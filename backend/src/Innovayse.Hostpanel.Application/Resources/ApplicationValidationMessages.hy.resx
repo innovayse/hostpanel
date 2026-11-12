@@ -1331,7 +1331,7 @@
     <value>Ընտրեք վճարային դարպասը։</value>
   </data>
   <data name="ConsentTextVersionInvalid" xml:space="preserve">
-    <value>Համաձայնության տեքստի տարբերակը պարտադիր է, առավելագույնը {0} նիշ։</value>
+    <value>Համաձայնության տեքստի տարբերակը պարտադիր է և պետք է լինի հրապարակված տարբերակներից մեկը։</value>
   </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>Վերադարձի հղումը պարտադիր է։</value>

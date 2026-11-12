@@ -26,7 +26,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPaymen
 /// A paid status that carries the method the gateway stored (the payer asked to save it when the payment was started) binds
 /// that method to the client's consent for the session, through <see cref="StoredMethodBinder"/>, in the very save that
 /// settles the invoice. Saving the method never decides the payment: no consent, a revoked one, a method the consent
-/// cannot take, or a reference the host cannot keep leave the invoice paid and bind nothing.
+/// cannot take, or a reference the host cannot keep leave the invoice paid and bind nothing. A session that will never store
+/// a method, because the gateway declined it or because the invoice was settled another way (<see cref="UnboundConsentRevoker"/>),
+/// has the consent recorded for it revoked, so a consent that no payment carried does not stay open.
 /// </remarks>
 public sealed class CompleteGatewayPaymentHandler
 {
@@ -51,6 +53,9 @@ public sealed class CompleteGatewayPaymentHandler
     /// <summary>Binds the method the gateway stored to the consent given for the payment.</summary>
     private readonly StoredMethodBinder _binder;
 
+    /// <summary>Ends the consent recorded for a session that will never store a method.</summary>
+    private readonly UnboundConsentRevoker _consents;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Resolves the configured payment plugin for a module id.</param>
@@ -59,6 +64,7 @@ public sealed class CompleteGatewayPaymentHandler
     /// <param name="clock">The clock the current moment is read from.</param>
     /// <param name="clientCredit">Puts what the gateway took beyond the amount due on the client's credit balance.</param>
     /// <param name="binder">Binds the method the gateway stored to the consent given for the payment.</param>
+    /// <param name="consents">Ends the consent recorded for a session that will never store a method.</param>
     public CompleteGatewayPaymentHandler(
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
@@ -66,7 +72,8 @@ public sealed class CompleteGatewayPaymentHandler
         ILogger<CompleteGatewayPaymentHandler> logger,
         IClock clock,
         IClientCredit clientCredit,
-        StoredMethodBinder binder)
+        StoredMethodBinder binder,
+        UnboundConsentRevoker consents)
     {
         _context = context;
         _pluginResolver = pluginResolver;
@@ -75,6 +82,7 @@ public sealed class CompleteGatewayPaymentHandler
         _clock = clock;
         _clientCredit = clientCredit;
         _binder = binder;
+        _consents = consents;
     }
 
     /// <summary>Handles the command.</summary>
@@ -95,7 +103,8 @@ public sealed class CompleteGatewayPaymentHandler
     /// goes to the client's balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid). An invoice waiting for a
     /// manual bank transfer is settled by a payment the session took in full: the wait ends and the transfer is not needed.
     /// The method the gateway stored for the payment, when it reports one, is bound to the consent of the session in the
-    /// same save; it never fails the payment.
+    /// same save; it never fails the payment. A declined session, and a session of an invoice settled another way, have the
+    /// consent recorded for them revoked.
     /// </returns>
     public async Task<Result<GatewayCompletionDto>> HandleAsync(
         CompleteGatewayPaymentCommand cmd, CancellationToken ct)
@@ -134,6 +143,13 @@ public sealed class CompleteGatewayPaymentHandler
             _logger.LogInformation(
                 "Invoice {InvoiceId} gateway session {GatewayOrderId} is {State} ({Raw}).",
                 invoice.Id, invoice.GatewayOrderId, status.State, status.RawStatus);
+
+            // A declined session is final (a new attempt is allowed past it), so the method it was asked to keep is never stored.
+            if (status.State != GatewayPaymentState.Pending)
+            {
+                await EndSessionConsentAsync(invoice, invoice.GatewayModule, invoice.GatewayOrderId, ct);
+            }
+
             return Result<GatewayCompletionDto>.Success(new GatewayCompletionDto(
                 status.State == GatewayPaymentState.Pending
                     ? GatewayCompletionState.Pending
@@ -166,6 +182,7 @@ public sealed class CompleteGatewayPaymentHandler
         // The ledger row is saved with the Paid mark; the concurrent-completion guard below then
         // makes "ledger row exists" and "invoice is Paid" one atomic fact.
         var module = invoice.GatewayModule;
+        var gatewayOrderId = invoice.GatewayOrderId;
 
         // The payer chose a bank transfer after this session was opened and then finished the card payment anyway: the
         // gateway has the money, so the invoice is settled with it and the transfer wait ends. A transfer that arrives later
@@ -218,7 +235,7 @@ public sealed class CompleteGatewayPaymentHandler
             // the dropped changes: a concurrent completion of this same payment bound it in its own save, and a path that
             // settled the invoice another way leaves the consent unbound, as a payment with no stored method does.
             _context.DetachAll();
-            var outcome = await CompleteAfterConflictAsync(cmd.InvoiceId, module, gatewayTransactionId, status, ct);
+            var outcome = await CompleteAfterConflictAsync(cmd.InvoiceId, module, gatewayOrderId, gatewayTransactionId, status, ct);
             if (outcome is null)
             {
                 throw;
@@ -291,6 +308,32 @@ public sealed class CompleteGatewayPaymentHandler
     }
 
     /// <summary>
+    /// Ends the consent recorded for a session that will never store a method and saves it. A consent that already
+    /// covers a method is left alone. A save that loses to another writer (the client revoked the consent, or a completion
+    /// bound it) is dropped and logged: there is nothing left to end, or the next completion of the session ends it.
+    /// </summary>
+    /// <param name="invoice">The invoice the session was opened for.</param>
+    /// <param name="module">The plugin id of the session.</param>
+    /// <param name="gatewayOrderId">The gateway-side order of the session, which keys its consent.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the consent is revoked and saved, or the save was dropped.</returns>
+    private async Task EndSessionConsentAsync(Invoice invoice, string module, string gatewayOrderId, CancellationToken ct)
+    {
+        await _consents.RevokeAsync(invoice.ClientId, module, gatewayOrderId, ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            _context.DetachAll();
+            _logger.LogInformation(
+                "Invoice {InvoiceId} gateway session {GatewayOrderId} changed its consent while it was being ended; the next completion ends it.",
+                invoice.Id, gatewayOrderId);
+        }
+    }
+
+    /// <summary>
     /// Answers for an invoice that is already settled. When it still holds a session no payment was
     /// recorded through (another path settled it while the session was open), the gateway is asked
     /// whether that session took money too, and money it took that the ledger does not hold is put
@@ -305,6 +348,9 @@ public sealed class CompleteGatewayPaymentHandler
         if (invoice is { GatewayModule: { } module, GatewayOrderId: { } orderId }
             && !invoice.WasPaidThrough(module))
         {
+            // Another path settled the invoice, so this session will never store a method, whatever it took.
+            await EndSessionConsentAsync(invoice, module, orderId, ct);
+
             var plugin = await _pluginResolver.ResolveAsync(module, ct);
             if (plugin is not null)
             {
@@ -338,6 +384,7 @@ public sealed class CompleteGatewayPaymentHandler
     /// </summary>
     /// <param name="invoiceId">The invoice id.</param>
     /// <param name="module">The plugin id of the session that took the money.</param>
+    /// <param name="gatewayOrderId">The gateway-side order of the session, which keys its consent.</param>
     /// <param name="reference">The gateway's reference of the payment.</param>
     /// <param name="status">The gateway's paid status.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -348,7 +395,7 @@ public sealed class CompleteGatewayPaymentHandler
     /// invoice is still open, so the conflict is the caller's to raise.
     /// </returns>
     private async Task<Result<GatewayCompletionDto>?> CompleteAfterConflictAsync(
-        int invoiceId, string module, string reference, GatewayPaymentStatus status, CancellationToken ct)
+        int invoiceId, string module, string gatewayOrderId, string reference, GatewayPaymentStatus status, CancellationToken ct)
     {
         var current = await _context.Invoices
             .Include(i => i.Transactions)
@@ -364,6 +411,8 @@ public sealed class CompleteGatewayPaymentHandler
         }
         else
         {
+            // Settled or closed another way, so this session will never store a method.
+            await EndSessionConsentAsync(current, module, gatewayOrderId, ct);
             await HandBackUnrecordedAsync(current, module, reference, status, ct);
         }
 

@@ -1,8 +1,14 @@
 using System.Net;
 using System.Net.Http.Json;
+using Innovayse.Hostpanel.Application.Billing.Commands.StartGatewayPayment;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Shared.Constants;
+using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -346,5 +352,113 @@ public sealed class StartGatewayPaymentSaveMethodTests(IntegrationTestFactory fa
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         scenario.Plugin.Instructions.Should().ContainSingle().Which.SavePaymentMethod.Should().BeTrue();
         (await scenario.ConsentsOfAsync(clientId)).Should().ContainSingle();
+    }
+    /// <summary>
+    /// A consent wording version nobody published is a validation error: the evidence of a consent only ever names words
+    /// the portal showed, so an unknown version reaches neither the gateway nor the consent.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithSaveAndAnUnpublishedConsentTextVersion_IsRefused()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-unpublished");
+
+        var response = await scenario.StartAsync(signedIn.Client, invoiceId, savePaymentMethod: true, consentTextVersion: "2026-11");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be("VALIDATION_ERROR");
+        scenario.Plugin.Instructions.Should().BeEmpty();
+        (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Both published wording versions are accepted, by their wire values, which are the portal's own: the consent keeps
+    /// exactly the text the portal sent.
+    /// </summary>
+    /// <param name="version">The wire value of a published version.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData(ConsentTextVersionWire.AccountCard)]
+    [InlineData(ConsentTextVersionWire.CheckoutAgreement)]
+    public async Task Start_WithSaveAndAPublishedConsentTextVersion_KeepsItAsEvidence(string version)
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-published");
+
+        var response = await scenario.StartAsync(signedIn.Client, invoiceId, savePaymentMethod: true, consentTextVersion: version);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().ContainSingle().Which.ConsentTextVersion.Should().Be(version);
+    }
+
+    /// <summary>
+    /// A request that carries no caller and asks to keep the method is a failed result with the unauthorized code, not an
+    /// exception that has to be caught at the edge, and the gateway is never asked.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithSaveByNoCaller_ReturnsAnUnauthorizedFailure()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-nocaller");
+        using var scope = scenario.Host.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var result = await bus.InvokeAsync<Result<RedirectDto>>(
+            new StartGatewayPaymentCommand(
+                invoiceId, scenario.Module, BillingTestSeeds.AllowedReturnUrl, true, SavingGatewayScenario.ConsentTextVersion),
+            CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        result.ErrorCode.Should().Be(SharedErrorCodes.Unauthorized);
+        scenario.Plugin.Instructions.Should().BeEmpty();
+        scenario.Plugin.Customers.Should().BeEmpty();
+        (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().BeEmpty();
+        (await scenario.CustomerCountAsync(signedIn.ClientId)).Should().Be(0);
+    }
+
+    /// <summary>
+    /// A payment the gateway could not register leaves no customer row behind: the customer is saved in the very save that
+    /// records the session and the consent, so nothing is recorded for an attempt that never became a payment.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithSaveWhenTheGatewayCannotRegisterThePayment_RecordsNoCustomer()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-noregister");
+        scenario.Plugin.CreatePaymentThrows = new TimeoutException("The gateway did not answer.");
+
+        var response = await scenario.StartAsync(signedIn.Client, invoiceId, savePaymentMethod: true);
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
+        (await scenario.CustomerCountAsync(signedIn.ClientId)).Should().Be(0);
+        (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().BeEmpty();
+        (await scenario.InvoiceAsync(invoiceId)).GatewayOrderId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A concurrent first request records the same customer between this request's read and its save: the unique key
+    /// refuses the customer row, which is dropped, and the rest of the change (the session and the consent) is saved at
+    /// once, so the start still succeeds and the client has the one customer the other request recorded.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithSaveWhenAnotherRequestRecordsTheCustomerFirst_StillRecordsTheSessionAndConsent()
+    {
+        var race = new CustomerRaceSaveInterceptor();
+        using var scenario = new SavingGatewayScenario(factory, saveInterceptor: race);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-customer-race");
+
+        var response = await scenario.StartAsync(signedIn.Client, invoiceId, savePaymentMethod: true);
+
+        race.Fired.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await scenario.CustomerCountAsync(signedIn.ClientId)).Should().Be(1);
+        var gatewayOrderId = (await scenario.InvoiceAsync(invoiceId)).GatewayOrderId;
+        gatewayOrderId.Should().NotBeNull();
+        (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().ContainSingle().Which.SessionId.Should().Be(gatewayOrderId);
     }
 }

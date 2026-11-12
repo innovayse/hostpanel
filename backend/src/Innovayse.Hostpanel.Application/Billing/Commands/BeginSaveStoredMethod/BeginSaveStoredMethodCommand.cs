@@ -16,7 +16,10 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.BeginSaveStoredMethod
 /// The absolute address the payer comes back to after a redirect gateway step; its origin must be one the deployment
 /// allows. An embedded plugin ignores it.
 /// </param>
-/// <param name="ConsentTextVersion">The version of the consent wording the payer ticked, as the portal showed it; kept as evidence.</param>
+/// <param name="ConsentTextVersion">
+/// The version of the consent wording the payer ticked, as the portal showed it; kept as evidence. The wire value of a
+/// published version (<see cref="Innovayse.Hostpanel.Domain.Billing.Enums.ConsentTextVersion"/>).
+/// </param>
 /// <param name="IpAddress">The address of the request, set by the controller; not read from the body.</param>
 /// <param name="UserAgent">The browser identification of the request, set by the controller; not read from the body.</param>
 public sealed record BeginSaveStoredMethodCommand(

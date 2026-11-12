@@ -38,25 +38,25 @@ public sealed class GatewayCustomerEnsurer
     }
 
     /// <summary>
-    /// Returns the client's customer reference at the module, asking the plugin and recording it the first time. Two
-    /// first requests at once end with the one the database kept.
+    /// Returns the client's customer at the module, asking the plugin the first time and staging the row that records
+    /// it. Nothing is saved: the caller saves the row together with the change it belongs to (the consent and the
+    /// session of the payment, or of the save session), so a customer is never recorded for a payment that was not.
     /// </summary>
     /// <remarks>
-    /// Saves at once when it records the customer, so the caller must have nothing else staged that it is not ready to
-    /// save. When the save loses to another request only the customer row of this call is dropped from the context:
-    /// whatever else the caller has loaded or staged stays.
+    /// Two first requests at once both stage the row and one save loses to the unique key on the client and module;
+    /// <see cref="SaveAsync"/> is the one place that settles it.
     /// </remarks>
     /// <param name="plugin">The stored credential capability of the module.</param>
     /// <param name="clientId">The client.</param>
     /// <param name="module">The payment plugin id.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The customer reference, or <see langword="null"/> when the client has no record to build the customer from.</returns>
-    public async Task<string?> EnsureAsync(IStoredCredentialPlugin plugin, int clientId, string module, CancellationToken ct)
+    /// <returns>The customer, or <see langword="null"/> when the client has no record to build the customer from.</returns>
+    public async Task<EnsuredGatewayCustomer?> EnsureAsync(IStoredCredentialPlugin plugin, int clientId, string module, CancellationToken ct)
     {
         var existing = await FindRefAsync(clientId, module, ct);
         if (existing is not null)
         {
-            return existing;
+            return new EnsuredGatewayCustomer(clientId, module, existing, null);
         }
 
         var client = await _bus.FindClientBriefAsync(clientId, withEmail: true, ct);
@@ -70,18 +70,40 @@ public sealed class GatewayCustomerEnsurer
 
         var row = GatewayCustomer.Create(clientId, module, created.CustomerRef, _clock.UtcNow);
         _context.GatewayCustomers.Add(row);
+        return new EnsuredGatewayCustomer(clientId, module, created.CustomerRef, row);
+    }
+
+    /// <summary>
+    /// Saves what the caller staged together with the customer row <see cref="EnsureAsync"/> staged, in one save. When
+    /// the save loses because another request recorded the same customer first, only this call's row is dropped and the
+    /// rest of the caller's change is saved once more: the plugin answers the same customer for the same client
+    /// reference, so the row that won holds the reference this request would have stored.
+    /// </summary>
+    /// <param name="ensured">The customer the caller got from <see cref="EnsureAsync"/>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the caller's change is saved.</returns>
+    /// <exception cref="ConcurrencyConflictException">
+    /// The save lost for a reason other than the customer: nobody recorded the customer, so the conflict is the caller's.
+    /// </exception>
+    public async Task SaveAsync(EnsuredGatewayCustomer ensured, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(ensured);
+
         try
         {
             await _context.SaveChangesAsync(ct);
-            return created.CustomerRef;
         }
-        catch (ConcurrencyConflictException)
+        catch (ConcurrencyConflictException) when (ensured.Created is { } staged)
         {
-            // Another request recorded the customer first. The plugin answers the same customer for the same client
-            // reference, so the row that won holds the reference this request would have stored.
-            // A conflict means the winner's row exists, so a missing row here is a real error and not an absent client.
-            _context.Detach(row);
-            return await CustomerRefs(clientId, module).FirstAsync(ct);
+            // A conflict with the customer's row means the winner's row exists now, so a missing row says the save
+            // lost on something else (the invoice moved) and that is not this method's to retry.
+            _context.Detach(staged);
+            if (await FindRefAsync(ensured.ClientId, ensured.GatewayModuleId, ct) is null)
+            {
+                throw;
+            }
+
+            await _context.SaveChangesAsync(ct);
         }
     }
 

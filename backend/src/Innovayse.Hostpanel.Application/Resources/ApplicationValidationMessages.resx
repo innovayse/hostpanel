@@ -587,7 +587,7 @@
     <value>Select a payment gateway.</value>
   </data>
   <data name="ConsentTextVersionInvalid" xml:space="preserve">
-    <value>The consent text version is required and at most {0} characters.</value>
+    <value>The consent text version is required and must be one of the published versions.</value>
   </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>A return URL is required.</value>

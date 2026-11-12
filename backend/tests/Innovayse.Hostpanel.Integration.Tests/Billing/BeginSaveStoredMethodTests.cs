@@ -26,7 +26,7 @@ public sealed class BeginSaveStoredMethodTests(IntegrationTestFactory factory) :
     private static Task<HttpResponseMessage> BeginAsync(HttpClient caller, string module, bool consentAccepted, string returnUrl) =>
         caller.PostAsJsonAsync(
             "/api/me/stored-payment-methods/sessions",
-            new { gatewayModuleId = module, consentAccepted, returnUrl, consentTextVersion = "2026-11" });
+            new { gatewayModuleId = module, consentAccepted, returnUrl, consentTextVersion = ConsentTextVersionWire.AccountCard });
 
     /// <summary>A ticked consent opens a session, records the consent without a method and keeps the gateway customer.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -72,7 +72,7 @@ public sealed class BeginSaveStoredMethodTests(IntegrationTestFactory factory) :
                 gatewayModuleId = scenario.Module,
                 consentAccepted = true,
                 returnUrl = BillingTestSeeds.AllowedReturnUrl,
-                consentTextVersion = "2026-11",
+                consentTextVersion = ConsentTextVersionWire.AccountCard,
                 ipAddress = "203.0.113.99",
                 userAgent = "Forged/9.9",
             });
@@ -82,7 +82,7 @@ public sealed class BeginSaveStoredMethodTests(IntegrationTestFactory factory) :
         using var scope = scenario.Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var consent = await context.CardChargeConsents.AsNoTracking().SingleAsync(c => c.GatewayModuleId == scenario.Module && c.SessionId == sessionId);
-        consent.ConsentTextVersion.Should().Be("2026-11");
+        consent.ConsentTextVersion.Should().Be(ConsentTextVersionWire.AccountCard);
         consent.UserAgent.Should().Be("EvidenceBrowser/1.0");
         consent.IpAddress.Should().NotBe("203.0.113.99", "the address is the connection's, never the body's");
     }
@@ -98,6 +98,31 @@ public sealed class BeginSaveStoredMethodTests(IntegrationTestFactory factory) :
         var response = await signedIn.Client.PostAsJsonAsync(
             "/api/me/stored-payment-methods/sessions",
             new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be("VALIDATION_ERROR");
+        using var scope = scenario.Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.CardChargeConsents.AsNoTracking().AnyAsync(c => c.ClientId == signedIn.ClientId)).Should().BeFalse();
+    }
+
+    /// <summary>A consent wording version the portal never published is refused, so the evidence only ever names words the payer saw.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Begin_WithAnUnpublishedConsentTextVersion_IsRefusedAndWritesNothing()
+    {
+        using var scenario = new StoredCredentialScenario(factory);
+        var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, scenario.Host, "begin-unpublished");
+
+        var response = await signedIn.Client.PostAsJsonAsync(
+            "/api/me/stored-payment-methods/sessions",
+            new
+            {
+                gatewayModuleId = scenario.Module,
+                consentAccepted = true,
+                returnUrl = BillingTestSeeds.AllowedReturnUrl,
+                consentTextVersion = "2026-11",
+            });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be("VALIDATION_ERROR");

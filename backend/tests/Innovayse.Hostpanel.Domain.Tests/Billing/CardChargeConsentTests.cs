@@ -98,6 +98,45 @@ public sealed class CardChargeConsentTests
         consent.RevokedAt.Should().Be(Now.AddDays(1));
     }
 
+    /// <summary>A consent that covers no method yet is revoked, and can no longer take one.</summary>
+    [Fact]
+    public void RevokeUnbound_WithoutAMethod_RevokesTheConsent()
+    {
+        var consent = NewConsent();
+
+        consent.RevokeUnbound(Now.AddHours(1));
+
+        consent.IsRevoked.Should().BeTrue();
+        consent.RevokedAt.Should().Be(Now.AddHours(1));
+        var act = () => consent.AttachMethod("pm-1");
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    /// <summary>A consent that already covers a method is the client's to revoke: the call changes nothing.</summary>
+    [Fact]
+    public void RevokeUnbound_WithAMethod_LeavesTheConsent()
+    {
+        var consent = NewConsent();
+        consent.AttachMethod("pm-1");
+
+        consent.RevokeUnbound(Now.AddHours(1));
+
+        consent.IsActive.Should().BeTrue();
+        consent.RevokedAt.Should().BeNull();
+    }
+
+    /// <summary>A consent revoked already keeps its first moment, and the call changes nothing.</summary>
+    [Fact]
+    public void RevokeUnbound_OnARevokedConsent_KeepsTheFirstMoment()
+    {
+        var consent = NewConsent();
+        consent.Revoke(Now.AddDays(1));
+
+        consent.RevokeUnbound(Now.AddDays(5));
+
+        consent.RevokedAt.Should().Be(Now.AddDays(1));
+    }
+
     /// <summary>A consent needs a module and a session.</summary>
     [Fact]
     public void Grant_WithoutModuleOrSession_Throws()

@@ -25,7 +25,7 @@ public sealed class CompleteSaveStoredMethodRaceTests(IntegrationTestFactory fac
     {
         var begun = await caller.PostAsJsonAsync(
             "/api/me/stored-payment-methods/sessions",
-            new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl, consentTextVersion = "2026-11" });
+            new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl, consentTextVersion = ConsentTextVersionWire.AccountCard });
         begun.StatusCode.Should().Be(HttpStatusCode.OK);
         return (await begun.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("sessionId").GetString()!;
     }

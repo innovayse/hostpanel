@@ -1,5 +1,8 @@
+using System.Linq.Expressions;
 using FluentValidation;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 
 namespace Innovayse.Hostpanel.Application.Common.Validators;
@@ -54,21 +57,46 @@ public static class ValidationRuleExtensions
     }
 
     /// <summary>
-    /// Requires the version of the consent wording a payer ticked: present, not blank, and short enough for the consent
-    /// that keeps it as evidence (<see cref="CardChargeConsent.MaxTextVersionLength"/>).
+    /// Requires the version of the consent wording a payer ticked to be one the portal published
+    /// (<see cref="ConsentTextVersion"/>, compared by its wire value), so the evidence a consent keeps always names
+    /// words the payer really saw. An absent, blank or unknown value is refused.
     /// </summary>
     /// <typeparam name="T">The command being validated.</typeparam>
     /// <typeparam name="TProperty">The type of the property, a <see cref="string"/> (nullable or not).</typeparam>
     /// <param name="rule">The rule builder for the wording version property.</param>
-    /// <param name="message">The localized sentence reported when the version is missing or too long.</param>
+    /// <param name="message">The localized sentence reported when the version is missing or not a published one.</param>
     /// <returns>The rule builder, for chaining.</returns>
     public static IRuleBuilderOptions<T, TProperty> MustBeConsentTextVersion<T, TProperty>(
         this IRuleBuilder<T, TProperty> rule, string message)
     {
         ArgumentNullException.ThrowIfNull(rule);
 
-        return rule.Must(value => value is string { Length: > 0 and <= CardChargeConsent.MaxTextVersionLength } version
-            && !string.IsNullOrWhiteSpace(version)).WithMessage(message);
+        return rule.Must(value => (value as string).IsPublishedConsentTextVersion()).WithMessage(message);
+    }
+
+    /// <summary>
+    /// States, once, the rule every hosted payment that can keep the payer's method shares: the wording version is
+    /// required, and must be a published one, only when the payer asked to keep the method. A payment that saves nothing
+    /// has no consent to describe, so its version is not looked at.
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="validator">The validator of the command.</param>
+    /// <param name="savesMethod">Reads whether the payer asked to keep the method from the command.</param>
+    /// <param name="consentTextVersion">Selects the wording version from the command.</param>
+    /// <param name="message">The localized sentence reported when the version is missing or not a published one.</param>
+    public static void RuleForConsentTextVersionWhenSaving<T>(
+        this AbstractValidator<T> validator,
+        Func<T, bool> savesMethod,
+        Expression<Func<T, string?>> consentTextVersion,
+        string message)
+    {
+        ArgumentNullException.ThrowIfNull(validator);
+        ArgumentNullException.ThrowIfNull(savesMethod);
+        ArgumentNullException.ThrowIfNull(consentTextVersion);
+
+        validator.When(
+            savesMethod,
+            () => validator.RuleFor(consentTextVersion).MustBeConsentTextVersion(message));
     }
 
     /// <summary>Requires a 1-based page number.</summary>

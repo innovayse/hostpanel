@@ -24,7 +24,8 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayme
 /// </param>
 /// <param name="ConsentTextVersion">
 /// The version of the consent wording the payer ticked, as the portal showed it; kept as evidence. Required when
-/// <paramref name="SavePaymentMethod"/> is set, ignored otherwise.
+/// <paramref name="SavePaymentMethod"/> is set, and then the wire value of a published version
+/// (<see cref="Innovayse.Hostpanel.Domain.Billing.Enums.ConsentTextVersion"/>); ignored otherwise.
 /// </param>
 /// <param name="IpAddress">The address of the request, set by the controller; not read from the body.</param>
 /// <param name="UserAgent">The browser identification of the request, set by the controller; not read from the body.</param>

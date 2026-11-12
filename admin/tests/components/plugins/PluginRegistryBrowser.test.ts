@@ -233,6 +233,30 @@ describe('PluginRegistryBrowser', () => {
     expect(wrapper.get('[data-testid="registry-downloads-example-registrar"]').text()).toBe('')
   })
 
+  it('lists the cards in one column, then two, then three as the screen widens', async () => {
+    const wrapper = await mountBrowser()
+
+    expect(wrapper.get('[data-testid="plugin-registry-list"]').classes()).toEqual(
+      expect.arrayContaining(['grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3']),
+    )
+  })
+
+  it('shows the rating with stars, average and review count only when the registry sends one', async () => {
+    const wrapper = await mountBrowser({ items: [{ ...fresh, rating: { average: 4.5, count: 12 } }, outdated] })
+    const rating = wrapper.get('[data-testid="registry-rating-example-pay"]')
+
+    expect(rating.findAll('[data-testid="rating-star"]')).toHaveLength(5)
+    expect(rating.get('[data-testid="rating-summary"]').text()).toBe('4.5 (12)')
+    expect(rating.attributes('aria-label')).toBe('Rated 4.5 out of 5 from 12 reviews')
+    expect(wrapper.find('[data-testid="registry-rating-example-registrar"]').exists()).toBe(false)
+  })
+
+  it('shows no rating for a null rating, never a default', async () => {
+    const wrapper = await mountBrowser({ items: [{ ...fresh, rating: null }] })
+
+    expect(wrapper.find('[data-testid="registry-rating-example-pay"]').exists()).toBe(false)
+  })
+
   it('does not open the details page when Install is clicked', async () => {
     const wrapper = await mountBrowser()
 

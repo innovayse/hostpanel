@@ -25,6 +25,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Tags">The plugin's tags, cleaned and capped; <see langword="null"/> when the source carries none (the update list).</param>
 /// <param name="Downloads">Downloads of every version added up; <see langword="null"/> when the registry does not say.</param>
 /// <param name="LatestChangelog">The release notes of <paramref name="LatestVersion"/> as Markdown text, cleaned and capped; <see langword="null"/> when the registry sends none.</param>
+/// <param name="Rating">The reviews summary; <see langword="null"/> when the plugin has no reviews or the registry sends no usable summary.</param>
 public sealed record RegistryPluginDto(
     string Id,
     string Name,
@@ -43,4 +44,5 @@ public sealed record RegistryPluginDto(
     PluginRegistryPublisherKind? PublisherKind = null,
     IReadOnlyList<string>? Tags = null,
     long? Downloads = null,
-    string? LatestChangelog = null);
+    string? LatestChangelog = null,
+    RegistryPluginRatingDto? Rating = null);

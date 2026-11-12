@@ -695,7 +695,21 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
                 : null,
             Tags: ToTags(item.Tags),
             Downloads: item.Downloads is >= 0 ? item.Downloads : null,
-            LatestChangelog: CleanMultiline(item.LatestChangelog, MaxChangelogLength));
+            LatestChangelog: CleanMultiline(item.LatestChangelog, MaxChangelogLength),
+            Rating: ToRating(item.Rating));
+    }
+
+    /// <summary>
+    /// Checks the registry's reviews summary. Only an average between 1 and 5 (a star scale) with at least one review is
+    /// kept: anything else is dropped rather than shown, so a rating is never invented.
+    /// </summary>
+    /// <param name="rating">The summary as sent; <see langword="null"/> when the plugin has no reviews.</param>
+    /// <returns>The summary, or <see langword="null"/> when it is absent or out of range.</returns>
+    private static RegistryPluginRatingDto? ToRating(PluginRegistryRatingWire? rating)
+    {
+        return rating is { Average: >= 1 and <= 5 and var average, Count: >= 1 and var count } && double.IsFinite(average)
+            ? new RegistryPluginRatingDto(average, count)
+            : null;
     }
 
     /// <summary>Cleans the registry's tags: each is cleaned and capped, empty and repeated ones are dropped, and at most <see cref="MaxTags"/> are kept.</summary>

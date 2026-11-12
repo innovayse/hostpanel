@@ -75,5 +75,9 @@
   },
   "errorState": {
     "retry": "Retry"
+  },
+  "rating": {
+    "label": "Rated {average} out of 5 from {count} reviews",
+    "summary": "{average} ({count})"
   }
 }

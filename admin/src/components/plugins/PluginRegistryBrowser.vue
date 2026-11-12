@@ -2,8 +2,8 @@
 /**
  * The Browse tab's list: a search box, a category select and a page of registry cards.
  *
- * The card is not interactive itself: its name is a link-looking button that opens the plugin's details page. Top to bottom it shows the
- * picture and name with the Verified badge at the right end, the publisher with its kind, a clamped description, up to three tag chips and
+ * The list has three columns on a wide screen, two on a medium one and one on a narrow one. The card is not interactive itself: its name is a link-looking button that opens the plugin's details page. Top to bottom it shows the
+ * picture and name with the Verified badge at the right end, the publisher with its kind, the rating (stars, average and review count, only when the registry sends one), a clamped description, up to three tag chips and
  * a "+N" chip, the category and price chips, a footer under a divider (downloads on the left, latest and SDK version on the right), then
  * the installed version, staged or update state and the actions. Cards in a row share one height.
  * The action is Install for a plugin that is not installed, Update for one with a newer version and
@@ -26,6 +26,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
+import UiRating from '@/components/ui/UiRating.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -269,7 +270,7 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
       <UiText tone="muted" size="sm" data-testid="plugin-registry-total">
         {{ t('plugins.pluginRegistry.total', { total }) }}
       </UiText>
-      <UiGrid :columns="2" gap="md" data-testid="plugin-registry-list">
+      <UiGrid :columns="3" gap="md" data-testid="plugin-registry-list">
         <UiCard
           v-for="item in items"
           :key="item.id"
@@ -313,6 +314,12 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
                 {{ t(`plugins.pluginRegistry.publisherKind.${item.publisherKind}`) }}
               </UiBadge>
             </UiStack>
+            <UiRating
+              v-if="item.rating"
+              :average="item.rating.average"
+              :count="item.rating.count"
+              :data-testid="`registry-rating-${item.id}`"
+            />
             <UiText tone="muted" size="sm" class="line-clamp-3" :data-testid="`registry-description-${item.id}`">
               {{ item.description }}
             </UiText>

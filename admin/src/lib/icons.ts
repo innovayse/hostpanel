@@ -68,6 +68,8 @@ export const Icon = {
   File: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
   /** A flag on a pole, for a flagged ticket. */
   Flag: '<path d="M4 2v20h2v-8l2-2 12 6V4L8 10 6 12V2z"/>',
+  /** A five-pointed star, for a rating. */
+  Star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
 } as const
 
 /** One of the icon names. */

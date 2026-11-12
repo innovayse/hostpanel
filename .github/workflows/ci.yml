@@ -94,6 +94,25 @@ jobs:
       - name: Run both edges and the admin image and check their response headers
         run: sh scripts/check-edge-headers.sh
 
+  # Builds the API image the way the release does (the prod stage, standalone flavour). The Dockerfile checks its own
+  # publish output and fails the build on a .pdb file, on a native runtime of another platform or on a missing
+  # SkiaSharp library, so a change that fattens the image again turns this job red. The size report below is for
+  # reading in the log; it asserts nothing.
+  api-image:
+    name: API image (prod stage builds, publish output checked)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
+      - name: Build the prod image
+        run: docker build --file backend/Dockerfile --target prod --build-arg AUTH_MODE=local --tag hostpanel-api:ci backend
+      - name: Report the image size and its largest layers
+        run: |
+          docker image inspect hostpanel-api:ci --format 'image size: {{.Size}} bytes'
+          docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' hostpanel-api:ci | head -n 8 | cut -c1-120
+
   install-backup:
     name: Installer upgrade backup and rollback
     runs-on: ubuntu-latest

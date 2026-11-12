@@ -1241,6 +1241,14 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   messages of that type; `Production.AssertAllPreGeneratedTypesExist` is set in `Static` mode as well, for the
   environment check over every code collection. `WolverineStartupTests` pins both, and starts the current
   Wolverine on a message store schema created by 5.41 (`Fixtures/wolverine-5.41-schema.sql`).
+- **The API image publishes for its own runtime and carries no debug symbols.** The prod stage is Alpine, so
+  `backend/Dockerfile` restores and publishes the API for `linux-musl-x64` or `linux-musl-arm64` (from BuildKit's
+  `TARGETARCH`, written once to `/tmp/runtime-id`), framework-dependent and without the native launcher, with
+  `DebugType=none`. Only the matching SkiaSharp native library is copied, and no `.pdb` (about 300 MB less in the
+  application layer). The step after the publish fails the image build on a `.pdb` file, on a folder of another
+  platform under `runtimes/`, or on a missing `libSkiaSharp.so`; the `api-image` job in `.github/workflows/ci.yml`
+  builds the prod stage on every pull request so the check runs before a merge. Do not publish the API portably
+  again, and do not add a package with its own native assets without checking what the check says.
 - **Handlers return `Result` / `Result<T>`** (`Shared/Models`); controllers derive from
   `BaseApiController` and return through `HandleResult`, which maps the failure code to a status
   with `StatusMapping`. Every controller derives from it (`ControllerBaseTests`); handlers and

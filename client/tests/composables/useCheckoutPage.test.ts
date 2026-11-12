@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import type { Pinia } from 'pinia'
+import { orderPaymentStartPath } from '~/tests/helpers/billingPaths'
 import { cartLine } from '~/tests/helpers/checkoutFlow'
 import { mountAsyncPage } from '~/tests/helpers/mountWithKit'
 import { makeClientUser } from '~/tests/helpers/clientUser'
@@ -38,7 +39,7 @@ const PATHS = {
   products: '/api/portal/public/products',
   methods: '/api/portal/order/payment-methods',
   create: '/api/portal/order/create',
-  gatewayStart: '/api/portal/order/42/gateway-payment/start',
+  gatewayStart: orderPaymentStartPath(42),
   bankTransfer: '/api/portal/client/invoices/77/bank-transfer',
 } as const
 

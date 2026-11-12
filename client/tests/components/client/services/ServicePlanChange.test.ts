@@ -16,6 +16,8 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { FAILED_READ_REQUESTS } from '~/tests/helpers/failedRead'
+import { settle } from '~/tests/helpers/settle'
 import { ServiceChangeStatus } from '~/types/servicechangestatus'
 import { ServiceChangeType } from '~/types/servicechangetype'
 import { waitUntil } from '~/tests/helpers/waitUntil'
@@ -46,9 +48,6 @@ const OPTIONS = [
 const answerChange = (reply: StubReply): void => {
   table[`POST ${CHANGE_PATH}`] = reply
 }
-
-/** How many times the options are asked for when the first answer is a server failure: the transport asks once more. */
-const FAILED_READ_REQUESTS = 2
 
 /**
  * Mounts the panel and waits for the options to be read.
@@ -121,6 +120,7 @@ describe('ServicePlanChange', () => {
     table[`GET ${OPTIONS_PATH}`] = { status: 500, body: { detail: 'no' } }
 
     await mountPanel(FAILED_READ_REQUESTS)
+    await settle()
 
     expect(requestsTo(stub.requests, OPTIONS_PATH)).toHaveLength(FAILED_READ_REQUESTS)
   })

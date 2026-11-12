@@ -12,6 +12,7 @@ import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
+import { settle } from '~/tests/helpers/settle'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
@@ -52,13 +53,14 @@ enum OutcomePanel {
  * Mounts the page and presses the confirm button, as the reader does.
  *
  * @param panel - The panel the reply must end on.
- * @returns The wrapper once the one confirm request has reached the stub and its panel is shown.
+ * @returns The wrapper once the one confirm request has reached the stub, its panel is shown and the event loop has settled, so a late extra request would already be counted.
  */
 const mountAndConfirm = async (panel: OutcomePanel) => {
   const wrapper = await mountAuthPage(UnsubscribePage)
   await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
   await waitUntil(() => expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(1))
   await waitUntil(() => expect(wrapper.find(`[data-testid="${panel}"]`).exists()).toBe(true))
+  await settle()
   return wrapper
 }
 

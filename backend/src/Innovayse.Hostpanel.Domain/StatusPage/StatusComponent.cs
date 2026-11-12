@@ -60,7 +60,11 @@ public sealed class StatusComponent : BaseEntity
     /// <summary>Gets the id of the incident the automatic checks opened and have not closed yet, or <c>null</c>.</summary>
     public int? ActiveIncidentId { get; private set; }
 
-    /// <summary>Gets whether the monitored component has failed enough checks in a row to count as down.</summary>
+    /// <summary>
+    /// Gets whether the monitored component has failed enough checks in a row to count as down. This is what the checks
+    /// find and ignores <see cref="StateOverride"/>: an override changes the page (<see cref="CurrentState"/>), while
+    /// the automatic incident keeps following this.
+    /// </summary>
     public bool IsDown => MonitoringEnabled && ConsecutiveFailures >= FailureThreshold;
 
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>

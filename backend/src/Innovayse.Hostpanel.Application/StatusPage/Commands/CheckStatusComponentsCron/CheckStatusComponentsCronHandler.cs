@@ -22,6 +22,9 @@ namespace Innovayse.Hostpanel.Application.StatusPage.Commands.CheckStatusCompone
 /// </summary>
 public sealed class CheckStatusComponentsCronHandler
 {
+    /// <summary>How many component addresses are requested at the same time, so one pass never opens a connection per component.</summary>
+    private const int MaxConcurrentProbes = 10;
+
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -97,8 +100,10 @@ public sealed class CheckStatusComponentsCronHandler
                 break;
             }
 
-            // The requests are independent and wait on the network, so the batch is probed side by side.
-            var outcomes = await Task.WhenAll(components.Select(c => ProbeAsync(c, ct)));
+            // The requests are independent and wait on the network, so the batch is probed side by side, at most
+            // MaxConcurrentProbes at a time.
+            using var gate = new SemaphoreSlim(MaxConcurrentProbes);
+            var outcomes = await Task.WhenAll(components.Select(c => ProbeAsync(c, gate, ct)));
             for (var i = 0; i < components.Count; i++)
             {
                 if (await ApplyAsync(components[i], outcomes[i], ct) && outcomes[i] is not null)
@@ -148,16 +153,25 @@ public sealed class CheckStatusComponentsCronHandler
 
     /// <summary>Requests the address of a component whose check is switched on.</summary>
     /// <param name="component">The component.</param>
+    /// <param name="gate">Limits how many requests are in flight at once.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>What the request found, or <see langword="null"/> when the component is not monitored.</returns>
-    private async Task<StatusProbeResult?> ProbeAsync(StatusComponent component, CancellationToken ct)
+    private async Task<StatusProbeResult?> ProbeAsync(StatusComponent component, SemaphoreSlim gate, CancellationToken ct)
     {
         if (!component.MonitoringEnabled || component.CheckUrl is null)
         {
             return null;
         }
 
-        return await _probe.ProbeAsync(component.CheckUrl, ct);
+        await gate.WaitAsync(ct);
+        try
+        {
+            return await _probe.ProbeAsync(component.CheckUrl, ct);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     /// <summary>
@@ -201,6 +215,8 @@ public sealed class CheckStatusComponentsCronHandler
     /// <summary>
     /// Opens an incident for a component that is down and has none, and closes the incident of one that is not
     /// down. Driven by the stored state rather than by the change, so a pass that failed half way is finished by the next.
+    /// An operator's override changes only what the page shows (<see cref="StatusComponent.CurrentState"/>), never this:
+    /// the incident follows <see cref="StatusComponent.IsDown"/>, which is what the checks find.
     /// </summary>
     /// <param name="component">The tracked component, already saved with its latest check.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -209,6 +225,9 @@ public sealed class CheckStatusComponentsCronHandler
     {
         if (component.IsDown && component.ActiveIncidentId is null)
         {
+            // Opened only while the component holds no incident of ours (the link above), so a component that is
+            // still down never gets a second one. The text is stored in English on purpose: an incident is one public
+            // record, not a per-reader message, so there is no locale to localize it into and the page shows it as written.
             var opened = await _bus.InvokeAsync<Result<int>>(
                 new OpenStatusIncidentCommand(
                     $"{component.Name} is not responding",

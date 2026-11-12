@@ -128,8 +128,10 @@ describe('credit page', () => {
 
     refusePageTwo = false
     await wrapper.get('[data-testid="credit-error-retry"]').trigger('click')
-    await waitUntil(() => expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(false))
+    // The sentence clears the moment the retry starts; the balance is what appears once its answer has been handled.
+    await waitUntil(() => expect(wrapper.find('[data-testid="credit-balance"]').exists()).toBe(true))
 
+    expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(false)
     expect(queryOf(reads()[reads().length - 1]!)).toEqual({ page: '2', pageSize: '10' })
     expect(wrapper.find('[data-testid="credit-balance"]').exists()).toBe(true)
   })

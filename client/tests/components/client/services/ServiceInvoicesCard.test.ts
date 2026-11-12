@@ -18,6 +18,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { ServiceInvoice } from '~/types/serviceinvoice'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that lists the invoices raised against service 4. */
 const INVOICES_PATH = '/api/portal/client/services/4/invoices'
@@ -76,7 +77,8 @@ describe('ServiceInvoicesCard', () => {
   it('shows skeletons while loading', async () => {
     const held = heldReply()
     const { wrapper, read } = mountCard(held.reply)
-    await flushPromises()
+    // Released only after the request reached the stub: a release before that answers nothing and the read never ends.
+    await waitUntil(() => expect(held.waiting()).toBe(1))
 
     expect(wrapper.findAll('[data-testid="ui-skeleton"]')).toHaveLength(3)
 

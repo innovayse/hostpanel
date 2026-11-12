@@ -43,12 +43,12 @@ afterEach(async () => {
 /**
  * Mounts the page and presses the confirm button, as the reader does.
  *
- * @returns The wrapper after the request has settled.
+ * @returns The wrapper once the reply has arrived and the done or failed panel is shown.
  */
 const mountAndConfirm = async () => {
   const wrapper = await mountAuthPage(UnsubscribePage)
   await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
-  await flushPromises()
+  await waitUntil(() => expect(wrapper.find('[data-testid="unsubscribe-done"]').exists() || wrapper.find('[data-testid="unsubscribe-failed"]').exists()).toBe(true))
   return wrapper
 }
 

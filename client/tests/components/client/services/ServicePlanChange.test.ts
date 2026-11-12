@@ -50,11 +50,13 @@ const answerChange = (reply: StubReply): void => {
 /**
  * Mounts the panel and waits for the options to be read.
  *
+ * The transport asks once more after a server failure, so the number of requests is not fixed here.
+ *
  * @returns The wrapper.
  */
 const mountPanel = async () => {
   const wrapper = mountClient(ServicePlanChange, { props: { serviceId: '4' } })
-  await waitUntil(() => expect(requestsTo(stub.requests, OPTIONS_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, OPTIONS_PATH).length).toBeGreaterThan(0))
   await waitUntil(() => expect(useServicePlanChangeStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper

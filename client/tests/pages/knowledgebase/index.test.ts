@@ -138,7 +138,8 @@ describe('pages/knowledgebase/index', () => {
     table[`GET ${ContentPath.KbArticles}`] = { body: { items: [{ id: 40, title: 'DNS basics' }] } }
 
     await submitSearch(wrapper, 'dns')
-    await waitUntil(() => expect(wrapper.find('[data-testid="kb-search-count"]').exists()).toBe(true))
+    // The count heading shows as soon as the search starts; the results card only once the reply has arrived.
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-search-results"]').exists()).toBe(true))
 
     expect(router.replace).toHaveBeenCalledWith({ query: { q: 'dns' } })
     expect(articleReads().map(queryOf).at(-1)).toMatchObject({ search: 'dns' })
@@ -216,7 +217,8 @@ describe('pages/knowledgebase/index', () => {
 
     answerWith()
     await wrapper.find('[data-testid="kb-retry"]').trigger('click')
-    await waitUntil(() => expect(wrapper.find('[data-testid="kb-categories"]').exists()).toBe(true))
+    // The categories block shows skeletons as soon as the retry starts; a category card only once the second reply has arrived.
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-category-card-billing"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, ContentPath.KbCategories)).toHaveLength(2)
     expect(wrapper.find('[data-testid="kb-load-error"]').exists()).toBe(false)

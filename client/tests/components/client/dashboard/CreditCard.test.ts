@@ -30,11 +30,14 @@ let table: StubRouteTable
 /**
  * Mounts the widget and waits until the credit it reads on appearing has been handled.
  *
+ * The transport asks once more after a server failure, so the number of requests is not fixed here;
+ * the first test asserts the request of a read that succeeded.
+ *
  * @returns The wrapper.
  */
 const mountCard = async () => {
   const wrapper = mountClient(CreditCard)
-  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH).length).toBeGreaterThan(0))
   await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper

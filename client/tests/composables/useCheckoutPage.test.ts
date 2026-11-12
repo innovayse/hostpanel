@@ -109,7 +109,8 @@ const preloadCurrencies = async (): Promise<void> => {
  * Runs the composable the way a page does: inside a component's setup, under `Suspense`, so the
  * lifecycle hook it registers has an instance to belong to and fires on mount. The page's reads go
  * over a real socket, so this waits until the composable has settled and the catalogue read the
- * mount starts (when there is a cart and a known payer currency) has been answered.
+ * mount starts has been answered. That read happens only when, at mount, there is a cart and a known
+ * payer currency; a visit that loads the currencies itself makes none.
  *
  * @returns What the composable returned.
  */
@@ -122,9 +123,13 @@ const runInPage = async (): Promise<CheckoutPage> => {
       return () => h('div')
     },
   })
+  // Decided before the mount, from what the page starts with: reading the stores afterwards would race the
+  // currency reply and the cart restore, and wait for a catalogue read the page never makes.
+  const readsCatalogue = useCurrencyStore().payerCode !== null
+    && (!useCartStore().isEmpty || window.localStorage.getItem(CART_STORAGE_KEY) !== null)
   await mountAsyncPage(Host, { pinia })
   await waitUntil(() => expect(page).toBeDefined())
-  if (useCurrencyStore().payerCode !== null && !useCartStore().isEmpty) {
+  if (readsCatalogue) {
     await waitUntil(() => expect(requestsTo(stub.requests, PATHS.products)).toHaveLength(1))
   }
   await settle(5)

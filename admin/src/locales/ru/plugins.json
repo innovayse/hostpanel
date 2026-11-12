@@ -210,6 +210,15 @@
     "chatStop": "Остановить",
     "chatResultDetails": "Подробнее",
     "chatStepStopped": "остановлено",
-    "chatStepsCount": "Выполнено {done} из {total}"
+    "chatStepsCount": "Выполнено {done} из {total}",
+    "chatLog": "Разговор",
+    "chatEmpty": "Начните разговор.",
+    "chatJumpToLatest": "К последнему сообщению",
+    "chatHint": "Enter отправляет, Shift+Enter переносит строку",
+    "chatCopy": "Скопировать ответ",
+    "chatCopyCode": "Скопировать код",
+    "chatCopied": "Скопировано",
+    "chatRetry": "Повторить",
+    "chatWriting": "Пишется ответ"
   }
 }

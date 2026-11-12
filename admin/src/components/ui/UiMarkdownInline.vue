@@ -2,8 +2,8 @@
 /**
  * The inline pieces of one Markdown block: text, bold, italic, code and https links. Every piece is
  * drawn as a text node inside an ordinary element, so nothing from the source can become markup. A
- * link opens in a new tab with the safe `rel`; with `links` off it stays its text. Used by
- * {@link UiMarkdown}; it holds no state.
+ * link opens in a new tab with the safe `rel`; with `links` off it stays its text. With `caret` on, a
+ * blinking caret ends the run, for a reply still being written. Used by {@link UiMarkdown}; it holds no state.
  */
 import { MarkdownInlineKind } from '@/utils/markdown'
 import type { MarkdownInline } from '@/utils/markdown'
@@ -14,8 +14,11 @@ withDefaults(defineProps<{
   nodes: MarkdownInline[]
   /** Whether a link is drawn as a link; off draws its text only. */
   links?: boolean
+  /** Ends the run with a blinking caret, as a reply that is still being written does. */
+  caret?: boolean
 }>(), {
   links: true,
+  caret: false,
 })
 </script>
 
@@ -36,4 +39,10 @@ withDefaults(defineProps<{
     >{{ node.text }}</a>
     <template v-else>{{ node.text }}</template>
   </template>
+  <span
+    v-if="caret"
+    class="ml-0.5 inline-block h-4 w-0.5 translate-y-0.5 animate-pulse bg-current motion-reduce:animate-none"
+    aria-hidden="true"
+    data-testid="markdown-caret"
+  />
 </template>

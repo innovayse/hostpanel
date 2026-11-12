@@ -9,15 +9,15 @@
  * exactly as the manifest declares it; the host checked every reference at install and checks the caller
  * again on every call, so nothing here decides who may call what.
  */
-import { computed, onUnmounted, ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import PluginBlock from '@/components/plugins/view/PluginBlock.vue'
+import PluginBlocks from '@/components/plugins/view/PluginBlocks.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { providePluginView } from '@/composables/usePluginView'
 import { fillPluginPath, pluginLinkParams } from '@/lib/pluginView'
 import { pluginPagePath } from '@/lib/routes'
 import { usePluginUiStore } from '@/stores/pluginUi'
-import type { PluginBlock as PluginBlockData, PluginPageLink, PluginView } from '@/types/pluginview'
+import type { PluginPageLink, PluginView } from '@/types/pluginview'
 import { UiGap } from '@/utils/ui/layout'
 
 /** Props for PluginView. */
@@ -120,10 +120,6 @@ providePluginView({
   adopt,
 })
 
-/** The blocks keyed by id or kind and their place, which a view document never reorders. */
-const entries = computed<{ key: string; block: PluginBlockData }[]>(() =>
-  props.view.blocks.map((block, position) => ({ key: `${block.id ?? block.kind}-${position}`, block })))
-
 onUnmounted(() => {
   for (const stop of watches.values()) {
     stop()
@@ -134,6 +130,6 @@ onUnmounted(() => {
 
 <template>
   <UiStack :gap="UiGap.Lg" data-testid="plugin-view">
-    <PluginBlock v-for="entry in entries" :key="entry.key" :block="entry.block" />
+    <PluginBlocks :blocks="view.blocks" />
   </UiStack>
 </template>

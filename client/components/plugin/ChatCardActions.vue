@@ -1,5 +1,5 @@
 <template>
-  <UiStack v-show="shown" direction="row" gap="sm" align="center" wrap data-testid="plugin-chat-result-actions">
+  <UiStack v-show="shown" :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiCrossAlign.Center" wrap data-testid="plugin-chat-result-actions">
     <PluginChatCardAction
       v-for="action in result.actions"
       :key="action.key"
@@ -11,8 +11,8 @@
     />
     <UiButton
       v-if="result.details.length"
-      variant="outline"
-      size="sm"
+      :variant="UiButtonVariant.Outline"
+      :size="UiSize.Sm"
       data-testid="plugin-chat-result-details-toggle"
       @click="emit('toggleDetails')"
     >{{ $t('plugins.chatResultDetails') }}</UiButton>
@@ -28,6 +28,7 @@
  * and the next message. The row is hidden, never removed: a hidden action must stay mounted, because it is what reads its
  * condition again at the next refresh and brings the row back.
  */
+import { UiButtonVariant, UiCrossAlign, UiDirection, UiGap, UiSize } from '~/utils/ui/enums'
 import type { PluginChatResult } from '~/types/pluginchatresult'
 
 /** Props of PluginChatCardActions. */

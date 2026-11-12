@@ -20,6 +20,15 @@
     "previewInsecure": "Для предпросмотра нужно защищённое соединение. По обычному http браузер скрывает то, что панель проверяет перед показом сайта, поэтому предпросмотр отключён. Откройте панель по https.",
     "chatStepStopped": "Остановлено",
     "chatStepsCount": "Выполнено шагов: {done} из {total}",
-    "chatResultDetails": "Подробнее"
+    "chatResultDetails": "Подробнее",
+    "chatLog": "Разговор",
+    "chatEmpty": "Начните разговор.",
+    "chatJumpToLatest": "К последнему сообщению",
+    "chatHint": "Enter отправляет, Shift+Enter переносит строку",
+    "chatCopy": "Скопировать ответ",
+    "chatCopyCode": "Скопировать код",
+    "chatCopied": "Скопировано",
+    "chatRetry": "Повторить",
+    "chatWriting": "Пишется ответ"
   }
 }

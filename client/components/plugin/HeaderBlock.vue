@@ -10,6 +10,13 @@
         <PluginBlock v-for="action in actions" :key="action.key" :block="action.block" />
       </UiStack>
     </UiStack>
+    <!-- Inside a host page the card around the view already says where it is: a section title, not the page title. -->
+    <UiStack v-else-if="embedded" direction="row" gap="md" align="center" wrap data-testid="plugin-header-embedded">
+      <UiHeading :level="UiHeadingLevel.H2" :size="UiHeadingSize.Subsection" class="min-w-0 truncate" data-testid="plugin-header">{{ title }}</UiHeading>
+      <UiStack v-if="actions.length" direction="row" gap="md" align="center" wrap class="ml-auto">
+        <PluginBlock v-for="action in actions" :key="action.key" :block="action.block" />
+      </UiStack>
+    </UiStack>
     <UiPageHeader v-else :title="title" class="!mb-0" data-testid="plugin-header">
       <template v-if="actions.length" #actions>
         <PluginBlock v-for="action in actions" :key="action.key" :block="action.block" />
@@ -34,11 +41,15 @@
  * sentence inside one button's column made that column taller than the others and the row's buttons fell out of
  * line. The latest action's sentence replaces the previous one.
  *
+ * In an embedded view (a slot widget on a host page) the header is a section title at the h2 level with its actions
+ * beside it, not the page title.
+ *
  * A `compact` header is one slim line for the top of a workspace page: the page's back link, a title and a smaller line
  * read from routes (`titleSource`, `subtitleSource`), and on the right whatever `actions` lines up, any block kind.
  */
-import { providePluginActionMessages, usePluginBackLink, usePluginSource } from '~/composables/usePluginView'
+import { providePluginActionMessages, usePluginBackLink, usePluginEmbedded, usePluginSource } from '~/composables/usePluginView'
 import type { PluginHeaderBlock } from '~/types/pluginblock'
+import { UiHeadingLevel, UiHeadingSize } from '~/utils/ui/enums'
 
 /** Props of PluginHeaderBlock. */
 interface Props {
@@ -48,6 +59,9 @@ interface Props {
 
 /** The props. */
 const props = defineProps<Props>()
+
+/** Whether the view sits inside a host page, which gets the section header. */
+const embedded = usePluginEmbedded()
 
 /** The page's back link, which a compact header draws on its own line. */
 const back = usePluginBackLink()

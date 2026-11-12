@@ -19,7 +19,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { EMPTY_DATE, formatDate, formatDateTime } from '~/utils/formatDate'
+import { EMPTY_DATE, formatDate, formatDateTime, formatTime } from '~/utils/formatDate'
 
 /** The renewal date production served for service 16, microseconds and offset included. */
 const PRODUCTION_NEXT_DUE = '2026-09-08T08:19:37.756135+00:00'
@@ -124,5 +124,23 @@ describe('formatDateTime', () => {
     expect(formatDateTime(null, 'en')).toBe(EMPTY_DATE)
     expect(formatDateTime('', 'en')).toBe(EMPTY_DATE)
     expect(formatDateTime('yesterday-ish', 'en')).toBe(EMPTY_DATE)
+  })
+})
+
+describe('formatTime', () => {
+  it('renders only the time of day, without the date', () => {
+    const rendered = formatTime(new Date(2026, 8, 8, 15, 7), 'en')
+
+    expect(rendered).toMatch(/3:07/)
+    expect(rendered).not.toMatch(/2026/)
+  })
+
+  it('reads an epoch like a date', () => {
+    expect(formatTime(new Date(2026, 8, 8, 15, 7).getTime(), 'en')).toMatch(/3:07/)
+  })
+
+  it('renders the empty marker for a missing or unparseable moment', () => {
+    expect(formatTime(null, 'en')).toBe(EMPTY_DATE)
+    expect(formatTime('yesterday-ish', 'en')).toBe(EMPTY_DATE)
   })
 })

@@ -20,6 +20,15 @@
     "previewInsecure": "Նախադիտման համար անհրաժեշտ է անվտանգ կապ։ Սովորական http-ով դիտարկիչը թաքցնում է այն, ինչ վահանակը ստուգում է կայքը ցույց տալուց առաջ, ուստի նախադիտումն անջատված է։ Բացեք վահանակը https-ով։",
     "chatStepStopped": "Կանգնեցված է",
     "chatStepsCount": "Կատարված է {done} քայլ {total}-ից",
-    "chatResultDetails": "Մանրամասներ"
+    "chatResultDetails": "Մանրամասներ",
+    "chatLog": "Զրույց",
+    "chatEmpty": "Սկսեք զրույցը։",
+    "chatJumpToLatest": "Անցնել վերջին հաղորդագրությանը",
+    "chatHint": "Enter՝ ուղարկելու, Shift+Enter՝ նոր տողի համար",
+    "chatCopy": "Պատճենել պատասխանը",
+    "chatCopyCode": "Պատճենել կոդը",
+    "chatCopied": "Պատճենվեց",
+    "chatRetry": "Կրկնել",
+    "chatWriting": "Պատասխանը գրվում է"
   }
 }

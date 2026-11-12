@@ -3,7 +3,7 @@
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ label }}</p>
-        <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white truncate" data-testid="ui-stat-tile-value">{{ value }}</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white truncate" data-testid="ui-stat-tile-value"><slot name="value">{{ value }}</slot></p>
         <p v-if="hint" class="mt-1 text-xs flex items-center gap-1" :class="trendClass">
           <component :is="trendIcon" v-if="trendIcon" :size="12" :stroke-width="2.5" />
           {{ hint }}
@@ -19,7 +19,7 @@
 <script setup lang="ts">
 /**
  * UiStatTile - one headline number with its label, an optional icon and a trend hint
- * (dashboard summary tiles).
+ * (dashboard summary tiles). The `value` slot replaces the plain value, for example with a badge.
  */
 import { computed } from 'vue'
 import type { Component } from 'vue'

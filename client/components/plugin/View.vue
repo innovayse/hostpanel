@@ -1,6 +1,6 @@
 <template>
   <UiStack gap="lg" data-testid="plugin-view">
-    <PluginBlock v-for="entry in entries" :key="entry.key" :block="entry.block" />
+    <PluginBlocks :blocks="view.blocks" />
   </UiStack>
 </template>
 
@@ -16,9 +16,9 @@
  * server checks the caller again on every call, so nothing here decides who may call what.
  */
 import { providePluginSelection } from '~/composables/usePluginSelection'
-import { providePluginView } from '~/composables/usePluginView'
+import { providePluginEmbedded, providePluginView } from '~/composables/usePluginView'
 import { clientPluginPagePath } from '~/constants/clientRoutes'
-import type { PluginBlock as PluginBlockData, PluginPageLink } from '~/types/pluginblock'
+import type { PluginPageLink } from '~/types/pluginblock'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginView } from '~/types/pluginview'
 import { fillPluginPath, pluginLinkParams } from '~/utils/plugins'
@@ -35,6 +35,8 @@ interface Props {
   externalOrigins?: string[]
   /** The exact origins a preview block may frame, from the page's answer; a slot has none. */
   frameOrigins?: string[]
+  /** Whether the view sits inside a host page (a slot widget) instead of being a plugin page of its own; its header is then compact. */
+  embedded?: boolean
   /** Told of each block's first read as it starts, so a slot widget can tell a slow widget from a ready one. */
   track?: (read: Promise<void>) => void
 }
@@ -43,6 +45,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   externalOrigins: () => [],
   frameOrigins: () => [],
+  embedded: false,
   track: undefined,
 })
 
@@ -120,6 +123,8 @@ const open = (link: PluginPageLink, row: unknown): void => {
 
 providePluginSelection(props.pluginId, props.values)
 
+providePluginEmbedded(props.embedded)
+
 providePluginView({
   pluginId: props.pluginId,
   values: props.values,
@@ -133,14 +138,4 @@ providePluginView({
     props.track?.(read)
   },
 })
-
-/**
- * The blocks with a key each: the block's id, else its kind, and always its place, which a view document never
- * reorders. The place keeps the keys of a list apart when a plugin that was installed before the host refused repeated
- * ids still gives one id to two blocks; a repeated key would let Vue patch one block over the other.
- */
-const entries = computed(() => props.view.blocks.map((block: PluginBlockData, position: number) => ({
-  key: `${block.id ?? block.kind}-${position}`,
-  block,
-})))
 </script>

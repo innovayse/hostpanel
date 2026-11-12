@@ -4,7 +4,7 @@
       <UiTabs v-model="active" :tabs="tabs" class="min-w-0 flex-1" />
       <PluginActionBlock v-for="(action, position) in block.actions" :key="`${position}-${action.label}`" :block="action" />
     </UiStack>
-    <PluginBlock v-for="entry in blocks" :key="entry.key" :block="entry.block" />
+    <PluginBlocks :blocks="openBlocks" :scope="`${active}:`" />
   </UiStack>
 </template>
 
@@ -36,7 +36,6 @@ const active = ref(props.block.tabs[0]?.id ?? '')
 /** The tabs as the kit draws them; the titles are text. */
 const tabs = computed(() => props.block.tabs.map(tab => ({ value: tab.id, label: tab.title })))
 
-/** The open tab's blocks, keyed by the tab as well, so switching tabs mounts fresh blocks. */
-const blocks = computed(() => (props.block.tabs.find(tab => tab.id === active.value)?.blocks ?? [])
-  .map((block, position) => ({ key: `${active.value}:${block.id ?? block.kind}-${position}`, block })))
+/** The open tab's blocks; the tab id scopes their keys, so switching tabs mounts fresh blocks. */
+const openBlocks = computed(() => props.block.tabs.find(tab => tab.id === active.value)?.blocks ?? [])
 </script>

@@ -515,3 +515,23 @@ export const providePluginActionMessages = (): Ref<PluginActionMessage | null> =
 export const usePluginActionMessageOutlet = (): PluginActionMessageOutlet | null => {
   return inject(PLUGIN_ACTION_MESSAGE_KEY, null)
 }
+
+/** The injection key that tells a block its view sits inside a host page (a slot widget) instead of being a plugin page of its own. */
+const PLUGIN_EMBEDDED_KEY: InjectionKey<boolean> = Symbol('plugin-embedded')
+
+/**
+ * Tells the blocks below the calling component whether their view is embedded in a host page.
+ *
+ * @param embedded - True for a slot widget, false for a plugin page.
+ * @returns Nothing.
+ */
+export const providePluginEmbedded = (embedded: boolean): void => {
+  provide(PLUGIN_EMBEDDED_KEY, embedded)
+}
+
+/**
+ * Whether the view the calling block is rendered in is embedded in a host page.
+ *
+ * @returns True inside a slot widget.
+ */
+export const usePluginEmbedded = (): boolean => inject(PLUGIN_EMBEDDED_KEY, false)

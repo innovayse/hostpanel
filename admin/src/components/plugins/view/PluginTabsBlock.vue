@@ -6,7 +6,7 @@
  */
 import { computed, ref } from 'vue'
 import PluginActionBlock from '@/components/plugins/view/PluginActionBlock.vue'
-import PluginBlock from '@/components/plugins/view/PluginBlock.vue'
+import PluginBlocks from '@/components/plugins/view/PluginBlocks.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import type { PluginBlock as PluginBlockData, PluginTabsBlock } from '@/types/pluginview'
@@ -26,10 +26,8 @@ const active = ref<string>(props.block.tabs[0]?.id ?? '')
 const tabs = computed<UiTabItem[]>(() =>
   props.block.tabs.map((tab) => ({ value: tab.id, label: tab.title, testid: `plugin-tab-${tab.id}` })))
 
-/** The open tab's blocks, keyed by the tab as well, so switching tabs mounts fresh blocks. */
-const blocks = computed<{ key: string; block: PluginBlockData }[]>(() =>
-  (props.block.tabs.find((tab) => tab.id === active.value)?.blocks ?? [])
-    .map((block, position) => ({ key: `${active.value}:${block.id ?? block.kind}-${position}`, block })))
+/** The open tab's blocks; the tab id scopes their keys, so switching tabs mounts fresh blocks. */
+const openBlocks = computed<readonly PluginBlockData[]>(() => props.block.tabs.find((tab) => tab.id === active.value)?.blocks ?? [])
 </script>
 
 <template>
@@ -38,6 +36,6 @@ const blocks = computed<{ key: string; block: PluginBlockData }[]>(() =>
       <UiTabs v-model="active" :items="tabs" class="min-w-0 flex-1" />
       <PluginActionBlock v-for="(action, position) in block.actions ?? []" :key="`${position}-${action.label}`" :block="action" />
     </UiStack>
-    <PluginBlock v-for="entry in blocks" :key="entry.key" :block="entry.block" />
+    <PluginBlocks :blocks="openBlocks" :scope="`${active}:`" />
   </UiStack>
 </template>

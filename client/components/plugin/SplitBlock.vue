@@ -10,7 +10,7 @@
       :data-testid="`plugin-split-pane-${position}`"
     >
       <UiStack gap="md" class="md:h-full">
-        <PluginBlock v-for="entry in blocksOf(pane, position)" :key="entry.key" :block="entry.block" />
+        <PluginBlocks :blocks="pane.blocks" :scope="`${position}:`" />
       </UiStack>
     </div>
   </div>
@@ -25,7 +25,7 @@
  * would stretch the pane instead of scrolling inside it, and its composer would leave the screen.
  */
 import { providePluginPane } from '~/composables/usePluginView'
-import type { PluginBlock as PluginBlockData, PluginSplitBlock, PluginSplitPane } from '~/types/pluginblock'
+import type { PluginSplitBlock } from '~/types/pluginblock'
 
 /** Props of PluginSplitBlock. */
 interface Props {
@@ -33,17 +33,8 @@ interface Props {
   block: PluginSplitBlock
 }
 
+/** The props, read in the template. */
 defineProps<Props>()
 
 providePluginPane()
-
-/**
- * A pane's blocks with a key each, which a view document never reorders.
- *
- * @param pane - The pane.
- * @param position - The pane's place.
- * @returns The keyed blocks.
- */
-const blocksOf = (pane: PluginSplitPane, position: number): { key: string, block: PluginBlockData }[] =>
-  pane.blocks.map((block, index) => ({ key: `${position}:${block.id ?? block.kind}-${index}`, block }))
 </script>

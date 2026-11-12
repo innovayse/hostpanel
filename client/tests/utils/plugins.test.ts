@@ -11,11 +11,13 @@ import { PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from 
 import { describe, expect, it, vi } from 'vitest'
 import { Globe, Puzzle } from 'lucide-vue-next'
 import { HttpMethod } from '~/types/httpmethod'
+import { PluginBlockGroupKind, PluginBlockKind } from '~/types/pluginblockkind'
 import { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import {
   parsePluginChatResult,
+  groupPluginBlocks,
   pluginActionBody,
   parsePluginChatStep,
   pluginDocumentLoaded,
@@ -681,5 +683,45 @@ describe('parsePluginSelectionMessage', () => {
 
   it('refuses everything while the release is unknown', () => {
     expect(parsePluginSelectionMessage({ ...toggle, release: '' }, '')).toBeNull()
+  })
+})
+
+describe('groupPluginBlocks', () => {
+  it('groups consecutive stats and consecutive links and leaves every other block alone', () => {
+    const groups = groupPluginBlocks([
+      { kind: PluginBlockKind.Stat, label: 'A' },
+      { kind: PluginBlockKind.Stat, label: 'B' },
+      { kind: PluginBlockKind.Text, text: 't' },
+      { kind: PluginBlockKind.Link, label: 'L1' },
+      { kind: PluginBlockKind.Link, label: 'L2' },
+      { kind: PluginBlockKind.Stat, label: 'C' },
+    ])
+
+    expect(groups.map(group => [group.kind, group.blocks.length])).toEqual([
+      [PluginBlockGroupKind.Stats, 2],
+      [PluginBlockGroupKind.Single, 1],
+      [PluginBlockGroupKind.Links, 2],
+      [PluginBlockGroupKind.Stats, 1],
+    ])
+  })
+
+  it('never groups two blocks of a kind that stands alone', () => {
+    const groups = groupPluginBlocks([{ kind: PluginBlockKind.Text, text: 'a' }, { kind: PluginBlockKind.Text, text: 'b' }])
+
+    expect(groups.map(group => group.kind)).toEqual([PluginBlockGroupKind.Single, PluginBlockGroupKind.Single])
+  })
+
+  it('keys each block by its id or kind and its place, under the scope, so a repeated id stays unique', () => {
+    const groups = groupPluginBlocks([
+      { kind: PluginBlockKind.Stat, id: 'a', label: 'A' },
+      { kind: PluginBlockKind.Stat, id: 'a', label: 'B' },
+    ], 'tab:')
+
+    expect(groups[0]!.key).toBe('tab:a-0')
+    expect(groups[0]!.blocks.map(entry => entry.key)).toEqual(['tab:a-0', 'tab:a-1'])
+  })
+
+  it('returns no group for no blocks', () => {
+    expect(groupPluginBlocks([])).toEqual([])
   })
 })

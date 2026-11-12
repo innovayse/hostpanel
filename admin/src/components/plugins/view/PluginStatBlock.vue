@@ -1,24 +1,18 @@
 <script setup lang="ts">
 /**
  * A labelled value, written in the view or read from a GET route, formatted with the operator's locale
- * and shown as text. A failed read shows the API's sentence in place of the value, so one failing block
- * never hides the rest of the page. `format: badge` draws the word as a badge above its label.
+ * and shown as text in a tile. A failed read shows the API's sentence in place of the value, so one failing block
+ * never hides the rest of the page. `format: badge` draws the word as a badge in the tile.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { usePluginSource } from '@/composables/usePluginView'
 import { formatPluginValue } from '@/lib/pluginView'
 import { PluginValueFormat } from '@/types/pluginview'
 import type { PluginStatBlock } from '@/types/pluginview'
-import { UiCardPadding } from '@/utils/ui/card'
-import { UiGap } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for PluginStatBlock. */
 const props = defineProps<{
@@ -42,11 +36,10 @@ const badge = computed<boolean>(() => props.block.format === PluginValueFormat.B
 
 <template>
   <UiSkeleton v-if="loading" :lines="2" data-testid="plugin-stat-loading" />
-  <UiCard v-else-if="badge" :padding="UiCardPadding.Md" data-testid="plugin-stat">
-    <UiStack :gap="UiGap.Sm">
-      <UiBadge class="self-start" data-testid="plugin-stat-badge">{{ formatted }}</UiBadge>
-      <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ block.label }}</UiText>
-    </UiStack>
-  </UiCard>
-  <UiStatTile v-else :label="block.label" :value="error || formatted" data-testid="plugin-stat" />
+  <!-- A status word is drawn as a badge in the tile; a failed read still shows the sentence as a plain value. -->
+  <UiStatTile v-else :label="block.label" :value="error || formatted" data-testid="plugin-stat">
+    <template v-if="badge" #value>
+      <UiBadge data-testid="plugin-stat-badge">{{ formatted }}</UiBadge>
+    </template>
+  </UiStatTile>
 </template>

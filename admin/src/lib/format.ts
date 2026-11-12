@@ -159,6 +159,21 @@ export const formatClock = (iso: string, locale: string): string => {
 }
 
 /**
+ * Formats the time of day, without seconds, of a moment such as when a chat message was written.
+ *
+ * @param moment - The moment, in milliseconds since the epoch.
+ * @param locale - Locale code the time is written in.
+ * @returns The local time, or an empty string when the moment cannot be read.
+ */
+export const formatTime = (moment: number | undefined, locale: string): string => {
+  if (moment === undefined) {
+    return ''
+  }
+  const date = new Date(moment)
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+}
+
+/**
  * Formats the time passed since a moment as `6d 1h 17m` (zero units dropped, minutes always kept).
  *
  * @param iso - ISO 8601 timestamp, null or undefined.

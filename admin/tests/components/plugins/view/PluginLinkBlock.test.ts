@@ -20,6 +20,18 @@ describe('PluginLinkBlock', () => {
     expect(link.attributes('target')).toBeUndefined()
   })
 
+  it('draws a link as a button, with the external-link mark only when it leaves the panel', async () => {
+    const { wrapper } = await mountPluginView([
+      { kind: PluginBlockKind.Link, label: 'Clients', href: '/clients' },
+      { kind: PluginBlockKind.Link, label: 'Docs', href: 'https://docs.example.com/a' },
+    ], { externalOrigins: ['https://*.example.com'] })
+
+    const [inside, outside] = wrapper.findAll('[data-testid="plugin-link"]')
+    expect(inside?.classes()).toContain('cursor-pointer')
+    expect(inside?.find('[data-testid="plugin-link-external"]').exists()).toBe(false)
+    expect(outside?.find('[data-testid="plugin-link-external"]').exists()).toBe(true)
+  })
+
   it('opens an allowed https origin in a new tab without the opener', async () => {
     const { wrapper } = await mountPluginView([{ kind: PluginBlockKind.Link, label: 'Docs', href: 'https://docs.example.com/a' }], {
       externalOrigins: ['https://*.example.com'],

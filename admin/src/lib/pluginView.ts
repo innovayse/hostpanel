@@ -12,10 +12,12 @@ import { formatDateTime } from '@/lib/format'
 import { pluginPagePath } from '@/lib/routes'
 import { HttpMethod } from '@/types/http'
 import type { PluginMenuLink, PluginUiMenuItemDto, PluginUiPageDto } from '@/types/pluginui'
-import { PluginBlockKind, PluginBlockTone, PluginChatStepState, PluginValueFormat } from '@/types/pluginview'
+import { PluginBlockGroupKind, PluginBlockKind, PluginBlockTone, PluginChatStepState, PluginValueFormat } from '@/types/pluginview'
 import type {
   PluginActionBlock,
   PluginActionBodyValue,
+  PluginBlock,
+  PluginBlockGroup,
   PluginChatResult,
   PluginChatResultAction,
   PluginChatStep,
@@ -659,3 +661,34 @@ export const pluginMenuLinks = (menus: readonly PluginUiMenuItemDto[], pages: re
       }
       return [{ key: `${item.pluginId}:${item.id}`, label: item.label, icon: item.icon, to: pluginPagePath(item.pluginId, path) }]
     })
+
+// The block from here to the end of groupPluginBlocks is shared with the other app, held equal by pluginGrouping.shared.test.ts.
+/** The group layout of the block kinds that are drawn as a run; every other kind stands alone. */
+const PLUGIN_GROUP_KINDS: ReadonlyMap<PluginBlockKind, PluginBlockGroupKind> = new Map([
+  [PluginBlockKind.Stat, PluginBlockGroupKind.Stats],
+  [PluginBlockKind.Link, PluginBlockGroupKind.Links],
+])
+
+/**
+ * Groups a list of blocks for laying out: consecutive `stat` blocks become one group (a tile grid) and consecutive
+ * `link` blocks another (a button row); every other block is a group of its own. Document order is kept, and so is
+ * each block's key: its id or kind plus its place in the list, so a view that repeats an id still has unique keys.
+ *
+ * @param blocks - The blocks of a view, a tab or a pane.
+ * @param scope - A prefix that keeps keys apart between lists rendered side by side; empty for none.
+ * @returns The groups, in order.
+ */
+export const groupPluginBlocks = (blocks: readonly PluginBlock[], scope = ''): PluginBlockGroup[] => {
+  const groups: PluginBlockGroup[] = []
+  blocks.forEach((block, position) => {
+    const keyed = { key: `${scope}${block.id ?? block.kind}-${position}`, block }
+    const kind = PLUGIN_GROUP_KINDS.get(block.kind) ?? PluginBlockGroupKind.Single
+    const last = groups.at(-1)
+    if (last && kind !== PluginBlockGroupKind.Single && last.kind === kind) {
+      last.blocks.push(keyed)
+      return
+    }
+    groups.push({ key: keyed.key, kind, blocks: [keyed] })
+  })
+  return groups
+}

@@ -33,4 +33,8 @@ export interface PluginChatMessage {
   results: PluginChatResult[]
   /** The plugin's own failures during the reply, in arrival order. */
   issues: PluginChatIssue[]
+  /** What the plugin says it is doing now while the reply is written; empty when nothing. */
+  status: string
+  /** When this session wrote the message, in milliseconds since the epoch; absent for a message read from the history. */
+  sentAt?: number
 }

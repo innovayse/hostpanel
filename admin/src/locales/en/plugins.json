@@ -210,6 +210,15 @@
     "chatStop": "Stop",
     "chatResultDetails": "Details",
     "chatStepStopped": "stopped",
-    "chatStepsCount": "{done} of {total} done"
+    "chatStepsCount": "{done} of {total} done",
+    "chatLog": "Conversation",
+    "chatEmpty": "Start the conversation.",
+    "chatJumpToLatest": "Jump to latest",
+    "chatHint": "Enter to send, Shift+Enter for a new line",
+    "chatCopy": "Copy reply",
+    "chatCopyCode": "Copy code",
+    "chatCopied": "Copied",
+    "chatRetry": "Retry",
+    "chatWriting": "Writing a reply"
   }
 }

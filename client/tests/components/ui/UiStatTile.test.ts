@@ -48,4 +48,11 @@ describe('UiStatTile', () => {
     expect(up.find('.text-xs.flex svg').exists()).toBe(true)
     expect(flat.find('.text-xs.flex svg').exists()).toBe(false)
   })
+
+  it('draws the value slot in place of the plain value', () => {
+    const wrapper = mountWithKit(UiStatTile, { props: { label: 'x', value: 1 }, slots: { value: '<b data-testid="custom">Live</b>' } })
+
+    expect(wrapper.find('[data-testid="ui-stat-tile-value"] [data-testid="custom"]').text()).toBe('Live')
+    expect(wrapper.find('[data-testid="ui-stat-tile-value"]').text()).not.toContain('1')
+  })
 })

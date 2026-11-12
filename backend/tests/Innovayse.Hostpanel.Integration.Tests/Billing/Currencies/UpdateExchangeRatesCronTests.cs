@@ -50,11 +50,17 @@ public sealed class UpdateExchangeRatesCronTests(IntegrationTestFactory factory)
         var source = new FakeExchangeRateSource(new Dictionary<string, decimal> { ["AMD"] = QuotedAmdRate });
         var host = HostWith(source);
         await PutCurrencyAsync(host, "SEK", rateToBase: 0.1m);
+        try
+        {
+            await RunAsync(host);
 
-        await RunAsync(host);
-
-        (await RateOfAsync("SEK")).Should().Be(0.1m, "a currency the source does not name is never zeroed");
-        (await RateOfAsync("AMD")).Should().Be(QuotedAmdRate);
+            (await RateOfAsync("SEK")).Should().Be(0.1m, "a currency the source does not name is never zeroed");
+            (await RateOfAsync("AMD")).Should().Be(QuotedAmdRate);
+        }
+        finally
+        {
+            await RemoveCurrencyAsync("SEK");
+        }
     }
 
     /// <summary>A source that is down leaves every rate as it was, throws nothing and still schedules the next run.</summary>
@@ -169,6 +175,16 @@ public sealed class UpdateExchangeRatesCronTests(IntegrationTestFactory factory)
             isEnabled = true,
         });
         response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>Deletes a currency a test created, so it does not leak into the other tests.</summary>
+    /// <param name="code">The currency code.</param>
+    /// <returns>A task that completes when it is deleted.</returns>
+    private async Task RemoveCurrencyAsync(string code)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        await context.Currencies.Where(c => c.Code == code).ExecuteDeleteAsync();
     }
 
     /// <summary>Reads the stored rate of a currency.</summary>

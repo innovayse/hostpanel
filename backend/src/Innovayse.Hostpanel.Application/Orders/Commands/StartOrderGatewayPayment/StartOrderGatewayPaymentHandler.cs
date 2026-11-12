@@ -58,6 +58,8 @@ public sealed class StartOrderGatewayPaymentHandler
         var order = payable.Value!;
 
         return await _bus.InvokeAsync<Result<RedirectDto>>(
-            new StartGatewayPaymentCommand(order.InvoiceId!.Value, cmd.Module, cmd.ReturnUrl), ct);
+            new StartGatewayPaymentCommand(
+                order.InvoiceId!.Value, cmd.Module, cmd.ReturnUrl, cmd.SavePaymentMethod, cmd.ConsentTextVersion, cmd.IpAddress, cmd.UserAgent),
+            ct);
     }
 }

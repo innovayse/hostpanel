@@ -16,9 +16,6 @@
     "goToOrder": "Continue",
     "goToInvoice": "Back to invoice",
     "viewInvoices": "View invoices",
-    "tryAgain": "Try paying again",
-    "saveStarting": "Taking you to the payment provider to save your payment method…",
-    "saveFailed": "Your payment went through, but we could not set up automatic renewals with this payment method.",
-    "saveFailedLink": "Open saved payment methods"
+    "tryAgain": "Try paying again"
   }
 }

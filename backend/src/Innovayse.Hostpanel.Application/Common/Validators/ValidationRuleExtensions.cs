@@ -53,6 +53,24 @@ public static class ValidationRuleExtensions
         return rule.Must(value => CurrencyCode.IsValid(value as string)).WithMessage(message);
     }
 
+    /// <summary>
+    /// Requires the version of the consent wording a payer ticked: present, not blank, and short enough for the consent
+    /// that keeps it as evidence (<see cref="CardChargeConsent.MaxTextVersionLength"/>).
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <typeparam name="TProperty">The type of the property, a <see cref="string"/> (nullable or not).</typeparam>
+    /// <param name="rule">The rule builder for the wording version property.</param>
+    /// <param name="message">The localized sentence reported when the version is missing or too long.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, TProperty> MustBeConsentTextVersion<T, TProperty>(
+        this IRuleBuilder<T, TProperty> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(value => value is string { Length: > 0 and <= CardChargeConsent.MaxTextVersionLength } version
+            && !string.IsNullOrWhiteSpace(version)).WithMessage(message);
+    }
+
     /// <summary>Requires a 1-based page number.</summary>
     /// <typeparam name="T">The command or query being validated.</typeparam>
     /// <param name="rule">The rule builder for the page property.</param>
@@ -77,6 +95,77 @@ public static class ValidationRuleExtensions
         ArgumentNullException.ThrowIfNull(rule);
 
         return rule.InclusiveBetween(1, maxPageSize).WithMessage(message);
+    }
+
+    /// <summary>Requires a discount within the range <see cref="PriceDiscount"/> allows: 0 to 100 percent.</summary>
+    /// <typeparam name="T">The command or query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the discount property.</param>
+    /// <param name="message">The localized sentence reported when the discount is out of range.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, decimal> MustBeDiscountPercentRange<T>(this IRuleBuilder<T, decimal> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(PriceDiscount.IsValidPercent).WithMessage(message);
+    }
+
+    /// <summary>
+    /// Requires a display name that is present and no longer than the column that stores it. An empty,
+    /// blank or absent value is refused with <paramref name="requiredMessage"/>, a long one with
+    /// <paramref name="tooLongMessage"/>.
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="rule">The rule builder for the name property.</param>
+    /// <param name="maxLength">The longest name the column holds.</param>
+    /// <param name="requiredMessage">The localized sentence reported when the name is missing.</param>
+    /// <param name="tooLongMessage">The localized sentence reported when the name is over <paramref name="maxLength"/>.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string> MustBeName<T>(
+        this IRuleBuilder<T, string> rule, int maxLength, string requiredMessage, string tooLongMessage)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.NotEmpty().WithMessage(requiredMessage)
+            .MaximumLength(maxLength).WithMessage(tooLongMessage);
+    }
+
+    /// <summary>Requires a whole number that is zero or more: a position in a list, a count.</summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="rule">The rule builder for the property.</param>
+    /// <param name="message">The localized sentence reported when the value is below zero.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, int> MustBeNonNegative<T>(this IRuleBuilder<T, int> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.GreaterThanOrEqualTo(0).WithMessage(message);
+    }
+
+    /// <summary>Requires an amount that is zero or more.</summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="rule">The rule builder for the amount property.</param>
+    /// <param name="message">The localized sentence reported when the amount is below zero.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, decimal> MustBeNonNegative<T>(this IRuleBuilder<T, decimal> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.GreaterThanOrEqualTo(0m).WithMessage(message);
+    }
+
+    /// <summary>Requires a value that is one of the members the enum defines, so a bare number is refused.</summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <typeparam name="TEnum">The enum the property carries.</typeparam>
+    /// <param name="rule">The rule builder for the enum property.</param>
+    /// <param name="message">The localized sentence reported when the value is not a defined member.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, TEnum> MustBeDefinedEnum<T, TEnum>(
+        this IRuleBuilder<T, TEnum> rule, string message)
+        where TEnum : struct, Enum
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.IsInEnum().WithMessage(message);
     }
 
     /// <summary>

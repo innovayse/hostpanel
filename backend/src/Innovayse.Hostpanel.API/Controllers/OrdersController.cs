@@ -263,16 +263,27 @@ public sealed class OrdersController : BaseApiController
     /// Returns the gateway URL to redirect the payer's browser to.
     /// </summary>
     /// <param name="id">Order primary key; wins over any order id in the body.</param>
-    /// <param name="command">The payment module, return URL and the order's payment token.</param>
+    /// <param name="command">
+    /// The payment module, return URL and the order's payment token, and optionally the choice to keep the payment method
+    /// with the consent wording version. The address and browser kept as consent evidence are the request's own, set here
+    /// over whatever the body says.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the redirect URL; 400 with <c>VALIDATION_ERROR</c>, <c>ORDER_NOT_INVOICED</c>,
+    /// 200 with the redirect URL; 400 with <c>VALIDATION_ERROR</c> (a method to keep without the consent wording
+    /// version), <c>ORDER_NOT_INVOICED</c>,
     /// <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or <c>GATEWAY_CURRENCY_MISMATCH</c>;
+    /// 401 when a guest asks to keep the payment method, which only the signed-in owner of the invoice may;
     /// 403 with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay;
+    /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when a signed-in linked user without <c>ViewPayInvoices</c> asks to keep the
+    /// payment method (paying without keeping it needs no permission);
     /// 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an order,
-    /// <c>INVOICE_NOT_FOUND</c> or <c>CURRENCY_NOT_FOUND</c>; 409 with
-    /// <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>; 503 with <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the
-    /// payment module is not set up;
+    /// <c>INVOICE_NOT_FOUND</c> (also when the signed-in caller asking to keep the method is not the invoice's client),
+    /// <c>CLIENT_PROFILE_NOT_FOUND</c> (the same caller has no client record) or <c>CURRENCY_NOT_FOUND</c>; 409 with
+    /// <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>, <c>INVOICE_STORED_CHARGE_HELD</c> or
+    /// <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> (a method to keep at a module that cannot keep one); 503 with
+    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the payment module is not set up, or with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>
+    /// when the gateway fails to register the payment;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/gateway-payment/start")]
@@ -280,6 +291,7 @@ public sealed class OrdersController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.Auth)]
     [ProducesResponseType(typeof(RedirectDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
@@ -287,7 +299,10 @@ public sealed class OrdersController : BaseApiController
     public async Task<IActionResult> StartGatewayPaymentAsync(
         int id, [FromBody] StartOrderGatewayPaymentCommand command, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<RedirectDto>>(command with { OrderId = id }, ct);
+        // The consent evidence is the connection's and the headers', never the body's: the overlay wins over any value sent.
+        var outcome = await _bus.InvokeAsync<Result<RedirectDto>>(
+            command with { OrderId = id, IpAddress = RequestIpAddress, UserAgent = RequestUserAgent },
+            ct);
         return HandleResult(outcome);
     }
 

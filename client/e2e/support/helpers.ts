@@ -207,10 +207,11 @@ export const enableSlides = async (request: APIRequestContext): Promise<void> =>
  * bank transfer is offered by default.
  *
  * @param request Playwright's API request context.
+ * @param withPlain Also offer a hosted gateway that cannot store credentials.
  * @returns Resolves once the stub offers the gateway.
  */
-export const enableHostedGateway = async (request: APIRequestContext): Promise<void> => {
-  await request.post(`${STUB_URL}/__e2e/gateways`, { data: { hosted: true } })
+export const enableHostedGateway = async (request: APIRequestContext, withPlain = false): Promise<void> => {
+  await request.post(`${STUB_URL}/__e2e/gateways`, { data: { hosted: true, plain: withPlain } })
 }
 
 /**

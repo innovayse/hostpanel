@@ -4,8 +4,9 @@ using Innovayse.Hostpanel.Domain.Orders;
 namespace Innovayse.Hostpanel.Application.Common.Settings;
 
 /// <summary>
-/// How a placed order is numbered and how long its invoice stays open. Bound from the "Orders"
-/// section; a deployment sets these only to change the defaults.
+/// How a placed order is numbered and how long its invoice stays open, which is also how long the proration
+/// invoice of a plan change stays open. Bound from the "Orders" section; a deployment sets these only to change
+/// the defaults.
 /// </summary>
 public sealed class OrderOptions
 {
@@ -18,7 +19,7 @@ public sealed class OrderOptions
     /// <summary>Minimum number of digits of the sequence part; shorter numbers are zero-padded.</summary>
     public int NumberDigits { get; set; } = 4;
 
-    /// <summary>Days an order's invoice stays open before it falls due.</summary>
+    /// <summary>Days an order's invoice, or the proration invoice of a plan change, stays open before it falls due.</summary>
     public int InvoicePaymentTermDays { get; set; } = 7;
 
     /// <summary>The longest retry lease the options accept, in minutes (one day).</summary>
@@ -43,7 +44,7 @@ public sealed class OrderOptions
         && InvoicePaymentTermDays is >= 0 and <= 365
         && RetryLeaseMinutes is >= 1 and <= MaxRetryLeaseMinutes;
 
-    /// <summary>How long an order's invoice stays open.</summary>
+    /// <summary>How long an order's invoice, or the proration invoice of a plan change, stays open.</summary>
     public TimeSpan InvoicePaymentTerm => TimeSpan.FromDays(InvoicePaymentTermDays);
 
     /// <summary>How long a retry's claim on an order line is respected.</summary>

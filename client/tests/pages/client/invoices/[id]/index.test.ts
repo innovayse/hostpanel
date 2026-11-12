@@ -33,7 +33,7 @@ vi.mock('~/utils/saveBlob', () => ({ saveBlob }))
 const invoice = (overrides: Record<string, unknown> = {}) => ({
   id: 41, status: InvoiceStatus.Unpaid, currency: 'USD', invoiceDate: '2026-01-01', dueDate: '2099-01-15', paidAt: null, paymentMethod: 'card',
   subTotal: 90, tax: 10, credit: 0, total: 100, amountDue: 100, isCreditTopUp: false, isBankTransferPending: false,
-  items: [{ id: 1, description: 'Hosting', amount: 90 }], transactions: [],
+  items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 0 }], transactions: [],
   ...overrides
 })
 
@@ -88,6 +88,18 @@ describe('invoice page', () => {
     expect(billingApi.fetchInvoice).toHaveBeenCalledWith('41')
     expect(wrapper.find('[data-testid="invoice-heading"]').text()).toContain('client.invoices.heading')
     expect(wrapper.find('[data-testid="invoice-items"]').text()).toContain('Hosting')
+  })
+
+  it('notes the client group discount on a discounted line only', async () => {
+    billingApi.fetchInvoice.mockResolvedValue(
+      invoice({ items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 10 }] }),
+    )
+    const discounted = await mountPage(InvoicePage)
+    billingApi.fetchInvoice.mockResolvedValue(invoice())
+    const plain = await mountPage(InvoicePage)
+
+    expect(discounted.find('[data-testid="invoice-item-discount"]').exists()).toBe(true)
+    expect(plain.find('[data-testid="invoice-item-discount"]').exists()).toBe(false)
   })
 
   it('shows the amounts in the invoice currency, with tax only when there is some', async () => {

@@ -118,7 +118,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var invoice = Invoice.Create(clientId, SeededAt.AddDays(14), "USD", SeededAt);
-            invoice.Cancel();
+            invoice.Cancel(SeededAt);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
         }

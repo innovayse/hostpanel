@@ -614,7 +614,29 @@
       "TransactionReversed": "Մատյանի գրառումը չեղարկվեց",
       "CreditNoteIssued": "Կրեդիտ-նոտան տրվեց հաճախորդի մնացորդին",
       "CreditNoteVoided": "Կրեդիտ-նոտան չեղարկվեց",
-      "PlanChangeCredit": "Կրեդիտ ավելի էժան սակագնին անցնելու համար"
+      "PlanChangeCredit": "Կրեդիտ ավելի էժան պլանին անցնելու համար"
     }
+  },
+  "clientGroups": {
+    "title": "Հաճախորդների խմբեր",
+    "subtitle": "Հաճախորդների սեգմենտներ զեղչով և գույնով։",
+    "add": "Ավելացնել խումբ",
+    "createTitle": "Նոր հաճախորդների խումբ",
+    "editTitle": "Խմբագրել հաճախորդների խումբը",
+    "empty": "Հաճախորդների խմբեր դեռ չկան։",
+    "namePlaceholder": "Օրինակ՝ Ռեսելլերներ",
+    "descriptionPlaceholder": "Ինչի համար է այս խումբը",
+    "discount": "Զեղչ (%)",
+    "discountPlaceholder": "0",
+    "color": "Գույն",
+    "colorPlaceholder": "#3B82F6",
+    "clients": "Հաճախորդներ",
+    "setDefault": "Դարձնել լռելյայն",
+    "clearDefault": "Հանել լռելյայնից",
+    "deleteTitle": "Ջնջել հաճախորդների խումբը",
+    "deleteMessage": "Ջնջե՞լ {name} խումբը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
+    "group": "Հաճախորդի խումբ",
+    "noGroup": "Առանց խմբի",
+    "defaultGroup": "Լռելյայն խումբ"
   }
 }

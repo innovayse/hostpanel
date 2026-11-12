@@ -45,6 +45,17 @@ const detail: ClientDetail = {
   },
 }
 
+/** The groups the picker offers, as the admin list answers them. */
+const GROUPS = [
+  { id: 4, name: 'VIP', description: null, discountPercent: 10, color: '#112233', isDefault: false, clientCount: 1 },
+]
+
+/** The endpoints the profile calls by default: the client and the groups of the picker. */
+const defaultRoutes = () => stubPathRoutes([
+  { path: '/api/clients/5', body: detail },
+  { path: '/api/admin/client-groups', body: GROUPS },
+])
+
 /**
  * Mounts the profile view over a store that already holds an active client. The client route
  * answers the detail, so the re-read after a save fills the form again.
@@ -53,7 +64,7 @@ const detail: ClientDetail = {
  * @param stub - Stubs the global fetch; answers the client route by default.
  * @returns The wrapper and the fetch mock the save goes through.
  */
-const mountProfile = async (shown: ClientDetail = detail, stub: () => ReturnType<typeof vi.fn> = () => stubPathRoutes([{ path: '/api/clients/5', body: detail }])) => {
+const mountProfile = async (shown: ClientDetail = detail, stub: () => ReturnType<typeof vi.fn> = defaultRoutes) => {
   const fetchMock = stub()
   const pinia = createPinia()
   setActivePinia(pinia)
@@ -157,6 +168,23 @@ describe('ClientProfileView', () => {
 
     const put = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')
     expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toMatchObject({ clientGroupId: 4 })
+  })
+
+  it('sends the group picked in the form, and null when it is cleared', async () => {
+    const { wrapper, fetchMock } = await mountProfile({ ...detail, clientGroupId: 4 })
+    const picker = wrapper.findAllComponents(UiSelect).find(c => c.attributes('data-testid') === 'client-profile-group')
+    expect((picker?.props() as { options: unknown[] } | undefined)?.options).toEqual([
+      { value: null, label: 'No group' },
+      { value: 4, label: 'VIP' },
+    ])
+
+    picker?.vm.$emit('update:modelValue', null)
+    await flushPromises()
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const put = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')
+    expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toMatchObject({ clientGroupId: null })
   })
 
   it('does not save when the operator backs out of the prompt', async () => {

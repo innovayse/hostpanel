@@ -25,6 +25,9 @@ public sealed class DemoStoredCredentialState
     /// <summary>Charges by customer reference and idempotency key.</summary>
     private readonly Dictionary<(string Customer, string Key), StoredChargeResult> _charges = new();
 
+    /// <summary>The gateway orders whose payment asked to keep the payer's method.</summary>
+    private readonly HashSet<string> _paymentSaves = new(StringComparer.Ordinal);
+
     /// <summary>The source of the current moment, used for the stored card's expiry year.</summary>
     private readonly IClock _clock;
 
@@ -90,6 +93,29 @@ public sealed class DemoStoredCredentialState
             methods.Add(method);
             _completed[sessionId] = method;
             return method;
+        }
+    }
+
+    /// <summary>Remembers that the payment of a gateway order asked to keep the payer's method.</summary>
+    /// <param name="gatewayOrderId">The gateway order the payment was registered as.</param>
+    public void RequestPaymentSave(string gatewayOrderId)
+    {
+        lock (_gate)
+        {
+            _paymentSaves.Add(gatewayOrderId);
+        }
+    }
+
+    /// <summary>The method a payment kept, when it asked to: a demo Visa whose reference is derived from the gateway order, so every read answers the same card.</summary>
+    /// <param name="gatewayOrderId">The gateway order the payment was registered as.</param>
+    /// <returns>The kept method, or <see langword="null"/> when the payment did not ask to keep one.</returns>
+    public SavedMethod? PaymentSavedMethod(string gatewayOrderId)
+    {
+        lock (_gate)
+        {
+            return _paymentSaves.Contains(gatewayOrderId)
+                ? new SavedMethod($"demo-pm-{gatewayOrderId}", "visa", "4242", 12, _clock.UtcNow.Year + 3, false)
+                : null;
         }
     }
 
@@ -179,6 +205,7 @@ public sealed class DemoStoredCredentialState
         {
             _sessions.Clear();
             _completed.Clear();
+            _paymentSaves.Clear();
             _methods.Clear();
             _charges.Clear();
             _sessionCounter = 0;

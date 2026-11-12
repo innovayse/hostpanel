@@ -4,6 +4,8 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -106,6 +108,35 @@ public sealed class RejectServiceChangeRequestTests(IntegrationTestFactory facto
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_CHANGE_REQUEST_NOT_FOUND);
+    }
+
+    /// <summary>
+    /// Cancelling the invoice also rejects the request through its event, and that rejection can be saved first. The staff reject
+    /// is then still answered as a success, the request stays rejected, and the staff note is kept.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task WhenTheCancelledInvoicesEventRejectsFirst_TheStaffRejectSucceedsAndKeepsItsNote()
+    {
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, null, 10m, 20m);
+        var invoiceId = await ServiceChangeTestSeeds.SeedInvoiceAsync(factory, seeded.ClientId, 5m);
+        var requestId = await ServiceChangeTestSeeds.SeedRequestAsync(factory, seeded, ServiceChangeStatus.Approved, invoiceId);
+        var race = new RejectRaceSaveInterceptor();
+        using var host = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(race))));
+        using var staff = host.CreateClient();
+        staff.DefaultRequestHeaders.Authorization = (await ServicesTestSeeds.AdminClientAsync(factory)).DefaultRequestHeaders.Authorization;
+
+        var response = await staff.PostAsJsonAsync(RouteOf(requestId), new { note = "Staff reason" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        race.Fired.Should().BeTrue();
+        var request = await ServiceChangeTestSeeds.ReadRequestAsync(factory, requestId);
+        request.Status.Should().Be(ServiceChangeStatus.Rejected);
+        request.Note.Should().Be("Staff reason");
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.AsNoTracking().FirstAsync(i => i.Id == invoiceId)).Status.Should().Be(InvoiceStatus.Cancelled);
     }
 
     /// <summary>A client of the portal is not staff.</summary>

@@ -1,4 +1,5 @@
 using FluentValidation;
+using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Domain.Clients;
 
 namespace Innovayse.Hostpanel.Application.Clients.Extensions;
@@ -44,7 +45,7 @@ public static class ClientGroupRuleExtensions
     {
         ArgumentNullException.ThrowIfNull(rule);
 
-        return rule.InclusiveBetween(0m, ClientGroup.MaxDiscountPercent).WithMessage(rangeMessage)
+        return rule.MustBeDiscountPercentRange(rangeMessage)
             .PrecisionScale(ClientGroup.DiscountPercentPrecision, ClientGroup.DiscountPercentScale, ignoreTrailingZeros: true)
             .WithMessage(decimalsMessage);
     }

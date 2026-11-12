@@ -117,7 +117,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
             draft.AddItem("Draft", 11m, 1);
             var cancelled = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
             cancelled.AddItem("Cancelled", 13m, 1);
-            cancelled.Cancel();
+            cancelled.Cancel(DateTimeOffset.UtcNow);
             db.Invoices.AddRange(draft, cancelled);
             await db.SaveChangesAsync();
         }

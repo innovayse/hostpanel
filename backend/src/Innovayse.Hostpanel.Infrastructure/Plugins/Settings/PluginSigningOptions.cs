@@ -15,8 +15,8 @@ public sealed class PluginSigningOptions
     public const string SectionName = "PluginSigning";
 
     /// <summary>
-    /// The maintainers' public keys, shipped with the host in <c>appsettings.json</c>. Empty until the first
-    /// maintainer key is published; an operator does not edit this list.
+    /// The maintainers' public keys, shipped with the host in <c>appsettings.json</c>: the key official
+    /// plugins are signed with. An operator does not edit this list.
     /// </summary>
     public List<TrustedPluginKey> MaintainerKeys { get; set; } = [];
 

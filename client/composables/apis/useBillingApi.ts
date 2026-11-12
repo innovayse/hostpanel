@@ -12,6 +12,7 @@ import type { BankTransferDetails } from '~/types/banktransferdetails'
 import type { ClientCredit } from '~/types/clientcredit'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
 import type { ClientInvoice } from '~/types/clientinvoice'
+import type { ConsentTextVersion } from '~/types/consenttextversion'
 import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
@@ -68,6 +69,10 @@ export const useBillingApi = () => {
    * @param returnUrl - Absolute URL the bank returns the payer to.
    * @param paymentToken - The order's payment token, returned when it was placed. Checkout is open
    * to guests, so this is what authorises paying for an order, in place of a credential.
+   * @param savePaymentMethod - Whether the payer asked for the method they enter in this payment to be saved for
+   * automatic renewals; the gateway then keeps it within the same payment. Leave out for a plain payment.
+   * @param consentTextVersion - The wording the payer agreed to when they ticked the box; the server records the
+   * consent from this same request. Sent with `savePaymentMethod` only.
    * @returns The bank's URL to hand the browser to.
    * @throws Whatever `apiFetch` throws.
    */
@@ -75,11 +80,13 @@ export const useBillingApi = () => {
     orderId: string | number,
     module: string,
     returnUrl: string,
-    paymentToken: string
+    paymentToken: string,
+    savePaymentMethod?: boolean,
+    consentTextVersion?: ConsentTextVersion
   ): Promise<{ redirectUrl: string }> =>
     apiFetch<{ redirectUrl: string }>(`/api/portal/order/${orderId}/gateway-payment/start`, {
       method: HttpMethod.Post,
-      body: { module, returnUrl, paymentToken }
+      body: { module, returnUrl, paymentToken, savePaymentMethod, consentTextVersion }
     })
 
   /**

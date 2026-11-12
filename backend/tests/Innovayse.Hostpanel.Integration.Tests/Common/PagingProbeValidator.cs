@@ -12,5 +12,6 @@ internal sealed class PagingProbeValidator : AbstractValidator<PagingProbe>
         RuleFor(x => x.Id).MustBePositiveId(ValidationRuleExtensionsTests.IdMessage);
         RuleFor(x => x.Page).MustBePage(ValidationRuleExtensionsTests.PageMessage);
         RuleFor(x => x.PageSize).MustBePageSize(ValidationRuleExtensionsTests.MaxPageSize, ValidationRuleExtensionsTests.PageSizeMessage);
+        RuleFor(x => x.DiscountPercent).MustBeDiscountPercentRange(ValidationRuleExtensionsTests.DiscountMessage);
     }
 }

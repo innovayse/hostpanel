@@ -143,7 +143,7 @@ public sealed class BulkInvoiceActionHandler
                 }
             }
 
-            invoice.Cancel();
+            invoice.Cancel(_clock.UtcNow);
         }
 
         return Result<int>.Success(cancellable.Count);

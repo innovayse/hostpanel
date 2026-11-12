@@ -10,6 +10,8 @@ import type { ClientFilters } from '@/types/client'
 import { ClientStatus } from '@/types/client'
 import { clientStatusTone } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
+import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
+import ClientGroupSelect from '@/components/clients/ClientGroupSelect.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -69,6 +71,9 @@ const phoneFilter = ref('')
 /** Status filter; empty means any. */
 const statusFilter = ref<ClientStatus | ''>('')
 
+/** Client group filter; null means any. */
+const groupFilter = ref<number | null>(null)
+
 /** Status filter options. */
 const statusOptions = computed(() => [
   { value: '', label: t('shared.any') },
@@ -88,16 +93,18 @@ const currentFilters = (): ClientFilters => ({
   email: emailFilter.value || undefined,
   phone: phoneFilter.value || undefined,
   status: statusFilter.value || undefined,
+  clientGroupId: groupFilter.value ?? undefined,
 })
 
 /** True when any filter field has a value. */
 const hasFilters = computed(() =>
-  !!(nameFilter.value || emailFilter.value || phoneFilter.value || statusFilter.value),
+  !!(nameFilter.value || emailFilter.value || phoneFilter.value || statusFilter.value || groupFilter.value !== null),
 )
 
 /** Number of active filters. */
 const activeFilterCount = computed(() =>
-  [nameFilter.value, emailFilter.value, phoneFilter.value, statusFilter.value].filter(Boolean).length,
+  [nameFilter.value, emailFilter.value, phoneFilter.value, statusFilter.value, groupFilter.value]
+    .filter(value => value !== '' && value !== null).length,
 )
 
 /**
@@ -120,6 +127,7 @@ const clearFilters = (): void => {
   emailFilter.value = ''
   phoneFilter.value = ''
   statusFilter.value = ''
+  groupFilter.value = null
   store.page = 1
   store.fetchAll()
 }
@@ -177,7 +185,7 @@ onMounted(() => store.fetchAll())
 
     <UiFilterCard>
       <template #fields>
-        <UiGrid :columns="4" gap="sm">
+        <UiGrid :columns="3" gap="sm">
           <UiField :label="t('clients.clientsList.clientCompanyName')">
             <template #default="{ id }">
               <UiInput
@@ -216,6 +224,16 @@ onMounted(() => store.fetchAll())
           </UiField>
           <UiField :label="t('shared.status')">
             <UiSelect v-model="statusFilter" :options="statusOptions" :placeholder="t('shared.any')" data-testid="clients-list-filter-status" />
+          </UiField>
+          <UiField :label="t('clients.clientGroups.group')">
+            <template #default="{ id }">
+              <ClientGroupSelect
+                :id="id"
+                v-model="groupFilter"
+                :empty-label="t('shared.any')"
+                data-testid="clients-list-filter-group"
+              />
+            </template>
           </UiField>
         </UiGrid>
       </template>
@@ -264,6 +282,7 @@ onMounted(() => store.fetchAll())
             <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.company') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader>{{ t('clients.clientGroups.group') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.clientsList.2fa') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.clientsList.joined') }}</UiTableHeader>
           </UiTableRow>
@@ -293,6 +312,14 @@ onMounted(() => store.fetchAll())
                 {{ t('clients.clientsList.userDeleted') }}
               </UiBadge>
               <UiBadge v-else :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
+            </UiTableCell>
+            <UiTableCell>
+              <ClientGroupBadge
+                v-if="client.clientGroupName && client.clientGroupColor"
+                :name="client.clientGroupName"
+                :color="client.clientGroupColor"
+              />
+              <template v-else>—</template>
             </UiTableCell>
             <UiTableCell>
               <UiTooltip

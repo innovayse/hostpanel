@@ -51,10 +51,12 @@ repositories. What is specific to this project is short:
   and still returns the token in the body for scripted callers, and `logout` clears the cookie
   through `HandleSessionEnded`. `HealthController` derives from `BaseApiController` with
   `[AllowAnonymous]` like the rest.
-- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-groups,products,projects,status,testimonials}` (like `/api/public/slides` and
+- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-bundles,product-groups,products,projects,status,testimonials}` (like `/api/public/slides` and
   `/api/public/demo` before them) are `[AllowAnonymous]` read-only queries: the storefront renders them before anyone has
   signed in, so they cannot carry the usual `[Authorize]` on every action. They stay on `BaseApiController`, dispatch one
   query, return only active, already-localised records and never expose an admin field; writes remain behind `Policies.Admin`.
+  `GET /api/public/products/{id}/options` (the order screen's option groups, see "Product options") is one of them, and is the only
+  anonymous read of option data: it lives under `/api/public/` like the rest, never beside the admin routes.
 - **Handler and validator naming is `<UseCase>Handler` / `<UseCase>Validator`.** Use-case names are unique across modules (`ProvisionService` in Provisioning,
   `SetupService` in Services), one use case per state transition (`SuspendService`, `UnsuspendService`,
   `TerminateService`: every route, cron and status change dispatches them, and each checks the state
@@ -242,9 +244,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.2.0, which keeps what 2.1.0 added, the `Ui`
-  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, and adds the plugin
-  packaging package, `Hostpanel.Sdk.Packaging`).** Every SDK type lives in
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.5.0, which keeps what 2.1.0 added, the `Ui`
+  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
+  packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
+  `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
   `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
   `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
   `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
@@ -286,6 +289,21 @@ docker/                              compose set (shared·dev·prod·platform), 
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
 - **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
+  **A method can also be saved within a payment (#915, SDK 3.5.0).** `StartGatewayPayment` (and `StartMyGatewayPayment`,
+  `StartOrderGatewayPayment`, which hand their command to it) takes `SavePaymentMethod` and the `ConsentTextVersion` the payer
+  ticked. Only the invoice's own signed-in client can ask, a user linked to the account only with `ViewPayInvoices`
+  (`ClientAccessExtensions.EnsureCallerHoldsAsync`, because the order route is open to guests and never meets the permission
+  filter: `CLIENT_PERMISSION_DENIED`; paying without saving needs no permission), and a payment that saves is refused
+  with `CLIENT_CARD_PAYMENT_DISABLED` when card processing is disabled for the client, with `STORED_CREDENTIALS_NOT_SUPPORTED` at a
+  module without the capability and with 401 for a guest. The gateway customer is ensured before the payment is registered
+  (`GatewayCustomerEnsurer`, shared with `BeginSaveStoredMethod`), the payment is registered with
+  `PaymentInstruction.SavePaymentMethod`, and the consent (keyed by the gateway order, with the wording version and the
+  request's own address and browser, never the body's) is saved with the session. `CompleteGatewayPayment`, from the return page and from
+  `ReconcileGatewayPaymentsCron` alike, binds the method in `GatewayPaymentStatus.SavedMethod` to that consent through
+  `StoredMethodBinder` (shared with `CompleteSaveStoredMethod`) in the very save that settles the invoice. A missing or
+  conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
+  method, or a reference over `CardChargeConsent.MaxMethodRefLength` (200) is logged and binds nothing. A save that lost to a
+  concurrent completion drops the binding with the rest, because the winner bound it in its own save.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
@@ -705,7 +723,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     `PluginSignaturePayload.Header` carries the version, so a change of format is a new header, not a silent clash.
   - **Trusted keys** are public keys only (`PluginSigningOptions`, sealed, `SectionName = "PluginSigning"`, validated
     at startup by `PluginSigningOptionsValidator`): `MaintainerKeys` ships in `appsettings.json` (the Innovayse key
-    `innovayse-2026`; its private half is never in a repository or on a host, tests generate their own keys per run) and `OperatorKeys`
+    `official-innovayse-2026`; its private half is never in a repository or on a host, tests generate their own keys per run) and `OperatorKeys`
     is the operator's own (`PluginSigning__OperatorKeys__0__KeyId` and `__PublicKey`, the base64 of the 32-byte raw
     key). Two lists because configuration arrays merge by index: one list would let an operator's first entry replace
     the maintainers' first. The trusted set is both lists; a key id may appear once. A private key is never in the
@@ -1225,6 +1243,14 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   messages of that type; `Production.AssertAllPreGeneratedTypesExist` is set in `Static` mode as well, for the
   environment check over every code collection. `WolverineStartupTests` pins both, and starts the current
   Wolverine on a message store schema created by 5.41 (`Fixtures/wolverine-5.41-schema.sql`).
+- **The API image publishes for its own runtime and carries no debug symbols.** The prod stage is Alpine, so
+  `backend/Dockerfile` restores and publishes the API for `linux-musl-x64` or `linux-musl-arm64` (from BuildKit's
+  `TARGETARCH`, written once to `/tmp/runtime-id`), framework-dependent and without the native launcher, with
+  `DebugType=none`. Only the matching SkiaSharp native library is copied, and no `.pdb` (about 300 MB less in the
+  application layer). The step after the publish fails the image build on a `.pdb` file, on a folder of another
+  platform under `runtimes/`, or on a missing `libSkiaSharp.so`; the `api-image` job in `.github/workflows/ci.yml`
+  builds the prod stage on every pull request so the check runs before a merge. Do not publish the API portably
+  again, and do not add a package with its own native assets without checking what the check says.
 - **Handlers return `Result` / `Result<T>`** (`Shared/Models`); controllers derive from
   `BaseApiController` and return through `HandleResult`, which maps the failure code to a status
   with `StatusMapping`. Every controller derives from it (`ControllerBaseTests`); handlers and
@@ -1401,6 +1427,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
   `Plugins/Events/PurgeRemovedPluginDataHandler` deletes a removed plugin's store rows written up to the operator's purge request on
   `PluginDataPurgeRequestedEvent`; it is idempotent and writes only the Plugins module's own tables (see the plugin store under "Plugin routes").
+  `Services/Events/ServiceChangeInvoiceCancelledHandler` dispatches `RejectServiceChangeRequestCommand` on `InvoiceCancelledEvent` for the
+  approved plan change request that waits for the cancelled invoice (see "A plan change is one request"); it is idempotent, and a refusal is logged for staff.
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An
@@ -1411,6 +1439,38 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   a line whose target is gone simply bills a name it keeps in its own `Description`. The renewal markers on the line
   decide what is applied, never the existence of the target, and the sweeps read the target through its module's
   query, which answers "not found" for a removed row.
+
+### Product options
+
+A product can carry configurable options a client chooses when ordering it, such as an operating system or extra IP
+addresses. Module `Products`; this slice stores and serves the options and does not yet price or bill them.
+
+- **Two tables, one aggregate.** `ProductOptionGroups` (`ProductOptionGroup`, an `IAggregateRoot`) belongs to a product
+  (`ProductId`, cascade delete) and owns `ProductOptions` (`ProductOption`, cascade delete). An option is created, changed and
+  removed only through its group (`AddOption`, `UpdateOption`, `RemoveOption`), which judges what the group's type allows; the
+  option has no public constructor and `IHostpanelDbContext` exposes only `ProductOptionGroups`, so options are read through the
+  group's `Options`. Because no `DbSet` names the option table, `ProductOptionConfiguration` names it `ProductOptions` itself.
+- **Group types** (`ProductOptionType`, stored as text): `Dropdown` and `Radio` hold any number of options; `Checkbox`,
+  `Quantity` and `Text` hold at most one; a `Text` option carries no price; a `Quantity` group carries `MinQuantity` (0 or more)
+  and `MaxQuantity` (1 or more, at least the minimum) and no other type may. The type is fixed when the group is created.
+  A group with no option yet is allowed while an admin builds it.
+- **Price types** (`ProductOptionPriceType`, stored as text): `Fixed` is money in the platform's base currency, `Percentage` is a
+  share of the product's own price in whatever currency the order is billed in, capped at 100. `PriceModifier` and
+  `SetupFeeModifier` are `numeric(18,4)` like a product price and never negative. The shared name and price checks are
+  `ProductOptionRules` (Domain, internal); the same rules are backed by `CK_ProductOptionGroups_*` and `CK_ProductOptions_*`
+  check constraints and pinned by `ProductOptionConstraintTests`.
+- **Admin routes** (`Policies.Admin`): `GET /api/product-option-groups?productId=` (every group with its options, empty ones
+  included; 404 `PRODUCT_NOT_FOUND` for an unknown product), `POST` (create, 404 `PRODUCT_NOT_FOUND`), `PUT {id}`,
+  `PUT order` (the product's group ids in the wanted order; anything but exactly its groups, including any list for a product that
+  does not exist, is `PRODUCT_OPTION_GROUP_ORDER_MISMATCH`), `DELETE {id}`; and `/api/product-options` for `POST`, `PUT {id}` and
+  `DELETE {id}` on options.
+- **The one anonymous route** is `GET /api/public/products/{id}/options` (`ProductsController`, `GetOrderableProductOptions`):
+  the groups of an *active* product, in the admin's shape, with the groups that hold no option left out. An unknown and an
+  inactive product are the same 404 `PRODUCT_NOT_FOUND`, so an inactive product's options are not offered.
+- **Reads and mapping live once** in `Products/Extensions/ProductOptionGroupExtensions` (`ReadProductOptionGroupsAsync`, the one
+  projection to `ProductOptionGroupDto`; `FindGroupOfOptionAsync`, the tracked load for a change). The field rules every option and
+  group validator repeats are the shared `MustBeName`, `MustBeNonNegative` and `MustBeDefinedEnum` in
+  `Common/Validators/ValidationRuleExtensions`.
 
 ### Recurring billing
 
@@ -1424,6 +1484,15 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 `RenewalAttemptAt` claims a domain line before the registrar call. Every suspension carries a `SuspensionSource`
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
+
+**A client group's discount is taken once, when the order is placed, and renewals keep that price.** `PlaceOrderHandler`
+reads the discount of the ordering client's group (the default group for a client the order creates) and takes it off
+every product line through `PriceDiscount.Apply`, so the order line, the invoice line and the service's recurring amount
+all carry the discounted price; a domain line keeps its registry price. `InvoiceItem.DiscountPercent` snapshots the
+percent on the invoice line and is cleared only when staff edit the unit price. Renewal invoices bill the service's
+recurring amount, which already is the discounted price, and never read the group again, so moving a client to another
+group or changing a group's discount touches no existing invoice and no existing service, and a renewal is not
+discounted a second time.
 
 **A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
 session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
@@ -1477,7 +1546,11 @@ staff approval and the payment event alike: it asks the panel for the new packag
 service holding a hosting account), and only then stages the plan, the price, the `PlanChangeCredit` of a downgrade, the
 Completed status and the activity line in one save. A refusal by the panel therefore changes and credits nothing and leaves
 the request Approved, and approving it again repeats the call; the request's `xmin` token stops two runs crediting twice.
-Rejecting an approved upgrade cancels its unpaid invoice first. The Services handlers never touch the `Invoices` table:
+Rejecting an approved upgrade cancels its unpaid invoice first, and the other way round: `Invoice.Cancel` raises
+`InvoiceCancelledEvent`, and `Services/Events/ServiceChangeInvoiceCancelledHandler` rejects the approved request that waits
+for that invoice (through `RejectServiceChangeRequestCommand`, idempotent), so a cancelled invoice never leaves the service
+holding an open request (a staff reject that loses that race on the request's xmin token is answered as a success and only adds its note, `ServiceChangeRequest.AmendRejectionNote`). The proration invoice falls due after `Orders:InvoicePaymentTermDays`, the same term as an order's
+invoice. The Services handlers never touch the `Invoices` table:
 they raise, read and cancel invoices through the Billing use cases.
 
 ### Client account status
@@ -1551,7 +1624,9 @@ feature does not exist is not kept. The decisions:
   `ChargeInvoiceStoredMethod` (charging one). The check is
   `ClientSettingsExtensions.EnsureClientMayPayByCardAsync`, beside the status guard
   `EnsureClientMayTransactAsync`. Hosted gateway sessions (`StartGatewayPayment`) and staff-entered
-  payments are not card processing and are not refused.
+  payments are not card processing and are not refused, except a `StartGatewayPayment` with `SavePaymentMethod`, which keeps
+  a method for later charges and is refused with the same code (and, for a user linked to the account without `ViewPayInvoices`,
+  with `CLIENT_PERMISSION_DENIED`).
 - **`AllowSso`.** It means single sign-on into the hosting panel of the client's own services (the
   product has no per-client external sign-on for the client sign-in itself, which is the same for every
   account). `GetMyServiceControlPanelSsoUrl` refuses an account with it off, with 403
@@ -1666,7 +1741,11 @@ surrounding spaces, make one recipient, the one with the lowest client id; the c
   The demo accounts' own credentials are protected by one rule, `IDemoAccountGuard` (Application port, `Infrastructure/Demo/DemoAccountGuard`):
   with demo on, the email and password of `Demo__AdminEmail` / `Demo__ClientEmail` cannot change; password
   reset (`ResetPasswordCommand`) and `UpdateClientHandler`'s email change ask it and answer 403 `DEMO_ACTION_DISABLED`. Local sign-in (`UserService`) asks it too: wrong passwords are not counted against those two accounts, so no visitor can lock them.
-- **Demo stored charges.** The demo payment plugin implements `IStoredCredentialPlugin` in memory; the last two digits of the amount in minor units pick the outcome: 02 declined, 03 action required, 04 pending, 05 money taken and then `TimeoutException`, 06 `TimeoutException` before anything is taken, anything else succeeded. The first result per idempotency key is final: a repeat answers it and never throws (a 06 key records nothing, so it throws again). The book is `DemoStoredCredentialState`, a singleton shared by every resolve and cleared by the demo reset.
+- **Demo stored charges.** The demo payment plugin implements `IStoredCredentialPlugin` in memory; the last two digits of the amount in minor units pick the outcome: 02 declined, 03 action required, 04 pending, 05 money taken and then `TimeoutException`, 06 `TimeoutException` before anything is taken, anything else succeeded. The first result per idempotency key is final: a repeat answers it and never throws (a 06 key records nothing, so it throws again). The book is `DemoStoredCredentialState`, a singleton shared by every resolve and cleared by the demo reset. A demo payment registered with `SavePaymentMethod` reports a demo Visa ending in 4242 in
+  `GatewayPaymentStatus.SavedMethod` once it reads as paid, the same card on every read (the reference is derived from the gateway
+  order), so the choice to save can be walked end to end and the host binds it to the consent. A payment request names no
+  customer, so the demo does not add that card to a customer's list: `ListMethodsAsync` does not return it, and the saved method
+  lists without brand and last four digits (`detailsAvailable` false).
 - **Currency.** The demo payment plugin accepts every currency stored (`IPaymentPlugin.AcceptsCurrency`), not only USD.
 - **Data.** `IDemoDataManager` resets (wipes and reseeds) at startup instead of running `DevDataSeeder`, so every deploy shows the current seed, and
   `ResetDemoDataCommand` truncates every table except the identity roles and reseeds in one

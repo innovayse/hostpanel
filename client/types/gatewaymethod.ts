@@ -4,4 +4,6 @@ export interface GatewayMethod {
   module: string
   /** Gateway name as configured for display. */
   displayName: string
+  /** Whether the gateway can keep the payment method entered in a payment for later automatic charges. */
+  supportsStoredCredentials: boolean
 }

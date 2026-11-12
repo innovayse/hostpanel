@@ -27,6 +27,25 @@ namespace Innovayse.Hostpanel.Shared.Controllers;
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
 public abstract class BaseApiController : ControllerBase
 {
+    /// <summary>
+    /// Gets the address the request came from, as the connection reports it; <see langword="null"/> when it reports none.
+    /// For the evidence of a consent that an action overlays on its command, so a client cannot write its own.
+    /// </summary>
+    protected string? RequestIpAddress => HttpContext.Connection.RemoteIpAddress?.ToString();
+
+    /// <summary>
+    /// Gets the browser identification the request carries; <see langword="null"/> when the header is absent or empty.
+    /// For the evidence of a consent that an action overlays on its command, so a client cannot write its own.
+    /// </summary>
+    protected string? RequestUserAgent
+    {
+        get
+        {
+            var userAgent = Request.Headers.UserAgent.ToString();
+            return userAgent.Length > 0 ? userAgent : null;
+        }
+    }
+
     /// <summary>Answers a refusal in the product's shape.</summary>
     /// <param name="type">The error code.</param>
     /// <param name="title">The class of failure.</param>

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Shared.Constants;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
@@ -73,5 +74,22 @@ public sealed class CreateClientGroupTests(IntegrationTestFactory factory) : ICl
         var response = await client.PostAsJsonAsync(ClientGroupTestSeeds.Route, ClientGroupTestSeeds.Body());
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>A name another group already has is refused with 409, and no second group is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Create_RefusesAnExistingName()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var name = $"Taken {Guid.NewGuid():N}";
+        await ClientGroupTestSeeds.CreateAsync(admin, name);
+
+        var response = await admin.PostAsJsonAsync(ClientGroupTestSeeds.Route, ClientGroupTestSeeds.Body(name));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_GROUP_NAME_ALREADY_EXISTS);
+        var groups = await admin.GetFromJsonAsync<System.Text.Json.JsonElement>(ClientGroupTestSeeds.Route);
+        groups.EnumerateArray().Count(g => g.GetProperty("name").GetString() == name).Should().Be(1);
     }
 }

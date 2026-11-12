@@ -393,7 +393,7 @@ describe('useDomainsStore detail reads', () => {
   })
 
   it('keeps the gateways, and an empty list when they cannot be read', async () => {
-    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'card_gateway', displayName: 'Card gateway' }]).mockRejectedValueOnce(refusal)
+    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }]).mockRejectedValueOnce(refusal)
     const store = useDomainsStore()
 
     await store.loadPaymentMethods()

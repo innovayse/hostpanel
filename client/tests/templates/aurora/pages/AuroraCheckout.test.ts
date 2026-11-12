@@ -63,7 +63,7 @@ interface FakeCheckout {
  * @param options Whether the cart is empty and which payment methods the gateway offers.
  * @returns The settable parts of the fake checkout store.
  */
-const buildStores = (options: { empty?: boolean, canSave?: boolean, methods?: { module: string, displayName: string }[] } = {}): FakeCheckout => {
+const buildStores = (options: { empty?: boolean, canSave?: boolean, methods?: { module: string, displayName: string, supportsStoredCredentials: boolean }[] } = {}): FakeCheckout => {
   const placeOrder = vi.fn(async () => ({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' }))
   fakes.cart = reactive({
     isEmpty: options.empty ?? false,
@@ -93,7 +93,7 @@ const buildStores = (options: { empty?: boolean, canSave?: boolean, methods?: { 
     totalLabel: ref('$9.99'),
     submittingLabel,
     submittingHint,
-    paymentMethods: ref(options.methods ?? [{ module: 'card_gateway', displayName: 'Card' }, { module: 'example_gateway', displayName: 'Example Gateway' }]),
+    paymentMethods: ref(options.methods ?? [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }, { module: 'example_gateway', displayName: 'Example Gateway', supportsStoredCredentials: false }]),
     selectedMethod,
     saveForRenewals: ref(false),
     canSaveForRenewals,

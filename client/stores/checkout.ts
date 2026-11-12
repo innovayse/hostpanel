@@ -32,10 +32,10 @@ import type { PlaceOrderInput } from '~/types/placeorderinput'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
 import { isSafeRedirectUrl } from '~/utils/externalRedirect'
 import { formatMoney } from '~/utils/formatMoney'
-import { forgetCheckoutSave, rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
 import { isHostedGatewayModule } from '~/utils/paymentModules'
 import { translate } from '~/utils/translate'
 import { CartItemType } from '~/types/cartitemtype'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 
 /** Two amounts closer than this are the same price; it absorbs float rounding, not a real change. */
 const TOTAL_TOLERANCE = 0.005
@@ -86,9 +86,9 @@ export const useCheckoutStore = defineStore('checkout', () => {
   const acceptedTotalOrderId = ref<number | null>(null)
 
   /**
-   * Whether the payer ticked "save this payment method for automatic renewals". Off by default; it
-   * only counts while {@link canSaveForRenewals} holds, and it is acted on after the payment is
-   * confirmed, never at checkout.
+   * Whether the payer ticked "save this payment method for automatic renewals". Off by default. It
+   * rides the start-payment request, so the gateway saves the method within the same payment; it
+   * can be true only while {@link canSaveForRenewals} holds.
    */
   const saveForRenewals = ref(false)
 
@@ -109,15 +109,21 @@ export const useCheckoutStore = defineStore('checkout', () => {
   const isHostedGateway = computed(() => isHostedGatewayModule(selectedMethod.value))
 
   /**
-   * Whether the renewal-save choice may be offered and honoured: a signed-in client (the stored
-   * methods belong to an account) paying through a hosted gateway, never by bank transfer.
-   *
-   * @returns True when the box is offered.
+   * Whether the "save for automatic renewals" box is shown at checkout: a signed-in client (the
+   * stored methods belong to an account) paying through a gateway that can keep the method it
+   * collects (`supportsStoredCredentials`), never a guest and never a bank transfer.
    */
-  const mayOfferSave = (): boolean => authStore.isLoggedIn && isHostedGatewayModule(selectedMethod.value)
+  const canSaveForRenewals = computed(() =>
+    authStore.isLoggedIn
+    && paymentMethods.value.some(m => m.module === selectedMethod.value && m.supportsStoredCredentials))
 
-  /** Whether the "save for automatic renewals" box is shown at checkout. */
-  const canSaveForRenewals = computed(mayOfferSave)
+  // A choice made for one method must not linger once the box is gone (another method, signed out).
+  // Synchronous so the value is already cleared when the next read or submit happens.
+  watch(canSaveForRenewals, (offered) => {
+    if (!offered) {
+      saveForRenewals.value = false
+    }
+  }, { flush: 'sync' })
 
   /** Short submit-button label while the order is being placed; the sentence lives in {@link submittingHint}. */
   const submittingLabel = computed(() =>
@@ -380,29 +386,18 @@ export const useCheckoutStore = defineStore('checkout', () => {
         // navigation that knows only the order id, and that page has to prove the order is
         // theirs before the backend will say whether the payment went through.
         rememberPaymentToken(result.orderId, result.paymentToken, result.invoiceId)
-        // A retry of the same order must not inherit a choice made on an earlier attempt.
-        forgetCheckoutSave(result.orderId)
+        // The box rides this request: the server records the consent from it and the gateway saves the
+        // method within the same payment, so the payer enters the card once and nothing follows the return.
         const { redirectUrl } = await billing.startOrderGatewayPayment(
           result.orderId,
           method,
           returnUrl,
-          result.paymentToken
+          result.paymentToken,
+          saveForRenewals.value,
+          saveForRenewals.value ? ConsentTextVersion.CheckoutAgreement : undefined
         )
         if (!isSafeRedirectUrl(redirectUrl)) {
           throw new Error(translate('checkout.errors.generic'))
-        }
-        // The renewal-save choice rides the same trip as the payment token. Nothing is started here:
-        // the return page starts the stored-method session only once the payment is confirmed.
-        if (saveForRenewals.value && mayOfferSave()) {
-          // Best effort: the gateway session is already registered, so a failure here must not turn a set
-          // up payment into an error. The payer still goes to the bank; the choice is just not kept.
-          try {
-            // Bound to the signed-in account: another account on this browser must not act on it.
-            await authStore.fetchUser()
-            rememberCheckoutSave(result.orderId, method, authStore.user?.email)
-          } catch {
-            // Nothing is saved after this payment; the payment itself is unaffected.
-          }
         }
         // The cart is kept: the result page empties it once the bank confirms the payment, so a
         // declined or abandoned payment leaves the payer's choices where they were.

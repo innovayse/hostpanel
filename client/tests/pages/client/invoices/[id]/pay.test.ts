@@ -34,7 +34,7 @@ describe('invoice payment page', () => {
 
   it('shows the payment panel beside the invoice summary and the security notice with a hosted gateway', async () => {
     billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }])
 
     const wrapper = await mountPage(PayPage)
 
@@ -62,7 +62,7 @@ describe('invoice payment page', () => {
     expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
 
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }])
     await wrapper.find('[data-testid="invoice-pay-options-retry"]').trigger('click')
     await flushPromises()
 
@@ -99,7 +99,7 @@ describe('invoice payment page', () => {
 
   it('offers the gateway payment button when a gateway is enabled', async () => {
     billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }])
     const wrapper = await mountPage(PayPage)
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
@@ -107,7 +107,7 @@ describe('invoice payment page', () => {
 
   it('shows the bank details of an invoice that waits for a transfer, with no payment choices or gateway notice', async () => {
     billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.PaymentPending))
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }])
     billingApi.fetchBankTransfer.mockResolvedValue({ invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
 
     const wrapper = await mountPage(PayPage)

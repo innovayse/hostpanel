@@ -134,9 +134,9 @@ describe('useInvoicePaymentStore reads', () => {
 
   it('reads the gateways and picks the first plugin-backed gateway', async () => {
     fetchGatewayMethodsMock.mockResolvedValue([
-      { module: 'bank_transfer', displayName: 'Bank' },
-      { module: 'hosted_gateway', displayName: 'Hosted gateway' },
-      { module: 'card_gateway', displayName: 'Card' }
+      { module: 'bank_transfer', displayName: 'Bank', supportsStoredCredentials: false },
+      { module: 'hosted_gateway', displayName: 'Hosted gateway', supportsStoredCredentials: false },
+      { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }
     ])
     const store = useInvoicePaymentStore()
 
@@ -147,7 +147,7 @@ describe('useInvoicePaymentStore reads', () => {
   })
 
   it('has no hosted gateway when only the bank transfer is offered', async () => {
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'bank_transfer', displayName: 'Bank' }])
+    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'bank_transfer', displayName: 'Bank', supportsStoredCredentials: false }])
     const store = useInvoicePaymentStore()
 
     await store.loadPaymentOptions()
@@ -303,11 +303,11 @@ describe('useInvoicePaymentStore bank transfer', () => {
     const store = useInvoicePaymentStore()
     expect(store.bankTransferOffered).toBe(false)
 
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card' }])
+    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card', supportsStoredCredentials: false }])
     await store.loadPaymentOptions()
     expect(store.bankTransferOffered).toBe(false)
 
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card' }, { module: 'bank_transfer', displayName: 'Bank' }])
+    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card', supportsStoredCredentials: false }, { module: 'bank_transfer', displayName: 'Bank', supportsStoredCredentials: false }])
     await store.loadPaymentOptions()
     expect(store.bankTransferOffered).toBe(true)
   })

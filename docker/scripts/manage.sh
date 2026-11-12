@@ -91,6 +91,17 @@ shift || true
 SERVICE="${1:-all}"
 
 # ── Compose helper ────────────────────────────────────────────────────────────
+# Runs `dotnet ef` in the API container against the dev database. The tool is restored from the manifest right
+# before every call, so a packages volume that outlives the image still has the pinned version.
+container_ef() {
+    dc exec hostpanel-api sh -c 'dotnet tool restore >/dev/null && dotnet ef "$@" --project src/Innovayse.Hostpanel.Infrastructure/Innovayse.Hostpanel.Infrastructure.csproj --startup-project src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj --connection "$ConnectionStrings__DefaultConnection"' sh "$@"
+}
+
+# Runs `dotnet ef` on the host from the manifest-pinned tool (current directory is the API project).
+native_ef() {
+    dotnet tool restore >/dev/null && dotnet ef "$@"
+}
+
 dc() {
     docker compose -f "$ROOT/docker/docker-compose.shared.yml" -f "$ROOT/docker/docker-compose.dev.yml" "$@"
 }
@@ -178,7 +189,7 @@ docker_db() {
             info "Restoring packages..."
             dc exec hostpanel-api dotnet restore
             info "Running EF Core migrations..."
-            dc exec hostpanel-api sh -c 'dotnet ef database update --project src/Innovayse.Hostpanel.Infrastructure/Innovayse.Hostpanel.Infrastructure.csproj --startup-project src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj --connection "$ConnectionStrings__DefaultConnection"'
+            container_ef database update
             success "Migrations applied"
             ;;
         reset)
@@ -186,8 +197,8 @@ docker_db() {
             read -rp "Are you sure? [y/N] " confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 dc exec hostpanel-api dotnet restore
-                dc exec hostpanel-api sh -c 'dotnet ef database drop --force --project src/Innovayse.Hostpanel.Infrastructure/Innovayse.Hostpanel.Infrastructure.csproj --startup-project src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj --connection "$ConnectionStrings__DefaultConnection"'
-                dc exec hostpanel-api sh -c 'dotnet ef database update --project src/Innovayse.Hostpanel.Infrastructure/Innovayse.Hostpanel.Infrastructure.csproj --startup-project src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj --connection "$ConnectionStrings__DefaultConnection"'
+                container_ef database drop --force
+                container_ef database update
                 success "Database reset complete"
             else
                 info "Cancelled"
@@ -445,8 +456,7 @@ native_db() {
         migrate)
             info "Running EF Core migrations..."
             cd "$BACKEND"
-            dotnet tool restore
-            dotnet ef database update
+            native_ef database update
             success "Migrations applied"
             ;;
         reset)
@@ -454,9 +464,8 @@ native_db() {
             read -rp "Are you sure? [y/N] " confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 cd "$BACKEND"
-                dotnet tool restore
-                dotnet ef database drop --force
-                dotnet ef database update
+                native_ef database drop --force
+                native_ef database update
                 success "Database reset complete"
             else
                 info "Cancelled"

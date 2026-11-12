@@ -32,9 +32,9 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
 
     /// <summary>Reads one consent as stored.</summary>
     /// <param name="scenario">The scenario whose module the consent belongs to.</param>
-    /// <param name="clientId">The consent's client.</param>
-    /// <param name="consentId">The consent.</param>
-    /// <returns>The consent.</returns>
+    /// <param name="clientId">The client whose consents are read.</param>
+    /// <param name="consentId">The id of the consent to find.</param>
+    /// <returns>The stored consent with that id.</returns>
     private static async Task<CardChargeConsent> ConsentAsync(SavingGatewayScenario scenario, int clientId, int consentId) =>
         (await scenario.ConsentsOfAsync(clientId)).Single(c => c.Id == consentId);
 

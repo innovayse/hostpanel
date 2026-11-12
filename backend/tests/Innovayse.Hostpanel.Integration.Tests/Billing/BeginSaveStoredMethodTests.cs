@@ -205,6 +205,7 @@ public sealed class BeginSaveStoredMethodTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
     /// <summary>
     /// A concurrent first save session of the same client records the gateway customer between this request's read and its
     /// save: the unique key refuses this request's customer row, which is dropped, and the consent is saved at once, so the

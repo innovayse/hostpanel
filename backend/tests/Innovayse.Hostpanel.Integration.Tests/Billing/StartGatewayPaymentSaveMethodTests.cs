@@ -353,6 +353,7 @@ public sealed class StartGatewayPaymentSaveMethodTests(IntegrationTestFactory fa
         scenario.Plugin.Instructions.Should().ContainSingle().Which.SavePaymentMethod.Should().BeTrue();
         (await scenario.ConsentsOfAsync(clientId)).Should().ContainSingle();
     }
+
     /// <summary>
     /// A consent wording version nobody published is a validation error: the evidence of a consent only ever names words
     /// the portal showed, so an unknown version reaches neither the gateway nor the consent.
@@ -461,6 +462,7 @@ public sealed class StartGatewayPaymentSaveMethodTests(IntegrationTestFactory fa
         gatewayOrderId.Should().NotBeNull();
         (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().ContainSingle().Which.SessionId.Should().Be(gatewayOrderId);
     }
+
     /// <summary>
     /// A save that loses for a reason other than the customer (the invoice moved under the request) is not retried and is
     /// not mistaken for a customer race: nobody recorded the customer, so the conflict reaches the caller as 409, and the

@@ -707,7 +707,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
     /// <returns>The summary, or <see langword="null"/> when it is absent or out of range.</returns>
     private static RegistryPluginRatingDto? ToRating(PluginRegistryRatingWire? rating)
     {
-        return rating is { Average: >= 1 and <= 5 and var average, Count: >= 1 and var count } && double.IsFinite(average)
+        return rating is { Average: >= 1 and <= 5 and var average, Count: >= 1 and var count }
             ? new RegistryPluginRatingDto(average, count)
             : null;
     }

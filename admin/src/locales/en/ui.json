@@ -77,7 +77,7 @@
     "retry": "Retry"
   },
   "rating": {
-    "label": "Rated {average} out of 5 from {count} reviews",
+    "label": "Rated {average} out of 5 from {count} review | Rated {average} out of 5 from {count} reviews",
     "summary": "{average} ({count})"
   }
 }

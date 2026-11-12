@@ -24,17 +24,19 @@ const props = defineProps<{
   count: number
 }>()
 
-/** Translation function. */
-const { t } = useI18n()
+/** Translation function and the interface language. */
+const { t, locale } = useI18n()
 
 /** The average with one decimal, as shown and as read out. */
-const averageText = computed<string>(() => props.average.toFixed(1))
+const averageText = computed<string>(() =>
+  new Intl.NumberFormat(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(props.average),
+)
 
 /** How many stars are filled: the average rounded, kept inside the row. */
 const filled = computed<number>(() => Math.min(Math.max(Math.round(props.average), 0), STAR_COUNT))
 
 /** The sentence assistive technology reads for the whole row. */
-const label = computed<string>(() => t('ui.rating.label', { average: averageText.value, count: props.count }))
+const label = computed<string>(() => t('ui.rating.label', { average: averageText.value, count: props.count }, props.count))
 
 /** The visible summary beside the stars. */
 const summary = computed<string>(() => t('ui.rating.summary', { average: averageText.value, count: props.count }))

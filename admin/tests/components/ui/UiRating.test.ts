@@ -36,6 +36,10 @@ describe('UiRating', () => {
     expect(row.attributes('aria-label')).toBe('Rated 4.5 out of 5 from 12 reviews')
   })
 
+  it('reads the singular for a single review', () => {
+    expect(mountRating(5, 1).get('[data-testid="rating"]').attributes('aria-label')).toBe('Rated 5.0 out of 5 from 1 review')
+  })
+
   it('keeps the filled stars inside the row for an out of range average', () => {
     const filledOf = (average: number) =>
       mountRating(average, 1).findAll('[data-testid="rating-star"]').filter(star => star.attributes('data-on') === 'true').length

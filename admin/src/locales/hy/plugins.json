@@ -6,20 +6,20 @@
       "storedCredentials": "Պահպանված վճարման եղանակներ"
     },
     "pendingRestart": "Սպասում է վերագործարկման",
-    "categoryByAuthor": "{category} · հեղինակ՝ {author}",
     "removing": "Հեռացվում է…",
     "remove": "Հեռացնել",
-    "details": "Մանրամասներ",
     "refused": "Մերժված",
     "staged": "{version} տարբերակը պատրաստ է, կկիրառվի վերագործարկումից հետո",
     "brokenRule": "{id} · խախտված կանոն՝ {rule}",
-    "updateAvailable": "Հասանելի է թարմացում՝ {version}",
-    "showNotes": "{version} տարբերակի փոփոխությունները",
-    "hideNotes": "Թաքցնել փոփոխությունները",
-    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։",
-    "whatChanged": "Ինչ կփոխվի {to} տարբերակում",
-    "showUpdateNotes": "Ինչ նոր է {version} տարբերակում",
-    "hideUpdateNotes": "Թաքցնել նորությունները"
+    "updateAvailable": "Հասանելի է թարմացում՝ {version}"
+  },
+  "pluginTile": {
+    "verified": "Ստուգված",
+    "tag": "#{tag}",
+    "moreTags": "+{count}",
+    "downloads": "Ներբեռնումներ՝ {count}",
+    "version": "v{version}",
+    "settings": "Բացել կարգավորումները"
   },
   "pluginUploader": {
     "dropYourPlugin": "Քաշեք ձեր պլագինը",
@@ -112,10 +112,6 @@
     "searchLabel": "Որոնում",
     "categoryPlaceholder": "Կատեգորիա",
     "allCategories": "Բոլոր կատեգորիաները",
-    "byAuthor": "հեղինակ՝ {author}",
-    "version": "v{version}",
-    "sdkVersion": "SDK {version}",
-    "verified": "Ստուգված",
     "install": "Տեղադրել",
     "update": "Թարմացնել մինչև {version}",
     "details": "Մանրամասներ",
@@ -136,18 +132,7 @@
       "Free": "Անվճար",
       "Paid": "Վճարովի",
       "Private": "Մասնավոր"
-    },
-    "publisherKind": {
-      "Personal": "Անհատ",
-      "Organization": "Կազմակերպություն"
-    },
-    "tag": "#{tag}",
-    "moreTags": "+{count}",
-    "downloads": "Ներբեռնումներ՝ {count}",
-    "whatChanged": "Ինչ է փոխվել",
-    "showNotes": "Ինչ նոր է {version} տարբերակում",
-    "hideNotes": "Թաքցնել նորությունները",
-    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։"
+    }
   },
   "registryTrust": {
     "title": "Վստահություն կատալոգի նկատմամբ",

@@ -6,20 +6,20 @@
       "storedCredentials": "Saved payment methods"
     },
     "pendingRestart": "Pending restart",
-    "categoryByAuthor": "{category} · by {author}",
     "removing": "Removing…",
     "remove": "Remove",
-    "details": "Details",
     "refused": "Refused",
     "staged": "Version {version} staged, applies after restart",
     "brokenRule": "{id} · broken rule: {rule}",
-    "updateAvailable": "Update available: {version}",
-    "showNotes": "Release notes of {version}",
-    "hideNotes": "Hide release notes",
-    "noNotes": "This version has no release notes.",
-    "whatChanged": "What changes in {to}",
-    "showUpdateNotes": "What is new in {version}",
-    "hideUpdateNotes": "Hide what is new"
+    "updateAvailable": "Update available: {version}"
+  },
+  "pluginTile": {
+    "verified": "Verified",
+    "tag": "#{tag}",
+    "moreTags": "+{count}",
+    "downloads": "{count} downloads",
+    "version": "v{version}",
+    "settings": "Open settings"
   },
   "pluginUploader": {
     "dropYourPlugin": "Drop your plugin",
@@ -112,10 +112,6 @@
     "searchLabel": "Search",
     "categoryPlaceholder": "Category",
     "allCategories": "All categories",
-    "byAuthor": "by {author}",
-    "version": "v{version}",
-    "sdkVersion": "SDK {version}",
-    "verified": "Verified",
     "install": "Install",
     "update": "Update to {version}",
     "details": "Details",
@@ -136,18 +132,7 @@
       "Free": "Free",
       "Paid": "Paid",
       "Private": "Private"
-    },
-    "publisherKind": {
-      "Personal": "Personal",
-      "Organization": "Organization"
-    },
-    "tag": "#{tag}",
-    "moreTags": "+{count}",
-    "downloads": "{count} downloads",
-    "whatChanged": "What changed",
-    "showNotes": "What is new in {version}",
-    "hideNotes": "Hide what is new",
-    "noNotes": "This version has no release notes."
+    }
   },
   "registryTrust": {
     "title": "Registry trust",

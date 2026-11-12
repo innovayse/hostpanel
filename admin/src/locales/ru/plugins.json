@@ -6,20 +6,20 @@
       "storedCredentials": "Сохранённые способы оплаты"
     },
     "pendingRestart": "Ожидает перезапуска",
-    "categoryByAuthor": "{category} · автор: {author}",
     "removing": "Удаление…",
     "remove": "Удалить",
-    "details": "Подробнее",
     "refused": "Отклонён",
     "staged": "Версия {version} подготовлена, применится после перезапуска",
     "brokenRule": "{id} · нарушенное правило: {rule}",
-    "updateAvailable": "Доступно обновление: {version}",
-    "showNotes": "Что нового в {version}",
-    "hideNotes": "Скрыть список изменений",
-    "noNotes": "У этой версии нет списка изменений.",
-    "whatChanged": "Что изменится в {to}",
-    "showUpdateNotes": "Что нового в {version}",
-    "hideUpdateNotes": "Скрыть, что нового"
+    "updateAvailable": "Доступно обновление: {version}"
+  },
+  "pluginTile": {
+    "verified": "Проверен",
+    "tag": "#{tag}",
+    "moreTags": "+{count}",
+    "downloads": "Загрузок: {count}",
+    "version": "v{version}",
+    "settings": "Открыть настройки"
   },
   "pluginUploader": {
     "dropYourPlugin": "Перетащите плагин",
@@ -112,10 +112,6 @@
     "searchLabel": "Поиск",
     "categoryPlaceholder": "Категория",
     "allCategories": "Все категории",
-    "byAuthor": "автор: {author}",
-    "version": "v{version}",
-    "sdkVersion": "SDK {version}",
-    "verified": "Проверен",
     "install": "Установить",
     "update": "Обновить до {version}",
     "details": "Подробнее",
@@ -136,18 +132,7 @@
       "Free": "Бесплатный",
       "Paid": "Платный",
       "Private": "Приватный"
-    },
-    "publisherKind": {
-      "Personal": "Частный",
-      "Organization": "Организация"
-    },
-    "tag": "#{tag}",
-    "moreTags": "+{count}",
-    "downloads": "Загрузок: {count}",
-    "whatChanged": "Что изменилось",
-    "showNotes": "Что нового в {version}",
-    "hideNotes": "Скрыть, что нового",
-    "noNotes": "У этой версии нет списка изменений."
+    }
   },
   "registryTrust": {
     "title": "Доверие к каталогу",

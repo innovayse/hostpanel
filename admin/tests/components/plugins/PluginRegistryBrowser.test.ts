@@ -1,13 +1,15 @@
 /**
- * Tests for PluginRegistryBrowser: a card per listing with its Verified badge and price, Install for a
- * plugin that is absent, Update for one with a newer version, a plain badge for one that is current,
- * the name button that opens details, the Details action for a paid plugin without a key, Uninstall, per card busy state, the
- * staged and update states, the card layout (publisher kind, tags, footer with downloads and version), the debounced search, the empty, loading and error states, and the page event.
+ * Tests for PluginRegistryBrowser: a shared tile per listing with its Verified mark and one meta line (publisher,
+ * category, price), Install for a plugin that is absent, Update for one with a newer version, an installed badge for
+ * one that is current, the name that opens details, the Details action for a paid plugin without a key, Uninstall, per
+ * card busy state, the staged and update badges, the tile content (tags, footer with downloads and version, rating),
+ * the debounced search, the empty, skeleton and error states, and the page event.
+ */
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
-import { PluginCategory, PluginPricing, PluginPublisherKind } from '@/types/plugin'
+import { PluginCategory, PluginPricing } from '@/types/plugin'
 import type { PluginRegistryItemDto } from '@/types/plugin'
 import { mountScreen } from '../../helpers/mount'
 import { pickOption } from '../../helpers/select'
@@ -82,9 +84,9 @@ describe('PluginRegistryBrowser', () => {
     const wrapper = await mountBrowser()
 
     expect(wrapper.get('[data-testid="registry-card-example-pay"]').text()).toContain('Example Pay')
-    expect(wrapper.get('[data-testid="registry-card-example-pay"]').text()).toContain('by Hostpanel')
-    expect(wrapper.find('[data-testid="registry-verified-example-pay"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="registry-verified-example-registrar"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="plugin-tile-meta-example-pay"]').text()).toBe('Hostpanel · Payment · Free')
+    expect(wrapper.find('[data-testid="plugin-tile-verified-example-pay"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-tile-verified-example-registrar"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="registry-card-example-registrar"]').text()).toContain('Paid')
     expect(wrapper.get('[data-testid="registry-card-example-pay"]').text()).toContain('Free')
   })
@@ -121,31 +123,10 @@ describe('PluginRegistryBrowser', () => {
     expect(wrapper.emitted('install')).toEqual([['example-registrar', '2.0.0']])
   })
 
-  it('opens the release notes of the latest version as Markdown, and says when there are none', async () => {
-    const wrapper = await mountBrowser({ items: [{ ...fresh, latestChangelog: '- Faster **refunds**' }, outdated] })
-
-    expect(wrapper.get('[data-testid="registry-notes-toggle-example-pay"]').text()).toBe('What is new in 2.0.0')
-    await wrapper.get('[data-testid="registry-notes-toggle-example-pay"]').trigger('click')
-    await wrapper.get('[data-testid="registry-notes-toggle-example-registrar"]').trigger('click')
-
-    expect(wrapper.get('[data-testid="registry-notes-example-pay"]').find('li strong').text()).toBe('refunds')
-    expect(wrapper.get('[data-testid="registry-notes-example-registrar"]').text()).toBe('This version has no release notes.')
-  })
-
-  it('links an available update to the details page where its release notes are', async () => {
-    const wrapper = await mountBrowser()
-
-    await wrapper.get('[data-testid="registry-changes-example-registrar"]').trigger('click')
-
-    expect(wrapper.emitted('details')).toEqual([['example-registrar']])
-    expect(wrapper.find('[data-testid="registry-changes-example-pay"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="registry-changes-example-host"]').exists()).toBe(false)
-  })
-
   it('shows a plain installed badge, with no install button, for a current plugin', async () => {
     const wrapper = await mountBrowser()
 
-    expect(wrapper.get('[data-testid="registry-installed-example-host"]').text()).toBe('Installed 2.0.0')
+    expect(wrapper.get('[data-testid="plugin-tile-badge-example-host-installed"]').text()).toBe('Installed 2.0.0')
     expect(wrapper.find('[data-testid="registry-install-example-host"]').exists()).toBe(false)
   })
 
@@ -160,12 +141,12 @@ describe('PluginRegistryBrowser', () => {
   it('opens the details page from the name button', async () => {
     const wrapper = await mountBrowser()
 
-    await wrapper.get('[data-testid="registry-open-example-pay"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-tile-open-example-pay"]').trigger('click')
 
     expect(wrapper.emitted('details')).toEqual([['example-pay']])
   })
 
-  it('keeps the card itself non interactive, with the name as a real button', async () => {
+  it('keeps the card itself non interactive, with the name as the one real button', async () => {
     const wrapper = await mountBrowser()
     const card = wrapper.get('[data-testid="registry-card-example-pay"]')
 
@@ -173,64 +154,37 @@ describe('PluginRegistryBrowser', () => {
     expect(card.attributes('tabindex')).toBeUndefined()
     await card.trigger('click')
     expect(wrapper.emitted('details')).toBeUndefined()
-    expect(wrapper.get('[data-testid="registry-open-example-pay"]').element.tagName).toBe('BUTTON')
-  })
-
-  it('lays the card out as icon and name, publisher, description, chips, footer and actions', async () => {
-    const wrapper = await mountBrowser()
-    const card = wrapper.get('[data-testid="registry-card-example-pay"]')
-
-    expect(card.classes()).toContain('h-full')
-    expect(card.get('[data-testid="registry-author-example-pay"]').text()).toBe('by Hostpanel')
-    expect(card.get('[data-testid="registry-description-example-pay"]').classes()).toContain('line-clamp-3')
-    expect(card.get('[data-testid="registry-category-example-pay"]').find('svg').exists()).toBe(true)
-  })
-
-  it('keeps the name link free of padding so it lines up with the text below', async () => {
-    const wrapper = await mountBrowser()
-    const open = wrapper.get('[data-testid="registry-open-example-pay"]')
-
-    expect(open.classes().some((c) => /^p[xy]?-/.test(c))).toBe(false)
-    expect(open.classes()).toContain('focus-visible:ring-2')
+    expect(wrapper.get('[data-testid="plugin-tile-open-example-pay"]').element.tagName).toBe('BUTTON')
   })
 
   it('shows the latest version with a tag icon in the footer under a divider', async () => {
     const wrapper = await mountBrowser()
-    const footer = wrapper.get('[data-testid="registry-footer-example-pay"]')
+    const footer = wrapper.get('[data-testid="plugin-tile-footer-example-pay"]')
 
     expect(footer.classes()).toContain('border-t')
     expect(footer.classes()).toContain('mt-auto')
-    expect(footer.get('[data-testid="registry-version-example-pay"]').find('svg').exists()).toBe(true)
-    expect(footer.text()).toContain('SDK 3.0.0')
-  })
-
-  it('shows the publisher kind chip only when the registry sends it', async () => {
-    const wrapper = await mountBrowser({
-      items: [{ ...fresh, publisherKind: PluginPublisherKind.Organization }, outdated],
-    })
-
-    expect(wrapper.get('[data-testid="registry-publisher-kind-example-pay"]').text()).toBe('Organization')
-    expect(wrapper.find('[data-testid="registry-publisher-kind-example-registrar"]').exists()).toBe(false)
+    expect(footer.get('[data-testid="plugin-tile-version-example-pay"]').text()).toBe('v2.0.0')
+    expect(footer.get('[data-testid="plugin-tile-version-example-pay"]').find('svg').exists()).toBe(true)
   })
 
   it('shows the first three tags as chips and folds the rest into +N', async () => {
     const wrapper = await mountBrowser({ items: [{ ...fresh, tags: ['cards', 'billing', 'eu', 'sepa', 'wallets'] }, outdated] })
-    const tags = wrapper.get('[data-testid="registry-tags-example-pay"]')
+    const tags = wrapper.get('[data-testid="plugin-tile-chips-example-pay"]')
 
     expect(tags.text()).toContain('#cards')
     expect(tags.text()).toContain('#eu')
     expect(tags.text()).not.toContain('#sepa')
-    expect(wrapper.get('[data-testid="registry-more-tags-example-pay"]').text()).toBe('+2')
-    expect(wrapper.find('[data-testid="registry-tags-example-registrar"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="plugin-tile-more-tags-example-pay"]').text()).toBe('+2')
+    expect(wrapper.find('[data-testid^="plugin-tile-tag-example-registrar"]').exists()).toBe(false)
   })
 
   it('shows the download count with an icon only when the registry sends it', async () => {
     const wrapper = await mountBrowser({ items: [{ ...fresh, downloads: 1234 }, outdated] })
-    const downloads = wrapper.get('[data-testid="registry-downloads-example-pay"]')
+    const downloads = wrapper.get('[data-testid="plugin-tile-downloads-example-pay"]')
 
     expect(downloads.text()).toBe('1,234 downloads')
     expect(downloads.find('svg').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="registry-downloads-example-registrar"]').text()).toBe('')
+    expect(wrapper.find('[data-testid="plugin-tile-downloads-example-registrar"]').exists()).toBe(false)
   })
 
   it('lists the cards in one column, then two, then three as the screen widens', async () => {
@@ -243,18 +197,18 @@ describe('PluginRegistryBrowser', () => {
 
   it('shows the rating with stars, average and review count only when the registry sends one', async () => {
     const wrapper = await mountBrowser({ items: [{ ...fresh, rating: { average: 4.5, count: 12 } }, outdated] })
-    const rating = wrapper.get('[data-testid="registry-rating-example-pay"]')
+    const rating = wrapper.get('[data-testid="plugin-tile-rating-example-pay"]')
 
     expect(rating.findAll('[data-testid="rating-star"]')).toHaveLength(5)
     expect(rating.get('[data-testid="rating-summary"]').text()).toBe('4.5 (12)')
     expect(rating.attributes('aria-label')).toBe('Rated 4.5 out of 5 from 12 reviews')
-    expect(wrapper.find('[data-testid="registry-rating-example-registrar"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-tile-rating-example-registrar"]').exists()).toBe(false)
   })
 
   it('shows no rating for a null rating, never a default', async () => {
     const wrapper = await mountBrowser({ items: [{ ...fresh, rating: null }] })
 
-    expect(wrapper.find('[data-testid="registry-rating-example-pay"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-tile-rating-example-pay"]').exists()).toBe(false)
   })
 
   it('does not open the details page when Install is clicked', async () => {
@@ -268,8 +222,8 @@ describe('PluginRegistryBrowser', () => {
   it('shows the category and the price on a card', async () => {
     const wrapper = await mountBrowser()
 
-    expect(wrapper.get('[data-testid="registry-category-example-pay"]').text()).toBe('Payment')
-    expect(wrapper.get('[data-testid="registry-price-example-registrar"]').text()).toBe('Paid')
+    expect(wrapper.get('[data-testid="plugin-tile-meta-example-pay"]').text()).toContain('Payment')
+    expect(wrapper.get('[data-testid="plugin-tile-meta-example-registrar"]').text()).toContain('Paid')
   })
 
   it('offers Details instead of Install for a paid plugin without a saved key', async () => {
@@ -329,15 +283,15 @@ describe('PluginRegistryBrowser', () => {
   it('shows the update state of an installed plugin with a newer version', async () => {
     const wrapper = await mountBrowser()
 
-    expect(wrapper.get('[data-testid="registry-update-state-example-registrar"]').text()).toContain('2.0.0')
-    expect(wrapper.find('[data-testid="registry-update-state-example-host"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="plugin-tile-badge-example-registrar-update"]').text()).toContain('2.0.0')
+    expect(wrapper.find('[data-testid="plugin-tile-badge-example-host-update"]').exists()).toBe(false)
   })
 
   it('shows the staged version instead of the update state', async () => {
     const wrapper = await mountBrowser({ stagedVersions: { 'example-registrar': '2.0.0' } })
 
-    expect(wrapper.get('[data-testid="registry-staged-example-registrar"]').text()).toContain('2.0.0')
-    expect(wrapper.find('[data-testid="registry-update-state-example-registrar"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="plugin-tile-badge-example-registrar-staged"]').text()).toContain('2.0.0')
+    expect(wrapper.find('[data-testid="plugin-tile-badge-example-registrar-update"]').exists()).toBe(false)
   })
 
   it('reports the search text once the typing has paused, not per keystroke', async () => {
@@ -376,10 +330,11 @@ describe('PluginRegistryBrowser', () => {
     expect(wrapper.find('[data-testid="plugin-registry-list"]').exists()).toBe(false)
   })
 
-  it('shows the skeleton while the first page loads', async () => {
-    const wrapper = await mountBrowser({ items: [], total: 0, loading: true })
+  it('shows a skeleton tile per page slot while the first page loads', async () => {
+    const wrapper = await mountBrowser({ items: [], total: 0, loading: true, pageSize: 6 })
 
     expect(wrapper.find('[data-testid="plugin-registry-loading"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="plugin-tile-skeleton"]')).toHaveLength(6)
     expect(wrapper.find('[data-testid="plugin-registry-empty"]').exists()).toBe(false)
   })
 

@@ -108,7 +108,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// <returns>The client id and product id.</returns>
     private static async Task<ClientProductIds> SeedClientAndProductAsync(IHostpanelDbContext context)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
 
         var group = ProductGroup.Create($"fulfill-{Guid.NewGuid():N}", null);
@@ -116,7 +116,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         await context.SaveChangesAsync(CancellationToken.None);
 
         var product = Product.Create(
-            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -247,7 +247,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-refund-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "pre-refund-txn", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "pre-refund-txn", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -282,7 +282,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, productId) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 10.005m, productId);
         invoice.SetGatewaySession("bank-gateway", "gw-order-mixed-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "pre-refund-txn", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "pre-refund-txn", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -309,7 +309,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-card-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_card_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_card_1", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -341,7 +341,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, productId) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 10m, productId);
         invoice.SetGatewaySession("bank-gateway", "gw-order-mixed-card", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_mixed_card", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_mixed_card", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -373,7 +373,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
         invoice.ApplyCredit(10m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-partial-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_partial_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_partial_1", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -402,7 +402,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-nothing-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_nothing_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_nothing_1", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -439,7 +439,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-unrecorded-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "pre-refund-unrecorded", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "pre-refund-unrecorded", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -470,7 +470,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-unknown-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_unknown_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_unknown_1", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
         var domainName = (await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId)).Items.Single().Domain!;
         await OrdersTestReads.ReleaseDomainAsync(host.Services, domainName);
@@ -502,7 +502,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-race-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_race_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_race_1", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
         var line = (await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId)).Items.Single();
         var handler = BuildHandler(scope);
@@ -554,7 +554,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
         invoice.UpdateOptions(invoice.InvoiceDate, invoice.DueDate, invoice.PaymentMethod, taxRate: 10m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-taxed-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_taxed_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_taxed_1", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -591,7 +591,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var order = await context.Orders.FindAsync(orderId);
         var invoice = await context.Invoices.FindAsync(order!.InvoiceId!.Value);
         invoice!.SetGatewaySession("bank-gateway", "gw-order-unconfigured-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "pre-refund-txn", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "pre-refund-txn", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -620,7 +620,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
         invoice.ApplyCredit(10m);
         invoice.SetGatewaySession("bank-gateway", "gw-order-split-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
-        invoice.Settle("bank-gateway", "ch_split_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle("bank-gateway", "ch_split_1", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
@@ -648,7 +648,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
         invoice.ApplyCredit(25m);
-        invoice.Settle(PaymentMethodNames.CreditBalance, "credit-paid", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        invoice.Settle(PaymentMethodNames.CreditBalance, "credit-paid", TestMoments.Seeded, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);

@@ -32,6 +32,7 @@ import { ConsentTextVersion } from '~/types/consenttextversion'
 import type { BillingCurrency } from '~/types/currency'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import type { PlaceOrderInput } from '~/types/placeorderinput'
+import { PricingCycle } from '~/types/pricingcycle'
 import { ProductType } from '~/types/producttype'
 
 /** The stub playing the BFF. */

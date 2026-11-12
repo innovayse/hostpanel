@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
@@ -514,6 +515,57 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         (await context.ServiceChangeRequests.AsNoTracking().AnyAsync(r => r.ServiceId == seeded.ServiceId)).Should().BeFalse();
         var invoices = await context.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).ToListAsync();
         invoices.Should().ContainSingle().Which.Status.Should().Be(InvoiceStatus.Unpaid);
+    }
+
+    /// <summary>
+    /// When Billing refuses to cancel the invoice with a failure instead of an exception (here the invoice is gone), it is logged as
+    /// critical with the refusal's code, the request is still taken back, and the caller still sees the original error.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_WhenBillingRefusesToCancelTheInvoice_LogsTheCodeAndKeepsTheOriginalError()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-refused");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+        var logger = new CapturingLogger<RequestMyServicePlanChangeHandler>();
+
+        // The save that links the invoice fails, and just before it the invoice disappears (as if another process removed it),
+        // so the clean-up asks Billing to cancel an invoice it cannot find, which it answers as a failure, not a throw.
+        bool LinksAfterTheInvoiceIsGone(ChangeTracker tracker)
+        {
+            if (!LinksTheInvoice(tracker))
+            {
+                return false;
+            }
+
+            using var connection = new NpgsqlConnection(tracker.Context.Database.GetConnectionString());
+            connection.Open();
+            using var delete = new NpgsqlCommand(
+                """
+                DELETE FROM "InvoiceItems" WHERE "InvoiceId" IN (SELECT "Id" FROM "Invoices" WHERE "ClientId" = @client);
+                DELETE FROM "Invoices" WHERE "ClientId" = @client;
+                """,
+                connection);
+            delete.Parameters.AddWithValue("client", clientId);
+            delete.ExecuteNonQuery();
+            return true;
+        }
+
+        using var host = FailingSaveHost
+            .Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), LinksAfterTheInvoiceIsGone)
+            .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+                services.AddSingleton<ILogger<RequestMyServicePlanChangeHandler>>(logger)));
+        using var crashing = host.CreateClient();
+        crashing.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
+
+        var response = await crashing.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Critical).Which.Message
+            .Should().Contain("could not be cancelled").And.Contain(HostpanelErrorCodes.INVOICE_NOT_FOUND);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.ServiceChangeRequests.AsNoTracking().AnyAsync(r => r.ServiceId == seeded.ServiceId)).Should().BeFalse();
     }
 
     /// <summary>

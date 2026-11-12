@@ -69,8 +69,9 @@ public sealed class ServiceChangeInvoicePaidHandler
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Wolverine combines every handler of one message into a single chain, so a throw here would also stop the
-            // client's payment-confirmation mail. The request stays Approved, which is the record staff retry from.
+            // Handlers of one event run on separate queues, so a throw here would not stop the client's payment-confirmation
+            // mail, but it would only repeat the same failure through the retry cycle. The request stays Approved, which is
+            // the record staff retry from, so the failure is logged for them instead.
             _logger.LogError(ex, "Applying the plan change of paid invoice {InvoiceId} failed; staff can approve it again.", evt.InvoiceId);
         }
     }

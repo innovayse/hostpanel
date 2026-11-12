@@ -1,9 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Services.Events;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
@@ -14,7 +18,10 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ServiceChangeInvoiceCancelledHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>Waits until the request leaves Approved; the rejection is made by an event handler after the cancellation's save.</summary>
+    /// <summary>
+    /// Waits until the request leaves Approved; the rejection is made by an event handler after the cancellation's save, on its
+    /// own queue, so the test polls for up to 10 seconds (50 reads, 200 ms apart) instead of assuming when it ran.
+    /// </summary>
     /// <param name="requestId">The request to read.</param>
     /// <returns>The request as last read.</returns>
     private async Task<ServiceChangeRequest> WaitForRejectionAsync(int requestId)
@@ -102,11 +109,18 @@ public sealed class ServiceChangeInvoiceCancelledHandlerTests(IntegrationTestFac
         var invoiceId = await ServiceChangeTestSeeds.SeedInvoiceAsync(factory, seeded.ClientId, 5m);
         var requestId = await ServiceChangeTestSeeds.SeedRequestAsync(factory, seeded, ServiceChangeStatus.Completed, invoiceId);
 
-        await factory.Services.PublishAndWaitAsync(new InvoiceCancelledEvent(invoiceId, seeded.ClientId)
+        var logger = new CapturingLogger<ServiceChangeInvoiceCancelledHandler>();
+        using var host = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.AddSingleton<ILogger<ServiceChangeInvoiceCancelledHandler>>(logger)));
+
+        await host.Services.PublishAndWaitAsync(new InvoiceCancelledEvent(invoiceId, seeded.ClientId)
         {
             OccurredAt = DateTimeOffset.UtcNow,
         });
 
+        // Rejecting a Completed request would be refused and leave the status alone, so the status proves nothing: the handler
+        // logs every refusal of the reject, and it logs nothing only when it never tried.
         (await ServiceChangeTestSeeds.ReadRequestAsync(factory, requestId)).Status.Should().Be(ServiceChangeStatus.Completed);
+        logger.Entries.Should().BeEmpty();
     }
 }

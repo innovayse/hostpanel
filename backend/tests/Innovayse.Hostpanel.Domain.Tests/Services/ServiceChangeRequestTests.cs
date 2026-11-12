@@ -178,6 +178,35 @@ public sealed class ServiceChangeRequestTests
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(ServicesErrors.ServiceChangeInvalidState);
     }
 
+    /// <summary>A rejection that someone else made first can still receive the staff note, and without one it keeps the earlier note.</summary>
+    [Fact]
+    public void AmendRejectionNote_OnARejectedRequest_SetsTheNoteAndKeepsTheOtherWhenNone()
+    {
+        var request = PendingUpgrade();
+        request.Reject(null, Now);
+
+        request.AmendRejectionNote("Staff reason");
+        request.AmendRejectionNote(null);
+
+        request.Note.Should().Be("Staff reason");
+        request.Status.Should().Be(ServiceChangeStatus.Rejected);
+    }
+
+    /// <summary>The note can only be amended on a rejected request.</summary>
+    /// <param name="status">A status other than Rejected.</param>
+    [Theory]
+    [InlineData(ServiceChangeStatus.Pending)]
+    [InlineData(ServiceChangeStatus.Approved)]
+    [InlineData(ServiceChangeStatus.Completed)]
+    public void AmendRejectionNote_OnARequestThatIsNotRejected_Throws(ServiceChangeStatus status)
+    {
+        var request = InStatus(status);
+
+        var act = () => request.AmendRejectionNote("Staff reason");
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(ServicesErrors.ServiceChangeInvalidState);
+    }
+
     /// <summary>Builds a request and moves it to a status through the entity's own methods.</summary>
     /// <param name="status">The status to reach.</param>
     /// <returns>A request in that status.</returns>

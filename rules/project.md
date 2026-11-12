@@ -1491,7 +1491,7 @@ the request Approved, and approving it again repeats the call; the request's `xm
 Rejecting an approved upgrade cancels its unpaid invoice first, and the other way round: `Invoice.Cancel` raises
 `InvoiceCancelledEvent`, and `Services/Events/ServiceChangeInvoiceCancelledHandler` rejects the approved request that waits
 for that invoice (through `RejectServiceChangeRequestCommand`, idempotent), so a cancelled invoice never leaves the service
-holding an open request. The proration invoice falls due after `Orders:InvoicePaymentTermDays`, the same term as an order's
+holding an open request (a staff reject that loses that race on the request's xmin token is answered as a success and only adds its note, `ServiceChangeRequest.AmendRejectionNote`). The proration invoice falls due after `Orders:InvoicePaymentTermDays`, the same term as an order's
 invoice. The Services handlers never touch the `Invoices` table:
 they raise, read and cancel invoices through the Billing use cases.
 

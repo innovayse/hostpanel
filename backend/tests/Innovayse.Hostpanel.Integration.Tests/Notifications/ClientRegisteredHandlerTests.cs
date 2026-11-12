@@ -23,7 +23,7 @@ public sealed class ClientRegisteredHandlerTests(IntegrationTestFactory factory)
 
         var email = $"welcome-{Guid.NewGuid():N}@example.test";
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ClientCreatedEvent(1, $"subject-{Guid.NewGuid():N}", email, DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientCreatedEvent(1, $"subject-{Guid.NewGuid():N}", email, TestMoments.Seeded));
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);

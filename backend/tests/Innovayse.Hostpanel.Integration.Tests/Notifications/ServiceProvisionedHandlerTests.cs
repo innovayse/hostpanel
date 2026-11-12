@@ -26,7 +26,7 @@ public sealed class ServiceProvisionedHandlerTests(IntegrationTestFactory factor
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "notification-event");
         var serviceId = await NotificationsTestSeeds.SeedClientServiceAsync(context, client.Id);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceProvisionedEvent(serviceId, client.Id, "provisioning-ref-1", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceProvisionedEvent(serviceId, client.Id, "provisioning-ref-1", TestMoments.Seeded));
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);

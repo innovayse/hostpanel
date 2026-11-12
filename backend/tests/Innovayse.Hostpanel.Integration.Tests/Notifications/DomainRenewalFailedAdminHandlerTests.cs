@@ -29,7 +29,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var name = $"{Guid.NewGuid():N}.test";
 
-        await bus.PublishAsync(new DomainRenewalFailedEvent(42, 7, name, 99, "Registrar refused the paid renewal.") { OccurredAt = DateTimeOffset.UtcNow });
+        await bus.PublishAsync(new DomainRenewalFailedEvent(42, 7, name, 99, "Registrar refused the paid renewal.") { OccurredAt = TestMoments.Seeded });
 
         for (var i = 0; i < 50 && !sender.Sent.Any(m => m.To == AdminEmail); i++)
         {
@@ -59,7 +59,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var name = $"{Guid.NewGuid():N}.test";
 
-        await bus.PublishAsync(new DomainRenewalFailedEvent(42, 7, name, 0, "No renew price; no renewal invoice was raised.") { OccurredAt = DateTimeOffset.UtcNow });
+        await bus.PublishAsync(new DomainRenewalFailedEvent(42, 7, name, 0, "No renew price; no renewal invoice was raised.") { OccurredAt = TestMoments.Seeded });
 
         for (var i = 0; i < 50 && !sender.Sent.Any(m => m.To == AdminEmail && m.Subject.Contains(name, StringComparison.Ordinal)); i++)
         {
@@ -85,7 +85,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var name = $"{Guid.NewGuid():N}.test";
 
-        await bus.PublishAsync(new DomainRenewalFailedEvent(42, 7, name, 99, "Registrar refused the paid renewal.") { OccurredAt = DateTimeOffset.UtcNow });
+        await bus.PublishAsync(new DomainRenewalFailedEvent(42, 7, name, 99, "Registrar refused the paid renewal.") { OccurredAt = TestMoments.Seeded });
 
         for (var i = 0; i < 50 && !sender.Sent.Any(m => m.To == contact); i++)
         {
@@ -105,7 +105,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewalFailedEvent(42, 7, $"{Guid.NewGuid():N}.test", 99, "x") { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewalFailedEvent(42, 7, $"{Guid.NewGuid():N}.test", 99, "x") { OccurredAt = TestMoments.Seeded });
 
         sender.Sent.Should().BeEmpty();
     }

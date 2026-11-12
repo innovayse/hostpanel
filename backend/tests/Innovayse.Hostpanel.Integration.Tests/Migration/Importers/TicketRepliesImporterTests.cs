@@ -33,7 +33,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         var client = await context.Clients.FirstAsync(c => c.UserId == userId);
         var subject = $"ticket-{Guid.NewGuid():N}";
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.TicketReplies);
@@ -65,7 +65,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         var client = await context.Clients.FirstAsync(c => c.UserId == userId);
         var subject = $"ticket-{Guid.NewGuid():N}";
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
         return new SeededTicket(email, subject, ticket.Id);
@@ -223,7 +223,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         await PullAsync(scope);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var tracked = await context.Tickets.SingleAsync(t => t.Id == ticket.TicketId);
-        tracked.Close(DateTimeOffset.UtcNow);
+        tracked.Close(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var second = await PullAsync(scope);

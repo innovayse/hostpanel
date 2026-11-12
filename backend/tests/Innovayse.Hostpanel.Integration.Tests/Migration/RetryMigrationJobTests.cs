@@ -25,8 +25,8 @@ public sealed class RetryMigrationJobTests(IntegrationTestFactory factory) : ICl
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var job = await context.MigrationJobs.FirstAsync(j => j.Id == id);
-            job.Queue(DateTimeOffset.UtcNow);
-            job.Fail(MigrationJobFailure.Interrupted, DateTimeOffset.UtcNow);
+            job.Queue(TestMoments.Seeded);
+            job.Fail(MigrationJobFailure.Interrupted, TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

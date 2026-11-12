@@ -66,7 +66,8 @@ public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : 
         var clientId = await context.Clients.AsNoTracking()
             .Where(c => c.UserId == userId).Select(c => c.Id).SingleAsync();
         var sourceInvoiceId = Guid.NewGuid().ToString("N");
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        // The due date is not part of what is checked: the test only looks at the link between the transaction and the invoice.
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Hosting", 10m, 1);
         invoice.SetExternalId(sourceInvoiceId);
         context.Invoices.Add(invoice);

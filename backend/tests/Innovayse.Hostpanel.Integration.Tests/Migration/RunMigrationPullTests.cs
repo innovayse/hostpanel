@@ -64,7 +64,7 @@ public sealed class RunMigrationPullTests(IntegrationTestFactory factory) : ICla
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Announcements);
-        job.Fail(MigrationJobFailure.Interrupted, DateTimeOffset.UtcNow);
+        job.Fail(MigrationJobFailure.Interrupted, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(new RunMigrationPullCommand(job.Id));

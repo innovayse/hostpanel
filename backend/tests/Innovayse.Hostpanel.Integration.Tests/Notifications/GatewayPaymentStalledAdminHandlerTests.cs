@@ -28,7 +28,7 @@ public sealed class GatewayPaymentStalledAdminHandlerTests(IntegrationTestFactor
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.PublishAsync(new GatewayPaymentStalledEvent(515151, 7, "bank-gateway", 26) { OccurredAt = DateTimeOffset.UtcNow });
+        await bus.PublishAsync(new GatewayPaymentStalledEvent(515151, 7, "bank-gateway", 26) { OccurredAt = TestMoments.Seeded });
 
         for (var i = 0; i < 50 && !sender.Sent.Any(m => m.To == AdminEmail); i++)
         {
@@ -51,7 +51,7 @@ public sealed class GatewayPaymentStalledAdminHandlerTests(IntegrationTestFactor
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new GatewayPaymentStalledEvent(1, 1, "bank-gateway", 24) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new GatewayPaymentStalledEvent(1, 1, "bank-gateway", 24) { OccurredAt = TestMoments.Seeded });
 
         sender.Sent.Should().BeEmpty();
     }

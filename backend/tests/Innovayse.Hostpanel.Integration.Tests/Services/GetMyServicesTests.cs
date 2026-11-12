@@ -197,7 +197,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
         var group = ProductGroup.Create($"my-services-usage-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", ProductType.SharedHosting, 2m, 20m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", ProductType.SharedHosting, 2m, 20m, TestMoments.Seeded);
         context.Products.Add(product);
 
         var server = Server.Create(new ServerDetails(
@@ -215,7 +215,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), DateTimeOffset.UtcNow);
+            NameServers: ServerNameServers.None), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
 

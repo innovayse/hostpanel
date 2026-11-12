@@ -26,7 +26,7 @@ public sealed class ClientServiceTerminatedHandlerTests(IntegrationTestFactory f
         await context.SaveChangesAsync(CancellationToken.None);
         var service = await context.ClientServices.AsNoTracking().FirstAsync(s => s.Id == serviceId, CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ClientServiceTerminatedEvent(serviceId, service.ClientId, DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientServiceTerminatedEvent(serviceId, service.ClientId, TestMoments.Seeded));
 
         (await context.CancellationRequests.AsNoTracking().SingleAsync(r => r.ServiceId == serviceId, CancellationToken.None))
             .Status.Should().Be(CancellationStatus.Closed);
@@ -40,7 +40,7 @@ public sealed class ClientServiceTerminatedHandlerTests(IntegrationTestFactory f
         using var scope = factory.Services.CreateScope();
 
         var act = () => scope.ServiceProvider.PublishAndWaitAsync(
-            new ClientServiceTerminatedEvent(ServicesTestSeeds.NoSuchServiceId, 1, DateTimeOffset.UtcNow));
+            new ClientServiceTerminatedEvent(ServicesTestSeeds.NoSuchServiceId, 1, TestMoments.Seeded));
 
         await act.Should().NotThrowAsync();
     }

@@ -94,7 +94,7 @@ public sealed class ServiceChangeInvoiceCancelledHandlerTests(IntegrationTestFac
 
         await factory.Services.PublishAndWaitAsync(new InvoiceCancelledEvent(unrelatedInvoice, seeded.ClientId)
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         (await ServiceChangeTestSeeds.ReadRequestAsync(factory, requestId)).Status.Should().Be(ServiceChangeStatus.Approved);
@@ -115,7 +115,7 @@ public sealed class ServiceChangeInvoiceCancelledHandlerTests(IntegrationTestFac
 
         await host.Services.PublishAndWaitAsync(new InvoiceCancelledEvent(invoiceId, seeded.ClientId)
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         // Rejecting a Completed request would be refused and leave the status alone, so the status proves nothing: the handler

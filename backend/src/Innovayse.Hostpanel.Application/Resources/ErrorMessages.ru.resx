@@ -441,6 +441,27 @@
   <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
     <value>В наборе должен быть ровно один основной продукт.</value>
   </data>
+  <data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
+    <value>Опции количества нужен минимум от нуля и максимум не меньше одного и не меньше минимума. У других типов опций диапазона нет.</value>
+  </data>
+<data name="PRODUCT_OPTION_COUNT_NOT_ALLOWED" xml:space="preserve">
+    <value>Эта группа опций содержит одну опцию, и она уже есть.</value>
+  </data>
+<data name="PRODUCT_OPTION_PRICE_NOT_ALLOWED" xml:space="preserve">
+    <value>Текстовая опция является свободным значением и не может иметь цену.</value>
+  </data>
+<data name="PRODUCT_OPTION_PRICE_OUT_OF_RANGE" xml:space="preserve">
+    <value>Цена опции не может быть отрицательной, а процент не может превышать 100.</value>
+  </data>
+<data name="PRODUCT_OPTION_NOT_FOUND" xml:space="preserve">
+    <value>Такая опция продукта не найдена.</value>
+  </data>
+<data name="PRODUCT_OPTION_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Такая группа опций продукта не найдена.</value>
+  </data>
+<data name="PRODUCT_OPTION_GROUP_ORDER_MISMATCH" xml:space="preserve">
+    <value>Список должен содержать каждую группу опций продукта ровно один раз.</value>
+  </data>
 <data name="SLIDE_NOT_FOUND" xml:space="preserve">
     <value>Такой слайд не найден.</value>
   </data>

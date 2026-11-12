@@ -1622,6 +1622,40 @@ public static class HostpanelErrorCodes
     /// <summary>The bundle does not have exactly one primary product (400): <see cref="Domain.Products.ProductBundle.Update"/>.</summary>
     public const string PRODUCT_BUNDLE_PRIMARY_INVALID = Domain.Products.ProductsErrors.ProductBundlePrimaryInvalid;
 
+    /// <summary>
+    /// The quantity range does not fit the option group's type (400):
+    /// <see cref="Domain.Products.ProductOptionGroup.Create"/>.
+    /// </summary>
+    public const string PRODUCT_OPTION_QUANTITY_RANGE_INVALID = Domain.Products.ProductsErrors.ProductOptionQuantityRangeInvalid;
+
+    /// <summary>
+    /// The option group's type holds one option and already has it (400):
+    /// <see cref="Domain.Products.ProductOptionGroup.AddOption"/>.
+    /// </summary>
+    public const string PRODUCT_OPTION_COUNT_NOT_ALLOWED = Domain.Products.ProductsErrors.ProductOptionCountNotAllowed;
+
+    /// <summary>
+    /// A text option was given a price (400): <see cref="Domain.Products.ProductOptionGroup.AddOption"/>.
+    /// </summary>
+    public const string PRODUCT_OPTION_PRICE_NOT_ALLOWED = Domain.Products.ProductsErrors.ProductOptionPriceNotAllowed;
+
+    /// <summary>
+    /// An option modifier is negative, or a percentage above 100 (400):
+    /// <see cref="Domain.Products.ProductOptionGroup.AddOption"/>.
+    /// </summary>
+    public const string PRODUCT_OPTION_PRICE_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductOptionPriceOutOfRange;
+
+    /// <summary>The id names no product option (404).</summary>
+    public const string PRODUCT_OPTION_NOT_FOUND = Domain.Products.ProductsErrors.ProductOptionNotFound;
+
+    /// <summary>The id names no product option group (404).</summary>
+    public const string PRODUCT_OPTION_GROUP_NOT_FOUND = "PRODUCT_OPTION_GROUP_NOT_FOUND";
+
+    /// <summary>
+    /// The ids given to reorder a product's option groups are not exactly the product's groups, each once (400).
+    /// </summary>
+    public const string PRODUCT_OPTION_GROUP_ORDER_MISMATCH = "PRODUCT_OPTION_GROUP_ORDER_MISMATCH";
+
     /// <summary>The service is not Active (400): <see cref="Domain.Services.ClientService.Suspend"/>.</summary>
     public const string SERVICE_NOT_ACTIVE = Domain.Services.ServicesErrors.ServiceNotActive;
 

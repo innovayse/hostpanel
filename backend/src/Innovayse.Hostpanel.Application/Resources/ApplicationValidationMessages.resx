@@ -991,6 +991,39 @@
   <data name="ProductFeatureSortOrderInvalid" xml:space="preserve">
     <value>The sort order cannot be negative.</value>
   </data>
+  <data name="ProductOptionGroupIdInvalid" xml:space="preserve">
+    <value>Provide a valid option group id.</value>
+  </data>
+  <data name="ProductOptionIdInvalid" xml:space="preserve">
+    <value>Provide a valid option id.</value>
+  </data>
+  <data name="ProductOptionGroupNameRequired" xml:space="preserve">
+    <value>An option group needs a name.</value>
+  </data>
+  <data name="ProductOptionGroupNameTooLong" xml:space="preserve">
+    <value>Keep the name within {0} characters.</value>
+  </data>
+  <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
+    <value>Choose a valid option group type.</value>
+  </data>
+  <data name="ProductOptionNameRequired" xml:space="preserve">
+    <value>An option needs a name.</value>
+  </data>
+  <data name="ProductOptionNameTooLong" xml:space="preserve">
+    <value>Keep the name within {0} characters.</value>
+  </data>
+  <data name="ProductOptionDisplayOrderInvalid" xml:space="preserve">
+    <value>The display order cannot be negative.</value>
+  </data>
+  <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
+    <value>Choose a valid price type.</value>
+  </data>
+  <data name="ProductOptionPriceInvalid" xml:space="preserve">
+    <value>A price cannot be negative.</value>
+  </data>
+  <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
+    <value>List the option group ids in the new order.</value>
+  </data>
   <data name="SlideIdInvalid" xml:space="preserve">
     <value>Provide a valid slide id.</value>
   </data>

@@ -29,6 +29,9 @@ public sealed class ConfigurationTests
     /// <summary>The suffix every options class carries.</summary>
     private const string OptionsSuffix = "Options";
 
+    /// <summary>The namespace of the generated EF migrations, whose class names describe a schema change and never bind configuration.</summary>
+    private const string MigrationsNamespace = "Innovayse.Hostpanel.Infrastructure.Migrations";
+
     /// <summary>
     /// Types below the composition root that may hold <see cref="IConfiguration"/>, each a documented
     /// exception in hostpanel/rules/project.md. The plugin activator hands every plugin the
@@ -131,6 +134,8 @@ public sealed class ConfigurationTests
         return ProductLayers()
             .SelectMany(Layers.AuthoredTypesOf)
             .Where(type => type.IsClass && !type.IsNested && type.Name.EndsWith(OptionsSuffix, StringComparison.Ordinal))
+            // A generated migration named after its change (AddProductOptions) is not a settings bag.
+            .Where(type => type.Namespace != MigrationsNamespace)
             .ToList();
     }
 

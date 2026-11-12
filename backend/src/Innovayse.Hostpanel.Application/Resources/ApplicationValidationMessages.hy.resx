@@ -934,6 +934,39 @@
   <data name="ProductFeatureSortOrderInvalid" xml:space="preserve">
     <value>Դասավորության հերթականությունը չի կարող բացասական լինել։</value>
   </data>
+  <data name="ProductOptionGroupIdInvalid" xml:space="preserve">
+    <value>Նշեք ընտրանիների խմբի վավեր ID։</value>
+  </data>
+  <data name="ProductOptionIdInvalid" xml:space="preserve">
+    <value>Նշեք ընտրանու վավեր ID։</value>
+  </data>
+  <data name="ProductOptionGroupNameRequired" xml:space="preserve">
+    <value>Ընտրանիների խումբը պահանջում է անուն։</value>
+  </data>
+  <data name="ProductOptionGroupNameTooLong" xml:space="preserve">
+    <value>Անունը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
+    <value>Ընտրեք ընտրանիների խմբի վավեր տեսակ։</value>
+  </data>
+  <data name="ProductOptionNameRequired" xml:space="preserve">
+    <value>Ընտրանին պահանջում է անուն։</value>
+  </data>
+  <data name="ProductOptionNameTooLong" xml:space="preserve">
+    <value>Անունը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductOptionDisplayOrderInvalid" xml:space="preserve">
+    <value>Ցուցադրման հերթականությունը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
+    <value>Ընտրեք գնի վավեր տեսակ։</value>
+  </data>
+  <data name="ProductOptionPriceInvalid" xml:space="preserve">
+    <value>Գինը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
+    <value>Նշեք ընտրանիների խմբերի ID-ները նոր հերթականությամբ։</value>
+  </data>
   <data name="SlideIdInvalid" xml:space="preserve">
     <value>Նշեք սլայդի վավեր ID։</value>
   </data>

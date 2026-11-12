@@ -441,6 +441,27 @@
   <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
     <value>Փաթեթում պետք է լինի ճիշտ մեկ հիմնական արտադրանք։</value>
   </data>
+  <data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
+    <value>Քանակի ընտրանուն պետք է նվազագույնը զրո կամ ավելի և առավելագույնը առնվազն մեկ, ոչ պակաս նվազագույնից։ Մյուս տեսակներն ընդգրկույթ չունեն։</value>
+  </data>
+<data name="PRODUCT_OPTION_COUNT_NOT_ALLOWED" xml:space="preserve">
+    <value>Ընտրանիների այս խումբը պարունակում է մեկ ընտրանի, և այն արդեն կա։</value>
+  </data>
+<data name="PRODUCT_OPTION_PRICE_NOT_ALLOWED" xml:space="preserve">
+    <value>Տեքստային ընտրանին ազատ արժեք է և գին ունենալ չի կարող։</value>
+  </data>
+<data name="PRODUCT_OPTION_PRICE_OUT_OF_RANGE" xml:space="preserve">
+    <value>Ընտրանու գինը չի կարող բացասական լինել, իսկ տոկոսը չի կարող գերազանցել 100-ը։</value>
+  </data>
+<data name="PRODUCT_OPTION_NOT_FOUND" xml:space="preserve">
+    <value>Ապրանքի այդպիսի ընտրանի չի գտնվել։</value>
+  </data>
+<data name="PRODUCT_OPTION_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Ապրանքի ընտրանիների այդպիսի խումբ չի գտնվել։</value>
+  </data>
+<data name="PRODUCT_OPTION_GROUP_ORDER_MISMATCH" xml:space="preserve">
+    <value>Ցանկը պետք է նշի ապրանքի ընտրանիների յուրաքանչյուր խումբը ճիշտ մեկ անգամ։</value>
+  </data>
 <data name="SLIDE_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի սլայդ չի գտնվել։</value>
   </data>

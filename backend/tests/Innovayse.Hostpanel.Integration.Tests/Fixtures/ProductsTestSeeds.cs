@@ -124,6 +124,59 @@ public static class ProductsTestSeeds
         return list!.Single(p => p.GetProperty("id").GetInt32() == productId);
     }
 
+    /// <summary>Creates a product option group through the API and returns its id.</summary>
+    /// <param name="client">An authenticated admin client.</param>
+    /// <param name="productId">The product the group configures.</param>
+    /// <param name="type">The group type; sent as its name, the way the wire spells it.</param>
+    /// <param name="displayOrder">Position within the product.</param>
+    /// <param name="minQuantity">Least amount, for a quantity group.</param>
+    /// <param name="maxQuantity">Most amount, for a quantity group.</param>
+    /// <returns>The new group's id.</returns>
+    public static async Task<int> CreateOptionGroupAsync(
+        HttpClient client,
+        int productId,
+        ProductOptionType type = ProductOptionType.Dropdown,
+        int displayOrder = 0,
+        int? minQuantity = null,
+        int? maxQuantity = null)
+    {
+        var response = await client.PostAsJsonAsync("/api/product-option-groups", new
+        {
+            productId,
+            name = $"group-{Guid.NewGuid():N}",
+            type = type.ToString(),
+            isRequired = false,
+            displayOrder,
+            minQuantity,
+            maxQuantity,
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return await response.Content.ReadFromJsonAsync<int>();
+    }
+
+    /// <summary>Adds an option to a group through the API and returns its id.</summary>
+    /// <param name="client">An authenticated admin client.</param>
+    /// <param name="groupId">The group the option belongs to.</param>
+    /// <param name="name">The option name.</param>
+    /// <param name="priceModifier">The recurring modifier.</param>
+    /// <param name="displayOrder">Position within the group.</param>
+    /// <returns>The new option's id.</returns>
+    public static async Task<int> AddOptionAsync(
+        HttpClient client, int groupId, string name = "Option", decimal priceModifier = 0m, int displayOrder = 0)
+    {
+        var response = await client.PostAsJsonAsync("/api/product-options", new
+        {
+            groupId,
+            name,
+            priceModifier,
+            priceType = nameof(ProductOptionPriceType.Fixed),
+            setupFeeModifier = 0m,
+            displayOrder,
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return await response.Content.ReadFromJsonAsync<int>();
+    }
+
     /// <summary>A SKU no other test uses, in lower case so the tests also see it normalised.</summary>
     /// <returns>The SKU as a caller would type it.</returns>
     public static string UniqueSku() => $"lic-{Guid.NewGuid():N}";

@@ -80,7 +80,7 @@ export const DOMAIN_PRODUCT = {
  * @param {string} name Plan name.
  * @param {number} monthly Monthly price in USD.
  * @param {string} type Product type the catalogue reports.
- * @returns {object} The plan, priced in USD and AMD.
+ * @returns {{ id: number, groupId: number, name: string, description: string, status: string, type: string, pricing: { monthly: number, annual: number }, prices: { currencyCode: string, monthly: number, annual: number }[] }} The plan, priced in USD and AMD.
  */
 const familyPlan = (id, groupId, name, monthly, type) => ({
   id,

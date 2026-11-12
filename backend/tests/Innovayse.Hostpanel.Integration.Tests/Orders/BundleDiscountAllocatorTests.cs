@@ -53,7 +53,7 @@ public sealed class BundleDiscountAllocatorTests
         var result = BundleDiscountAllocator.Allocate([10m, 10m, 10m], BundleDiscountType.Fixed, 10m, "USD");
 
         result.Should().Equal(6.67m, 6.66m, 6.67m);
-        (30m - result.Sum()).Should().Be(20m);
+        (30m - result.Sum()).Should().Be(10m);
     }
 
     /// <summary>

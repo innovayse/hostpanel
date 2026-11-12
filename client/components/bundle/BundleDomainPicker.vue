@@ -52,7 +52,7 @@
           >
             <div class="flex min-w-0 items-center gap-3">
               <UiText class="break-all font-mono">{{ result.name }}</UiText>
-              <UiBadge size="sm" rounded :variant="AVAILABILITY_TONES[result.status as DomainResultStatus]">
+              <UiBadge size="sm" rounded :variant="AVAILABILITY_TONES[result.status]">
                 {{ $t(`aurora.domainSearch.${result.status}`) }}
               </UiBadge>
             </div>

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-13
+
+Highlights since 0.4.0:
+
+- Payment plugins can answer a form post or a browser step, and a plugin can serve its checkout page from a public callback. This needs plugin SDK 3.7.0.
+- A client can save the payment method within the checkout payment, pay by manual bank transfer, top up a wallet balance and receive credit notes.
+- Billing gained tax rules with automatic tax on new invoices, plan upgrades and downgrades with proration, and an Upcoming Renewals page.
+- Product bundles, fraud detection with a review queue, and email campaigns with segments, one click unsubscribe and open and click tracking.
+- Plugins: restricted registry plugins and managing registry plugins from the admin panel.
+- The installer backs up the database before an upgrade and can roll it back.
+
+Upgrade notes, read before upgrading:
+
+- The ticket status Answered is gone. A data migration turns existing Answered tickets into Awaiting Reply.
+- The HTTP clients the host hands to a plugin no longer follow redirects, as plugin SDK 3.7.0 requires. A plugin that relied on a followed redirect must handle the 3xx reply itself.
+- With single sign-on, register the API as the back-channel logout receiver (`/api/auth/backchannel-logout`) for this client, otherwise an admin session outlives a sign-out everywhere (details below).
+
 ### Removed
 
 - Support: the ticket status Answered is gone. A ticket is Open, Awaiting Reply or Closed. Existing Answered tickets become Awaiting Reply in a data migration, the Customer-Reply filter of the admin ticket list is removed, and the old Answered filter is now named Awaiting Reply. Importing tickets from another system is unchanged.
@@ -337,7 +354,8 @@ Upgrade notes, read before upgrading:
 - Backend sources were tracked as a submodule; they are now part of the repository.
 - Repository URLs in the README and clone instructions.
 
-[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/innovayse/hostpanel/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/innovayse/hostpanel/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/innovayse/hostpanel/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/innovayse/hostpanel/releases/tag/v0.3.0

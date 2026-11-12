@@ -300,7 +300,7 @@ public sealed class FulfilmentExtensionPointsSchemaTests(IntegrationTestFactory 
     /// <summary>Builds an unsaved client with a unique subject and email.</summary>
     /// <returns>The client.</returns>
     private static Client NewClient() =>
-        Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
 
     /// <summary>Saves a fresh product group and adds an unsaved digital product to it.</summary>
     /// <param name="db">The context the product is added to.</param>
@@ -311,7 +311,7 @@ public sealed class FulfilmentExtensionPointsSchemaTests(IntegrationTestFactory 
         db.ProductGroups.Add(group);
         await db.SaveChangesAsync();
 
-        var product = Product.Create(group.Id, "Licence", null, null, null, null, ProductType.Digital, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Licence", null, null, null, null, ProductType.Digital, 0m, 0m, TestMoments.Seeded);
         db.Products.Add(product);
         return product;
     }

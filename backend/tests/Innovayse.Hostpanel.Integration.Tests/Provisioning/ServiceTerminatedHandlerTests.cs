@@ -25,7 +25,7 @@ public sealed class ServiceTerminatedHandlerTests(IntegrationTestFactory factory
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminatedEvent(serviceId, clientId, "cancelled", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminatedEvent(serviceId, clientId, "cancelled", TestMoments.Seeded));
 
         var call = Assert.Single(provider.Terminated);
         Assert.Equal(serviceId, call.ServiceId);

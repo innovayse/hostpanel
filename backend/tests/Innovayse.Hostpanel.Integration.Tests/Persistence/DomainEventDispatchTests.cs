@@ -70,7 +70,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var email = $"dispatch-welcome-{Guid.NewGuid():N}@example.test";
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", email, DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", email, TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -101,7 +101,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
         await context.SaveChangesAsync(CancellationToken.None);
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var ticket = Ticket.Create(clientId, "Dispatch me", "Please", department.Id, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        var ticket = Ticket.Create(clientId, "Dispatch me", "Please", department.Id, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -124,7 +124,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             using var suppression = scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress();
-            var client = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", suppressedEmail, DateTimeOffset.UtcNow);
+            var client = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", suppressedEmail, TestMoments.Seeded);
             context.Clients.Add(client);
             await context.SaveChangesAsync(CancellationToken.None);
 
@@ -136,7 +136,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
         using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Alan", "Turing", markerEmail, DateTimeOffset.UtcNow));
+            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Alan", "Turing", markerEmail, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -162,7 +162,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await using var transaction = await context.Database.BeginTransactionAsync();
-            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Edsger", "Dijkstra", rolledBackEmail, DateTimeOffset.UtcNow));
+            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Edsger", "Dijkstra", rolledBackEmail, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
             await transaction.RollbackAsync();
         }
@@ -170,7 +170,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
         using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Barbara", "Liskov", markerEmail, DateTimeOffset.UtcNow));
+            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Barbara", "Liskov", markerEmail, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -194,7 +194,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
 
         await using (var transaction = await context.Database.BeginTransactionAsync())
         {
-            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Donald", "Knuth", email, DateTimeOffset.UtcNow));
+            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Donald", "Knuth", email, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
 
             // Saved but not committed: the welcome handler must not have been handed anything yet.

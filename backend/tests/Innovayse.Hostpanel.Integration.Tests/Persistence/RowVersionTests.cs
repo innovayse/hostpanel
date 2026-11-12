@@ -62,7 +62,7 @@ public sealed class RowVersionTests(IntegrationTestFactory factory) : IClassFixt
         await context.SaveChangesAsync(CancellationToken.None);
 
         var ticket = Ticket.Create(
-            clientId, "Concurrent edit", "Two staff open this ticket at once.", department.Id, TicketPriority.Medium, DateTimeOffset.UtcNow);
+            clientId, "Concurrent edit", "Two staff open this ticket at once.", department.Id, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
         return ticket.Id;

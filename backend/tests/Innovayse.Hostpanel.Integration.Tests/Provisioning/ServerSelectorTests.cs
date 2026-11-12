@@ -98,7 +98,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
         var before = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
-        first.RecordConnectionTest(true, 10, DateTimeOffset.UtcNow);
+        first.RecordConnectionTest(true, 10, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         var after = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
 
@@ -200,8 +200,8 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), DateTimeOffset.UtcNow);
-        server.RecordConnectionTest(true, accounts, DateTimeOffset.UtcNow);
+            NameServers: ServerNameServers.None), TestMoments.Seeded);
+        server.RecordConnectionTest(true, accounts, TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
         return server;

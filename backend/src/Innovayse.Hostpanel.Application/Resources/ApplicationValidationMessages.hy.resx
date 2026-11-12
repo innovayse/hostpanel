@@ -850,6 +850,33 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Նկարագրությունը չպետք է գերազանցի {0} նիշը։</value>
   </data>
+  <data name="ProductBundleIdInvalid" xml:space="preserve">
+    <value>Նշեք փաթեթի ճիշտ ID։</value>
+  </data>
+  <data name="ProductBundleNameRequired" xml:space="preserve">
+    <value>Արտադրանքների փաթեթը պետք է ունենա անվանում։</value>
+  </data>
+  <data name="ProductBundleNameTooLong" xml:space="preserve">
+    <value>Փաթեթի անվանումը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductBundleDescriptionTooLong" xml:space="preserve">
+    <value>Նկարագրությունը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductBundleSortOrderInvalid" xml:space="preserve">
+    <value>Դասավորման դիրքը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="ProductBundleDomainTermInvalid" xml:space="preserve">
+    <value>Դոմենով փաթեթին պետք է 1-ից {0} տարի գրանցում, իսկ առանց դոմենի փաթեթը պետք է թողնի տարիները դատարկ։</value>
+  </data>
+  <data name="ProductBundleDiscountInvalid" xml:space="preserve">
+    <value>Զեղչը չի համապատասխանում իր տեսակին․ տոկոսը 0-ից {0} է, ֆիքսված գումարը բացասական չէ և պահանջում է արժույթի կոդ, իսկ առանց զեղչի ոչ գումար է պետք, ոչ արժույթ։</value>
+  </data>
+  <data name="ProductBundleItemsRequired" xml:space="preserve">
+    <value>Փաթեթին ավելացրեք առնվազն մեկ արտադրանք։</value>
+  </data>
+  <data name="ProductBundleItemProductInvalid" xml:space="preserve">
+    <value>Փաթեթի յուրաքանչյուր դիրքի համար նշեք արտադրանքի ճիշտ ID։</value>
+  </data>
   <data name="ProductIdInvalid" xml:space="preserve">
     <value>Նշեք ապրանքի վավեր ID։</value>
   </data>

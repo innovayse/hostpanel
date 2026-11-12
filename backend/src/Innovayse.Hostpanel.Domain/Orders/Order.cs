@@ -46,6 +46,9 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// <summary>Gets the FK to the linked invoice, or null if not yet created.</summary>
     public int? InvoiceId { get; private set; }
 
+    /// <summary>Gets the FK to the <see cref="Products.ProductBundle"/> the order was placed from, or null for an order of single products.</summary>
+    public int? BundleId { get; private set; }
+
     /// <summary>Gets the client's IP address at checkout time.</summary>
     public string? IpAddress { get; private set; }
 
@@ -116,6 +119,16 @@ public sealed class Order : BaseEntity, IAggregateRoot
         };
         order.AddDomainEvent(new OrderCreatedEvent(0, clientId, now));
         return order;
+    }
+
+    /// <summary>Records that the order was placed from a product bundle.</summary>
+    /// <param name="bundleId">FK to the bundle.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The bundle id is not positive.</exception>
+    public void PlaceFromBundle(int bundleId)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bundleId);
+
+        BundleId = bundleId;
     }
 
     /// <summary>Moves the placement date to an earlier moment, for orders imported or seeded from history.</summary>

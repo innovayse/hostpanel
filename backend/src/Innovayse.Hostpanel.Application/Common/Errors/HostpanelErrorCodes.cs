@@ -1115,6 +1115,18 @@ public static class HostpanelErrorCodes
     /// <summary>Another product already uses this SKU; a SKU names one product only (409).</summary>
     public const string PRODUCT_SKU_ALREADY_IN_USE = "PRODUCT_SKU_ALREADY_IN_USE";
 
+    /// <summary>The id names no product bundle (404).</summary>
+    public const string PRODUCT_BUNDLE_NOT_FOUND = "PRODUCT_BUNDLE_NOT_FOUND";
+
+    /// <summary>A product listed in the bundle does not exist (404).</summary>
+    public const string PRODUCT_BUNDLE_PRODUCT_NOT_FOUND = "PRODUCT_BUNDLE_PRODUCT_NOT_FOUND";
+
+    /// <summary>
+    /// A product listed in the bundle is a domain product (400): the domain is the bundle's included
+    /// domain, priced per extension when the order is placed, never a component.
+    /// </summary>
+    public const string PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED = "PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED";
+
     // Slides
 
     /// <summary>The id names no homepage slide (404).</summary>
@@ -1591,6 +1603,24 @@ public static class HostpanelErrorCodes
     /// <see cref="Domain.Products.Product.SetGracePeriodDays"/>.
     /// </summary>
     public const string PRODUCT_GRACE_PERIOD_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductGracePeriodOutOfRange;
+
+    /// <summary>
+    /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):
+    /// <see cref="Domain.Products.ProductBundle.Update"/>.
+    /// </summary>
+    public const string PRODUCT_BUNDLE_DOMAIN_TERM_INVALID = Domain.Products.ProductsErrors.ProductBundleDomainTermInvalid;
+
+    /// <summary>The discount type, amount and currency do not agree (400): <see cref="Domain.Products.ProductBundle.Update"/>.</summary>
+    public const string PRODUCT_BUNDLE_DISCOUNT_INVALID = Domain.Products.ProductsErrors.ProductBundleDiscountInvalid;
+
+    /// <summary>The bundle has no product in it (400): <see cref="Domain.Products.ProductBundle.Update"/>.</summary>
+    public const string PRODUCT_BUNDLE_ITEMS_REQUIRED = Domain.Products.ProductsErrors.ProductBundleItemsRequired;
+
+    /// <summary>The same product is listed in the bundle more than once (400): <see cref="Domain.Products.ProductBundle.Update"/>.</summary>
+    public const string PRODUCT_BUNDLE_ITEM_DUPLICATE = Domain.Products.ProductsErrors.ProductBundleItemDuplicate;
+
+    /// <summary>The bundle does not have exactly one primary product (400): <see cref="Domain.Products.ProductBundle.Update"/>.</summary>
+    public const string PRODUCT_BUNDLE_PRIMARY_INVALID = Domain.Products.ProductsErrors.ProductBundlePrimaryInvalid;
 
     /// <summary>The service is not Active (400): <see cref="Domain.Services.ClientService.Suspend"/>.</summary>
     public const string SERVICE_NOT_ACTIVE = Domain.Services.ServicesErrors.ServiceNotActive;

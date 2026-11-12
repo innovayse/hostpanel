@@ -2772,6 +2772,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("BundleId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
@@ -2821,6 +2824,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BundleId");
 
                     b.HasIndex("ClientId");
 
@@ -3199,6 +3204,87 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
                         });
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.ProductBundle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("DiscountCurrency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("DomainYears")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IncludesDomain")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive", "SortOrder");
+
+                    b.ToTable("ProductBundles", t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductBundles_Discount", "(\"DiscountType\" = 'None' AND \"DiscountAmount\" = 0 AND \"DiscountCurrency\" IS NULL) OR (\"DiscountType\" = 'Percentage' AND \"DiscountAmount\" BETWEEN 0 AND 100 AND \"DiscountCurrency\" IS NULL) OR (\"DiscountType\" = 'Fixed' AND \"DiscountAmount\" >= 0 AND \"DiscountCurrency\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_ProductBundles_DomainTerm", "(\"IncludesDomain\" AND \"DomainYears\" BETWEEN 1 AND 10) OR (NOT \"IncludesDomain\" AND \"DomainYears\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.ProductBundleItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BundleId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("BundleId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ProductBundleItems");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.ProductFeature", b =>
@@ -5454,6 +5540,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Orders.Order", b =>
                 {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Products.ProductBundle", null)
+                        .WithMany()
+                        .HasForeignKey("BundleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
                         .WithMany()
                         .HasForeignKey("ClientId")
@@ -5495,6 +5586,21 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasOne("Innovayse.Hostpanel.Domain.Products.ProductGroup", null)
                         .WithMany("Products")
                         .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.ProductBundleItem", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Products.ProductBundle", null)
+                        .WithMany("Items")
+                        .HasForeignKey("BundleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Products.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -5858,6 +5964,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.Product", b =>
                 {
                     b.Navigation("Prices");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.ProductBundle", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Products.ProductGroup", b =>

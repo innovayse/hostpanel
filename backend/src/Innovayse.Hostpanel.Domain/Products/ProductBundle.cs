@@ -32,6 +32,12 @@ public sealed class ProductBundle : BaseEntity, IAggregateRoot
     /// <summary>The largest percentage discount.</summary>
     public const decimal MaxDiscountPercentage = 100m;
 
+    /// <summary>The largest fixed discount; the amount column holds 14 whole digits and 4 decimals.</summary>
+    public const decimal MaxFixedDiscount = 1_000_000_000m;
+
+    /// <summary>The decimals a discount amount keeps; the amount column stores no more.</summary>
+    private const int DiscountScale = 4;
+
     /// <summary>Internal mutable components list.</summary>
     private readonly List<ProductBundleItem> _items = [];
 
@@ -82,6 +88,14 @@ public sealed class ProductBundle : BaseEntity, IAggregateRoot
             : domainYears is null;
     }
 
+    /// <summary>Whether an amount fits the stored decimals without being rounded.</summary>
+    /// <param name="amount">The discount amount.</param>
+    /// <returns><see langword="true"/> when the amount has no more decimals than the column keeps.</returns>
+    private static bool HasStorableScale(decimal amount)
+    {
+        return decimal.Round(amount, DiscountScale) == amount;
+    }
+
     /// <summary>Whether a discount is coherent.</summary>
     /// <param name="type">The discount type.</param>
     /// <param name="amount">The discount amount.</param>
@@ -95,8 +109,8 @@ public sealed class ProductBundle : BaseEntity, IAggregateRoot
         return type switch
         {
             BundleDiscountType.None => amount == 0m && currency is null,
-            BundleDiscountType.Percentage => amount is >= 0m and <= MaxDiscountPercentage && currency is null,
-            BundleDiscountType.Fixed => amount >= 0m && CurrencyCode.IsValid(currency?.Trim()),
+            BundleDiscountType.Percentage => amount is >= 0m and <= MaxDiscountPercentage && HasStorableScale(amount) && currency is null,
+            BundleDiscountType.Fixed => amount is >= 0m and <= MaxFixedDiscount && HasStorableScale(amount) && CurrencyCode.IsValid(currency?.Trim()),
             _ => false,
         };
     }

@@ -1,6 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
@@ -43,6 +47,27 @@ public sealed class ListCatalogProductBundlesTests(IntegrationTestFactory factor
             b.TryGetProperty("isActive", out _).Should().BeFalse();
             b.TryGetProperty("sortOrder", out _).Should().BeFalse();
         });
+    }
+
+    /// <summary>A bundle with a product that is no longer on sale is not listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListCatalog_HidesABundleWithAProductNotOnSale()
+    {
+        var admin = await ProductsTestSeeds.AdminClientAsync(factory);
+        var product = await ProductsTestSeeds.CreateProductAsync(admin);
+        var id = await ProductsTestSeeds.CreateBundleAsync(admin, ProductsTestSeeds.BundleBody(product));
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Products
+                .Where(p => p.Id == product)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.Status, ProductStatus.Inactive));
+        }
+
+        var list = await factory.CreateClient().GetFromJsonAsync<JsonElement[]>("/api/public/product-bundles");
+
+        list!.Should().NotContain(b => b.GetProperty("id").GetInt32() == id);
     }
 
     /// <summary>A row carries the offer: the domain, the discount and the components with their names.</summary>

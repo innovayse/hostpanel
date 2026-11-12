@@ -60,6 +60,25 @@ public sealed class UpdateProductBundleTests(IntegrationTestFactory factory) : I
         bundle.GetProperty("isActive").GetBoolean().Should().BeFalse();
     }
 
+    /// <summary>A body that leaves <c>isActive</c> out keeps an inactive bundle off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Update_WithoutIsActive_KeepsAnInactiveBundleOff()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var product = await ProductsTestSeeds.CreateProductAsync(client);
+        var id = await ProductsTestSeeds.CreateBundleAsync(client, ProductsTestSeeds.BundleBody(product));
+        var off = ProductsTestSeeds.BundleBody(product);
+        off["isActive"] = false;
+        (await client.PutAsJsonAsync($"/api/products/bundles/{id}", off)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await client.PutAsJsonAsync($"/api/products/bundles/{id}", ProductsTestSeeds.BundleBody(product));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var bundle = await client.GetFromJsonAsync<JsonElement>($"/api/products/bundles/{id}");
+        bundle.GetProperty("isActive").GetBoolean().Should().BeFalse();
+    }
+
     /// <summary>Updating an unknown bundle answers 404 with <c>PRODUCT_BUNDLE_NOT_FOUND</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

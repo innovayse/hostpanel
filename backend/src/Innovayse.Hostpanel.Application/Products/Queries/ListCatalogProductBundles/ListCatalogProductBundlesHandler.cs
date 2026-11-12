@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Extensions;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,7 +30,7 @@ public sealed class ListCatalogProductBundlesHandler
     /// </summary>
     /// <param name="qry">The query; it carries no input.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The active bundles by sort position, then name. Never refuses.</returns>
+    /// <returns>The active bundles whose products are all on sale, by sort position, then name. Never refuses.</returns>
     public async Task<Result<IReadOnlyList<CatalogProductBundleDto>>> HandleAsync(
         ListCatalogProductBundlesQuery qry, CancellationToken ct)
     {
@@ -39,6 +40,8 @@ public sealed class ListCatalogProductBundlesHandler
             .AsNoTracking()
             .Include(b => b.Items)
             .Where(b => b.IsActive)
+            // A bundle offering a product that is no longer on sale is not offered at all.
+            .Where(b => b.Items.All(i => _context.Products.Any(p => p.Id == i.ProductId && p.Status == ProductStatus.Active)))
             .OrderBy(b => b.SortOrder)
             .ThenBy(b => b.Name)
             .ToListAsync(ct);

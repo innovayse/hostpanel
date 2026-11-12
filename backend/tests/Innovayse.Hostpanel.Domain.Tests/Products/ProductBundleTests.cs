@@ -146,6 +146,8 @@ public sealed class ProductBundleTests
     [InlineData(BundleDiscountType.Fixed, 0, "USD", true)]
     [InlineData(BundleDiscountType.Fixed, 250, "USD", true)]
     [InlineData(BundleDiscountType.Fixed, -1, "USD", false)]
+    [InlineData(BundleDiscountType.Fixed, 1000000001, "USD", false)]
+    [InlineData(BundleDiscountType.Fixed, 5.00001, "USD", false)]
     [InlineData(BundleDiscountType.Fixed, 5, null, false)]
     [InlineData(BundleDiscountType.Fixed, 5, "US", false)]
     public void Create_ChecksTheDiscount(BundleDiscountType type, double amount, string? currency, bool valid)

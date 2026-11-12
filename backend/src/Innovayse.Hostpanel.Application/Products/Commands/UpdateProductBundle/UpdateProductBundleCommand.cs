@@ -18,7 +18,7 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProductBundle;
 /// <param name="DiscountAmount">A percentage from 0 to 100, a fixed amount, or zero for no discount.</param>
 /// <param name="DiscountCurrency">The ISO 4217 code of a fixed discount; null for any other type.</param>
 /// <param name="Items">The new components: at least one product (never a domain product), none twice, exactly one primary.</param>
-/// <param name="IsActive">Whether the bundle is visible in the storefront; a body that leaves it out keeps the bundle active.</param>
+/// <param name="IsActive">Whether the bundle is visible in the storefront; a body that leaves it out keeps the bundle as it is.</param>
 public sealed record UpdateProductBundleCommand(
     int Id,
     string Name,
@@ -30,4 +30,4 @@ public sealed record UpdateProductBundleCommand(
     decimal DiscountAmount,
     string? DiscountCurrency,
     IReadOnlyList<ProductBundleItemInput> Items,
-    bool IsActive = true);
+    bool? IsActive = null);

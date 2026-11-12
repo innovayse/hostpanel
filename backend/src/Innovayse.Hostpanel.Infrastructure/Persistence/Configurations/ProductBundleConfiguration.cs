@@ -27,7 +27,8 @@ public sealed class ProductBundleConfiguration : IEntityTypeConfiguration<Produc
         // The storefront lists the active bundles in the operator's order.
         builder.HasIndex(x => new { x.IsActive, x.SortOrder });
 
-        // Backstops for the rules the aggregate enforces, so a row written around it is refused too.
+        // Backstops for the discount and domain rules of the aggregate, so a row written around it is refused too.
+        // "At least one item" and "exactly one primary" are the aggregate's alone: they span two tables.
         // The enum is stored as text, so the rule names its members.
         builder.ToTable(table =>
         {

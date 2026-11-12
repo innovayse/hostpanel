@@ -57,11 +57,11 @@ public sealed class UpdateProductBundleHandler
             cmd.DiscountAmount,
             cmd.DiscountCurrency,
             cmd.Items.ToItems());
-        if (cmd.IsActive)
+        if (cmd.IsActive is true)
         {
             bundle.Activate();
         }
-        else
+        else if (cmd.IsActive is false)
         {
             bundle.Deactivate();
         }

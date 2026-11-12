@@ -7,7 +7,8 @@
  * @module tests/pages/client/apps/[plugin]/[...page].test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { vi } from 'vitest'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { StubReply, StubRequest, StubServer } from '~/tests/helpers/stubServer'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'

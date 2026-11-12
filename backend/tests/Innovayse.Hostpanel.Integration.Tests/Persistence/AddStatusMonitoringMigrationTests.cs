@@ -14,10 +14,10 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class AddStatusMonitoringMigrationTests
 {
     /// <summary>The migration before the one under test.</summary>
-    private const string PreviousMigration = "20261111203915_AddProductBundles";
+    private const string PreviousMigration = "20261112104836_AddTaxRulesAndClientTaxFields";
 
     /// <summary>The migration under test.</summary>
-    private const string MigrationUnderTest = "20261112130825_AddStatusMonitoring";
+    private const string MigrationUnderTest = "20261112150830_AddStatusMonitoring";
 
     /// <summary>Each component that was not operational gets its state as the override, and operational ones get none.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>

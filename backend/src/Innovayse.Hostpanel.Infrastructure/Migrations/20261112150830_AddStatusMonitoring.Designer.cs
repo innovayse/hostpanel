@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Hostpanel.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261112130825_AddStatusMonitoring")]
+    [Migration("20261112150830_AddStatusMonitoring")]
     partial class AddStatusMonitoring
     {
         /// <inheritdoc />
@@ -961,6 +961,47 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("QuoteItems");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.TaxRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("RatePercent")
+                        .HasColumnType("numeric(6,3)");
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Country", "Region")
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("Country", "Region"), false);
+
+                    b.ToTable("TaxRules", t =>
+                        {
+                            t.HasCheckConstraint("CK_TaxRules_RatePercent", "\"RatePercent\" >= 0 AND \"RatePercent\" <= 100");
+                        });
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.Transaction", b =>
                 {
                     b.Property<int>("Id")
@@ -1359,6 +1400,14 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<bool>("TaxExempt")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("TaxExemptionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("UserId")
                         .IsRequired()

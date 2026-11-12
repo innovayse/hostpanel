@@ -6,6 +6,6 @@
 export enum CheckoutDestinationKind {
   /** A page of this site; the page navigates to it with the router. */
   Route = 'route',
-  /** An address outside this site (a bank's payment page); the page hands the browser to it. */
-  External = 'external'
+  /** The gateway's hosted step (a bank's payment page); the page hands the browser to it as the backend described. */
+  Gateway = 'gateway'
 }

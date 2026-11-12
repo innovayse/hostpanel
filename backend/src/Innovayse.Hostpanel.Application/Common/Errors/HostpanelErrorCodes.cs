@@ -860,6 +860,9 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest changelog is longer than the SDK allows (400).</summary>
     public const string PLUGIN_MANIFEST_CHANGELOG_TOO_LONG = "PLUGIN_MANIFEST_CHANGELOG_TOO_LONG";
 
+    /// <summary>The manifest serverAccountIdLabel is empty, too long or holds a control character (400).</summary>
+    public const string PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID = "PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 

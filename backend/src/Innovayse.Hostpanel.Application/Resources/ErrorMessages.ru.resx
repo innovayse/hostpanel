@@ -612,6 +612,9 @@
 <data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
     <value>Список изменений в манифесте слишком длинный: не более 4000 символов.</value>
   </data>
+<data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
+    <value>Подпись поля идентификатора аккаунта сервера в манифесте должна содержать от 1 до 60 символов без управляющих символов.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
   </data>

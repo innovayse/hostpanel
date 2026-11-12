@@ -90,6 +90,8 @@ export type PluginErrorCode = (typeof PluginErrorCode)[keyof typeof PluginErrorC
 export const PluginCapability = {
   /** A payment plugin that can charge a saved card or account. */
   StoredCredentials: 'storedCredentials',
+  /** A payment plugin that completes a payment from the request the payer returns with (a browser step). */
+  PaymentReturn: 'paymentReturn',
   /** A plugin of any type that also answers routes and adds pages, menus and slots. */
   Endpoints: 'endpoints',
 } as const

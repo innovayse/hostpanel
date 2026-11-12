@@ -889,7 +889,7 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   const gatewayStartMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/start$/)
   if (method === 'POST' && gatewayStartMatch) {
     if (gatewayStartMatch[1] === String(INVOICE.id)) {
-      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL, kind: 'Redirect', formPost: null })
     } else {
       sendProblem(res, 404, 'NOT_FOUND', 'Invoice not found.')
     }
@@ -909,7 +909,7 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   const orderGatewayMatch = path.match(/^\/api\/orders\/(\d+)\/gateway-payment\/(start|complete)$/)
   if (method === 'POST' && orderGatewayMatch) {
     if (orderGatewayMatch[2] === 'start') {
-      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL, kind: 'Redirect', formPost: null })
     } else if (orderGatewayMatch[1] === String(ORDER.orderId)) {
       send(res, 200, { state: 'Paid', orderNumber: `ORD-${ORDER.orderId}` })
     } else if (orderGatewayMatch[1] === String(ORDER_DECLINED_ID)) {

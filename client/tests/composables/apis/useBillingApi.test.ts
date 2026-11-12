@@ -45,8 +45,9 @@ const rows: ExpectedRequest[] = [
   { name: 'applyInvoiceCredit posts the amount to the invoice credit route', call: () => api.applyInvoiceCredit(7, 12.5), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/credit', body: { amount: 12.5 } },
   { name: 'fetchCreditNotes reads the credit notes route', call: () => api.fetchCreditNotes(), method: HttpMethod.Get, url: '/api/portal/client/credit-notes' },
   { name: 'fetchCreditNotePdf reads the credit note PDF', call: () => api.fetchCreditNotePdf(7), method: HttpMethod.Get, url: '/api/portal/client/credit-notes/7/pdf' },
-  { name: 'completeGatewayPayment for an order sends the token', call: () => api.completeGatewayPayment(PaymentTarget.Order, 42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/complete', body: { paymentToken: 'tok' } },
-  { name: 'completeGatewayPayment for an invoice sends an empty body', call: () => api.completeGatewayPayment(PaymentTarget.Invoice, 7), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/complete', body: {} },
+  { name: 'completeGatewayPayment for an order sends the token', call: () => api.completeGatewayPayment(PaymentTarget.Order, 42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/complete', body: { paymentToken: 'tok', returnParameters: [] } },
+  { name: 'completeGatewayPayment for an invoice sends only the return parameters', call: () => api.completeGatewayPayment(PaymentTarget.Invoice, 7), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/complete', body: { returnParameters: [] } },
+  { name: 'completeGatewayPayment sends the return parameters of the gateway', call: () => api.completeGatewayPayment(PaymentTarget.Invoice, 7, undefined, [{ name: 'nonce', value: 'n1' }]), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/complete', body: { returnParameters: [{ name: 'nonce', value: 'n1' }] } },
 ]
 
 describe('useBillingApi', () => {

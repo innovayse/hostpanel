@@ -96,6 +96,31 @@ public sealed class PluginCapabilityActivationTests(IntegrationTestFactory facto
             .Outcome.Should().Be(PluginActivationOutcome.Disabled);
     }
 
+    /// <summary>A payment plugin declaring paymentReturn that implements <see cref="IPaymentReturnPlugin"/> activates; one that does not is refused.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task PaymentReturn_IsActivatedWhenImplemented_AndRefusedWhenNot()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var honest = PluginActivationTestSeeds.NewId("ret");
+        var liar = PluginActivationTestSeeds.NewId("ret-liar");
+        await PluginActivationTestSeeds.EnableAsync(db, honest, liar);
+        var activator = PluginActivationTestSeeds.Activator(factory, db);
+
+        var implemented = await activator.ActivateAsync<IPaymentPlugin>(
+            PluginCapabilitySeeds.Plugin(honest, PluginType.Payment, typeof(ReturnCapablePaymentPlugin), PluginCapabilities.PaymentReturn),
+            CancellationToken.None);
+        var missing = await activator.ActivateAsync<IPaymentPlugin>(
+            PluginCapabilitySeeds.Plugin(liar, PluginType.Payment, typeof(ConfigurationCapturingPaymentPlugin), PluginCapabilities.PaymentReturn),
+            CancellationToken.None);
+
+        implemented.Outcome.Should().Be(PluginActivationOutcome.Activated);
+        implemented.Instance.Should().BeOfType<ReturnCapablePaymentPlugin>().Which.Should().BeAssignableTo<IPaymentReturnPlugin>();
+        missing.Outcome.Should().Be(PluginActivationOutcome.CapabilityNotImplemented);
+        missing.Instance.Should().BeNull();
+    }
+
     /// <summary>A declared capability the class does not implement refuses the plugin for every contract, fulfilment included.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

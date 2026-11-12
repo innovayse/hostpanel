@@ -369,13 +369,13 @@ public sealed class OrdersController : BaseApiController
     /// marks the invoice paid and fulfills the order.
     /// </summary>
     /// <param name="id">Order primary key; wins over any order id in the body.</param>
-    /// <param name="command">The order's payment token.</param>
+    /// <param name="command">The order's payment token and the request the payer came back from the gateway with.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the payment state (Paid, Pending or Declined) and the order's number; 400 with <c>VALIDATION_ERROR</c> or
     /// <c>ORDER_NOT_INVOICED</c>; 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an
     /// order, <c>INVOICE_NOT_FOUND</c> or <c>GATEWAY_SESSION_NOT_FOUND</c>; 503 with
-    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the payment module is not set up;
+    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the payment module is not set up, or <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/gateway-payment/complete")]

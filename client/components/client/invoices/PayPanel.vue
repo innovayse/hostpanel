@@ -53,7 +53,7 @@
  */
 import { storeToRefs } from 'pinia'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
-import { redirectToExternal } from '~/utils/externalRedirect'
+import { redirectToGateway } from '~/utils/externalRedirect'
 import { UiButtonVariant } from '~/utils/ui/enums'
 
 /** Props of PayPanel. */
@@ -89,7 +89,7 @@ const bankTransferVariant = computed<UiButtonVariant>(() =>
   hostedGatewayModule.value ? UiButtonVariant.Secondary : UiButtonVariant.Primary)
 
 /**
- * Starts a hosted-gateway payment and redirects the browser to the bank.
+ * Starts a hosted-gateway payment and hands the browser to the bank: a redirect, an auto submitted form or a browser step.
  *
  * @returns Resolves when the attempt has ended; a refusal is rendered from `payError`.
  */
@@ -98,10 +98,10 @@ const payWithHostedGateway = async (): Promise<void> => {
     return
   }
   const returnUrl = new URL(localePath(`/payment/result?invoice=${props.invoiceId}`), window.location.origin).toString()
-  const redirectUrl = await paymentStore.startGatewayPayment(props.invoiceId, hostedGatewayModule.value, returnUrl)
-  if (redirectUrl) {
-    // The store already refused an unsafe address; this is the last guard before the browser leaves.
-    redirectToExternal(redirectUrl)
+  const start = await paymentStore.startGatewayPayment(props.invoiceId, hostedGatewayModule.value, returnUrl)
+  if (start) {
+    // The store already refused an unsafe answer; this is the last guard before the browser leaves.
+    redirectToGateway(start)
   }
 }
 

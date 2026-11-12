@@ -243,11 +243,12 @@ public sealed class MyBillingController : BaseApiController
     }
 
     /// <summary>Verifies a hosted-gateway payment for the authenticated client's invoice.</summary>
-    /// <param name="id">Invoice primary key.</param>
+    /// <param name="id">Invoice primary key; wins over any invoice id in the body.</param>
+    /// <param name="command">The request the payer came back from the gateway with; absent parameters are a plain status check.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 OK with the payment state; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's,
-    /// or <c>GATEWAY_SESSION_NOT_FOUND</c>; 503 with <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>;
+    /// 200 OK with the payment state; 400 with <c>VALIDATION_ERROR</c>; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's,
+    /// or <c>GATEWAY_SESSION_NOT_FOUND</c>; 503 with <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> or <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -255,14 +256,16 @@ public sealed class MyBillingController : BaseApiController
     [Authorize(Policy = Policies.Client)]
     [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
     [ProducesResponseType(typeof(GatewayCompletionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> CompleteGatewayPaymentAsync(int id, CancellationToken ct)
+    public async Task<IActionResult> CompleteGatewayPaymentAsync(
+        int id, [FromBody] CompleteMyGatewayPaymentCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<GatewayCompletionDto>>(
-            new CompleteMyGatewayPaymentCommand(id), ct);
+            command with { InvoiceId = id }, ct);
         return HandleResult(outcome);
     }
 }

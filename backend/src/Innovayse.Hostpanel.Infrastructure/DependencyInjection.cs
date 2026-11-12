@@ -493,6 +493,7 @@ public static class DependencyInjection
         // different host. AddHttpClient() above only registers the factory; the empty name is
         // what configures the default client itself.
         services.AddHttpClient(string.Empty)
+            .AddNoRedirects()
             .AddNoRetryResilience(o => o.Default);
 
         services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();

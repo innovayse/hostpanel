@@ -122,7 +122,7 @@ describe('payment result page', () => {
 
     const wrapper = await mountResult(ResultTitle.Success, { order: '5' })
 
-    expect(bodyOf(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))[0])).toEqual({ paymentToken: ORDER.token })
+    expect(bodyOf(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))[0])).toEqual({ paymentToken: ORDER.token, returnParameters: [] })
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=INV-77')
     expect(useOrderPaymentToken().recall(ORDER.id)).toBeUndefined()
   })
@@ -132,8 +132,22 @@ describe('payment result page', () => {
 
     const wrapper = await mountResult(ResultTitle.Success, { invoice: '9' })
 
-    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({})
+    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({ returnParameters: [] })
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/invoices/9')
+  })
+
+  it('hands what the gateway returned the payer with to the backend, without the page own parameters', async () => {
+    table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Paid } }
+
+    await mountResult(ResultTitle.Success, { invoice: '9', nonce: 'n1', payer: ['p1', 'p2'] })
+
+    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({
+      returnParameters: [
+        { name: 'nonce', value: 'n1' },
+        { name: 'payer', value: 'p1' },
+        { name: 'payer', value: 'p2' }
+      ]
+    })
   })
 
   it('keeps the token and lets the payer check again while the bank has not settled', async () => {

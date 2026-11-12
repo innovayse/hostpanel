@@ -37,6 +37,15 @@ describe('POST /api/portal/order/:id/gateway-payment/complete', () => {
     expect(backend.requests[0]?.url).toBe('/api/orders/42/gateway-payment/complete')
   })
 
+  it('forwards the payment token and the return parameters of the gateway to the backend', async () => {
+    backend.respondWith(() => ({ body: { state: GatewayPaymentState.Pending } }))
+    const body = { paymentToken: 'tok', returnParameters: [{ name: 'nonce', value: 'n1' }] }
+
+    await route.default(makeEvent({ params: { id: '42' }, body }))
+
+    expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual(body)
+  })
+
   it('refuses a request with no order id before reaching the backend', async () => {
     const error = await refusal(() => route.default(makeEvent()))
 

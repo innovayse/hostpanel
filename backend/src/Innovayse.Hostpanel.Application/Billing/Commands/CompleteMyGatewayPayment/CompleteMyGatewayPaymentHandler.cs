@@ -53,6 +53,6 @@ public sealed class CompleteMyGatewayPaymentHandler
 
         // The staff use case already answers with a code; its refusal passes through unchanged.
         return await _bus.InvokeAsync<Result<GatewayCompletionDto>>(
-            new CompleteGatewayPaymentCommand(cmd.InvoiceId), ct);
+            new CompleteGatewayPaymentCommand(cmd.InvoiceId, cmd.ReturnParameters), ct);
     }
 }

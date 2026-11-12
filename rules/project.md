@@ -244,7 +244,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.5.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.7.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -272,7 +272,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   is enabled from the admin Integrations page, where it is listed (with its type) when its manifest sets
   `showInIntegrations`.
 - **Capabilities (#818).** A manifest may list `capabilities`, names from the SDK's `PluginCapabilities`:
-  `storedCredentials` (a payment plugin only, the class also implements `IStoredCredentialPlugin`) and `endpoints`
+  `storedCredentials` (a payment plugin only, the class also implements `IStoredCredentialPlugin`), `paymentReturn` (a payment plugin only, the class also implements `IPaymentReturnPlugin`) and `endpoints`
   (any type, the class also implements `IPluginEndpoints`). A **serving plugin** is an app plugin or a plugin of any
   other type that declares `endpoints`; `PluginManifestCapabilityExtensions.ServesEndpoints()`
   (`Infrastructure/Plugins/Extensions`) is the one place that decides it, and the loader (which also registers such a
@@ -318,6 +318,27 @@ docker/                              compose set (shared·dev·prod·platform), 
   conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
   method, or a reference over `CardChargeConsent.MaxMethodRefLength` (200) is logged and binds nothing. A save that lost to a
   concurrent completion drops the binding with the rest, because the winner bound it in its own save.
+- **Session kinds, the browser step and the plugin HTTP clients (#1174, #1159, SDK 3.7.0).** A payment session is a redirect,
+  a form post or a browser step. `StartGatewayPaymentHandler` is the one place that judges it: `PaymentSessionExtensions`
+  (`Application/Billing/Extensions`) refuses a form that breaks `PaymentFormPost`'s rules or `PaymentFormPostLimits` (absolute
+  `https` action without user info or control characters, field count, name and value lengths) and a browser step from a plugin
+  that is not an `IPaymentReturnPlugin`, answers `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, stores no session and cancels the order
+  the gateway just registered (`GatewayPaymentCanceller`); an accepted one is mapped by the same class to `RedirectDto`
+  (`RedirectUrl`, `Kind`, `FormPost`), which the three start routes answer with. The portal never renders plugin markup: it builds
+  the form from the fields as element properties and submits it (`utils/externalRedirect`, `redirectToGateway`), a redirect and a
+  browser step open the address. The payer returns to `/payment/result`, which posts the other query pairs as
+  `returnParameters` to the three complete routes (`CompleteMyGatewayPayment`, `CompleteOrderGatewayPayment`, then
+  `CompleteGatewayPayment`); `null` (the reconciliation job) is not a return and only reads the status. For a return the handler
+  calls `IPaymentReturnPlugin.CompleteAsync` first, with `PaymentReturnParameterExtensions.ToPluginParameters` (ordinal names,
+  first value wins, a set over `PaymentReturnLimits` is dropped whole), and then `GetStatusAsync`, whose answer alone decides;
+  an invoice already settled is never completed again, and a plugin that throws leaves the status unread (503
+  `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, the reconciliation job settles it later). `paymentReturn` is a payment-only capability
+  checked against `IPaymentReturnPlugin` by the activator. A callback may answer an HTML page (`PluginReply.Raw` with
+  `text/html`): `PluginCallRunner` hands `RawReplyResult` the exact `https` origins of the manifest's `externalOrigins`
+  (`PluginPageOrigins`), which writes `default-src 'none'` with only those origins for script, style, font, connect, frame and
+  form-action, `base-uri 'none'`, `frame-ancestors 'none'` and a sandbox without the application's origin, plus `no-store` and no
+  referrer. The client named after a plugin id and the factory's unnamed client do not follow redirects
+  (`AddNoRedirects`). The SDK's `Redirect` reply kind (`PluginReply.Redirect`) is not served yet: it is answered `PLUGIN_FAILED`.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
@@ -450,7 +471,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   every `hostAccess` entry is a kind of `PluginHostAccess.All` (today `ssh`, exact case), none twice, and only in a
   version 2 manifest (`PLUGIN_HOST_ACCESS_UNKNOWN`);
   every `capabilities` entry is one the host defines and the plugin type may carry (`PLUGIN_CAPABILITY_NOT_ALLOWED`:
-  an unknown or wrong-case name, a name declared twice, or `storedCredentials` on anything but a payment plugin); a plugin that is not a
+  an unknown or wrong-case name, a name declared twice, or `storedCredentials` or `paymentReturn` on anything but a payment plugin); a plugin that is not a
   serving plugin declares no `api` route and no `ui` menu, page or slot (`PLUGIN_ENDPOINTS_NOT_DECLARED`, because the
   host would accept them and never serve them);
   a client route, page or slot `permission` is `PluginPermissions.Any` or a defined `ClientPermission` name,

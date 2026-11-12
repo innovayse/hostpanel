@@ -36,6 +36,14 @@ describe('POST /api/portal/client/invoices/:id/gateway-payment/complete', () => 
     expect(backend.requests[0]?.headers['authorization']).toBe('Bearer jwt')
   })
 
+  it('forwards the return parameters of the gateway to the backend', async () => {
+    const body = { returnParameters: [{ name: 'nonce', value: 'n1' }] }
+
+    await route.default(makeEvent({ params: { id: '7' }, body, cookies: await signedIn('jwt') }))
+
+    expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual(body)
+  })
+
   it('forwards the reader language to the backend', async () => {
     const event = makeEvent({ params: { id: '7' }, headers: { 'x-language': 'hy' }, cookies: await signedIn('jwt') })
 

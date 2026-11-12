@@ -17,6 +17,7 @@ using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
+using Innovayse.Hostpanel.Infrastructure.Security.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -289,6 +290,7 @@ public static class PluginLoader
         // handler, so each loaded plugin gets the generic plugin profile under its id: the host
         // names no vendor, and the contract with the plugin is only "your id is your client name".
         services.AddHttpClient(manifest.Id, client => client.Timeout = HttpBackstopTimeouts.Plugin)
+            .AddNoRedirects()
             .AddPluginResilience();
 
         switch (manifest.Type)

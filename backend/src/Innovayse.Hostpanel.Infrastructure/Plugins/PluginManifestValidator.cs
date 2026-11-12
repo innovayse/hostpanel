@@ -32,6 +32,7 @@ internal static class PluginManifestValidator
         new Dictionary<string, PluginType?>(StringComparer.Ordinal)
         {
             [PluginCapabilities.StoredCredentials] = PluginType.Payment,
+            [PluginCapabilities.PaymentReturn] = PluginType.Payment,
             [PluginCapabilities.Endpoints] = null,
         };
 

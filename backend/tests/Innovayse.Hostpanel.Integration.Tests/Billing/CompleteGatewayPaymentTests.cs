@@ -77,7 +77,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// <param name="invoiceId">The invoice to complete.</param>
     /// <returns>The HTTP response.</returns>
     private static Task<HttpResponseMessage> CompleteAsync(HttpClient client, int invoiceId) =>
-        client.PostAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", content: null);
+        client.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", new { });
 
     /// <summary>A gateway that reports Paid marks the invoice paid with the gateway's own transaction id.</summary>
     /// <returns>A task that completes when the test has run.</returns>

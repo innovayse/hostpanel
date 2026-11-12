@@ -320,10 +320,11 @@ public abstract class BaseApiController : ControllerBase
             return HandleStream(Result<StreamedReply>.Success(stream));
         }
 
-        // A raw reply is written as the sender chose: its bytes, media type and status, with no serialisation.
+        // A raw reply is written as the sender chose: its bytes, media type and status, with no serialisation. An HTML page also
+        // carries the origins it may reach, which the use case worked out from the plugin's manifest.
         if (reply.RawBody is { } raw && reply.ContentType is { } contentType)
         {
-            return new RawReplyResult(reply.Status, raw, contentType);
+            return new RawReplyResult(reply.Status, raw, contentType, reply.PageOrigins);
         }
 
         // A JsonResult, not an ObjectResult: content negotiation would write a plugin's bare string as text/plain, and a

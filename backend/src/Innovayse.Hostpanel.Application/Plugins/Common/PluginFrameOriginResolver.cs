@@ -118,19 +118,10 @@ public sealed class PluginFrameOriginResolver
             .ToList();
     }
 
-    /// <summary>The panel's own origin in the list's canonical form.</summary>
-    /// <returns>The origin, or null for an address that is not absolute, which then matches nothing.</returns>
-    private string? OwnOrigin()
-    {
-        return Uri.TryCreate(_portal.Value.BaseUrl, UriKind.Absolute, out var address)
-            ? address.GetLeftPart(UriPartial.Authority).ToLowerInvariant()
-            : null;
-    }
-
     /// <summary>Removes repeats and cuts the list at the header bound.</summary>
     /// <param name="origins">The origins in priority order.</param>
     /// <returns>The kept origins.</returns>
-    private static List<string> Bound(IEnumerable<string> origins)
+    public static List<string> Bound(IEnumerable<string> origins)
     {
         var kept = new List<string>();
         var length = 0;
@@ -147,5 +138,14 @@ public sealed class PluginFrameOriginResolver
         }
 
         return kept;
+    }
+
+    /// <summary>The panel's own origin in the list's canonical form.</summary>
+    /// <returns>The origin, or null for an address that is not absolute, which then matches nothing.</returns>
+    private string? OwnOrigin()
+    {
+        return Uri.TryCreate(_portal.Value.BaseUrl, UriKind.Absolute, out var address)
+            ? address.GetLeftPart(UriPartial.Authority).ToLowerInvariant()
+            : null;
     }
 }

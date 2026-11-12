@@ -87,7 +87,7 @@ public sealed class BeginSaveStoredMethodHandler
     /// <c>CLIENT_SUSPENDED</c> / <c>CLIENT_CLOSED</c> / <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the account may not
     /// save a method; <c>RETURN_URL_NOT_ALLOWED</c> when the address's origin is not allowed;
     /// <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> when the module is off or offers no stored credentials; or
-    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin could not be reached (no consent is recorded then).
+    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin could not be reached (no consent and no customer are recorded then).
     /// </returns>
     public async Task<Result<SaveMethodSessionDto>> HandleAsync(BeginSaveStoredMethodCommand cmd, CancellationToken ct)
     {
@@ -124,19 +124,20 @@ public sealed class BeginSaveStoredMethodHandler
 
         try
         {
-            var customerRef = await _customers.EnsureAsync(plugin, clientId.Value, cmd.GatewayModuleId, ct);
-            if (customerRef is null)
+            var customer = await _customers.EnsureAsync(plugin, clientId.Value, cmd.GatewayModuleId, ct);
+            if (customer is null)
             {
                 return Result<SaveMethodSessionDto>.FailureCode(HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND);
             }
 
-            var session = await plugin.BeginSaveMethodAsync(new SaveMethodContext(customerRef, cmd.ReturnUrl), ct);
+            var session = await plugin.BeginSaveMethodAsync(new SaveMethodContext(customer.CustomerRef, cmd.ReturnUrl), ct);
 
-            // Recorded before the payer is handed to the gateway step, so nothing can be stored without consent.
+            // Recorded before the payer is handed to the gateway step, so nothing can be stored without consent. The customer
+            // row the session needs is saved with it, so a session that could not be opened leaves no customer behind.
             _context.CardChargeConsents.Add(
                 CardChargeConsent.Grant(
                     clientId.Value, cmd.GatewayModuleId, session.SessionId, _clock.UtcNow, cmd.ConsentTextVersion, cmd.IpAddress, cmd.UserAgent));
-            await _context.SaveChangesAsync(ct);
+            await _customers.SaveAsync(customer, ct);
 
             return Result.Success(new SaveMethodSessionDto(session.SessionId, session.Mode, session.ClientToken, session.RedirectUrl));
         }

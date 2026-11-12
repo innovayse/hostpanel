@@ -26,7 +26,7 @@ public sealed class CompleteSaveStoredMethodTests(IntegrationTestFactory factory
     {
         var begun = await caller.PostAsJsonAsync(
             "/api/me/stored-payment-methods/sessions",
-            new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl, consentTextVersion = "2026-11" });
+            new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl, consentTextVersion = ConsentTextVersionWire.AccountCard });
         begun.StatusCode.Should().Be(HttpStatusCode.OK);
         return (await begun.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("sessionId").GetString()!;
     }
@@ -153,7 +153,7 @@ public sealed class CompleteSaveStoredMethodTests(IntegrationTestFactory factory
             true, new SavedMethod(new string('m', CardChargeConsent.MaxMethodRefLength + 1), "visa", "4242", 12, 2031, false));
         var begun = await signedIn.Client.PostAsJsonAsync(
             "/api/me/stored-payment-methods/sessions",
-            new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl, consentTextVersion = "2026-11" });
+            new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl, consentTextVersion = ConsentTextVersionWire.AccountCard });
         begun.StatusCode.Should().Be(HttpStatusCode.OK);
         var sessionId = (await begun.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("sessionId").GetString()!;
 
@@ -203,6 +203,6 @@ public sealed class CompleteSaveStoredMethodTests(IntegrationTestFactory factory
         var current = await scenario.ConsentAsync(consentId);
         current.IsActive.Should().BeTrue();
         current.IsDefault.Should().BeTrue("the default moved from the consent that was replaced");
-        current.ConsentTextVersion.Should().Be("2026-11");
+        current.ConsentTextVersion.Should().Be(ConsentTextVersionWire.AccountCard);
     }
 }

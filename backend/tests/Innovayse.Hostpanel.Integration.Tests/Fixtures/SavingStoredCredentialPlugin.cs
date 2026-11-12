@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 /// <summary>
 /// A payment plugin that also offers stored credentials and honours <see cref="PaymentInstruction.SavePaymentMethod"/>: it
-/// records every instruction and customer request it receives, reads every registered payment as paid for the amount it
+/// records every instruction and customer request it receives, reads every registered payment as <see cref="StateOnStatus"/> (paid unless a test says otherwise) for the amount it
 /// was registered with, and reports <see cref="MethodOnStatus"/> as the method the gateway stored. A fake port standing in
 /// for a hosted gateway, which a test must never actually call.
 /// </summary>
@@ -31,6 +31,12 @@ public sealed class SavingStoredCredentialPlugin : IPaymentPlugin, IStoredCreden
     /// <summary>What completing a save session answers; completing one without setting it is a test mistake.</summary>
     public SavedMethodResult? SaveSessionResult { get; set; }
 
+    /// <summary>Gets or sets the state <see cref="GetStatusAsync"/> reports for every registered payment; paid unless a test says otherwise.</summary>
+    public GatewayPaymentState StateOnStatus { get; set; } = GatewayPaymentState.Paid;
+
+    /// <summary>Gets or sets an exception <see cref="CreatePaymentAsync"/> throws instead of answering, as a gateway outage would, when set.</summary>
+    public Exception? CreatePaymentThrows { get; set; }
+
     /// <summary>Gets or sets an exception <see cref="EnsureCustomerAsync"/> throws instead of answering, as a gateway outage would, when set.</summary>
     public Exception? EnsureCustomerThrows { get; set; }
 
@@ -41,6 +47,11 @@ public sealed class SavingStoredCredentialPlugin : IPaymentPlugin, IStoredCreden
     public Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)
     {
         Instructions.Add(instruction);
+        if (CreatePaymentThrows is not null)
+        {
+            return Task.FromException<PaymentSession>(CreatePaymentThrows);
+        }
+
         var orderId = string.Create(CultureInfo.InvariantCulture, $"saving-{Guid.NewGuid():N}-{++_orders}");
         _amounts[orderId] = instruction.AmountMinor;
         return Task.FromResult(new PaymentSession(orderId, $"{instruction.ReturnUrl}?order={orderId}"));
@@ -49,7 +60,7 @@ public sealed class SavingStoredCredentialPlugin : IPaymentPlugin, IStoredCreden
     /// <inheritdoc/>
     public Task<GatewayPaymentStatus> GetStatusAsync(string gatewayOrderId, CancellationToken ct) =>
         Task.FromResult(new GatewayPaymentStatus(
-            GatewayPaymentState.Paid, $"tx-{gatewayOrderId}", "paid", _amounts[gatewayOrderId], SavedMethod: MethodOnStatus));
+            StateOnStatus, $"tx-{gatewayOrderId}", "paid", _amounts[gatewayOrderId], SavedMethod: MethodOnStatus));
 
     /// <inheritdoc/>
     public Task<string> RefundAsync(string gatewayOrderId, long amountMinor, CancellationToken ct) =>

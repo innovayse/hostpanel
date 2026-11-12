@@ -59,6 +59,7 @@ public static class DependencyInjection
         // shared by the save session and by the payment that saves its method.
         services.AddScoped<GatewayCustomerEnsurer>();
         services.AddScoped<StoredMethodBinder>();
+        services.AddScoped<UnboundConsentRevoker>();
 
         // The connection state of plugin integrations (IPluginStatus), cached and worded for the Integrations page.
         services.AddScoped<PluginConnectionReader>();

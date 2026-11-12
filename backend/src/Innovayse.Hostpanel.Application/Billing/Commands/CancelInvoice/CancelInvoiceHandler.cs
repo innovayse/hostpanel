@@ -31,20 +31,26 @@ public sealed class CancelInvoiceHandler
     /// <summary>The clock the moment of the cancellation is read from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Ends the consent recorded for the session of the invoice being cancelled.</summary>
+    private readonly UnboundConsentRevoker _consents;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="activity">Records the activity log line for this action, saved with the change it describes.</param>
     /// <param name="clientCredit">Returns the invoice's credit to the client's balance in the same save.</param>
     /// <param name="canceller">Voids the gateway order of the invoice's unpaid hosted session.</param>
     /// <param name="clock">The clock the moment of the cancellation is read from.</param>
+    /// <param name="consents">Ends the consent recorded for the session of the invoice being cancelled.</param>
     public CancelInvoiceHandler(
-        IHostpanelDbContext context, IActivityLogger activity, IClientCredit clientCredit, GatewayPaymentCanceller canceller, IClock clock)
+        IHostpanelDbContext context, IActivityLogger activity, IClientCredit clientCredit,
+        GatewayPaymentCanceller canceller, IClock clock, UnboundConsentRevoker consents)
     {
         _context = context;
         _activity = activity;
         _clientCredit = clientCredit;
         _canceller = canceller;
         _clock = clock;
+        _consents = consents;
     }
 
     /// <summary>Handles the command.</summary>
@@ -90,6 +96,7 @@ public sealed class CancelInvoiceHandler
         }
 
         invoice.Cancel(_clock.UtcNow);
+        await _consents.RevokeOfAsync(invoice, ct);
         await _activity.RecordAsync(
             new ActivityLogEntry(invoice.ClientId, $"Cancelled Invoice - Invoice ID: {invoice.Id}"), ct);
         await _context.SaveChangesAsync(ct);

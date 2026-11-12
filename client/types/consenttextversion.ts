@@ -6,11 +6,12 @@
 
 /**
  * Which wording the payer ticked. The server keeps the value as evidence of what was shown, so it
- * is sent with every save session (the API binds it as `consentTextVersion`, at most 50 characters,
- * and refuses a session without it).
+ * is sent with every save session and with every payment that keeps the method (the API binds it as
+ * `consentTextVersion`). The server accepts only the values of this enum (`ConsentTextVersion` in the
+ * backend carries the same wire values) and refuses anything else with a validation error.
  *
- * A change to either wording needs a NEW value here: never edit the text under an existing value,
- * or old consents would point at words the payer never saw.
+ * A change to either wording needs a NEW value here and a new member in the backend enum: never edit the
+ * text under an existing value, or old consents would point at words the payer never saw.
  */
 export enum ConsentTextVersion {
   /** The consent line on the account's saved-methods card (`client.storedMethods.consent*`). */

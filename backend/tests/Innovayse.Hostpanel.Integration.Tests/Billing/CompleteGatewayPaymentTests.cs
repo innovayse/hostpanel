@@ -258,7 +258,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             readerContext, resolver, bus, NullLogger<CompleteGatewayPaymentHandler>.Instance,
             readerScope.ServiceProvider.GetRequiredService<IClock>(),
             readerScope.ServiceProvider.GetRequiredService<IClientCredit>(),
-            readerScope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
+            readerScope.ServiceProvider.GetRequiredService<StoredMethodBinder>(),
+            readerScope.ServiceProvider.GetRequiredService<UnboundConsentRevoker>());
 
         // Loads the same row the handler is about to load, then wins the race by saving first.
         using (var winnerScope = factory.Services.CreateScope())
@@ -296,7 +297,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             readerContext, resolver, bus, NullLogger<CompleteGatewayPaymentHandler>.Instance,
             readerScope.ServiceProvider.GetRequiredService<IClock>(),
             readerScope.ServiceProvider.GetRequiredService<IClientCredit>(),
-            readerScope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
+            readerScope.ServiceProvider.GetRequiredService<StoredMethodBinder>(),
+            readerScope.ServiceProvider.GetRequiredService<UnboundConsentRevoker>());
 
         // The handler's own context has to be holding the row *before* the competing write, or it
         // saves against the current version and there is no conflict to test. Loading it here is
@@ -396,7 +398,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             NullLogger<CompleteGatewayPaymentHandler>.Instance,
             scope.ServiceProvider.GetRequiredService<IClock>(),
             scope.ServiceProvider.GetRequiredService<IClientCredit>(),
-            scope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
+            scope.ServiceProvider.GetRequiredService<StoredMethodBinder>(),
+            scope.ServiceProvider.GetRequiredService<UnboundConsentRevoker>());
 
         var result = await handler.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
 
@@ -1287,7 +1290,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             NullLogger<CompleteGatewayPaymentHandler>.Instance,
             scope.ServiceProvider.GetRequiredService<IClock>(),
             scope.ServiceProvider.GetRequiredService<IClientCredit>(),
-            scope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
+            scope.ServiceProvider.GetRequiredService<StoredMethodBinder>(),
+            scope.ServiceProvider.GetRequiredService<UnboundConsentRevoker>());
 
     /// <summary>
     /// Seeds a client and an invoice with a live gateway session directly against the database,

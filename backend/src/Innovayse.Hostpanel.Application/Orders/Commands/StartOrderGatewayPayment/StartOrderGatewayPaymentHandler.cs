@@ -43,7 +43,15 @@ public sealed class StartOrderGatewayPaymentHandler
     /// refuses with (<c>INVOICE_NOT_FOUND</c>, <c>INVOICE_NOT_PAYABLE</c>,
     /// <c>RETURN_URL_NOT_ALLOWED</c>, <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>,
     /// <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>CURRENCY_NOT_FOUND</c> or
-    /// <c>GATEWAY_CURRENCY_MISMATCH</c>).
+    /// <c>GATEWAY_CURRENCY_MISMATCH</c>). A payment that keeps the method (<c>SavePaymentMethod</c>) is also refused with
+    /// <c>UNAUTHORIZED</c> when the request carries no caller (a guest), <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> when the module
+    /// cannot keep a method, <c>CLIENT_PROFILE_NOT_FOUND</c> or <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the caller acts for no
+    /// account, <c>INVOICE_NOT_FOUND</c> when the caller is not the invoice's client, <c>CLIENT_PERMISSION_DENIED</c> when a
+    /// linked user lacks <c>ViewPayInvoices</c>, <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the account may not pay by card, or
+    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the gateway could not create the customer. A payment of either kind is
+    /// also refused with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the account may not pay, and with
+    /// <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c> while a stored charge claim of the invoice
+    /// stands.
     /// </returns>
     public async Task<Result<RedirectDto>> HandleAsync(StartOrderGatewayPaymentCommand cmd, CancellationToken ct)
     {

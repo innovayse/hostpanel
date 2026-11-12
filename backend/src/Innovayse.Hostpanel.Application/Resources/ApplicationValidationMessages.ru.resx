@@ -587,7 +587,7 @@
     <value>Выберите платёжный шлюз.</value>
   </data>
   <data name="ConsentTextVersionInvalid" xml:space="preserve">
-    <value>Версия текста согласия обязательна, не более {0} символов.</value>
+    <value>Версия текста согласия обязательна и должна быть одной из опубликованных.</value>
   </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>Необходим адрес возврата.</value>

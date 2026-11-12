@@ -39,8 +39,11 @@ public sealed class StartMyGatewayPaymentHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The absolute URL to redirect the payer to, or <c>INVOICE_NOT_FOUND</c> (404) when the
-    /// invoice is not the caller's, when no such invoice exists, or when the caller has no client
-    /// record.
+    /// invoice is not the caller's or does not exist, <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account,
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin cannot say which account that is, or whatever
+    /// <see cref="StartGatewayPaymentCommand"/> refuses with, among them <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the
+    /// gateway fails to register the payment or to create the customer of a method to keep, and <c>CLIENT_PERMISSION_DENIED</c>
+    /// when a linked user without <c>ViewPayInvoices</c> asks to keep the method.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
     public async Task<Result<RedirectDto>> HandleAsync(StartMyGatewayPaymentCommand cmd, CancellationToken ct)

@@ -13,9 +13,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A failed domain registration alerts the configured platform admin exactly once.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -31,7 +28,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = SeededAt });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = TestMoments.Seeded });
 
         var toAdmin = Assert.Single(emailSender.Sent, m => m.To == NotificationsTestSeeds.AdminEmail);
         Assert.NotNull(toAdmin);
@@ -55,7 +52,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = SeededAt });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = TestMoments.Seeded });
 
         var only = Assert.Single(emailSender.Sent);
         Assert.Equal(email, only.To);
@@ -77,7 +74,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = SeededAt });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = TestMoments.Seeded });
 
         Assert.Single(emailSender.Sent, m => m.To == contactEmail);
     }

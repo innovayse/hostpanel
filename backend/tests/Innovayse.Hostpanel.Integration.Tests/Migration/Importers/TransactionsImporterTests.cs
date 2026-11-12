@@ -19,9 +19,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A transaction for a known client is imported.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -69,7 +66,8 @@ public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : 
         var clientId = await context.Clients.AsNoTracking()
             .Where(c => c.UserId == userId).Select(c => c.Id).SingleAsync();
         var sourceInvoiceId = Guid.NewGuid().ToString("N");
-        var invoice = Invoice.Create(clientId, SeededAt.AddDays(7), "USD", SeededAt);
+        // The due date is not part of what is checked: the test only looks at the link between the transaction and the invoice.
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Hosting", 10m, 1);
         invoice.SetExternalId(sourceInvoiceId);
         context.Invoices.Add(invoice);

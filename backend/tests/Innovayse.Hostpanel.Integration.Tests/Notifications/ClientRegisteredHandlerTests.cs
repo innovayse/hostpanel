@@ -12,9 +12,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ClientRegisteredHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A newly registered client is sent the welcome email exactly once.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -26,7 +23,7 @@ public sealed class ClientRegisteredHandlerTests(IntegrationTestFactory factory)
 
         var email = $"welcome-{Guid.NewGuid():N}@example.test";
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ClientCreatedEvent(1, $"subject-{Guid.NewGuid():N}", email, SeededAt));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientCreatedEvent(1, $"subject-{Guid.NewGuid():N}", email, TestMoments.Seeded));
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);

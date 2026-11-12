@@ -19,9 +19,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A reply for an existing open ticket is appended.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -36,7 +33,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         var client = await context.Clients.FirstAsync(c => c.UserId == userId);
         var subject = $"ticket-{Guid.NewGuid():N}";
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, SeededAt);
+        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.TicketReplies);
@@ -68,7 +65,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         var client = await context.Clients.FirstAsync(c => c.UserId == userId);
         var subject = $"ticket-{Guid.NewGuid():N}";
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, SeededAt);
+        var ticket = Ticket.Create(client.Id, subject, "Initial message", departmentId, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
         return new SeededTicket(email, subject, ticket.Id);
@@ -226,7 +223,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
         await PullAsync(scope);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var tracked = await context.Tickets.SingleAsync(t => t.Id == ticket.TicketId);
-        tracked.Close(SeededAt);
+        tracked.Close(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var second = await PullAsync(scope);

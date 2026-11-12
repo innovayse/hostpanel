@@ -18,9 +18,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RecoverInterruptedMigrationJobsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>
     /// With the clock fixed, stale queued, running and heartbeat-less jobs fail as interrupted, fresh
     /// ones are kept, and a pending job stays pending.
@@ -29,7 +26,7 @@ public sealed class RecoverInterruptedMigrationJobsTests(IntegrationTestFactory 
     [Fact]
     public async Task StaleJobs_AreFailed_FreshJobsAreKeptAsync()
     {
-        using var host = new ClockedHost(factory, SeededAt);
+        using var host = new ClockedHost(factory, TestMoments.Seeded);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var stale = scope.ServiceProvider.GetRequiredService<IOptions<ScheduledJobsOptions>>().Value.MigrationStaleAfter;

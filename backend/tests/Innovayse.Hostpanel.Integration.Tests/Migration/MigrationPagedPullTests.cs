@@ -14,9 +14,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class MigrationPagedPullTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>How many records the source holds: more than one page of the pager's 50.</summary>
     private const int RecordCount = 60;
 
@@ -66,7 +63,9 @@ public sealed class MigrationPagedPullTests(IntegrationTestFactory factory) : IC
         await worker.RunAsync(job.Id, CancellationToken.None);
 
         var failed = await context.MigrationJobs.SingleAsync(j => j.Id == job.Id);
-        failed.Queue(SeededAt);
+        // The heartbeat is on the real clock: the recovery job runs on the shared host every few minutes and fails a
+        // queued job whose heartbeat is stale, which a fixed moment in the past would be.
+        failed.Queue(DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
         await worker.RunAsync(job.Id, CancellationToken.None);
 

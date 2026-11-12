@@ -19,9 +19,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>The staff address configured on the test host.</summary>
     private const string AdminEmail = "ops@example.test";
 
@@ -37,7 +34,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
 
         await PublishAndWaitAsync(host, new GatewayPaymentWithoutReferenceEvent(717171, 7, "bank-gateway", 12.5m, "USD")
         {
-            OccurredAt = SeededAt,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -57,7 +54,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
 
         await PublishAndWaitAsync(host, new GatewayPaymentWithoutReferenceEvent(727272, 7, "bank-gateway", null, "USD")
         {
-            OccurredAt = SeededAt,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -75,7 +72,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
 
         await PublishAndWaitAsync(
             host,
-            new GatewayPaymentWithoutReferenceEvent(1, 1, "bank-gateway", 1m, "USD") { OccurredAt = SeededAt });
+            new GatewayPaymentWithoutReferenceEvent(1, 1, "bank-gateway", 1m, "USD") { OccurredAt = TestMoments.Seeded });
 
         sender.Sent.Should().BeEmpty();
     }

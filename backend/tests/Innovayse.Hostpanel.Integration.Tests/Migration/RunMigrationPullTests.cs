@@ -16,9 +16,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RunMigrationPullTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>
     /// A record whose save fails is discarded and counted as failed; the records after it still
     /// import, the job completes at 100 percent, and no log row carries a field of a record.
@@ -67,7 +64,7 @@ public sealed class RunMigrationPullTests(IntegrationTestFactory factory) : ICla
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Announcements);
-        job.Fail(MigrationJobFailure.Interrupted, SeededAt);
+        job.Fail(MigrationJobFailure.Interrupted, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(new RunMigrationPullCommand(job.Id));

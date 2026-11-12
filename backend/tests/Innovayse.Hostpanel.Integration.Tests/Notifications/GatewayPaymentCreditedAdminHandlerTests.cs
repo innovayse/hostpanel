@@ -20,9 +20,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>The staff address configured on the test host.</summary>
     private const string AdminEmail = "ops@example.test";
 
@@ -38,7 +35,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         await PublishAndWaitAsync(host, new GatewayPaymentCreditedEvent(616161, 7, "bank-gateway", "ref-credited-1", 4.5m, "USD", Credited: true)
         {
-            OccurredAt = SeededAt,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -59,7 +56,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         await PublishAndWaitAsync(host, new GatewayPaymentCreditedEvent(626262, 7, "bank-gateway", "ref-held-1", 10m, "EUR", Credited: false)
         {
-            OccurredAt = SeededAt,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -77,7 +74,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         await PublishAndWaitAsync(
             host,
-            new GatewayPaymentCreditedEvent(1, 1, "bank-gateway", "ref-none", 1m, "USD", Credited: true) { OccurredAt = SeededAt });
+            new GatewayPaymentCreditedEvent(1, 1, "bank-gateway", "ref-none", 1m, "USD", Credited: true) { OccurredAt = TestMoments.Seeded });
 
         sender.Sent.Should().BeEmpty();
     }

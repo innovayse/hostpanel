@@ -14,9 +14,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RetryMigrationJobTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A failed job is queued again and its failure cleared.</summary>
     /// <returns>A task.</returns>
     [Fact]
@@ -28,8 +25,8 @@ public sealed class RetryMigrationJobTests(IntegrationTestFactory factory) : ICl
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var job = await context.MigrationJobs.FirstAsync(j => j.Id == id);
-            job.Queue(SeededAt);
-            job.Fail(MigrationJobFailure.Interrupted, SeededAt);
+            job.Queue(TestMoments.Seeded);
+            job.Fail(MigrationJobFailure.Interrupted, TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

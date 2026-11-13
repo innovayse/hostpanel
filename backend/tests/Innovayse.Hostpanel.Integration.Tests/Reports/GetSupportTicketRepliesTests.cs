@@ -15,10 +15,10 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetSupportTicketRepliesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>A staff reply posted today is counted in the Support Ticket Replies report.</summary>
+    /// <summary>A staff reply posted in the requested month is counted in the Support Ticket Replies report.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task CountsAStaffReplyToday()
+    public async Task CountsAStaffReplyInTheRequestedMonth()
     {
         var marker = $"Reply{Guid.NewGuid():N}";
         var clientId = await ReportsTestSeeds.CreateClientAsync(factory, marker);
@@ -27,14 +27,16 @@ public sealed class GetSupportTicketRepliesTests(IntegrationTestFactory factory)
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             // A real department: a ticket's department is a foreign key.
             var departmentId = await SupportTestSeeds.SeedDepartmentAsync(db);
-            var ticket = Ticket.Create(clientId, "Help", "I need help", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
-            ticket.AddReply("On it", marker, isStaffReply: true, DateTimeOffset.UtcNow);
+            var ticket = Ticket.Create(clientId, "Help", "I need help", departmentId, TicketPriority.Medium, TestMoments.Seeded);
+            ticket.AddReply("On it", marker, isStaffReply: true, TestMoments.Seeded);
+            // The stored time of a ticket and its replies is set at save; put them in the requested month.
+            ticket.Backdate(TestMoments.Seeded, TimeSpan.FromMinutes(1));
             db.Tickets.Add(ticket);
             await db.SaveChangesAsync();
         }
 
         var client = await ReportsTestSeeds.AdminClientAsync(factory);
-        var response = await client.GetAsync("/api/reports/support-ticket-replies");
+        var response = await client.GetAsync("/api/reports/support-ticket-replies?year=2026&month=3");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();

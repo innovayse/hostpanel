@@ -19,8 +19,8 @@ public sealed class GetRevenueReportTests(IntegrationTestFactory factory) : ICla
     public async Task AdminCanReadTheReportAsync()
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("O"));
-        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("O"));
+        var from = Uri.EscapeDataString(TestMoments.Seeded.AddDays(-30).ToString("O"));
+        var to = Uri.EscapeDataString(TestMoments.Seeded.ToString("O"));
 
         var response = await client.GetAsync($"/api/admin/reports/revenue?startDate={from}&endDate={to}");
 
@@ -57,8 +57,8 @@ public sealed class GetRevenueReportTests(IntegrationTestFactory factory) : ICla
     public async Task StartAfterEnd_AnswersAnEmptyReportAsync()
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var from = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("O"));
-        var to = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-30).ToString("O"));
+        var from = Uri.EscapeDataString(TestMoments.Seeded.ToString("O"));
+        var to = Uri.EscapeDataString(TestMoments.Seeded.AddDays(-30).ToString("O"));
 
         var response = await client.GetAsync($"/api/admin/reports/revenue?startDate={from}&endDate={to}");
 

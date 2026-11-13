@@ -37,15 +37,17 @@ public sealed class GetMonthlyOrdersTests(IntegrationTestFactory factory) : ICla
             await db.SaveChangesAsync();
             productId = product.Id;
 
-            var order = Order.Create($"ORD{Guid.NewGuid():N}"[..20], clientId, "manual", null, "USD", DateTimeOffset.UtcNow);
+            var order = Order.Create($"ORD{Guid.NewGuid():N}"[..20], clientId, "manual", null, "USD", TestMoments.Seeded);
             order.AddItem(productId, product.Name, BillingCycle.Monthly, 10m, 10m, null, null);
-            order.Accept(DateTimeOffset.UtcNow);
+            order.Accept(TestMoments.Seeded);
+            // The stored time of an order is set at save; put it in the requested month.
+            order.Backdate(TestMoments.Seeded);
             db.Orders.Add(order);
             await db.SaveChangesAsync();
         }
 
         var client = await ReportsTestSeeds.AdminClientAsync(factory);
-        var response = await client.GetAsync("/api/reports/monthly-orders");
+        var response = await client.GetAsync("/api/reports/monthly-orders?year=2026&month=3");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();

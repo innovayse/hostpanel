@@ -809,7 +809,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     (`GET /api/admin/plugins/registry?q=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
     (`GET .../registry/updates`) and `InstallRegistryPluginCommand` (`POST .../registry/{id}/install`, body `{version}`,
     demo restricted). One type each for a plugin (`RegistryPluginDto`) and a page (`RegistryPluginPageDto`): the client fills
-    the registry's members, `PluginUpdateOffer` (shared by the browser and the update check) sets `installed`,
+    the registry's members, `PluginUpdateOffer` (shared by the browser and the update check, reading through `RegistryPluginReader`) sets `installed`,
     `installedVersion` and `updateAvailable`. The offer is `PluginUpdateRule.NewestOffer`: the newest published version
     that is newer than the installed one and than any staged upload and whose host range admits the running host
     (`PluginHostCompatibility`). `latestVersion` of a row with an update is that version, which is the one an update
@@ -819,12 +819,13 @@ docker/                              compose set (shared·dev·prod·platform), 
     page and version list with the stored licence key, and for a host only plugin the signed list after the installation is
     verified (`RegistryInstanceEnrollment.EnsureVerifiedAsync`). The scoped reader reads each licence key and page once,
     verifies once, and answers every call after the first outage of the registry (switched off, unreachable, too slow or an
-    answer that cannot be read) with that outage. The details page uses the same rule. Reading a host only plugin can register
+    answer that cannot be read; the last is treated as an outage because a registry that answers with unreadable data cannot be relied on for the rest of the request) with that outage. The details page uses the same rule. Reading a host only plugin can register
     and verify this installation, so the browser and the update check can have that one write effect.
   - **What is sent to the registry.** Only `GET {BaseUrl}plugins?q&category&page&pageSize`, `POST {BaseUrl}plugins/latest` with
     the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}` and
-    `GET {BaseUrl}plugins/{id}/versions` for an installed plugin that has a newer version (the browser, the update check and
-    the details page), `GET {BaseUrl}plugins/{id}/versions/{version}` and the package address that reply names. A plugin
+    `GET {BaseUrl}plugins/{id}/versions` (the details page for any plugin it shows; the browser and the update check only for
+    an installed plugin that has a newer version, and the update check also reads the page of a plugin with a stored key),
+    `GET {BaseUrl}plugins/{id}/versions/{version}` and the package address that reply names. A plugin
     with a stored licence key sends it as `X-Licence-Key` on its page and version list. For a host only plugin the
     version list is signed with this installation's registry identity (and carries no licence key), after the installation
     registered and verified itself with `POST {BaseUrl}instances` and `.../verify`. No cookie, no token, no host name, no

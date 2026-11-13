@@ -12,7 +12,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// </summary>
 /// <remarks>
 /// The reader is scoped, so it serves one request: it reads each licence key and each page once, verifies the installation
-/// once, and answers every call after the first outage of the registry with that outage instead of asking again. Reading a
+/// once (whatever the answer was), and answers every call after the first outage of the registry with that outage instead
+/// of asking again. A version list is read once per plugin by each caller, so it is not cached. Reading a
 /// host only plugin can register and verify this installation with the registry, so a read can have that one write effect.
 /// </remarks>
 public sealed class RegistryPluginReader

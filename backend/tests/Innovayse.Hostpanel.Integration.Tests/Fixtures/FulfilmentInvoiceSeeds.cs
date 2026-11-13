@@ -55,7 +55,7 @@ internal static class FulfilmentInvoiceSeeds
     internal static async Task<Invoice> SeedAsync(AppDbContext db, DateTimeOffset now)
     {
         var client = Client.Create(
-            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
 

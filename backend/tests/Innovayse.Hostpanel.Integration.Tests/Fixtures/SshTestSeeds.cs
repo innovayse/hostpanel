@@ -45,7 +45,7 @@ public static class SshTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(new ServerDetails(
             $"ssh-srv-{Guid.NewGuid():N}", hostname, null, null, module, "root", new ServerCredentials(null, null, "hash"), true, null,
-            false, false, 0m, null, null, ServerNameServers.None), DateTimeOffset.UtcNow);
+            false, false, 0m, null, null, ServerNameServers.None), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -70,7 +70,7 @@ public static class SshTestSeeds
         var group = ProductGroup.Create($"ssh-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 

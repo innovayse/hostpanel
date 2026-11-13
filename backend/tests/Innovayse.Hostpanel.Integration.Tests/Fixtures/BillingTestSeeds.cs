@@ -69,7 +69,7 @@ public static class BillingTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         var client = Client.Create(
-            $"user-{Guid.NewGuid():N}", firstName, lastName, $"{firstName.ToLowerInvariant()}-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"user-{Guid.NewGuid():N}", firstName, lastName, $"{firstName.ToLowerInvariant()}-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         if (currency is not null)
         {
             client.SetCurrency(currency);

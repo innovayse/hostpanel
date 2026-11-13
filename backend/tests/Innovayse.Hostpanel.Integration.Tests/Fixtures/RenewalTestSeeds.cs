@@ -55,7 +55,7 @@ internal static class RenewalTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
 
-        var domain = RegisteredDomain.Register(clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, expiresAt, autoRenew, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        var domain = RegisteredDomain.Register(clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiresAt, autoRenew, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain;

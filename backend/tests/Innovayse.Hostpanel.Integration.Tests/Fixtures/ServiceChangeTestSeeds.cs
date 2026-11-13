@@ -241,7 +241,7 @@ public static class ServiceChangeTestSeeds
     /// <returns>The new client's id.</returns>
     private static async Task<int> SeedClientAsync(IHostpanelDbContext context)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
         return client.Id;

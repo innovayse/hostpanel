@@ -173,7 +173,7 @@ internal static class DomainsTestSeeds
     public static async Task<int> SeedClientAsync(IHostpanelDbContext context)
     {
         var client = Client.Create(
-            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
         return client.Id;
@@ -186,7 +186,7 @@ internal static class DomainsTestSeeds
     {
         var clientId = await SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1),
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
             autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -277,7 +277,7 @@ internal static class DomainsTestSeeds
         await context.SaveChangesAsync(CancellationToken.None);
 
         var product = Product.Create(
-            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
         return product.Id;

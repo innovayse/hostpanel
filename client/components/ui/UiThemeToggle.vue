@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 /**
- * ThemeToggle (`UiThemeToggle`) - sun/moon switch between light and dark mode.
+ * ThemeToggle (`UiThemeToggle`): sun/moon switch between light and dark mode.
  *
  * Hidden entirely when `portal.theme.user_toggle` is `false`: an operator who has designed a
  * light-only or dark-only storefront does not want a visitor flipping it into the palette they

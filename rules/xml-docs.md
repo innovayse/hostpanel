@@ -2,7 +2,7 @@
 
 ## Rule
 
-**ALL members — public, protected, internal, private — MUST have XML documentation comments.**
+**ALL members (public, protected, internal, private) MUST have XML documentation comments.**
 
 No exceptions by access modifier. Every field, property, method, constructor, class, interface, enum, and enum value gets a doc comment.
 
@@ -81,8 +81,8 @@ public interface IRegistrarProvider
 
 ## What NOT to document
 
-- Test methods — skip XML docs in test projects
-- Auto-generated / migration files — skip
+- Test methods: skip XML docs in test projects
+- Auto-generated / migration files: skip
 
 ## Enforcement
 

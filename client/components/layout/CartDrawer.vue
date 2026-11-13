@@ -115,7 +115,7 @@
 
 <script setup lang="ts">
 /**
- * CartDrawer - the slide-in cart: the items in the payer's currency, a notice for items left in
+ * CartDrawer. The slide-in cart: the items in the payer's currency, a notice for items left in
  * another currency, the total, and the way on to checkout.
  *
  * The panel, backdrop, close button and Escape handling are the kit's `UiDrawer`; this component
@@ -150,7 +150,7 @@ const router = useRouter()
 const route = useRoute()
 
 /**
- * Returns the display price for a cart item, in the currency it was actually added in - never
+ * Returns the display price for a cart item, in the currency it was actually added in, never
  * converted, never re-labelled by the page language. See `stores/cart.ts`'s module note.
  *
  * @param item - Cart item.
@@ -159,10 +159,10 @@ const route = useRoute()
 const itemPrice = (item: typeof cart.items[number]): string =>
   formatMoney(item.amount, currencyStore.moneyCurrencyFor(item.currency))
 
-/** Items priced in a currency other than the payer's current one - excluded from the total. */
+/** Items priced in a currency other than the payer's current one, excluded from the total. */
 const staleItems = computed(() => cart.staleItems(currencyStore.payerCode))
 
-/** Items priced in the payer's current currency - the ones listed and totalled. */
+/** Items priced in the payer's current currency, the ones listed and totalled. */
 const visibleItems = computed(() => cart.itemsInCurrency(currencyStore.payerCode))
 
 /** The formatted total of the listed items, empty while the cart has none. */

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
  * Client domains list: shows all domain registrations belonging to the current client.
- * Navigates to the domain detail page when a row is clicked.
+ * Navigates to the domain detail page when a row is clicked. The page lives in the address (`useFilterQuery`),
+ * so a reload or a shared link opens the same page.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDomainsStore } from '@/stores/domains'
@@ -15,7 +16,6 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -28,6 +28,7 @@ import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
@@ -50,11 +51,14 @@ const domains = ref<DomainRegistration[]>([])
 /** True while a request is in flight (owned by the store). */
 const loading = computed(() => store.loading)
 
+/** True while the first load is in flight and there are no rows yet; the table then draws its placeholder rows. */
+const initialLoading = computed(() => loading.value && domains.value.length === 0)
+
 /** Error message, null when no error (owned by the store). */
 const error = computed(() => store.error)
 
-/** Current page (1-based). */
-const page = ref(1)
+/** The page of the list, kept in the address. */
+const { page, setPage } = useFilterQuery([])
 
 /** Items per page. */
 const pageSize = ref(DEFAULT_PAGE_SIZE)
@@ -76,17 +80,6 @@ const fetchDomains = async (): Promise<void> => {
 }
 
 /**
- * Navigate to a specific page and re-fetch.
- *
- * @param p - Target page number.
- * @returns Nothing.
- */
-const goToPage = (p: number): void => {
-  page.value = p
-  fetchDomains()
-}
-
-/**
  * Navigates to the domain detail page for the given domain.
  *
  * @param domainId - The ID of the domain to view.
@@ -96,26 +89,28 @@ const viewDomain = (domainId: number): void => {
   router.push(clientItemPath(clientId.value, ClientSection.Domains, domainId))
 }
 
+// A page chosen, or the back button, loads the page the address names.
+watch(page, fetchDomains)
+
 onMounted(() => fetchDomains())
 </script>
 
 <template>
   <UiStack>
-    <UiStack v-if="loading && domains.length === 0" data-testid="client-domains-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientDomainsList.loadingDomains') }}</UiText>
-    </UiStack>
-
     <UiErrorState
-      v-else-if="error"
+      v-if="error"
       :message="error"
       :loading="loading"
       testid="client-domains-error"
       @retry="fetchDomains()"
     />
 
-    <UiCard v-else-if="domains.length > 0" class="overflow-x-auto">
-      <UiTable :density="UiTableDensity.Comfortable" data-testid="client-domains-table">
+    <UiCard v-else-if="initialLoading || domains.length > 0">
+      <UiTable
+        :density="UiTableDensity.Comfortable"
+        :loading="initialLoading"
+        data-testid="client-domains-table"
+      >
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
@@ -150,23 +145,26 @@ onMounted(() => fetchDomains())
           </UiTableRow>
         </UiTableBody>
       </UiTable>
-      <UiStack
-        v-if="totalCount > pageSize"
-        direction="row"
-        :justify="UiJustify.Between"
-        :align="UiAlignItems.Center"
-      >
-        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-          {{ t('shared.totalcountDomainValue', { totalCount }) }}
-        </UiText>
-        <UiPagination
-          :page="page"
-          :total="totalCount"
-          :page-size="pageSize"
-          testid="client-domains-pagination"
-          @update:page="goToPage"
-        />
-      </UiStack>
+      <template v-if="initialLoading || totalCount > pageSize" #footer>
+        <UiStack
+          direction="row"
+          wrap
+          :justify="UiJustify.Between"
+          :align="UiAlignItems.Center"
+        >
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+            {{ t('shared.totalcountDomainValue', { totalCount }) }}
+          </UiText>
+          <UiPagination
+            :page="page"
+            :total="totalCount"
+            :page-size="pageSize"
+            :loading="initialLoading"
+            testid="client-domains-pagination"
+            @update:page="setPage"
+          />
+        </UiStack>
+      </template>
     </UiCard>
 
     <UiCard v-else>

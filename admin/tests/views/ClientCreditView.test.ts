@@ -146,4 +146,12 @@ describe('ClientCreditView', () => {
     expect(wrapper.get('[data-testid="client-credit-error"]').text()).toContain('The client was not found.')
     expect(wrapper.find('[data-testid="client-credit-balance"]').exists()).toBe(false)
   })
+
+  it('keeps the tiles and the cards in place with placeholders while the first load is pending', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountCredit()
+
+    expect(wrapper.get('[data-testid="client-credit-loading"]').findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(2)
+    expect(wrapper.get('[data-testid="client-credit-loading"]').findAll('[data-testid="ui-card-skeleton"]')).toHaveLength(2)
+  })
 })

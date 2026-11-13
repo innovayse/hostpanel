@@ -5,17 +5,18 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ReportActions from '@/components/reports/ReportActions.vue'
 import ReportChartCard from '@/components/reports/ReportChartCard.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
+import ReportStatRow from '@/components/reports/ReportStatRow.vue'
 import ReportTable from '@/components/reports/ReportTable.vue'
-import UiButton from '@/components/ui/UiButton.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
 import { downloadCsv } from '@/lib/reportsCsv'
 import { formatCurrencyCode } from '@/lib/money'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
+import type { ReportStat } from '@/types/reportstat'
 import type { ReportTopClient } from '@/types/reporttopclient'
 import { UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
@@ -41,6 +42,13 @@ const currency = computed<string>(() => rows.value[0]?.currency ?? '')
  * @returns The amount with its currency symbol.
  */
 const formatMoney = (amount: number): string => formatCurrencyCode(amount, currency.value)
+
+/** Headline figures: the leader's income, the total of the ranked clients and how many were ranked. */
+const stats = computed<ReportStat[]>(() => [
+  { key: 'leader', label: t('reports.topClients.leader'), value: rows.value[0]?.clientName ?? '—', hint: rows.value[0] ? formatMoney(rows.value[0].balance) : undefined },
+  { key: 'total', label: t('reports.topClients.totalIncome'), value: formatMoney(rows.value.reduce((sum, row) => sum + row.balance, 0)) },
+  { key: 'clients', label: t('reports.topClients.rankedClients'), value: rows.value.length },
+])
 
 /** Table columns. */
 const columns = computed<ReportColumn[]>(() => [
@@ -72,13 +80,11 @@ const exportCsv = (): void => {
 
 <template>
   <ReportPage :retry="load" :title="t('reports.topClients.top10ClientsByIncome')" :description="t('reports.topClients.thisReportShowsThe10')">
-    <template #filters>
-      <UiStack direction="row" justify="end" class="mb-6">
-        <UiButton variant="secondary" data-testid="report-export" @click="exportCsv">
-          {{ t('shared.exportCsv') }}
-        </UiButton>
-      </UiStack>
+    <template #actions>
+      <ReportActions exportable @export="exportCsv" />
     </template>
+
+    <ReportStatRow :stats="stats" />
 
     <ReportChartCard :type="UiChartType.Pie" :labels="labels" :series="series" :value-formatter="formatMoney" height="lg" />
     <ReportTable :columns="columns" :rows="rows" row-key="clientId" :format-money="formatMoney" :empty-text="t('reports.topClients.noData')" />

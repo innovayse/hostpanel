@@ -1,10 +1,10 @@
 /**
  * Mount tests of DomainRegistrationsView (domain registrations): it renders what the API sent, shows the empty state where it
- * has one, and shows the API's sentence when the load is refused.
+ * has one, keeps the page in the address, and shows the API's sentence when the load is refused.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import DomainRegistrationsView from '@/views/DomainRegistrationsView.vue'
-import { mountRoutedSettled } from '../helpers/mount'
+import { mountRouted, mountRoutedSettled } from '../helpers/mount'
 import { json, problem, stubFetch } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 import { DomainStatus } from '@/types/domain'
@@ -54,6 +54,22 @@ describe('DomainRegistrationsView', () => {
     const wrapper = await mountRoutedSettled(DomainRegistrationsView, '/clients/domain-registrations')
 
     expect(wrapper.get('[data-testid="domain-registrations-row-4"]').text()).toContain('2 years')
+  })
+
+  it('opens the page the address names and keeps the chosen page in the address', async () => {
+    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
+    const { wrapper, router } = await mountRouted(
+      DomainRegistrationsView,
+      '/clients/domain-registrations',
+      '/clients/domain-registrations?page=2',
+    )
+    await flushPromises()
+
+    expect(mock.mock.calls.map(([url]) => url as string)[0]).toBe('/api/domains?page=2&pageSize=20')
+    await wrapper.get('[data-testid="domain-registrations-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '3' })
   })
 
   it('shows the empty state and the refusal sentence', async () => {

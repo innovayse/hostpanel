@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 /**
- * TicketPriorityPicker - the three priority buttons of the new-ticket form; the chosen one is
+ * TicketPriorityPicker: the three priority buttons of the new-ticket form; the chosen one is
  * filled, the others quiet.
  */
 import { computed } from 'vue'

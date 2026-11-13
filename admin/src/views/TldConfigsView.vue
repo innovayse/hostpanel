@@ -9,11 +9,11 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -264,7 +264,7 @@ watch(statusFilter, () => {
  * @param item - The TLD entry whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const tldActions = (item: TldConfigListItem): UiRowAction[] => {
+const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
   /**
    * Prompts deletion of this TLD entry.
    * @returns Nothing.
@@ -286,7 +286,7 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
         <UiSelect
           model-value=""
           :options="importOptions"
-          :placeholder="importing ? t('settings.tldConfigs.importing') : t('settings.tldConfigs.import')"
+          :placeholder="t('settings.tldConfigs.import')"
           :disabled="importing"
           data-testid="tld-configs-import"
           class="w-40"
@@ -295,12 +295,12 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
         <UiButton
           type="button"
           variant="secondary"
-          :disabled="syncing"
+          :loading="syncing"
           data-testid="tld-configs-sync"
           @click="handleSync"
         >
           <UiIcon :markup="Icon.Refresh" size="sm" />
-          {{ syncing ? t('settings.tldConfigs.syncing') : t('settings.tldConfigs.syncPrices') }}
+          {{ t('settings.tldConfigs.syncPrices') }}
         </UiButton>
         <UiLink :to="createRoute" :variant="UiButtonVariant.Primary" data-testid="tld-configs-add">
           <UiIcon :markup="Icon.Add" size="sm" />
@@ -340,12 +340,10 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
       />
     </UiStack>
 
-    <SettingsLoading v-if="store.loading" :message="t('settings.tldConfigs.loadingTldConfigurations')" />
-
-    <UiErrorState v-else-if="store.error" :message="store.error" testid="tld-configs-error" @retry="store.fetchAll()" />
+    <UiErrorState v-if="store.error" :message="store.error" testid="tld-configs-error" @retry="store.fetchAll()" />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="paginatedConfigs.length === 0" :colspan="9">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="paginatedConfigs.length === 0" :loading="store.loading">
         <template #empty>
           {{ t('settings.tldConfigs.noTldConfigurationsFoundAdd') }}
         </template>
@@ -434,7 +432,6 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
       :title="t('settings.tldConfigs.deleteTldConfiguration')"
       :message="t('settings.tldConfigs.deleteMessage', { tld: deleteTarget.tld })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="confirmDelete"

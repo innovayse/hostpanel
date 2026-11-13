@@ -1,6 +1,6 @@
 <script lang="ts">
 /**
- * UiAccent - scopes a data colour (a product's or a slide's brand colour) to everything inside it.
+ * UiAccent: scopes a data colour (a product's or a slide's brand colour) to everything inside it.
  *
  * The colour is written once, as the `--accent` custom property of the wrapper, and the kit's
  * accent classes (`utils/ui/accent.ts`) read it, so a screen never carries a hex or an inline

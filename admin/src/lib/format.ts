@@ -1,5 +1,5 @@
 /**
- * Date, time and text formatting helpers shared by the admin screens: localized dates, the
+ * Date, time and text formatting helpers shared by the admin screens: localized dates, sizes, the
  * compact support date-time, time of day, elapsed and relative time, and day-string helpers.
  */
 
@@ -84,20 +84,6 @@ export const formatDateTime = (iso: string | null | undefined, fallback = '—')
     return fallback
   }
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
-
-/**
- * Upper-cases the first letter of a raw value such as a billing cycle.
- *
- * @param value - Raw value (for example "monthly").
- * @param fallback - Text to return for an empty value. Defaults to an em dash.
- * @returns For example "Monthly", or the fallback.
- */
-export const capitalize = (value: string | null | undefined, fallback = '—'): string => {
-  if (!value) {
-    return fallback
-  }
-  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 /** What is shown for a missing or unreadable date in the support formatters. */
@@ -243,3 +229,27 @@ export const formatRelativeFromNow = (iso: string, locale: string, now: number =
  */
 export const formatShare = (share: number, locale: string): string =>
   new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(share)
+
+/** Megabytes in a gigabyte and gigabytes in a terabyte, for {@link formatSizeMb}. */
+const SIZE_STEP = 1024
+
+/** Unit names from megabytes upward, for {@link formatSizeMb}. */
+const SIZE_UNITS = ['MB', 'GB', 'TB'] as const
+
+/**
+ * Writes a size given in megabytes in the largest unit that keeps it at or above 1, with at most
+ * one decimal ("512" becomes "512 MB", "1536" becomes "1.5 GB", "2048" becomes "2 GB").
+ *
+ * @param megabytes - The size in megabytes; the API's disk and bandwidth limits use this unit.
+ * @param locale - Locale code the number is written in.
+ * @returns The size with its unit.
+ */
+export const formatSizeMb = (megabytes: number, locale: string): string => {
+  let value = megabytes
+  let unit = 0
+  while (value >= SIZE_STEP && unit < SIZE_UNITS.length - 1) {
+    value /= SIZE_STEP
+    unit++
+  }
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)} ${SIZE_UNITS[unit]}`
+}

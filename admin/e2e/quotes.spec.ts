@@ -8,7 +8,7 @@ import { acceptedQuote, draftQuote, quotesPage } from './fixtures/quotes'
 import { fieldOf } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
-test('the subject filter narrows the quotes list', async ({ page }) => {
+test('the search box narrows the quotes list', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [json(HttpMethod.Get, '/api/billing/quotes', quotesPage), json(HttpMethod.Get, '/api/clients', { items: [], pageNumber: 1, pageSize: 100, totalCount: 0, totalPages: 0 })],
@@ -18,8 +18,7 @@ test('the subject filter narrows the quotes list', async ({ page }) => {
   await expect(page.getByTestId('billing-quotes-table')).toContainText(draftQuote.subject)
   await expect(page.getByTestId('billing-quotes-table')).toContainText(acceptedQuote.subject)
 
-  await page.getByTestId('billing-quotes-filter-toggle').click()
-  await fieldOf(page, 'billing-quotes-filter-subject').fill('Migration')
+  await fieldOf(page, 'billing-quotes-search').fill('Migration')
 
   await expect(page.getByTestId(`billing-quote-open-${draftQuote.id}`)).toHaveCount(0)
   await expect(page.getByTestId(`billing-quote-open-${acceptedQuote.id}`)).toBeVisible()

@@ -73,11 +73,11 @@ const handleSave = (): void => {
       </UiButton>
       <UiButton
         :variant="UiButtonVariant.Primary"
-        :disabled="saving"
+        :loading="saving"
         data-testid="clients-change-password-save"
         @click="handleSave"
       >
-        {{ saving ? t('shared.saving2') : t('shared.save') }}
+        {{ t('shared.save') }}
       </UiButton>
     </template>
   </UiDialog>

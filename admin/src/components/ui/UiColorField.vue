@@ -58,7 +58,7 @@ const inputAttrs = computed<Record<string, unknown>>(() =>
 
 <template>
   <div class="flex items-center gap-2">
-    <span class="block w-10 shrink-0 overflow-hidden rounded-lg border border-border">
+    <span class="block w-10.5 shrink-0 overflow-hidden rounded-control border border-border">
       <UiColorSwatch :color="preview" :title="preview" />
     </span>
     <UiInput

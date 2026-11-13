@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 /**
- * UiRadio - a themed radio option; group several with the same `name` and one v-model.
+ * UiRadio: a themed radio option; group several with the same `name` and one v-model.
  *
  * A hidden native radio keeps form semantics; the visible circle is a `role="radio"` button.
  */

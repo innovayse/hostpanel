@@ -18,13 +18,13 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -50,6 +50,9 @@ const router = useRouter()
 
 /** Quote store, the only caller of the quote endpoints. */
 const store = useQuotesStore()
+
+/** True while the first load is in flight and there are no quotes yet; the table then draws its placeholder rows. */
+const initialLoading = computed<boolean>(() => store.loading && store.clientQuotes.length === 0)
 
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
@@ -166,7 +169,7 @@ const editQuote = (id: number): void => {
  * @param quote - The row.
  * @returns The action list passed to UiRowActions.
  */
-const quoteActions = (quote: QuoteListItem): UiRowAction[] => [
+const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `client-quotes-edit-${quote.id}`,
@@ -200,17 +203,19 @@ onMounted(() => fetchQuotes())
 
 <template>
   <UiStack>
-    <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-      <UiHeading :level="1" variant="card">{{ t('shared.quotes') }}</UiHeading>
-      <UiButton
-        type="button"
-        :variant="UiButtonVariant.Primary"
-        data-testid="client-quotes-create"
-        @click="createQuote"
-      >
-        {{ t('clients.clientQuotes.createNewQuote') }}
-      </UiButton>
-    </UiStack>
+    <UiSectionHeader :level="1" variant="card">
+      {{ t('shared.quotes') }}
+      <template #actions>
+        <UiButton
+          type="button"
+          :variant="UiButtonVariant.Primary"
+          data-testid="client-quotes-create"
+          @click="createQuote"
+        >
+          {{ t('clients.clientQuotes.createNewQuote') }}
+        </UiButton>
+      </template>
+    </UiSectionHeader>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-quotes-feedback" />
 
@@ -222,16 +227,11 @@ onMounted(() => fetchQuotes())
       @retry="fetchQuotes()"
     />
 
-    <UiStack v-if="store.loading && store.clientQuotes.length === 0" data-testid="client-quotes-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientQuotes.loadingQuotes') }}</UiText>
-    </UiStack>
-
     <UiCard v-else class="overflow-x-auto">
       <UiTable
         :density="UiTableDensity.Comfortable"
-        :empty="store.clientQuotes.length === 0"
-        :colspan="7"
+        :loading="initialLoading"
+        :empty="!initialLoading && store.clientQuotes.length === 0"
         data-testid="client-quotes-table"
       >
         <UiTableHead>
@@ -267,7 +267,7 @@ onMounted(() => fetchQuotes())
         </template>
       </UiTable>
       <UiStack
-        v-if="store.clientQuotesTotal > pageSize"
+        v-if="initialLoading || store.clientQuotesTotal > pageSize"
         direction="row"
         :justify="UiJustify.Between"
         :align="UiAlignItems.Center"
@@ -279,6 +279,7 @@ onMounted(() => fetchQuotes())
           :page="page"
           :total="store.clientQuotesTotal"
           :page-size="pageSize"
+          :loading="initialLoading"
           testid="client-quotes-pagination"
           @update:page="goToPage"
         />
@@ -291,7 +292,6 @@ onMounted(() => fetchQuotes())
       :title="t('clients.clientQuotes.deleteQuote')"
       :message="t('clients.clientQuotes.confirmDeleteQuote', { id: deleteTargetId })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="executeDelete"

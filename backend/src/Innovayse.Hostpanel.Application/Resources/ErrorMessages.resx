@@ -484,7 +484,7 @@
     <value>This installation has already been set up and someone already holds the administrator role. Ask them to grant you access.</value>
   </data>
 <data name="SETUP_TOKEN_INVALID" xml:space="preserve">
-    <value>That setup token is not the one this installation issued. The current token is printed in the server log every time the API starts while setup is still outstanding — restart the API and read the newest one.</value>
+    <value>That setup token is not the one this installation issued. The current token is printed in the server log every time the API starts while setup is still outstanding. Restart the API and read the newest one.</value>
   </data>
 <data name="TWO_FACTOR_CODE_INVALID" xml:space="preserve">
     <value>That code did not match. Check your authenticator app and try again.</value>
@@ -923,7 +923,7 @@
     <value>Only an accepted order has lines to fulfil.</value>
   </data>
   <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
-    <value>This order line cannot be retried now. Only a failed line of an accepted order can be, and not while another retry is running it.</value>
+    <value>This order line cannot be retried now. Only a failed line of an accepted order can be retried, and not while another retry is already running.</value>
   </data>
   <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
     <value>This order has no such line.</value>
@@ -1037,7 +1037,7 @@
     <value>No SSH host key was received from the agent host and port. Check that the port runs sshd.</value>
   </data>
   <data name="SSH_AGENT_HOST_UNREACHABLE" xml:space="preserve">
-    <value>No answer from the agent host and port: HostPanel has no network path to them. Check the address, that the network this HostPanel runs in reaches it (VPN or routing), and that the server's firewall lets HostPanel's address in.</value>
+    <value>No answer from the agent host and port: HostPanel has no network path to them. Check the address, make sure the network HostPanel runs in can reach it (VPN or routing), and make sure the server firewall lets the HostPanel address in.</value>
   </data>
   <data name="SSH_AGENT_PORT_REFUSED" xml:space="preserve">
     <value>The agent host refused the connection on that port: nothing listens there, or a firewall rejects HostPanel's address. Check the port and the firewall.</value>

@@ -105,15 +105,15 @@
     "templates": {
       "aurora": {
         "label": "Aurora",
-        "hint": "Glow-backed design — dark/light, Armenian typography"
+        "hint": "Glow-backed design, dark/light, Armenian typography"
       },
       "nova": {
         "label": "Nova",
-        "hint": "Editorial layout with a teal palette — dark/light"
+        "hint": "Editorial layout with a teal palette, dark/light"
       },
       "classic": {
         "label": "Classic",
-        "hint": "Default — the original storefront design, dark/light"
+        "hint": "Default: the original storefront design, dark/light"
       }
     },
     "themeDefault": "Default colour mode",
@@ -267,10 +267,10 @@
   "branding": {
     "title": "Branding",
     "description": "The storefront's logos and browser tab icon. Changes take effect on the next page load.",
-    "pasteUrl": "Or paste image URL...",
+    "pasteUrl": "Or paste image URL",
     "logo": {
       "label": "Logo (light backgrounds)",
-      "hint": "JPEG, PNG, WebP — max 5MB"
+      "hint": "JPEG, PNG, WebP, max 5MB"
     },
     "logoDark": {
       "label": "Logo (dark backgrounds)",
@@ -282,13 +282,13 @@
     },
     "favicon": {
       "label": "Favicon",
-      "hint": "PNG, SVG, ICO — max 5MB"
+      "hint": "PNG, SVG, ICO, max 5MB"
     },
     "remove": "Remove image"
   },
   "brandColors": {
     "title": "Brand colours",
-    "description": "Two colours the storefront derives its whole palette from — buttons, links, highlights and the e-mails. Empty keeps each template's own colours.",
+    "description": "Two colours the storefront derives its whole palette from: buttons, links, highlights and the e-mails. Empty keeps each template's own colours.",
     "primary": {
       "label": "Primary",
       "hint": "Buttons, links and highlights. The eleven shades below are derived from it."
@@ -300,9 +300,9 @@
     "reset": "Reset to default",
     "previewButton": "Button",
     "previewLink": "Link",
-    "contrastOk": "White text on this colour: {ratio}:1 — passes WCAG AA.",
-    "contrastDark": "White text on this colour: {ratio}:1 — too low, so buttons will use dark text.",
-    "contrastLow": "White text on this colour: {ratio}:1 — below WCAG AA for small text; fine for buttons."
+    "contrastOk": "White text on this colour gives {ratio}:1, which passes WCAG AA.",
+    "contrastDark": "White text on this colour gives {ratio}:1. That is too low, so buttons will use dark text.",
+    "contrastLow": "White text on this colour gives {ratio}:1. That is below WCAG AA for small text, but fine for buttons."
   },
   "typography": {
     "title": "Typography",
@@ -354,9 +354,8 @@
     "10Gb": "10 GB",
     "removeLine": "Remove line",
     "feature": "Feature",
-    "adding": "Adding…",
     "add": "Add",
-    "plansLineUpByFeature": "Plans line up by feature name, so spell it the same way across products — \"Disk\" and \"Disk space\" become two separate rows. Within one product a name can only be used once; reusing it is refused rather than saved where it would never show.",
+    "plansLineUpByFeature": "Plans line up by feature name, so spell it the same way across products: \"Disk\" and \"Disk space\" become two separate rows. Within one product a name can only be used once; reusing it is refused rather than saved where it would never show.",
     "confirmRemoveTitle": "Remove this line?",
     "confirmRemoveMessage": "The line \"{label}\" will be removed from the specification."
   },
@@ -376,7 +375,7 @@
     "serverGroup": "Server Group",
     "noneAutoSelectByModule": "None (auto-select by module)",
     "assignToAServerGroup": "Assign to a server group for load-balanced provisioning. Optional.",
-    "briefProductDescription": "Brief product description...",
+    "briefProductDescription": "Brief product description",
     "pricing": "Pricing",
     "monthly": "Monthly",
     "annual": "Annual",
@@ -410,9 +409,7 @@
     "other": "Other",
     "vps": "VPS"
   },
-  "currencies": {
-    "loadingCurrencies": "Loading currencies..."
-  },
+  "currencies": {},
   "emailTemplates": {
     "emailTemplates": "Email Templates",
     "noTemplatesFound": "No templates found.",
@@ -427,7 +424,6 @@
     "products": "Products",
     "manageHostingPlansAndServices": "Manage hosting plans and services available for purchase",
     "createProduct": "Create Product",
-    "loadingProducts": "Loading products...",
     "group": "Group",
     "editSpecification": "Edit specification",
     "editProduct": "Edit product",
@@ -485,7 +481,6 @@
   },
   "slideForm": {
     "slides": "Slides",
-    "loadingSlideData": "Loading slide data...",
     "generalSettings": "General Settings",
     "icon": "Icon",
     "orTypeMdiIconName": "Or type MDI icon name (e.g. cloud-check)",
@@ -493,8 +488,8 @@
     "image": "Image",
     "slidePreview": "Slide preview",
     "removeImage": "Remove image",
-    "jpegPngWebpSvgMax": "JPEG, PNG, WebP, SVG — max 5MB",
-    "orPasteImageUrl": "Or paste image URL...",
+    "jpegPngWebpSvgMax": "JPEG, PNG, WebP, SVG, max 5MB",
+    "orPasteImageUrl": "Or paste image URL",
     "demoUrl": "Demo URL",
     "demoUrlPlaceholder": "https://demo.example.com",
     "optionalTryDemoButtonLink": "Optional \"Try Demo\" button link on the slide",
@@ -513,7 +508,7 @@
     "slideTitle": "Slide title",
     "tagline": "Tagline",
     "shortSubtitle": "Short subtitle",
-    "slideBodyText": "Slide body text...",
+    "slideBodyText": "Slide body text",
     "features": "Features",
     "removeFeature": "Remove feature",
     "addFeature": "Add Feature",
@@ -555,10 +550,8 @@
   },
   "slides": {
     "slides": "Slides",
-    "manageHomepageHeroSlidesDrag": "Manage homepage hero slides — drag to reorder",
-    "savingOrder": "Saving order...",
+    "manageHomepageHeroSlidesDrag": "Manage homepage hero slides. Drag to reorder.",
     "addSlide": "Add Slide",
-    "loadingSlides": "Loading slides...",
     "image": "Image",
     "audience": "Audience",
     "visibility": "Visibility",
@@ -570,12 +563,12 @@
     "always": "Always",
     "from": "From {date}",
     "until": "Until {date}",
+    "range": "From {from} to {until}",
     "slideNumber": "Slide #{id}",
     "deleteMessage": "Delete \"{title}\"? This action cannot be undone."
   },
   "tldConfigForm": {
     "tldPricing": "TLD Pricing",
-    "loadingTldConfiguration": "Loading TLD configuration...",
     "generalSettings": "General Settings",
     "tld": "TLD",
     "domainExtensionWithoutTheDot": "Domain extension without the dot (e.g. \"com\", \"net\", \"am\")",
@@ -608,15 +601,12 @@
   "tldConfigs": {
     "tldPricing": "TLD Pricing",
     "configureDomainExtensionPricingAnd": "Configure domain extension pricing and providers",
-    "importing": "Importing...",
     "import": "Import",
     "nameAm": "Name.am",
     "namecheap": "Namecheap",
-    "syncing": "Syncing...",
     "syncPrices": "Sync Prices",
     "addTld": "Add TLD",
-    "searchTlds": "Search TLDs...",
-    "loadingTldConfigurations": "Loading TLD configurations...",
+    "searchTlds": "Search TLDs",
     "tld": "TLD",
     "provider": "Provider",
     "cost1yr": "Cost (1yr)",
@@ -626,7 +616,7 @@
     "editTld": "Edit TLD",
     "deleteTld": "Delete TLD",
     "noTldConfigurationsFoundAdd": "No TLD configurations found. Add your first TLD or import from a provider.",
-    "showingValueValue2OfLength": "Showing {value}–{value2} of {length} TLDs",
+    "showingValueValue2OfLength": "Showing {value}-{value2} of {length} TLDs",
     "deleteTldConfiguration": "Delete TLD Configuration",
     "allProviders": "All Providers",
     "allStatus": "All Status",
@@ -634,5 +624,65 @@
     "deleteMessage": "Delete \".{tld}\" TLD configuration? This action cannot be undone.",
     "importComplete": "Import complete: {imported} imported, {updated} updated.",
     "never": "Never"
+  },
+  "index": {
+    "title": "Settings",
+    "subtitle": "Everything that shapes the panel and the storefront, grouped by what it controls.",
+    "groups": {
+      "storefront": "Storefront and catalogue",
+      "billing": "Billing",
+      "communication": "Communication",
+      "security": "Security"
+    },
+    "items": {
+      "general": {
+        "title": "General",
+        "description": "Site identity, appearance, branding, tracking and every other global setting."
+      },
+      "products": {
+        "title": "Products",
+        "description": "Plans, prices, billing cycles and features."
+      },
+      "productBundles": {
+        "title": "Product bundles",
+        "description": "Offers that sell several products together."
+      },
+      "tldPricing": {
+        "title": "TLD pricing",
+        "description": "Registration, renewal and transfer prices per domain extension."
+      },
+      "slides": {
+        "title": "Slides",
+        "description": "The storefront home page banner slides."
+      },
+      "gateways": {
+        "title": "Payment gateways",
+        "description": "The ways clients can pay, configured under integrations."
+      },
+      "currencies": {
+        "title": "Currencies",
+        "description": "Currencies, exchange rates and the default currency."
+      },
+      "taxRules": {
+        "title": "Tax rules",
+        "description": "Tax rates by country and region."
+      },
+      "emailTemplates": {
+        "title": "Email templates",
+        "description": "The messages the panel sends to clients and staff."
+      },
+      "fraud": {
+        "title": "Fraud protection",
+        "description": "Order screening, block lists and the fraud log."
+      }
+    }
+  },
+  "saveBar": {
+    "unsaved": "{count} unsaved change | {count} unsaved changes",
+    "clean": "No unsaved changes",
+    "saveAll": "Save changes",
+    "discard": "Discard changes",
+    "saveShort": "Save",
+    "discardShort": "Discard"
   }
 }

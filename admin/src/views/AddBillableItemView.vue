@@ -16,6 +16,7 @@ import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
@@ -154,14 +155,14 @@ onMounted(loadClients)
           </UiField>
         </UiGrid>
 
-        <UiStack direction="row" gap="md" align="center">
-          <UiButton type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-billable-item-submit">
-            {{ t('shared.addBillableItem') }}
-          </UiButton>
+        <UiFormActions>
           <UiLink :to="AppRoute.BillingBillableItems" variant="ghost" data-testid="billing-add-billable-item-cancel">
             {{ t('shared.cancel') }}
           </UiLink>
-        </UiStack>
+          <UiButton type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-billable-item-submit">
+            {{ t('shared.addBillableItem') }}
+          </UiButton>
+        </UiFormActions>
       </UiForm>
     </UiCard>
   </UiStack>

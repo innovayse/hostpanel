@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 /**
- * UiFooterLink - a link in a site footer, shared by the aurora, nova and classic footers.
+ * UiFooterLink: a link in a site footer, shared by the aurora, nova and classic footers.
  *
  * At rest it is muted text; on hover and on keyboard focus it turns to the template's brand
  * colour and draws an underline that slides in from the left, with a smooth transition. Colours

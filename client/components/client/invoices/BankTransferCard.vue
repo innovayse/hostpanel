@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 /**
- * BankTransferCard - the bank details of a manual bank transfer, each with a copy button, the reference to write on the
+ * BankTransferCard: the bank details of a manual bank transfer, each with a copy button, the reference to write on the
  * transfer shown prominently, and the "awaiting payment confirmation" status.
  *
  * Shown on the payment page and the invoice page while the transfer waits for staff to confirm it. The reference is the invoice

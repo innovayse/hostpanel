@@ -3,7 +3,7 @@
  *
  * Every token is prefixed `--n-` and declared only where nova is the active
  * template: on the `.tpl-nova` root each nova component paints, and on the
- * <html> element when `data-template="nova"` — layouts/default.vue stamps that
+ * <html> element when `data-template="nova"`, layouts/default.vue stamps that
  * attribute. The second selector exists because the body surface and the
  * scrollbar are painted by elements no template component owns; without it
  * those rules would have nothing to resolve against. Neither selector is
@@ -28,8 +28,8 @@ html[data-template='nova'].dark,
   --n-footer: #0f2c38;
   --n-ink: #edf6f8;
   --n-muted: #a2bcc5;
-  /* Brand and accent read the operator's colours (plugins/brand-tokens.ts) — a light tint
-     on the dark surface, a deeper shade on the light one — and keep nova's own periwinkle
+  /* Brand and accent read the operator's colours (plugins/brand-tokens.ts): a light tint
+     on the dark surface, a deeper shade on the light one, and keep nova's own periwinkle
      and amber when nothing is set. --n-on-brand is the text that sits on a filled brand. */
   --n-brand: rgb(var(--brand-primary-400, 127 141 255));
   --n-brand-hover: rgb(var(--brand-primary-300, 154 165 255));
@@ -61,7 +61,7 @@ html[data-template='nova'].light,
 
 /*
  * Motion. Declared here rather than as utilities so a single media query can
- * switch the whole template off for a visitor who asked for reduced motion —
+ * switch the whole template off for a visitor who asked for reduced motion,
  * the reveal must never be the thing that hides content from them, so the
  * end state, not the start state, is what the query restores.
  */

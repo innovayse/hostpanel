@@ -28,6 +28,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
+import UiPhoneInput from '@/components/ui/UiPhoneInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -190,7 +191,7 @@ const settingToggles = computed<ToggleDef<ClientSettingSwitch>[]>(() => [
 /** Internal admin notes. */
 const adminNotes = ref('')
 
-const { countryOptions, phoneCodeOptions, resolvePhoneCode, parsePhone } = useGeoOptions()
+const { countryOptions, resolvePhoneCode, parsePhone } = useGeoOptions()
 
 /** Resolves the selected country's phone code for the payload. */
 const selectedPhoneCode = computed(() => resolvePhoneCode(phoneCountry.value))
@@ -392,10 +393,10 @@ onBeforeUnmount(() => {
       <UiButton
         type="submit"
         :variant="UiButtonVariant.Primary"
-        :disabled="saving"
+        :loading="saving"
         data-testid="client-profile-save"
       >
-        {{ saving ? t('shared.saving') : t('shared.saveChanges') }}
+        {{ t('shared.saveChanges') }}
       </UiButton>
     </UiStack>
 
@@ -462,15 +463,11 @@ onBeforeUnmount(() => {
                 </template>
               </UiField>
               <UiField :label="t('shared.phone')">
-                <UiStack direction="row" gap="sm">
-                  <UiSelect data-testid="client-profile-phone-country" v-model="phoneCountry" :options="phoneCodeOptions" :placeholder="t('shared.phone')" searchable wide />
-                  <UiInput
-                    v-model="phone"
-                    type="text"
-                    :placeholder="t('shared.phoneNumber2')"
-                    data-testid="client-profile-phone"
-                  />
-                </UiStack>
+                <UiPhoneInput
+                  v-model:phone-number="phone"
+                  v-model:country-code="phoneCountry"
+                  data-testid="client-profile-phone"
+                />
               </UiField>
             </UiGrid>
             <UiField :label="t('shared.status')">
@@ -659,7 +656,6 @@ onBeforeUnmount(() => {
         <UiTable
           :density="UiTableDensity.Comfortable"
           :empty="store.current.contacts.length === 0"
-          :colspan="4"
           data-testid="client-profile-contacts"
         >
           <UiTableHead>

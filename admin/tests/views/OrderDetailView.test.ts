@@ -1,10 +1,11 @@
 /**
- * Mount tests for OrderDetailView: the order, its invoice and items render, the actions follow
+ * Mount tests for OrderDetailView: the order, its invoice and items render on their tabs, the actions follow
  * the status, each command shows its outcome above the order, cancel and delete are confirmed in a
  * danger prompt, a confirmed delete returns to the list and a refused load offers a retry.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
 import OrderDetailView from '@/views/OrderDetailView.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
@@ -83,9 +84,30 @@ const mountDetail = async () => {
   return mounted
 }
 
+/**
+ * Opens a tab of the detail.
+ *
+ * @param wrapper - The mounted detail.
+ * @param tab - The tab to open.
+ */
+const openTab = async (wrapper: VueWrapper, tab: 'overview' | 'items' | 'notes') => {
+  await wrapper.get(`[data-testid="order-tab-${tab}"]`).trigger('click')
+  await flushPromises()
+}
+
 describe('OrderDetailView', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('draws the real page structure while the order loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountDetail()
+
+    expect(wrapper.find('[data-testid="order-header-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="order-tab-items"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Order Info')
+    expect(wrapper.findAll('[data-testid="order-fact-loading"]').length).toBeGreaterThan(0)
   })
 
   it('renders the order number, status, invoice link, items and notes', async () => {
@@ -95,10 +117,15 @@ describe('OrderDetailView', () => {
     expect(wrapper.get('[data-testid="order-header"]').text()).toContain('ORD-0008')
     expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Pending')
     expect(wrapper.get('[data-testid="order-invoice-link"]').attributes('href')).toBe('/billing/41')
+    expect(wrapper.text()).toContain('30.00 EUR')
+    expect(wrapper.find('[data-testid="order-item-1"]').exists()).toBe(false)
+
+    await openTab(wrapper, 'items')
     expect(wrapper.get('[data-testid="order-item-1"]').text()).toContain('Shared Hosting')
     expect(wrapper.get('[data-testid="order-item-1"]').text()).toContain('Monthly')
     expect(wrapper.get('[data-testid="order-item-1"]').text()).toContain('30.00 EUR')
-    expect(wrapper.text()).toContain('30.00 EUR')
+
+    await openTab(wrapper, 'notes')
     expect((wrapper.get('[data-testid="order-notes-input"]').element as HTMLTextAreaElement).value).toBe('Call the client')
   })
 
@@ -279,6 +306,7 @@ describe('OrderDetailView', () => {
   it('shows each line fulfilment state, and a retry only on the failed one', async () => {
     stubRoutes({ 'GET /api/orders/8': () => json(incompleteOrder) })
     const { wrapper } = await mountDetail()
+    await openTab(wrapper, 'items')
 
     expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Incomplete')
     expect(wrapper.get('[data-testid="order-item-fulfilment-1"]').text()).toContain('Fulfilled')
@@ -301,6 +329,7 @@ describe('OrderDetailView', () => {
       },
     })
     const { wrapper } = await mountDetail()
+    await openTab(wrapper, 'items')
 
     await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
     await flushPromises()
@@ -322,6 +351,7 @@ describe('OrderDetailView', () => {
       'GET /api/orders/8': () => json(incompleteOrder),
     })
     const { wrapper } = await mountDetail()
+    await openTab(wrapper, 'items')
 
     await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
     await flushPromises()
@@ -336,6 +366,7 @@ describe('OrderDetailView', () => {
       'GET /api/orders/8': () => json(incompleteOrder),
     })
     const { wrapper } = await mountDetail()
+    await openTab(wrapper, 'items')
 
     await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
     await flushPromises()

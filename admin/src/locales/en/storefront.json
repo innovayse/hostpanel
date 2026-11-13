@@ -6,7 +6,6 @@
   },
   "notFound": "Entry #{id} was not found.",
   "list": {
-    "savingOrder": "Saving order...",
     "reorder": "Reorder",
     "moveUp": "Move up",
     "moveDown": "Move down",
@@ -17,17 +16,16 @@
     "unsavedChangesMessage": "You have unsaved changes. Are you sure you want to leave?",
     "leave": "Leave",
     "removeImage": "Remove image",
-    "imageHint": "JPEG, PNG, WebP, SVG — max 5MB",
-    "pasteImageUrl": "Or paste image URL...",
+    "imageHint": "JPEG, PNG, WebP, SVG, max 5MB",
+    "pasteImageUrl": "Or paste image URL",
     "general": "General",
     "translations": "Translations",
     "sortOrder": "Sort order"
   },
   "testimonials": {
     "title": "Testimonials",
-    "subtitle": "Customer quotes shown on the storefront — drag to reorder",
+    "subtitle": "Customer quotes shown on the storefront. Drag to reorder.",
     "add": "Add testimonial",
-    "loading": "Loading testimonials...",
     "empty": "No testimonials yet. Add your first one to get started.",
     "deleteTitle": "Delete testimonial",
     "deleteMessage": "Delete the testimonial from \"{name}\"? This action cannot be undone.",
@@ -49,13 +47,12 @@
     "activeHint": "Show this testimonial to visitors",
     "publishedAt": "Date",
     "publishedAtHint": "The date shown with the testimonial; leave empty to use the date it was added",
-    "quotePlaceholder": "What the customer said..."
+    "quotePlaceholder": "What the customer said"
   },
   "partners": {
     "title": "Partners",
-    "subtitle": "Partner logos shown on the storefront — drag to reorder",
+    "subtitle": "Partner logos shown on the storefront. Drag to reorder.",
     "add": "Add partner",
-    "loading": "Loading partners...",
     "empty": "No partners yet. Add your first one to get started.",
     "deleteTitle": "Delete partner",
     "deleteMessage": "Delete the partner \"{name}\"? This action cannot be undone.",
@@ -73,9 +70,8 @@
   },
   "locations": {
     "title": "Server locations",
-    "subtitle": "Data-centre locations shown on the storefront — drag to reorder",
+    "subtitle": "Data-centre locations shown on the storefront. Drag to reorder.",
     "add": "Add location",
-    "loading": "Loading locations...",
     "empty": "No locations yet. Add your first one to get started.",
     "deleteTitle": "Delete location",
     "deleteMessage": "Delete the location \"{name}\"? This action cannot be undone.",
@@ -96,9 +92,8 @@
   },
   "projects": {
     "title": "Projects",
-    "subtitle": "Portfolio projects shown on the storefront — drag to reorder",
+    "subtitle": "Portfolio projects shown on the storefront. Drag to reorder.",
     "add": "Add project",
-    "loading": "Loading projects...",
     "empty": "No projects yet. Add your first one to get started.",
     "deleteTitle": "Delete project",
     "deleteMessage": "Delete the project \"{name}\"? This action cannot be undone.",
@@ -123,13 +118,12 @@
     "titlePlaceholder": "Project title",
     "summary": "Summary",
     "summaryPlaceholder": "One line about the project",
-    "descriptionPlaceholder": "Full project description..."
+    "descriptionPlaceholder": "Full project description"
   },
   "faqs": {
     "title": "FAQ",
-    "subtitle": "Questions and answers shown on the storefront — drag to reorder",
+    "subtitle": "Questions and answers shown on the storefront. Drag to reorder.",
     "add": "Add question",
-    "loading": "Loading questions...",
     "empty": "No questions yet. Add your first one to get started.",
     "deleteTitle": "Delete question",
     "deleteMessage": "Delete the question \"{name}\"? This action cannot be undone.",
@@ -148,6 +142,6 @@
     "activeHint": "Show this question to visitors",
     "questionPlaceholder": "The question visitors ask",
     "answer": "Answer",
-    "answerPlaceholder": "The answer..."
+    "answerPlaceholder": "The answer"
   }
 }

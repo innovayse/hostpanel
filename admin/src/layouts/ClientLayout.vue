@@ -1,23 +1,31 @@
 <script setup lang="ts">
 /**
  * Layout wrapper for client detail pages.
- * Shows a compact header with client info and the inner sidebar alongside the active sub-page.
+ * Shows a glass header card (avatar, name, status, key figures, export), the section tabs under it and the
+ * active sub-page below. While the client is read, the header keeps its shape with bars in place of the avatar,
+ * the name, the status and the figures, and the tabs are already there; the sub-page waits for the client.
  */
-import { onMounted, watch, ref } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientsStore } from '@/stores/clients'
 import { clientStatusTone } from '@/lib/tones'
-import ClientInnerSidebar from '@/components/clients/ClientInnerSidebar.vue'
+import { formatDate } from '@/lib/format'
+import { Icon } from '@/lib/icons'
+import { formatPlainAmount } from '@/lib/money'
 import ClientExportModal from '@/components/clients/ClientExportModal.vue'
+import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
+import ClientSectionTabs from '@/components/clients/ClientSectionTabs.vue'
 import RoutedView from '@/components/layout/RoutedView.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -28,12 +36,6 @@ import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
 
 const { t } = useI18n()
-
-/** Icon markup (shape tags) of the back button. */
-const BACK_ICON = '<polyline points="15 18 9 12 15 6" />'
-
-/** Icon markup (shape tags) of the export button. */
-const EXPORT_ICON = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'
 
 /** Whether the export dialog is open. */
 const showExportModal = ref(false)
@@ -46,6 +48,36 @@ const router = useRouter()
 
 /** Clients store, owner of the loaded client. */
 const store = useClientsStore()
+
+/** One figure of the header card: a caption over its value. */
+interface HeaderStat {
+  /** Key of the figure; also the suffix of its `data-testid`. */
+  key: string
+  /** Translated caption. */
+  label: string
+  /** The value as it is read; null while the client is being read. */
+  value: string | null
+}
+
+/** The key figures of the open client, in the order the card shows them. */
+const stats = computed<HeaderStat[]>(() => {
+  const client = store.current
+  return [
+    { key: 'id', label: t('shared.id'), value: client ? String(client.id) : null },
+    { key: 'email', label: t('shared.email'), value: client ? client.email : null },
+    { key: 'joined', label: t('clients.clientsList.joined'), value: client ? formatDate(client.createdAt) : null },
+    {
+      key: 'two-factor',
+      label: t('clients.clientsList.2fa'),
+      value: client ? (client.twoFactorEnabled ? t('clients.clientsList.on') : t('clients.clientsList.off')) : null,
+    },
+    {
+      key: 'credit',
+      label: t('clients.clientCredit.credit'),
+      value: client ? formatPlainAmount(client.creditBalance ?? 0, client.preferences.currency) : null,
+    },
+  ]
+})
 
 /**
  * Loads the client data and currencies for the current route param.
@@ -80,67 +112,91 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiStack gap="md" class="h-full w-full">
-    <UiStack v-if="store.loading && !store.current" :align="UiAlignItems.Center" data-testid="client-layout-loading">
-      <UiSkeleton :lines="2" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientLayout.loadingClient') }}</UiText>
-    </UiStack>
-
-    <UiAlert v-else-if="store.error && !store.current" variant="error" data-testid="client-layout-error">
+  <UiStack gap="md" class="w-full">
+    <UiAlert v-if="store.error && !store.current" variant="error" data-testid="client-layout-error">
       {{ store.error }}
     </UiAlert>
 
-    <template v-else-if="store.current">
+    <template v-else>
       <!--
-        From md up: back, initials, the name block (name over status) and export in one row. On a phone the
-        first three stay in a line, the name block reading as a line itself (the name with the status badge right
-        after it, wrapping if the name is long), and export drops to a row of its own at the end.
+        The header card. The first row holds back, the avatar, the name block (name over status, group and company)
+        and export; on a phone the name block fills the row and export drops to a row of its own at the end. The key
+        figures sit under it in a grid that is two columns wide on a phone.
       -->
-      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" reflow-below-md data-testid="client-layout-header">
-        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" class="min-w-0 flex-1">
-          <UiIconButton :label="t('shared.back')" data-testid="client-layout-back" @click="goBack">
-            <UiIcon :markup="BACK_ICON" />
-          </UiIconButton>
-          <UiBadge :tone="UiTone.Primary">
-            {{ store.current.firstName.charAt(0) }}{{ store.current.lastName.charAt(0) }}
-          </UiBadge>
-          <UiStack gap="xs" reflow-below-md class="min-w-0 flex-1">
-            <UiHeading :level="1" variant="section" class="min-w-0 break-words" data-testid="client-header-name">
-              {{ store.current.firstName }} {{ store.current.lastName }}
-            </UiHeading>
-            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="sm">
-              <UiBadge :tone="clientStatusTone(store.current.status)" small>{{ store.current.status }}</UiBadge>
-              <UiText v-if="store.current.companyName" :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">
-                {{ store.current.companyName }}
+      <UiCard padding="md" :aria-busy="store.current ? undefined : 'true'" :data-testid="store.current ? 'client-layout-header' : 'client-layout-loading'">
+        <UiStack gap="md">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" reflow-below-md>
+            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" class="min-w-0 flex-1">
+              <UiIconButton :label="t('shared.back')" data-testid="client-layout-back" @click="goBack">
+                <UiIcon :markup="Icon.Back" />
+              </UiIconButton>
+              <UiBadge v-if="store.current" :tone="UiTone.Primary" data-testid="client-layout-avatar">
+                {{ store.current.firstName.charAt(0) }}{{ store.current.lastName.charAt(0) }}
+              </UiBadge>
+              <UiSkeletonBar v-else class="h-6 w-10 shrink-0 rounded-full" aria-hidden="true" />
+              <UiStack v-if="!store.current" gap="xs" class="min-w-0 flex-1" aria-hidden="true">
+                <UiSkeletonBar class="h-7 w-56 max-w-full rounded-md" />
+                <UiSkeletonBar class="h-4 w-40 rounded-md" />
+              </UiStack>
+              <UiStack v-else gap="xs" reflow-below-md class="min-w-0 flex-1">
+                <UiHeading :level="1" variant="section" class="min-w-0 break-words" data-testid="client-header-name">
+                  {{ store.current.firstName }} {{ store.current.lastName }}
+                </UiHeading>
+                <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="sm" wrap>
+                  <UiBadge :tone="clientStatusTone(store.current.status)" small dot>{{ store.current.status }}</UiBadge>
+                  <ClientGroupBadge
+                    v-if="store.current.clientGroupName && store.current.clientGroupColor"
+                    :name="store.current.clientGroupName"
+                    :color="store.current.clientGroupColor"
+                  />
+                  <UiText v-if="store.current.companyName" :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">
+                    {{ store.current.companyName }}
+                  </UiText>
+                </UiStack>
+              </UiStack>
+            </UiStack>
+            <UiButton
+              :variant="UiButtonVariant.Secondary"
+              :size="UiSize.Sm"
+              class="self-end md:self-auto"
+              :disabled="!store.current"
+              data-testid="client-layout-export"
+              @click="showExportModal = true"
+            >
+              <UiIcon :markup="Icon.Download" :size="UiSize.Sm" />
+              {{ t('clients.clientLayout.exportData') }}
+            </UiButton>
+          </UiStack>
+          <UiGrid :columns="6" gap="sm" data-testid="client-layout-stats">
+            <UiStack
+              v-for="stat in stats"
+              :key="stat.key"
+              gap="xs"
+              class="min-w-0"
+              :data-testid="`client-layout-stat-${stat.key}`"
+            >
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">
+                {{ stat.label }}
+              </UiText>
+              <UiSkeletonBar v-if="stat.value === null" class="h-4 w-20 rounded-md" aria-hidden="true" />
+              <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="truncate font-medium">
+                {{ stat.value }}
               </UiText>
             </UiStack>
-          </UiStack>
+          </UiGrid>
         </UiStack>
-        <UiButton
-          :variant="UiButtonVariant.Secondary"
-          :size="UiSize.Sm"
-          class="self-end md:self-auto"
-          data-testid="client-layout-export"
-          @click="showExportModal = true"
-        >
-          <UiIcon :markup="EXPORT_ICON" :size="UiSize.Sm" />
-          {{ t('clients.clientLayout.exportData') }}
-        </UiButton>
-      </UiStack>
+      </UiCard>
 
       <ClientExportModal
-        v-if="showExportModal"
+        v-if="showExportModal && store.current"
         :client-id="Number(route.params.id)"
         :client-name="`${store.current.firstName} ${store.current.lastName}`"
         @close="showExportModal = false"
       />
 
-      <!-- A column on phones, where the section tabs are a strip above the content (the content starts a step below it); a row from md up, where they are the icon rail. -->
-      <UiStack :direction="UiDirection.Row" gap="none" reflow-below-md class="flex-1 min-h-0">
-        <ClientInnerSidebar :client-id="String(route.params.id)" />
-        <UiStack gap="none" class="flex-1 min-w-0 overflow-y-auto pt-4 md:pl-6 md:pt-0">
-          <RoutedView />
-        </UiStack>
+      <ClientSectionTabs :client-id="String(route.params.id)" />
+      <UiStack v-if="store.current" gap="none" class="min-w-0 flex-1">
+        <RoutedView />
       </UiStack>
     </template>
   </UiStack>

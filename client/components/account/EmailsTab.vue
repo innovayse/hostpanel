@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 /**
- * EmailsTab - the "Email History" tab: a searchable, paged list of the mail sent to the account.
+ * EmailsTab. The "Email History" tab: a searchable, paged list of the mail sent to the account.
  *
  * The list lives in the account store; search and paging are view state of this tab only.
  *

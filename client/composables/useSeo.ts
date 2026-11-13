@@ -3,7 +3,7 @@
  * Handles canonical URLs, hreflang tags, Open Graph, and Twitter Cards
  *
  * Note: TypeScript may show errors for auto-imported composables (useI18n, useRoute, etc.)
- * during typecheck, but these are false positives - Nuxt auto-imports work at runtime.
+ * during typecheck, but these are false positives: Nuxt auto-imports work at runtime.
  *
  * @module composables/useSeo
  */

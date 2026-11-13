@@ -36,7 +36,6 @@ const emit = defineEmits<{
     :title="t(`clients.clientProfile.statusConfirm.${status}.title`)"
     :message="t(`clients.clientProfile.statusEffects.${status}`)"
     :confirm-label="t(`clients.clientProfile.statusConfirm.${status}.action`)"
-    :loading-label="t('shared.saving')"
     :loading="loading"
     :tone="status === ClientStatus.Closed ? UiTone.Danger : UiTone.Warning"
     :data-testid="testid"

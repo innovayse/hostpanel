@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 /**
- * UiSection - a full-width page band with vertical padding and an optional tinted background.
+ * UiSection: a full-width page band with vertical padding and an optional tinted background.
  *
  * With `contained` its content sits inside the shared page-width UiContainer, so section edges
  * line up with the header and footer.

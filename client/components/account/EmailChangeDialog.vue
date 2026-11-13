@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 /**
- * EmailChangeDialog - collects the new sign-in address and the current password, and asks the
+ * EmailChangeDialog: collects the new sign-in address and the current password, and asks the
  * account store to mail a confirmation link to the new address.
  *
  * The shape of the address and a typed password are checked here first; everything else (a wrong

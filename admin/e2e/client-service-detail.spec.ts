@@ -60,6 +60,8 @@ const sectionSaves = (api: StubApi): RecordedCall[] =>
 interface SectionCase {
   /** The section under test. */
   section: ServiceSection
+  /** The tab the section sits on. */
+  tab: 'account' | 'billing' | 'notes'
   /** Changes the section's fields on the page. */
   edit: (page: Page) => Promise<void>
   /** Test id of the section's save button. */
@@ -72,6 +74,7 @@ interface SectionCase {
 const sectionCases: SectionCase[] = [
   {
     section: ServiceSection.HostingAccount,
+    tab: 'account',
     edit: async (page) => {
       await fieldOf(page, 'client-service-domain').fill('shop.example.test')
     },
@@ -80,6 +83,7 @@ const sectionCases: SectionCase[] = [
   },
   {
     section: ServiceSection.Billing,
+    tab: 'billing',
     edit: async (page) => {
       await fieldOf(page, 'client-service-recurring').fill('14.5')
       await fieldOf(page, 'client-service-recurring').press('Tab')
@@ -99,6 +103,7 @@ const sectionCases: SectionCase[] = [
   },
   {
     section: ServiceSection.Automation,
+    tab: 'billing',
     edit: async (page) => {
       await page.getByTestId('client-service-auto-terminate').click()
       await fieldOf(page, 'client-service-terminate-reason').fill('The client is leaving.')
@@ -108,6 +113,7 @@ const sectionCases: SectionCase[] = [
   },
   {
     section: ServiceSection.Notes,
+    tab: 'notes',
     edit: async (page) => {
       await fieldOf(page, 'client-service-admin-notes').fill('Backups checked.')
     },
@@ -116,6 +122,7 @@ const sectionCases: SectionCase[] = [
   },
   {
     section: ServiceSection.Status,
+    tab: 'account',
     edit: async (page) => {
       await page.getByTestId('client-service-status').getByTestId('ui-select-trigger').click()
       await page.getByTestId('client-service-status').getByTestId('ui-select-option').nth(2).click()
@@ -134,6 +141,7 @@ for (const sectionCase of sectionCases) {
     await page.goto(pageUrl)
     await expect(fieldOf(page, 'client-service-domain')).toHaveValue(activeServiceDetail.domain ?? '')
 
+    await page.getByTestId(`client-service-tab-${sectionCase.tab}`).click()
     await sectionCase.edit(page)
     await page.getByTestId(sectionCase.saveButton).click()
 

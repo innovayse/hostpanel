@@ -131,7 +131,7 @@ describe('EmailCampaignFormView, a new campaign', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const mock = stubRoutes(common)
     const wrapper = await open('/support/email-campaigns')
-    expect(wrapper.get('[data-testid="email-campaign-audience"]').text()).toBe('Counting matching clients...')
+    expect(wrapper.get('[data-testid="email-campaign-audience"]').attributes('aria-busy')).toBe('true')
 
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
@@ -278,13 +278,25 @@ describe('EmailCampaignFormView, a new campaign', () => {
     await fill(wrapper)
 
     await wrapper.get('[data-testid="email-campaign-schedule"]').trigger('click')
-    await wrapper.get('[data-testid="email-campaign-schedule-at"]').trigger('click')
+    await wrapper.get('[data-testid="email-campaign-schedule-at"] button').trigger('click')
     await wrapper.get('[data-testid="email-campaign-schedule-confirm"]').trigger('click')
     await flushPromises()
     await flushPromises()
 
     expect(wrapper.get('[data-testid="email-campaign-error"]').text()).toBe('The time is in the past.')
     expect(wrapper.find('[data-testid="email-campaign-save"]').exists()).toBe(true)
+  })
+})
+
+describe('EmailCampaignFormView, loading', () => {
+  it('keeps the form fields and the actions in place as placeholders while the campaign loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await open('/support/email-campaigns/7')
+
+    expect(wrapper.get('[data-testid="email-campaign-form"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(3)
+    expect(wrapper.find('[data-testid="email-campaign-subject"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="email-campaign-save"]').attributes('disabled')).toBeDefined()
   })
 })
 
@@ -345,7 +357,7 @@ describe('EmailCampaignFormView, a draft', () => {
     const wrapper = await open('/support/email-campaigns/7')
 
     await wrapper.get('[data-testid="email-campaign-schedule"]').trigger('click')
-    await wrapper.get('[data-testid="email-campaign-schedule-at"]').trigger('click')
+    await wrapper.get('[data-testid="email-campaign-schedule-at"] button').trigger('click')
     await wrapper.get('[data-testid="email-campaign-schedule-confirm"]').trigger('click')
     await flushPromises()
     await flushPromises()

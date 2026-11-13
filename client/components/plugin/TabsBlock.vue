@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 /**
- * PluginTabsBlock - tabs, each holding blocks. Only the open tab's blocks are rendered, so a closed tab reads no
+ * PluginTabsBlock: tabs, each holding blocks. Only the open tab's blocks are rendered, so a closed tab reads no
  * route; opening it mounts its blocks, which read then. The optional `actions` sit on the tab row, whichever tab is open.
  * In a split pane the tabs pass the pane's height on, so a chat in a tab keeps its composer in view.
  */

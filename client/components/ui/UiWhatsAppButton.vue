@@ -89,7 +89,7 @@
 
 <script setup lang="ts">
 /**
- * WhatsAppButton (`UiWhatsAppButton`) - floating Telegram and WhatsApp contact buttons.
+ * WhatsAppButton (`UiWhatsAppButton`): floating Telegram and WhatsApp contact buttons.
  *
  * Both channels come from the operator's portal settings, so a self-hosted install shows its own
  * contacts; a channel with no value is not rendered. The glow and brand colours are theme tokens

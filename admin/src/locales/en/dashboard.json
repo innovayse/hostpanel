@@ -1,16 +1,42 @@
 {
-  "title": "Dashboard",
-  "subtitle": "Welcome back — here's what's happening",
-  "recentActivity": "Recent activity",
-  "quickLinks": "Quick links",
-  "live": "Live",
-  "loadingMetrics": "Loading metrics…",
+  "subtitle": "What needs attention today.",
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "period": {
+    "label": "Period",
+    "days30": "30 days",
+    "days90": "90 days"
+  },
   "stats": {
-    "totalRevenue": "Total Revenue",
-    "monthlyRevenue": "Monthly Revenue",
-    "activeServices": "Active Services",
-    "overdueInvoices": "Overdue Invoices",
-    "openTickets": "Open Tickets",
-    "totalClients": "Total Clients"
+    "monthlyRevenue": "Revenue this month",
+    "activeServices": "Active services",
+    "overdueInvoices": "Overdue invoices",
+    "openTickets": "Open tickets"
+  },
+  "recentInvoices": "Latest invoices",
+  "viewAll": "View all",
+  "noInvoices": "No invoices yet.",
+  "attention": {
+    "title": "Needs attention",
+    "kind": {
+      "overdueInvoice": "Overdue invoices",
+      "pendingOrder": "Pending orders",
+      "expiringDomain": "Domains expiring in 30 days",
+      "urgentTicket": "Urgent tickets"
+    }
+  },
+  "revenue": {
+    "title": "Revenue against target",
+    "note": "Dashed line: monthly average",
+    "income": "Income",
+    "average": "Monthly average"
+  },
+  "serverLoad": {
+    "title": "Server capacity",
+    "emptyTitle": "No load data",
+    "emptyDescription": "Servers with a limit and a connection test show their account load here."
   }
 }

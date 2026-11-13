@@ -16,7 +16,7 @@ You need:
   [Compose v2 plugin](https://docs.docker.com/compose/install/) installed and the
   daemon running. The installer checks for `docker`, `docker compose`, `curl` and
   `openssl` and names any that are missing.
-- Two DNS host names pointing at your server — one for the client portal
+- Two DNS host names pointing at your server: one for the client portal
   (e.g. `panel.example.com`) and one for the admin panel (e.g. `admin.example.com`).
   They must be different: the admin panel is served from the root path and needs its
   own host.
@@ -66,7 +66,7 @@ HOSTPANEL_BACKCHANNEL_LOGOUT_KEY=<openssl rand -hex 24>
 
 :::
 
-The one-command installer is recommended — it generates all secrets, sets every
+The one-command installer is recommended, it generates all secrets, sets every
 required value and waits for the stack to become healthy. The docker compose and
 `.env` tabs are for operators who need a scripted or custom setup; see
 [Install by hand with docker compose](#install-by-hand-with-docker-compose) for the
@@ -140,11 +140,11 @@ Pass flags on the command line or set the matching environment variable in front
   { name: '--keep &lt;n&gt; / HOSTPANEL_BACKUP_KEEP', type: 'number', default: '5', description: 'How many of the newest upgrade backups to keep in the backups folder. The oldest backup of each of the newest versions is kept as well (see --keep-versions). Older ones are removed.' },
   { name: '--keep-versions &lt;n&gt; / HOSTPANEL_BACKUP_KEEP_VERSIONS', type: 'number', default: '10', description: 'For how many of the newest versions the oldest backup is kept besides the newest ones. The newest versions are the ones with the most recent backup, not the highest version numbers. Versions further back lose theirs, so the backups folder does not grow with every release.' },
   { name: '--skip-backup', type: 'flag', default: 'none', description: 'Upgrade without a database backup. The data is not protected: use it only when there is nothing to keep.' },
-  { name: '--help / -h', type: 'flag', default: '—', description: 'Print usage and exit.' },
-  { name: 'HOSTPANEL_NONINTERACTIVE=1', type: 'env', default: '—', description: 'Skip the interactive prompts. Requires HOSTPANEL_DOMAIN and HOSTPANEL_ADMIN_EMAIL to be set.' },
-  { name: 'HOSTPANEL_DOMAIN', type: 'env', default: '—', description: 'Public host name of the client portal. Required for a non-interactive run.' },
+  { name: '--help / -h', type: 'flag', default: '', description: 'Print usage and exit.' },
+  { name: 'HOSTPANEL_NONINTERACTIVE=1', type: 'env', default: '', description: 'Skip the interactive prompts. Requires HOSTPANEL_DOMAIN and HOSTPANEL_ADMIN_EMAIL to be set.' },
+  { name: 'HOSTPANEL_DOMAIN', type: 'env', default: '', description: 'Public host name of the client portal. Required for a non-interactive run.' },
   { name: 'HOSTPANEL_ADMIN_DOMAIN', type: 'env', default: 'admin.&lt;domain&gt;', description: 'Public host name of the admin panel.' },
-  { name: 'HOSTPANEL_ADMIN_EMAIL', type: 'env', default: '—', description: 'Administrator email address. Required for a non-interactive run.' },
+  { name: 'HOSTPANEL_ADMIN_EMAIL', type: 'env', default: '', description: 'Administrator email address. Required for a non-interactive run.' },
 ]" />
 
 **Non-interactive example** (CI/CD or a provisioning script):
@@ -191,7 +191,7 @@ curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh
 | `EDGE_HTTPS_PORT` | `8443` |
 
 Your proxy must forward **both** host names to port 8080, keep the original `Host`
-header and add `X-Forwarded-Proto: https` — sign-in cookies require a secure origin.
+header and add `X-Forwarded-Proto: https`, sign-in cookies require a secure origin.
 
 Each extra proxy in front of the stack raises `RATE_LIMIT_TRUSTED_PROXY_COUNT` and
 `CLIENT_TRUSTED_PROXY_COUNT` by one. See the [configuration reference](/operators/configuration)
@@ -201,9 +201,9 @@ for details.
 
 The installer downloads three files into the install directory:
 
-- `docker-compose.hub.yml` — the stack definition
-- `Caddyfile` — the edge proxy configuration
-- `.env.example` — the settings template
+- `docker-compose.hub.yml`: the stack definition
+- `Caddyfile`: the edge proxy configuration
+- `.env.example`: the settings template
 
 It then creates `.env` (mode `600`) from `.env.example` with these values set:
 
@@ -265,7 +265,7 @@ cp .env.example .env && chmod 600 .env
 ```
 
 **3. Edit `.env`.** The example ships with `IMAGE_TAG=local`, `ALLOWED_HOSTS=panel.example.test`,
-`POSTGRES_DB=innovayse_dev`, a placeholder `ENCRYPTION_KEY` and `SMTP_HOST=hostpanel-mailhog` —
+`POSTGRES_DB=innovayse_dev`, a placeholder `ENCRYPTION_KEY` and `SMTP_HOST=hostpanel-mailhog`,
 leaving these unchanged will fail the pull or be refused on startup. Set at least:
 
 | Setting | Example value |
@@ -330,7 +330,7 @@ cd /opt/hostpanel && docker compose -f docker-compose.hub.yml up -d
 ```
 
 The API validates `SMTP_ENCRYPTION` on startup and names the key in the log if it is
-wrong — see [Troubleshooting](#troubleshooting).
+wrong: see [Troubleshooting](#troubleshooting).
 
 ## First run
 
@@ -339,12 +339,12 @@ wrong — see [Troubleshooting](#troubleshooting).
 When no one holds the Admin role yet, the admin panel shows a two-step setup
 screen under the heading **Initial setup** instead of the sign-in page.
 
-**Step 1 of 2 — create the first account on this installation**
+**Step 1 of 2: create the first account on this installation**
 
 Fill in **First name**, **Last name**, **Email address** and **Password**, then
 click **Create account**.
 
-**Step 2 of 2 — claim the administrator role**
+**Step 2 of 2: claim the administrator role**
 
 You are now signed in. The screen shows "Signed in as `<your email>`." and a
 **Setup token** field (placeholder: "Paste the token from the server log").
@@ -378,7 +378,7 @@ opens and the setup screen never appears again.
 
 | Error | Meaning |
 |---|---|
-| "That setup token is not the one this installation issued..." | Wrong or stale token. Restart the API and read the newest one from the log. |
+| "That setup token is not the one this installation issued." | Wrong or stale token. Restart the API and read the newest one from the log. |
 | "This installation has already been set up and someone already holds the administrator role." | Setup is done. Sign in normally, or ask the existing administrator for access. |
 | "Invalid email or password." | Wrong credentials on the sign-in page after setup is complete. |
 

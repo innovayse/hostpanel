@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 /**
- * PluginTableBlock - rows read from a GET route, one column per declared field, each value formatted as text with
+ * PluginTableBlock: rows read from a GET route, one column per declared field, each value formatted as text with
  * the host's formatters (never as markup), paged in the panel when the view sets `pageSize`. A row link opens a
  * page of the plugin, its parameters read from the row; the view checks the page and every parameter. `display: cards`
  * draws each row as a card, for a narrow pane where a table would scroll sideways.

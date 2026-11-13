@@ -68,4 +68,51 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
     }
+
+    /// <summary>The search matches the domain name case-insensitively as a substring and leaves other domains out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListDomains_SearchFiltersByNameCaseInsensitiveAsync()
+    {
+        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var (_, ownerClientId) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "list-domains-search");
+        var token = Guid.NewGuid().ToString("N")[..10];
+        var matchId = await DomainsTestSeeds.RegisterDomainAsync(admin, ownerClientId, $"shop-{token}.com");
+        var otherId = await DomainsTestSeeds.RegisterDomainAsync(admin, ownerClientId);
+
+        var response = await admin.GetAsync($"/api/domains?page=1&pageSize=100&search={token.ToUpperInvariant()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var ids = body.RootElement.GetProperty("items").EnumerateArray().Select(d => d.GetProperty("id").GetInt32()).ToList();
+        ids.Should().Contain(matchId).And.NotContain(otherId);
+        body.RootElement.GetProperty("totalCount").GetInt32().Should().Be(1);
+    }
+
+    /// <summary>A search wildcard typed by the admin matches itself, not every domain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListDomains_SearchWildcardIsLiteralAsync()
+    {
+        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync("/api/domains?page=1&pageSize=100&search=%25");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("totalCount").GetInt32().Should().Be(0);
+    }
+
+    /// <summary>A search longer than the limit is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListDomains_SearchTooLong_Returns400ValidationErrorAsync()
+    {
+        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/domains?page=1&pageSize=20&search={new string('a', 256)}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
+    }
 }

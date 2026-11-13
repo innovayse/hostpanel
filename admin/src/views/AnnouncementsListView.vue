@@ -14,7 +14,8 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -27,7 +28,6 @@ import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { formatDateTimeCompact } from '@/lib/format'
 import { useAnnouncementsStore } from '@/stores/announcements'
-import { pageCount } from '@/lib/paging'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
@@ -37,9 +37,6 @@ import type { Announcement } from '@/types/announcement'
 const { t } = useI18n()
 
 const store = useAnnouncementsStore()
-
-/** Number of columns of the table (width of the status row). */
-const COLUMN_COUNT = 4
 
 /** ID of the announcement waiting for delete confirmation; null when no dialog is open. */
 const deleteTarget = ref<number | null>(null)
@@ -64,9 +61,6 @@ const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Dan
 const load = async (): Promise<void> => {
   loadError.value = (await store.fetchAll()) ? null : store.error
 }
-
-/** Number of pages for the record count. */
-const totalPages = computed<number>(() => pageCount(store.totalCount, store.pageSize))
 
 /**
  * Loads another page.
@@ -119,7 +113,7 @@ onMounted(() => {
  * @param announcement - The announcement of the row.
  * @returns The action list passed to UiRowActions.
  */
-const rowActions = (announcement: Announcement): UiRowAction[] => {
+const rowActions = (announcement: Announcement): UiMenuAction[] => {
   /**
    * Stages this announcement for the delete confirmation.
    *
@@ -152,14 +146,9 @@ const rowActions = (announcement: Announcement): UiRowAction[] => {
       </template>
     </UiPageHeader>
 
-    <UiStack direction="row" justify="between" wrap>
-      <UiText tone="muted" size="sm" data-testid="announcements-count">
-        {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-      </UiText>
-      <UiText tone="muted" size="sm">
-        {{ t('shared.pagePageOfTotalpages', { page: store.page, totalPages }) }}
-      </UiText>
-    </UiStack>
+    <UiText tone="muted" size="sm" data-testid="announcements-count">
+      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
+    </UiText>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="announcements-feedback" />
 
@@ -171,12 +160,11 @@ const rowActions = (announcement: Announcement): UiRowAction[] => {
       @retry="load"
     />
 
-    <UiCard class="overflow-x-auto">
+    <UiCard v-else>
       <UiTable
         :density="UiTableDensity.Comfortable"
         :loading="store.loading && store.announcements.length === 0"
         :empty="!store.loading && store.announcements.length === 0"
-        :colspan="COLUMN_COUNT"
         data-testid="announcements-table"
       >
         <UiTableHead>
@@ -229,7 +217,6 @@ const rowActions = (announcement: Announcement): UiRowAction[] => {
       :title="t('support.announcementsList.deleteAnnouncement')"
       :message="t('support.announcementsList.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="handleDelete"

@@ -15,7 +15,8 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -44,9 +45,6 @@ import { UiTone } from '@/utils/ui/tone'
 const { t } = useI18n()
 
 const store = useNetworkIssuesStore()
-
-/** Number of columns of the table (width of the status row). */
-const COLUMN_COUNT = 7
 
 /** The tab shown when the page opens. */
 const DEFAULT_TAB = NetworkIssueTab.Open
@@ -159,7 +157,7 @@ onMounted(() => {
  * @param issue - The network issue of the row.
  * @returns The action list passed to UiRowActions.
  */
-const rowActions = (issue: NetworkIssue): UiRowAction[] => {
+const rowActions = (issue: NetworkIssue): UiMenuAction[] => {
   /**
    * Stages this network issue for the delete confirmation.
    *
@@ -215,12 +213,11 @@ const rowActions = (issue: NetworkIssue): UiRowAction[] => {
       @retry="store.fetchAll()"
     />
 
-    <UiCard v-else class="overflow-x-auto">
+    <UiCard v-else>
       <UiTable
         :density="UiTableDensity.Comfortable"
         :loading="store.loading && store.issues.length === 0"
         :empty="!store.loading && store.issues.length === 0"
-        :colspan="COLUMN_COUNT"
         data-testid="network-issues-table"
       >
         <UiTableHead>
@@ -279,7 +276,6 @@ const rowActions = (issue: NetworkIssue): UiRowAction[] => {
       :title="t('support.networkIssues.deleteNetworkIssue')"
       :message="t('support.networkIssues.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="handleDelete"

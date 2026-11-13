@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 /**
- * UiDialog - a centred modal with a backdrop, an optional header, a body and a footer.
+ * UiDialog: a centred modal with a backdrop, an optional header, a body and a footer.
  *
  * Teleports to `<body>` so it stacks above everything, locks page scrolling while open (shared
  * counter, see `utils/ui/overlay.ts`), closes on Escape, and closes on a backdrop click when

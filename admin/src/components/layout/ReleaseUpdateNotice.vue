@@ -66,14 +66,14 @@ const copyCommand = async (): Promise<void> => {
 <template>
   <div
     v-if="releaseStatus.status?.isUpgradeAvailable"
-    class="mx-2.5 mb-2 rounded-[9px] border border-warning-500/30 bg-warning-500/10 p-3"
+    class="mx-2.5 mb-2 rounded-[9px] border border-status-yellow/30 bg-tint-yellow p-3"
     data-testid="release-update-notice"
   >
     <UiStack gap="xs">
       <!-- Header: icon + version label -->
       <UiStack direction="row" align="center" gap="xs">
-        <UiIcon :markup="UPGRADE_ICON" size="sm" class="shrink-0 text-warning-500" />
-        <UiText size="sm" class="font-medium text-warning-600 dark:text-warning-400">
+        <UiIcon :markup="UPGRADE_ICON" size="sm" class="shrink-0 text-status-yellow" />
+        <UiText size="sm" class="font-medium text-status-yellow">
           {{ t('layout.releaseUpdate.title', { version: releaseStatus.status.latestVersion }) }}
         </UiText>
       </UiStack>

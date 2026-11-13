@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 /**
- * DomainContactForm - the eleven WHOIS fields of one contact role, in the order they are
+ * DomainContactForm: the eleven WHOIS fields of one contact role, in the order they are
  * normally written. It owns no state: it shows the values it is given and reports each edit.
  */
 import type { DomainContactFields } from '~/types/domaincontactfields'

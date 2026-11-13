@@ -12,13 +12,14 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
+import UiButton from '@/components/ui/UiButton.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { splitIsoDate } from '@/lib/format'
 import { translate } from '@/lib/translate'
 import {
   RangeEdge,
   buildYearOptions,
-  dateActionClasses,
   dateArrowClasses,
   dateCellBaseClasses,
   dateCellEmptyClasses,
@@ -31,6 +32,7 @@ import {
   dateRangePresets,
   formatDisplayDate,
   formatIsoDate,
+  getDayKeysForMonth,
   getDaysForMonth,
   parsePartialDate,
   parseTypedDate,
@@ -116,6 +118,9 @@ const months = computed<Date[]>(() => {
 
 /** Cells of each shown month. */
 const monthCells = computed<(number | null)[][]>(() => months.value.map(getDaysForMonth))
+
+/** ISO day of each cell of each shown month, the cell's list key. */
+const monthCellKeys = computed<string[][]>(() => months.value.map(getDayKeysForMonth))
 
 /** Left month select value. */
 const currentMonthValue = computed<string>({
@@ -518,7 +523,7 @@ onUnmounted(() => {
               >
                 {{ t(item.labelKey) }}
               </button>
-              <div class="text-left px-3 py-2 text-primary-600 light:text-primary-700 font-semibold rounded text-sm bg-primary-500/10">{{ t('shared.custom') }}</div>
+              <div class="text-left px-3 py-2 text-text-accent font-semibold rounded-lg text-sm bg-tint-blue">{{ t('shared.custom') }}</div>
             </div>
 
             <div class="flex-1 p-4">
@@ -546,14 +551,14 @@ onUnmounted(() => {
               </div>
 
               <div class="flex gap-8">
-                <div v-for="(month, idx) in months" :key="idx" class="flex-1">
+                <div v-for="(month, idx) in months" :key="formatIsoDate(month)" class="flex-1">
                   <div class="grid grid-cols-7 gap-1 mb-2">
                     <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
                   </div>
                   <div class="grid grid-cols-7 gap-1">
                     <button
                       v-for="(day, i) in monthCells[idx]"
-                      :key="i"
+                      :key="monthCellKeys[idx]?.[i]"
                       type="button"
                       :data-testid="`date-range-day-${idx}-${i}`"
                       :disabled="day === null"
@@ -568,19 +573,14 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="flex items-center justify-between border-t border-border p-4 bg-surface-hover rounded-b-[10px]">
+          <div class="flex items-center justify-between border-t border-border p-4 bg-surface-hover rounded-b-control">
             <span v-if="pickedLabel" class="text-sm text-text-secondary">{{ pickedLabel }}</span>
             <span v-else class="text-sm text-text-secondary">{{ t('ui.uiDateRangePicker.selectDateRange') }}</span>
             <div class="flex gap-2">
-              <button type="button" data-testid="date-range-clear" :class="dateActionClasses" class="px-4 py-2" @click="clearRange">{{ t('shared.clear') }}</button>
-              <button
-                type="button"
-                data-testid="date-range-apply"
-                class="px-4 py-2 text-sm gradient-brand text-white rounded-[9px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500/50 font-semibold"
-                @click="applyRange"
-              >
+              <UiButton :variant="UiButtonVariant.Ghost" type="button" data-testid="date-range-clear" @click="clearRange">{{ t('shared.clear') }}</UiButton>
+              <UiButton :variant="UiButtonVariant.Primary" type="button" data-testid="date-range-apply" @click="applyRange">
                 {{ t('shared.apply') }}
-              </button>
+              </UiButton>
             </div>
           </div>
         </div>

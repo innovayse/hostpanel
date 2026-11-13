@@ -47,7 +47,7 @@ The admin panel has a Russian plural rule defined in `admin/src/i18n.ts`. When a
 }
 ```
 
-The three slots correspond to one, two–four and five-or-more respectively, matching the `russianPlural` function in `i18n.ts`.
+The three slots correspond to one, two to four and five-or-more respectively, matching the `russianPlural` function in `i18n.ts`.
 
 ## Style
 

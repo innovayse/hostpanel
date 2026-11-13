@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 /**
- * PluginLinkBlock - a link, written in the view or read from a GET route, drawn as an outline button; one that leaves
+ * PluginLinkBlock: a link, written in the view or read from a GET route, drawn as an outline button; one that leaves
  * the panel carries an external-link mark.
  *
  * Rendered only when `pluginLinkTarget` admits the address: a host-relative path (one leading `/`, never `//`,

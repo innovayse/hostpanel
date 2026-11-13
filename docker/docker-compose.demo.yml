@@ -11,7 +11,7 @@
 #     internal-only network. Nothing production-side is on it, so it reaches no production container anyway.
 #   - `edge` is the dedicated external network hostpanel_demo_edge, NOT the production network. Only the edge proxy
 #     (your reverse proxy, which is on both networks) and the three edge-facing demo services are on it. The demo
-#     therefore cannot resolve or route to any production container (hostpanel-db, ...);
+#     therefore cannot resolve or route to any production container (hostpanel-db and so on);
 #     the one production-side peer it can address is the proxy itself, which routes by Host header.
 #     Create it once per host:  docker network create --subnet 172.29.0.0/16 hostpanel_demo_edge  (deploy:demo does,
 #     idempotently). The subnet is fixed because the operator's edge proxy denies it on every production host,

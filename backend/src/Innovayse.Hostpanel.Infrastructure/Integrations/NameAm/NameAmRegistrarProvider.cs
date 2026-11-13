@@ -433,7 +433,7 @@ public sealed class NameAmRegistrarProvider : IRegistrarProvider
             if (!string.Equals(status, ActiveDomainStatus, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogInformation(
-                    "Domain {DomainName} found in Name.am but status is '{Status}' — not yet active",
+                    "Domain {DomainName} found in Name.am but status is '{Status}', so it is not yet active",
                     domainName, status);
                 return new RegistrarResult(false, null, null, HostpanelErrorCodes.REGISTRAR_DOMAIN_NOT_ACTIVE);
             }

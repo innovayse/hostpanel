@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 /**
- * UiStatGroup - an even grid of stats: two columns on a phone, one equal column per stat from
+ * UiStatGroup. An even grid of stats: two columns on a phone, one equal column per stat from
  * `sm` up (four at most, then it wraps). Dividers are drawn between neighbouring cells only.
  */
 import { computed } from 'vue'

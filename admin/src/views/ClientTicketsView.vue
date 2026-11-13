@@ -13,12 +13,11 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -43,6 +42,9 @@ const route = useRoute()
 
 /** Client ticket store, the only caller of the ticket endpoints. */
 const store = useClientTicketsStore()
+
+/** True while the first load is in flight and there are no tickets yet; the tiles and the table then draw their placeholders. */
+const initialLoading = computed<boolean>(() => store.loading && store.tickets.length === 0)
 
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
@@ -104,16 +106,18 @@ onBeforeUnmount(() => {
 
 <template>
   <UiStack>
-    <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-      <UiHeading :level="1" variant="card">{{ t('clients.clientTickets.tickets') }}</UiHeading>
-      <UiLink
-        :to="clientTicketNewPath(clientId)"
-        :variant="UiButtonVariant.Primary"
-        data-testid="client-tickets-new"
-      >
-        {{ t('clients.clientTickets.openNewTicket') }}
-      </UiLink>
-    </UiStack>
+    <UiSectionHeader :level="1" variant="card">
+      {{ t('clients.clientTickets.tickets') }}
+      <template #actions>
+        <UiLink
+          :to="clientTicketNewPath(clientId)"
+          :variant="UiButtonVariant.Primary"
+          data-testid="client-tickets-new"
+        >
+          {{ t('clients.clientTickets.openNewTicket') }}
+        </UiLink>
+      </template>
+    </UiSectionHeader>
 
     <UiErrorState
       v-if="store.error"
@@ -123,32 +127,31 @@ onBeforeUnmount(() => {
       @retry="fetchTickets()"
     />
 
-    <UiStack v-if="store.loading && store.tickets.length === 0" data-testid="client-tickets-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientTickets.loadingTickets') }}</UiText>
-    </UiStack>
-
     <template v-else>
       <UiGrid :columns="4">
         <UiStatTile
           :label="t('clients.clientTickets.openedThisMonth')"
           :value="store.stats.openedThisMonth"
           :tone="UiTone.Primary"
+          :loading="initialLoading"
         />
         <UiStatTile
           :label="t('clients.clientTickets.openedLastMonth')"
           :value="store.stats.openedLastMonth"
           :tone="UiTone.Info"
+          :loading="initialLoading"
         />
         <UiStatTile
           :label="t('clients.clientTickets.openedThisYear')"
           :value="store.stats.openedThisYear"
           :tone="UiTone.Success"
+          :loading="initialLoading"
         />
         <UiStatTile
           :label="t('clients.clientTickets.openedLastYear')"
           :value="store.stats.openedLastYear"
           :tone="UiTone.Neutral"
+          :loading="initialLoading"
         />
       </UiGrid>
 
@@ -166,8 +169,8 @@ onBeforeUnmount(() => {
       <UiCard class="overflow-x-auto">
         <UiTable
           :density="UiTableDensity.Comfortable"
-          :empty="store.tickets.length === 0"
-          :colspan="5"
+          :loading="initialLoading"
+          :empty="!initialLoading && store.tickets.length === 0"
           data-testid="client-tickets-table"
         >
           <UiTableHead>
@@ -203,7 +206,7 @@ onBeforeUnmount(() => {
           </template>
         </UiTable>
         <UiStack
-          v-if="store.totalCount > pageSize"
+          v-if="initialLoading || store.totalCount > pageSize"
           direction="row"
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
@@ -215,6 +218,7 @@ onBeforeUnmount(() => {
             :page="page"
             :total="store.totalCount"
             :page-size="pageSize"
+            :loading="initialLoading"
             testid="client-tickets-pagination"
             @update:page="goToPage"
           />

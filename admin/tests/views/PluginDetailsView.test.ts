@@ -3,7 +3,7 @@
  * details with their versions, an install behind a confirmation, a downgrade behind its own
  * explicit confirmation, an update to the newest version, an uninstall behind a confirmation that
  * raises the restart banner, a refusal shown as the API's sentence, and the write-only licence key
- * of a paid plugin (save, remove, refusal).
+ * of a paid plugin (save, remove, refusal). Versions, Licence and Changes sit behind the page's tabs, which the tests switch.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -35,13 +35,17 @@ const stubRoutes = (routes: Record<string, () => Response>) =>
   ))
 
 /**
- * Mounts the page for the fixture plugin and waits for the load.
+ * Mounts the page for the fixture plugin, waits for the load and opens a tab when one is named.
  *
+ * @param tab - The tab to switch to (`versions`, `licence` or `changes`); the overview stays on show when omitted.
  * @returns The wrapper.
  */
-const mountPage = async () => {
+const mountPage = async (tab?: 'versions' | 'licence' | 'changes') => {
   const { wrapper } = await mountRouted(PluginDetailsView, '/plugins/:id', '/plugins/example-pay')
   await flushPromises()
+  if (tab !== undefined) {
+    await wrapper.get(`[data-testid="plugin-details-tab-${tab}"]`).trigger('click')
+  }
   return wrapper
 }
 
@@ -66,8 +70,14 @@ describe('PluginDetailsView', () => {
 
     expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
     expect(wrapper.find('[data-testid="plugin-details-link-documentation"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-version-3.0.0"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-tab-licence"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="plugin-details-tab-versions"]').trigger('click')
+
     expect(wrapper.find('[data-testid="plugin-version-3.0.0"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugin-version-1.0.0"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-link-documentation"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-licence-card"]').exists()).toBe(false)
   })
 
@@ -76,6 +86,8 @@ describe('PluginDetailsView', () => {
     const { wrapper } = await mountRouted(PluginDetailsView, '/plugins/:id', '/plugins/example-pay')
 
     expect(wrapper.find('[data-testid="plugin-details-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-tab-overview"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-links"]').exists()).toBe(true)
     await flushPromises()
     expect(wrapper.find('[data-testid="plugin-details-loading"]').exists()).toBe(false)
   })
@@ -162,7 +174,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails()),
       'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true }),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('versions')
 
     await wrapper.get('[data-testid="plugin-version-install-3.0.0"]').trigger('click')
     await flushPromises()
@@ -188,7 +200,7 @@ describe('PluginDetailsView', () => {
         ],
       })),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('changes')
 
     const card = wrapper.get('[data-testid="plugin-details-changes"]')
     expect(card.get('[data-testid="plugin-update-changes-heading"]').text()).toBe('What changes from 2.0.0 to 4.0.0')
@@ -202,7 +214,22 @@ describe('PluginDetailsView', () => {
     stubRoutes({ [DETAILS_URL]: () => json(makeDetails({ updateAvailable: false, latestVersion: '2.0.0' })) })
     const wrapper = await mountPage()
 
+    expect(wrapper.find('[data-testid="plugin-details-tab-changes"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-details-changes"]').exists()).toBe(false)
+  })
+
+  it('offers the Changes tab only while an update is pending, and the Licence tab only for a plugin that needs a key', async () => {
+    stubRoutes({ [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true })) })
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('[data-testid="plugin-details-tab-changes"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-tab-licence"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-changes"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="plugin-details-tab-changes"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="plugin-details-changes"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-link-documentation"]').exists()).toBe(false)
   })
 
   it('repeats the changes in the update confirmation', async () => {
@@ -240,7 +267,7 @@ describe('PluginDetailsView', () => {
       })),
       'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '1.0.0' }),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('versions')
 
     await wrapper.get('[data-testid="plugin-version-install-1.0.0"]').trigger('click')
     await flushPromises()
@@ -256,7 +283,7 @@ describe('PluginDetailsView', () => {
 
   it('installs nothing when the confirmation is dismissed', async () => {
     const mock = stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('versions')
 
     await wrapper.get('[data-testid="plugin-version-install-3.0.0"]').trigger('click')
     await flushPromises()
@@ -272,7 +299,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails()),
       'POST /api/admin/plugins/registry/example-pay/install': () => problem('This version needs a licence key.', 409),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('versions')
 
     await wrapper.get('[data-testid="plugin-version-install-3.0.0"]').trigger('click')
     await flushPromises()
@@ -318,7 +345,7 @@ describe('PluginDetailsView', () => {
 
   it('shows a yanked version with its reason and replacement', async () => {
     stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('versions')
 
     expect(wrapper.get('[data-testid="plugin-version-status-1.0.0"]').text()).toBe('Yanked')
     expect(wrapper.get('[data-testid="plugin-version-reason-1.0.0"]').text()).toContain('Charges twice.')
@@ -335,7 +362,7 @@ describe('PluginDetailsView', () => {
         return new Response(null, { status: 204 })
       },
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('licence')
 
     expect(wrapper.find('[data-testid="plugin-licence-missing"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugin-details-licence-needed"]').exists()).toBe(true)
@@ -359,7 +386,7 @@ describe('PluginDetailsView', () => {
         return new Response(null, { status: 204 })
       },
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('licence')
 
     await wrapper.get('[data-testid="plugin-licence-remove"]').trigger('click')
     await flushPromises()
@@ -373,7 +400,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true })),
       'PUT /api/admin/plugins/registry/example-pay/licence': () => problem('The key is not valid.', 400),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('licence')
 
     await wrapper.get('[data-testid="plugin-licence-input"]').setValue('BAD')
     await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
@@ -387,7 +414,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true, hasLicenceKey: true })),
       'PUT /api/admin/plugins/registry/example-pay/licence': () => new Response(null, { status: 204 }),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('licence')
 
     await wrapper.get('[data-testid="plugin-licence-input"]').setValue('KEY-NEW')
     await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
@@ -401,7 +428,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true, hasLicenceKey: true })),
       'PUT /api/admin/plugins/registry/example-pay/licence': () => problem('The key is not valid.', 400),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('licence')
 
     await wrapper.get('[data-testid="plugin-licence-input"]').setValue('BAD')
     await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
@@ -415,7 +442,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true, hasLicenceKey: true })),
       'DELETE /api/admin/plugins/registry/example-pay/licence': () => new Response(null, { status: 204 }),
     })
-    const wrapper = await mountPage()
+    const wrapper = await mountPage('licence')
 
     await wrapper.get('[data-testid="plugin-licence-input"]').setValue('TYPED')
     await wrapper.get('[data-testid="plugin-licence-remove"]').trigger('click')

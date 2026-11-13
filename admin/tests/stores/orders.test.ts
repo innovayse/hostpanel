@@ -21,13 +21,12 @@ describe('ordersStore', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fetchAll sends the status filter and fills the list', async () => {
+  it('fetchAll sends the page and the status and fills the list', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 1 }))
     const store = useOrdersStore()
-    store.statusFilter = OrderStatus.Pending
 
-    expect(await store.fetchAll()).toBe(true)
-    expect(callOf(mock).url).toBe('/api/orders?page=1&pageSize=20&status=Pending')
+    expect(await store.fetchAll(2, OrderStatus.Pending)).toBe(true)
+    expect(callOf(mock).url).toBe('/api/orders?page=2&pageSize=20&status=Pending')
     expect(store.orders).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(1)
     expect(store.loading).toBe(false)
@@ -36,11 +35,11 @@ describe('ordersStore', () => {
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useOrdersStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1, null)).toBe(false)
     expect(store.error).toBe('Not allowed.')
 
     stubOffline()
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1, null)).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
   })
 
@@ -190,16 +189,16 @@ describe('ordersStore', () => {
     expect(mock).toHaveBeenCalledTimes(1)
   })
 
-  it('deleteOrder refreshes the list on success and clears actionError', async () => {
+  it('deleteOrder clears actionError on success and leaves the list to the screen', async () => {
     const store = useOrdersStore()
     stubFetch(problem('Locked.', 409))
     expect(await store.deleteOrder(8)).toBe(false)
     expect(store.actionError).toBe('Locked.')
 
-    const mock = stubFetch(new Response(null, { status: 204 }), json({ items: [], totalCount: 0 }))
+    const mock = stubFetch(new Response(null, { status: 204 }))
     expect(await store.deleteOrder(8)).toBe(true)
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/orders/8', method: 'DELETE' })
-    expect(callOf(mock, 1).url).toBe('/api/orders?page=1&pageSize=20')
+    expect(mock).toHaveBeenCalledTimes(1)
     expect(store.actionError).toBeNull()
   })
 })

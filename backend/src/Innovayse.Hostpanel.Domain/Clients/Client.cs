@@ -636,7 +636,7 @@ public sealed class Client : BaseEntity, IAggregateRoot
         {
             throw new DomainRuleException(
                 ClientsErrors.ClientCreditInsufficient,
-                $"Cannot deduct {amount} — current credit balance is {CreditBalance}.");
+                $"Cannot deduct {amount}, the current credit balance is {CreditBalance}.");
         }
 
         CreditBalance -= amount;

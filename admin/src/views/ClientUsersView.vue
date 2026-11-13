@@ -20,7 +20,8 @@ import UserFormModal from '@/components/clients/UserFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
@@ -32,7 +33,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -75,6 +76,9 @@ const users = ref<ClientUserItem[]>([])
 
 /** True while the initial fetch is in flight (owned by the store). */
 const loading = computed(() => store.loading)
+
+/** True while the first load is in flight and there are no users yet; the list then draws its placeholders. */
+const initialLoading = computed<boolean>(() => loading.value && users.value.length === 0)
 
 /** The sentence of the last refused list load, shown with Retry; null when the list loaded. */
 const loadError = ref<string | null>(null)
@@ -417,7 +421,7 @@ onBeforeUnmount(() => {
  * @param u - The user whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
+const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
   /**
    * Opens the manage dialog for this user.
    * @returns Nothing.
@@ -444,13 +448,8 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
       {{ error }}
     </UiAlert>
 
-    <UiStack v-if="loading" data-testid="client-users-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientUsers.loadingUsers') }}</UiText>
-    </UiStack>
-
     <UiErrorState
-      v-else-if="loadError !== null"
+      v-if="loadError !== null"
       :message="loadError"
       :loading="loading"
       testid="client-users-load-error"
@@ -459,7 +458,8 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
 
     <template v-else>
       <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-        <UiHeading :level="2" variant="section">
+        <UiSkeletonBar v-if="initialLoading" class="h-6 w-32 rounded-md" aria-hidden="true" />
+        <UiHeading v-else :level="2" variant="section">
           {{ t('clients.clientUsers.usersLength', { length: users.length }) }}
         </UiHeading>
         <UiButton
@@ -543,20 +543,21 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
                 <UiButton
                   v-if="addMode === AddUserMode.Search"
                   :variant="UiButtonVariant.Primary"
-                  :disabled="addingUser"
+                  :loading="addingUser"
                   data-testid="client-users-add-submit"
                   @click="handleAddUser"
                 >
-                  {{ addingUser ? t('clients.clientUsers.adding') : t('clients.clientUsers.addUser2') }}
+                  {{ t('clients.clientUsers.addUser2') }}
                 </UiButton>
                 <UiButton
                   v-else
                   :variant="UiButtonVariant.Primary"
-                  :disabled="inviteSending || !inviteReady"
+                  :loading="inviteSending"
+                  :disabled="!inviteReady"
                   data-testid="client-users-invite-submit"
                   @click="handleSendInvite"
                 >
-                  {{ inviteSending ? t('shared.sending') : t('clients.clientUsers.sendInvite') }}
+                  {{ t('clients.clientUsers.sendInvite') }}
                 </UiButton>
               </UiStack>
             </UiStack>
@@ -564,8 +565,8 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
         </UiCard>
       </UiCollapse>
 
-      <UiCard v-if="users.length > 0" class="overflow-x-auto">
-        <UiTable :density="UiTableDensity.Comfortable" data-testid="client-users-table">
+      <UiCard v-if="initialLoading || users.length > 0" class="overflow-x-auto">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-users-table">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
@@ -624,7 +625,6 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
       :title="t('clients.clientUsers.transferOwnership')"
       :message="t('clients.clientUsers.confirmTransferOwnership', { email: makeOwnerTarget.email })"
       :confirm-label="t('clients.clientUsers.transfer')"
-      :loading-label="t('shared.transferring')"
       :loading="transferringOwnership"
       tone="warning"
       @confirm="confirmMakeOwner"
@@ -637,7 +637,6 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
       :title="t('clients.clientUsers.removeUser')"
       :message="t('clients.clientUsers.confirmRemoveUser', { email: removeUserTarget.email })"
       :confirm-label="t('clients.clientUsers.remove')"
-      :loading-label="t('shared.removing')"
       :loading="removingUser"
       tone="danger"
       @confirm="confirmRemoveUser"

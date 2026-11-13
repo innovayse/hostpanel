@@ -1,5 +1,5 @@
 /**
- * Tests for the demo store: values kept, admin account picked, one load only, silent on failure.
+ * Tests for the demo store: values and accounts kept, one load only, silent on failure.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 describe('demoStore', () => {
-  it('load keeps the description and exposes the admin account', async () => {
+  it('load keeps the description and the published accounts', async () => {
     stubFetch(json({
       enabled: true,
       nextResetAt: '2030-01-01T00:00:00Z',
@@ -31,7 +31,7 @@ describe('demoStore', () => {
     await store.load()
     expect(store.enabled).toBe(true)
     expect(store.nextResetAt).toBe('2030-01-01T00:00:00Z')
-    expect(store.adminAccount?.email).toBe('a@x.test')
+    expect(store.accounts.map(a => a.email)).toEqual(['c@x.test', 'a@x.test'])
   })
 
   it('load reaches the network once', async () => {
@@ -42,7 +42,7 @@ describe('demoStore', () => {
     await store.load()
     expect(mock).toHaveBeenCalledTimes(1)
     expect(store.enabled).toBe(false)
-    expect(store.adminAccount).toBeNull()
+    expect(store.accounts).toEqual([])
   })
 
   it('forced load reaches the network again', async () => {

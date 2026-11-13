@@ -2,7 +2,6 @@
   "title": "Currencies",
   "description": "Configure billing currencies, exchange rates and the base currency",
   "updateRates": "Update Exchange Rates",
-  "updatingRates": "Updating...",
   "updateProductPrices": "Update Product Prices",
   "addCurrency": "Add Currency",
   "table": {
@@ -23,8 +22,7 @@
   "makeBaseModal": {
     "title": "Make Base Currency",
     "message": "Make {code} the base currency? Rates of every other currency are re-expressed against the new base.",
-    "confirmLabel": "Make Base",
-    "loadingLabel": "Switching..."
+    "confirmLabel": "Make Base"
   },
   "pricesPicker": {
     "title": "Update Product Prices",
@@ -35,8 +33,7 @@
   "pricesConfirm": {
     "title": "Overwrite Product Prices",
     "message": "This overwrites {codes} product prices, recomputed from the base currency. This cannot be undone.",
-    "confirmLabel": "Overwrite",
-    "loadingLabel": "Updating..."
+    "confirmLabel": "Overwrite"
   },
   "toasts": {
     "makeBaseSucceeded": "{code} is now the base currency.",
@@ -75,7 +72,6 @@
     },
     "cancel": "Cancel",
     "save": "Save Changes",
-    "add": "Add Currency",
-    "saving": "Saving..."
+    "add": "Add Currency"
   }
 }

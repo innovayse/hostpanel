@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 /**
- * UiStatTile - one headline number with its label, an optional icon and a trend hint
+ * UiStatTile: one headline number with its label, an optional icon and a trend hint
  * (dashboard summary tiles). The `value` slot replaces the plain value, for example with a badge.
  */
 import { computed } from 'vue'

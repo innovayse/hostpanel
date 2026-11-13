@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiContainer - the one shared page-width wrapper.
+ * UiContainer: the one shared page-width wrapper.
  *
  * Renders the `container-custom` class, defined once in `assets/css/main.css`
  * (`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`, i.e. 1280px with 16/24/32px gutters).

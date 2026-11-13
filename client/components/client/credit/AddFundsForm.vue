@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 /**
- * AddFundsForm - the amount a client wants to add to their credit balance.
+ * AddFundsForm: the amount a client wants to add to their credit balance.
  *
  * The limits are the admin's and arrive with the credit; the form checks the amount against them before it asks, and the
  * backend checks again, so a stale page cannot add less or more than allowed. Submitting emits the amount; the page raises the

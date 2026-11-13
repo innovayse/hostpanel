@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 /**
- * DomainSidebar - the side menu of the domain detail page: the panels to switch between (all but
+ * DomainSidebar. The side menu of the domain detail page: the panels to switch between (all but
  * the overview are locked while the registrar is still processing the domain) and the actions
  * renew and register another domain.
  */

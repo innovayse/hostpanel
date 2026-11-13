@@ -102,8 +102,8 @@ A quote can only be edited while it is in a stage that permits editing (`QUOTE_N
 
 ### Duplicate and convert
 
-- **Duplicate** — creates a copy of the quote in Draft stage.
-- **Convert to Invoice** — creates an invoice from the quote's line items. The quote itself stays unchanged.
+- **Duplicate**: creates a copy of the quote in Draft stage.
+- **Convert to Invoice**: creates an invoice from the quote's line items. The quote itself stays unchanged.
 
 ## Cancellation requests
 

@@ -1,12 +1,12 @@
 /**
  * Tests for HomeSectionsCard: one switch per home section, each reading its own settings row,
- * the portfolio defaulting to off, and each switch saving on its own as `true` or `false`.
+ * the portfolio defaulting to off, and each switch a draft of the page save bar saved as `true` or `false`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HomeSectionsCard from '@/components/settings/HomeSectionsCard.vue'
 import { HOME_SECTION_SETTING, HomeSection } from '@/types/homesection'
 import type { Setting, SettingSave } from '@/types/setting'
-import { mountScreen } from '../../helpers/mount'
+import { mountSettingsCard } from '../../helpers/settingsPage'
 
 /** The save callback the card is given; it answers that the value was stored. */
 const save = vi.fn<SettingSave>(async () => ({ saved: true, error: null }))
@@ -32,7 +32,7 @@ const idOf = (section: HomeSection): number => rows.find((row) => row.key === HO
 
 describe('HomeSectionsCard', () => {
   it('renders one switch per section with the stored state', async () => {
-    const { wrapper } = await mountScreen(HomeSectionsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(HomeSectionsCard, rows)
 
     for (const section of Object.values(HomeSection)) {
       const expected = section === HomeSection.Projects ? 'false' : 'true'
@@ -41,33 +41,33 @@ describe('HomeSectionsCard', () => {
   })
 
   it('turns a section off and saves the literal false', async () => {
-    const { wrapper } = await mountScreen(HomeSectionsCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(HomeSectionsCard, rows)
 
     await wrapper.get('[data-testid="home-section-faq"]').trigger('click')
-    await wrapper.get('[data-testid="home-section-faq-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[idOf(HomeSection.Faq), 'false']])
   })
 
   it('turns the portfolio on and saves the literal true', async () => {
-    const { wrapper } = await mountScreen(HomeSectionsCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(HomeSectionsCard, rows)
 
     await wrapper.get('[data-testid="home-section-projects"]').trigger('click')
-    await wrapper.get('[data-testid="home-section-projects-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[idOf(HomeSection.Projects), 'true']])
   })
 
   it('reads an empty portfolio row as off and any other empty row as on', async () => {
     const empty = rows.map((row) => ({ ...row, value: '' }))
-    const { wrapper } = await mountScreen(HomeSectionsCard, { save, settings: empty })
+    const { wrapper } = await mountSettingsCard(HomeSectionsCard, empty)
 
     expect(wrapper.get('[data-testid="home-section-projects"]').attributes('aria-checked')).toBe('false')
     expect(wrapper.get('[data-testid="home-section-cta"]').attributes('aria-checked')).toBe('true')
   })
 
   it('warns about a section whose row was never seeded', async () => {
-    const { wrapper } = await mountScreen(HomeSectionsCard, { save, settings: rows.filter((row) => row.key !== 'portal.sections.apps') })
+    const { wrapper } = await mountSettingsCard(HomeSectionsCard, rows.filter((row) => row.key !== 'portal.sections.apps'))
 
     const warnings = wrapper.findAll('[data-testid="setting-not-seeded"]')
     expect(warnings).toHaveLength(1)

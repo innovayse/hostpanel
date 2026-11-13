@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 /**
- * UiStat - one headline figure with its caption. Every stat has the same type sizes, so a row
+ * UiStat: one headline figure with its caption. Every stat has the same type sizes, so a row
  * of them reads evenly; a long text value wraps to two lines and is then cut, with the full text
  * in the `title`. The cell bottom-aligns its content, so captions in a row line up even when one
  * value wraps. Colour is inherited (currentColor) unless a screen passes `valueClass` and

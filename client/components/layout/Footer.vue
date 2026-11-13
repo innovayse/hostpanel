@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
 /**
- * LayoutFooter - the classic storefront footer: a call-to-action band, a brand block with the
+ * LayoutFooter. The classic storefront footer: a call-to-action band, a brand block with the
  * operator's contact details, five link columns (hosting plan groups from the catalogue, domains,
  * company, support, legal) and a bottom row with the copyright, language and currency pickers and
  * the theme toggle. It sits on the classic footer surface with a visible top border so it reads

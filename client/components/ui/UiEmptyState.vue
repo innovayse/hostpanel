@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 /**
- * UiEmptyState - the "nothing here yet" block of a list or page: an icon, a title, a sentence and
+ * UiEmptyState. The "nothing here yet" block of a list or page: an icon, a title, a sentence and
  * an optional action in the default slot (a button that creates the first item).
  */
 import type { Component } from 'vue'

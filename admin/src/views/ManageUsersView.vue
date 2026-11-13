@@ -17,7 +17,8 @@ import ChangePasswordModal from '@/components/clients/ChangePasswordModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -244,7 +245,7 @@ onUnmounted(() => {
  * @param user - The user whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const manageUserActions = (user: UserListItem): UiRowAction[] => {
+const manageUserActions = (user: UserListItem): UiMenuAction[] => {
   /**
    * Opens the manage dialog for this user.
    * @returns Nothing.
@@ -291,23 +292,25 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
 
     <!-- Search bar -->
     <UiFilterCard>
-      <UiStack direction="row" align="end" gap="sm" wrap>
+      <template #fields>
         <UiInput
           v-model="search"
           type="text"
           :label="t('shared.search2')"
           :placeholder="t('clients.manageUsers.searchByNameOrEmail')"
-          class="min-w-0 flex-1"
+          class="min-w-48 flex-1 max-sm:w-full"
           data-testid="users-search"
           @keydown.enter="applySearch"
         />
+      </template>
+      <template #actions>
         <UiButton variant="primary" data-testid="users-search-submit" @click="applySearch">
           {{ t('shared.search2') }}
         </UiButton>
         <UiButton v-if="search" variant="ghost" data-testid="users-search-clear" @click="clearSearch">
           {{ t('shared.clear') }}
         </UiButton>
-      </UiStack>
+      </template>
     </UiFilterCard>
 
     <!-- List load failed: replaces the table, with a Retry -->
@@ -325,7 +328,6 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
       :density="UiTableDensity.Comfortable"
       :loading="store.loading && store.users.length === 0"
       :empty="!store.loading && store.users.length === 0"
-      :colspan="6"
       data-testid="users-table"
     >
       <UiTableHead>

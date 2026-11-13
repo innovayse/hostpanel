@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiList - a bulleted, numbered, plain or divided list; fill it with UiListItem.
+ * UiList: a bulleted, numbered, plain or divided list; fill it with UiListItem.
  */
 import { computed } from 'vue'
 import { UiListStyle } from '~/utils/ui/enums'

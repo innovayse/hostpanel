@@ -16,7 +16,7 @@ test('the dashboard shows each headline number on its tile', async ({ page }) =>
   await expect(page.getByTestId('dashboard-stat-activeServices')).toContainText(String(dashboardStats.activeServices))
   await expect(page.getByTestId('dashboard-stat-overdueInvoices')).toContainText(String(dashboardStats.overdueInvoices))
   await expect(page.getByTestId('dashboard-stat-openTickets')).toContainText(String(dashboardStats.openTickets))
-  await expect(page.getByTestId('dashboard-stat-totalClients')).toContainText(String(dashboardStats.totalClients))
+  await expect(page.getByTestId('nav-clients-count')).toHaveText(String(dashboardStats.totalClients))
 })
 
 test('a refused load shows the API sentence instead of the tiles', async ({ page }) => {

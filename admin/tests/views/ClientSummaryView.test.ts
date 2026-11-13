@@ -128,6 +128,18 @@ const externalAccountPuts = (mock: ReturnType<typeof stubRoutes>) =>
     .filter((call) => call.method === 'PUT' && call.url === '/api/clients/7/external-account')
 
 describe('ClientSummaryView', () => {
+  it('keeps every card with its heading and captions as placeholders while the summary loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountRouted(ClientSummaryView, '/clients/:id/summary', '/clients/7/summary')
+
+    expect(wrapper.get('[data-testid="client-summary-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="client-external-account-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="client-summary-info"]').text()).toContain('First Name')
+    expect(wrapper.get('[data-testid="client-summary-billing"]').text()).toContain('Paid')
+    expect(wrapper.find('[data-testid="client-summary-billing-count"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+  })
+
   it('mounts without throwing', async () => {
     const wrapper = await mountClientView(ClientSummaryView)
 

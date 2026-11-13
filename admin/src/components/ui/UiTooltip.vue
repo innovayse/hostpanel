@@ -3,7 +3,7 @@
  * Hover/focus hint around any trigger.
  *
  * The default slot is the trigger; `text` is the hint, shown on pointer hover and on keyboard
- * focus inside the trigger, and linked to it with `aria-describedby`.
+ * focus inside the trigger, and linked to it with `aria-describedby`. The hint is an opaque elevated surface.
  */
 import { useId } from 'vue'
 import type { UiTooltipPlacement } from '@/utils/ui/tooltip'
@@ -34,7 +34,7 @@ const placementClasses: Record<UiTooltipPlacement, string> = {
     <span
       :id="id"
       role="tooltip"
-      class="pointer-events-none absolute left-1/2 -translate-x-1/2 z-40 whitespace-nowrap rounded-md bg-surface-elevated border border-border-strong px-2 py-1 text-[0.72rem] text-text-primary shadow-lg hidden group-hover:block group-focus-within:block"
+      class="pointer-events-none absolute left-1/2 -translate-x-1/2 z-40 whitespace-nowrap glass-strong rounded-lg px-2.5 py-1.5 text-xs text-text-primary shadow-popover hidden group-hover:block group-focus-within:block"
       :class="placementClasses[placement]"
     >
       {{ text }}

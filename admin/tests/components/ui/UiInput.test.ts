@@ -36,15 +36,17 @@ describe('UiInput', () => {
       attrs: { class: 'w-24' },
     })
 
-    expect(wrapper.attributes('type')).toBe('password')
-    expect(wrapper.attributes('placeholder')).toBe('secret')
-    expect(wrapper.classes()).toContain('w-24')
+    const input = wrapper.get('input')
+
+    expect(input.attributes('type')).toBe('password')
+    expect(input.attributes('placeholder')).toBe('secret')
+    expect(input.classes()).toContain('w-24')
   })
 
   it('draws the themed field from tokens', () => {
     const wrapper = mount(UiInput)
 
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['bg-surface-field', 'border-border', 'rounded-[10px]']))
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['bg-surface-field', 'border-border-control', 'rounded-control']))
   })
 
   it('marks an invalid field', () => {
@@ -78,5 +80,47 @@ describe('UiInput', () => {
 
     expect(wrapper.find('[data-testid="icon"]').exists()).toBe(true)
     expect(wrapper.get('input').classes()).toContain('pl-9')
+  })
+
+  it('hides a password and flips it to text with the show/hide button', async () => {
+    const wrapper = mount(UiInput, { props: { type: 'password', modelValue: 's3cret' } })
+    const toggle = wrapper.get('[data-testid="input-toggle-password"]')
+
+    expect(wrapper.get('input').attributes('type')).toBe('password')
+    expect(toggle.attributes('aria-pressed')).toBe('false')
+    expect(toggle.attributes('aria-label')).toMatch(/show/i)
+
+    await toggle.trigger('click')
+
+    expect(wrapper.get('input').attributes('type')).toBe('text')
+    expect(toggle.attributes('aria-pressed')).toBe('true')
+    expect(toggle.attributes('aria-label')).toMatch(/hide/i)
+  })
+
+  it('offers no show/hide button on a plain text field', () => {
+    expect(mount(UiInput).find('[data-testid="input-toggle-password"]').exists()).toBe(false)
+  })
+
+  it('hints autofill by type and lets the screen override it', () => {
+    expect(mount(UiInput, { props: { type: 'email' } }).attributes('autocomplete')).toBe('email')
+    expect(mount(UiInput, { props: { type: 'password' } }).get('input').attributes('autocomplete')).toBe('current-password')
+    expect(
+      mount(UiInput, { props: { type: 'password' }, attrs: { autocomplete: 'new-password' } }).get('input').attributes('autocomplete'),
+    ).toBe('new-password')
+    expect(mount(UiInput).attributes('autocomplete')).toBeUndefined()
+  })
+
+  it('shows a disabled field as muted with a not-allowed cursor', () => {
+    const wrapper = mount(UiInput, { attrs: { disabled: '' } })
+
+    expect(wrapper.attributes('disabled')).toBeDefined()
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['disabled:text-text-muted', 'disabled:cursor-not-allowed']))
+  })
+
+  it('carries aria-describedby from the screen so an error is tied to the field', () => {
+    const wrapper = mount(UiInput, { props: { invalid: true }, attrs: { 'aria-describedby': 'msg' } })
+
+    expect(wrapper.attributes('aria-describedby')).toBe('msg')
+    expect(wrapper.attributes('aria-invalid')).toBe('true')
   })
 })

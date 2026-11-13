@@ -48,6 +48,15 @@ afterEach(() => {
 })
 
 describe('FraudSettingsView', () => {
+  it('keeps the switch, the fields and the save button in place as placeholders while the settings load', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountScreen(FraudSettingsView)
+
+    expect(wrapper.find('[data-testid="fraud-settings-form"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.get('[data-testid="fraud-settings-save"]').attributes('disabled')).toBeDefined()
+  })
+
   it('fills the form with the stored settings', async () => {
     stubRouteTable({ 'GET /admin/fraud/settings': () => json(stored) })
     const { wrapper } = await mountScreen(FraudSettingsView)

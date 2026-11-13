@@ -31,6 +31,7 @@ import {
   datePresetIdleClasses,
   formatDisplayDate,
   formatIsoDate,
+  getDayKeysForMonth,
   getDaysForMonth,
   matchQuickDate,
   parsePartialDate,
@@ -116,6 +117,9 @@ const selectedQuick = computed<QuickDate | null>(() => matchQuickDate(props.mode
 
 /** Cells of the visible month. */
 const monthDays = computed<(number | null)[]>(() => getDaysForMonth(currentMonth.value))
+
+/** ISO day of each visible cell, the cell's list key. */
+const monthDayKeys = computed<string[]>(() => getDayKeysForMonth(currentMonth.value))
 
 /** Month select value, kept in step with the grid. */
 const currentMonthValue = computed<string>({
@@ -367,7 +371,6 @@ onUnmounted(() => {
       :placeholder="fieldPlaceholder"
       :disabled="disabled"
       :class="dateFieldClasses"
-      class="disabled:opacity-50 disabled:cursor-not-allowed"
       @click="openPopup"
       @focus="openPopup"
       @input="handleInput"
@@ -413,7 +416,7 @@ onUnmounted(() => {
             <div class="grid grid-cols-7 gap-1">
               <button
                 v-for="(day, i) in monthDays"
-                :key="i"
+                :key="monthDayKeys[i]"
                 type="button"
                 :data-testid="`date-picker-day-${i}`"
                 :disabled="day === null"

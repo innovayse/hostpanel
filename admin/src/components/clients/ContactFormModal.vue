@@ -17,6 +17,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
+import UiPhoneInput from '@/components/ui/UiPhoneInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
@@ -111,7 +112,7 @@ const errors = ref({ firstName: '', lastName: '', email: '' })
 /** True when any validation error is present. */
 const hasErrors = computed(() => Object.values(errors.value).some(Boolean))
 
-const { countryOptions, phoneCodeOptions, resolvePhoneCode, parsePhone } = useGeoOptions()
+const { countryOptions, resolvePhoneCode, parsePhone } = useGeoOptions()
 
 /** Resolves the selected country's phone code for the payload. */
 const selectedPhoneCode = computed(() => resolvePhoneCode(phoneCountry.value))
@@ -299,15 +300,11 @@ onMounted(() => {
             </template>
           </UiField>
           <UiField :label="t('shared.phone')">
-            <UiStack direction="row" gap="sm">
-              <UiSelect v-model="phoneCountry" :options="phoneCodeOptions" :placeholder="t('shared.phone')" searchable wide data-testid="clients-contact-phone-country" />
-              <UiInput
-                v-model="phone"
-                type="text"
-                :placeholder="t('shared.phoneNumber2')"
-                data-testid="clients-contact-phone"
-              />
-            </UiStack>
+            <UiPhoneInput
+              v-model:phone-number="phone"
+              v-model:country-code="phoneCountry"
+              data-testid="clients-contact-phone"
+            />
           </UiField>
           <UiField :label="t('clients.contactForm.contactType')">
             <UiSelect v-model="contactType" :options="contactTypeOptions" :placeholder="t('clients.contactForm.contactType')" data-testid="clients-contact-type" />
@@ -409,10 +406,10 @@ onMounted(() => {
           <UiButton
             type="submit"
             :variant="UiButtonVariant.Primary"
-            :disabled="saving"
+            :loading="saving"
             data-testid="clients-contact-save"
           >
-            {{ saving ? t('shared.saving') : (isEditing ? t('shared.saveChanges') : t('clients.contactForm.addContact')) }}
+            {{ isEditing ? t('shared.saveChanges') : t('clients.contactForm.addContact') }}
           </UiButton>
         </UiStack>
       </UiStack>
@@ -425,7 +422,6 @@ onMounted(() => {
     :title="t('clients.contactForm.deleteContact')"
     :message="t('clients.contactForm.permanentlyDeleteThisContactThis')"
     :confirm-label="t('shared.delete')"
-    :loading-label="t('shared.deleting')"
     tone="danger"
     @confirm="confirmDelete"
     @close="showDeleteConfirm = false"

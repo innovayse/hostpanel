@@ -2,15 +2,14 @@
  * Tests for PluginRegistryBrowser: a card per listing with its Verified badge and price, Install for a
  * plugin that is absent, Update for one with a newer version, a plain badge for one that is current,
  * the name button that opens details, the Details action for a paid plugin without a key, Uninstall, per card busy state, the
- * staged and update states, the card layout (publisher kind, tags, footer with downloads and version), the debounced search, the empty, loading and error states, and the page event.
+ * staged and update states, the card layout (publisher kind, tags, footer with downloads and version), the empty, loading and error states, and the page event.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
 import { PluginCategory, PluginPricing, PluginPublisherKind } from '@/types/plugin'
 import type { PluginRegistryItemDto } from '@/types/plugin'
 import { mountScreen } from '../../helpers/mount'
-import { pickOption } from '../../helpers/select'
 
 /** A verified, free listing that is not installed. */
 const fresh: PluginRegistryItemDto = {
@@ -62,8 +61,6 @@ const mountBrowser = async (overrides: Record<string, unknown> = {}) => {
     total: 3,
     pageSize: 10,
     page: 1,
-    query: '',
-    category: '',
     loading: false,
     error: null,
     installingIds: [],
@@ -72,10 +69,6 @@ const mountBrowser = async (overrides: Record<string, unknown> = {}) => {
   })
   return wrapper
 }
-
-afterEach(() => {
-  vi.useRealTimers()
-})
 
 describe('PluginRegistryBrowser', () => {
   it('shows a card per listing with the verified badge only for a verified publisher', async () => {
@@ -152,7 +145,8 @@ describe('PluginRegistryBrowser', () => {
   it('disables only the card that installs and leaves the others usable', async () => {
     const wrapper = await mountBrowser({ installingIds: ['example-pay'] })
 
-    expect(wrapper.get('[data-testid="registry-install-example-pay"]').text()).toBe('Installing…')
+    expect(wrapper.get('[data-testid="registry-install-example-pay"]').text()).toBe('Install')
+    expect(wrapper.get('[data-testid="registry-install-example-pay"]').attributes('aria-busy')).toBe('true')
     expect(wrapper.get('[data-testid="registry-install-example-pay"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="registry-install-example-registrar"]').attributes('disabled')).toBeUndefined()
   })
@@ -321,7 +315,8 @@ describe('PluginRegistryBrowser', () => {
   it('names the card whose removal runs and disables only that one', async () => {
     const wrapper = await mountBrowser({ removingId: 'example-host' })
 
-    expect(wrapper.get('[data-testid="registry-uninstall-example-host"]').text()).toBe('Removing…')
+    expect(wrapper.get('[data-testid="registry-uninstall-example-host"]').text()).toBe('Uninstall')
+    expect(wrapper.get('[data-testid="registry-uninstall-example-host"]').attributes('aria-busy')).toBe('true')
     expect(wrapper.get('[data-testid="registry-uninstall-example-host"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="registry-uninstall-example-registrar"]').attributes('disabled')).toBeUndefined()
   })
@@ -338,35 +333,6 @@ describe('PluginRegistryBrowser', () => {
 
     expect(wrapper.get('[data-testid="registry-staged-example-registrar"]').text()).toContain('2.0.0')
     expect(wrapper.find('[data-testid="registry-update-state-example-registrar"]').exists()).toBe(false)
-  })
-
-  it('reports the search text once the typing has paused, not per keystroke', async () => {
-    // Mount first: the mount helper waits on a real timer, which fake timers would never fire.
-    const wrapper = await mountBrowser()
-    vi.useFakeTimers()
-    const input = wrapper.get('[data-testid="plugin-registry-search"]')
-
-    await input.setValue('pa')
-    await input.setValue('pay')
-    expect(wrapper.emitted('update:query')).toBeUndefined()
-    vi.advanceTimersByTime(300)
-
-    expect(wrapper.emitted('update:query')).toEqual([['pay']])
-  })
-
-  it('has a placeholder on the search box and the category select', async () => {
-    const wrapper = await mountBrowser()
-
-    expect(wrapper.get('[data-testid="plugin-registry-search"]').attributes('placeholder')).toBe('Search the registry')
-    expect(wrapper.get('[data-testid="plugin-registry-category"]').text()).toContain('All categories')
-  })
-
-  it('emits the chosen category from the select', async () => {
-    const wrapper = await mountBrowser()
-
-    await pickOption(wrapper, 'plugin-registry-category', 'Payment')
-
-    expect(wrapper.emitted('update:category')).toEqual([[PluginCategory.Payment]])
   })
 
   it('shows the empty state when nothing matches', async () => {

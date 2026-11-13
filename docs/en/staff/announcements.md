@@ -34,8 +34,8 @@ Go to **Support → Knowledgebase**. Subtitle: "Manage knowledgebase articles an
 
 Click **Add Category** and enter:
 - **Category Name**
-- **Check to Hide** — hides the category from the client portal
-- **Description** — shown on the category page
+- **Check to Hide**: hides the category from the client portal
+- **Description**: shown on the category page
 
 Every category gets a short address (its **slug**) from its name when it is created, for example `billing-payments`. The slug stays the same when the category is renamed, so links to it keep working.
 

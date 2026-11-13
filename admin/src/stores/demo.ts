@@ -8,10 +8,9 @@
  */
 
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useDemoApi } from '@/composables/apis/useDemoApi'
 import { runAction } from '@/lib/runAction'
-import { DemoAccountRole } from '@/types/demo'
 import type { DemoAccount } from '@/types/demo'
 
 /** Pinia store holding the demo-mode description. */
@@ -29,11 +28,6 @@ export const useDemoStore = defineStore('demo', () => {
 
   /** True once a load has been attempted, successfully or not. */
   const loaded = ref(false)
-
-  /** The published Admin account, or null when there is none. */
-  const adminAccount = computed<DemoAccount | null>(
-    () => accounts.value.find(a => a.role === DemoAccountRole.Admin) ?? null,
-  )
 
   /** Sentence of the last failed lookup, or null. A failure still means "not a demo". */
   const error = ref<string | null>(null)
@@ -59,5 +53,5 @@ export const useDemoStore = defineStore('demo', () => {
     accounts.value = result.value.accounts ?? []
   }
 
-  return { enabled, nextResetAt, accounts, loaded, error, adminAccount, load }
+  return { enabled, nextResetAt, accounts, loaded, error, load }
 })

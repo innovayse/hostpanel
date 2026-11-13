@@ -148,7 +148,6 @@ const setImage = (index: number, url: string): void => {
   <StorefrontFormShell
     testid="project"
     :breadcrumb="breadcrumb"
-    :loading-label="t('storefront.projects.loading')"
     :save-label="flow.isEditMode.value ? t('shared.saveChanges') : t('storefront.projects.create')"
     :loading="flow.loadingEntry.value"
     :saving="flow.saving.value"

@@ -373,6 +373,9 @@
   <data name="DomainPageRequired" xml:space="preserve">
     <value>Page must be 1 or greater.</value>
   </data>
+  <data name="DomainListSearchTooLong" xml:space="preserve">
+    <value>The domain search text may be at most {0} characters.</value>
+  </data>
   <data name="DomainPageSizeRange" xml:space="preserve">
     <value>Page size must be between 1 and 100.</value>
   </data>
@@ -1304,7 +1307,7 @@
     <value>The slug can only contain lowercase letters, digits and single hyphens.</value>
   </data>
   <data name="ProjectImageUrlsRequired" xml:space="preserve">
-    <value>Provide the image list, empty if there are no images.</value>
+    <value>Provide the image list. It must be empty if there are no images.</value>
   </data>
   <data name="ProjectImagesTooMany" xml:space="preserve">
     <value>A project can have at most {0} images.</value>
@@ -1367,7 +1370,7 @@
     <value>Enter a valid management user name.</value>
   </data>
   <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
-    <value>The host key fingerprint must look like SHA256:… (43 characters).</value>
+    <value>The host key fingerprint must be SHA256: followed by 43 characters.</value>
   </data>
   <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
     <value>The private key is too long.</value>

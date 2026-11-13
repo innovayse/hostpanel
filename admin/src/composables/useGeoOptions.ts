@@ -23,14 +23,15 @@ export const useGeoOptions = () => {
      }))]
   )
 
-  /** Phone code options keyed by ISO2 for uniqueness. */
-  const phoneCodeOptions = computed<{ value: string; label: string; displayLabel: string }[]>(() =>
+  /** Phone code options keyed by ISO2 for uniqueness; the search also matches the native name and the ISO code. */
+  const phoneCodeOptions = computed<{ value: string; label: string; displayLabel: string; keywords: string }[]>(() =>
     geoCountries
       .filter(c => c.phone && c.name && c.iso2)
       .map(c => ({
         value: String(c.iso2),
         label: `${c.emoji ?? ''} +${c.phone}`,
         displayLabel: `${c.emoji ?? ''} ${c.name} (+${c.phone})`,
+        keywords: [c.native, c.iso2].filter(Boolean).join(' '),
       }))
       .sort((a, b) => a.displayLabel.localeCompare(b.displayLabel))
   )

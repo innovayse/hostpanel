@@ -1,10 +1,9 @@
 /**
  * Tests for the date and text helpers in `lib/format`: the date-only and date-time formatters
- * fall back on empty or implausible input, `toDateInputValue` cuts the day, and `capitalize`
- * upper-cases the first letter.
+ * fall back on empty or implausible input, `toDateInputValue` cuts the day.
  */
 import { describe, expect, it } from 'vitest'
-import { capitalize, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, formatTime, toDateInputValue } from '@/lib/format'
+import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, formatSizeMb, formatTime, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -31,12 +30,6 @@ describe('format', () => {
     expect(toDateInputValue('2026-03-04T10:00:00Z')).toBe('2026-03-04')
     expect(toDateInputValue(null)).toBe('')
     expect(toDateInputValue('nonsense')).toBe('')
-  })
-
-  it('capitalises the first letter and falls back for an empty value', () => {
-    expect(capitalize('monthly')).toBe('Monthly')
-    expect(capitalize('')).toBe('—')
-    expect(capitalize(null, '-')).toBe('-')
   })
 })
 
@@ -145,5 +138,23 @@ describe('formatShare', () => {
   it('keeps at most one decimal', () => {
     expect(formatShare(0.1234, 'en')).toBe('12.3%')
     expect(formatShare(0.12349, 'en')).toBe('12.3%')
+  })
+})
+
+describe('formatSizeMb', () => {
+  it('keeps megabytes below a gigabyte', () => {
+    expect(formatSizeMb(0, 'en')).toBe('0 MB')
+    expect(formatSizeMb(512, 'en')).toBe('512 MB')
+    expect(formatSizeMb(1023, 'en')).toBe('1,023 MB')
+  })
+
+  it('moves up to gigabytes and terabytes with at most one decimal', () => {
+    expect(formatSizeMb(1024, 'en')).toBe('1 GB')
+    expect(formatSizeMb(1536, 'en')).toBe('1.5 GB')
+    expect(formatSizeMb(2 * 1024 * 1024, 'en')).toBe('2 TB')
+  })
+
+  it('stays in terabytes for a very large size', () => {
+    expect(formatSizeMb(2048 * 1024 * 1024, 'en')).toBe('2,048 TB')
   })
 })

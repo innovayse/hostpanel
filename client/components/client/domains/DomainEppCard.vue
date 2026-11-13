@@ -10,14 +10,14 @@
     </UiAlert>
     <UiButton size="sm" variant="subtle" :loading="eppSending" full-width data-testid="domain-epp-request" @click="requestEpp">
       <Mail v-if="!eppSending" :size="14" :stroke-width="2" class="mr-1.5" />
-      {{ eppSending ? $t('client.domains.sendingEpp') : $t('client.domains.emailEpp') }}
+      {{ $t('client.domains.emailEpp') }}
     </UiButton>
   </UiCard>
 </template>
 
 <script setup lang="ts">
 /**
- * DomainEppCard - asks for the domain's EPP (transfer authorisation) code, which the registrar
+ * DomainEppCard: asks for the domain's EPP (transfer authorisation) code, which the registrar
  * e-mails to the account. Shows a warning while the registrar lock is on, because a locked
  * domain cannot be transferred.
  */

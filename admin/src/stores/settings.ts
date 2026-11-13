@@ -46,7 +46,7 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Sentence for the last failed product create or update, null when none. */
   const actionError = ref<string | null>(null)
 
-  /** The API's per-field messages for the last failed product create or update (`sku`, `metadata`, `gracePeriodDays` ...), empty when none. */
+  /** The API's per-field messages for the last failed product create or update (`sku`, `metadata`, `gracePeriodDays` and so on), empty when none. */
   const fieldErrors = ref<Record<string, string>>({})
 
   /** Sentence for the last failed branding upload, null when none. */
@@ -193,7 +193,7 @@ export const useSettingsStore = defineStore('settings', () => {
   /**
    * Drops the API's message for one field of the product form, once the operator changed it.
    *
-   * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays` ...).
+   * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays` and so on).
    * @returns Nothing; the field's message is removed from the shared field errors.
    */
   const clearFieldError = (field: string): void => {

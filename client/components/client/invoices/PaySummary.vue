@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 /**
- * PaySummary - the invoice recap beside the payment form: line items, totals, what has been
+ * PaySummary. The invoice recap beside the payment form: line items, totals, what has been
  * received and the balance still due. Every figure is formatted in the invoice's own currency.
  */
 import { computed } from 'vue'

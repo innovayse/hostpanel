@@ -1,6 +1,6 @@
 <template>
   <UiStack gap="none" data-testid="classic-home">
-    <!-- H1 for SEO - visually hidden, semantically the first heading on the page -->
+    <!-- H1 for SEO: visually hidden, semantically the first heading on the page -->
     <UiHeading :level="UiHeadingLevel.H1" class="sr-only" data-testid="classic-home-title">{{ $t('seo.home.h1') }}</UiHeading>
 
     <!-- Hero: products full-screen slider (not toggleable) -->
@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 /**
- * ClassicHome - the classic template's homepage: a hidden H1 followed by the marketing sections
+ * ClassicHome. The classic template's homepage: a hidden H1 followed by the marketing sections
  * in hosting-site order. Every section except the hero is switched on or off by its
  * `portal.sections.*` setting through {@link useHomeSections}; the classic template has no
  * projects section, so that toggle has nothing to hide here.

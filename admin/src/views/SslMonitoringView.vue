@@ -71,7 +71,7 @@ const revalidate = async (): Promise<void> => {
           {{ includeInactive ? t('reports.sslMonitoring.hideInactiveDomains') : t('reports.sslMonitoring.showInactiveDomains') }}
         </UiButton>
         <UiButton variant="secondary" :loading="store.updating" data-testid="report-revalidate" @click="revalidate">
-          {{ store.updating ? t('reports.sslMonitoring.reValidating') : t('reports.sslMonitoring.reValidateSslStatus') }}
+          {{ t('reports.sslMonitoring.reValidateSslStatus') }}
         </UiButton>
       </UiStack>
     </template>

@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 /**
- * CookieBanner (`UiCookieBanner`) - the consent card floating in the bottom corner of the page
+ * CookieBanner (`UiCookieBanner`): the consent card floating in the bottom corner of the page
  * (full width less a gutter on a phone), small enough that it never sits over the page's content.
  *
  * Mounted by the `default` and `client` layouts only, so auth pages (no layout) never show it.

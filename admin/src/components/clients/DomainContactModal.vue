@@ -116,10 +116,10 @@ const handleSave = (): void => {
         <UiButton
           type="submit"
           :variant="UiButtonVariant.Primary"
-          :disabled="saving"
+          :loading="saving"
           data-testid="clients-domain-contact-save"
         >
-          {{ saving ? t('shared.saving') : t('shared.saveChanges') }}
+          {{ t('shared.saveChanges') }}
         </UiButton>
       </UiStack>
     </UiForm>

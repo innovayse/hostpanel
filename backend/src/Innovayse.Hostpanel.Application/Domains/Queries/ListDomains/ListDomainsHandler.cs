@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -29,7 +30,7 @@ public sealed class ListDomainsHandler
     /// <summary>
     /// Handles <see cref="ListDomainsQuery"/>.
     /// </summary>
-    /// <param name="query">The list domains query with pagination parameters.</param>
+    /// <param name="query">The list domains query with pagination and search parameters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A paged result containing domain registration items with client names. Never refuses.</returns>
     public async Task<Result<PaginatedList<DomainRegistrationDto>>> HandleAsync(
@@ -39,6 +40,14 @@ public sealed class ListDomainsHandler
         if (query.ClientId.HasValue)
         {
             domainsQuery = domainsQuery.Where(x => x.ClientId == query.ClientId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            // EF.Functions.Like rather than the Npgsql-only ILike: Application does not reference the
+            // provider. The term is escaped so a typed % or _ matches itself.
+            var pattern = LikePattern.Contains(query.Search.Trim());
+            domainsQuery = domainsQuery.Where(x => EF.Functions.Like(x.Name.ToLower(), pattern, LikePattern.EscapeCharacter));
         }
 
         var orderedDomains = domainsQuery.OrderBy(x => x.Name);

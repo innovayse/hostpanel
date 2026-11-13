@@ -111,7 +111,7 @@ describe('unsubscribe page', () => {
     expect(wrapper.find('[data-testid="unsubscribe-failed"]').text()).toContain('A token is required.')
   })
 
-  it('disables the button and shows the working line while the request is open', async () => {
+  it('disables the button and marks it busy while the request is open', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
     table[`POST ${UNSUBSCRIBE_PATH}`] = { hold: true }
 
@@ -121,7 +121,7 @@ describe('unsubscribe page', () => {
 
     const button = wrapper.find('[data-testid="unsubscribe-confirm-button"]')
     expect(button.attributes('disabled')).toBeDefined()
-    expect(button.text()).toContain('client.unsubscribe.working')
+    expect(button.attributes('aria-busy')).toBe('true')
   })
 
   it('keeps itself out of search results', async () => {

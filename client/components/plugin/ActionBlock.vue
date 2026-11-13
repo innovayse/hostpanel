@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 /**
- * PluginActionBlock - a button that calls one of the plugin's routes, named by `{ method, path }`: after the
+ * PluginActionBlock. A button that calls one of the plugin's routes, named by `{ method, path }`: after the
  * confirmation the view asks for, if any; then it reads the named blocks again, opens the named page, and shows
  * the sentence the plugin answered with (`message` of the reply), or the refusal's sentence from the store. A
  * `followUp` then keeps reading the named blocks until the work the call started has ended (`usePluginFollowUp`).

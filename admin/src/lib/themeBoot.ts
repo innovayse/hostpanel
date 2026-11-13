@@ -45,7 +45,7 @@ export const THEME_BOOT_CONFIG: ThemeBootConfig = {
   dark: AdminTheme.Dark,
   lightQuery: '(prefers-color-scheme: light)',
   lightClass: 'light',
-  colors: { light: '#f4f6fb', dark: '#0a0a0f' },
+  colors: { light: '#f5f7fc', dark: '#070b18' },
 }
 
 /**

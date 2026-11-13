@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 /**
- * UiAccordion - collapsible sections, single-open by default or multi-open with `multiple`.
+ * UiAccordion: collapsible sections, single-open by default or multi-open with `multiple`.
  *
  * Each section's body defaults to `item.content` and can be replaced through the scoped slot
  * `content-<index>`.

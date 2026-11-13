@@ -6,6 +6,6 @@
 
 <script setup lang="ts">
 /**
- * TableFoot (`UiTableFoot`) - the footer of a UiTable (totals), tinted and ruled from the body.
+ * TableFoot (`UiTableFoot`): the footer of a UiTable (totals), tinted and ruled from the body.
  */
 </script>

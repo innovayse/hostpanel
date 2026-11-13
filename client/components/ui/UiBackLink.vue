@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 /**
- * UiBackLink - the "back" link above a detail page or under an auth form: an arrow and a label.
+ * UiBackLink. The "back" link above a detail page or under an auth form: an arrow and a label.
  *
  * The label comes from the `label` prop or, for a link that holds richer content, the default
  * slot. `compact` is the tighter variant the auth screens use.

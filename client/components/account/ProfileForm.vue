@@ -127,7 +127,7 @@
       </UiButton>
       <UiButton type="submit" size="sm" :loading="saving" data-testid="account-profile-save">
         <Check v-if="!saving" :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ saving ? $t('client.profile.saving') : $t('client.profile.save') }}
+        {{ $t('client.profile.save') }}
       </UiButton>
     </template>
   </UiForm>
@@ -135,7 +135,7 @@
 
 <script setup lang="ts">
 /**
- * ProfileForm - the edit form for the profile, billing address and email preferences.
+ * ProfileForm: the edit form for the profile, billing address and email preferences.
  *
  * Owns only the draft; saving goes through the account store, which keeps the refusal sentence
  * and the per-field messages this form renders. The required fields are checked before anything

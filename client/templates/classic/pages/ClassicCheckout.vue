@@ -254,13 +254,13 @@
                 size="md"
                 full-width
                 :loading="submitting"
-                :disabled="submitting || cart.isEmpty || !selectedMethod || !mayPlaceOrders"
+                :disabled="cart.isEmpty || !selectedMethod || !mayPlaceOrders"
                 class="!h-12 font-semibold"
                 data-testid="checkout-submit"
                 @click="submitOrder"
               >
                 <Lock v-if="!submitting" :size="18" class="mr-2" />
-                {{ submitting ? submittingLabel : $t('checkout.placeOrder') }}
+                {{ $t('checkout.placeOrder') }}
               </UiButton>
               <CheckoutSubmitHint :message="submittingHint" />
 
@@ -294,7 +294,7 @@
 
 <script setup lang="ts">
 /**
- * ClassicCheckout - the classic template's checkout: the account step (signed-in summary or
+ * ClassicCheckout. The classic template's checkout: the account step (signed-in summary or
  * guest form), the payment-method step with the card form, and the order summary with the
  * submit button.
  *
@@ -325,7 +325,6 @@ const {
   bundleName,
   bundleOffer,
   bundleDiscount,
-  submittingLabel,
   submittingHint,
   paymentMethods,
   selectedMethod,

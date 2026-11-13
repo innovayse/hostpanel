@@ -1,9 +1,9 @@
 /**
  * Post-build checks that VitePress's own link checker does not cover:
  *
- * 1. Missing images — every <img src="..."> in the built HTML must resolve to a
+ * 1. Missing images: every <img src="..."> in the built HTML must resolve to a
  *    file that exists in the dist directory.
- * 2. Orphan pages — every .md source file (except index files that are covered
+ * 2. Orphan pages: every .md source file (except index files that are covered
  *    by their directory URL) must appear at least once in the sidebar defined in
  *    config.ts, so a new page cannot be published without a navigation entry.
  *
@@ -79,7 +79,7 @@ for (const htmlFile of collectHtml(distDir)) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Orphan pages — .md files not reachable from the sidebar
+// 2. Orphan pages: .md files not reachable from the sidebar
 // ---------------------------------------------------------------------------
 
 /**

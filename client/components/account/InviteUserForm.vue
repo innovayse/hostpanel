@@ -66,7 +66,7 @@
       <template #actions>
         <UiButton type="submit" :loading="inviting" data-testid="account-invite-submit">
           <Send v-if="!inviting" :size="15" :stroke-width="2" class="mr-1.5" />
-          {{ inviting ? $t('client.users.sending') : $t('client.users.sendInvite') }}
+          {{ $t('client.users.sendInvite') }}
         </UiButton>
       </template>
     </UiForm>
@@ -75,7 +75,7 @@
 
 <script setup lang="ts">
 /**
- * InviteUserForm - invites a person to the account with all or chosen permissions.
+ * InviteUserForm: invites a person to the account with all or chosen permissions.
  *
  * Sending goes through the account store; on success the form empties, says so, and asks the
  * tab to read the team list again. A refusal (also one from removing a member) is the store's

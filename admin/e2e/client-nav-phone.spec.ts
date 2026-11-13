@@ -1,6 +1,6 @@
 /**
  * Client pages at phone width: the section navigation is a horizontal tab strip above the content
- * instead of a vertical icon rail, the client header and the cards use the full width, nothing
+ * (the same strip at every width), the client header card and the cards use the full width, nothing
  * scrolls sideways, a tab opens its section, the top bar fits, and the theme is changed from the menu drawer.
  */
 import { HttpMethod } from '../src/types/http'
@@ -52,7 +52,6 @@ test('the client sections are a tab strip above the content on a phone', async (
 
   const strip = page.getByTestId('client-nav-strip')
   await expect(strip).toBeVisible()
-  await expect(page.getByTestId('client-nav-rail')).toBeHidden()
 
   // The strip sits above the content and scrolls on its own; the page itself does not.
   const stripBox = await boxOf(strip)
@@ -141,15 +140,14 @@ test('the top bar fits a phone: the sign-out button is on screen and the control
 
   await page.goto('/clients/7/summary')
 
-  const signOut = await boxOf(page.getByTestId('topbar-sign-out'))
-  expect(signOut.x + signOut.width).toBeLessThanOrEqual(390)
+  const bell = await boxOf(page.getByTestId('topbar-notifications'))
+  expect(bell.x + bell.width).toBeLessThanOrEqual(390)
   await expect(page.getByTestId('topbar-toggle-sidebar')).toBeVisible()
   // The page still has a heading on a phone, and it stays left of the controls.
   const title = await boxOf(page.getByTestId('topbar-title'))
-  expect(title.x + title.width).toBeLessThanOrEqual(signOut.x)
+  expect(title.x + title.width).toBeLessThanOrEqual(bell.x)
   await expect(page.getByTestId('topbar-notifications')).toBeVisible()
   await expect(page.getByTestId('topbar-theme')).toBeHidden()
-  await expect(page.getByTestId('topbar-settings')).toBeHidden()
 })
 
 test('a phone changes the theme from the menu drawer, since the top bar has no room for the picker', async ({ page }) => {
@@ -170,7 +168,8 @@ test('a phone changes the theme from the menu drawer, since the top bar has no r
 
   await page.getByTestId('topbar-toggle-sidebar').click()
   await expect(page.getByTestId('sidebar-theme')).toBeVisible()
-  await page.getByTestId('sidebar-theme-light').click()
+  await page.getByTestId('sidebar-theme').click()
+  await page.getByTestId('theme-option-light').click()
 
   await expect(page.locator('html')).toHaveClass(/(^|\s)light(\s|$)/)
   expect(await page.evaluate(key => window.localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
@@ -230,7 +229,7 @@ test('a tab on the phone strip opens its section', async ({ page }) => {
 test.describe('on a tablet and wider', () => {
   test.use({ viewport: { width: 1024, height: 800 } })
 
-  test('the icon rail is back and the strip is gone', async ({ page }) => {
+  test('the same tab strip is shown, there is no icon rail, and the top bar has its full controls', async ({ page }) => {
     await stubApi(page, {
       signedIn: true,
       routes: [
@@ -244,10 +243,11 @@ test.describe('on a tablet and wider', () => {
 
     await page.goto('/clients/7/summary')
 
-    await expect(page.getByTestId('client-nav-rail')).toBeVisible()
-    await expect(page.getByTestId('client-nav-strip')).toBeHidden()
+    await expect(page.getByTestId('client-nav-strip')).toBeVisible()
+    await expect(page.getByTestId('client-tab-summary')).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByTestId('topbar-theme')).toBeVisible()
-    await expect(page.getByTestId('topbar-settings')).toBeVisible()
+    await page.getByTestId('sidebar-user-menu').click()
+    await expect(page.getByTestId('sidebar-settings')).toBeVisible()
   })
 })
 

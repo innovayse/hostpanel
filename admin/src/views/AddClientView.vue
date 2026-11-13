@@ -35,6 +35,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRadio from '@/components/ui/UiRadio.vue'
+import UiPhoneInput from '@/components/ui/UiPhoneInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -87,7 +88,7 @@ const phone = ref('')
 /** Selected phone country ISO2 code. */
 const phoneCountry = ref('US')
 
-const { countryOptions, phoneCodeOptions, resolvePhoneCode } = useGeoOptions()
+const { countryOptions, resolvePhoneCode } = useGeoOptions()
 
 /** Resolves the selected country's phone code for the payload. */
 const selectedPhoneCode = computed(() => resolvePhoneCode(phoneCountry.value))
@@ -319,11 +320,11 @@ onMounted(() => {
         <UiButton
           type="button"
           :variant="UiButtonVariant.Primary"
-          :disabled="saving"
+          :loading="saving"
           data-testid="add-client-submit"
           @click="handleSubmit"
         >
-          {{ saving ? t('shared.creating') : t('clients.addClient.createClient') }}
+          {{ t('clients.addClient.createClient') }}
         </UiButton>
       </template>
     </UiPageHeader>
@@ -445,15 +446,11 @@ onMounted(() => {
                   </template>
                 </UiField>
                 <UiField :label="t('shared.phone')">
-                  <UiStack direction="row" gap="sm">
-                    <UiSelect data-testid="add-client-phone-country" v-model="phoneCountry" :options="phoneCodeOptions" :placeholder="t('shared.phone')" searchable wide />
-                    <UiInput
-                      v-model="phone"
-                      type="text"
-                      :placeholder="t('shared.phoneNumber2')"
-                      data-testid="add-client-phone"
-                    />
-                  </UiStack>
+                  <UiPhoneInput
+                    v-model:phone-number="phone"
+                    v-model:country-code="phoneCountry"
+                    data-testid="add-client-phone"
+                  />
                 </UiField>
                 <UiField :label="t('shared.language')">
                   <UiSelect data-testid="add-client-language" v-model="language" :options="languageOptions" :placeholder="t('shared.default')" />

@@ -40,6 +40,15 @@ describe('brandingStore', () => {
     expect(store.logoOnDarkUrl).toBe('/d.png')
   })
 
+  it('hasLogo is true once either logo is set', async () => {
+    stubFetch(json([{ key: 'portal.logo.dark', value: '/d.png' }]))
+    const store = useBrandingStore()
+    expect(store.hasLogo).toBe(false)
+
+    await store.load()
+    expect(store.hasLogo).toBe(true)
+  })
+
   it('load prefers the dark logo on dark surfaces', async () => {
     stubFetch(json([
       { key: 'portal.logo', value: '/l.png' },

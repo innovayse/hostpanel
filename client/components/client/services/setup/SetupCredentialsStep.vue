@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 /**
- * SetupCredentialsStep - the second step of the setup wizard: the control-panel username and
+ * SetupCredentialsStep. The second step of the setup wizard: the control-panel username and
  * password. The username is cleaned as it is typed (lowercase letters and digits only).
  */
 import { Lock } from 'lucide-vue-next'

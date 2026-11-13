@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatMessage - one message of a plugin chat. The reader's own message is a bubble on the right; the plugin's reply
+ * PluginChatMessage: one message of a plugin chat. The reader's own message is a bubble on the right; the plugin's reply
  * is plain text beside an avatar and its optional name, up to about 75 characters wide, with a copy button.
  *
  * A reply is read as the small Markdown subset of `UiMarkdownText` (code blocks carry their own copy button) and ends in a

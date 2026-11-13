@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 /**
- * PluginPreviewBlock - one address read from a route, in a sandboxed frame, with a source and a size switch.
+ * PluginPreviewBlock: one address read from a route, in a sandboxed frame, with a source and a size switch.
  *
  * The frame shows only an address `pluginFrameAddress` admits against the page's `frameOrigins`, and only in a document
  * the panel's server wrote the narrow `frame-src` for this page. A CSP belongs to the document, so a router move here, from

@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 /**
- * PluginHeaderBlock - a plugin view's title, with its action buttons beside it. The title is interpolated, never
+ * PluginHeaderBlock: a plugin view's title, with its action buttons beside it. The title is interpolated, never
  * bound as HTML. Each action is drawn through PluginBlock, so its own `visibleWhen` applies like any block's.
  *
  * The sentence an action answers with is shown once, on one line under the whole header, not under its button: a

@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 /**
- * SetupStepCard - the frame of a setup wizard step: an icon tile, the step's title and subtitle
+ * SetupStepCard. The frame of a setup wizard step: an icon tile, the step's title and subtitle
  * and the step's fields in the default slot.
  */
 import type { Component } from 'vue'

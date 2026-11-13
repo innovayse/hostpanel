@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiBalancedGrid - a grid of cards that stays balanced for any item count.
+ * UiBalancedGrid: a grid of cards that stays balanced for any item count.
  *
  * Columns come from the item count ({@link balancedColumns}) and every row, the incomplete last
  * one included, is centred, so one, two, five or seven cards never leave an orphan against the

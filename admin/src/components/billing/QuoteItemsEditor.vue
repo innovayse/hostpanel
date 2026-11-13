@@ -2,7 +2,8 @@
 /**
  * The line-item editor of a quote: quantity, description, unit price, discount and tax per line,
  * a running total per line, and the sub-total and total due. Used by the create and the detail
- * screens, which hold the lines as this component's `v-model`.
+ * screens, which hold the lines as this component's `v-model`. `loading` keeps the real header and draws placeholder
+ * rows and totals while the quote is still being read.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -11,7 +12,9 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -22,19 +25,25 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { formatPlainAmount } from '@/lib/money'
-import type { QuoteItemUpdate } from '@/types/quote'
+import { blankQuoteLine } from '@/lib/quoteLines'
+import type { QuoteLineDraft } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** ISO 4217 code the quote is priced in; amounts read in dollars while it is not known yet. */
   currency?: string | null
-}>()
+  /** Draws placeholder rows and totals while the quote is read. */
+  loading?: boolean
+}>(), {
+  currency: undefined,
+  loading: false,
+})
 
 /** The quote lines; the editor replaces the array on every change. */
-const lines = defineModel<QuoteItemUpdate[]>({ required: true })
+const lines = defineModel<QuoteLineDraft[]>({ required: true })
 
 /**
  * Computes what one line comes to after its discount.
@@ -42,7 +51,7 @@ const lines = defineModel<QuoteItemUpdate[]>({ required: true })
  * @param line - The line.
  * @returns Quantity times unit price, less the discount percentage.
  */
-const lineTotal = (line: QuoteItemUpdate): number => {
+const lineTotal = (line: QuoteLineDraft): number => {
   const base = line.quantity * line.unitPrice
   return base - base * (line.discountPercent / MAX_PERCENT)
 }
@@ -56,13 +65,13 @@ const subTotal = computed<number>(() => lines.value.reduce((sum, line) => sum + 
  * @param index - Position of the line.
  * @param change - The fields to overwrite.
  */
-const patch = (index: number, change: Partial<QuoteItemUpdate>): void => {
+const patch = (index: number, change: Partial<QuoteLineDraft>): void => {
   lines.value = lines.value.map((line, position) => (position === index ? { ...line, ...change } : line))
 }
 
 /** Appends a blank line. */
 const addLine = (): void => {
-  lines.value = [...lines.value, { quantity: 1, description: '', unitPrice: 0, discountPercent: 0, taxed: false }]
+  lines.value = [...lines.value, blankQuoteLine()]
 }
 
 /**
@@ -81,7 +90,7 @@ const removeLine = (index: number): void => {
  * @param index - The line position.
  * @returns The action list passed to UiRowActions.
  */
-const lineActions = (index: number): UiRowAction[] => {
+const lineActions = (index: number): UiMenuAction[] => {
   if (lines.value.length <= 1) {
     return []
   }
@@ -110,7 +119,7 @@ const lineActions = (index: number): UiRowAction[] => {
         {{ t('shared.lineItems') }}
       </UiHeading>
 
-      <UiTable :density="UiTableDensity.Compact" :empty="lines.length === 0" :colspan="7">
+      <UiTable :density="UiTableDensity.Compact" :empty="lines.length === 0" :loading="loading" :colspan="7" :skeleton-rows="3">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.qty') }}</UiTableHeader>
@@ -123,7 +132,7 @@ const lineActions = (index: number): UiRowAction[] => {
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
-          <UiTableRow v-for="(line, index) in lines" :key="index">
+          <UiTableRow v-for="(line, index) in lines" :key="line.key">
             <UiTableCell>
               <UiNumberInput
                 :model-value="line.quantity"
@@ -180,17 +189,19 @@ const lineActions = (index: number): UiRowAction[] => {
       </UiTable>
 
       <UiStack direction="row" justify="between" align="center" wrap>
-        <UiButton variant="secondary" size="sm" data-testid="billing-quote-item-add" @click="addLine">
+        <UiButton variant="secondary" size="sm" :disabled="loading" data-testid="billing-quote-item-add" @click="addLine">
           {{ t('billing.quoteDetail.addItem') }}
         </UiButton>
         <UiStack align="end" gap="xs">
           <UiStack direction="row" gap="lg" align="center">
             <UiText tone="muted" size="md">{{ t('shared.subTotal2') }}</UiText>
-            <UiText tone="secondary" size="md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
+            <UiSkeletonBar v-if="loading" class="h-4 w-20 rounded-md" aria-hidden="true" />
+            <UiText v-else tone="secondary" size="md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
           </UiStack>
           <UiStack direction="row" gap="lg" align="center">
             <UiText tone="primary" size="md">{{ t('shared.totalDue2') }}</UiText>
-            <UiText tone="primary" size="md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
+            <UiSkeletonBar v-if="loading" class="h-4 w-20 rounded-md" aria-hidden="true" />
+            <UiText v-else tone="primary" size="md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
           </UiStack>
         </UiStack>
       </UiStack>

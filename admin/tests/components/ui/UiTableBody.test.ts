@@ -22,6 +22,6 @@ describe('UiTableBody', () => {
 
   it('draws dividers between rows only when asked', () => {
     expect(mount(UiTableBody).classes()).not.toContain('divide-y')
-    expect(mount(UiTableBody, { props: { divided: true } }).classes()).toEqual(expect.arrayContaining(['divide-y', 'divide-border']))
+    expect(mount(UiTableBody, { props: { divided: true } }).classes()).toEqual(expect.arrayContaining(['divide-y', 'divide-border-subtle']))
   })
 })

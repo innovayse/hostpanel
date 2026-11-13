@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 /**
- * UiLink - a text link in the theme.
+ * UiLink: a text link in the theme.
  *
  * `to` renders a NuxtLink for in-app navigation; `href` renders an anchor. An off-site `href`
  * (or `external`) opens in a new tab with `rel="noopener noreferrer"` so the target cannot reach

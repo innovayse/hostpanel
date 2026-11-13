@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 /**
- * PluginSplitBlock - two panes side by side, the conversation's width bounded and the other pane taking the rest;
+ * PluginSplitBlock: two panes side by side, the conversation's width bounded and the other pane taking the rest;
  * stacked on a phone, the first pane on top. Each pane scrolls on its own on a wide screen.
  *
  * The row is bounded to the block's height and a pane's content to the pane's: with an open-ended row a tall conversation

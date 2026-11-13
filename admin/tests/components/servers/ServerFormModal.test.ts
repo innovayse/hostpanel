@@ -57,6 +57,16 @@ describe('ServerFormModal', () => {
     })
   })
 
+  it('sends no account cap once the max accounts limit is switched to unlimited', async () => {
+    const wrapper = mountModal({ server: serverDto() })
+
+    await wrapper.get('[data-testid="ui-limit-toggle"]').trigger('click')
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+
+    const payload = wrapper.emitted('saved')?.[0]?.[0] as { limits: { maxAccounts: number | null } }
+    expect(payload.limits.maxAccounts).toBeNull()
+  })
+
   it('loads an edited server with the secrets left blank', () => {
     const wrapper = mountModal({ server: serverDto({ name: 'edited', username: 'admin' }) })
 

@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 /**
- * DomainSwitchRow - one setting of a domain as a switch: what it is called while on or off, a
+ * DomainSwitchRow. One setting of a domain as a switch: what it is called while on or off, a
  * line of explanation and the switch. The switch only asks; the parent decides whether the API
  * accepted the change and passes the new state back in.
  */

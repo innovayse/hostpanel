@@ -1,5 +1,12 @@
 {
   "back": "Back to plugins",
+  "tabs": {
+    "label": "Plugin sections",
+    "overview": "Overview",
+    "versions": "Versions",
+    "licence": "Licence",
+    "changes": "Changes"
+  },
   "notFoundTitle": "Plugin not found",
   "notFoundDescription": "The registry has no plugin with this id.",
   "verified": "Verified",

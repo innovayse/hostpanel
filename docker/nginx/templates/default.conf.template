@@ -43,7 +43,7 @@ log_format masked '$remote_addr - $remote_user [$time_local] "$request_method $l
 # X-Forwarded-For is replaced with the connecting address, never appended to: a value the visitor
 # sent must not reach the client or the API, which trust the first entry from a known proxy.
 
-# Main site — client + API
+# Main site: client + API
 server {
     listen 80;
     server_name ${DOMAIN};
@@ -101,7 +101,7 @@ server {
         proxy_set_header   X-Forwarded-Proto $panel_forwarded_proto;
     }
 
-    # Everything else — Nuxt SSR
+    # Everything else: Nuxt SSR
     location / {
         include snippets/security-headers.conf;
         # The portal's own scripts, styles and fonts come from this origin. Nuxt inlines its payload and

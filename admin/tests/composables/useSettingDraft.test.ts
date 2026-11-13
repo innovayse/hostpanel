@@ -96,6 +96,16 @@ describe('useSettingDraft', () => {
     expect(draft.outcome.value).toEqual({ saved: true, error: null })
   })
 
+  it('drops the edit on discard', () => {
+    const draft = useSettingDraft(settingsWith('nova'), 'portal.template')
+    draft.value.value = 'classic'
+
+    draft.discard()
+
+    expect(draft.value.value).toBe('nova')
+    expect(draft.dirty.value).toBe(false)
+  })
+
   it('is saving while the request is in flight and refuses a second submit meanwhile', async () => {
     const draft = useSettingDraft(settingsWith('nova'), 'portal.template')
     let finish: (result: { saved: boolean; error: string | null }) => void = () => undefined

@@ -41,8 +41,8 @@ export const stubSchemeQuery = (light: boolean): FakeSchemeQuery => {
 export const resetThemeDocument = (): void => {
   document.documentElement.className = ''
   document.head.innerHTML =
-    '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f6fb">'
-    + '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0f">'
+    '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f7fc">'
+    + '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070b18">'
   window.localStorage.clear()
 }
 

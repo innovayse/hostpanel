@@ -140,12 +140,13 @@ describe('UiDialog', () => {
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
-  it('uses the given confirm label and swaps it while loading', () => {
+  it('uses the given confirm label and keeps it, with a spinner, while loading', () => {
     const idle = mountDialog({ variant: 'confirm', confirmLabel: 'Delete' })
-    const busy = mountDialog({ variant: 'confirm', confirmLabel: 'Delete', loading: true, loadingLabel: 'Deleting...' })
+    const busy = mountDialog({ variant: 'confirm', confirmLabel: 'Delete', loading: true })
 
     expect(idle.get('[data-testid="dialog-confirm"]').text()).toBe('Delete')
-    expect(busy.get('[data-testid="dialog-confirm"]').text()).toBe('Deleting...')
+    expect(busy.get('[data-testid="dialog-confirm"]').text()).toBe('Delete')
+    expect(busy.get('[data-testid="dialog-confirm"]').attributes('aria-busy')).toBe('true')
     expect(busy.get('[data-testid="dialog-confirm"]').attributes('disabled')).toBeDefined()
   })
 
@@ -154,5 +155,20 @@ describe('UiDialog', () => {
 
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="save"]').exists()).toBe(true)
+  })
+
+  it('stacks the footer actions at full width on phones, right-aligned above', () => {
+    const wrapper = mountDialog({ title: 'x' }, { footer: '<button>Save</button>' })
+
+    expect(wrapper.get('[data-testid="ui-dialog-footer"]').classes()).toEqual(expect.arrayContaining(['justify-end', 'max-sm:flex-col-reverse', 'max-sm:items-stretch']))
+  })
+})
+
+describe('UiDialog surface', () => {
+  it('is an elevated glass panel with the panel radius', () => {
+    const classes = mountDialog({ title: 'Edit' }).get('[role="dialog"]').classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['glass-strong', 'rounded-panel']))
+    expect(classes).not.toContain('bg-surface-card')
   })
 })

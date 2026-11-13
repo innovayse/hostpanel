@@ -30,42 +30,42 @@ Go to **Clients → Add New Client**.
 <Steps>
 <li>
 
-**Account Owner** — choose **Create a new user** to create a brand-new login, or **Associate with an existing user** to link the client record to a user who already has an account.
+**Account Owner**: choose **Create a new user** to create a brand-new login, or **Associate with an existing user** to link the client record to a user who already has an account.
 
 </li>
 <li>
 
-**Profile Details** — first name, last name, company name, phone number.
+**Profile Details**: first name, last name, company name, phone number.
 
 </li>
 <li>
 
-**Address & Billing** — street address, city, state, postcode, country, **Currency** (cannot be changed once the client has been invoiced), **Payment Method**, and **Billing Contact**.
+**Address & Billing**: street address, city, state, postcode, country, **Currency** (cannot be changed once the client has been invoiced), **Payment Method**, and **Billing Contact**.
 
 </li>
 <li>
 
-**Email Notifications** — choose which system emails this client receives.
+**Email Notifications**: choose which system emails this client receives.
 
 </li>
 <li>
 
-**Settings** — tick the options that apply:
+**Settings**: tick the options that apply:
 
-- **Overdue Notices** — send payment overdue emails
-- **Tax Exempt** — no tax rate can be set on their invoices
-- **Tax ID** — the client's tax or VAT number, optional text kept on the client record (it is not validated)
-- **Tax Exemption Reason** — optional note on why the client is tax exempt
-- **Separate Invoices** — one invoice per order line
-- **Disable CC Processing** — skip automatic card charges
-- **Marketing Emails Opt-in** — include in marketing campaigns
-- **Status Update** — notify the client of service status changes
-- **Allow Single Sign-On** — allow SSO login for this account
+- **Overdue Notices**: send payment overdue emails
+- **Tax Exempt**: no tax rate can be set on their invoices
+- **Tax ID**: the client's tax or VAT number, optional text kept on the client record (it is not validated)
+- **Tax Exemption Reason**: optional note on why the client is tax exempt
+- **Separate Invoices**: one invoice per order line
+- **Disable CC Processing**: skip automatic card charges
+- **Marketing Emails Opt-in**: include in marketing campaigns
+- **Status Update**: notify the client of service status changes
+- **Allow Single Sign-On**: allow SSO login for this account
 
 </li>
 <li>
 
-**Admin Notes** — private notes visible only to staff.
+**Admin Notes**: private notes visible only to staff.
 
 </li>
 <li>
@@ -83,13 +83,13 @@ Once a client has been invoiced, their currency cannot be changed (<code>CLIENT_
 
 Open a client and click **Summary**. The page shows:
 
-- **Client Information** — contact and billing details at a glance.
-- **Other Information** — account settings and notes.
-- **Invoices / Billing** — invoice counters and financial totals: Gross Revenue, Client Expenses, Net Income, Credit Balance.
-- **Products / Services** — active and past services.
-- **Recent Emails** — last few emails sent to the client.
-- **Admin Notes** — staff-only notes.
-- **Current Quotes** — open quotes.
+- **Client Information**: contact and billing details at a glance.
+- **Other Information**: account settings and notes.
+- **Invoices / Billing**: invoice counters and financial totals: Gross Revenue, Client Expenses, Net Income, Credit Balance.
+- **Products / Services**: active and past services.
+- **Recent Emails**: last few emails sent to the client.
+- **Admin Notes**: staff-only notes.
+- **Current Quotes**: open quotes.
 
 Quick links at the top right: **Create Invoice**, **Add Billable Item**, **Create New Quote**, **Open New Ticket**.
 
@@ -101,9 +101,9 @@ Click **Profile** to edit the client's contact details, billing address, currenc
 
 Click the **Users** tab. Each client account has one **Owner** and may have additional **Users**.
 
-- **+ Add User** — choose **Search Existing** to link a user who already has a login, or **Invite by Email** to send an invitation.
-- **Transfer Ownership** — pass the Owner role to another user on the account.
-- **Remove** — remove a user from the account.
+- **+ Add User**: choose **Search Existing** to link a user who already has a login, or **Invite by Email** to send an invitation.
+- **Transfer Ownership**: pass the Owner role to another user on the account.
+- **Remove**: remove a user from the account.
 
 The owner cannot be removed until ownership is transferred to someone else (`CLIENT_OWNER_CANNOT_BE_REMOVED`). You cannot transfer ownership to someone who is already the owner (`CLIENT_TRANSFER_SAME_OWNER`).
 
@@ -111,9 +111,9 @@ The owner cannot be removed until ownership is transferred to someone else (`CLI
 
 Click the **Contacts** tab to manage additional email contacts for this client. Contacts receive copies of emails but cannot log in.
 
-- **Add** — fill in the contact form and save.
-- **Edit** — update an existing contact.
-- **Delete** — remove the contact permanently.
+- **Add**: fill in the contact form and save.
+- **Edit**: update an existing contact.
+- **Delete**: remove the contact permanently.
 
 Two contacts on the same client account cannot share an email address (`CONTACT_EMAIL_IN_USE`).
 
@@ -121,8 +121,8 @@ Two contacts on the same client account cannot share an email address (`CONTACT_
 
 Go to **Clients → Manage Users** to see every user across all client accounts. From this screen you can:
 
-- **Send Password Reset Email** — sends a reset link to the user's email address. <Label type="local" /> Local accounts only; not available for SSO users.
-- **Change Password** — set a new password directly. <Label type="local" /> Local accounts only.
+- **Send Password Reset Email**: sends a reset link to the user's email address. <Label type="local" /> Local accounts only; not available for SSO users.
+- **Change Password**: set a new password directly. <Label type="local" /> Local accounts only.
 
 ## Suspend, deactivate, and close
 

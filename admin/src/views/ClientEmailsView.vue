@@ -15,7 +15,6 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -82,16 +81,11 @@ onMounted(load)
       @retry="load"
     />
 
-    <UiStack v-if="store.loading && store.emails.length === 0" data-testid="client-emails-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientEmails.loadingEmails') }}</UiText>
-    </UiStack>
-
     <UiCard v-else class="overflow-x-auto">
       <UiTable
         :density="UiTableDensity.Comfortable"
-        :empty="store.emails.length === 0"
-        :colspan="3"
+        :loading="store.loading && store.emails.length === 0"
+        :empty="!store.loading && store.emails.length === 0"
         data-testid="client-emails-table"
       >
         <UiTableHead>

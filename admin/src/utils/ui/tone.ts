@@ -20,37 +20,52 @@ export const UiTone = {
 /** One of the semantic tones. */
 export type UiTone = (typeof UiTone)[keyof typeof UiTone]
 
-/** Pill/badge classes per tone (tinted background, matching border and text; `light:` steps keep the text AA-readable on a white surface). */
+/**
+ * Pill/badge classes per tone: the 14 percent status tint as the fill and the status colour as the text,
+ * with no border. The status and accent tokens swap per theme (`:root.light` in main.css), so no `light:`
+ * step is needed and the text stays AA-readable on the tint in both themes.
+ */
 export const toneBadgeClasses: Record<UiTone, string> = {
-  neutral: 'bg-surface-hover text-text-secondary border-border',
-  primary: 'bg-primary-500/10 text-primary-400 light:text-primary-600 border-primary-500/20',
-  info: 'bg-primary-500/10 text-primary-400 light:text-primary-600 border-primary-500/20',
-  success: 'bg-status-green/10 text-status-green light:text-green-700 border-status-green/20',
-  warning: 'bg-status-yellow/10 text-status-yellow light:text-yellow-700 border-status-yellow/20',
-  danger: 'bg-status-red/10 text-status-red light:text-red-600 border-status-red/20',
+  neutral: 'bg-surface-hover text-text-secondary',
+  primary: 'bg-tint-blue text-text-accent',
+  info: 'bg-tint-blue text-text-accent',
+  success: 'bg-tint-green text-status-green',
+  warning: 'bg-tint-yellow text-status-yellow',
+  danger: 'bg-tint-red text-status-red',
 }
 
-/** Banner classes per tone (same tint as the badge, on a block surface). */
-export const toneAlertClasses: Record<UiTone, string> = toneBadgeClasses
+/** Banner classes per tone: the badge tint and text on a block surface, with a faint border of the tone. */
+export const toneAlertClasses: Record<UiTone, string> = {
+  neutral: `${toneBadgeClasses.neutral} border-border`,
+  primary: `${toneBadgeClasses.primary} border-text-accent/25`,
+  info: `${toneBadgeClasses.info} border-text-accent/25`,
+  success: `${toneBadgeClasses.success} border-status-green/25`,
+  warning: `${toneBadgeClasses.warning} border-status-yellow/25`,
+  danger: `${toneBadgeClasses.danger} border-status-red/25`,
+}
 
 /** Foreground-only classes per tone (icons, trend text, stat values). */
 export const toneTextClasses: Record<UiTone, string> = {
   neutral: 'text-text-primary',
-  primary: 'text-primary-400 light:text-primary-600',
-  info: 'text-primary-400 light:text-primary-600',
-  success: 'text-status-green light:text-green-700',
-  warning: 'text-status-yellow light:text-yellow-700',
-  danger: 'text-status-red light:text-red-600',
+  primary: 'text-text-accent',
+  info: 'text-text-accent',
+  success: 'text-status-green',
+  warning: 'text-status-yellow',
+  danger: 'text-status-red',
 }
 
-/** Solid fill classes per tone (confirm buttons); the status fills carry dark text on the bright dark-theme fill and white on the deeper light-theme fill. */
+/**
+ * Solid fill classes per tone (confirm buttons). The status fills are bright pastels in the dark theme
+ * and deep tones in the light one, so the label is the page's base colour: dark on the pastel, near
+ * white on the deep fill. The accent fill steps to a deeper blue in the light theme for the same reason.
+ */
 export const toneSolidClasses: Record<UiTone, string> = {
   neutral: 'bg-surface-hover text-text-primary hover:bg-border',
-  primary: 'bg-primary-600 light:bg-primary-700 text-white hover:bg-primary-700 light:hover:bg-primary-800',
-  info: 'bg-primary-600 light:bg-primary-700 text-white hover:bg-primary-700 light:hover:bg-primary-800',
-  success: 'bg-status-green text-gray-950 light:text-white hover:opacity-90',
-  warning: 'bg-status-yellow text-gray-950 light:text-white hover:opacity-90',
-  danger: 'bg-status-red text-gray-950 light:text-white hover:opacity-90',
+  primary: 'bg-primary-400 light:bg-primary-600 text-surface-base hover:bg-primary-300 light:hover:bg-primary-700',
+  info: 'bg-primary-400 light:bg-primary-600 text-surface-base hover:bg-primary-300 light:hover:bg-primary-700',
+  success: 'bg-status-green text-surface-base hover:opacity-90',
+  warning: 'bg-status-yellow text-surface-base hover:opacity-90',
+  danger: 'bg-status-red text-surface-base hover:opacity-90',
 }
 
 /** Dot classes per tone (status dots inside a badge). */

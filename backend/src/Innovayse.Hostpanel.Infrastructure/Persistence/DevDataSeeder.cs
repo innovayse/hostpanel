@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Common;
-using Innovayse.Hostpanel.Domain.Auth;
+using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
@@ -41,6 +41,9 @@ public sealed class DevDataSeeder
     /// <summary>Creates the development sign-in accounts.</summary>
     private readonly UserManager<AppUser> _userManager;
 
+    /// <summary>Grants the seeded accounts their roles in the store authorization and the setup check read.</summary>
+    private readonly ISubjectRoleStore _roles;
+
     /// <summary>Discards the domain events seed saves raise, so seeding triggers no notifications.</summary>
     private readonly IDomainEventGate _eventGate;
 
@@ -56,14 +59,16 @@ public sealed class DevDataSeeder
     /// <summary>Initializes a new instance of the <see cref="DevDataSeeder"/> class.</summary>
     /// <param name="db">The database the development data is written to.</param>
     /// <param name="userManager">Creates the development sign-in accounts.</param>
+    /// <param name="roles">Grants the seeded accounts their roles in the store authorization and the setup check read.</param>
     /// <param name="eventGate">Discards the domain events seed saves raise, so seeding triggers no notifications.</param>
     /// <param name="options">The sign-in passwords of the accounts this class creates, from configuration.</param>
     /// <param name="logger">Records which parts were seeded or skipped.</param>
     /// <param name="clock">The source of the moment the seeded dates count from.</param>
-    public DevDataSeeder(AppDbContext db, UserManager<AppUser> userManager, IDomainEventGate eventGate, IOptions<DevDataSeederOptions> options, ILogger<DevDataSeeder> logger, IClock clock)
+    public DevDataSeeder(AppDbContext db, UserManager<AppUser> userManager, ISubjectRoleStore roles, IDomainEventGate eventGate, IOptions<DevDataSeederOptions> options, ILogger<DevDataSeeder> logger, IClock clock)
     {
         _db = db;
         _userManager = userManager;
+        _roles = roles;
         _eventGate = eventGate;
         _passwords = options.Value;
         _logger = logger;
@@ -105,9 +110,10 @@ public sealed class DevDataSeeder
 
         // ── Admin user ───────────────────────────────────────────────────────
         const string adminEmail = "admin@example.test";
-        if (await _userManager.FindByEmailAsync(adminEmail) is null)
+        var adminUser = await _userManager.FindByEmailAsync(adminEmail);
+        if (adminUser is null)
         {
-            var adminUser = new AppUser
+            adminUser = new AppUser
             {
                 UserName = adminEmail,
                 Email = adminEmail,
@@ -116,10 +122,17 @@ public sealed class DevDataSeeder
                 EmailConfirmed = true,
             };
             var adminResult = await _userManager.CreateAsync(adminUser, _passwords.AdminPassword);
-            if (adminResult.Succeeded)
+            if (!adminResult.Succeeded)
             {
-                await _userManager.AddToRoleAsync(adminUser, Roles.Admin);
+                adminUser = null;
             }
+        }
+
+        // Granted through the store authorization and the setup check read, outside the creation branch:
+        // the grant is idempotent, so a dev database seeded before this ran heals on the next start.
+        if (adminUser is not null)
+        {
+            await _roles.AddAsync(adminUser.Id, Role.Admin, ct);
         }
 
         var productNames = await _db.Products.Select(p => p.Name).ToListAsync(ct);
@@ -180,7 +193,7 @@ public sealed class DevDataSeeder
                 _logger.LogInformation("Seeded Domain Registration product");
             }
 
-            _logger.LogInformation("Dev seed skipped — data already exists");
+            _logger.LogInformation("Dev seed skipped because data already exists");
             return;
         }
 
@@ -229,10 +242,7 @@ public sealed class DevDataSeeder
                     }
                 }
 
-                if (!await _userManager.IsInRoleAsync(user, Roles.Client))
-                {
-                    await _userManager.AddToRoleAsync(user, Roles.Client);
-                }
+                await _roles.AddAsync(user.Id, Role.Client, ct);
 
                 var client = Client.Create(user.Id, first, last, email, _now, company);
                 if (phone is not null)
@@ -717,7 +727,7 @@ public sealed class DevDataSeeder
              "Go to the Domains section and click Register Domain. Search for your desired domain name, select it, and complete the registration form. Domains are activated within minutes.",
              "Domains"),
             ("How to update your DNS records",
-             "Open the domain you want to manage, click DNS Management, and use the Add Record form to create A, CNAME, MX, or TXT entries. Changes propagate within 24–48 hours.",
+             "Open the domain you want to manage, click DNS Management, and use the Add Record form to create A, CNAME, MX, or TXT entries. Changes propagate within 24 to 48 hours.",
              "Domains"),
             ("Choosing a hosting plan",
              "Starter Hosting is ideal for small websites. Business Hosting suits growing businesses that need more resources. Pro Hosting is recommended for high-traffic sites and developers.",
@@ -747,7 +757,7 @@ public sealed class DevDataSeeder
         var clients = await db.Clients.Where(c => c.Status == ClientStatus.Active).ToListAsync(ct);
         if (clients.Count == 0 || departments.Count == 0)
         {
-            logger.LogInformation("Skipping ticket seeding — no active clients or departments");
+            logger.LogInformation("Skipping ticket seeding because there are no active clients or departments");
             return;
         }
 
@@ -962,7 +972,7 @@ public sealed class DevDataSeeder
             ("Welcome to HostPanel",
              "We are excited to have you on board! HostPanel gives you everything you need to manage your hosting, domains, billing, and support in one place. If you have any questions, our support team is here to help 24/7.",
              true),
-            ("Scheduled Maintenance — June 15",
+            ("Scheduled Maintenance on June 15",
              "We will be performing scheduled maintenance on our shared hosting servers on June 15 between 02:00 and 04:00 UTC. During this window, websites may experience brief downtime. We apologise for any inconvenience.",
              true),
             ("New Feature: Two-Factor Authentication",

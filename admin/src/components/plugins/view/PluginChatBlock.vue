@@ -148,7 +148,7 @@ const logClasses = computed<string>(() => (inPane ? 'max-h-[50dvh]' : 'max-h-[60
           <UiButton
             :variant="UiButtonVariant.Secondary"
             :size="UiSize.Sm"
-            class="pointer-events-auto shadow"
+            class="pointer-events-auto shadow-popover"
             data-testid="plugin-chat-jump"
             @click="jumpToLatest"
           >

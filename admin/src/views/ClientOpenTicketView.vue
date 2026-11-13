@@ -153,11 +153,12 @@ onMounted(() => {
           <UiButton
             type="button"
             :variant="UiButtonVariant.Primary"
-            :disabled="store.loading || incomplete"
+            :loading="store.loading"
+            :disabled="incomplete"
             data-testid="client-open-ticket-submit"
             @click="handleSubmit"
           >
-            {{ store.loading ? t('shared.creating') : t('clients.clientOpenTicket.openTicket') }}
+            {{ t('clients.clientOpenTicket.openTicket') }}
           </UiButton>
         </UiStack>
         <UiStatusMessage :message="store.error" :tone="UiTone.Danger" data-testid="client-open-ticket-error" />

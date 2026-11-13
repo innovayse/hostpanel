@@ -29,7 +29,11 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding } from '@/utils/ui/card'
 import { UiAlignItems, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import { UiSkeletonShape } from '@/utils/ui/skeleton'
 import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+
+/** How many placeholder rows the table shows while its source is read. */
+const SKELETON_ROWS = 4
 
 /** Props for PluginTableBlock. */
 const props = defineProps<{
@@ -94,6 +98,9 @@ const pageCount = computed<number>(() => Math.max(1, Math.ceil(rows.value.length
 /** The rows of the page shown. */
 const visibleRows = computed<TableRow[]>(() => rows.value.slice((page.value - 1) * perPage.value, page.value * perPage.value))
 
+/** Whether the pager is drawn: while reading, when the view pages the table (so it keeps its place); afterwards, when there is more than one page. */
+const showPager = computed<boolean>(() => !error.value && (loading.value ? Boolean(props.block.pageSize) : pageCount.value > 1))
+
 /**
  * Opens the page the row links to.
  *
@@ -117,9 +124,9 @@ watch(pageCount, (count) => {
 <template>
   <UiStack :gap="UiGap.Sm" data-testid="plugin-table">
     <UiHeading v-if="block.title" :level="3" :variant="UiHeadingVariant.Card">{{ block.title }}</UiHeading>
-    <UiSkeleton v-if="loading" :lines="4" data-testid="plugin-table-loading" />
+    <UiSkeleton v-if="loading && block.display === PluginTableDisplay.Cards" :shape="UiSkeletonShape.Block" :count="SKELETON_ROWS" data-testid="plugin-table-loading" />
     <UiText v-else-if="error" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-error">{{ error }}</UiText>
-    <UiText v-else-if="rows.length === 0" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-empty">{{ t('plugins.pluginPage.tableEmpty') }}</UiText>
+    <UiText v-else-if="rows.length === 0 && !loading" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-empty">{{ t('plugins.pluginPage.tableEmpty') }}</UiText>
     <UiStack v-else-if="block.display === PluginTableDisplay.Cards" :gap="UiGap.Sm" data-testid="plugin-table-cards">
       <UiCard v-for="row in visibleRows" :key="row.key" :padding="UiCardPadding.Sm" data-testid="plugin-table-card">
         <UiStack direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap>
@@ -131,7 +138,7 @@ watch(pageCount, (count) => {
         </UiStack>
       </UiCard>
     </UiStack>
-    <UiTable v-else scrollable>
+    <UiTable v-else scrollable :loading="loading" :skeleton-rows="SKELETON_ROWS" data-testid="plugin-table-grid">
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader v-for="column in block.columns" :key="column.field">{{ column.label }}</UiTableHeader>
@@ -156,10 +163,11 @@ watch(pageCount, (count) => {
       </UiTableBody>
     </UiTable>
     <UiPagination
-      v-if="!loading && !error && pageCount > 1"
+      v-if="showPager"
       :page="page"
       :total="rows.length"
       :page-size="perPage"
+      :loading="loading"
       testid="plugin-table-pagination"
       @update:page="page = $event"
     />

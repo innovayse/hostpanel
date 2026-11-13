@@ -1,6 +1,7 @@
 /**
- * Smoke tests for SupportTicketDetailView: the loaded ticket and thread, the reply form and the
- * close action, through the real store and transport with `fetch` stubbed.
+ * Smoke tests for SupportTicketDetailView: the loaded ticket and its thread as bubbles, the side card
+ * and its sheet on a phone, the reply composer and the close action, through the real store and
+ * transport with `fetch` stubbed.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -38,6 +39,17 @@ afterEach(() => {
 })
 
 describe('SupportTicketDetailView', () => {
+  it('draws the real layout with chat bubble and field placeholders while the ticket loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+
+    const wrapper = await mountView(SupportTicketDetailView, location)
+
+    expect(wrapper.find('[data-testid="ticket-loading"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ticket-message-loading"]')).toHaveLength(3)
+    expect(wrapper.find('[data-testid="ticket-composer"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+  })
+
   it('shows the ticket, its first message and the thread', async () => {
     stubPathRoutes(loadRoutes)
 
@@ -47,6 +59,51 @@ describe('SupportTicketDetailView', () => {
     expect(wrapper.get('[data-testid="ticket-initial-message"]').text()).toContain('Nothing resolves.')
     expect(wrapper.findAll('[data-testid="ticket-reply"]')).toHaveLength(1)
     expect(wrapper.get('[data-testid="ticket-reply"]').text()).toContain('Looking into it.')
+  })
+
+  it('puts the client on the left and staff on the right of the thread', async () => {
+    stubPathRoutes(loadRoutes)
+
+    const wrapper = await mountView(SupportTicketDetailView, location)
+
+    expect(wrapper.get('[data-testid="ticket-initial-message"][data-side="other"] [data-testid="ui-chat-bubble-body"]').text()).toBe('Nothing resolves.')
+    expect(wrapper.get('[data-testid="ticket-reply"][data-side="own"] [data-testid="ui-chat-bubble-body"]').text()).toBe('Looking into it.')
+    expect(wrapper.get('[data-testid="ticket-reply"]').text()).toContain('Ann')
+  })
+
+  it('shows the ticket details in a side card on a wide screen', async () => {
+    stubPathRoutes(loadRoutes)
+
+    const wrapper = await mountView(SupportTicketDetailView, location)
+
+    expect(wrapper.get('[data-testid="ticket-details-open"]').classes()).toContain('lg:hidden')
+    expect(wrapper.get('[data-testid="ticket-meta"]').text()).toContain('Unassigned')
+    expect(wrapper.get('[data-testid="ticket-composer"] textarea').attributes('data-testid')).toBe('ticket-reply-message')
+  })
+
+  it('moves the ticket details into a sheet on a phone', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    stubPathRoutes(loadRoutes)
+
+    const wrapper = await mountView(SupportTicketDetailView, location)
+    expect(wrapper.find('[data-testid="ticket-meta"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="ticket-details-open"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer-body"] [data-testid="ticket-meta"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ticket-department"]').exists()).toBe(true)
+  })
+
+  it('saves the department and priority chosen in the side card', async () => {
+    const mock = stubPathRoutes(loadRoutes)
+    const wrapper = await mountView(SupportTicketDetailView, location)
+
+    await wrapper.get('[data-testid="ticket-save"]').trigger('click')
+    await flushPromises()
+
+    const update = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.method === 'PUT')
+    expect(update).toMatchObject({ url: '/api/tickets/5', body: { priority: 'Medium', departmentId: 1 } })
+    expect(wrapper.get('[data-testid="ticket-save-feedback"]').text()).toBe('Changes saved successfully.')
   })
 
   it('keeps the reply button disabled until the message is filled, then sends the reply without an author', async () => {

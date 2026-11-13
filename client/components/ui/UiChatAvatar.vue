@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 /**
- * UiChatAvatar - the round mark that signs the replies of the other party in a chat.
+ * UiChatAvatar: the round mark that signs the replies of the other party in a chat.
  *
  * Decorative: the reply's own name line, when there is one, names the sender, so the mark is hidden from assistive
  * technology; `label` only gives sighted readers a tooltip.

@@ -1,5 +1,5 @@
 /**
- * Support channel item type - one way to reach support, as the support section shows it.
+ * Support channel item type: one way to reach support, as the support section shows it.
  *
  * @module types/supportchannelitem
  */

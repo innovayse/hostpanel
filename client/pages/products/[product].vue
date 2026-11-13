@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 /**
- * Product detail page - one product family with its plans, prices and calls to action.
+ * Product detail page: one product family with its plans, prices and calls to action.
  * Route: /products/[product]
  *
  * The page reads the catalogue through the catalogue store (prices are in the payer's currency, so
@@ -49,6 +49,7 @@ import { PricingCycle } from '~/types/pricingcycle'
 import type { ProductPlan } from '~/types/productplan'
 import { buildComparisonRows } from '~/utils/comparisonRows'
 import { formatMoney } from '~/utils/formatMoney'
+import { detailTitle } from '~/utils/seoTitle'
 import { findProductDetail, firstOfferedPrice, pricedCycles } from '~/utils/productFamilies'
 import { buildSeoLinks, localizedUrl } from '~/utils/seoLinks'
 import { shareImageMeta } from '~/utils/shareImage'
@@ -240,7 +241,7 @@ watchEffect(() => {
   if (!product) {
     return
   }
-  const fullTitle = `${product.name} | ${siteName.value}`
+  const fullTitle = detailTitle(product.name, siteName.value)
   // A few catalogue products carry no description; fall back to the catalogue-wide copy.
   const metaDescription = product.description || t('seo.products.description')
 

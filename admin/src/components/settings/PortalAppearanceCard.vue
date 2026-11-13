@@ -14,7 +14,6 @@ import { useI18n } from 'vue-i18n'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
-import SettingSaveButton from '@/components/settings/SettingSaveButton.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
@@ -25,7 +24,7 @@ import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { PortalTemplate, PortalThemeMode } from '@/types/portalappearance'
 import { SettingEnv, SettingKey, SettingToggle } from '@/types/setting'
-import type { Setting, SettingSave } from '@/types/setting'
+import type { Setting } from '@/types/setting'
 
 const { t } = useI18n()
 
@@ -33,8 +32,6 @@ const { t } = useI18n()
 const props = defineProps<{
   /** All system settings, as loaded from the backend. */
   settings: Setting[]
-  /** Persists one row and answers how it went; each control shows its own outcome. */
-  save: SettingSave
 }>()
 
 /** Templates with their label and hint keys. */
@@ -112,6 +109,7 @@ const missingKeys = computed<SettingKey[]>(() => {
 
 <template>
   <SettingsSection
+    :columns="2"
     :title="t('settings.portalAppearance.title')"
     :description="t('settings.portalAppearance.description')"
   >
@@ -130,12 +128,6 @@ const missingKeys = computed<SettingKey[]>(() => {
         :placeholder="t('settings.portalAppearance.template')"
         data-testid="portal-template"
         class="min-w-56"
-      />
-      <SettingSaveButton
-        :dirty="templateDraft.dirty.value"
-        :saving="templateDraft.saving.value"
-        data-testid="portal-template-save"
-        @click="templateDraft.submit(save)"
       />
       <SettingOutcome :outcome="templateDraft.outcome.value" />
       <UiText tone="muted" size="md">
@@ -161,12 +153,6 @@ const missingKeys = computed<SettingKey[]>(() => {
           />
           {{ t(mode.labelKey) }}
         </UiLabel>
-        <SettingSaveButton
-          :dirty="themeDraft.dirty.value"
-          :saving="themeDraft.saving.value"
-          data-testid="portal-theme-save"
-          @click="themeDraft.submit(save)"
-        />
         <SettingOutcome :outcome="themeDraft.outcome.value" />
       </UiStack>
     </UiStack>
@@ -182,12 +168,6 @@ const missingKeys = computed<SettingKey[]>(() => {
           {{ t('settings.portalAppearance.userToggleHint') }}
         </UiText>
       </UiStack>
-      <SettingSaveButton
-        :dirty="toggleDraft.dirty.value"
-        :saving="toggleDraft.saving.value"
-        data-testid="portal-user-toggle-save"
-        @click="toggleDraft.submit(save)"
-      />
       <SettingOutcome :outcome="toggleDraft.outcome.value" />
     </UiStack>
   </SettingsSection>

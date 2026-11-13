@@ -2,10 +2,11 @@
 /**
  * Services list view: paged table of all client hosted services.
  *
- * Shows id, product, domain, client, price, billing cycle, next due date and status. Reads
- * `stores/services`; a refused load shows `store.error` with a retry.
+ * Shows id, product, domain, client, price, billing cycle, next due date and status. The page lives in the
+ * address (`useFilterQuery`), so a reload or a shared link opens the same page; the services endpoint takes no
+ * other filter. Reads `stores/services`; a refused load shows `store.error` with a retry.
  */
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -30,23 +31,27 @@ import { formatPrice } from '@/lib/money'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { useServicesStore } from '@/stores/services'
 import { clientPath } from '@/lib/routes'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
 const store = useServicesStore()
 
-/**
- * Moves to a page of the list and loads it.
- *
- * @param page - Target page, 1-based.
- */
-const goToPage = (page: number): void => {
-  store.page = page
-  void store.fetchAll()
-}
+/** The page of the list, kept in the address. */
+const { page, setPage } = useFilterQuery([])
 
-onMounted(() => store.fetchAll())
+/**
+ * Loads the page the address names.
+ *
+ * @returns True when loaded; false when refused (see `store.error`).
+ */
+const load = (): Promise<boolean> => store.fetchAll(page.value)
+
+// A page chosen, or the back button, loads the page the address names.
+watch(page, load)
+
+onMounted(() => load())
 </script>
 
 <template>
@@ -62,14 +67,13 @@ onMounted(() => store.fetchAll())
       :message="store.error"
       :loading="store.loading"
       testid="services-error"
-      @retry="store.fetchAll()"
+      @retry="load"
     />
 
     <UiCard v-else-if="store.services.length > 0 || store.loading">
       <UiTable
         :density="UiTableDensity.Comfortable"
         :loading="store.loading && store.services.length === 0"
-        :colspan="8"
         data-testid="services-table"
       >
         <UiTableHead>
@@ -112,18 +116,20 @@ onMounted(() => store.fetchAll())
         </UiTableBody>
       </UiTable>
 
-      <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiText tone="muted" size="xs">
-          {{ t('services.servicesList.totalcountServiceValue', { totalCount: store.totalCount }) }}
-        </UiText>
-        <UiPagination
-          :page="store.page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          testid="services-pagination"
-          @update:page="goToPage"
-        />
-      </UiStack>
+      <template #footer>
+        <UiStack direction="row" justify="between" align="center" wrap>
+          <UiText tone="muted" size="xs">
+            {{ t('services.servicesList.totalcountServiceValue', { totalCount: store.totalCount }) }}
+          </UiText>
+          <UiPagination
+            :page="page"
+            :total="store.totalCount"
+            :page-size="store.pageSize"
+            testid="services-pagination"
+            @update:page="setPage"
+          />
+        </UiStack>
+      </template>
     </UiCard>
 
     <UiCard v-else>

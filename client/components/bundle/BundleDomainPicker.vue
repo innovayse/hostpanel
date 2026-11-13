@@ -42,7 +42,7 @@
         </UiForm>
 
         <UiText v-if="!hasZones" size="sm" tone="muted" data-testid="bundle-domain-no-zones">{{ $t('aurora.domainSearch.noZones') }}</UiText>
-        <UiText v-else-if="pending" size="sm" tone="muted" data-testid="bundle-domain-pending">{{ $t('aurora.domainSearch.searching') }}</UiText>
+        <UiSkeleton v-else-if="pending" :lines="3" data-testid="bundle-domain-pending" />
         <div v-else class="space-y-2">
           <UiCard
             v-for="result in results"

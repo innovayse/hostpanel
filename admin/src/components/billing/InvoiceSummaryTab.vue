@@ -8,6 +8,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useResultBanner } from '@/composables/useResultBanner'
+import InvoiceFactTiles from '@/components/billing/InvoiceFactTiles.vue'
 import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
 import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -15,17 +16,15 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
+import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { formatDate } from '@/lib/format'
 import { invoiceStatusTone } from '@/lib/tones'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceBulkAction, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
-import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
@@ -48,18 +47,6 @@ const SummaryAction = {
 
 /** One of the {@link SummaryAction} values. */
 type SummaryAction = (typeof SummaryAction)[keyof typeof SummaryAction]
-
-/** One caption/value line of the invoice facts. */
-interface FactRow {
-  /** Stable key of the row. */
-  key: string
-  /** Row caption. */
-  label: string
-  /** Row value. */
-  value: string
-  /** Tone of the value. */
-  tone: UiTextTone
-}
 
 const store = useBillingStore()
 
@@ -93,21 +80,6 @@ const canPay = computed<boolean>(() => PAYABLE.includes(props.invoice.status))
 
 /** True when the invoice can still be cancelled. */
 const canCancel = computed<boolean>(() => CANCELLABLE.includes(props.invoice.status))
-
-/**
- * What is still owed, exactly as the API reports it. The API owns the rule (the total less the
- * recorded payments, nothing for a Paid, Refunded or Cancelled invoice), so a settlement booked
- * without a payment row of the invoice's own still shows a zero balance here.
- */
-const balance = computed<number>(() => props.invoice.amountDue)
-
-/** The invoice facts shown beside the status. */
-const facts = computed<FactRow[]>(() => [
-  { key: 'invoiceDate', label: t('shared.invoiceDate'), value: formatDate(props.invoice.dates.invoiceDate), tone: UiTextTone.Secondary },
-  { key: 'dueDate', label: t('shared.dueDate'), value: formatDate(props.invoice.dates.dueDate), tone: UiTextTone.Secondary },
-  { key: 'amount', label: t('billing.invoiceSummaryTab.invoiceAmount'), value: formatPlainAmount(props.invoice.amounts.total ?? 0, props.invoice.currency), tone: UiTextTone.Secondary },
-  { key: 'balance', label: t('shared.balance'), value: formatPlainAmount(balance.value, props.invoice.currency), tone: balance.value > 0 ? UiTextTone.Danger : UiTextTone.Success },
-])
 
 /** True when the confirmation prompt for cancelling is open. */
 const confirmingCancel = computed<boolean>(() => pending.value === SummaryAction.Cancel)
@@ -186,75 +158,74 @@ const markPaid = (): Promise<void> =>
       {{ t('billing.invoiceSummaryTab.thisIsADraftInvoice') }}
     </UiAlert>
 
-    <UiCard padding="md">
-      <UiGrid :columns="2" gap="lg">
-        <UiGrid :columns="2" gap="sm" class="items-center">
-          <UiText tone="muted" size="md">{{ t('shared.clientName') }}</UiText>
-          <UiStack direction="row" gap="sm" align="center" wrap>
-            <UiText tone="primary" size="md" data-testid="billing-invoice-client-name">{{ invoice.clientName }}</UiText>
-            <UiLink
-              variant="link"
-              :to="clientSectionPath(invoice.clientId, ClientSection.Invoices)"
-              data-testid="billing-invoice-client-invoices"
-            >
-              {{ t('billing.invoiceSummaryTab.viewInvoices') }}
-            </UiLink>
-          </UiStack>
-          <template v-for="fact in facts" :key="fact.key">
-            <UiText tone="muted" size="md">{{ fact.label }}</UiText>
-            <UiText :tone="fact.tone" size="md" :data-testid="`billing-invoice-fact-${fact.key}`">{{ fact.value }}</UiText>
-          </template>
-        </UiGrid>
+    <InvoiceFactTiles :invoice="invoice" />
 
-        <UiStack align="center" gap="sm">
-          <UiBadge :tone="invoiceStatusTone(invoice.status)" data-testid="billing-invoice-status">
-            {{ invoice.status }}
-          </UiBadge>
-          <UiText tone="muted" size="sm">
-            {{ t('billing.invoiceSummaryTab.paymentMethod') }} {{ invoice.payment.method || t('shared.none') }}
-          </UiText>
-
-          <UiStack v-if="!readonly" direction="row" gap="sm" justify="center" wrap>
-            <UiButton
-              v-if="isDraft"
-              variant="primary"
-              :loading="running === SummaryAction.Publish"
-              :disabled="running !== null"
-              data-testid="billing-invoice-publish"
-              @click="publish"
-            >
-              {{ t('billing.invoiceSummaryTab.publish') }}
-            </UiButton>
-            <UiButton
-              v-if="canCancel"
-              variant="secondary"
-              :loading="running === SummaryAction.Cancel"
-              :disabled="running !== null"
-              data-testid="billing-invoice-cancel"
-              @click="ask(SummaryAction.Cancel)"
-            >
-              {{ t('shared.markCancelled') }}
-            </UiButton>
-            <UiButton
-              v-if="canPay"
-              variant="primary"
-              :loading="running === SummaryAction.MarkPaid"
-              :disabled="running !== null"
-              data-testid="billing-invoice-mark-paid"
-              @click="ask(SummaryAction.MarkPaid)"
-            >
-              {{ t('billing.invoiceSummaryTab.markPaid') }}
-            </UiButton>
+    <UiCard padding="md" data-testid="billing-invoice-document">
+      <UiStack gap="lg">
+        <UiStack direction="row" gap="md" justify="between" align="start" wrap>
+          <UiStack gap="xs">
+            <UiText tone="muted" size="sm">{{ t('shared.clientName') }}</UiText>
+            <UiStack direction="row" gap="sm" align="center" wrap>
+              <UiHeading :level="2" variant="card" data-testid="billing-invoice-client-name">{{ invoice.clientName }}</UiHeading>
+              <UiLink
+                variant="link"
+                :to="clientSectionPath(invoice.clientId, ClientSection.Invoices)"
+                data-testid="billing-invoice-client-invoices"
+              >
+                {{ t('billing.invoiceSummaryTab.viewInvoices') }}
+              </UiLink>
+            </UiStack>
           </UiStack>
-          <UiAlert
-            v-if="feedback.message.value"
-            :variant="feedback.isError.value ? UiTone.Danger : UiTone.Success"
-            data-testid="billing-invoice-summary-feedback"
-          >
-            {{ feedback.message.value }}
-          </UiAlert>
+          <UiStack gap="xs" align="end">
+            <UiBadge :tone="invoiceStatusTone(invoice.status)" data-testid="billing-invoice-status">
+              {{ invoice.status }}
+            </UiBadge>
+            <UiText tone="muted" size="sm">
+              {{ t('billing.invoiceSummaryTab.paymentMethod') }} {{ invoice.payment.method || t('shared.none') }}
+            </UiText>
+          </UiStack>
         </UiStack>
-      </UiGrid>
+
+        <UiStack v-if="!readonly" direction="row" gap="sm" wrap>
+          <UiButton
+            v-if="isDraft"
+            variant="primary"
+            :loading="running === SummaryAction.Publish"
+            :disabled="running !== null"
+            data-testid="billing-invoice-publish"
+            @click="publish"
+          >
+            {{ t('billing.invoiceSummaryTab.publish') }}
+          </UiButton>
+          <UiButton
+            v-if="canCancel"
+            variant="secondary"
+            :loading="running === SummaryAction.Cancel"
+            :disabled="running !== null"
+            data-testid="billing-invoice-cancel"
+            @click="ask(SummaryAction.Cancel)"
+          >
+            {{ t('shared.markCancelled') }}
+          </UiButton>
+          <UiButton
+            v-if="canPay"
+            variant="primary"
+            :loading="running === SummaryAction.MarkPaid"
+            :disabled="running !== null"
+            data-testid="billing-invoice-mark-paid"
+            @click="ask(SummaryAction.MarkPaid)"
+          >
+            {{ t('billing.invoiceSummaryTab.markPaid') }}
+          </UiButton>
+        </UiStack>
+        <UiAlert
+          v-if="feedback.message.value"
+          :variant="feedback.isError.value ? UiTone.Danger : UiTone.Success"
+          data-testid="billing-invoice-summary-feedback"
+        >
+          {{ feedback.message.value }}
+        </UiAlert>
+      </UiStack>
     </UiCard>
 
     <UiDialog
@@ -272,7 +243,7 @@ const markPaid = (): Promise<void> =>
       :open="confirmingMarkPaid"
       :variant="UiDialogVariant.Confirm"
       :title="t('billing.invoiceSummaryTab.confirmMarkPaidTitle')"
-      :message="t('billing.invoiceSummaryTab.confirmMarkPaidMessage', { id: invoice.id, amount: formatPlainAmount(balance, invoice.currency) })"
+      :message="t('billing.invoiceSummaryTab.confirmMarkPaidMessage', { id: invoice.id, amount: formatPlainAmount(invoice.amountDue, invoice.currency) })"
       :confirm-label="t('billing.invoiceSummaryTab.markPaid')"
       :loading="running === SummaryAction.MarkPaid"
       :tone="UiTone.Primary"

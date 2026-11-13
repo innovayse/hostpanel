@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * ClassicCard - the classic template's card: a white (charcoal in dark mode) surface, a hairline
+ * ClassicCard. The classic template's card: a white (charcoal in dark mode) surface, a hairline
  * border, a modest radius and a restrained shadow. It wraps the kit's bare `UiCard`, which keeps
  * the border width and padding and leaves every colour to the caller; the important modifier on
  * the radius beats the bare card's larger one.

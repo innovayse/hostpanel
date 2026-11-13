@@ -26,6 +26,7 @@ import type { PricingCycle } from '~/types/pricingcycle'
 import { bundleDiscount } from '~/utils/bundlePricing'
 import { bundleCartItems, isBundleComplete, toCartBundle } from '~/utils/bundleOrder'
 import { tldOf } from '~/utils/domainTld'
+import { detailTitle } from '~/utils/seoTitle'
 import { formatMoney } from '~/utils/formatMoney'
 import { cycleAmount } from '~/utils/productFamilies'
 
@@ -226,7 +227,7 @@ export const useBundlePage = async (id: number) => {
   }
 
   useSeo(() => ({
-    title: `${t('bundles.title')} — ${bundle.value?.name ?? siteName.value}`,
+    title: detailTitle(t('bundles.title'), bundle.value?.name ?? siteName.value),
     description: bundle.value?.description ?? t('bundles.subtitle'),
     path: `/bundles/${id}`,
   }))

@@ -49,7 +49,7 @@ Open a client, go to their **Domains** tab and click a domain to open its detail
 | Card | Contents |
 |------|---------|
 | Domain Info | Order, order type, domain name, registrar, first payment amount, recurring amount |
-| Nameservers | Nameserver 1–5; saved to the registrar on change (`NAMESERVERS_UPSTREAM_FAILED` if the registrar refuses) |
+| Nameservers | Nameserver 1-5; saved to the registrar on change (`NAMESERVERS_UPSTREAM_FAILED` if the registrar refuses) |
 | Registrar Commands | Register, Renew, Modify Contact Details, Get EPP Code, Enable / Disable ID Protection |
 | Dates & Billing | Registration period, expiry date, renewal price, subscription ID |
 | Management Tools | DNS Management, Email Forwarding, ID Protection, Auto Renew, Registrar Lock |
@@ -59,18 +59,18 @@ Open a client, go to their **Domains** tab and click a domain to open its detail
 | Domain Reminder History | Table of reminder emails sent for this domain |
 
 **Management Tools toggles:**
-- **DNS Management** — enables the DNS record table.
-- **Email Forwarding** — enables the email forwarding table.
-- **ID Protection** / **WHOIS Privacy** — hides registrant contact details in WHOIS (`WHOIS_PRIVACY_UPSTREAM_FAILED` if refused; `REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE` if the registrar does not support it).
-- **Auto Renew** — controls whether a renewal invoice is raised automatically before expiry.
-- **Registrar Lock** — prevents unauthorised transfers out (`REGISTRAR_LOCK_UPSTREAM_FAILED` if the registrar refuses).
+- **DNS Management**: enables the DNS record table.
+- **Email Forwarding**: enables the email forwarding table.
+- **ID Protection** / **WHOIS Privacy**: hides registrant contact details in WHOIS (`WHOIS_PRIVACY_UPSTREAM_FAILED` if refused; `REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE` if the registrar does not support it).
+- **Auto Renew**: controls whether a renewal invoice is raised automatically before expiry.
+- **Registrar Lock**: prevents unauthorised transfers out (`REGISTRAR_LOCK_UPSTREAM_FAILED` if the registrar refuses).
 
 A domain that has no registrar reference returns `DOMAIN_NO_REGISTRAR_REF` when a registrar command is attempted. Cancelling a domain that cannot be cancelled returns `DOMAIN_CANCEL_NOT_ALLOWED`.
 
 ## All domains
 
-- **Domains** — shows all domain records across all clients. Use the search box to find a domain by name.
-- **Domain Registrations** — lists all registration and transfer orders, useful for monitoring pending domains.
+- **Domains**: shows all domain records across all clients. Use the search box to find a domain by name.
+- **Domain Registrations**: lists all registration and transfer orders, useful for monitoring pending domains.
 
 ## Domain renewal
 
@@ -81,7 +81,7 @@ A renewal invoice is raised automatically by a daily job (runs at **05:00 UTC** 
 
 After payment, Hostpanel sends a renewal request to the registrar. If the registrar accepts, the expiry date is extended and the customer receives `domain-renewed`. If the registrar refuses, staff receive `domain-renewal-failed-admin`.
 
-**Manual renewal:** On the domain page, click **Renew** in the Registrar Commands card, enter the number of years and confirm. The panel shows `RENEWAL_INVOICE_OPEN` if there is already an open renewal invoice for this domain — pay or cancel that invoice first.
+**Manual renewal:** On the domain page, click **Renew** in the Registrar Commands card, enter the number of years and confirm. The panel shows `RENEWAL_INVOICE_OPEN` if there is already an open renewal invoice for this domain, pay or cancel that invoice first.
 
 Attempting to renew a domain that cannot be renewed (wrong status) returns `DOMAIN_RENEW_NOT_ALLOWED`.
 

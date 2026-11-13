@@ -15,8 +15,8 @@ import { serverDto, serverGroupDto, serverSshSettingsDto, serverSshSetupDto } fr
  *
  * @returns The wrapper.
  */
-const mountServers = async () => {
-  const { wrapper } = await mountRouted(ServersView, '/servers', '/servers')
+const mountServers = async (url = '/servers') => {
+  const { wrapper } = await mountRouted(ServersView, '/servers', url)
   await flushPromises()
   return wrapper
 }
@@ -37,7 +37,45 @@ describe('ServersView', () => {
     expect(row.text()).toContain('host1')
     expect(row.text()).toContain('12 / 100')
     expect(wrapper.get('[data-testid="server-state-1"]').text()).toBe('Online')
-    expect(wrapper.find('[data-testid="servers-table-Cwp7"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="servers-module-Cwp7"]').text()).not.toBe('')
+    expect(wrapper.get('progress').attributes('value')).toBe('12')
+  })
+
+  it('shows only the servers the address filters keep, with a chip for the filter', async () => {
+    stubRoutes({
+      'GET /api/admin/servers': () => json([
+        serverDto(),
+        serverDto({ id: 2, name: 'host2', module: 'Plesk', isOnline: false }),
+      ]),
+      'GET /api/admin/server-groups': () => json([]),
+    })
+    const wrapper = await mountServers('/servers?state=offline')
+
+    expect(wrapper.find('[data-testid="server-row-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="server-row-2"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('1')
+  })
+
+  it('narrows the list by the search text in the address', async () => {
+    stubRoutes({
+      'GET /api/admin/servers': () => json([serverDto(), serverDto({ id: 2, name: 'other' })]),
+      'GET /api/admin/server-groups': () => json([]),
+    })
+    const wrapper = await mountServers('/servers?search=other')
+
+    expect(wrapper.find('[data-testid="server-row-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="server-row-2"]').exists()).toBe(true)
+  })
+
+  it('says so when no server matches the filters', async () => {
+    stubRoutes({
+      'GET /api/admin/servers': () => json([serverDto()]),
+      'GET /api/admin/server-groups': () => json([]),
+    })
+    const wrapper = await mountServers('/servers?module=Plesk')
+
+    expect(wrapper.find('[data-testid="servers-no-matches"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="servers-empty"]').exists()).toBe(false)
   })
 
   it('lists the groups with their fill type and servers', async () => {

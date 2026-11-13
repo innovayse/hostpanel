@@ -18,14 +18,14 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -47,6 +47,9 @@ const route = useRoute()
 
 /** Client transactions store, the only caller of the transaction endpoints. */
 const store = useClientTransactionsStore()
+
+/** True while the first load is in flight and there are no transactions yet; the tiles and the table then draw their placeholders. */
+const initialLoading = computed<boolean>(() => store.loading && store.transactions.length === 0)
 
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
@@ -158,7 +161,7 @@ const dismissDelete = (): void => {
  * @param tx - The row.
  * @returns The action list passed to UiRowActions.
  */
-const transactionActions = (tx: Transaction): UiRowAction[] => [
+const transactionActions = (tx: Transaction): UiMenuAction[] => [
   {
     label: t('shared.delete'),
     testid: `client-transactions-delete-${tx.id}`,
@@ -181,17 +184,19 @@ onMounted(() => fetchTransactions())
 
 <template>
   <UiStack>
-    <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-      <UiHeading :level="1" variant="card">{{ t('shared.transactions') }}</UiHeading>
-      <UiButton
-        type="button"
-        :variant="UiButtonVariant.Primary"
-        data-testid="client-transactions-add"
-        @click="showAddModal = true"
-      >
-        {{ t('clients.clientTransactions.addNewTransaction') }}
-      </UiButton>
-    </UiStack>
+    <UiSectionHeader :level="1" variant="card">
+      {{ t('shared.transactions') }}
+      <template #actions>
+        <UiButton
+          type="button"
+          :variant="UiButtonVariant.Primary"
+          data-testid="client-transactions-add"
+          @click="showAddModal = true"
+        >
+          {{ t('clients.clientTransactions.addNewTransaction') }}
+        </UiButton>
+      </template>
+    </UiSectionHeader>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-transactions-feedback" />
 
@@ -203,40 +208,39 @@ onMounted(() => fetchTransactions())
       @retry="fetchTransactions()"
     />
 
-    <UiStack v-if="store.loading && store.transactions.length === 0" data-testid="client-transactions-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientTransactions.loadingTransactions') }}</UiText>
-    </UiStack>
-
     <template v-else>
       <UiGrid :columns="4">
         <UiStatTile
           :label="t('clients.clientTransactions.totalIn')"
           :value="formatPlainAmount(store.summary.totalIn, store.summary.currency)"
           :tone="UiTone.Success"
+          :loading="initialLoading"
         />
         <UiStatTile
           :label="t('clients.clientTransactions.totalFees')"
           :value="formatPlainAmount(store.summary.totalFees, store.summary.currency)"
           :tone="UiTone.Warning"
+          :loading="initialLoading"
         />
         <UiStatTile
           :label="t('clients.clientTransactions.totalOut')"
           :value="formatPlainAmount(store.summary.totalOut, store.summary.currency)"
           :tone="UiTone.Danger"
+          :loading="initialLoading"
         />
         <UiStatTile
           :label="t('shared.balance')"
           :value="formatPlainAmount(store.summary.balance, store.summary.currency)"
           :tone="UiTone.Primary"
+          :loading="initialLoading"
         />
       </UiGrid>
 
       <UiCard class="overflow-x-auto">
         <UiTable
           :density="UiTableDensity.Comfortable"
-          :empty="store.transactions.length === 0"
-          :colspan="7"
+          :loading="initialLoading"
+          :empty="!initialLoading && store.transactions.length === 0"
           data-testid="client-transactions-table"
         >
           <UiTableHead>
@@ -272,7 +276,7 @@ onMounted(() => fetchTransactions())
           </template>
         </UiTable>
         <UiStack
-          v-if="store.totalCount > pageSize"
+          v-if="initialLoading || store.totalCount > pageSize"
           direction="row"
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
@@ -284,6 +288,7 @@ onMounted(() => fetchTransactions())
             :page="page"
             :total="store.totalCount"
             :page-size="pageSize"
+            :loading="initialLoading"
             testid="client-transactions-pagination"
             @update:page="goToPage"
           />
@@ -297,7 +302,6 @@ onMounted(() => fetchTransactions())
       :title="t('clients.clientTransactions.deleteTransaction')"
       :message="t('clients.clientTransactions.confirmDeleteTransaction', { id: deleteTargetId })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="executeDelete"

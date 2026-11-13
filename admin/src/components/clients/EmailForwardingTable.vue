@@ -11,14 +11,15 @@ import { useDomainsStore } from '@/stores/domains'
 import { useResultBanner } from '@/composables/useResultBanner'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -249,7 +250,7 @@ const dismissDelete = (): void => {
  * @param rule - The row.
  * @returns The action list passed to UiRowActions.
  */
-const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiRowAction[] => [
+const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `clients-forwarding-edit-${rule.id}`,
@@ -281,23 +282,24 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiRowAction[] => 
 <template>
   <UiCard padding="md">
     <UiStack>
-      <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-        <UiHeading :level="2" variant="section">
-          {{ t('clients.emailForwardingTable.emailForwardingRules') }}
-        </UiHeading>
-        <UiIconButton
-          :label="t('shared.add')"
-          :size="UiSize.Sm"
-          data-testid="clients-forwarding-add"
-          @click="startAdd"
-        >
-          <UiIcon :markup="ICONS.add" :size="UiSize.Md" />
-        </UiIconButton>
-      </UiStack>
+      <UiSectionHeader :level="2" variant="section">
+        {{ t('clients.emailForwardingTable.emailForwardingRules') }}
+
+        <template #actions>
+          <UiIconButton
+            :label="t('shared.add')"
+            :size="UiSize.Sm"
+            data-testid="clients-forwarding-add"
+            @click="startAdd"
+          >
+            <UiIcon :markup="ICONS.add" :size="UiSize.Md" />
+          </UiIconButton>
+        </template>
+      </UiSectionHeader>
 
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-forwarding-feedback" />
 
-      <UiTable :density="UiTableDensity.Compact" :empty="isEmpty" :colspan="4" data-testid="clients-forwarding-table">
+      <UiTable :density="UiTableDensity.Compact" :empty="isEmpty" data-testid="clients-forwarding-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>
@@ -378,7 +380,6 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiRowAction[] => 
       :title="t('clients.emailForwardingTable.deleteForwardingRule')"
       :message="t('clients.emailForwardingTable.deleteThisEmailForwardingRule')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="confirmDelete"

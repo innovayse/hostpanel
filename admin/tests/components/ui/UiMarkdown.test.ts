@@ -83,7 +83,7 @@ describe('UiMarkdown code copy', () => {
     const button = wrapper.get('[data-testid="markdown-copy"]')
 
     expect(button.attributes('aria-label')).toBe('Copy code')
-    expect(wrapper.get('pre').classes()).toContain('pr-10')
+    expect(wrapper.get('pre').classes()).toContain('pr-11')
   })
 
   it('names the copied state like the copy button when no copied label is given', async () => {
@@ -101,7 +101,7 @@ describe('UiMarkdown code copy', () => {
     const wrapper = mount(UiMarkdown, { props: { source: '```\nrun\n```' } })
 
     expect(wrapper.find('[data-testid="markdown-copy"]').exists()).toBe(false)
-    expect(wrapper.get('pre').classes()).not.toContain('pr-10')
+    expect(wrapper.get('pre').classes()).not.toContain('pr-11')
   })
 })
 

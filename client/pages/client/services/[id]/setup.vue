@@ -1,11 +1,8 @@
 <template>
   <UiStack gap="lg" class="max-w-xl w-full mx-auto py-10 min-h-[60dvh] justify-center">
-    <ClientServicesSetupStatePanel
-      v-if="pending || isDigital"
-      loading
-      :title="$t('client.setup.loading')"
-      :description="$t('client.setup.pleaseWait')"
-    />
+    <UiCard v-if="pending || isDigital" padding="xl" aria-busy="true" data-testid="setup-loading">
+      <UiSkeleton :lines="4" />
+    </UiCard>
 
     <ClientServicesSetupStatePanel
       v-else-if="error || !service"
@@ -48,6 +45,7 @@ import { CLIENT_SERVICES_PATH, clientServicePath } from '~/constants/clientRoute
 import { AlertCircle, CheckCircle } from 'lucide-vue-next'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import { ServiceStatus } from '~/types/servicestatus'
+import { detailTitle } from '~/utils/seoTitle'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -86,5 +84,5 @@ if (isDigital.value) {
   await navigateTo(clientServicePath(serviceId), { replace: true })
 }
 
-useHead({ title: computed(() => `${t('client.setup.pageTitle')} — ${siteName.value}`) })
+useHead({ title: computed(() => detailTitle(t('client.setup.pageTitle'), siteName.value)) })
 </script>

@@ -50,7 +50,6 @@ const payments = computed<InvoiceTransaction[]>(() =>
         <UiTable
           :density="UiTableDensity.Compact"
           :empty="payments.length === 0"
-          :colspan="5"
           data-testid="billing-invoice-payments-table"
         >
           <UiTableHead>
@@ -88,7 +87,6 @@ const payments = computed<InvoiceTransaction[]>(() =>
         <UiTable
           :density="UiTableDensity.Compact"
           :empty="allTransactions.length === 0"
-          :colspan="5"
           data-testid="billing-invoice-history-table"
         >
           <UiTableHead>

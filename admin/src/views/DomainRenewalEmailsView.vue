@@ -16,6 +16,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import { useReport } from '@/composables/useReport'
 import { useReportClients } from '@/composables/useReportClients'
 import { reportPath } from '@/lib/reportsQuery'
+import { renewalEmailKey } from '@/lib/reportsRows'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
 import { DOMAIN_REMINDER_TYPE_LABEL_KEYS } from '@/types/domain'
@@ -89,6 +90,7 @@ const columns = computed<ReportColumn[]>(() => [
       v-if="data"
       :columns="columns"
       :rows="data.rows"
+      :row-key="renewalEmailKey"
       :empty-text="t('shared.noDataFoundForThis2')"
     >
       <template #cell-reminder="{ row }">

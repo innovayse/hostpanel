@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 /**
- * SaveOption - the checkout choice "Save this payment method for automatic renewals".
+ * SaveOption: the checkout choice "Save this payment method for automatic renewals".
  *
  * Off by default (the parent owns the value). The text under the label is the agreement to charge
  * later renewal invoices, so ticking the box is the payer's consent; the server records it from the

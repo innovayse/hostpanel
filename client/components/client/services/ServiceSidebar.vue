@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceSidebar - the side menu of the service detail page: the panels to switch between, the
+ * ServiceSidebar. The side menu of the service detail page: the panels to switch between, the
  * actions (open a ticket, finish setup) and, when the server is known, quick links to the
  * control panel and webmail.
  */

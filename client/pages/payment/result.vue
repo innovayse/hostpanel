@@ -4,8 +4,14 @@
     <UiCard padding="xl" class="w-full max-w-md text-center rounded-3xl [.tpl-classic_&]:rounded-lg [.tpl-classic_&]:shadow-sm">
       <!-- Verifying -->
       <template v-if="state === GatewayPaymentState.Verifying">
-        <Loader2 :size="40" class="mx-auto text-cyan-700 dark:text-cyan-400 [.tpl-classic_&]:text-classic-brand animate-spin mb-4" />
-        <UiText tone="muted" data-testid="payment-verifying">{{ $t('paymentResult.verifying') }}</UiText>
+        <Loader2
+          :size="40"
+          class="mx-auto text-cyan-700 dark:text-cyan-400 [.tpl-classic_&]:text-classic-brand animate-spin"
+          role="status"
+          aria-busy="true"
+          :aria-label="$t('ui.loading')"
+          data-testid="payment-verifying"
+        />
       </template>
 
       <!-- Paid -->

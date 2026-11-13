@@ -64,7 +64,7 @@ data-testid="ticket-reply-form"
           <template #actions>
             <UiButton type="submit" :loading="replyLoading" data-testid="ticket-reply-submit">
               <Send v-if="!replyLoading" :size="16" :stroke-width="2" class="mr-2" />
-              {{ replyLoading ? $t('client.tickets.sending') : $t('client.tickets.sendReply') }}
+              {{ $t('client.tickets.sendReply') }}
             </UiButton>
           </template>
         </UiForm>

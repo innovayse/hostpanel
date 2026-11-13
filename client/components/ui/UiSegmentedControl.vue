@@ -25,7 +25,7 @@
 
 <script setup lang="ts" generic="T extends SegmentedValue">
 /**
- * UiSegmentedControl - a pill-shaped single choice between a few options (billing period,
+ * UiSegmentedControl: a pill-shaped single choice between a few options (billing period,
  * cycle, view mode).
  *
  * A real radio group: `role="radiogroup"` with `role="radio"` segments, one tab stop (the chosen

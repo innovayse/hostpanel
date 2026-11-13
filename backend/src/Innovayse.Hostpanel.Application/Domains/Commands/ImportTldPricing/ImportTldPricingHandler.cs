@@ -121,7 +121,7 @@ public sealed class ImportTldPricingHandler
         _cache.Remove("tld-pricing-configs");
 
         _logger.LogInformation(
-            "ImportTldPricing: completed for {Module} — {Imported} imported, {Updated} updated.",
+            "ImportTldPricing: completed for {Module}: {Imported} imported, {Updated} updated.",
             module, imported, updated);
 
         return Result.Success(new ImportTldPricingResult(imported, updated));

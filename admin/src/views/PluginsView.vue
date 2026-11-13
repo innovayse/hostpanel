@@ -2,7 +2,8 @@
 /**
  * Plugin Manager page.
  *
- * Lists installed plugins, provides ZIP upload for installation,
+ * Lists installed plugins as a grid of cards (one column on a phone) behind a search box and a status and category
+ * filter that live in the address, provides ZIP upload for installation,
  * and shows a restart banner when pending changes need to take effect. A refused load offers a
  * retry; the outcome of an install or remove (success, or the API's sentence) shows above the list;
  * a removal is confirmed first in a danger prompt that says the plugin's data is kept. A newer upload
@@ -11,7 +12,7 @@
  * second danger prompt. The "Allow unsigned plugins" switch with its warning sits
  * under the uploader and saves through the settings store, like every other settings row. The slot widgets section
  * lists the widgets plugins add to pages, each with a product multi select the operator saves after install.
- * A second tab, Browse, lists the plugin registry (search, category, pages) with the registry trust card
+ * A second tab, Browse, lists the plugin registry (search, category filter and page live in the address through useFilterQuery) with the registry trust card
  * and installs or updates from it; the tab is not offered when the server answers that the registry is
  * switched off. A plugin with a newer registry version shows an update badge and an Update button in the
  * installed list, and a plugin the registry lists has a Details button. Registry cards open the details page,
@@ -19,12 +20,16 @@
  * from the installed list or from a registry card, opens a prompt that lists the release notes of every
  * version it passes through and installs only after the admin confirms.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { useFilterQuery } from '@/composables/useFilterQuery'
+import { enumValueOf } from '@/lib/enumValue'
+import { filterInstalledPlugins, InstalledPluginState } from '@/lib/installedPlugins'
 import { pluginPath } from '@/lib/routes'
 import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import PluginCard from '@/components/plugins/PluginCard.vue'
 import PluginInstallDialog from '@/components/plugins/PluginInstallDialog.vue'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
@@ -39,9 +44,11 @@ import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiField from '@/components/ui/UiField.vue'
+import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
@@ -49,8 +56,13 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import type { SettingSaveResult } from '@/types/setting'
+import { PluginCategory, PluginCategoryAll } from '@/types/plugin'
 import type { PluginCategoryFilter } from '@/types/plugin'
+import type { UiFilterChip } from '@/utils/ui/filter'
 import type { UiTabItem } from '@/utils/ui/tabs'
+
+/** How many plugin cards the installed list draws as placeholders while it loads (two rows of the two-column grid). */
+const PLUGIN_CARD_PLACEHOLDERS = 4
 
 /** Translation function. */
 const { t } = useI18n()
@@ -350,32 +362,109 @@ const handleRegistryInstall = async (id: string, version: string): Promise<void>
   }
 }
 
-/**
- * Applies a new search text to the registry list.
- *
- * @param q - The search text.
- */
-const handleRegistryQuery = (q: string): void => {
-  void store.setRegistryFilter({ q })
-}
+/** The registry list's search text, category and page, kept in the address so a reload or a shared link restores the same list. */
+const registry = reactive(useFilterQuery(['category'] as const))
+
+/** The category in the address as the registry filter: a value that is no registry category means every category. */
+const registryCategory = computed<PluginCategoryFilter>(
+  () => enumValueOf(PluginCategory, registry.applied.category) ?? PluginCategoryAll,
+)
 
 /**
- * Applies a new category to the registry list.
+ * Reads the filter in the address into the store and loads the registry page it names.
  *
- * @param category - The category, empty for every category.
+ * @returns Promise that resolves when the registry page is loaded.
  */
-const handleRegistryCategory = (category: PluginCategoryFilter): void => {
-  void store.setRegistryFilter({ category })
-}
+const loadRegistry = (): Promise<void> =>
+  store.setRegistryFilter({ q: registry.appliedSearch, category: registryCategory.value, page: registry.page })
+
+// A filter or page changed in the address (typing after its pause, the filter dialog, the pager, the back button) reloads the list.
+watch([() => registry.appliedSearch, registryCategory, () => registry.page], () => {
+  void loadRegistry()
+})
+
+/** Options of the registry category filter: every category, then one per registry category. */
+const registryCategoryOptions = computed<{ value: string; label: string }[]>(() => [
+  { value: PluginCategoryAll, label: t('plugins.pluginRegistry.allCategories') },
+  ...Object.values(PluginCategory).map(value => ({ value, label: t(`plugins.pluginRegistry.category.${value}`) })),
+])
+
+/** The chip of the applied registry category, none while every category is shown. */
+const registryChips = computed<UiFilterChip[]>(() => {
+  const label = registryCategoryOptions.value.find(option => option.value === registry.applied.category)?.label
+  return registry.applied.category === ''
+    ? []
+    : [{ key: 'category', label: t('plugins.pluginRegistry.categoryPlaceholder'), value: label ?? registry.applied.category }]
+})
 
 /**
- * Moves the registry list to a page.
+ * Moves the registry list to a page through the address.
  *
- * @param page - The page, starting at 1.
+ * @param next - The page, starting at 1.
  */
-const handleRegistryPage = (page: number): void => {
-  void store.setRegistryFilter({ page })
+const handleRegistryPage = (next: number): void => {
+  void registry.setPage(next)
 }
+
+/** Closed set of the Installed tab's filter fields; the strings are their keys in the address. */
+const InstalledFilterKey = {
+  /** The plugin's state on this server. */
+  State: 'status',
+  /** The plugin's category. */
+  Category: 'kind',
+} as const
+
+/**
+ * The Installed tab's search text and filters, kept in the address under their own keys so they do not
+ * collide with the registry's.
+ */
+const installedFilters = reactive(useFilterQuery(Object.values(InstalledFilterKey), { searchKey: 'installedSearch', pageKey: 'installedPage' }))
+
+/** Options of the state filter: any state, then each state a plugin can be in. */
+const stateOptions = computed<{ value: string; label: string }[]>(() => [
+  { value: '', label: t('shared.any') },
+  { value: InstalledPluginState.Active, label: t('shared.active') },
+  { value: InstalledPluginState.PendingRestart, label: t('plugins.pluginCard.pendingRestart') },
+  { value: InstalledPluginState.Refused, label: t('plugins.pluginCard.refused') },
+])
+
+/** Options of the category filter: any category, then each category the installed plugins have. */
+const installedCategoryOptions = computed<{ value: string; label: string }[]>(() => [
+  { value: '', label: t('plugins.pluginRegistry.allCategories') },
+  ...[...new Set(store.installed.map(plugin => plugin.category))].sort().map(category => ({ value: category, label: category })),
+])
+
+/** One chip per applied installed-list filter, with the value as the operator reads it. */
+const installedChips = computed<UiFilterChip[]>(() => {
+  const values = installedFilters.applied
+  const state = stateOptions.value.find(option => option.value === values.status)
+  const all: UiFilterChip[] = [
+    { key: InstalledFilterKey.State, label: t('shared.status'), value: state?.label ?? values.status },
+    { key: InstalledFilterKey.Category, label: t('plugins.pluginRegistry.categoryPlaceholder'), value: values.kind },
+  ]
+  return all.filter(chip => chip.value !== '')
+})
+
+/**
+ * Clears one installed-list filter from its chip.
+ *
+ * @param key - The key the chip reported.
+ */
+const removeInstalledChip = (key: string): void => {
+  const known = enumValueOf(InstalledFilterKey, key)
+  if (known !== null) {
+    void installedFilters.remove(known)
+  }
+}
+
+/** The installed plugins that match the search text and filters in the address. */
+const visibleInstalled = computed(() =>
+  filterInstalledPlugins(store.installed, {
+    search: installedFilters.appliedSearch,
+    state: installedFilters.applied.status,
+    category: installedFilters.applied.kind,
+  }),
+)
 
 /** Plugins that declare at least one slot widget; the others have nothing to bind. */
 const pluginsWithWidgets = computed(() => store.plugins.filter(plugin => (store.slotWidgets[plugin.id]?.length ?? 0) > 0))
@@ -386,7 +475,7 @@ const pluginsWithWidgets = computed(() => store.plugins.filter(plugin => (store.
  */
 onMounted(() => Promise.all([
   // The registration card exists only while the registry is on, which the first page decides.
-  store.fetchRegistry().then(() => (store.registryDisabled ? undefined : store.fetchRegistryInstance())),
+  loadRegistry().then(() => (store.registryDisabled ? undefined : store.fetchRegistryInstance())),
   store.fetchRegistryUpdates(),
   // The widgets are listed per installed plugin, so they wait for the plugin list.
   store.fetchAll().then(() => store.fetchSlotWidgets()),
@@ -425,21 +514,41 @@ onMounted(() => Promise.all([
         :error="store.registryInstanceError"
         @retry="store.retryRegistryInstance()"
       />
+      <UiListToolbar
+        v-model:search="registry.search"
+        :active-count="registry.activeCount"
+        :chips="registryChips"
+        search-testid="plugin-registry-search"
+        :search-placeholder="t('plugins.pluginRegistry.search')"
+        @apply="registry.apply()"
+        @reset="registry.reset()"
+        @cancel="registry.cancel()"
+        @remove="registry.remove('category')"
+        @clear="registry.clearAll()"
+      >
+        <UiField :label="t('plugins.pluginRegistry.categoryPlaceholder')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="registry.draft.category"
+              :options="registryCategoryOptions"
+              :placeholder="t('plugins.pluginRegistry.categoryPlaceholder')"
+              data-testid="plugin-registry-category"
+            />
+          </template>
+        </UiField>
+      </UiListToolbar>
       <PluginRegistryBrowser
         :items="store.registryItems"
         :total="store.registryTotal"
         :page-size="store.registryPageSize"
-        :page="store.registryQuery.page"
-        :query="store.registryQuery.q"
-        :category="store.registryQuery.category"
+        :page="registry.page"
         :loading="store.registryLoading"
         :error="store.registryError"
         :installing-ids="installingIds"
         :removing-id="removingId"
         :staged-versions="stagedVersions"
         :licensed-ids="licensedIds"
-        @update:query="handleRegistryQuery"
-        @update:category="handleRegistryCategory"
         @update:page="handleRegistryPage"
         @install="handleRegistryInstallRequest"
         @remove="askRemove"
@@ -503,7 +612,12 @@ onMounted(() => Promise.all([
       />
 
       <!-- Loading -->
-      <UiSkeleton v-else-if="store.loading && store.installed.length === 0" :lines="3" data-testid="plugins-loading" />
+      <UiStack v-else-if="store.loading && store.installed.length === 0" gap="sm" aria-busy="true" data-testid="plugins-loading">
+        <UiHeading :level="2" variant="section">{{ t('plugins.plugins.installedPlugins') }}</UiHeading>
+        <UiGrid :columns="2" gap="md">
+          <PluginCard v-for="placeholder in PLUGIN_CARD_PLACEHOLDERS" :key="placeholder" :plugin="null" loading />
+        </UiGrid>
+      </UiStack>
 
       <!-- Empty state -->
       <UiEmptyState
@@ -516,8 +630,50 @@ onMounted(() => Promise.all([
       <!-- Plugin list -->
       <UiStack v-else gap="sm" data-testid="plugins-list">
         <UiHeading :level="2" variant="section">{{ t('plugins.plugins.installedPlugins') }}</UiHeading>
+        <UiListToolbar
+          v-model:search="installedFilters.search"
+          :active-count="installedFilters.activeCount"
+          :chips="installedChips"
+          search-testid="plugins-installed-search"
+          @apply="installedFilters.apply()"
+          @reset="installedFilters.reset()"
+          @cancel="installedFilters.cancel()"
+          @remove="removeInstalledChip"
+          @clear="installedFilters.clearAll()"
+        >
+          <UiStack>
+            <UiField :label="t('shared.status')">
+              <template #default="{ id }">
+                <UiSelect
+                  :id="id"
+                  v-model="installedFilters.draft.status"
+                  :options="stateOptions"
+                  :placeholder="t('shared.status')"
+                  data-testid="plugins-installed-status"
+                />
+              </template>
+            </UiField>
+            <UiField :label="t('plugins.pluginRegistry.categoryPlaceholder')">
+              <template #default="{ id }">
+                <UiSelect
+                  :id="id"
+                  v-model="installedFilters.draft.kind"
+                  :options="installedCategoryOptions"
+                  :placeholder="t('plugins.pluginRegistry.categoryPlaceholder')"
+                  data-testid="plugins-installed-category"
+                />
+              </template>
+            </UiField>
+          </UiStack>
+        </UiListToolbar>
+        <UiEmptyState
+          v-if="visibleInstalled.length === 0"
+          :title="t('plugins.plugins.noPluginsMatch')"
+          data-testid="plugins-no-match"
+        />
+        <UiGrid v-else :columns="2" gap="md">
         <PluginCard
-          v-for="plugin in store.installed"
+          v-for="plugin in visibleInstalled"
           :key="plugin.id"
           :plugin="plugin"
           :removing="removingId === plugin.id"
@@ -529,6 +685,7 @@ onMounted(() => Promise.all([
           @update="askUpdate"
           @details="openDetails"
         />
+        </UiGrid>
       </UiStack>
     </template>
 

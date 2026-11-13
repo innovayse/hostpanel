@@ -3,7 +3,7 @@
  * matter for text from outside the panel (no HTML survives, only https links become links).
  */
 import { describe, expect, it } from 'vitest'
-import { isSafeLink, MarkdownBlockKind, MarkdownInlineKind, parseMarkdown } from '@/utils/markdown'
+import { MarkdownBlockKind, MarkdownInlineKind, parseMarkdown } from '@/utils/markdown'
 
 describe('parseMarkdown', () => {
   it('gives no blocks for null, empty and blank text', () => {
@@ -94,17 +94,5 @@ describe('parseMarkdown', () => {
 
     expect(new Set(ids).size).toBe(ids.length)
     expect(blocks[1]?.items).toHaveLength(2)
-  })
-})
-
-describe('isSafeLink', () => {
-  it('accepts an absolute https address only', () => {
-    expect(isSafeLink('https://example.org/x?y=1')).toBe(true)
-    expect(isSafeLink('http://example.org')).toBe(false)
-    expect(isSafeLink('javascript:alert(1)')).toBe(false)
-    expect(isSafeLink('//example.org')).toBe(false)
-    expect(isSafeLink('not a url')).toBe(false)
-    expect(isSafeLink('https:evil.com')).toBe(false)
-    expect(isSafeLink('https:/evil.com')).toBe(false)
   })
 })

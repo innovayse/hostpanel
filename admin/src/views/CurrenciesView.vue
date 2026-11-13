@@ -9,7 +9,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CurrencyFormModal from '@/components/settings/CurrencyFormModal.vue'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -18,7 +17,8 @@ import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -201,7 +201,7 @@ const handleUpdatePrices = async (): Promise<void> => {
  * @param currency - The row.
  * @returns The action list passed to UiRowActions.
  */
-const currencyActions = (currency: CurrencyDto): UiRowAction[] => [
+const currencyActions = (currency: CurrencyDto): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `currency-edit-${currency.code}`,
@@ -226,12 +226,12 @@ onMounted(() => store.fetchAll())
         <UiButton
           type="button"
           variant="secondary"
-          :disabled="updatingRates"
+          :loading="updatingRates"
           data-testid="currencies-update-rates"
           @click="handleUpdateRates"
         >
           <UiIcon :markup="Icon.Refresh" size="sm" />
-          {{ updatingRates ? t('currencies.updatingRates') : t('currencies.updateRates') }}
+          {{ t('currencies.updateRates') }}
         </UiButton>
         <UiButton
           type="button"
@@ -258,10 +258,8 @@ onMounted(() => store.fetchAll())
       {{ banner.message.value }}
     </UiAlert>
 
-    <SettingsLoading v-if="store.loading" :message="t('settings.currencies.loadingCurrencies')" />
-
     <UiErrorState
-      v-else-if="store.error"
+      v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="currencies-error"
@@ -269,7 +267,7 @@ onMounted(() => store.fetchAll())
     />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="store.currencies.length === 0" :colspan="8">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" :empty="!store.loading && store.currencies.length === 0">
         <template #empty>
           {{ t('currencies.empty') }}
         </template>
@@ -292,7 +290,7 @@ onMounted(() => store.fetchAll())
             hoverable
             :data-testid="`currency-row-${c.code}`"
           >
-            <UiTableCell class="font-semibold text-text-primary">{{ c.code }}</UiTableCell>
+            <UiTableCell strong>{{ c.code }}</UiTableCell>
             <UiTableCell muted class="tabular-nums">{{ c.numeric }}</UiTableCell>
             <UiTableCell muted>{{ formatSample(c) }}</UiTableCell>
             <UiTableCell numeric muted>{{ c.decimals }}</UiTableCell>
@@ -343,7 +341,6 @@ onMounted(() => store.fetchAll())
       :title="t('currencies.makeBaseModal.title')"
       :message="t('currencies.makeBaseModal.message', { code: makeBaseTarget.code })"
       :confirm-label="t('currencies.makeBaseModal.confirmLabel')"
-      :loading-label="t('currencies.makeBaseModal.loadingLabel')"
       :loading="makingBase"
       tone="primary"
       @confirm="confirmMakeBase"
@@ -392,7 +389,6 @@ onMounted(() => store.fetchAll())
       :title="t('currencies.pricesConfirm.title')"
       :message="t('currencies.pricesConfirm.message', { codes: selectedPriceCurrencies.join(', ') })"
       :confirm-label="t('currencies.pricesConfirm.confirmLabel')"
-      :loading-label="t('currencies.pricesConfirm.loadingLabel')"
       :loading="updatingPrices"
       tone="danger"
       @confirm="handleUpdatePrices"

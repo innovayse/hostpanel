@@ -24,7 +24,7 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5E8EF3">
     <!-- Windows start-screen tile. Relative on purpose: Vite does not rewrite meta content, so these resolve against <base>. -->
     <meta name="msapplication-TileImage" content="mstile-150x150.png">
-    <meta name="msapplication-TileColor" content="#0B0B14">
+    <meta name="msapplication-TileColor" content="#070b18">
     <meta name="msapplication-config" content="browserconfig.xml">
     <!--
       The browser chrome colour: the panel's page background in each scheme (main.css).
@@ -32,14 +32,14 @@
       same-origin file theme-boot.js by the admin-theme-boot plugin (src/lib/themeBootPlugin.ts): it applies the stored light/dark choice and
       rewrites these metas before the first paint, so the panel never flashes the wrong scheme.
     -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f6fb">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0f">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f7fc">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070b18">
     <!--
       Without the manifest Android ignores the 192/512 pair entirely, and the maskable
       variants have nothing to declare them.
 
       This href is absolute so Vite rewrites it to the deployment base. A relative one would
-      resolve against whatever route the SPA was deep-linked to — fine at /admin/, a 404 at
+      resolve against whatever route the SPA was deep-linked to: fine at /admin/, a 404 at
       /admin/settings/system. The icon paths *inside* the manifest stay relative for the
       mirror-image reason: Vite does not rewrite a static JSON file, and they resolve against
       the manifest's own URL, which is already base-correct.

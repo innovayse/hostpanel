@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceCard - one service of the list: name, domain, status (or a "needs setup" badge, never for a digital service), next
+ * ServiceCard. One service of the list: name, domain, status (or a "needs setup" badge, never for a digital service), next
  * renewal date, recurring amount and a disk-usage bar when the server reported a limit. The whole card links to the service, or to
  * its setup wizard while it has no control-panel account yet.
  */

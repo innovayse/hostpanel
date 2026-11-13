@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import BrandColorsCard from '@/components/settings/BrandColorsCard.vue'
 import type { Setting, SettingSave } from '@/types/setting'
-import { mountScreen } from '../../helpers/mount'
+import { mountSettingsCard } from '../../helpers/settingsPage'
 
 /** The save callback the card is given; it answers that the value was stored. */
 const save = vi.fn<SettingSave>(async () => ({ saved: true, error: null }))
@@ -22,7 +22,7 @@ const rows: Setting[] = [
 
 describe('BrandColorsCard', () => {
   it('shows the stored colour in the hex field and previews it as a swatch', async () => {
-    const { wrapper } = await mountScreen(BrandColorsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(BrandColorsCard, rows)
 
     expect((wrapper.get('[data-testid="brand-colors-hex-primary"]').element as HTMLInputElement).value).toBe('#0ea5e9')
     expect(wrapper.find('[data-testid="brand-colors-hex-primary"]').element.closest('div')?.querySelector('svg rect')?.getAttribute('fill')).toBe('#0ea5e9')
@@ -30,7 +30,7 @@ describe('BrandColorsCard', () => {
   })
 
   it('previews the built-in default when the colour is empty', async () => {
-    const { wrapper } = await mountScreen(BrandColorsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(BrandColorsCard, rows)
     const field = wrapper.get('[data-testid="brand-colors-hex-accent"]')
 
     expect(field.attributes('placeholder')).toBe('#a855f7')
@@ -38,33 +38,34 @@ describe('BrandColorsCard', () => {
   })
 
   it('saves a valid hex typed in the field', async () => {
-    const { wrapper } = await mountScreen(BrandColorsCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(BrandColorsCard, rows)
 
     await wrapper.get('[data-testid="brand-colors-hex-primary"]').setValue('#112233')
-    await wrapper.get('[data-testid="brand-colors-save-primary"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[1, '#112233']])
   })
 
-  it('refuses to enable Save for text that is not #rrggbb', async () => {
-    const { wrapper } = await mountScreen(BrandColorsCard, { save, settings: rows })
+  it('marks text that is not #rrggbb as invalid', async () => {
+    const { wrapper } = await mountSettingsCard(BrandColorsCard, rows)
 
     await wrapper.get('[data-testid="brand-colors-hex-primary"]').setValue('#12')
 
-    expect(wrapper.get('[data-testid="brand-colors-save-primary"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="brand-colors-hex-primary"]').attributes('aria-invalid')).toBe('true')
   })
 
-  it('resets to the template colour by saving an empty value', async () => {
-    const { wrapper } = await mountScreen(BrandColorsCard, { save, settings: rows })
+  it('resets to the template colour by leaving an empty value for the page bar to save', async () => {
+    const { wrapper, registry } = await mountSettingsCard(BrandColorsCard, rows)
 
     await wrapper.get('[data-testid="brand-colors-reset-primary"]').trigger('click')
+    expect(registry.dirtyCount.value).toBe(1)
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[1, '']])
   })
 
   it('says whether white text passes on the colour', async () => {
-    const { wrapper } = await mountScreen(BrandColorsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(BrandColorsCard, rows)
 
     await wrapper.get('[data-testid="brand-colors-hex-primary"]').setValue('#ffffff')
 
@@ -72,7 +73,7 @@ describe('BrandColorsCard', () => {
   })
 
   it('draws the shades as SVG without any inline style', async () => {
-    const { wrapper } = await mountScreen(BrandColorsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(BrandColorsCard, rows)
 
     expect(wrapper.findAll('svg rect').length).toBeGreaterThan(10)
     expect(wrapper.html()).not.toContain('style=')

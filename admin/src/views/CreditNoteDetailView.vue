@@ -179,7 +179,7 @@ onMounted(load)
       </UiCard>
 
       <UiCard>
-        <UiTable :empty="items.length === 0" :colspan="4" data-testid="billing-credit-note-items">
+        <UiTable :empty="items.length === 0" data-testid="billing-credit-note-items">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('billing.creditNotes.description') }}</UiTableHeader>

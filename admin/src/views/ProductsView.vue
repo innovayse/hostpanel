@@ -10,14 +10,14 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ProductFeaturesModal from '@/components/settings/ProductFeaturesModal.vue'
 import ProductFormModal from '@/components/settings/ProductFormModal.vue'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -190,7 +190,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
  * @param product - The product whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const productActions = (product: Product): UiRowAction[] => {
+const productActions = (product: Product): UiMenuAction[] => {
   /**
    * Opens the specification editor for this product.
    * @returns Nothing.
@@ -221,17 +221,15 @@ const productActions = (product: Product): UiRowAction[] => {
       </template>
     </UiPageHeader>
 
-    <SettingsLoading v-if="store.loading" :message="t('settings.products.loadingProducts')" />
-
     <UiErrorState
-      v-else-if="store.error"
+      v-if="store.error"
       :message="store.error"
       testid="products-error"
       @retry="loadAll"
     />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="store.products.length === 0" :colspan="10">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="store.products.length === 0" :loading="store.loading">
         <template #empty>
           {{ t('settings.products.noProductsFoundCreateYour') }}
         </template>

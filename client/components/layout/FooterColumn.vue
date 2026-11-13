@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 /**
- * LayoutFooterColumn - one titled column of links in the classic footer. Every link uses the
+ * LayoutFooterColumn: one titled column of links in the classic footer. Every link uses the
  * shared footer link hover, so the columns read the same in light and dark.
  */
 import type { FooterLink } from '~/types/footerlink'

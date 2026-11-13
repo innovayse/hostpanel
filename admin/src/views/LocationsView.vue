@@ -82,7 +82,6 @@ const editRoute = (item: ServerLocation): string => editPath(AppRoute.Storefront
     :title="t('storefront.locations.title')"
     :subtitle="t('storefront.locations.subtitle')"
     :add-label="t('storefront.locations.add')"
-    :loading-label="t('storefront.locations.loading')"
     :empty-label="t('storefront.locations.empty')"
     :delete-title="t('storefront.locations.deleteTitle')"
     :edit-label="t('storefront.locations.edit')"

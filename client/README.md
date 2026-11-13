@@ -10,7 +10,7 @@ conventions are in `../rules/vuejs-style.md` and `../rules/jsdoc.md`.
 
 ```
 components/ui/        the kit (Ui*): every screen is composed from it
-components/<area>/    area components (account, catalog, client, checkout, ...)
+components/<area>/    area components (account, catalog, client, checkout and so on)
 pages/ layouts/       routes and shells -- kit components only, no raw tag
 templates/<name>/     aurora, nova, classic: header, footer, page bodies, sections
 stores/               Pinia -- the only callers of composables/apis
@@ -48,7 +48,7 @@ There is no ratchet any more: every rule applies to every `.vue` and `.ts` file.
 |---|---|
 | `yarn lint` | ESLint conformance block (JSDoc, const arrows, braces, placeholders, no raw tags in screens, layering imports, no `any`/`!`), `scripts/check-layers.mjs`, `scripts/check-no-legacy-error-fields.mjs` |
 | `yarn lint:i18n` | en/ru/hy parity, unused keys, literal `t('key')` absent from `en` |
-| `yarn audit:conformance --strict` | every conformance metric is zero (raw tags, JSDoc, test ids, hard-coded text, `style`, `catch` in `.vue`, ...) |
+| `yarn audit:conformance --strict` | every conformance metric is zero (raw tags, JSDoc, test ids, hard-coded text, `style`, `catch` in `.vue` and so on) |
 | `yarn typecheck` | `nuxt typecheck` (`vue-tsc`) |
 | `yarn test --maxWorkers=2` | vitest: unit and component tests in `tests/` (real kit, real Pinia) |
 | `yarn e2e` | Playwright against the production build, the C# API replaced by `e2e/support/stub-backend.mjs` (see `e2e/README.md`) |

@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 /**
- * UiTooltip - a click-to-open popover anchored under its trigger.
+ * UiTooltip: a click-to-open popover anchored under its trigger.
  *
  * The popover is nudged horizontally so it never leaves the viewport; the nudge is written as the
  * `--tip-left` custom property on the popover (read by a Tailwind class), not as an inline style.

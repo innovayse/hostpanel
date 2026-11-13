@@ -93,14 +93,22 @@ describe('TransactionsListView', () => {
     expect(wrapper.get('[data-testid="billing-transactions-total-fees"]').text()).toContain('0.25 EUR')
   })
 
-  it('narrows the page by description', async () => {
+  it('narrows the page by the search text', async () => {
     stubRoutes({ 'GET /api/transactions?': ledger })
     const wrapper = await mountLedger()
 
-    await wrapper.get('[data-testid="billing-transactions-filter-toggle"]').trigger('click')
-    await wrapper.get('[data-testid="billing-transactions-filter-description"]').setValue('refund')
+    await wrapper.get('[data-testid="billing-transactions-search"]').setValue('refund')
 
     expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(1)
+  })
+
+  it('narrows the page by the direction in the address and shows it as a chip', async () => {
+    stubRoutes({ 'GET /api/transactions?': ledger })
+    const { wrapper } = await mountRouted(TransactionsListView, '/billing/transactions', '/billing/transactions?direction=out')
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="filter-chip-direction"]').exists()).toBe(true)
   })
 
   it('deletes a transaction only after the confirmation', async () => {

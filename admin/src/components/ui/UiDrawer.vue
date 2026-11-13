@@ -3,17 +3,19 @@
  * Side panel that slides over the page edge (filters, detail peek, the menu on a phone).
  *
  * Teleported to `<body>`; closes on Escape or a backdrop click, keeps Tab inside and returns focus
- * to the opener. The default slot is the body and `footer` an optional pinned action row. It slides in from its
+ * to the opener. The panel is an opaque elevated surface (nothing shows through it). With `sheet` it is a bottom
+ * sheet below the `sm` breakpoint (rounded top corners, a grip, room for the home indicator through the safe-area
+ * inset) and the usual side panel from there up. The default slot is the body and `footer` an optional pinned action row. It slides in from its
  * edge (`UiTransition`, nothing moves under reduced motion); focus goes to the first control when the enter has
  * ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
  */
-import { nextTick, ref, useId } from 'vue'
+import { computed, nextTick, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { useModalSurface } from '@/utils/ui/modalSurface'
-import { modalPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
+import { modalPanelClasses, sheetPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
 import type { UiDrawerSide } from '@/utils/ui/drawer'
 
 const { t } = useI18n()
@@ -30,10 +32,13 @@ const props = withDefaults(defineProps<{
   flush?: boolean
   /** A narrower panel (20rem) that leaves a strip of the page to tap on a phone. */
   narrow?: boolean
+  /** Becomes a bottom sheet on a phone (below `sm`); a side panel from there up. Off keeps the side panel everywhere. */
+  sheet?: boolean
 }>(), {
   side: 'right',
   flush: false,
   narrow: false,
+  sheet: false,
 })
 
 const emit = defineEmits<{
@@ -49,8 +54,14 @@ const panel = ref<HTMLElement | null>(null)
 
 /** Placement classes per edge. */
 const sideClasses: Record<UiDrawerSide, string> = {
-  left: 'left-0 border-r border-border-strong',
-  right: 'right-0 border-l border-border-strong',
+  left: 'top-0 bottom-0 left-0 border-r border-border-strong',
+  right: 'top-0 bottom-0 right-0 border-l border-border-strong',
+}
+
+/** Placement classes per edge of a sheet: along the bottom on a phone, the edge panel from `sm` up. */
+const sheetSideClasses: Record<UiDrawerSide, string> = {
+  left: 'bottom-0 left-0 right-0 max-h-[85dvh] rounded-t-panel border-t border-border-strong max-sm:pb-[env(safe-area-inset-bottom)] sm:top-0 sm:right-auto sm:max-h-none sm:rounded-none sm:border-t-0 sm:border-r',
+  right: 'bottom-0 left-0 right-0 max-h-[85dvh] rounded-t-panel border-t border-border-strong max-sm:pb-[env(safe-area-inset-bottom)] sm:top-0 sm:left-auto sm:max-h-none sm:rounded-none sm:border-t-0 sm:border-l',
 }
 
 /** Panel motion per edge. */
@@ -58,6 +69,20 @@ const slideClasses: Record<UiDrawerSide, string> = {
   left: modalPanelClasses.drawerLeft,
   right: modalPanelClasses.drawerRight,
 }
+
+/** Placement of the panel for the chosen edge. */
+const placementClasses = computed<string>(() => (props.sheet ? sheetSideClasses[props.side] : sideClasses[props.side]))
+
+/** Motion of the panel: a sheet rises from the bottom on a phone. */
+const motionClasses = computed<string>(() => (props.sheet ? sheetPanelClasses[props.side] : slideClasses[props.side]))
+
+/** Maximum width; a sheet is full width on a phone, so its limit applies from `sm` up. */
+const widthClasses = computed<string>(() => {
+  if (props.sheet) {
+    return props.narrow ? 'sm:max-w-xs' : 'sm:max-w-md'
+  }
+  return props.narrow ? 'max-w-xs' : 'max-w-md'
+})
 
 /** Whether the leave animation is running; no request may be made from a drawer that is going away. */
 const leaving = ref(false)
@@ -135,18 +160,21 @@ const onLeaveCancelled = (): void => {
       @after-leave="onLeft"
       @leave-cancelled="onLeaveCancelled"
     >
-      <div v-if="open" class="group/overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" @click.self="close">
+      <div v-if="open" class="group/overlay fixed inset-0 z-50 bg-(--overlay-backdrop) backdrop-blur-sm" @click.self="close">
         <aside
           ref="panel"
           role="dialog"
           aria-modal="true"
           :aria-labelledby="titleId"
           tabindex="-1"
-          class="absolute top-0 bottom-0 w-full bg-surface-card shadow-2xl flex flex-col overflow-hidden outline-none"
-          :class="[narrow ? 'max-w-xs' : 'max-w-md', sideClasses[side], slideClasses[side]]"
+          class="glass-strong absolute w-full shadow-overlay flex flex-col overflow-hidden outline-none"
+          :class="[widthClasses, placementClasses, motionClasses]"
           @keydown="onKeydown"
         >
-          <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-border shrink-0">
+          <div v-if="sheet" class="flex shrink-0 justify-center pt-2 sm:hidden" aria-hidden="true" data-testid="drawer-grip">
+            <span class="h-1 w-10 rounded-pill bg-border-strong" />
+          </div>
+          <div class="flex h-(--shell-header-h) items-center justify-between gap-3 border-b border-border-subtle px-6 shrink-0">
             <UiHeading :id="titleId" :level="2" variant="card">
               {{ title }}
             </UiHeading>
@@ -167,7 +195,7 @@ const onLeaveCancelled = (): void => {
           <div class="flex-1 min-h-0 overflow-y-auto" :class="flush ? '' : 'p-6'" data-testid="drawer-body">
             <slot />
           </div>
-          <div v-if="$slots.footer" class="flex justify-end gap-2 px-6 py-4 border-t border-border shrink-0">
+          <div v-if="$slots.footer" class="flex justify-end gap-2 px-6 py-4 border-t border-border-subtle shrink-0 max-sm:flex-col-reverse max-sm:items-stretch" data-testid="ui-drawer-footer">
             <slot name="footer" />
           </div>
         </aside>

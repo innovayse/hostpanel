@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatComposer - the message field of a plugin chat: a growing field with the send control inside it, which turns
+ * PluginChatComposer. The message field of a plugin chat: a growing field with the send control inside it, which turns
  * into Stop while a reply streams, and a quiet hint about the keyboard. Send and Stop are one button that changes its
  * icon, label and action, so the keyboard focus stays on it when a reply starts.
  *

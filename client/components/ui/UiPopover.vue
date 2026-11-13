@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 /**
- * UiPopover - a floating panel opened from a trigger, for menus and tile launchers.
+ * UiPopover: a floating panel opened from a trigger, for menus and tile launchers.
  *
  * The trigger lives in the `trigger` slot and receives `open`, `toggle` and `close`; the default
  * slot is the panel body and receives `close`. The panel closes on Escape and on a click anywhere

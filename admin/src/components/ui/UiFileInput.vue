@@ -8,6 +8,7 @@
  * `id`, classes and `data-testid` land on the input.
  */
 import { ref, watch } from 'vue'
+import { focusRingClasses } from '@/utils/ui/input'
 
 /** Props for UiFileInput. */
 const props = withDefaults(defineProps<{
@@ -24,6 +25,9 @@ const emit = defineEmits<{
 
 /** The native input, needed to clear its value. */
 const input = ref<HTMLInputElement | null>(null)
+
+/** Classes of the picker: the kit's focus ring, a muted label and button while it is disabled. */
+const classes = `text-sm text-text-secondary rounded-control file:mr-3 file:rounded-[9px] file:border file:border-border file:bg-surface-field file:px-3.5 file:py-1.5 file:text-[0.8125rem] file:font-medium file:text-text-secondary file:cursor-pointer hover:file:bg-surface-hover hover:file:text-text-primary disabled:text-text-muted disabled:cursor-not-allowed file:disabled:text-text-muted file:disabled:cursor-not-allowed ${focusRingClasses}`
 
 /**
  * Re-emits the native selection as a file array.
@@ -48,7 +52,7 @@ watch(() => props.modelValue, (files) => {
   <input
     ref="input"
     type="file"
-    class="text-[0.78rem] text-text-secondary file:mr-3 file:rounded-lg file:border-0 file:bg-surface-hover file:px-3 file:py-1.5 file:text-text-primary file:cursor-pointer"
+    :class="classes"
     @change="onChange"
   >
 </template>

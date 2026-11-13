@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 /**
- * Table - the credit notes issued to the client: number, date, the invoice credited, where the value went, the total and the
+ * Table. The credit notes issued to the client: number, date, the invoice credited, where the value went, the total and the
  * state, with a button that downloads each one as a PDF.
  *
  * A credit note is not invoice credit, so nothing here is labelled "credit" alone. The table only formats what the backend sent and

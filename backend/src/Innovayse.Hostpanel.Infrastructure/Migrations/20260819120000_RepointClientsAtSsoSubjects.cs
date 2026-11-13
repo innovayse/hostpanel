@@ -12,7 +12,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
     /// <para>
     /// <c>clients.UserId</c> holds whatever this product's identity provider calls a
     /// person. Standalone, that is the local <c>AspNetUsers.Id</c> and always has been.
-    /// Where the SSO owns the people, it is the SSO subject — and once the identity
+    /// Where the SSO owns the people, it is the SSO subject, and once the identity
     /// provider starts answering from the SSO, a row still holding a local id resolves
     /// to nobody. The customer keeps their account and loses their clients, services and
     /// invoices with it.
@@ -35,7 +35,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
     /// </para>
     /// <para>
     /// Rows pointing at neither a local id nor a subject are left alone. They are already
-    /// orphans — remnants of accounts deleted back when deleting removed the row — and
+    /// orphans: remnants of accounts deleted back when deleting removed the row, and
     /// this migration is not the place to decide what becomes of them.
     /// </para>
     /// </remarks>

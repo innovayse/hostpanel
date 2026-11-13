@@ -21,6 +21,7 @@ import { UiInputType } from '@/utils/ui/input'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiField from '@/components/ui/UiField.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
@@ -233,7 +234,7 @@ const handleSave = (): void => {
           :icon-url="integration.iconUrl"
           data-testid="integration-plugin-avatar"
         />
-        <UiStack v-else align="center" justify="center" class="h-10 w-10 shrink-0 rounded-xl p-2" :class="meta?.color ?? 'bg-text-muted'">
+        <UiStack v-else align="center" justify="center" class="h-10 w-10 shrink-0 rounded-control p-2" :class="meta?.color ?? 'bg-text-muted'">
           <UiImage
             v-if="meta?.logo"
             :src="meta.logo"
@@ -340,17 +341,7 @@ const handleSave = (): void => {
       </UiGrid>
 
       <!-- Actions -->
-      <UiStack direction="row" gap="sm">
-        <UiButton
-          type="button"
-          variant="primary"
-          :loading="loading"
-          :disabled="testing"
-          data-testid="integration-save"
-          @click="handleSave"
-        >
-          {{ t('shared.saveChanges') }}
-        </UiButton>
+      <UiFormActions>
         <!-- Hidden when the API says the integration has no test (a plugin without the status capability). -->
         <UiButton
           v-if="integration.canTestConnection"
@@ -363,7 +354,17 @@ const handleSave = (): void => {
         >
           {{ t('shared.testConnection') }}
         </UiButton>
-      </UiStack>
+        <UiButton
+          type="button"
+          variant="primary"
+          :loading="loading"
+          :disabled="testing"
+          data-testid="integration-save"
+          @click="handleSave"
+        >
+          {{ t('shared.saveChanges') }}
+        </UiButton>
+      </UiFormActions>
     </UiStack>
   </UiCard>
 </template>

@@ -1,22 +1,21 @@
 <script setup lang="ts">
 /**
- * One on/off settings row: a switch with its label and hint, and its own Save button.
+ * One on/off settings row: a switch with its label and hint; the page's save bar saves it.
  *
  * The row is stored as the string `true` or `false`. A row that was never seeded is replaced by
  * the usual warning, because the panel cannot create settings. Used by the home sections card and
- * by the hosting details card, so a boolean setting saves the same way everywhere.
+ * by the hosting details card, so a boolean setting behaves the same way everywhere.
  */
 import { toRef } from 'vue'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import { useSettingSwitch } from '@/composables/useSettingSwitch'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
-import SettingSaveButton from '@/components/settings/SettingSaveButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { SettingEnv, SettingToggle } from '@/types/setting'
-import type { Setting, SettingKey, SettingSave } from '@/types/setting'
+import type { Setting, SettingKey } from '@/types/setting'
 
 /** Props for SettingToggleField. */
 const props = defineProps<{
@@ -30,10 +29,8 @@ const props = defineProps<{
   hint?: string
   /** Whether the switch shows as on while the stored value is empty. */
   defaultOn: boolean
-  /** Test id of the switch; the Save button adds `-save`. */
+  /** Test id of the switch. */
   testid: string
-  /** Persists one row and answers how it went; each control shows its own outcome. */
-  save: SettingSave
 }>()
 
 /** The settings list as a ref, which is what the draft composable watches. */
@@ -58,12 +55,6 @@ const enabled = useSettingSwitch(draft)
         {{ hint }}
       </UiText>
     </UiStack>
-    <SettingSaveButton
-      :dirty="draft.dirty.value"
-      :saving="draft.saving.value"
-      :data-testid="`${testid}-save`"
-      @click="draft.submit(save)"
-    />
     <SettingOutcome :outcome="draft.outcome.value" />
   </UiStack>
 </template>

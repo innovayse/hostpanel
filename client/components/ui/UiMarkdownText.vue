@@ -1,6 +1,6 @@
 <script lang="ts">
 /**
- * UiMarkdownText - shows a text written in the small Markdown subset of `utils/ui/markdownText.ts`, such as an AI reply.
+ * UiMarkdownText: shows a text written in the small Markdown subset of `utils/ui/markdownText.ts`, such as an AI reply.
  *
  * The string is never injected as markup: it is read into a tree of known tags and drawn with `h()`, so all of its text
  * is escaped by Vue and HTML in it stays visible text. A code block gets a copy button when the caller names the button

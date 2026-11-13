@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 /**
- * SetupWizard - the three-step first-time setup of a hosting service: domain, control-panel
+ * SetupWizard. The three-step first-time setup of a hosting service: domain, control-panel
  * credentials, review. The typed values are checked here as the client types (the checks mirror
  * the server's validator); provisioning, its in-flight flag and the API's refusal belong to the
  * service management store. A successful setup opens the service's management page.

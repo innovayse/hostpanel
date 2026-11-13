@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 /**
- * UiDrawer - a side panel that overlays the page (cart, filters, mobile menu).
+ * UiDrawer: a side panel that overlays the page (cart, filters, mobile menu).
  *
  * Teleports to body, locks page scrolling while open (shared counter, see utils/ui/overlay.ts),
  * closes on Escape, the close button, or a backdrop click. The default slot scrolls; `header`

@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 /**
- * PaymentMethodsTab - the "Payment Methods" tab: the methods saved for later payments.
+ * PaymentMethodsTab. The "Payment Methods" tab: the methods saved for later payments.
  *
  * The saved methods, their default and their removal live in the stored-methods card. A member of
  * the account without the permission to view and pay invoices sees the tab disabled with the reason.

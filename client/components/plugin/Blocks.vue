@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 /**
- * PluginBlocks - draws a list of plugin blocks (a view, a tab or a pane) in document order. Consecutive `stat` blocks
+ * PluginBlocks: draws a list of plugin blocks (a view, a tab or a pane) in document order. Consecutive `stat` blocks
  * are laid out together as a grid of tiles and consecutive `link` blocks as a wrapping row of buttons
  * (`groupPluginBlocks`); every other block stands alone. It renders the groups only: the surrounding stack and its
  * gap belong to the caller, so a view, its tabs and its panes all lay a list out the same way.

@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 /**
- * CardHeader (`UiCardHeader`) - the title row of a card: an optional icon and title on the
+ * CardHeader (`UiCardHeader`). The title row of a card: an optional icon and title on the
  * left, the default slot (actions, badges) on the right.
  */
 import type { Component } from 'vue'

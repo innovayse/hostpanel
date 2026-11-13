@@ -1,34 +1,37 @@
 <script setup lang="ts">
 /**
- * Billing transactions ledger: the totals of the whole ledger, a net-revenue chart of the page,
- * and the page's transactions, narrowed as the operator types by direction, payment method, date
- * range, description, amount and gateway reference. Rows can be edited or deleted; a delete is
- * confirmed in a danger prompt and its outcome (success, or the API's sentence) shows above the
- * table. A refused load offers a retry.
+ * Billing transactions ledger: the totals of the whole ledger, a net-revenue chart of the page, and the page's
+ * transactions, narrowed as the operator types by the search box (description, client, gateway reference) and by
+ * a filter dialog (direction, payment method, date range, amount) whose applied filters show as chips. The
+ * filters, the search text and the page live in the address (`useFilterQuery`). Rows can be edited or deleted; a
+ * delete is confirmed in a danger prompt and its outcome (success, or the API's sentence) shows above the table.
+ * A refused load offers a retry.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import TransactionChart from '@/components/billing/TransactionChart.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import { useFilterDateRange } from '@/composables/useFilterDateRange'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
@@ -46,45 +49,45 @@ import { formatPlainAmount } from '@/lib/money'
 import { useTransactionsStore } from '@/stores/billingTransactions'
 import type { Transaction } from '@/types/transaction'
 import { AppRoute, transactionEditPath } from '@/lib/routes'
+import type { UiFilterChip } from '@/utils/ui/filter'
 
 const { t } = useI18n()
 
-/** Which side of the ledger the list shows. */
+/** Which side of the ledger the list shows; an empty filter value means both. */
 const Direction = {
-  All: 'all',
   In: 'in',
   Out: 'out',
 } as const
 
+/** The filter fields kept in the address, beside the search text and the page. */
+const FilterKey = {
+  Direction: 'direction',
+  Method: 'method',
+  From: 'from',
+  To: 'to',
+  Amount: 'amount',
+} as const
+
+/** One of the {@link FilterKey} values. */
+type FilterKey = (typeof FilterKey)[keyof typeof FilterKey]
+
 const store = useTransactionsStore()
 
-/** True while the filter card is open. */
-const filtersOpen = ref(false)
-
-/** Direction filter. */
-const filterDirection = ref<string>(Direction.All)
-
-/** Payment-method filter; empty means any. */
-const filterMethod = ref('')
-
-/** Date-range filter. */
-const filterDateRange = ref<[string, string] | null>(null)
-
-/** Description filter. */
-const filterDescription = ref('')
-
-/** Amount filter; 0 means any. */
-const filterAmount = ref(0)
-
-/** Gateway-reference filter. */
-const filterReference = ref('')
+/** The filters, the search text and the page of the list, as the address holds them. */
+const filters = useFilterQuery<FilterKey>([
+  FilterKey.Direction,
+  FilterKey.Method,
+  FilterKey.From,
+  FilterKey.To,
+  FilterKey.Amount,
+])
 
 /** Transaction waiting for the delete confirmation, null when none. */
 const pendingDeleteId = ref<number | null>(null)
 
 /** Options of the direction select. */
 const directionOptions = computed(() => [
-  { value: Direction.All, label: t('billing.transactionsList.allActivity') },
+  { value: '', label: t('billing.transactionsList.allActivity') },
   { value: Direction.In, label: t('billing.transactionsList.paymentsReceived') },
   { value: Direction.Out, label: t('billing.transactionsList.paymentsSent') },
 ])
@@ -92,42 +95,82 @@ const directionOptions = computed(() => [
 /** Options of the payment-method select: "any" plus the shared methods. */
 const methodOptions = computed(() => [{ value: '', label: t('shared.any') }, ...TRANSACTION_METHOD_OPTIONS])
 
+/** The date range of the filter draft; the picker edits the pair, the address keeps its two ends. */
+const draftRange = useFilterDateRange(filters.draft, FilterKey.From, FilterKey.To)
+
+/** The amount of the filter draft as a number; 0 means any. The address keeps it as text. */
+const draftAmount = computed<number>({
+  /**
+   * Reads the draft's amount as a number.
+   *
+   * @returns The amount, 0 when none is set.
+   */
+  get: () => Number(filters.draft.value.amount) || 0,
+  /**
+   * Writes the amount back into the draft as text, empty for none.
+   *
+   * @param amount - The amount typed; 0 or less clears it.
+   */
+  set: (amount) => {
+    filters.draft.value.amount = amount > 0 ? String(amount) : ''
+  },
+})
+
+/** The applied filters as chips, in the order they are shown. */
+const chips = computed<UiFilterChip<FilterKey>[]>(() => {
+  const applied = filters.applied.value
+  const result: UiFilterChip<FilterKey>[] = []
+  if (applied.direction !== '') {
+    const label = directionOptions.value.find(option => option.value === applied.direction)?.label ?? applied.direction
+    result.push({ key: FilterKey.Direction, label: t('billing.transactionsList.show'), value: label })
+  }
+  if (applied.method !== '') {
+    const label = methodOptions.value.find(option => option.value === applied.method)?.label ?? applied.method
+    result.push({ key: FilterKey.Method, label: t('shared.paymentMethod'), value: label })
+  }
+  if (applied.from !== '') {
+    result.push({ key: FilterKey.From, label: t('billing.invoicesList.dateFrom'), value: formatDate(applied.from) })
+  }
+  if (applied.to !== '') {
+    result.push({ key: FilterKey.To, label: t('billing.invoicesList.dateTo'), value: formatDate(applied.to) })
+  }
+  if (applied.amount !== '') {
+    result.push({ key: FilterKey.Amount, label: t('shared.amount'), value: applied.amount })
+  }
+  return result
+})
+
 /**
- * Tells whether a transaction passes the filter card.
+ * Tells whether a transaction passes the search text and the applied filters.
  *
  * @param transaction - A transaction of the loaded page.
- * @returns True when the transaction matches every filter that is set.
+ * @returns True when the transaction matches every filter that is set and contains the search text.
  */
 const matches = (transaction: Transaction): boolean => {
-  if (filterDirection.value === Direction.In && !(transaction.amountIn > 0)) {
+  const applied = filters.applied.value
+  const term = filters.search.value.trim().toLowerCase()
+  const searchable = [transaction.description, transaction.clientName, transaction.transactionId ?? '']
+  if (term !== '' && !searchable.some(field => field.toLowerCase().includes(term))) {
     return false
   }
-  if (filterDirection.value === Direction.Out && !(transaction.amountOut > 0)) {
+  if (applied.direction === Direction.In && !(transaction.amountIn > 0)) {
     return false
   }
-  if (filterMethod.value !== '' && transaction.paymentMethod !== filterMethod.value) {
+  if (applied.direction === Direction.Out && !(transaction.amountOut > 0)) {
     return false
   }
-  if (filterDateRange.value !== null) {
-    const day = toIsoDay(new Date(transaction.date))
-    if (day < filterDateRange.value[0] || day > filterDateRange.value[1]) {
-      return false
-    }
-  }
-  if (
-    filterDescription.value !== ''
-    && !transaction.description.toLowerCase().includes(filterDescription.value.toLowerCase())
-  ) {
+  if (applied.method !== '' && transaction.paymentMethod !== applied.method) {
     return false
   }
-  if (filterAmount.value > 0 && transaction.amountIn !== filterAmount.value && transaction.amountOut !== filterAmount.value) {
+  const day = toIsoDay(new Date(transaction.date))
+  if ((applied.from !== '' && day < applied.from) || (applied.to !== '' && day > applied.to)) {
     return false
   }
-  return filterReference.value === ''
-    || (transaction.transactionId ?? '').toLowerCase().includes(filterReference.value.toLowerCase())
+  const amount = Number(applied.amount)
+  return !(amount > 0 && transaction.amountIn !== amount && transaction.amountOut !== amount)
 }
 
-/** The loaded page, narrowed by the filter card. */
+/** The loaded page, narrowed by the search text and the filters. */
 const shownTransactions = computed<Transaction[]>(() => store.transactions.filter(matches))
 
 /**
@@ -139,24 +182,12 @@ const shownTransactions = computed<Transaction[]>(() => store.transactions.filte
  */
 const cell = (value: number, currency: string): string => (value > 0 ? formatPlainAmount(value, currency) : '—')
 
-/** Clears every filter. */
-const clearFilters = (): void => {
-  filterDirection.value = Direction.All
-  filterMethod.value = ''
-  filterDateRange.value = null
-  filterDescription.value = ''
-  filterAmount.value = 0
-  filterReference.value = ''
-}
-
 /**
- * Loads a page of the ledger.
- *
- * @param next - Page number (1-based).
+ * Loads the page of the ledger named by the address.
  *
  * @returns Resolves when the request has settled.
  */
-const load = (next: number): Promise<void> => store.fetchAll(next, store.pageSize)
+const load = (): Promise<void> => store.fetchAll(filters.page.value, store.pageSize)
 
 /** The outcome line of the last delete. */
 const feedback = useResultBanner()
@@ -193,7 +224,7 @@ const dismissDelete = (): void => {
  * @param id - The transaction id.
  * @returns The action list passed to UiRowActions.
  */
-const transactionActions = (id: number): UiRowAction[] => [
+const transactionActions = (id: number): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `billing-transaction-edit-${id}`,
@@ -214,16 +245,14 @@ const transactionActions = (id: number): UiRowAction[] => [
   },
 ]
 
-onMounted(() => load(1))
+// The address is the source of truth: the first load and every change of the page read the ledger.
+watch(filters.page, load, { immediate: true })
 </script>
 
 <template>
   <UiStack data-testid="billing-transactions-view">
     <UiPageHeader :title="t('shared.transactions')" :subtitle="t('billing.transactionsList.paymentTransactionsAndRecords')">
       <template #actions>
-        <UiButton variant="secondary" data-testid="billing-transactions-filter-toggle" @click="filtersOpen = !filtersOpen">
-          {{ filtersOpen ? t('shared.hideFilters') : t('shared.searchFilter') }}
-        </UiButton>
         <UiLink :to="AppRoute.BillingAddTransaction" variant="primary" data-testid="billing-transactions-add">
           <UiIcon :markup="Icon.Add" size="sm" />
           {{ t('billing.transactionsList.addTransaction') }}
@@ -231,50 +260,39 @@ onMounted(() => load(1))
       </template>
     </UiPageHeader>
 
-    <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="3">
+    <UiGrid :columns="4">
+      <UiStatTile :label="t('billing.transactionsList.totalIncome')" :value="formatPlainAmount(store.summary.totalIn, store.summary.currency)" tone="success" data-testid="billing-transactions-total-in" />
+      <UiStatTile :label="t('billing.transactionsList.totalExpenditure')" :value="formatPlainAmount(store.summary.totalOut, store.summary.currency)" tone="danger" data-testid="billing-transactions-total-out" />
+      <UiStatTile :label="t('billing.transactionsList.totalFees')" :value="formatPlainAmount(store.summary.totalFees, store.summary.currency)" data-testid="billing-transactions-total-fees" />
+      <UiStatTile :label="t('shared.balance')" :value="formatPlainAmount(store.summary.balance, store.summary.currency)" tone="primary" data-testid="billing-transactions-balance" />
+    </UiGrid>
+
+    <UiListToolbar
+      v-model:search="filters.search.value"
+      search-testid="billing-transactions-search"
+      :active-count="filters.activeCount.value"
+      :chips="chips"
+      @apply="filters.apply"
+      @reset="filters.reset"
+      @cancel="filters.cancel"
+      @remove="filters.remove"
+      @clear="filters.clearAll"
+    >
+      <UiStack gap="md">
         <UiField :label="t('billing.transactionsList.show')">
-          <UiSelect v-model="filterDirection" :options="directionOptions" :placeholder="t('billing.transactionsList.show')" />
+          <UiSelect v-model="filters.draft.value.direction" :options="directionOptions" :placeholder="t('billing.transactionsList.show')" />
         </UiField>
         <UiField :label="t('shared.paymentMethod')">
-          <UiSelect v-model="filterMethod" :options="methodOptions" :placeholder="t('shared.paymentMethod')" />
+          <UiSelect v-model="filters.draft.value.method" :options="methodOptions" :placeholder="t('shared.paymentMethod')" />
         </UiField>
         <UiField :label="t('shared.dateRange')">
-          <UiDateRangePicker v-model="filterDateRange" :placeholder="t('shared.selectDateRange')" />
-        </UiField>
-        <UiField :label="t('shared.description')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="filterDescription"
-              type="text"
-              :placeholder="t('shared.search')"
-              data-testid="billing-transactions-filter-description"
-            />
-          </template>
+          <UiDateRangePicker v-model="draftRange" :placeholder="t('shared.selectDateRange')" />
         </UiField>
         <UiField :label="t('shared.amount')">
-          <UiNumberInput v-model="filterAmount" :step="0.01" :min="0" placeholder="0.00" />
+          <UiNumberInput v-model="draftAmount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-transactions-filter-amount" />
         </UiField>
-        <UiField :label="t('shared.transactionId')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="filterReference"
-              type="text"
-              :placeholder="t('shared.search')"
-            />
-          </template>
-        </UiField>
-      </UiGrid>
-      <template #actions>
-        <UiStack direction="row" justify="center">
-          <UiButton variant="ghost" data-testid="billing-transactions-clear" @click="clearFilters">
-            {{ t('shared.clear') }}
-          </UiButton>
-        </UiStack>
-      </template>
-    </UiFilterCard>
+      </UiStack>
+    </UiListToolbar>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-transactions-feedback" />
 
@@ -283,15 +301,8 @@ onMounted(() => load(1))
       :message="store.error"
       :loading="store.loading"
       testid="billing-transactions-error"
-      @retry="load(store.page)"
+      @retry="load"
     />
-
-    <UiGrid :columns="4">
-      <UiStatTile :label="t('billing.transactionsList.totalIncome')" :value="formatPlainAmount(store.summary.totalIn, store.summary.currency)" tone="success" data-testid="billing-transactions-total-in" />
-      <UiStatTile :label="t('billing.transactionsList.totalExpenditure')" :value="formatPlainAmount(store.summary.totalOut, store.summary.currency)" tone="danger" data-testid="billing-transactions-total-out" />
-      <UiStatTile :label="t('billing.transactionsList.totalFees')" :value="formatPlainAmount(store.summary.totalFees, store.summary.currency)" data-testid="billing-transactions-total-fees" />
-      <UiStatTile :label="t('shared.balance')" :value="formatPlainAmount(store.summary.balance, store.summary.currency)" tone="primary" data-testid="billing-transactions-balance" />
-    </UiGrid>
 
     <UiCard padding="md">
       <UiStack gap="sm">
@@ -310,7 +321,6 @@ onMounted(() => load(1))
       <UiTable
         :loading="store.loading && store.transactions.length === 0"
         :empty="!store.loading && shownTransactions.length === 0"
-        :colspan="8"
         data-testid="billing-transactions-table"
       >
         <UiTableHead>
@@ -344,17 +354,17 @@ onMounted(() => load(1))
           </UiTableRow>
         </UiTableBody>
         <template #empty>
-          {{ t('billing.transactionsList.noTransactionsFound') }}
+          <UiEmptyState :title="t('billing.transactionsList.noTransactionsFound')" data-testid="billing-transactions-empty" />
         </template>
       </UiTable>
     </UiCard>
 
     <UiPagination
-      :page="store.page"
+      :page="filters.page.value"
       :total="store.totalCount"
       :page-size="store.pageSize"
       testid="billing-transactions-pagination"
-      @update:page="load"
+      @update:page="filters.setPage"
     />
 
     <UiDialog
@@ -363,7 +373,6 @@ onMounted(() => load(1))
       :title="t('billing.transactionsList.deleteTransaction')"
       :message="t('billing.transactionsList.deleteTransactionMessage', { id: pendingDeleteId ?? 0 })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="store.loading"
       :tone="UiTone.Danger"
       @confirm="confirmDelete"

@@ -108,6 +108,12 @@ export interface QuoteItemUpdate extends QuoteItemInput {
   id?: number
 }
 
+/** A quote line as the editor holds it: the wire fields plus a client-side key that survives edits. */
+export interface QuoteLineDraft extends QuoteItemUpdate {
+  /** Stable key of the row for list rendering; never sent to the API. */
+  key: number
+}
+
 /** Fields the quote create and update bodies share. */
 export interface QuoteFields {
   /** Quote subject line. */

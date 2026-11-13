@@ -36,9 +36,11 @@ describe('typography maps', () => {
   })
 })
 
-describe('field label contrast', () => {
-  it('uses the secondary text token, not the muted one', () => {
-    expect(labelVariantClasses.field).toContain('text-text-secondary')
-    expect(labelVariantClasses.field).not.toContain('text-text-muted')
+describe('field label look', () => {
+  it('is the concept caption: 13px, medium weight, in the muted text token (AA on both grounds)', () => {
+    expect(labelVariantClasses.field).toContain('text-[0.8125rem]')
+    expect(labelVariantClasses.field).toContain('font-medium')
+    expect(labelVariantClasses.field).toContain('text-text-muted')
+    expect(labelVariantClasses.field).not.toContain('uppercase')
   })
 })

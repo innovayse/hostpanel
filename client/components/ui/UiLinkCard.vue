@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiLinkCard - a whole card that is one link (a row of a list that opens its detail page).
+ * UiLinkCard: a whole card that is one link (a row of a list that opens its detail page).
  *
  * The root carries the `group` class, so content inside can react to hovering the card with
  * `group-hover:` utilities.

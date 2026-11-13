@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 /**
- * Configure page - the billing-cycle choice and order summary for one product.
+ * Configure page: the billing-cycle choice and order summary for one product.
  * Route: /configure/[pid]
  *
  * The page reads the product through the catalogue store (in the payer's currency, so the read
@@ -36,6 +36,7 @@ import type { PricingCycleOption } from '~/types/pricingcycleoption'
 import { familyConfig, parseDescription } from '~/utils/catalogGroups'
 import { formatMoney } from '~/utils/formatMoney'
 import { cycleAmount } from '~/utils/productFamilies'
+import { detailTitle } from '~/utils/seoTitle'
 
 /** The current route. */
 const route = useRoute()
@@ -152,7 +153,7 @@ const addToCart = (): void => {
 }
 
 useSeo({
-  title: `${t('configure.title')} — ${productName.value}`,
+  title: detailTitle(t('configure.title'), productName.value),
   description: productDesc.value,
   path: `/configure/${pid}`,
 })

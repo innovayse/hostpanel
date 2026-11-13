@@ -64,4 +64,19 @@ describe('UiFieldSelector', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="field-selector-apply"]').exists()).toBe(false)
   })
+
+  it('names the panel it opens and closes on Escape with the focus back on the trigger', async () => {
+    const wrapper = mount(UiFieldSelector, { props: { fields, selected: new Set<string>() }, attachTo: document.body, global: { plugins: [createTestI18n()] } })
+    const trigger = wrapper.get('[data-testid="field-selector-trigger"]')
+    expect(trigger.attributes('aria-expanded')).toBe('false')
+
+    await trigger.trigger('click')
+    expect(trigger.attributes('aria-controls')).toBe(wrapper.get('[role="group"]').attributes('id'))
+
+    await trigger.trigger('keydown', { key: 'Escape' })
+
+    expect(wrapper.find('[role="group"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(trigger.element)
+    wrapper.unmount()
+  })
 })

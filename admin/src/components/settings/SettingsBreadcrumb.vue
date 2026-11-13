@@ -32,7 +32,7 @@ defineProps<{
 <template>
   <nav :aria-label="t('shared.youAreHere')" class="mb-6" data-testid="settings-breadcrumb">
     <UiStack direction="row" align="center" gap="xs">
-      <template v-for="(item, index) in items" :key="index">
+      <template v-for="(item, index) in items" :key="item.to ?? item.label">
         <UiIcon v-if="index > 0" :markup="Icon.Chevron" size="sm" class="text-text-muted" />
         <UiLink v-if="item.to" :to="item.to" variant="link">
           {{ item.label }}

@@ -175,7 +175,6 @@ watch(page, () => {
         :density="UiTableDensity.Compact"
         :loading="loading && items.length === 0"
         :empty="!loading && items.length === 0"
-        :colspan="5"
         data-testid="migration-report-table"
       >
         <UiTableHead>

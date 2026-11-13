@@ -16,6 +16,7 @@ import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -121,7 +122,7 @@ onMounted(populate)
             </UiStack>
           </UiField>
         </UiGrid>
-        <UiStack direction="row" justify="center">
+        <UiFormActions>
           <UiButton
             type="submit"
             variant="primary"
@@ -130,7 +131,7 @@ onMounted(populate)
           >
             {{ t('shared.saveChanges') }}
           </UiButton>
-        </UiStack>
+        </UiFormActions>
         <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-invoice-options-feedback" />
       </UiForm>
     </UiCard>

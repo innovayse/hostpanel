@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 /**
- * UiTypingDots - three bouncing dots that say the other party is writing, before its first words arrive.
+ * UiTypingDots: three bouncing dots that say the other party is writing, before its first words arrive.
  *
  * A status region named by `label`, so a screen reader announces it once; the dots stand still for readers who ask for
  * reduced motion.

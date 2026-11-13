@@ -6,7 +6,7 @@
  * A reply is read as Markdown through `UiMarkdown` with its links kept as text (an address renders only through
  * the link rule), its code blocks carry their own copy button, and it ends in a blinking caret while it is
  * written. Before its first words it shows the typing dots; what the plugin says it is doing (`status`) shows
- * inside it with a spinner. Steps, issues and result cards follow the text. The time shows for a
+ * inside it with a loader. Steps, issues and result cards follow the text. The time shows for a
  * message this session wrote, never for one read from the history.
  */
 import { computed } from 'vue'
@@ -17,18 +17,16 @@ import UiAlert from '@/components/ui/UiAlert.vue'
 import UiChatAvatar from '@/components/ui/UiChatAvatar.vue'
 import UiChatBubble, { UiChatBubbleSide } from '@/components/ui/UiChatBubble.vue'
 import UiCopyButton from '@/components/ui/UiCopyButton.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTypingDots from '@/components/ui/UiTypingDots.vue'
 import { formatTime } from '@/lib/format'
-import { Icon } from '@/lib/icons'
 import { PluginChatRole } from '@/types/pluginview'
 import type { PluginChatMessage } from '@/types/pluginview'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -96,10 +94,13 @@ const waiting = computed<boolean>(() =>
         </template>
       </UiStack>
       <UiTypingDots v-if="waiting" :label="t('plugins.pluginPage.chatWriting')" />
-      <UiStack v-if="writing && message.status" :direction="UiDirection.Row" :gap="UiGap.Xs" :align="UiAlignItems.Center" role="status">
-        <UiIcon :markup="Icon.Refresh" :size="UiSize.Sm" class="animate-spin text-primary-500 motion-reduce:animate-none" />
-        <UiText :size="UiTextSize.Xs" :tone="UiTextTone.Muted" data-testid="plugin-chat-status">{{ message.status }}</UiText>
-      </UiStack>
+      <UiLoader
+        v-if="writing && message.status"
+        :label="message.status"
+        show-label
+        class="text-xs text-text-muted"
+        data-testid="plugin-chat-status"
+      />
       <PluginChatSteps v-if="message.steps.length > 0" :steps="message.steps" />
       <UiAlert v-for="issue in message.issues" :key="issue.key" :variant="UiTone.Danger" data-testid="plugin-chat-issue">{{ issue.text }}</UiAlert>
       <PluginChatResultCard

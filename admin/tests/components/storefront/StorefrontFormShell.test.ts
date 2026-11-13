@@ -4,6 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
+import UiField from '@/components/ui/UiField.vue'
 import StorefrontFormShell from '@/components/storefront/StorefrontFormShell.vue'
 import { mountScreen } from '../../helpers/mount'
 
@@ -11,7 +12,6 @@ import { mountScreen } from '../../helpers/mount'
 const baseProps = {
   breadcrumb: [{ label: 'Widgets', to: '/widgets' }, { label: 'Create widget' }],
   testid: 'widget',
-  loadingLabel: 'Loading widget...',
   saveLabel: 'Create widget',
   loading: false,
   saving: false,
@@ -39,11 +39,22 @@ describe('StorefrontFormShell', () => {
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create widget')
   })
 
-  it('shows the loading caption instead of the body', async () => {
+  it('keeps the body and the bar while loading, with the fields as skeletons and Save disabled', async () => {
     const { wrapper } = await mountScreen(hostWith({ loading: true }))
 
-    expect(wrapper.text()).toContain('Loading widget...')
-    expect(wrapper.find('[data-testid="body"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="body"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="settings-form-save"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('provides the loading flag so a field below draws a skeleton', async () => {
+    const field = defineComponent({ setup: () => () => h(UiField, { label: 'Name' }, { default: () => h('input') }) })
+    const host = defineComponent({
+      setup: () => () => h(StorefrontFormShell, { ...baseProps, loading: true }, { default: () => h(field) }),
+    })
+    const { wrapper } = await mountScreen(host)
+
+    expect(wrapper.find('[data-testid="ui-field-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('input').exists()).toBe(false)
   })
 
   it('shows the refusal of a save next to the footer', async () => {

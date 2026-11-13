@@ -9,7 +9,7 @@
  * Preview, Schedule and Send now work on the saved campaign, so they save the form first; a new
  * campaign is created by the first of them and the page moves to its address.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import EmailCampaignPreviewDialog from '@/components/campaigns/EmailCampaignPreviewDialog.vue'
@@ -40,6 +40,7 @@ import {
   draftsFromSegments,
   newSegmentDraft,
   offeredFilterTypes,
+  segmentKey,
   segmentsFromDrafts,
 } from '@/lib/emailCampaigns'
 import { formatDateTimeCompact } from '@/lib/format'
@@ -54,6 +55,7 @@ import { AuthMode } from '@/types/auth'
 import { CampaignFilterType, CampaignStatus } from '@/types/emailcampaign'
 import type { EmailCampaignSegment, EmailCampaignSegmentDraft } from '@/types/emailcampaign'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -101,8 +103,11 @@ const takeSegmentKey = (): number => {
 /** The audience rules as the form edits them; {@link load} fills them (a blank rule for a new campaign). */
 const segments = ref<EmailCampaignSegmentDraft[]>([])
 
-/** Whether the campaign is being loaded. */
-const loading = ref(false)
+/** Whether the campaign is being loaded; true from the first paint of an existing campaign, so the form never flashes empty. */
+const loading = ref(campaignId.value !== null)
+
+// Every field of the form stays a placeholder while the campaign is read.
+provide(UI_FIELD_LOADING, loading)
 
 /** The sentence of a refused load, null when it loaded. */
 const loadError = ref<string | null>(null)
@@ -406,8 +411,6 @@ onBeforeUnmount(cancelCount)
 
     <UiPageHeader :title="pageTitle" :subtitle="readOnly ? t('emailCampaigns.form.subtitleView') : t('emailCampaigns.form.subtitleEdit')" />
 
-    <UiSkeleton v-if="loading" :lines="4" data-testid="email-campaign-loading" />
-
     <UiErrorState
       v-if="loadError !== null"
       :message="loadError"
@@ -419,7 +422,7 @@ onBeforeUnmount(cancelCount)
     <UiStatusMessage :message="feedback.message.value" :tone="UiTone.Success" data-testid="email-campaign-feedback" />
     <UiAlert v-if="actionError" variant="error" data-testid="email-campaign-error">{{ actionError }}</UiAlert>
 
-    <template v-if="!loading && loadError === null">
+    <template v-if="loadError === null">
       <UiCard v-if="store.current && readOnly" padding="md">
         <UiStack>
           <UiStack direction="row" gap="sm" align="center" wrap>
@@ -440,7 +443,7 @@ onBeforeUnmount(cancelCount)
         </UiStack>
       </UiCard>
 
-      <UiCard padding="md">
+      <UiCard padding="md" :aria-busy="loading ? 'true' : undefined" data-testid="email-campaign-form">
         <UiStack>
           <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">
             <template #default="{ id, invalid, describedby }">
@@ -478,7 +481,7 @@ onBeforeUnmount(cancelCount)
             <UiStack v-if="readOnly && store.current">
               <UiText
                 v-for="(segment, index) in store.current.segments"
-                :key="index"
+                :key="segmentKey(segment)"
                 tone="secondary"
                 size="md"
                 :data-testid="`email-campaign-segment-summary-${index}`"
@@ -508,9 +511,7 @@ onBeforeUnmount(cancelCount)
               <UiText v-else-if="store.audienceError" tone="danger" size="sm" data-testid="email-campaign-audience">
                 {{ store.audienceError }}
               </UiText>
-              <UiText v-else-if="store.audienceCount === null" tone="muted" size="sm" data-testid="email-campaign-audience">
-                {{ t('emailCampaigns.form.audienceCounting') }}
-              </UiText>
+              <UiSkeleton v-else-if="store.audienceCount === null" :lines="1" class="w-40" aria-busy="true" data-testid="email-campaign-audience" />
               <UiText v-else tone="secondary" size="sm" data-testid="email-campaign-audience">
                 {{ t('emailCampaigns.form.audienceCount', { count: store.audienceCount }) }}
               </UiText>
@@ -522,11 +523,11 @@ onBeforeUnmount(cancelCount)
               <UiButton
                 :variant="UiButtonVariant.Primary"
                 :loading="acting"
-                :disabled="!canSave || acting"
+                :disabled="!canSave"
                 data-testid="email-campaign-save"
                 @click="saveDraft"
               >
-                {{ acting ? t('shared.saving') : t('emailCampaigns.form.saveDraft') }}
+                {{ t('emailCampaigns.form.saveDraft') }}
               </UiButton>
               <UiButton
                 :variant="UiButtonVariant.Secondary"

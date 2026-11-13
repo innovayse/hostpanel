@@ -83,7 +83,7 @@ const updateNow = async (): Promise<void> => {
           {{ t('reports.diskUsage.noDataYetClickUpdate') }}
         </UiText>
         <UiButton variant="secondary" :loading="store.updating" data-testid="report-update-now" @click="updateNow">
-          {{ store.updating ? t('reports.diskUsage.updating') : t('reports.diskUsage.updateNow') }}
+          {{ t('reports.diskUsage.updateNow') }}
         </UiButton>
       </UiStack>
     </template>

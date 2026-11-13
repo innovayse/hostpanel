@@ -1,26 +1,35 @@
 <script setup lang="ts">
 /**
- * Support tickets list: a paged, searchable table of all tickets with a status filter, flagging
- * and bulk actions. A refused load offers a retry; a flag or bulk action shows its outcome (success,
- * or the API's sentence) next to the bulk bar; a bulk delete is confirmed first in a danger prompt.
+ * Support tickets list: a paged table of all tickets with priority and status badges, a search box,
+ * a filter dialog (status or flagged) whose active choice shows as a chip, flagging and bulk
+ * actions on the selected rows (`useRowSelection`, the floating `UiBulkBar`). The search, the filter and the page live in the address, so a reload or a shared link
+ * shows the same list. A refused load offers a retry; a flag or bulk action shows its outcome
+ * (success, or the API's sentence) above the list; a bulk delete is confirmed first in a
+ * danger prompt.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import SupportTicketPriorityBadge from '@/components/support/SupportTicketPriorityBadge.vue'
 import SupportTicketStatusBadge from '@/components/support/SupportTicketStatusBadge.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiField from '@/components/ui/UiField.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useRowSelection } from '@/composables/useRowSelection'
 import { UiDialogVariant } from '@/utils/ui/dialog'
+import type { UiFilterChip } from '@/utils/ui/filter'
 import { UiTone } from '@/utils/ui/tone'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiBulkBar from '@/components/ui/UiBulkBar.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -36,50 +45,72 @@ import { useSupportStore } from '@/stores/support'
 import { TicketBulkAction, TicketFlagFilter, TicketStatus } from '@/types/ticket'
 import type { TicketListFilter } from '@/types/ticket'
 import { Icon } from '@/lib/icons'
-import { pageCount } from '@/lib/paging'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import { toneTextClasses } from '@/utils/ui/tone'
-import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { AppRoute, supportTicketPath } from '@/lib/routes'
 
 const { t } = useI18n()
 
 const store = useSupportStore()
 
-/** Number of columns of the table (width of the status row). */
-const COLUMN_COUNT = 7
+/** The one filter field of the list, stored in the address under this key. */
+const FILTER_KEYS = ['status'] as const
 
-/** One status-filter button. */
+/** One choice of the status filter. */
 interface FilterOption {
-  /** Filter applied by the button; null shows every active ticket. */
-  value: TicketListFilter | null
+  /** Value stored in the address; empty shows every active ticket. */
+  value: string
+  /** The filter the API is asked for; null shows every active ticket. */
+  filter: TicketListFilter | null
   /** Translated label. */
   label: string
-  /** Suffix of the button's `data-testid`. */
-  key: string
 }
 
-/** Status filter buttons in display order. */
+/** Status filter choices in display order. */
 const filterOptions = computed<FilterOption[]>(() => [
-  { value: null, label: t('constants.ticketFilterOptions.allActiveTickets'), key: 'all' },
-  { value: TicketFlagFilter.Flagged, label: t('constants.ticketFilterOptions.flagged'), key: 'flagged' },
-  { value: TicketStatus.Open, label: t('support.networkIssues.open'), key: 'open' },
-  { value: TicketStatus.AwaitingReply, label: t('constants.ticketFilterOptions.awaitingReply'), key: 'awaiting-reply' },
-  { value: TicketStatus.Closed, label: t('clients.clientForm.closed'), key: 'closed' },
+  { value: '', filter: null, label: t('constants.ticketFilterOptions.allActiveTickets') },
+  { value: TicketFlagFilter.Flagged, filter: TicketFlagFilter.Flagged, label: t('constants.ticketFilterOptions.flagged') },
+  { value: TicketStatus.Open, filter: TicketStatus.Open, label: t('support.networkIssues.open') },
+  { value: TicketStatus.AwaitingReply, filter: TicketStatus.AwaitingReply, label: t('constants.ticketFilterOptions.awaitingReply') },
+  { value: TicketStatus.Closed, filter: TicketStatus.Closed, label: t('clients.clientForm.closed') },
 ])
 
 /** Bulk actions offered for the selected tickets. */
 const bulkActions = computed(() => [
-  { action: TicketBulkAction.Close, label: t('shared.close'), variant: UiButtonVariant.Secondary },
+  { action: TicketBulkAction.Close, label: t('shared.close'), variant: UiButtonVariant.Primary },
   { action: TicketBulkAction.Delete, label: t('shared.delete'), variant: UiButtonVariant.Danger },
   { action: TicketBulkAction.Flag, label: t('support.supportTickets.flag'), variant: UiButtonVariant.Secondary },
   { action: TicketBulkAction.Unflag, label: t('support.supportTickets.unflag'), variant: UiButtonVariant.Secondary },
 ])
 
-/** IDs of tickets selected via checkbox. */
-const selectedIds = ref<number[]>([])
+/** The address-backed filter, search text and page of the list. */
+const { applied, draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage } =
+  useFilterQuery(FILTER_KEYS)
+
+/** The status choice the address holds; unknown values count as no filter. */
+const appliedOption = computed<FilterOption | undefined>(() =>
+  filterOptions.value.find((option) => option.value === applied.value.status),
+)
+
+/** The filter the list is loaded with. */
+const activeFilter = computed<TicketListFilter | null>(() => appliedOption.value?.filter ?? null)
+
+/** Choices of the status select in the filter dialog. */
+const statusSelectOptions = computed(() => filterOptions.value.map(({ value, label }) => ({ value, label })))
+
+/** The active filter as a chip, none while every active ticket is shown. */
+const chips = computed<UiFilterChip[]>(() => {
+  const option = appliedOption.value
+  if (option === undefined || option.value === '') {
+    return []
+  }
+  return [{ key: 'status', label: t('shared.status'), value: option.label }]
+})
+
+/** The selected tickets of the page. */
+const selection = useRowSelection(() => store.tickets.map((ticket) => ticket.id))
 
 /** The outcome line of the last flag or bulk action. */
 const feedback = useResultBanner()
@@ -107,64 +138,11 @@ const report = (ok: boolean, successKey: string): void => {
   }
 }
 
-/** Whether every ticket on the page is selected. */
-const allSelected = computed<boolean>(
-  () => store.tickets.length > 0 && selectedIds.value.length === store.tickets.length,
-)
-
-/** Number of pages for the current filter. */
-const totalPages = computed<number>(() => pageCount(store.totalCount, store.pageSize))
-
 /** First record index (1-based) for display. */
 const showingFrom = computed<number>(() => (store.totalCount === 0 ? 0 : (store.page - 1) * store.pageSize + 1))
 
 /** Last record index (1-based) for display. */
 const showingTo = computed<number>(() => Math.min(store.page * store.pageSize, store.totalCount))
-
-/** Debounce timer of the search box. */
-let searchTimer: ReturnType<typeof setTimeout> | undefined
-
-/**
- * Forgets the selection (it belongs to the page that was loaded).
- */
-const clearSelection = (): void => {
-  selectedIds.value = []
-}
-
-/**
- * Selects every ticket on the page, or none.
- *
- * @param checked - Whether the select-all box is now checked.
- */
-const handleSelectAll = (checked: boolean): void => {
-  selectedIds.value = checked ? store.tickets.map((ticket) => ticket.id) : []
-}
-
-/**
- * Adds or removes one ticket from the selection.
- *
- * @param id - The ticket identifier.
- */
-const handleToggleSelect = (id: number): void => {
-  const index = selectedIds.value.indexOf(id)
-  if (index === -1) {
-    selectedIds.value.push(id)
-  } else {
-    selectedIds.value.splice(index, 1)
-  }
-}
-
-/**
- * Applies a status filter and reloads the first page.
- *
- * @param value - The filter, or null for all active tickets.
- */
-const applyFilter = (value: TicketListFilter | null): void => {
-  store.statusFilter = value
-  store.page = 1
-  clearSelection()
-  store.fetchAll()
-}
 
 /**
  * Flips the flag of one ticket and reloads on success.
@@ -187,16 +165,16 @@ const handleToggleFlag = async (id: number): Promise<void> => {
  * @returns Resolves when the action (and the reload) has settled.
  */
 const runBulkAction = async (action: TicketBulkAction): Promise<void> => {
-  if (selectedIds.value.length === 0) {
+  if (selection.count.value === 0) {
     return
   }
   feedback.clear()
   bulkRunning.value = true
-  const done = await store.bulkAction(selectedIds.value, action)
+  const done = await store.bulkAction([...selection.ids.value], action)
   bulkRunning.value = false
   report(done, action === TicketBulkAction.Delete ? 'shared.recordDeleted' : 'shared.changesSavedSuccessfully')
   if (done) {
-    clearSelection()
+    selection.clear()
     await store.fetchAll()
   }
 }
@@ -233,36 +211,21 @@ const dismissBulkDelete = (): void => {
 }
 
 /**
- * Loads another page.
+ * Loads the list the address asks for: the store is handed the filter, the search text and the page,
+ * and the selection (which belonged to the previous page) is dropped.
  *
- * @param page - The page to show, 1-based.
+ * @returns Resolves when the list has settled.
  */
-const goToPage = (page: number): void => {
-  store.page = page
-  clearSelection()
-  store.fetchAll()
+const load = async (): Promise<void> => {
+  store.statusFilter = activeFilter.value
+  store.search = appliedSearch.value
+  store.page = page.value
+  selection.clear()
+  await store.fetchAll()
 }
 
-// The search box reloads from the first page once typing pauses.
-watch(
-  () => store.search,
-  () => {
-    clearTimeout(searchTimer)
-    searchTimer = setTimeout(() => {
-      store.page = 1
-      clearSelection()
-      store.fetchAll()
-    }, SEARCH_DEBOUNCE_MS)
-  },
-)
-
-onBeforeUnmount(() => {
-  clearTimeout(searchTimer)
-})
-
-onMounted(() => {
-  store.fetchAll()
-})
+// The address is the source of truth: the first load, a filter, the search and a page all arrive here.
+watch([activeFilter, appliedSearch, page], load, { immediate: true })
 </script>
 
 <template>
@@ -282,50 +245,32 @@ onMounted(() => {
       </template>
     </UiPageHeader>
 
-    <UiStack direction="row" gap="sm" wrap>
-      <UiButton
-        v-for="option in filterOptions"
-        :key="option.key"
-        :variant="store.statusFilter === option.value ? UiButtonVariant.Primary : UiButtonVariant.Secondary"
-        :size="UiSize.Sm"
-        :data-testid="`support-tickets-filter-${option.key}`"
-        @click="applyFilter(option.value)"
-      >
-        {{ option.label }}
-      </UiButton>
-    </UiStack>
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="support-tickets-search"
+      :search-placeholder="t('support.supportTickets.searchTicketsBySubject')"
+      filter-testid="support-tickets-filter"
+      :active-count="activeCount"
+      :chips="chips"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove('status')"
+      @clear="clearAll"
+    >
+        <UiField :label="t('shared.status')">
+          <UiSelect
+            v-model="draft.status"
+            :options="statusSelectOptions"
+            :placeholder="t('shared.status')"
+            data-testid="support-tickets-filter-status"
+          />
+        </UiField>
+    </UiListToolbar>
 
-    <UiInput
-      v-model="store.search"
-      :placeholder="t('support.supportTickets.searchTicketsBySubject')"
-      class="max-w-md"
-      data-testid="support-tickets-search"
-    />
-
-    <UiStack direction="row" justify="between" wrap>
-      <UiText tone="muted" size="sm" data-testid="support-tickets-count">
-        {{ t('support.supportTickets.totalcountRecordsFoundShowingShowingfrom', { totalCount: store.totalCount, showingFrom, showingTo }) }}
-      </UiText>
-      <UiText tone="muted" size="sm">
-        {{ t('shared.pagePageOfTotalpages', { page: store.page, totalPages }) }}
-      </UiText>
-    </UiStack>
-
-    <UiCard v-if="selectedIds.length > 0" padding="sm" data-testid="support-tickets-bulk">
-      <UiStack direction="row" gap="sm" align="center" wrap>
-        <UiText tone="muted" size="md">{{ t('shared.withSelected') }}</UiText>
-        <UiButton
-          v-for="entry in bulkActions"
-          :key="entry.action"
-          :variant="entry.variant"
-          :size="UiSize.Sm"
-          :data-testid="`support-tickets-bulk-${entry.action}`"
-          @click="handleBulkAction(entry.action)"
-        >
-          {{ entry.label }}
-        </UiButton>
-      </UiStack>
-    </UiCard>
+    <UiText tone="muted" size="sm" data-testid="support-tickets-count">
+      {{ t('support.supportTickets.totalcountRecordsFoundShowingShowingfrom', { totalCount: store.totalCount, showingFrom, showingTo }) }}
+    </UiText>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="support-tickets-feedback" />
 
@@ -337,27 +282,22 @@ onMounted(() => {
       @retry="store.fetchAll()"
     />
 
-    <UiCard v-else class="overflow-x-auto">
+    <UiCard v-else>
       <UiTable
         :density="UiTableDensity.Comfortable"
         :loading="store.loading && store.tickets.length === 0"
         :empty="!store.loading && store.tickets.length === 0"
-        :colspan="COLUMN_COUNT"
+        :selection="selection"
+        select-all-testid="support-tickets-select-all"
         data-testid="support-tickets-table"
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>
-              <UiCheckbox
-                :model-value="allSelected"
-                data-testid="support-tickets-select-all"
-                @update:model-value="handleSelectAll"
-              />
-            </UiTableHeader>
             <UiTableHeader />
             <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.department') }}</UiTableHeader>
             <UiTableHeader>{{ t('support.supportTickets.requestor') }}</UiTableHeader>
+            <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.lastReply') }}</UiTableHeader>
           </UiTableRow>
@@ -367,16 +307,10 @@ onMounted(() => {
             v-for="ticket in store.tickets"
             :key="ticket.id"
             hoverable
-            :selected="selectedIds.includes(ticket.id)"
+            :row-id="ticket.id"
+            :select-testid="`support-tickets-select-${ticket.id}`"
             :data-testid="`support-tickets-row-${ticket.id}`"
           >
-            <UiTableCell>
-              <UiCheckbox
-                :model-value="selectedIds.includes(ticket.id)"
-                :data-testid="`support-tickets-select-${ticket.id}`"
-                @update:model-value="handleToggleSelect(ticket.id)"
-              />
-            </UiTableCell>
             <UiTableCell>
               <UiIconButton
                 :label="t('support.supportTickets.flag')"
@@ -399,6 +333,7 @@ onMounted(() => {
             </UiTableCell>
             <UiTableCell muted>{{ ticket.departmentName ?? '—' }}</UiTableCell>
             <UiTableCell muted>{{ ticket.clientName }}</UiTableCell>
+            <UiTableCell><SupportTicketPriorityBadge :priority="ticket.priority" /></UiTableCell>
             <UiTableCell><SupportTicketStatusBadge :status="ticket.status" /></UiTableCell>
             <UiTableCell muted>{{ formatElapsed(ticket.lastReplyAt) }}</UiTableCell>
           </UiTableRow>
@@ -417,14 +352,28 @@ onMounted(() => {
       :total="store.totalCount"
       :page-size="store.pageSize"
       testid="support-tickets-pagination"
-      @update:page="goToPage"
+      @update:page="setPage"
     />
+
+    <UiBulkBar :count="selection.count.value" data-testid="support-tickets-bulk" @clear="selection.clear">
+      <UiButton
+        v-for="entry in bulkActions"
+        :key="entry.action"
+        :variant="entry.variant"
+        :size="UiSize.Sm"
+        :disabled="bulkRunning"
+        :data-testid="`support-tickets-bulk-${entry.action}`"
+        @click="handleBulkAction(entry.action)"
+      >
+        {{ entry.label }}
+      </UiButton>
+    </UiBulkBar>
 
     <UiDialog
       :open="confirmingBulkDelete"
       :variant="UiDialogVariant.Confirm"
       :title="t('support.supportTickets.confirmBulkDeleteTitle')"
-      :message="t('support.supportTickets.confirmBulkDeleteMessage', { count: selectedIds.length })"
+      :message="t('support.supportTickets.confirmBulkDeleteMessage', { count: selection.count.value })"
       :confirm-label="t('shared.delete')"
       :loading="bulkRunning"
       :tone="UiTone.Danger"

@@ -5,14 +5,14 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiChart from '@/components/ui/UiChart.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -50,6 +50,9 @@ const statTiles = computed(() => [
   { key: 'average-first-response', label: t('support.supportOverview.averageFirstResponse'), value: averageFirstResponse.value, tone: UiTone.Neutral },
 ])
 
+/** Whether the first overview is still loading; the tiles and cards stay in place with placeholders meanwhile. */
+const overviewLoading = computed<boolean>(() => store.loading && !store.overviewStats)
+
 /** Hour labels 00-23 for the distribution chart. */
 const hourLabels = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
 
@@ -86,10 +89,8 @@ onMounted(() => {
       </template>
     </UiPageHeader>
 
-    <UiSkeleton v-if="store.loading && !store.overviewStats" :lines="4" data-testid="support-overview-loading" />
-
     <UiErrorState
-      v-else-if="store.error && !store.overviewStats"
+      v-if="store.error && !store.overviewStats"
       :message="store.error"
       testid="support-overview-error"
       @retry="store.fetchOverview(selectedPeriod)"
@@ -103,23 +104,25 @@ onMounted(() => {
           :label="tile.label"
           :value="tile.value"
           :tone="tile.tone"
+          :loading="overviewLoading"
           :data-testid="`support-overview-stat-${tile.key}`"
         />
       </UiGrid>
 
       <UiGrid :columns="2">
-        <UiCard padding="md">
-          <UiStack>
+        <UiCard padding="md" :loading="overviewLoading">
+          <template #header>
             <UiHeading :level="2" variant="card">{{ t('support.supportOverview.averageFirstReplyTime') }}</UiHeading>
-            <UiText tone="muted" size="md" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
-          </UiStack>
+          </template>
+          <UiText tone="muted" size="md" class="mt-3" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
         </UiCard>
 
         <UiCard padding="md">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('support.supportOverview.ticketsSubmittedByHour') }}</UiHeading>
             <UiChart
-              v-if="hasHourData"
+              v-if="overviewLoading || hasHourData"
+              :loading="overviewLoading"
               :type="UiChartType.Bar"
               :labels="hourLabels"
               :series="hourSeries"
@@ -127,9 +130,11 @@ onMounted(() => {
               height="lg"
               data-testid="support-overview-hours"
             />
-            <UiText v-else tone="muted" size="md" data-testid="support-overview-hours-empty">
-              {{ t('support.supportOverview.noData') }}
-            </UiText>
+            <UiEmptyState
+              v-else
+              :title="t('support.supportOverview.noData')"
+              data-testid="support-overview-hours-empty"
+            />
           </UiStack>
         </UiCard>
       </UiGrid>

@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceServerCard - the server, IP, control-panel user and nameservers of a service, its
+ * ServiceServerCard: the server, IP, control-panel user and nameservers of a service, its
  * disk and bandwidth use (each shown when the server reported a limit for it), the SSL certificate (or the lack of one) and links to the website and
  * the domain page.
  */

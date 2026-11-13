@@ -54,12 +54,12 @@ keywords: "նամակների ձևանմուշներ, փոփոխականներ, 
 Փոփոխականները օգտագործում են Liquid ձևանմուշների լեզուն։ Փոփոխականը գրվում է որպես <code v-pre>{{ name }}</code> կամ <code v-pre>{{ object.field }}</code>, անունները՝ փոքր տառերով և ընդգծման նշաններով։ Բոլոր ձևանմուշներին հասանելի են բրենդի և կայքի փոփոխականները.
 
 ```liquid
-{{ brand.primary }}       — primary brand colour
-{{ brand.primary_dark }}  — dark variant of the primary colour
-{{ brand.on_primary }}    — text colour on the primary background
-{{ brand.accent }}        — accent colour
-{{ brand.logo_url }}      — URL of the brand logo
-{{ site.name }}           — the name of the site
+{{ brand.primary }}: primary brand colour
+{{ brand.primary_dark }}: dark variant of the primary colour
+{{ brand.on_primary }}: text colour on the primary background
+{{ brand.accent }}: accent colour
+{{ brand.logo_url }}: URL of the brand logo
+{{ site.name }}: the name of the site
 ```
 
 Օրինակ՝ պայմանով և ցիկլով.

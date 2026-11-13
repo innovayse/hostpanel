@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 /**
- * DomainHeader - the title row of the domain detail page: the domain name, its expiry date and
+ * DomainHeader. The title row of the domain detail page: the domain name, its expiry date and
  * its status badge.
  */
 import { Globe } from 'lucide-vue-next'

@@ -16,7 +16,6 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -28,6 +27,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
@@ -53,6 +53,9 @@ const store = useProductFeaturesStore()
 
 /** The product's lines, as last loaded. */
 const features = ref<ProductFeature[]>([])
+
+/** Number of placeholder rows drawn while the lines load. */
+const SKELETON_ROWS = 3
 
 /** True while the lines are loading. */
 const loading = ref(true)
@@ -177,18 +180,26 @@ const dismissRemove = (): void => {
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="product-features-error" />
 
-    <SettingsLoading v-if="loading" :message="t('shared.loading')" />
-
     <UiErrorState
-      v-else-if="loadFailed"
+      v-if="loadFailed && !loading"
       :message="store.error ?? t('errors.noAnswer')"
       testid="product-features-load-error"
       @retry="load"
     />
 
     <template v-else>
+      <!-- Placeholder rows with the shape of the real lines while they load -->
+      <UiStack v-if="loading" gap="sm" aria-busy="true" data-testid="product-features-skeleton">
+        <UiStack v-for="row in SKELETON_ROWS" :key="row" direction="row" align="center" gap="sm" aria-hidden="true">
+          <UiSkeletonBar class="h-8 w-1/3 rounded-control" />
+          <UiSkeletonBar class="h-8 flex-1 rounded-control" />
+          <UiSkeletonBar class="h-8 w-16 rounded-control" />
+          <UiSkeletonBar class="size-8 rounded-control" />
+        </UiStack>
+      </UiStack>
+
       <UiEmptyState
-        v-if="features.length === 0"
+        v-else-if="features.length === 0"
         :title="t('settings.productFeatures.nothingSpecifiedYetTheComparison')"
         data-testid="product-features-empty"
       />
@@ -241,6 +252,7 @@ const dismissRemove = (): void => {
           type="text"
           size="sm"
           :placeholder="t('settings.productFeatures.feature')"
+          :disabled="loading"
           data-testid="product-feature-new-label"
           class="w-1/3"
           @keyup.enter="add"
@@ -250,6 +262,7 @@ const dismissRemove = (): void => {
           type="text"
           size="sm"
           :placeholder="t('shared.value')"
+          :disabled="loading"
           data-testid="product-feature-new-value"
           class="flex-1"
           @keyup.enter="add"
@@ -258,11 +271,12 @@ const dismissRemove = (): void => {
           type="button"
           variant="primary"
           size="sm"
-          :disabled="adding || !newLabel.trim() || !newValue.trim()"
+          :loading="adding"
+          :disabled="loading || !newLabel.trim() || !newValue.trim()"
           data-testid="product-feature-add"
           @click="add"
         >
-          {{ adding ? t('settings.productFeatures.adding') : t('settings.productFeatures.add') }}
+          {{ t('settings.productFeatures.add') }}
         </UiButton>
       </UiStack>
 

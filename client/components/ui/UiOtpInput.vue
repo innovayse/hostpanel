@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 /**
- * OtpInput (`UiOtpInput`) - a row of single-digit cells for a one-time code.
+ * OtpInput (`UiOtpInput`): a row of single-digit cells for a one-time code.
  *
  * Accepts digits only, moves focus as the reader types, backspaces across cells and takes a
  * pasted code. Emits `update:modelValue` on every change and `complete` once all cells are

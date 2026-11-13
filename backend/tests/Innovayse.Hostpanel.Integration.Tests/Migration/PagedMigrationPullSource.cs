@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 
 /// <summary>
 /// A source that serves one dataset by keyset paging, like the real addon: each record gets the id
-/// of its position (1, 2, 3, ...), a full page names its last id as the next start, and a short
+/// of its position (1, 2, 3 and so on), a full page names its last id as the next start, and a short
 /// page is the last one. It can fail the page that starts after a given id, once, the way a source
 /// that drops one request mid-pull answers.
 /// </summary>

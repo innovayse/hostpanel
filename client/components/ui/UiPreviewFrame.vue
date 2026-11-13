@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 /**
- * UiPreviewFrame - the one place an `<iframe>` of untrusted content is written, its attributes fixed.
+ * UiPreviewFrame: the one place an `<iframe>` of untrusted content is written, its attributes fixed.
  *
  * No `allow-same-origin`: the frame gets an opaque origin, so it can never reach the panel or drive a signed-in session
  * of the framed site. No `allow-top-navigation*`, `allow-popups*`, `allow-modals` or `allow-downloads` either: a preview

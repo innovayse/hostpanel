@@ -156,7 +156,7 @@
 
 <script setup lang="ts">
 /**
- * LegalDocument - the shared page body of every legal text (terms, privacy, cookies, refunds,
+ * LegalDocument: the shared page body of every legal text (terms, privacy, cookies, refunds,
  * acceptable use): a hero with the title and the "last updated" line, a numbered or icon-led list
  * of sections, and a closing "contact us" card.
  *

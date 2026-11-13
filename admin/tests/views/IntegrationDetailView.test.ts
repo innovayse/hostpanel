@@ -36,6 +36,16 @@ describe('IntegrationDetailView', () => {
     vi.unstubAllGlobals()
   })
 
+  it('draws the form card and the status card as placeholders while the integration loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountDetail('bank-transfer')
+
+    expect(wrapper.get('[data-testid="integration-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="integration-status-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(false)
+  })
+
   it('shows the breadcrumb, the form and the status sidebar', async () => {
     stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()) })
     const wrapper = await mountDetail('bank-transfer')

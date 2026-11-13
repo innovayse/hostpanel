@@ -21,7 +21,8 @@ import UiPagination from '@/components/ui/UiPagination.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -137,7 +138,7 @@ const dismissDelete = (): void => {
  * @param item - The row.
  * @returns The action list passed to UiRowActions.
  */
-const cancellationActions = (item: CancellationRequestItem): UiRowAction[] => [
+const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
   {
     label: t('clients.cancellationRequests.deleteRequest'),
     testid: `cancellations-delete-${item.id}`,
@@ -176,7 +177,7 @@ onMounted(() => load())
     />
 
     <UiCard v-if="hasRows || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="cancellations-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" data-testid="cancellations-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
@@ -254,7 +255,6 @@ onMounted(() => load())
       :title="t('clients.cancellationRequests.deleteCancellationRequest')"
       :message="t('clients.cancellationRequests.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       :tone="UiTone.Danger"
       data-testid="cancellations-delete-dialog"

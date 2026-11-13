@@ -6,12 +6,14 @@
  * value into text (money, percent, date, status badge and so on), and an empty value shows a dash. A
  * screen that needs a cell the formats cannot express fills the `cell-<key>` slot; one that needs
  * grouped rows replaces the whole body with the `body` slot. `totals` adds a footer row, and the
- * empty text shows when there are no rows.
+ * empty text shows when there are no rows. The card is glass; the table scrolls inside it past a
+ * height cap with its header stuck, and sideways on a narrow screen.
  */
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ReportStatusBadge from '@/components/reports/ReportStatusBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -21,6 +23,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { formatDate } from '@/lib/format'
 import { formatCurrencyCode, formatReportAmount } from '@/lib/money'
+import { NOT_LOADING, REPORT_LOADING } from '@/lib/reportLoading'
 import { valueAtPath } from '@/lib/valueAtPath'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import { isNumericColumn } from '@/types/reportcolumn'
@@ -38,8 +41,8 @@ const props = withDefaults(defineProps<{
   columns: readonly ReportColumn[]
   /** Rows to draw. */
   rows?: T[]
-  /** Property of a row that identifies it; the row position when omitted. */
-  rowKey?: keyof T & string
+  /** What identifies a row: the name of a unique property, or a function building a key from the row. Required whenever `rows` is passed. */
+  rowKey?: (keyof T & string) | ((row: T) => string)
   /** Text shown when there are no rows; "No data." when omitted. */
   emptyText?: string
   /** Forces the empty state on or off; by default it follows `rows`. */
@@ -84,11 +87,11 @@ defineSlots<{
   footer?: () => unknown
 }>()
 
+/** True while the report loads: the real columns stay and skeleton rows stand in for the data. */
+const loading = inject(REPORT_LOADING, NOT_LOADING)
+
 /** Whether the empty state shows. */
 const isEmpty = computed<boolean>(() => props.empty ?? props.rows.length === 0)
-
-/** Column count, at least one so the status row always has a width. */
-const columnCount = computed<number>(() => Math.max(1, props.columns.length))
 
 /**
  * Reads the raw value a column shows for a row.
@@ -147,14 +150,14 @@ const cellText = (row: T, column: ReportColumn): string => {
  * Finds the key of a row for the list rendering.
  *
  * @param row - The row.
- * @param index - Position of the row.
- * @returns The row property named by `rowKey`, or the position.
+ * @returns The row property named by `rowKey`, or the key `rowKey` builds from the row.
  */
-const keyOf = (row: T, index: number): string | number => {
-  if (props.rowKey === undefined) {
-    return index
+const keyOf = (row: T): string => {
+  const rowKey = props.rowKey
+  if (rowKey === undefined) {
+    throw new Error('ReportTable: rowKey is required when rows are passed.')
   }
-  return String(row[props.rowKey])
+  return typeof rowKey === 'function' ? rowKey(row) : String(row[rowKey])
 }
 
 /**
@@ -174,8 +177,8 @@ const totalText = (column: ReportColumn, position: number): string => {
 </script>
 
 <template>
-  <UiCard class="overflow-x-auto" :data-testid="testid">
-    <UiTable :density="UiTableDensity.Comfortable" :empty="isEmpty" :colspan="columnCount">
+  <UiCard class="overflow-hidden" :data-testid="testid">
+    <UiTable :density="UiTableDensity.Comfortable" :loading="loading" :empty="isEmpty && !loading">
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
@@ -185,7 +188,7 @@ const totalText = (column: ReportColumn, position: number): string => {
       </UiTableHead>
       <UiTableBody divided>
         <slot name="body">
-          <UiTableRow v-for="(row, index) in rows" :key="keyOf(row, index)" hoverable :data-testid="`${testid}-row`">
+          <UiTableRow v-for="row in rows" :key="keyOf(row)" hoverable :data-testid="`${testid}-row`">
             <UiTableCell v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
               <slot :name="`cell-${column.key}`" :row="row" :value="valueOf(row, column.key)">
                 <ReportStatusBadge
@@ -200,16 +203,16 @@ const totalText = (column: ReportColumn, position: number): string => {
           </UiTableRow>
         </slot>
       </UiTableBody>
-      <UiTableFoot v-if="totals && !isEmpty">
+      <UiTableFoot v-if="totals && !isEmpty && !loading">
         <UiTableRow data-testid="report-totals">
-          <UiTableCell v-for="(column, position) in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)" class="font-semibold text-text-primary">
+          <UiTableCell v-for="(column, position) in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)" class="text-text-primary">
             {{ totalText(column, position) }}
           </UiTableCell>
         </UiTableRow>
       </UiTableFoot>
       <slot name="footer" />
       <template #empty>
-        {{ emptyText ?? t('shared.noData') }}
+        <UiEmptyState :title="emptyText ?? t('shared.noData')" />
       </template>
     </UiTable>
   </UiCard>

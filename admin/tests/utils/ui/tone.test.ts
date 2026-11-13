@@ -26,17 +26,23 @@ describe('tone maps', () => {
     }
   })
 
-  it('gives every coloured text tone a readable light-theme step', () => {
+  it('draws a coloured badge as a status tint and the status colour, without a border or a per-theme step', () => {
     for (const tone of tones.filter((t) => t !== UiTone.Neutral)) {
-      expect(toneTextClasses[tone]).toContain('light:text-')
-      expect(toneBadgeClasses[tone]).toContain('light:text-')
+      expect(toneBadgeClasses[tone]).toMatch(/bg-tint-/)
+      expect(toneBadgeClasses[tone]).toMatch(/text-(status|text-accent)/)
+      expect(toneBadgeClasses[tone]).not.toMatch(/border/)
+      expect(toneAlertClasses[tone]).toMatch(/border-/)
+      expect(toneBadgeClasses[tone]).not.toContain('light:')
+      expect(toneTextClasses[tone]).not.toContain('light:')
     }
   })
 
-  it('pairs solid status fills with explicit text per theme, never a theme token', () => {
+  it('pairs solid status fills with the base surface colour as the label, never white or black', () => {
     for (const tone of [UiTone.Success, UiTone.Warning, UiTone.Danger]) {
-      expect(toneSolidClasses[tone]).toContain('text-gray-950 light:text-white')
-      expect(toneSolidClasses[tone]).not.toContain('text-surface-base')
+      expect(toneSolidClasses[tone]).toContain('text-surface-base')
+    }
+    for (const tone of tones) {
+      expect(toneSolidClasses[tone]).not.toMatch(/text-(white|black|gray-)/)
     }
   })
 

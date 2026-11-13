@@ -23,7 +23,7 @@ describe('bootTheme', () => {
 
     expect(bootTheme(THEME_BOOT_CONFIG)).toBe(true)
     expect(document.documentElement.classList.contains('light')).toBe(true)
-    expect(themeColors()).toEqual(['#f4f6fb', '#f4f6fb'])
+    expect(themeColors()).toEqual(['#f5f7fc', '#f5f7fc'])
     expect(document.querySelector('meta[media]')).toBeNull()
   })
 
@@ -34,7 +34,7 @@ describe('bootTheme', () => {
 
     expect(bootTheme(THEME_BOOT_CONFIG)).toBe(false)
     expect(document.documentElement.classList.contains('light')).toBe(false)
-    expect(themeColors()).toEqual(['#0a0a0f', '#0a0a0f'])
+    expect(themeColors()).toEqual(['#070b18', '#070b18'])
   })
 
   it('follows the system for "system", no choice or an unknown value', () => {
@@ -81,7 +81,7 @@ describe('themeBootScript', () => {
     new Function(themeBootScript())()
 
     expect(document.documentElement.classList.contains('light')).toBe(true)
-    expect(themeColors()).toEqual(['#f4f6fb', '#f4f6fb'])
+    expect(themeColors()).toEqual(['#f5f7fc', '#f5f7fc'])
   })
 
   it('embeds the panel config', () => {

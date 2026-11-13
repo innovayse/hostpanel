@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiIconTile - a small tinted square that carries an icon, the mark of a navigation row.
+ * UiIconTile: a small tinted square that carries an icon, the mark of a navigation row.
  *
  * Decorative: the row's text names the link, so the tile is hidden from assistive technology. The
  * resting `soft` tone fills in when the parent row (a `group`) is hovered or keyboard-focused. The

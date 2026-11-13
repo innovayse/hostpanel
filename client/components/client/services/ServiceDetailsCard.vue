@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceDetailsCard - the plan, domain, status, billing cycle, dates and amounts of a service as
+ * ServiceDetailsCard: the plan, domain, status, billing cycle, dates and amounts of a service as
  * a description list.
  */
 import { LayoutGrid } from 'lucide-vue-next'

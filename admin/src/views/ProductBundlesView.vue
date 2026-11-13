@@ -18,8 +18,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
-import type { UiRowAction } from '@/components/ui/UiRowActions.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -192,7 +191,7 @@ const stageDelete = (bundle: ProductBundle): void => {
  * @param bundle - The row's bundle.
  * @returns The menu actions.
  */
-const rowActions = (bundle: ProductBundle): UiRowAction[] => [
+const rowActions = (bundle: ProductBundle): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     /**
@@ -238,18 +237,16 @@ onMounted(async () => {
       {{ store.actionError }}
     </UiAlert>
 
-    <UiSkeleton v-if="store.loading && store.bundles.length === 0" :lines="3" data-testid="product-bundles-loading" />
-
     <UiErrorState
-      v-else-if="store.error"
+      v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="product-bundles-error"
       @retry="loadAll"
     />
 
-    <UiCard v-else-if="store.bundles.length > 0">
-      <UiTable :density="UiTableDensity.Comfortable" data-testid="product-bundles-table">
+    <UiCard v-else-if="store.loading || store.bundles.length > 0">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" data-testid="product-bundles-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>

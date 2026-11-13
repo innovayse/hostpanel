@@ -6,18 +6,21 @@
  * always rendered. Supports lifecycle actions: Suspend, Unsuspend, Terminate; terminating, and
  * moving the status to Terminated, is confirmed first.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, provide, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useServicesStore } from '@/stores/services'
 import { useServersStore } from '@/stores/servers'
 import { useSettingsStore } from '@/stores/settings'
 import { SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '@/lib/constants'
+import { serviceStatusTone, statusLabel } from '@/lib/tones'
+import { Icon } from '@/lib/icons'
 import { BillingCycle, ServiceChangeReason, ServiceSection, ServiceStatus } from '@/types/service'
 import { formatDate, toDateInputValue } from '@/lib/format'
 import type { ServiceListItem } from '@/types/service'
 import PluginSlot from '@/components/plugins/PluginSlot.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
@@ -32,16 +35,19 @@ import UiLabel from '@/components/ui/UiLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { PluginSlotId } from '@/types/pluginslot'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
@@ -49,11 +55,25 @@ import { ClientSection, clientItemPath, clientSectionPath, servicePlanChangesPat
 
 const { t } = useI18n()
 
-/** Icon markup (shape tags) of the back link. */
-const BACK_ICON = '<polyline points="15 18 9 12 15 6"/>'
+/** The tabs of the page. */
+enum ServiceTab {
+  /** The hosting account and the module commands, status and termination date. */
+  Account = 'account',
+  /** What the service is billed, its automation and its addons. */
+  Billing = 'billing',
+  /** The admin notes. */
+  Notes = 'notes',
+}
 
-/** Icon markup (shape tags) of the control panel button. */
-const PANEL_ICON = '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />'
+/** The tab on show. */
+const tab = ref<ServiceTab>(ServiceTab.Account)
+
+/** The tab strip. */
+const tabItems = computed<UiTabItem[]>(() => [
+  { value: ServiceTab.Account, label: t('clients.clientServiceDetail.serviceInfo'), testid: 'client-service-tab-account' },
+  { value: ServiceTab.Billing, label: t('clients.clientServiceDetail.billing'), testid: 'client-service-tab-billing' },
+  { value: ServiceTab.Notes, label: t('shared.adminNotes'), testid: 'client-service-tab-notes' },
+])
 
 /** Default billing cycle. */
 const DEFAULT_CYCLE = BillingCycle.Monthly
@@ -117,6 +137,12 @@ const service = computed(() => store.current)
 
 /** True while the initial load is in flight (owned by the store). */
 const loading = computed(() => store.loading)
+
+/** True while the service is read for the first time: the page keeps its real layout and draws it as placeholders. */
+const initialLoading = computed<boolean>(() => loading.value && service.value === null)
+
+// Every field of the page stays a placeholder until the service has arrived.
+provide(UI_FIELD_LOADING, initialLoading)
 
 /** Error message from the initial load (owned by the store). */
 const error = computed(() => store.error)
@@ -246,7 +272,7 @@ const serverOptions = computed(() => [
   { value: 0, label: t('shared.none') },
   ...serverList.value.map(s => ({
     value: s.id,
-    label: `${s.name} — ${s.endpoint.hostname} (${s.accountsCount ?? 0}/${s.limits.maxAccounts ?? '∞'})`,
+    label: `${s.name} (${s.endpoint.hostname}, ${s.accountsCount ?? 0}/${s.limits.maxAccounts ?? '∞'})`,
   })),
 ])
 
@@ -259,7 +285,7 @@ const productOptions = computed(() =>
 const serviceSwitcherOptions = computed(() =>
   clientServices.value.map(s => ({
     value: s.id,
-    label: `#${s.id} — ${s.productName}`,
+    label: `#${s.id} ${s.productName}`,
   })),
 )
 
@@ -747,502 +773,514 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiStack v-if="loading && !service" data-testid="client-service-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientServiceDetail.loadingService') }}</UiText>
-    </UiStack>
-
-    <UiAlert v-else-if="error && !service" variant="error" data-testid="client-service-error">
+    <UiAlert v-if="error && !service" variant="error" data-testid="client-service-error">
       {{ error }}
     </UiAlert>
 
-    <template v-else-if="service">
-      <UiStack>
-        <UiStack direction="row" wrap :justify="UiJustify.Between" :align="UiAlignItems.Center">
-          <UiStack direction="row" :align="UiAlignItems.Center">
-            <UiLink
-              :to="clientSectionPath(clientId, ClientSection.Services)"
-              :variant="UiButtonVariant.Secondary"
-              data-testid="client-service-back"
-            >
-              <UiIcon :markup="BACK_ICON" :size="UiSize.Sm" />
-              {{ t('shared.back') }}
-            </UiLink>
-            <UiSelect
-              data-testid="client-service-switcher"
-              v-if="clientServices.length > 1"
-              :model-value="Number(serviceId)"
-              :options="serviceSwitcherOptions"
-              :placeholder="t('shared.productService')"
-              searchable
-              @update:model-value="switchService"
-            />
-            <UiHeading :level="1" variant="card">
-              {{ t('clients.clientServiceDetail.serviceIdProductname', { id: service.id, productName: service.productName }) }}
-            </UiHeading>
-          </UiStack>
-
-          <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-            <UiStatusMessage :message="panelError" :tone="UiTone.Danger" data-testid="client-service-panel-error" />
-            <UiButton
-              v-if="service.status !== ServiceStatus.Terminated"
-              type="button"
-              :variant="UiButtonVariant.Secondary"
-              :disabled="ssoLoading || !service.account.provisioningRef"
-              data-testid="client-service-panel"
-              @click="handleLoginToPanel"
-            >
-              <UiIcon :markup="PANEL_ICON" :size="UiSize.Sm" />
-              {{ ssoLoading ? t('shared.loading') : t('clients.clientServiceDetail.loginToControlPanel') }}
-            </UiButton>
-            <UiLink
-              :to="servicePlanChangesPath(serviceId)"
-              :variant="UiButtonVariant.Secondary"
-              data-testid="client-service-plan-changes"
-            >
-              {{ t('serviceChangeRequests.viewHistory') }}
-            </UiLink>
-            <UiButton
-              type="button"
-              :variant="UiButtonVariant.Secondary"
-              data-testid="client-service-cancel"
-              @click="handleCancel"
-            >
-              {{ t('shared.cancel') }}
-            </UiButton>
-          </UiStack>
-        </UiStack>
-
-        <UiGrid :columns="2">
-          <UiStack>
-            <UiCard padding="md">
-              <UiForm
-                stacked
-                :aria-busy="saving === ServiceSection.HostingAccount"
-                data-testid="client-service-hosting-form"
-                @submit="saveHostingAccount"
+    <template v-else>
+      <UiStack :aria-busy="initialLoading ? 'true' : undefined">
+        <UiCard padding="md" :data-testid="service ? 'client-service-header' : 'client-service-loading'">
+          <UiStack direction="row" wrap :justify="UiJustify.Between" :align="UiAlignItems.Center">
+            <UiStack direction="row" wrap :align="UiAlignItems.Center">
+              <UiLink
+                :to="clientSectionPath(clientId, ClientSection.Services)"
+                :variant="UiButtonVariant.Secondary"
+                data-testid="client-service-back"
               >
-                <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.serviceInfo') }}</UiHeading>
-                <UiGrid :columns="2" gap="sm">
-                  <UiStack gap="xs">
-                    <UiLabel :variant="UiLabelVariant.Field">{{ t('clients.clientServiceDetail.order') }}</UiLabel>
-                    <UiText :tone="UiTextTone.Secondary">{{ service.id }}</UiText>
-                  </UiStack>
-                  <UiField :label="t('clients.clientServiceDetail.server')">
-                    <UiSelect
-                      data-testid="client-service-server"
-                      :model-value="serverId ?? 0"
-                      :options="serverOptions"
-                      :placeholder="t('clients.clientServiceDetail.server')"
-                      searchable
-                      @update:model-value="setServer"
+                <UiIcon :markup="Icon.Back" :size="UiSize.Sm" />
+                {{ t('shared.back') }}
+              </UiLink>
+              <UiSelect
+                data-testid="client-service-switcher"
+                v-if="clientServices.length > 1"
+                :model-value="Number(serviceId)"
+                :options="serviceSwitcherOptions"
+                :placeholder="t('shared.productService')"
+                searchable
+                @update:model-value="switchService"
+              />
+              <template v-if="service">
+                <UiHeading :level="1" variant="page">
+                  {{ t('clients.clientServiceDetail.serviceIdProductname', { id: service.id, productName: service.productName }) }}
+                </UiHeading>
+                <UiBadge :tone="serviceStatusTone(service.status)" data-testid="client-service-status-badge">
+                  {{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}
+                </UiBadge>
+              </template>
+              <UiStack v-else direction="row" :align="UiAlignItems.Center" aria-hidden="true">
+                <UiSkeletonBar class="h-9 w-64 rounded-md" />
+                <UiSkeletonBar class="h-5 w-20 rounded-full" />
+              </UiStack>
+            </UiStack>
+
+            <UiStack direction="row" wrap :align="UiAlignItems.Center" gap="sm">
+              <UiStatusMessage :message="panelError" :tone="UiTone.Danger" data-testid="client-service-panel-error" />
+              <UiButton
+                v-if="service?.status !== ServiceStatus.Terminated"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="ssoLoading"
+                :disabled="!service?.account.provisioningRef"
+                data-testid="client-service-panel"
+                @click="handleLoginToPanel"
+              >
+                <UiIcon :markup="Icon.ExternalLink" :size="UiSize.Sm" />
+                {{ t('clients.clientServiceDetail.loginToControlPanel') }}
+              </UiButton>
+              <UiLink
+                :to="servicePlanChangesPath(serviceId)"
+                :variant="UiButtonVariant.Secondary"
+                data-testid="client-service-plan-changes"
+              >
+                {{ t('serviceChangeRequests.viewHistory') }}
+              </UiLink>
+              <UiButton
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                data-testid="client-service-cancel"
+                @click="handleCancel"
+              >
+                {{ t('shared.cancel') }}
+              </UiButton>
+            </UiStack>
+          </UiStack>
+        </UiCard>
+
+        <UiTabs v-model="tab" :items="tabItems" :aria-label="t('clients.clientServiceDetail.serviceInfo')" />
+
+        <UiGrid v-if="tab === ServiceTab.Account" :columns="2">
+          <UiCard padding="md">
+            <UiForm
+              stacked
+              :aria-busy="saving === ServiceSection.HostingAccount"
+              data-testid="client-service-hosting-form"
+              @submit="saveHostingAccount"
+            >
+              <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.serviceInfo') }}</UiHeading>
+              <UiGrid :columns="2" gap="sm">
+                <UiStack gap="xs">
+                  <UiLabel :variant="UiLabelVariant.Field">{{ t('clients.clientServiceDetail.order') }}</UiLabel>
+                  <UiSkeletonBar v-if="!service" class="h-5 w-12 rounded-md" aria-hidden="true" />
+                  <UiText v-else :tone="UiTextTone.Secondary">{{ service.id }}</UiText>
+                </UiStack>
+                <UiField :label="t('clients.clientServiceDetail.server')">
+                  <UiSelect
+                    data-testid="client-service-server"
+                    :model-value="serverId ?? 0"
+                    :options="serverOptions"
+                    :placeholder="t('clients.clientServiceDetail.server')"
+                    searchable
+                    @update:model-value="setServer"
+                  />
+                </UiField>
+                <UiField :label="t('shared.domain')">
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="domain"
+                      type="text"
+                      :placeholder="t('shared.examples.domain')"
+                      data-testid="client-service-domain"
                     />
+                  </template>
+                </UiField>
+                <UiField :label="t('clients.clientServiceDetail.provisioningRef')">
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="provisioningRef"
+                      type="text"
+                      :placeholder="t('shared.examples.hostingAccount')"
+                      data-testid="client-service-provisioning-ref"
+                    />
+                  </template>
+                </UiField>
+                <UiField :label="t('clients.clientServiceDetail.dedicatedIp')">
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="dedicatedIp"
+                      type="text"
+                      :placeholder="t('shared.examples.ipAddress')"
+                      data-testid="client-service-dedicated-ip"
+                    />
+                  </template>
+                </UiField>
+                <UiField :label="t('shared.username')">
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="username"
+                      type="text"
+                      :placeholder="t('shared.examples.hostingUser')"
+                      data-testid="client-service-username"
+                    />
+                  </template>
+                </UiField>
+                <UiField :label="t('shared.password')">
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="password"
+                      type="password"
+                      placeholder="********"
+                      data-testid="client-service-password"
+                    />
+                  </template>
+                </UiField>
+              </UiGrid>
+              <UiButton
+                type="submit"
+                :variant="UiButtonVariant.Primary"
+                :aria-disabled="saving !== null"
+                data-testid="client-service-save-hosting"
+              >
+                {{ t(SAVE_LABEL_KEYS[ServiceSection.HostingAccount]) }}
+              </UiButton>
+              <UiStatusMessage
+                :message="outcomeOf(ServiceSection.HostingAccount)?.text ?? null"
+                :tone="outcomeTone(outcomeOf(ServiceSection.HostingAccount))"
+                data-testid="client-service-outcome-hosting-account"
+              />
+            </UiForm>
+          </UiCard>
+
+          <UiCard padding="md">
+            <UiStack>
+              <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.moduleCommands') }}</UiHeading>
+
+              <UiForm
+                :aria-busy="saving === ServiceSection.Status"
+                data-testid="client-service-status-form"
+                @submit="saveStatus"
+              >
+                <UiStack direction="row" wrap :align="UiAlignItems.End" gap="sm">
+                  <UiField :label="t('shared.status')">
+                    <UiSelect data-testid="client-service-status" v-model="status" :options="statusOptions" :placeholder="t('shared.status')" />
                   </UiField>
-                  <UiField :label="t('shared.domain')">
-                    <template #default="{ id }">
-                      <UiInput
-                        :id="id"
-                        v-model="domain"
-                        type="text"
-                        :placeholder="t('shared.examples.domain')"
-                        data-testid="client-service-domain"
-                      />
-                    </template>
-                  </UiField>
-                  <UiField :label="t('clients.clientServiceDetail.provisioningRef')">
-                    <template #default="{ id }">
-                      <UiInput
-                        :id="id"
-                        v-model="provisioningRef"
-                        type="text"
-                        :placeholder="t('shared.examples.hostingAccount')"
-                        data-testid="client-service-provisioning-ref"
-                      />
-                    </template>
-                  </UiField>
-                  <UiField :label="t('clients.clientServiceDetail.dedicatedIp')">
-                    <template #default="{ id }">
-                      <UiInput
-                        :id="id"
-                        v-model="dedicatedIp"
-                        type="text"
-                        :placeholder="t('shared.examples.ipAddress')"
-                        data-testid="client-service-dedicated-ip"
-                      />
-                    </template>
-                  </UiField>
-                  <UiField :label="t('shared.username')">
-                    <template #default="{ id }">
-                      <UiInput
-                        :id="id"
-                        v-model="username"
-                        type="text"
-                        :placeholder="t('shared.examples.hostingUser')"
-                        data-testid="client-service-username"
-                      />
-                    </template>
-                  </UiField>
-                  <UiField :label="t('shared.password')">
-                    <template #default="{ id }">
-                      <UiInput
-                        :id="id"
-                        v-model="password"
-                        type="password"
-                        placeholder="********"
-                        data-testid="client-service-password"
-                      />
-                    </template>
-                  </UiField>
-                </UiGrid>
-                <UiButton
-                  type="submit"
-                  :variant="UiButtonVariant.Primary"
-                  :aria-disabled="saving !== null"
-                  data-testid="client-service-save-hosting"
-                >
-                  {{ saving === ServiceSection.HostingAccount ? t('shared.saving') : t(SAVE_LABEL_KEYS[ServiceSection.HostingAccount]) }}
-                </UiButton>
+                  <UiButton
+                    type="submit"
+                    :variant="UiButtonVariant.Secondary"
+                    :disabled="!service || status === service.status"
+                    :aria-disabled="saving !== null"
+                    data-testid="client-service-status-save"
+                  >
+                    {{ t(SAVE_LABEL_KEYS[ServiceSection.Status]) }}
+                  </UiButton>
+                </UiStack>
                 <UiStatusMessage
-                  :message="outcomeOf(ServiceSection.HostingAccount)?.text ?? null"
-                  :tone="outcomeTone(outcomeOf(ServiceSection.HostingAccount))"
-                  data-testid="client-service-outcome-hosting-account"
+                  :message="outcomeOf(ServiceSection.Status)?.text ?? null"
+                  :tone="outcomeTone(outcomeOf(ServiceSection.Status))"
+                  data-testid="client-service-outcome-status"
                 />
               </UiForm>
-            </UiCard>
 
-            <UiCard padding="md">
-              <UiStack>
-                <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.moduleCommands') }}</UiHeading>
-
-                <UiForm
-                  :aria-busy="saving === ServiceSection.Status"
-                  data-testid="client-service-status-form"
-                  @submit="saveStatus"
-                >
+              <UiForm
+                v-if="service?.status === ServiceStatus.Terminated"
+                :aria-busy="saving === ServiceSection.TerminationDate"
+                data-testid="client-service-termination-form"
+                @submit="saveTerminationDate"
+              >
+                <UiStack>
+                  <UiText :tone="UiTextTone.Muted">
+                    {{ t('clients.clientServiceDetail.serviceTerminated') }}
+                  </UiText>
                   <UiStack direction="row" wrap :align="UiAlignItems.End" gap="sm">
-                    <UiField :label="t('shared.status')">
-                      <UiSelect data-testid="client-service-status" v-model="status" :options="statusOptions" :placeholder="t('shared.status')" />
+                    <UiField :label="t('clients.clientServiceDetail.terminationDate')">
+                      <UiDatePicker v-model="terminatedAt" data-testid="client-service-termination-date" />
                     </UiField>
                     <UiButton
                       type="submit"
                       :variant="UiButtonVariant.Secondary"
-                      :disabled="status === service.status"
+                      :disabled="!terminatedAt"
                       :aria-disabled="saving !== null"
-                      data-testid="client-service-status-save"
+                      data-testid="client-service-save-termination-date"
                     >
-                      {{ saving === ServiceSection.Status ? t('shared.saving') : t(SAVE_LABEL_KEYS[ServiceSection.Status]) }}
+                      {{ t(SAVE_LABEL_KEYS[ServiceSection.TerminationDate]) }}
                     </UiButton>
                   </UiStack>
                   <UiStatusMessage
-                    :message="outcomeOf(ServiceSection.Status)?.text ?? null"
-                    :tone="outcomeTone(outcomeOf(ServiceSection.Status))"
-                    data-testid="client-service-outcome-status"
+                    :message="outcomeOf(ServiceSection.TerminationDate)?.text ?? null"
+                    :tone="outcomeTone(outcomeOf(ServiceSection.TerminationDate))"
+                    data-testid="client-service-outcome-termination-date"
                   />
-                </UiForm>
-
-                <UiForm
-                  v-if="service.status === ServiceStatus.Terminated"
-                  :aria-busy="saving === ServiceSection.TerminationDate"
-                  data-testid="client-service-termination-form"
-                  @submit="saveTerminationDate"
-                >
-                  <UiStack>
-                    <UiText :tone="UiTextTone.Muted">
-                      {{ t('clients.clientServiceDetail.serviceTerminated') }}
-                    </UiText>
-                    <UiStack direction="row" wrap :align="UiAlignItems.End" gap="sm">
-                      <UiField :label="t('clients.clientServiceDetail.terminationDate')">
-                        <UiDatePicker v-model="terminatedAt" data-testid="client-service-termination-date" />
-                      </UiField>
-                      <UiButton
-                        type="submit"
-                        :variant="UiButtonVariant.Secondary"
-                        :disabled="!terminatedAt"
-                        :aria-disabled="saving !== null"
-                        data-testid="client-service-save-termination-date"
-                      >
-                        {{ saving === ServiceSection.TerminationDate ? t('shared.saving') : t(SAVE_LABEL_KEYS[ServiceSection.TerminationDate]) }}
-                      </UiButton>
-                    </UiStack>
-                    <UiStatusMessage
-                      :message="outcomeOf(ServiceSection.TerminationDate)?.text ?? null"
-                      :tone="outcomeTone(outcomeOf(ServiceSection.TerminationDate))"
-                      data-testid="client-service-outcome-termination-date"
-                    />
-                  </UiStack>
-                </UiForm>
-
-                <UiStack v-else direction="row" wrap gap="sm">
-                  <template v-if="service.status === ServiceStatus.Pending">
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Secondary"
-                      :disabled="commandLoading"
-                      data-testid="client-service-create"
-                      @click="handleProvision"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('clients.clientServiceDetail.create') }}
-                    </UiButton>
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Danger"
-                      :disabled="commandLoading"
-                      data-testid="client-service-terminate"
-                      @click="dangerConfirm = DangerAction.Terminate"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('clients.clientServiceDetail.terminate') }}
-                    </UiButton>
-                  </template>
-
-                  <template v-else-if="service.status === ServiceStatus.Active">
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Secondary"
-                      :disabled="commandLoading"
-                      data-testid="client-service-suspend"
-                      @click="showSuspendModal = true"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('clients.clientServiceDetail.suspend') }}
-                    </UiButton>
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Danger"
-                      :disabled="commandLoading"
-                      data-testid="client-service-terminate"
-                      @click="dangerConfirm = DangerAction.Terminate"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('clients.clientServiceDetail.terminate') }}
-                    </UiButton>
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Secondary"
-                      :disabled="commandLoading || !service.account.provisioningRef"
-                      data-testid="client-service-change-package"
-                      @click="showChangePackageModal = true"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('clients.clientServiceDetail.changePackage') }}
-                    </UiButton>
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Secondary"
-                      :disabled="commandLoading || !service.account.provisioningRef"
-                      data-testid="client-service-change-password"
-                      @click="showChangePasswordModal = true"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('shared.changePassword') }}
-                    </UiButton>
-                  </template>
-
-                  <template v-else-if="service.status === ServiceStatus.Suspended">
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Secondary"
-                      :disabled="commandLoading"
-                      data-testid="client-service-unsuspend"
-                      @click="handleUnsuspend"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('clients.clientServiceDetail.unsuspend') }}
-                    </UiButton>
-                    <UiButton
-                      type="button"
-                      :variant="UiButtonVariant.Danger"
-                      :disabled="commandLoading"
-                      data-testid="client-service-terminate"
-                      @click="dangerConfirm = DangerAction.Terminate"
-                    >
-                      {{ commandLoading ? t('shared.processing') : t('clients.clientServiceDetail.terminate') }}
-                    </UiButton>
-                  </template>
                 </UiStack>
-                <UiStatusMessage
-                  :message="commandOutcome?.text ?? null"
-                  :tone="outcomeTone(commandOutcome)"
-                  data-testid="client-service-command-outcome"
-                />
-              </UiStack>
-            </UiCard>
-
-            <UiCard padding="md">
-              <UiStack>
-                <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.addons') }}</UiHeading>
-                <UiText :tone="UiTextTone.Muted">{{ t('clients.clientServiceDetail.noAddonsFound') }}</UiText>
-              </UiStack>
-            </UiCard>
-          </UiStack>
-
-          <UiStack>
-            <UiCard padding="md">
-              <UiForm
-                stacked
-                :aria-busy="saving === ServiceSection.Billing"
-                data-testid="client-service-billing-form"
-                @submit="saveBillingTerms"
-              >
-                <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.billing') }}</UiHeading>
-                <UiField :label="t('shared.productService')">
-                  <UiSelect
-                    data-testid="client-service-product"
-                    v-model="productIdRef"
-                    :options="productOptions"
-                    :placeholder="t('shared.productService')"
-                    searchable
-                  />
-                </UiField>
-                <UiField :label="t('clients.clientServiceDetail.quantity')">
-                  <UiNumberInput data-testid="client-service-quantity" v-model="quantity" :min="1" placeholder="1" />
-                </UiField>
-                <UiGrid :columns="2" gap="sm">
-                  <UiStack gap="xs">
-                    <UiLabel :variant="UiLabelVariant.Field">{{ t('shared.registrationDate') }}</UiLabel>
-                    <UiText :tone="UiTextTone.Secondary" data-testid="client-service-registered">{{ formatDate(service.createdAt) }}</UiText>
-                  </UiStack>
-                  <UiField :label="t('clients.clientServiceDetail.firstPaymentAmount')">
-                    <UiNumberInput data-testid="client-service-first-payment" v-model="firstPaymentAmount" :step="0.01" :min="0" placeholder="0.00" />
-                  </UiField>
-                  <UiField :label="t('clients.clientServiceDetail.recurringAmount')">
-                    <UiNumberInput data-testid="client-service-recurring" v-model="recurringAmount" :step="0.01" :min="0" placeholder="0.00" />
-                  </UiField>
-                  <UiField :label="t('shared.nextDueDate')">
-                    <UiDatePicker v-model="nextDueDate" />
-                  </UiField>
-                  <UiField :label="t('shared.billingCycle')">
-                    <UiSelect data-testid="client-service-billing-cycle" v-model="billingCycle" :options="billingCycleOptions" :placeholder="t('shared.billingCycle')" />
-                  </UiField>
-                  <UiField :label="t('shared.paymentMethod')">
-                    <template #default="{ id }">
-                      <UiInput
-                        :id="id"
-                        v-model="paymentMethod"
-                        type="text"
-                        :placeholder="t('shared.paymentMethod')"
-                        data-testid="client-service-payment-method"
-                      />
-                    </template>
-                  </UiField>
-                  <UiField :label="t('clients.clientServiceDetail.promotionCode')">
-                    <template #default="{ id }">
-                      <UiInput
-                        :id="id"
-                        v-model="promotionCode"
-                        type="text"
-                        :placeholder="t('shared.examples.promoCode')"
-                        data-testid="client-service-promotion"
-                      />
-                    </template>
-                  </UiField>
-                </UiGrid>
-                <UiField :label="t('clients.clientServiceDetail.subscriptionId')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="subscriptionId"
-                      type="text"
-                      :placeholder="t('shared.examples.subscriptionId')"
-                      data-testid="client-service-subscription"
-                    />
-                  </template>
-                </UiField>
-                <UiButton
-                  type="submit"
-                  :variant="UiButtonVariant.Primary"
-                  :disabled="productIdRef === null"
-                  :aria-disabled="saving !== null"
-                  data-testid="client-service-save-billing"
-                >
-                  {{ saving === ServiceSection.Billing ? t('shared.saving') : t(SAVE_LABEL_KEYS[ServiceSection.Billing]) }}
-                </UiButton>
-                <UiStatusMessage
-                  :message="outcomeOf(ServiceSection.Billing)?.text ?? null"
-                  :tone="outcomeTone(outcomeOf(ServiceSection.Billing))"
-                  data-testid="client-service-outcome-billing"
-                />
               </UiForm>
-            </UiCard>
 
-            <UiCard padding="md">
-              <UiForm
-                stacked
-                :aria-busy="saving === ServiceSection.Automation"
-                data-testid="client-service-automation-form"
-                @submit="saveAutomation"
-              >
-                <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.autoManagement') }}</UiHeading>
-                <UiLabel :variant="UiLabelVariant.Inline">
-                  <UiToggle v-model="autoRenew" data-testid="client-service-auto-renew" />
-                  {{ t('clients.clientServiceDetail.autoRenew') }}
-                </UiLabel>
-                <UiLabel :variant="UiLabelVariant.Inline">
-                  <UiToggle v-model="overrideAutoSuspend" data-testid="client-service-override-suspend" />
-                  {{ t('clients.clientServiceDetail.overrideAutoSuspend') }}
-                </UiLabel>
-                <UiField v-if="overrideAutoSuspend" :label="t('clients.clientServiceDetail.suspendUntil')">
-                  <UiDatePicker v-model="suspendUntil" />
-                </UiField>
-                <UiLabel :variant="UiLabelVariant.Inline">
-                  <UiToggle v-model="autoTerminateEndOfCycle" data-testid="client-service-auto-terminate" />
-                  {{ t('clients.clientServiceDetail.autoTerminateEndOfCycle') }}
-                </UiLabel>
-                <UiField v-if="autoTerminateEndOfCycle" :label="t('clients.clientServiceDetail.terminationReason')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="autoTerminateReason"
-                      type="text"
-                      :placeholder="t('clients.clientServiceDetail.reasonForAutoTermination')"
-                      data-testid="client-service-terminate-reason"
-                    />
-                  </template>
-                </UiField>
-                <UiButton
-                  type="submit"
-                  :variant="UiButtonVariant.Primary"
-                  :aria-disabled="saving !== null"
-                  data-testid="client-service-save-automation"
-                >
-                  {{ saving === ServiceSection.Automation ? t('shared.saving') : t(SAVE_LABEL_KEYS[ServiceSection.Automation]) }}
-                </UiButton>
-                <UiStatusMessage
-                  :message="outcomeOf(ServiceSection.Automation)?.text ?? null"
-                  :tone="outcomeTone(outcomeOf(ServiceSection.Automation))"
-                  data-testid="client-service-outcome-automation"
-                />
-              </UiForm>
-            </UiCard>
-          </UiStack>
+              <UiStack v-else direction="row" wrap gap="sm">
+                <template v-if="service?.status === ServiceStatus.Pending">
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Secondary"
+                    :loading="commandLoading"
+                    data-testid="client-service-create"
+                    @click="handleProvision"
+                  >
+                    {{ t('clients.clientServiceDetail.create') }}
+                  </UiButton>
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Danger"
+                    :loading="commandLoading"
+                    data-testid="client-service-terminate"
+                    @click="dangerConfirm = DangerAction.Terminate"
+                  >
+                    {{ t('clients.clientServiceDetail.terminate') }}
+                  </UiButton>
+                </template>
+
+                <template v-else-if="service?.status === ServiceStatus.Active">
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Secondary"
+                    :loading="commandLoading"
+                    data-testid="client-service-suspend"
+                    @click="showSuspendModal = true"
+                  >
+                    {{ t('clients.clientServiceDetail.suspend') }}
+                  </UiButton>
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Danger"
+                    :loading="commandLoading"
+                    data-testid="client-service-terminate"
+                    @click="dangerConfirm = DangerAction.Terminate"
+                  >
+                    {{ t('clients.clientServiceDetail.terminate') }}
+                  </UiButton>
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Secondary"
+                    :loading="commandLoading"
+                    :disabled="!service.account.provisioningRef"
+                    data-testid="client-service-change-package"
+                    @click="showChangePackageModal = true"
+                  >
+                    {{ t('clients.clientServiceDetail.changePackage') }}
+                  </UiButton>
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Secondary"
+                    :loading="commandLoading"
+                    :disabled="!service.account.provisioningRef"
+                    data-testid="client-service-change-password"
+                    @click="showChangePasswordModal = true"
+                  >
+                    {{ t('shared.changePassword') }}
+                  </UiButton>
+                </template>
+
+                <template v-else-if="service?.status === ServiceStatus.Suspended">
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Secondary"
+                    :loading="commandLoading"
+                    data-testid="client-service-unsuspend"
+                    @click="handleUnsuspend"
+                  >
+                    {{ t('clients.clientServiceDetail.unsuspend') }}
+                  </UiButton>
+                  <UiButton
+                    type="button"
+                    :variant="UiButtonVariant.Danger"
+                    :loading="commandLoading"
+                    data-testid="client-service-terminate"
+                    @click="dangerConfirm = DangerAction.Terminate"
+                  >
+                    {{ t('clients.clientServiceDetail.terminate') }}
+                  </UiButton>
+                </template>
+              </UiStack>
+              <UiStatusMessage
+                :message="commandOutcome?.text ?? null"
+                :tone="outcomeTone(commandOutcome)"
+                data-testid="client-service-command-outcome"
+              />
+            </UiStack>
+          </UiCard>
         </UiGrid>
 
-        <UiCard padding="md">
-          <UiForm
-            stacked
-            :aria-busy="saving === ServiceSection.Notes"
-            data-testid="client-service-notes-form"
-            @submit="saveNotes"
-          >
-            <UiHeading :level="2" variant="card">{{ t('shared.adminNotes') }}</UiHeading>
-            <UiTextarea
-              v-model="adminNotes"
-              rows="6"
-              :placeholder="t('shared.internalNotesVisibleOnlyTo')"
-              data-testid="client-service-admin-notes"
-            />
-            <UiButton
-              type="submit"
-              :variant="UiButtonVariant.Primary"
-              :aria-disabled="saving !== null"
-              data-testid="client-service-save-notes"
+        <UiGrid v-else-if="tab === ServiceTab.Billing" :columns="2">
+          <UiCard padding="md">
+            <UiForm
+              stacked
+              :aria-busy="saving === ServiceSection.Billing"
+              data-testid="client-service-billing-form"
+              @submit="saveBillingTerms"
             >
-              {{ saving === ServiceSection.Notes ? t('shared.saving') : t(SAVE_LABEL_KEYS[ServiceSection.Notes]) }}
-            </UiButton>
-            <UiStatusMessage
-              :message="outcomeOf(ServiceSection.Notes)?.text ?? null"
-              :tone="outcomeTone(outcomeOf(ServiceSection.Notes))"
-              data-testid="client-service-outcome-notes"
-            />
-          </UiForm>
-        </UiCard>
+              <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.billing') }}</UiHeading>
+              <UiField :label="t('shared.productService')">
+                <UiSelect
+                  data-testid="client-service-product"
+                  v-model="productIdRef"
+                  :options="productOptions"
+                  :placeholder="t('shared.productService')"
+                  searchable
+                />
+              </UiField>
+              <UiField :label="t('clients.clientServiceDetail.quantity')">
+                <UiNumberInput data-testid="client-service-quantity" v-model="quantity" :min="1" placeholder="1" />
+              </UiField>
+              <UiGrid :columns="2" gap="sm">
+                <UiStack gap="xs">
+                  <UiLabel :variant="UiLabelVariant.Field">{{ t('shared.registrationDate') }}</UiLabel>
+                  <UiText :tone="UiTextTone.Secondary" data-testid="client-service-registered">{{ formatDate(service?.createdAt) }}</UiText>
+                </UiStack>
+                <UiField :label="t('clients.clientServiceDetail.firstPaymentAmount')">
+                  <UiNumberInput data-testid="client-service-first-payment" v-model="firstPaymentAmount" :step="0.01" :min="0" placeholder="0.00" />
+                </UiField>
+                <UiField :label="t('clients.clientServiceDetail.recurringAmount')">
+                  <UiNumberInput data-testid="client-service-recurring" v-model="recurringAmount" :step="0.01" :min="0" placeholder="0.00" />
+                </UiField>
+                <UiField :label="t('shared.nextDueDate')">
+                  <UiDatePicker v-model="nextDueDate" />
+                </UiField>
+                <UiField :label="t('shared.billingCycle')">
+                  <UiSelect data-testid="client-service-billing-cycle" v-model="billingCycle" :options="billingCycleOptions" :placeholder="t('shared.billingCycle')" />
+                </UiField>
+                <UiField :label="t('shared.paymentMethod')">
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="paymentMethod"
+                      type="text"
+                      :placeholder="t('shared.paymentMethod')"
+                      data-testid="client-service-payment-method"
+                    />
+                  </template>
+                </UiField>
+                <UiField :label="t('clients.clientServiceDetail.promotionCode')">
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="promotionCode"
+                      type="text"
+                      :placeholder="t('shared.examples.promoCode')"
+                      data-testid="client-service-promotion"
+                    />
+                  </template>
+                </UiField>
+              </UiGrid>
+              <UiField :label="t('clients.clientServiceDetail.subscriptionId')">
+                <template #default="{ id }">
+                  <UiInput
+                    :id="id"
+                    v-model="subscriptionId"
+                    type="text"
+                    :placeholder="t('shared.examples.subscriptionId')"
+                    data-testid="client-service-subscription"
+                  />
+                </template>
+              </UiField>
+              <UiButton
+                type="submit"
+                :variant="UiButtonVariant.Primary"
+                :disabled="productIdRef === null"
+                :aria-disabled="saving !== null"
+                data-testid="client-service-save-billing"
+              >
+                {{ t(SAVE_LABEL_KEYS[ServiceSection.Billing]) }}
+              </UiButton>
+              <UiStatusMessage
+                :message="outcomeOf(ServiceSection.Billing)?.text ?? null"
+                :tone="outcomeTone(outcomeOf(ServiceSection.Billing))"
+                data-testid="client-service-outcome-billing"
+              />
+            </UiForm>
+          </UiCard>
+
+          <UiCard padding="md">
+            <UiForm
+              stacked
+              :aria-busy="saving === ServiceSection.Automation"
+              data-testid="client-service-automation-form"
+              @submit="saveAutomation"
+            >
+              <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.autoManagement') }}</UiHeading>
+              <UiLabel :variant="UiLabelVariant.Inline">
+                <UiToggle v-model="autoRenew" data-testid="client-service-auto-renew" />
+                {{ t('clients.clientServiceDetail.autoRenew') }}
+              </UiLabel>
+              <UiLabel :variant="UiLabelVariant.Inline">
+                <UiToggle v-model="overrideAutoSuspend" data-testid="client-service-override-suspend" />
+                {{ t('clients.clientServiceDetail.overrideAutoSuspend') }}
+              </UiLabel>
+              <UiField v-if="overrideAutoSuspend" :label="t('clients.clientServiceDetail.suspendUntil')">
+                <UiDatePicker v-model="suspendUntil" />
+              </UiField>
+              <UiLabel :variant="UiLabelVariant.Inline">
+                <UiToggle v-model="autoTerminateEndOfCycle" data-testid="client-service-auto-terminate" />
+                {{ t('clients.clientServiceDetail.autoTerminateEndOfCycle') }}
+              </UiLabel>
+              <UiField v-if="autoTerminateEndOfCycle" :label="t('clients.clientServiceDetail.terminationReason')">
+                <template #default="{ id }">
+                  <UiInput
+                    :id="id"
+                    v-model="autoTerminateReason"
+                    type="text"
+                    :placeholder="t('clients.clientServiceDetail.reasonForAutoTermination')"
+                    data-testid="client-service-terminate-reason"
+                  />
+                </template>
+              </UiField>
+              <UiButton
+                type="submit"
+                :variant="UiButtonVariant.Primary"
+                :aria-disabled="saving !== null"
+                data-testid="client-service-save-automation"
+              >
+                {{ t(SAVE_LABEL_KEYS[ServiceSection.Automation]) }}
+              </UiButton>
+              <UiStatusMessage
+                :message="outcomeOf(ServiceSection.Automation)?.text ?? null"
+                :tone="outcomeTone(outcomeOf(ServiceSection.Automation))"
+                data-testid="client-service-outcome-automation"
+              />
+            </UiForm>
+          </UiCard>
+
+          <UiCard padding="md">
+            <UiStack>
+              <UiHeading :level="2" variant="card">{{ t('clients.clientServiceDetail.addons') }}</UiHeading>
+              <UiText :tone="UiTextTone.Muted">{{ t('clients.clientServiceDetail.noAddonsFound') }}</UiText>
+            </UiStack>
+          </UiCard>
+        </UiGrid>
+
+        <UiStack v-else>
+          <UiCard padding="md">
+            <UiForm
+              stacked
+              :aria-busy="saving === ServiceSection.Notes"
+              data-testid="client-service-notes-form"
+              @submit="saveNotes"
+            >
+              <UiHeading :level="2" variant="card">{{ t('shared.adminNotes') }}</UiHeading>
+              <UiTextarea
+                v-model="adminNotes"
+                rows="6"
+                :placeholder="t('shared.internalNotesVisibleOnlyTo')"
+                data-testid="client-service-admin-notes"
+              />
+              <UiButton
+                type="submit"
+                :variant="UiButtonVariant.Primary"
+                :aria-disabled="saving !== null"
+                data-testid="client-service-save-notes"
+              >
+                {{ t(SAVE_LABEL_KEYS[ServiceSection.Notes]) }}
+              </UiButton>
+              <UiStatusMessage
+                :message="outcomeOf(ServiceSection.Notes)?.text ?? null"
+                :tone="outcomeTone(outcomeOf(ServiceSection.Notes))"
+                data-testid="client-service-outcome-notes"
+              />
+            </UiForm>
+          </UiCard>
+        </UiStack>
       </UiStack>
 
-      <PluginSlot :key="service.id" :slot-id="PluginSlotId.AdminServicePanels" :context="{ serviceId: service.id }" />
+      <PluginSlot v-if="service" :key="service.id" :slot-id="PluginSlotId.AdminServicePanels" :context="{ serviceId: service.id }" />
 
       <UiDialog
         v-if="showChangePasswordModal"
@@ -1324,7 +1362,6 @@ onMounted(() => {
         :title="t('clients.clientServiceDetail.suspendService')"
         :message="t('clients.clientServiceDetail.areYouSureYouWant')"
         :confirm-label="t('clients.clientServiceDetail.suspend')"
-        :loading-label="t('shared.processing')"
         :loading="commandLoading"
         tone="warning"
         @confirm="handleSuspend"
@@ -1337,7 +1374,6 @@ onMounted(() => {
         :title="dangerTitle"
         :message="t('clients.clientServiceDetail.thisActionCannotBeUndone')"
         :confirm-label="dangerConfirmLabel"
-        :loading-label="t('shared.processing')"
         :loading="dangerLoading"
         :tone="UiTone.Danger"
         @confirm="confirmDanger"

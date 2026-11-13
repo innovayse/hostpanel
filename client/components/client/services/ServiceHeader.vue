@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceHeader - the title row of the service detail page: icon, plan name, domain, a "log in
+ * ServiceHeader. The title row of the service detail page: icon, plan name, domain, a "log in
  * to the control panel" button for an active service on a known server, and the status badge.
  */
 import { computed } from 'vue'

@@ -111,4 +111,15 @@ describe('ClientExternalAccountCard', () => {
     expect(wrapper.get('[data-testid="client-external-account-save"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="client-external-account-clear"]').attributes('disabled')).toBeDefined()
   })
+
+  it('keeps the header and fields but disables them and shows a bar for the link while loading', () => {
+    const wrapper = mountCard({ loading: true })
+
+    expect(wrapper.find('[data-testid="client-external-account-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="client-external-account-current"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('External account')
+    expect(wrapper.get('[data-testid="client-external-account-provider"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="client-external-account-id"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="client-external-account-save"]').attributes('disabled')).toBeDefined()
+  })
 })

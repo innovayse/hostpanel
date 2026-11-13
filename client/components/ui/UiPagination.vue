@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 /**
- * UiPagination - page buttons (a window of five around the current page) plus a page-size select.
+ * UiPagination: page buttons (a window of five around the current page) plus a page-size select.
  *
  * Changing the size emits the new size and resets the page to 1 so the reader never lands past
  * the end of the shorter list.

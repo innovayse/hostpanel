@@ -46,7 +46,20 @@ export const useAuthStore = defineStore('auth', () => {
   const api = useAuthApi()
 
   /** Currently authenticated admin user, null when unauthenticated. */
-  const user = ref<{ email: string; roles: string[] } | null>(null)
+  const user = ref<{ email: string; firstName: string; lastName: string; roles: string[] } | null>(null)
+
+  /**
+   * How the signed-in account is named on screen: first and last name, or the email address when the
+   * account holds no name. Null when signed out. Every place that shows who is signed in reads this,
+   * so the choice between name and email is made once.
+   */
+  const displayName = computed<string | null>(() => {
+    if (user.value === null) {
+      return null
+    }
+    const name = `${user.value.firstName} ${user.value.lastName}`.trim()
+    return name === '' ? user.value.email : name
+  })
 
   /** Whether the current user's email has been verified. Null means not yet checked. */
   const emailVerified = ref<boolean | null>(null)
@@ -293,7 +306,7 @@ export const useAuthStore = defineStore('auth', () => {
         emailVerified.value = null
         return
       }
-      user.value = { email: data.email, roles: data.roles }
+      user.value = { email: data.email, firstName: data.firstName, lastName: data.lastName, roles: data.roles }
       emailVerified.value = data.emailVerified
     } catch {
       // No answer (offline, a 5xx): the session state is still unknown, so the flag is left as it
@@ -393,6 +406,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     user,
+    displayName,
     isAdmin,
     accountKey,
     emailVerified,

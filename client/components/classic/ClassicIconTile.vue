@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * ClassicIconTile - a flat square icon mark for the classic template: the soft brand tint with
+ * ClassicIconTile. A flat square icon mark for the classic template: the soft brand tint with
  * the icon in the solid brand colour. No border, no glow, no per-item colour.
  */
 

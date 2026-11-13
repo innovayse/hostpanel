@@ -2,7 +2,7 @@ using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListGatewayLogs;
 
-/// <summary>Paginated, filtered query for the payment-gateway log - admin view.</summary>
+/// <summary>Paginated, filtered query for the payment-gateway log for the admin view.</summary>
 /// <param name="Page">1-based page number.</param>
 /// <param name="PageSize">Number of entries per page (max 100).</param>
 /// <param name="From">Optional start of the date range (inclusive, UTC).</param>

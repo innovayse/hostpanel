@@ -11,9 +11,6 @@ const NO_VALUE = '—'
 /** The registration periods, in years, that a price is entered for. */
 export const TLD_PERIODS = ['1', '2', '3', '5', '10'] as const
 
-/** One registration period. */
-export type TldPeriod = (typeof TLD_PERIODS)[number]
-
 /**
  * A price map with a zero for every period.
  *

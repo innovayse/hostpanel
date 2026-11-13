@@ -61,6 +61,8 @@ export enum AppRoute {
   Dashboard = '/dashboard',
   /** The `/domains` screen. */
   Domains = '/domains',
+  /** The `/forbidden` screen, where a signed-in account without the Admin role lands. */
+  Forbidden = '/forbidden',
   /** The `/fraud` area root; it opens the settings screen. */
   Fraud = '/fraud',
   /** The `/fraud/block-lists` screen. */
@@ -97,6 +99,8 @@ export enum AppRoute {
   SettingsCurrencies = '/settings/currencies',
   /** The `/settings/email-templates` screen. */
   SettingsEmailTemplates = '/settings/email-templates',
+  /** The `/settings/general` screen. */
+  SettingsGeneral = '/settings/general',
   /** The `/settings/product-bundles` screen. */
   SettingsProductBundles = '/settings/product-bundles',
   /** The `/settings/products` screen. */

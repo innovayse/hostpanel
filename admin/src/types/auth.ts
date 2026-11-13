@@ -55,6 +55,10 @@ export interface RegisterResponse {
 export interface MeResponse {
   /** Email address of the signed-in account. */
   email: string
+  /** Given name of the signed-in account; empty when the account holds none. */
+  firstName: string
+  /** Family name of the signed-in account; empty when the account holds none. */
+  lastName: string
   /** Roles granted locally in Hostpanel, never read off an SSO token. */
   roles: string[]
   /** Whether the identity provider reports the address as confirmed. */

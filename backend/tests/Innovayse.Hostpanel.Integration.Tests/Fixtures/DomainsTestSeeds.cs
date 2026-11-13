@@ -126,13 +126,14 @@ internal static class DomainsTestSeeds
     /// <summary>Registers a domain for the given client through the admin route.</summary>
     /// <param name="admin">A client authenticated as Admin.</param>
     /// <param name="clientId">The owning client's primary key.</param>
+    /// <param name="domainName">The name to register; a unique random <c>.com</c> name when null.</param>
     /// <returns>The new domain's primary key.</returns>
-    public static async Task<int> RegisterDomainAsync(HttpClient admin, int clientId)
+    public static async Task<int> RegisterDomainAsync(HttpClient admin, int clientId, string? domainName = null)
     {
         var label = Guid.NewGuid().ToString("N")[..12];
         var response = await admin.PostAsJsonAsync("/api/domains/register", new
         {
-            domainName = $"{label}.com",
+            domainName = domainName ?? $"{label}.com",
             years = 1,
             clientId,
             whoisPrivacy = false,

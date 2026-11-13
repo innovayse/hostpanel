@@ -14,10 +14,12 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFieldErrorClear } from '@/composables/useFieldErrorClear'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -508,39 +510,41 @@ const handleSubmit = (): void => {
 
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
-        <UiTable :density="UiTableDensity.Compact" class="rounded-xl border border-border" data-testid="product-form-prices">
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('shared.enabled') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.currency') }}</UiTableHeader>
-              <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
-          <UiTableBody divided>
-            <UiTableRow v-for="currency in currencyRows" :key="currency.code" :data-testid="`product-form-price-${currency.code}`">
-              <UiTableCell>
-                <UiCheckbox
-                  v-if="!currency.isBase"
-                  :model-value="rowFor(currency.code).enabled"
-                  :aria-label="currency.code"
-                  @update:model-value="rowFor(currency.code).enabled = $event"
-                />
-                <UiText v-else tone="primary" size="xs">{{ t('settings.productForm.base') }}</UiText>
-              </UiTableCell>
-              <UiTableCell class="font-medium text-text-primary">{{ currency.code }}</UiTableCell>
-              <UiTableCell v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>
-                <UiNumberInput
-                  v-model="rowFor(currency.code)[cycle]"
-                  :min="0"
-                  :step="0.01"
-                  :disabled="!rowFor(currency.code).enabled"
-                  placeholder="0.00"
-                  :data-testid="`product-form-price-${currency.code}-${cycle}`"
-                />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
+        <UiCard class="overflow-hidden">
+          <UiTable :density="UiTableDensity.Compact" data-testid="product-form-prices">
+            <UiTableHead>
+              <UiTableRow>
+                <UiTableHeader>{{ t('shared.enabled') }}</UiTableHeader>
+                <UiTableHeader>{{ t('shared.currency') }}</UiTableHeader>
+                <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
+              </UiTableRow>
+            </UiTableHead>
+            <UiTableBody divided>
+              <UiTableRow v-for="currency in currencyRows" :key="currency.code" :data-testid="`product-form-price-${currency.code}`">
+                <UiTableCell>
+                  <UiCheckbox
+                    v-if="!currency.isBase"
+                    :model-value="rowFor(currency.code).enabled"
+                    :aria-label="currency.code"
+                    @update:model-value="rowFor(currency.code).enabled = $event"
+                  />
+                  <UiText v-else tone="primary" size="xs">{{ t('settings.productForm.base') }}</UiText>
+                </UiTableCell>
+                <UiTableCell class="font-medium text-text-primary">{{ currency.code }}</UiTableCell>
+                <UiTableCell v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>
+                  <UiNumberInput
+                    v-model="rowFor(currency.code)[cycle]"
+                    :min="0"
+                    :step="0.01"
+                    :disabled="!rowFor(currency.code).enabled"
+                    placeholder="0.00"
+                    :data-testid="`product-form-price-${currency.code}-${cycle}`"
+                  />
+                </UiTableCell>
+              </UiTableRow>
+            </UiTableBody>
+          </UiTable>
+        </UiCard>
       </UiField>
 
       <!-- Recommended-plan toggle -->
@@ -563,14 +567,14 @@ const handleSubmit = (): void => {
 
       <UiStatusMessage :message="error ?? null" :tone="UiTone.Danger" data-testid="product-form-error" />
 
-      <UiStack direction="row" align="center" justify="end" gap="sm">
+      <UiFormActions>
         <UiButton type="button" variant="secondary" data-testid="product-form-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :disabled="saving" data-testid="product-form-save">
-          {{ saving ? t('shared.saving') : isEditMode ? t('shared.saveChanges') : t('settings.productForm.createProduct') }}
+        <UiButton type="submit" variant="primary" :loading="saving" data-testid="product-form-save">
+          {{ isEditMode ? t('shared.saveChanges') : t('settings.productForm.createProduct') }}
         </UiButton>
-      </UiStack>
+      </UiFormActions>
     </UiForm>
   </UiDialog>
 </template>

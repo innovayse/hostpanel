@@ -28,9 +28,9 @@ Click **Add Currency** and fill in:
 
 The **base currency** is always enabled and always has a rate of 1. It cannot be disabled (`CURRENCY_BASE_DISABLE_NOT_ALLOWED`).
 
-- **Make base** — sets this currency as the new base. All other exchange rates are recalculated.
-- **Update Exchange Rates** — fetches the latest rates from an external source and updates all non-base currencies automatically. The same update also runs by itself every day at 03:00 UTC; an installation with no outbound internet access turns it off with `DISABLE_EXCHANGE_RATE_UPDATES` (see the [configuration reference](/operators/configuration)). If the source is unreachable the rates stay as they were and the update is tried again the next day.
-- **Update Product Prices** — recalculates all product prices from the base currency using current exchange rates.
+- **Make base**: sets this currency as the new base. All other exchange rates are recalculated.
+- **Update Exchange Rates**: fetches the latest rates from an external source and updates all non-base currencies automatically. The same update also runs by itself every day at 03:00 UTC; an installation with no outbound internet access turns it off with `DISABLE_EXCHANGE_RATE_UPDATES` (see the [configuration reference](/operators/configuration)). If the source is unreachable the rates stay as they were and the update is tried again the next day.
+- **Update Product Prices**: recalculates all product prices from the base currency using current exchange rates.
 
 <Callout type="warning">
 Update Product Prices overwrites your existing product prices. This cannot be undone.
@@ -62,9 +62,9 @@ Paying an overdue invoice unsuspends the service automatically.
 
 Individual services can override the automatic suspension and termination behaviour. On a service record you can set:
 
-- **Automatic billing** — whether renewal invoices are raised automatically for this service.
-- **Override Auto-Suspend** — prevent the global rule from suspending this service.
-- **Auto-Terminate End of Cycle** — terminate at the end of the billing period instead of waiting for the global rule.
+- **Automatic billing**: whether renewal invoices are raised automatically for this service.
+- **Override Auto-Suspend**: prevent the global rule from suspending this service.
+- **Auto-Terminate End of Cycle**: terminate at the end of the billing period instead of waiting for the global rule.
 
 
 ## Renewal settings

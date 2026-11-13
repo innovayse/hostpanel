@@ -64,7 +64,7 @@
         <template #actions>
           <UiButton type="submit" :loading="submitting" :disabled="!form.domain || !form.paymentmethod" data-testid="transfer-submit">
             <ArrowLeftRight v-if="!submitting" :size="14" :stroke-width="2" class="mr-1.5" />
-            {{ submitting ? $t('client.domainTransfer.submitting') : $t('client.domainTransfer.submit') }}
+            {{ $t('client.domainTransfer.submit') }}
           </UiButton>
         </template>
       </UiForm>

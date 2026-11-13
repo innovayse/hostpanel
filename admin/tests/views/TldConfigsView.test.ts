@@ -74,7 +74,7 @@ describe('TldConfigsView', () => {
     const { wrapper } = await mountScreen(TldConfigsView)
 
     expect(wrapper.findAll('[data-testid^="tld-row-"]')).toHaveLength(20)
-    expect(wrapper.text()).toContain('Showing 1–20 of 25 TLDs')
+    expect(wrapper.text()).toContain('Showing 1-20 of 25 TLDs')
 
     await wrapper.get('[data-testid="tld-configs-pagination-next"]').trigger('click')
     expect(wrapper.findAll('[data-testid^="tld-row-"]')).toHaveLength(5)

@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 /**
- * UiTrustBar - a card of short guarantees, each with an icon chip. The items are centred with
+ * UiTrustBar: a card of short guarantees, each with an icon chip. The items are centred with
  * even gaps instead of stretched over the container, and stack on a phone. The card has a
  * single hairline border and no drop shadow, so nothing shows under its bottom edge.
  */

@@ -7,6 +7,10 @@
     "component": "SetupView.vue"
   },
   {
+    "path": "/forbidden",
+    "component": "ForbiddenView.vue"
+  },
+  {
     "path": "/verify-email",
     "meta": {
       "public": true
@@ -536,6 +540,10 @@
       },
       {
         "path": "settings",
+        "component": "SettingsIndexView.vue"
+      },
+      {
+        "path": "settings/general",
         "component": "SystemSettingsView.vue"
       },
       {
@@ -650,6 +658,6 @@
   },
   {
     "path": "/:pathMatch(.*)*",
-    "redirect": "/login"
+    "component": "NotFoundView.vue"
   }
 ]

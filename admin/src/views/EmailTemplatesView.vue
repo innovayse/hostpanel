@@ -13,7 +13,8 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -103,7 +104,7 @@ onMounted(() => store.fetchEmailTemplates())
  * @param slug - The slug of the template in the row.
  * @returns The action list passed to UiRowActions.
  */
-const templateActions = (slug: string): UiRowAction[] => {
+const templateActions = (slug: string): UiMenuAction[] => {
   /**
    * Opens the versions of this template.
    *
@@ -137,7 +138,6 @@ const templateActions = (slug: string): UiRowAction[] => {
         :density="UiTableDensity.Comfortable"
         :loading="store.loading"
         :empty="!store.loading && groups.length === 0"
-        :colspan="4"
         data-testid="email-templates-table"
       >
         <template #empty>

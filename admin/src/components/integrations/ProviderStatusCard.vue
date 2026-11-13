@@ -13,6 +13,7 @@ import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiMetric from '@/components/ui/UiMetric.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 
@@ -60,18 +61,16 @@ const lastTestedLabel = computed<string>(() =>
 
       <template v-if="info?.connected">
         <UiStack v-for="metric in metrics" :key="metric.label" gap="xs">
-          <UiText tone="muted" size="xs" class="font-semibold uppercase tracking-[0.08em]">{{ metric.label }}</UiText>
-          <UiText
-            tone="primary"
-            :class="[metric.large ? 'font-display text-3xl font-bold tabular-nums' : 'text-[0.85rem] font-medium', metric.mono ? 'font-mono' : '']"
-          >
+          <UiText tone="muted" size="sm">{{ metric.label }}</UiText>
+          <UiMetric v-if="metric.large" :value="metric.value ?? '—'" />
+          <UiText v-else tone="primary" size="md" :class="metric.mono ? 'font-mono' : ''">
             {{ metric.value ?? '—' }}
           </UiText>
         </UiStack>
       </template>
 
       <UiStack gap="xs">
-        <UiText tone="muted" size="xs" class="font-semibold uppercase tracking-[0.08em]">
+        <UiText tone="muted" size="sm">
           {{ t('integrations.providerStatus.lastTested') }}
         </UiText>
         <UiText tone="secondary" size="md" data-testid="provider-status-last-tested">{{ lastTestedLabel }}</UiText>

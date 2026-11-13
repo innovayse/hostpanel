@@ -15,6 +15,15 @@ afterEach(() => {
 })
 
 describe('AnnouncementFormView', () => {
+  it('keeps the form fields as placeholders while the announcement loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountRouted(AnnouncementFormView, '/support/announcements/:id/edit', '/support/announcements/4/edit')
+
+    expect(wrapper.get('[data-testid="announcement-form-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(3)
+    expect(wrapper.find('[data-testid="announcement-form-title"]').exists()).toBe(false)
+  })
+
   it('blocks saving until there is a title, then creates the announcement', async () => {
     const mock = stubPathRoutes([{ path: '/announcements', body: 9 }])
     const wrapper = await mountView(AnnouncementFormView)
@@ -77,7 +86,7 @@ describe('AnnouncementFormView without a date', () => {
     const { wrapper } = await mountRouted(AnnouncementFormView, '/support/announcements/:id', '/support/announcements/9')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="announcement-form-created-on"]').text()).toContain('2026-03-04')
+    expect((wrapper.get('[data-testid="announcement-form-created-on"]').element as HTMLInputElement).value).toContain('2026-03-04')
   })
 
   it('shows a refused load with a Retry instead of the form, and loads again from it', async () => {

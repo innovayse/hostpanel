@@ -18,8 +18,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
-import type { UiRowAction } from '@/components/ui/UiRowActions.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -37,6 +36,9 @@ const { t } = useI18n()
 
 /** Client groups store, the only caller of the group endpoints. */
 const store = useClientGroupsStore()
+
+/** True while the first load is in flight and there are no groups yet; the table then draws its placeholder rows. */
+const initialLoading = computed<boolean>(() => store.loading && store.groups.length === 0)
 
 /** Whether the create/edit dialog is open. */
 const formOpen = ref(false)
@@ -136,7 +138,7 @@ const stageDelete = (group: ClientGroup): void => {
  * @param group - The row's group.
  * @returns The menu actions.
  */
-const rowActions = (group: ClientGroup): UiRowAction[] => [
+const rowActions = (group: ClientGroup): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     /**
@@ -191,18 +193,16 @@ onMounted(async () => {
       {{ store.actionError }}
     </UiAlert>
 
-    <UiSkeleton v-if="store.loading && store.groups.length === 0" :lines="3" data-testid="client-groups-loading" />
-
     <UiErrorState
-      v-else-if="store.error"
+      v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="client-groups-error"
       @retry="store.fetchAll()"
     />
 
-    <UiCard v-else-if="store.groups.length > 0">
-      <UiTable :density="UiTableDensity.Comfortable" data-testid="client-groups-table">
+    <UiCard v-else-if="initialLoading || store.groups.length > 0">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-groups-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>

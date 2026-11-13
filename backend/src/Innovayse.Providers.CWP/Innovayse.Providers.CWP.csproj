@@ -16,7 +16,7 @@
   <ItemGroup>
     <!--
       IHttpClientFactory. CwpProvisioningProvider used to new up its own HttpClient, which
-      skipped the no-retry resilience pipeline the composition root configures for this client —
+      skipped the no-retry resilience pipeline the composition root configures for this client,
       and every CWP account call is a write, so a retried request re-creates or re-terminates a
       hosting account. Version pinned centrally in Directory.Packages.props.
     -->

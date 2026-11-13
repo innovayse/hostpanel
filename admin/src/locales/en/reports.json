@@ -22,7 +22,10 @@
   "annualIncome": {
     "annualIncomeReport": "Annual Income Report",
     "totalIncomePerMonthFor": "Income received per month of the selected year: payments less refunds.",
-    "income": "Income"
+    "income": "Income",
+    "totalIncome": "Total income",
+    "averageMonth": "Average per month",
+    "bestMonth": "Best month"
   },
   "clientsByCountry": {
     "clientsByCountry": "Clients by Country",
@@ -47,7 +50,7 @@
     "noEntriesForThisPeriod": "No entries for this period.",
     "endingBalance": "Ending Balance:",
     "debit": "Debit",
-    "invoicePayment": "Invoice Payment - #{id}",
+    "invoicePayment": "Invoice Payment #{id}",
     "paidHistory": "Invoice #{id}, paid before import"
   },
   "creditsReviewer": {
@@ -63,7 +66,7 @@
   },
   "customerRetention": {
     "averageCustomerRetentionTime": "Average Customer Retention Time",
-    "thisReportCalculatesAndProvides": "This report calculates and provides you with the average lifetime of products, services, addons and domains — that is the number of days between the registration date and the termination date. Averages are displayed by product and the associated billing cycle, and are displayed both as a number of days value and a years/months active.",
+    "thisReportCalculatesAndProvides": "This report shows the average lifetime of products, services, addons and domains: the number of days between the registration date and the termination date. Averages are grouped by product and billing cycle, and shown both in days and in years and months active.",
     "includeActiveProductsServicesAssuming": "Include Active Products & Services (Assuming active will end Next Due Date) in Calculation of Average Retention Time",
     "productCount": "Product Count",
     "averageDaysActive": "Average Days Active",
@@ -99,8 +102,7 @@
     "diskSpaceBandwidthUsageSummary": "Disk Space & Bandwidth Usage Summary",
     "thisReportShowsTheDisk": "This report shows the Disk Space & Bandwidth Usage Statistics for hosting accounts.",
     "diskSpaceUsageStatsLast": "Disk Space Usage Stats Last Updated at {value}",
-    "noDataYetClickUpdate": "No data yet — click Update Now to fetch from servers.",
-    "updating": "Updating…",
+    "noDataYetClickUpdate": "No data yet. Click Update Now to fetch it from the servers.",
     "updateNow": "Update Now",
     "clientNameDomain": "Client Name / Domain",
     "diskUsage": "Disk Usage",
@@ -206,7 +208,6 @@
     "displaysAListOfDomains": "Displays a list of domains with their SSL status, if available.",
     "hideInactiveDomains": "Hide Inactive Domains",
     "showInactiveDomains": "Show Inactive Domains",
-    "reValidating": "Re-validating...",
     "reValidateSslStatus": "Re-validate SSL Status",
     "issuer": "Issuer",
     "expiry": "Expiry",
@@ -251,7 +252,10 @@
   "topClients": {
     "top10ClientsByIncome": "Top 10 Clients by Income",
     "thisReportShowsThe10": "This report shows the 10 clients with the highest net invoice income: payments less refunds and fees. Credit top-ups are not income.",
-    "noData": "No data"
+    "noData": "No data",
+    "leader": "Top client",
+    "totalIncome": "Total income",
+    "rankedClients": "Ranked clients"
   },
   "transactionsReport": {
     "thisReportCanBeUsed": "This report can be used to generate a custom export of transactions by applying up to 5 filters.",

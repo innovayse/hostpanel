@@ -23,12 +23,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useDemoStore } from '@/stores/demo'
 import { AuthMode, SignInResult } from '@/types/auth'
+import type { DemoAccount } from '@/types/demo'
 import AuthShell from '@/components/auth/AuthShell.vue'
+import DemoAccountList from '@/components/auth/DemoAccountList.vue'
 import DemoBanner from '@/components/layout/DemoBanner.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiForm from '@/components/ui/UiForm.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { TWO_FACTOR_CODE_LENGTH } from '@/lib/limits'
@@ -47,7 +50,7 @@ const route = useRoute()
 /** Auth store: mode, session and every refusal sentence. */
 const authStore = useAuthStore()
 
-/** Demo store: the published demo account, when the deployment is a demo. */
+/** Demo store: the published demo accounts, when the deployment is a demo. */
 const demo = useDemoStore()
 
 /** Email field for local-mode sign-in. */
@@ -108,13 +111,14 @@ const finishSignIn = async (): Promise<void> => {
   await goToDestination()
 }
 
-/** Fills the form with the published demo Admin account; the operator still presses Sign in. */
-const handleUseDemoAccount = (): void => {
-  if (demo.adminAccount === null) {
-    return
-  }
-  email.value = demo.adminAccount.email
-  password.value = demo.adminAccount.password
+/**
+ * Fills the form with a published demo account; the operator still presses Sign in.
+ *
+ * @param account - The demo account whose "Use" button was pressed.
+ */
+const handleUseDemoAccount = (account: DemoAccount): void => {
+  email.value = account.email
+  password.value = account.password
 }
 
 /**
@@ -240,9 +244,7 @@ onMounted(async () => {
       </UiAlert>
 
       <!-- Mode still unknown: nothing can be drawn honestly yet. -->
-      <UiText v-if="resolvingMode" tone="secondary" size="md" data-testid="login-resolving">
-        {{ t('auth.login.checkingHowThisDeploymentSigns') }}
-      </UiText>
+      <UiLoader v-if="resolvingMode" data-testid="login-resolving" />
 
       <!-- Mode lookup failed. Retry is the recovery action; it re-requests, not reloads. -->
       <UiButton
@@ -373,27 +375,12 @@ onMounted(async () => {
           :disabled="authStore.loading"
         />
 
-        <!-- Demo deployment: the published Admin account, one click to prefill. -->
-        <UiAlert v-if="demo.enabled && demo.adminAccount !== null" variant="info" data-testid="demo-login">
-          <UiStack gap="xs">
-            <UiText size="sm">{{ t('demo.login.hint') }}</UiText>
-            <UiText size="sm" data-testid="demo-login-email">
-              {{ t('demo.login.email', { email: demo.adminAccount.email }) }}
-            </UiText>
-            <UiText size="sm" data-testid="demo-login-password">
-              {{ t('demo.login.password', { password: demo.adminAccount.password }) }}
-            </UiText>
-            <UiButton
-              variant="secondary"
-              size="sm"
-              type="button"
-              data-testid="demo-login-use"
-              @click="handleUseDemoAccount"
-            >
-              {{ t('demo.login.useAccount') }}
-            </UiButton>
-          </UiStack>
-        </UiAlert>
+        <!-- Demo deployment: the published accounts, one click to prefill. -->
+        <DemoAccountList
+          v-if="demo.enabled && demo.accounts.length > 0"
+          :accounts="demo.accounts"
+          @use="handleUseDemoAccount"
+        />
 
         <UiButton
           variant="primary"

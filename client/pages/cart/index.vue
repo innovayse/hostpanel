@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 /**
- * Cart page - the visitor's lines, their total and the way to checkout.
+ * Cart page: the visitor's lines, their total and the way to checkout.
  *
  * The page owns the cart and currency stores; `CartHero` and `CartContent` only render what they
  * are given. The cart lives in localStorage, so it is loaded on mount.
@@ -27,6 +27,7 @@ import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
 import type { CartItem } from '~/types/cartitem'
 import { formatMoney } from '~/utils/formatMoney'
+import { detailTitle } from '~/utils/seoTitle'
 
 /** Translation helpers and the active language. */
 const { t } = useI18n()
@@ -76,5 +77,5 @@ const removeItem = (item: CartItem): void => {
   cart.removeItem(item.pid, item.billingcycle, item.domain, item.domainAction)
 }
 
-useHead({ title: computed(() => `${t('cart.title')} — ${siteName.value}`) })
+useHead({ title: computed(() => detailTitle(t('cart.title'), siteName.value)) })
 </script>

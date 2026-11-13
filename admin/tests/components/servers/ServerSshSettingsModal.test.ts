@@ -6,6 +6,7 @@
  * beside its button while staying open, and never runs save and the health check together.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import ServerSshSettingsModal from '@/components/servers/ServerSshSettingsModal.vue'
 import { SshAgentProfile, SshProviderFailure } from '@/types/sshenums'
@@ -44,6 +45,23 @@ const mountDialog = async (docsUrl = ''): Promise<ReturnType<typeof mountWithApp
 describe('ServerSshSettingsModal', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('draws the real steps with placeholder fields while the settings load', async () => {
+    stubFetch(json(SETTINGS), json(SETUP))
+    stubDocsUrl('')
+    const wrapper = mountWithApp(ServerSshSettingsModal, { props: { serverId: 4, serverName: 'host1' } })
+    // The load starts in onMounted, so the placeholder state is drawn on the next tick.
+    await nextTick()
+
+    expect(wrapper.get('[data-testid="server-ssh-body"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="server-ssh-step-connection"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(5)
+
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(true)
   })
 
   it('loads settings and setup, and leaves the private key field empty', async () => {

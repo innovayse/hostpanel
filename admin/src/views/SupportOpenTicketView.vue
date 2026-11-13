@@ -219,23 +219,25 @@ onMounted(() => {
           </UiStack>
         </UiField>
 
-        <UiField :label="t('shared.name')">
-          <UiInput
-            :model-value="clientName"
-            readonly
-            :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
-            data-testid="support-open-ticket-name"
-          />
-        </UiField>
+        <UiGrid :columns="2">
+          <UiField :label="t('shared.name')">
+            <UiInput
+              :model-value="clientName"
+              readonly
+              :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
+              data-testid="support-open-ticket-name"
+            />
+          </UiField>
 
-        <UiField :label="t('shared.emailAddress')">
-          <UiInput
-            :model-value="clientEmail"
-            readonly
-            :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
-            data-testid="support-open-ticket-email"
-          />
-        </UiField>
+          <UiField :label="t('shared.emailAddress')">
+            <UiInput
+              :model-value="clientEmail"
+              readonly
+              :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
+              data-testid="support-open-ticket-email"
+            />
+          </UiField>
+        </UiGrid>
 
         <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">
           <UiInput
@@ -288,7 +290,7 @@ onMounted(() => {
             data-testid="support-open-ticket-submit"
             @click="handleSubmit"
           >
-            {{ store.loading ? t('shared.creating') : t('support.supportOpenTicket.openTicket') }}
+            {{ t('support.supportOpenTicket.openTicket') }}
           </UiButton>
         </UiStack>
         <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="support-open-ticket-error" />

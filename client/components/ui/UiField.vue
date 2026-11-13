@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 /**
- * UiField - a label, a control and the message under it.
+ * UiField: a label, a control and the message under it.
  *
  * It frames any control (a custom picker, a group of checkboxes, a bare file input) so every
  * form lays out the same. `error` takes what a store's `fieldErrors[name]` holds (one sentence or

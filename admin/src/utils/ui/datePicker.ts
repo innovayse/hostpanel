@@ -6,6 +6,8 @@
  * cannot drift apart; every colour in the class sets is a theme token, so the popups follow the
  * light/dark switch.
  */
+import { fieldBaseClasses, fieldWidthClasses, focusRingClasses } from '@/utils/ui/input'
+import { fieldSizeClasses } from '@/utils/ui/size'
 
 /** Which way the quick choices of a single-date picker point from today. */
 export const UiDatePickerDirection = {
@@ -103,24 +105,32 @@ export interface DateSelectOption {
   label: string
 }
 
-/** Classes of the text field that opens a popup. */
-export const dateFieldClasses =
-  'w-full px-3 py-2 text-[0.82rem] text-text-primary bg-surface-field border border-border rounded-[9px] placeholder:text-text-muted focus:outline-none focus:border-primary-500/40 transition-colors'
+/**
+ * Retints the date-picker library (its `--dp-*` custom properties) with the panel tokens, so its
+ * input, calendar and time wheel follow the light/dark switch and the control radius. The selector
+ * `.cls .dp--main` outranks the library's own `.dp--theme-dark` / `.dp--theme-light` rule that declares
+ * the same variables on the same element. Written out literally so Tailwind emits every class.
+ */
+export const dateLibraryThemeClasses =
+  '[&_.dp--main]:[--dp-background-color:var(--surface-elevated)] [&_.dp--main]:[--dp-text-color:var(--text-primary)] [&_.dp--main]:[--dp-hover-color:var(--surface-hover)] [&_.dp--main]:[--dp-hover-text-color:var(--text-primary)] [&_.dp--main]:[--dp-hover-icon-color:var(--text-primary)] [&_.dp--main]:[--dp-primary-color:var(--color-primary-500)] [&_.dp--main]:[--dp-primary-disabled-color:var(--border-strong)] [&_.dp--main]:[--dp-primary-text-color:var(--surface-base)] [&_.dp--main]:[--dp-secondary-color:var(--text-muted)] [&_.dp--main]:[--dp-border-color:var(--border)] [&_.dp--main]:[--dp-menu-border-color:var(--border-strong)] [&_.dp--main]:[--dp-border-color-hover:var(--text-secondary)] [&_.dp--main]:[--dp-border-color-focus:var(--text-accent)] [&_.dp--main]:[--dp-disabled-color:var(--surface-hover)] [&_.dp--main]:[--dp-disabled-color-text:var(--text-muted)] [&_.dp--main]:[--dp-scroll-bar-background:var(--surface-elevated)] [&_.dp--main]:[--dp-scroll-bar-color:var(--border-strong)] [&_.dp--main]:[--dp-icon-color:var(--text-secondary)] [&_.dp--main]:[--dp-danger-color:var(--color-status-red)] [&_.dp--main]:[--dp-highlight-color:var(--tint-blue)] [&_.dp--main]:[--dp-tooltip-color:var(--surface-hover)] [&_.dp--main]:[--dp-border-radius:var(--radius-control)] [&_.dp--main]:[--dp-font-family:var(--font-sans)]'
 
-/** Classes of the popup panel (the position is added by the component). */
-export const datePopupClasses = 'bg-surface-card rounded-[10px] shadow-2xl border border-border'
+/** Classes of the text field that opens a popup. */
+export const dateFieldClasses = `${fieldWidthClasses} ${fieldBaseClasses} ${fieldSizeClasses.md}`
+
+/** Classes of the popup panel (the position is added by the component); opaque, so nothing shows through it. */
+export const datePopupClasses = 'bg-surface-elevated rounded-card shadow-2xl border border-border-strong'
 
 /** Classes of the previous/next month arrows. */
-export const dateArrowClasses = 'text-text-secondary hover:text-text-primary text-lg transition-colors'
+export const dateArrowClasses = `rounded-lg px-2 text-text-secondary hover:text-text-primary text-lg transition-colors ${focusRingClasses}`
 
 /** Classes of a plain text action (Clear, Close). */
-export const dateActionClasses = 'text-sm text-text-secondary hover:text-text-primary transition-colors'
+export const dateActionClasses = `rounded-lg text-sm text-text-secondary hover:text-text-primary transition-colors ${focusRingClasses}`
 
 /** Classes of one calendar cell, common to every state. */
-export const dateCellBaseClasses = 'h-8 flex items-center justify-center text-sm rounded transition-colors'
+export const dateCellBaseClasses = `h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${focusRingClasses}`
 
 /** Classes of the selected day (and of a range edge). */
-export const dateCellSelectedClasses = 'bg-primary-600 light:bg-primary-700 text-white rounded font-semibold'
+export const dateCellSelectedClasses = 'bg-primary-400 light:bg-primary-600 text-surface-base rounded-lg font-semibold'
 
 /** Classes of a day inside a range. */
 export const dateCellInRangeClasses = 'bg-primary-500/25 text-text-primary'
@@ -132,10 +142,10 @@ export const dateCellEmptyClasses = 'text-text-muted opacity-60 cursor-not-allow
 export const dateCellIdleClasses = 'text-text-primary hover:bg-surface-hover'
 
 /** Classes of a preset/quick-choice button in its idle state. */
-export const datePresetIdleClasses = 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
+export const datePresetIdleClasses = `text-text-secondary hover:text-text-primary hover:bg-surface-hover ${focusRingClasses}`
 
 /** Classes of a quick-choice button in its active state. */
-export const datePresetActiveClasses = 'bg-primary-600 light:bg-primary-700 text-white'
+export const datePresetActiveClasses = 'bg-primary-400 light:bg-primary-600 text-surface-base'
 
 /**
  * Renders a local date as `YYYY-MM-DD`.
@@ -243,6 +253,19 @@ export const getDaysForMonth = (date: Date): (number | null)[] => {
     days.push(i)
   }
   return days
+}
+
+/**
+ * Lists a stable key for each cell of a month grid: the ISO day the cell sits on. A padding cell sits
+ * on a day of the neighbouring month, so every key in the grid is unique.
+ *
+ * @param date - Any date inside the month.
+ * @returns One ISO day per cell of {@link getDaysForMonth}, in the same order.
+ */
+export const getDayKeysForMonth = (date: Date): string[] => {
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+  const cellCount = getDaysForMonth(date).length
+  return Array.from({ length: cellCount }, (_, cell) => formatIsoDate(new Date(date.getFullYear(), date.getMonth(), 1 - firstDay + cell)))
 }
 
 /**

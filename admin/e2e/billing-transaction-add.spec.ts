@@ -33,8 +33,8 @@ test('adding a transaction posts it and returns to the ledger', async ({ page })
   await page.goto('/billing/add-transaction')
   await expect(page.getByTestId('billing-transaction-form')).toBeVisible()
 
-  await fieldOf(page, 'billing-transaction-client').click()
-  await page.getByTestId(`client-select-option-${newTransaction.clientId}`).click()
+  await page.getByTestId('billing-transaction-client').getByTestId('ui-select-trigger').click()
+  await page.getByTestId('ui-select-option').filter({ hasText: `${newTransaction.clientName} - #${newTransaction.clientId}` }).click()
   await fieldOf(page, 'billing-transaction-amount-in').fill(String(newTransaction.amountIn))
   await fieldOf(page, 'billing-transaction-amount-in').press('Tab')
   await fieldOf(page, 'billing-transaction-description').fill(newTransaction.description)
@@ -60,8 +60,8 @@ test('a refused transaction shows the API sentence and stays on the form', async
   })
 
   await page.goto('/billing/add-transaction')
-  await fieldOf(page, 'billing-transaction-client').click()
-  await page.getByTestId(`client-select-option-${newTransaction.clientId}`).click()
+  await page.getByTestId('billing-transaction-client').getByTestId('ui-select-trigger').click()
+  await page.getByTestId('ui-select-option').filter({ hasText: `${newTransaction.clientName} - #${newTransaction.clientId}` }).click()
   await page.getByTestId('billing-transaction-submit').click()
 
   await expect(page.getByTestId('billing-transaction-error')).toContainText(sentence)

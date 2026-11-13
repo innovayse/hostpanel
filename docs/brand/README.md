@@ -16,7 +16,7 @@ Colours: tile `#0B0B14`, share-card background `#0A0A0F`, wordmark `#0F172A` (li
 | `logo-dark.svg` | Horizontal lockup, light wordmark | `logo-dark.svg` in both apps and the repository root |
 | `logo-stacked-light.svg`, `logo-stacked-dark.svg` | Cube above wordmark | Not referenced yet |
 | `app-icon.svg` | Mark and wordmark on the rounded dark tile | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` |
-| `mark-64.png` … `mark-1024.png` | Mark at 64, 96, 128, 256, 1024 | Docs, slides, third-party listings |
+| `mark-64.png` to `mark-1024.png` | Mark at 64, 96, 128, 256, 1024 | Docs, slides, third-party listings |
 | `avatar-400.png`, `avatar-1000.png` | The full original app icon | GitHub organisation and Docker Hub avatars |
 | `social-preview.html` | 1280x640 source of the repository share card: cube mark and wordmark (`logo-dark.svg` inlined), headline, subline and stack badges | Source for `social-preview.png` |
 | `social-preview.png` | 1280x640 render of `social-preview.html`, under 1 MB | The repository social preview: upload it by hand in GitHub, Settings, General, Social preview (GitHub has no API for it) |
@@ -33,7 +33,7 @@ Colours: tile `#0B0B14`, share-card background `#0A0A0F`, wordmark `#0F172A` (li
 | `icon-maskable-192.png`, `icon-maskable-512.png` | 192, 512, mark inside the safe zone | the manifest, `purpose: maskable` |
 | `safari-pinned-tab.svg` | single-colour mark | `<link rel="mask-icon" color="#5E8EF3">` |
 | `mstile-150x150.png` | 150 | `msapplication-TileImage` and `browserconfig.xml` |
-| `browserconfig.xml` | — | `msapplication-config` |
+| `browserconfig.xml` | - | `msapplication-config` |
 | `logo.svg`, `logo-dark.svg` | vector | Default wordmark per theme: client `AppLogo` (`dark:` variant), admin `BrandLogo` (`light:` variant) |
 | `client/public/logo.png` | 520×120 | schema.org `Organization.logo` |
 | `client/public/og-image.jpg` | 1200×630 | `og:image` / `twitter:image` fallback (`utils/shareImage.ts`) |

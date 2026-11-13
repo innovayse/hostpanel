@@ -28,7 +28,7 @@ public static class EmailChangedNoticeTemplateSeeder
             Slug,
             "Sent to the previous address once a client's sign-in address has changed.",
             [
-                new SeededEmailVersion("Your sign-in email changed — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Your sign-in email changed | {{ site.name }}", new SeededEmailCopy(
                     "en",
                     "Your Sign-in Email Changed",
                     ["Your account now signs in with {{ new_email }}. Every session that was open has been signed out."],
@@ -36,7 +36,7 @@ public static class EmailChangedNoticeTemplateSeeder
                     ButtonText: null,
                     "If you did not make this change, contact support right away.",
                     EchoButtonUrl: false)),
-                new SeededEmailVersion("Адрес для входа изменён — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Адрес для входа изменён | {{ site.name }}", new SeededEmailCopy(
                     "ru",
                     "Адрес для входа изменён",
                     ["Теперь для входа в аккаунт используется {{ new_email }}. Все открытые сеансы завершены."],
@@ -44,7 +44,7 @@ public static class EmailChangedNoticeTemplateSeeder
                     ButtonText: null,
                     "Если это изменение сделали не вы, срочно обратитесь в поддержку.",
                     EchoButtonUrl: false)),
-                new SeededEmailVersion("Մուտքի էլ. հասցեն փոխվել է — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Մուտքի էլ. հասցեն փոխվել է | {{ site.name }}", new SeededEmailCopy(
                     "hy",
                     "Մուտքի էլ. հասցեն փոխվել է",
                     ["Այժմ ձեր հաշիվ մուտք է գործվում {{ new_email }} հասցեով։ Բոլոր բաց սեանսները փակվել են։"],

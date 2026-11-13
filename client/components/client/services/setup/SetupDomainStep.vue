@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 /**
- * SetupDomainStep - the first step of the setup wizard: the domain the hosting is for. A domain
+ * SetupDomainStep. The first step of the setup wizard: the domain the hosting is for. A domain
  * bought with the plan is shown locked; otherwise the client types one and is told at once when
  * it is not a valid hostname.
  */

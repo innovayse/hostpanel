@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.ListGatewayLogs;
 
 /// <summary>
 /// Validates <see cref="ListGatewayLogsQuery"/> paging before the handler executes. The filters are
-/// free text, dates and an enum, so any value is accepted - decided, not forgotten.
+/// free text, dates and an enum, so any value is accepted: decided, not forgotten.
 /// </summary>
 public sealed class ListGatewayLogsValidator : LocalizedValidator<ListGatewayLogsQuery>
 {

@@ -63,6 +63,12 @@ const router = createRouter({
       meta: { setup: true },
     },
     {
+      // No meta: any visitor may see it, and it must not bounce a signed-in non-admin back to the
+      // panel, which would send them straight here again.
+      path: AppRoute.Forbidden,
+      component: lazy('views/ForbiddenView.vue'),
+    },
+    {
       path: '/verify-email',
       component: lazy('views/VerifyEmailView.vue'),
       meta: { public: true },
@@ -192,7 +198,8 @@ const router = createRouter({
             { path: ':category', component: lazy('views/IntegrationsView.vue') },
           ],
         },
-        { path: 'settings', component: lazy('views/SystemSettingsView.vue') },
+        { path: 'settings', component: lazy('views/SettingsIndexView.vue') },
+        { path: 'settings/general', component: lazy('views/SystemSettingsView.vue') },
         { path: 'settings/email-templates', component: lazy('views/EmailTemplatesView.vue') },
         { path: 'settings/products', component: lazy('views/ProductsView.vue') },
         { path: 'settings/product-bundles', component: lazy('views/ProductBundlesView.vue') },
@@ -224,7 +231,7 @@ const router = createRouter({
         { path: 'storefront/locations/:id/edit', component: lazy('views/LocationFormView.vue') },
       ],
     },
-    { path: '/:pathMatch(.*)*', redirect: AppRoute.Login },
+    { path: '/:pathMatch(.*)*', component: lazy('views/NotFoundView.vue') },
   ],
 })
 

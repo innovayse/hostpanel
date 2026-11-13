@@ -6,7 +6,7 @@ keywords: "write plugin, hostpanel sdk, payment plugin, provisioning plugin, plu
 
 # Write a plugin
 
-A plugin is a .NET class library that references the Hostpanel SDK and adds a payment gateway, a provisioning module, a domain registrar or another capability. The plugin never references the Hostpanel host directly — only the SDK.
+A plugin is a .NET class library that references the Hostpanel SDK and adds a payment gateway, a provisioning module, a domain registrar or another capability. The plugin never references the Hostpanel host directly, only the SDK.
 
 ## Before you start
 
@@ -24,8 +24,8 @@ The `PluginType` enum defines what a plugin can be:
 
 | Type | Value | Covered in this guide |
 |------|-------|-----------------------|
-| `Provisioning` | 0 | Yes — see below |
-| `Payment` | 1 | Yes — see below |
+| `Provisioning` | 0 | Yes: see below |
+| `Payment` | 1 | Yes: see below |
 | `Registrar` | 2 | Listed only |
 | `Identity` | 3 | Listed only |
 | `Fulfilment` | 4 | Listed only |
@@ -226,7 +226,7 @@ public class MyGatewayTests
 
 ## A provisioning plugin
 
-Inherit `ProvisioningProviderBase` and implement `IProvisioningPlugin` from `Hostpanel.Sdk.Plugins.Provisioning`. Read `backend/src/Innovayse.Providers.CWP7` as the reference implementation — it shows the full hosting panel client contract and how to handle each provisioning command (create, suspend, unsuspend, terminate, change package, change password, login).
+Inherit `ProvisioningProviderBase` and implement `IProvisioningPlugin` from `Hostpanel.Sdk.Plugins.Provisioning`. Read `backend/src/Innovayse.Providers.CWP7` as the reference implementation, it shows the full hosting panel client contract and how to handle each provisioning command (create, suspend, unsuspend, terminate, change package, change password, login).
 
 ## The manifest (`plugin.json`)
 
@@ -249,7 +249,7 @@ Every plugin ZIP must have `plugin.json` at the root.
   { name: 'fields', type: 'array', default: '[]', description: 'Settings shown on the integration page, in order.' }
 ]" />
 
-The `icon` file is checked when the plugin is installed and again when it is loaded. A path that leaves the package, a file that is missing (`PLUGIN_ICON_MISSING`), a file over the size limit, a `.png` that is not a PNG, and an SVG that is not well-formed XML or that holds a script, a `foreignObject`, an event handler attribute (`onload`, `onclick`, ...), a DOCTYPE, or a reference that leaves the image (an `href` that is not a `#fragment`, a `url(...)` that is not a `#fragment`, `@import`) are refused with `PLUGIN_ICON_INVALID`. The admin panel shows the image where it shows the colour block; the host serves it from `GET /api/admin/plugins/{id}/icon` with `X-Content-Type-Options: nosniff` and a policy that blocks script and every fetch.
+The `icon` file is checked when the plugin is installed and again when it is loaded. A path that leaves the package, a file that is missing (`PLUGIN_ICON_MISSING`), a file over the size limit, a `.png` that is not a PNG, and an SVG that is not well-formed XML or that holds a script, a `foreignObject`, an event handler attribute (`onload`, `onclick` and so on), a DOCTYPE, or a reference that leaves the image (an `href` that is not a `#fragment`, a `url(...)` that is not a `#fragment`, `@import`) are refused with `PLUGIN_ICON_INVALID`. The admin panel shows the image where it shows the colour block; the host serves it from `GET /api/admin/plugins/{id}/icon` with `X-Content-Type-Options: nosniff` and a policy that blocks script and every fetch.
 
 The fields above cover manifest version 1. A manifest without `manifestVersion` is version 1; the host accepts `1` and `2` and refuses any other value (`PLUGIN_MANIFEST_VERSION_UNKNOWN`). `version` must be a strict `major.minor.patch` version. Manifest version 2 (`"manifestVersion": 2`) adds the members below.
 
@@ -680,7 +680,7 @@ plugin.sig                                 ← signature file (required on produ
 
 **Assembly naming.** The prefix `Innovayse.Hostpanel.` belongs to the host, so a package carrying a DLL under it is refused. The one exception is the plugin namespace `Innovayse.Hostpanel.Plugins.<Name>` (for example `Innovayse.Hostpanel.Plugins.Stripe.dll`), which is how official plugins are named and is always allowed in a package. The dot after `Plugins` is the boundary: `Innovayse.Hostpanel.PluginsX.dll` and `Innovayse.Hostpanel.Plugins.dll` are still host names and are refused. No host assembly is ever named under the plugin namespace (an architecture test guards it), so a plugin can never shadow one. Third-party plugins keep their own prefix, such as `MyCompany.MyGateway`.
 
-Do **not** include the SDK assembly (`Hostpanel.Sdk.dll`) or any assembly the host already provides. The server refuses packages that contain a host assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`). Give your assemblies names no other plugin uses: a package is also refused (`PLUGIN_ASSEMBLY_CONFLICT`) when one of its DLL or EXE file names, compared without regard to case, is already shipped by another installed or staged plugin, because the loader would bind both plugins to one copy. The rule covers every DLL in the package, shared third-party libraries included (a JSON or HTTP library two plugins both ship counts): if another installed plugin already ships a library of that name, pick a different assembly name or merge the library into your own assembly. Upgrading the same plugin `id` never conflicts with itself. A duplicate plugin `id` is skipped at startup without error — the first loaded version wins (built-in plugins load before uploaded ones).
+Do **not** include the SDK assembly (`Hostpanel.Sdk.dll`) or any assembly the host already provides. The server refuses packages that contain a host assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`). Give your assemblies names no other plugin uses: a package is also refused (`PLUGIN_ASSEMBLY_CONFLICT`) when one of its DLL or EXE file names, compared without regard to case, is already shipped by another installed or staged plugin, because the loader would bind both plugins to one copy. The rule covers every DLL in the package, shared third-party libraries included (a JSON or HTTP library two plugins both ship counts): if another installed plugin already ships a library of that name, pick a different assembly name or merge the library into your own assembly. Upgrading the same plugin `id` never conflicts with itself. A duplicate plugin `id` is skipped at startup without error, the first loaded version wins (built-in plugins load before uploaded ones).
 
 ### Sign the package
 
@@ -700,7 +700,7 @@ dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./My
 
 This writes `plugin.sig` into the folder. Zip the folder after signing.
 
-The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`. When you update a plugin, re-sign the new folder before re-zipping — updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
+The operator must add the matching public key to `PluginSigning:OperatorKeys` in their deployment environment, or the package will be refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`. When you update a plugin, re-sign the new folder before re-zipping, updating re-checks the signature and the server will refuse a stale or missing `plugin.sig`.
 
 ## Test it
 

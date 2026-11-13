@@ -15,6 +15,7 @@ import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -29,7 +30,8 @@ import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
 import { toIsoDay } from '@/lib/format'
 import { useQuotesStore } from '@/stores/quotes'
 import { QuoteStage } from '@/types/quote'
-import type { QuoteItemUpdate } from '@/types/quote'
+import { blankQuoteLine, quoteLinesPayload } from '@/lib/quoteLines'
+import type { QuoteLineDraft } from '@/types/quote'
 import { MS_PER_DAY } from '@/lib/limits'
 import { AppRoute, quotePath } from '@/lib/routes'
 
@@ -59,7 +61,7 @@ const stage = ref<string>(QuoteStage.Draft)
 const validUntil = ref<string | null>(toIsoDay(new Date(Date.now() + DEFAULT_VALIDITY_DAYS * MS_PER_DAY)))
 
 /** The quote lines, starting with one blank line. */
-const items = ref<QuoteItemUpdate[]>([{ quantity: 1, description: '', unitPrice: 0, discountPercent: 0, taxed: false }])
+const items = ref<QuoteLineDraft[]>([blankQuoteLine()])
 
 /** Proposal text shown at the top of the quote. */
 const proposalText = ref('')
@@ -83,7 +85,7 @@ const submit = async (): Promise<void> => {
     proposalText: proposalText.value || undefined,
     customerNotes: customerNotes.value || undefined,
     adminNotes: adminNotes.value || undefined,
-    items: items.value,
+    items: quoteLinesPayload(items.value),
   })
   if (id !== null) {
     await router.push(quotePath(id))
@@ -172,14 +174,14 @@ onMounted(() => {
         </UiStack>
       </UiCard>
 
-      <UiStack direction="row" gap="md" align="center">
-        <UiButton type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-quote-submit">
-          {{ t('billing.addQuote.createQuote') }}
-        </UiButton>
+      <UiFormActions>
         <UiLink :to="AppRoute.BillingQuotes" variant="ghost" data-testid="billing-add-quote-cancel">
           {{ t('shared.cancel') }}
         </UiLink>
-      </UiStack>
+        <UiButton type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-quote-submit">
+          {{ t('billing.addQuote.createQuote') }}
+        </UiButton>
+      </UiFormActions>
     </UiForm>
   </UiStack>
 </template>

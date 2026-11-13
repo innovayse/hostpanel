@@ -57,7 +57,7 @@ Click a ticket to open its detail page.
 
 **Ticket Settings panel** (right side): Department, Priority, Status, Save Changes.
 
-**Conversation** — the thread of messages between the client and staff.
+**Conversation**: the thread of messages between the client and staff.
 
 <Steps>
 <li>
@@ -85,9 +85,9 @@ If the department has no email address configured, no notification is sent on ti
 
 ## Close, reopen, delete
 
-- **Close** — closes the ticket and emails the client. A closed ticket cannot receive replies (`TICKET_REPLY_NOT_ALLOWED`). Closing an already-closed ticket returns `TICKET_CLOSE_NOT_ALLOWED`.
-- **Reopen** — moves a closed ticket back to Open.
-- **Delete** — permanently deletes the ticket. This cannot be undone.
+- **Close**: closes the ticket and emails the client. A closed ticket cannot receive replies (`TICKET_REPLY_NOT_ALLOWED`). Closing an already-closed ticket returns `TICKET_CLOSE_NOT_ALLOWED`.
+- **Reopen**: moves a closed ticket back to Open.
+- **Delete**: permanently deletes the ticket. This cannot be undone.
 
 There is no automatic closing of old tickets.
 
@@ -119,11 +119,11 @@ You can also open a ticket from a client's own **Tickets** tab.
 
 Go to **Support → Predefined Replies**. Subtitle: "Manage predefined ticket reply templates."
 
-**Categories** — organise replies into groups. Click **Add Category** and enter a Category Name. A category that has replies or sub-categories cannot be deleted (`PREDEFINED_REPLY_CATEGORY_IN_USE`). A predefined reply that does not exist returns `PREDEFINED_REPLY_NOT_FOUND`.
+**Categories**: organise replies into groups. Click **Add Category** and enter a Category Name. A category that has replies or sub-categories cannot be deleted (`PREDEFINED_REPLY_CATEGORY_IN_USE`). A predefined reply that does not exist returns `PREDEFINED_REPLY_NOT_FOUND`.
 
-**Replies** — click **Add Predefined Reply** and fill in Name, Category and Content.
+**Replies**: click **Add Predefined Reply** and fill in Name, Category and Content.
 
-**Search** — search predefined replies by name or content.
+**Search**: search predefined replies by name or content.
 
 ## Support reports
 

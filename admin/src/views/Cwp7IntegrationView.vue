@@ -22,7 +22,6 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
@@ -139,7 +138,9 @@ onMounted(() => {
       </UiCard>
 
       <!-- Loading -->
-      <UiSkeleton v-else-if="serversStore.loading" :lines="3" data-testid="cwp7-servers-loading" />
+      <UiGrid v-else-if="serversStore.loading" :columns="3" gap="md" data-testid="cwp7-servers-loading">
+        <UiCard v-for="index in 3" :key="index" padding="md" loading :skeleton-lines="3" />
+      </UiGrid>
 
       <!-- Server cards -->
       <UiGrid v-else :columns="3" gap="md" data-testid="cwp7-servers">

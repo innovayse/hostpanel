@@ -126,6 +126,14 @@ describe('PluginsView', () => {
     vi.unstubAllGlobals()
   })
 
+  it('keeps the installed heading and draws card placeholders while the list loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountPlugins()
+
+    expect(wrapper.get('[data-testid="plugins-loading"]').text()).toContain('Installed Plugins')
+    expect(wrapper.findAll('[data-testid="plugin-card-loading"]')).toHaveLength(4)
+  })
+
   it('lists the installed plugins', async () => {
     stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
     const wrapper = await mountPlugins()
@@ -714,5 +722,47 @@ describe('PluginsView registration card', () => {
     await mountPlugins()
 
     expect(mock.mock.calls.some(([url]) => String(url).includes('registry-instance'))).toBe(false)
+  })
+  it('loads the registry with the search, category and page held in the address', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 30, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const { wrapper } = await mountRouted(PluginsView, '/plugins', '/plugins?search=pay&category=Payment&page=2')
+    await flushPromises()
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+
+    const request = mock.mock.calls.map(([url]) => String(url)).find(url => url.startsWith('/api/admin/plugins/registry?'))
+    expect(request).toContain('q=pay')
+    expect(request).toContain('category=Payment')
+    expect(request).toContain('page=2')
+    expect((wrapper.get('[data-testid="plugin-registry-search"]').element as HTMLInputElement).value).toBe('pay')
+  })
+  it('narrows the installed list by the search text and the status in the address', async () => {
+    const mailer = { ...plugin, id: 'example-mail', name: 'Mailer', description: 'Sends email', isLoaded: false }
+    stubRoutes({
+      'GET /api/admin/plugins/example-mail/slot-widgets': () => json([]),
+      'GET /api/admin/plugins': () => json([plugin, mailer]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const { wrapper } = await mountRouted(PluginsView, '/plugins', '/plugins?installedSearch=mail&status=pendingRestart')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-card-example-mail"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-card-example-pay"]').exists()).toBe(false)
+  })
+
+  it('shows the no-match state when no installed plugin fits the filters', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const { wrapper } = await mountRouted(PluginsView, '/plugins', '/plugins?installedSearch=nothing-like-this')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugins-no-match"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-card-example-pay"]').exists()).toBe(false)
   })
 })

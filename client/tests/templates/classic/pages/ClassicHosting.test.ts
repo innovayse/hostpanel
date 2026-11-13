@@ -32,7 +32,7 @@ const plans = [
 
 /**
  * Stands in for `useAsyncData` the way Nuxt runs it: the handler once, and again whenever a watched
- * source or a getter key changes - which is what re-reads the plans once the payer currency resolves.
+ * source or a getter key changes, which is what re-reads the plans once the payer currency resolves.
  *
  * @param key The cache key; a getter is watched like a source.
  * @param handler The read to run.

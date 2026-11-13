@@ -8,11 +8,11 @@ description: How to choose and configure a client portal template, set brand col
 How the public client portal picks a design, how to add one, and which settings brand it.
 
 The public portal ships three designs and renders whichever one is selected. All
-produce identical SEO output — canonical, hreflang and schema.org live in
+produce identical SEO output, canonical, hreflang and schema.org live in
 `client/pages/`, never in a template.
 
 Set the site's own origin, or the sitemap will advertise whatever host each
-request happened to arrive on — behind a proxy that can be the container's
+request happened to arrive on, behind a proxy that can be the container's
 internal address. `NUXT_PUBLIC_BASE_URL` covers it at build time; a prebuilt
 image reads `NUXT_SITE_URL` at startup, which overrides the built-in value.
 
@@ -23,12 +23,12 @@ image reads `NUXT_SITE_URL` at startup, which overrides the built-in value.
 | `classic` | The original storefront design |
 
 `nova` supplies its own header, footer, homepage and hosting page, and reuses
-aurora's domain search and checkout — the checkout is the ordering path, and a
+aurora's domain search and checkout, the checkout is the ordering path, and a
 second copy of it would be a second place for a payment bug to live. Its design
 tokens are prefixed `--n-*` and declared only under `.tpl-nova` and
 `html[data-template='nova']`, so activating it cannot disturb the other two.
 
-Several of its cards state things this codebase cannot verify — NVMe storage, a
+Several of its cards state things this codebase cannot verify, NVMe storage, a
 CDN, server-side caching, a firewall, a malware scanner, a backup schedule, an
 uptime figure, free migration. Each waits on a setting and is hidden until an
 operator turns it on:
@@ -101,7 +101,7 @@ wins once set):
 | `portal.logo.dark` | `NUXT_PUBLIC_PORTAL_LOGO_DARK` | Logo for dark backgrounds; falls back to the light one. |
 | `portal.logo.mark` | `NUXT_PUBLIC_PORTAL_LOGO_MARK` | Square icon-only logo for compact places. |
 | `portal.favicon` | `NUXT_PUBLIC_PORTAL_FAVICON` | Browser tab icon; an upload generates the whole icon set. |
-| `portal.brand.primary` | `NUXT_PUBLIC_PORTAL_BRAND_PRIMARY` | Brand colour as `#rrggbb`. The whole primary scale — buttons, links, highlights, e-mail buttons — is derived from it; the text on it turns dark automatically when the colour is too light for white. |
+| `portal.brand.primary` | `NUXT_PUBLIC_PORTAL_BRAND_PRIMARY` | Brand colour as `#rrggbb`. The whole primary scale, buttons, links, highlights, e-mail buttons, is derived from it; the text on it turns dark automatically when the colour is too light for white. |
 | `portal.brand.accent` | `NUXT_PUBLIC_PORTAL_BRAND_ACCENT` | Accent colour as `#rrggbb`; gradients, badges and secondary highlights. |
 | `portal.brand.font_heading` | `NUXT_PUBLIC_PORTAL_BRAND_FONT_HEADING` | `inter`, `noto-sans-armenian`, `noto-serif-armenian` or `system`. Bundled; nothing loads from a font service. |
 | `portal.brand.font_body` | `NUXT_PUBLIC_PORTAL_BRAND_FONT_BODY` | Same list, for body text. |
@@ -149,8 +149,8 @@ and `portal.migration.free`. The uptime line in its trust bar prints `portal.sta
 
 The header app launcher is off unless `portal.apps.enabled` is `true`, because
 the apps it links to only exist in a deployment that runs them. Each entry then
-needs a URL of its own — `portal.apps.{account,tasks,erp,hostpanel,sheets,mail,docs,calendar}`,
-or the matching `NUXT_PUBLIC_*` variable — and entries without one are left out.
+needs a URL of its own: `portal.apps.{account,tasks,erp,hostpanel,sheets,mail,docs,calendar}`,
+or the matching `NUXT_PUBLIC_*` variable, and entries without one are left out.
 
 Every seeded setting is editable in **Admin → Settings**; the table takes one row
 at a time.

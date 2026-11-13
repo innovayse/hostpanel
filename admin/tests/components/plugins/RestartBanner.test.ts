@@ -20,7 +20,8 @@ describe('RestartBanner', () => {
     const wrapper = mount(RestartBanner, { props: { restarting: true }, global: { plugins: [createTestI18n()] } })
 
     expect(wrapper.get('[data-testid="plugins-restart"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.text()).toContain('Restarting')
+    expect(wrapper.get('[data-testid="plugins-restart"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.text()).toContain('Restart Server')
   })
 
   it('spreads text and button across the alert and wraps on a narrow screen', () => {

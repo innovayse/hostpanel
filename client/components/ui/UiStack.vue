@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiStack - lays its children out in a column or a row with a consistent gap.
+ * UiStack: lays its children out in a column or a row with a consistent gap.
  *
  * The replacement for a hand-written `flex flex-col gap-4` div. Gap, alignment and distribution
  * are enums, so spacing across the portal comes from one scale.

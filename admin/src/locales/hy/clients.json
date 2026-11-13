@@ -1,6 +1,6 @@
 {
   "addBillableItem": {
-    "describeTheCharge": "Նկարագրեք գանձումը..."
+    "describeTheCharge": "Նկարագրեք գանձումը"
   },
   "addTimeBilling": {
     "addTimeBillingEntries": "Ավելացնել ժամանակի հաշվառման գրառումներ",
@@ -12,9 +12,11 @@
   },
   "addTransaction": {
     "addNewTransaction": "Ավելացնել նոր գործարք",
-    "transactionDescription": "Գործարքի նկարագրություն...",
-    "externalReference": "Արտաքին հղում...",
-    "invoiceIdOptional": "Հաշվի ID (ոչ պարտադիր)",
+    "transactionDescription": "Գործարքի նկարագրություն",
+    "externalReference": "Արտաքին հղում",
+    "invoiceIdOptional": "Հաշիվ (ոչ պարտադիր)",
+    "noInvoice": "Առանց հաշվի",
+    "selectInvoice": "Ընտրեք հաշիվը",
     "selectGateway": "Ընտրեք դարպասը",
     "addToClientSCredit": "Ավելացնել հաճախորդի կրեդիտային մնացորդին",
     "failedToSaveTransaction": "Չհաջողվեց պահպանել գործարքը։"
@@ -28,7 +30,6 @@
     "exportData": "Տվյալների արտահանում",
     "chooseWhichDataPointsTo": "Ընտրեք տվյալները, որոնք պետք է ներառվեն արտահանման մեջ։",
     "generatingAnExportForA": "Մեծ պատմություն ունեցող հաճախորդի տվյալների արտահանումը կարող է որոշ ժամանակ տևել։",
-    "generating": "Ստեղծվում է…",
     "profileData": "Պրոֆիլի տվյալներ",
     "payMethods": "Վճարման եղանակներ",
     "users": "Կապված օգտատերեր",
@@ -140,9 +141,8 @@
     "billableItems": "Վճարվող դիրքեր",
     "addTimeBillingEntries": "Ավելացնել ժամանակի հաշվառման գրառումներ",
     "addBillableItem": "+ Ավելացնել վճարվող դիրք",
-    "loadingBillableItems": "Վճարվող դիրքերը բեռնվում են...",
     "uninvoicedItemsLength": "Չհաշվարկված դիրքեր ({length})",
-    "uninvoicedItemsAmountLength": "Չհաշվարկված դիրքեր — {amount} ({length})",
+    "uninvoicedItemsAmountLength": "Չհաշվարկված կետեր՝ {amount} ({length})",
     "invoiceSelectedItems": "Հաշիվ դուրս գրել ընտրված դիրքերի համար",
     "noUninvoicedBillableItems": "Չհաշվարկված վճարվող դիրքեր չկան։",
     "invoicedItems": "Հաշվարկված դիրքեր",
@@ -169,8 +169,7 @@
     "contactDeletedSuccessfully": "Կոնտակտը հաջողությամբ ջնջվեց։"
   },
   "clientDomainDetail": {
-    "loadingDomain": "Դոմեյնը բեռնվում է...",
-    "domainName": "Դոմեյն — {name}",
+    "domainName": "Դոմեյն՝ {name}",
     "domainInfo": "Տեղեկություններ դոմեյնի մասին",
     "order": "Պատվեր №՝",
     "orderType": "Պատվերի տեսակ՝",
@@ -215,12 +214,10 @@
     "contactSaved": "Կոնտակտային տվյալները պահպանվեցին։"
   },
   "clientDomainsList": {
-    "loadingDomains": "Դոմեյնները բեռնվում են...",
     "noDomainsFoundForThis": "Այս հաճախորդի համար դոմեյններ չեն գտնվել"
   },
   "clientEmails": {
     "emails": "Նամակներ",
-    "loadingEmails": "Նամակները բեռնվում են...",
     "totalcountEmailValue": "Նամակներ՝ {totalCount}",
     "status": "Կարգավիճակ",
     "delivered": "Առաքված է",
@@ -245,37 +242,29 @@
     "allStatuses": "Բոլոր կարգավիճակները",
     "from": "Սկսած",
     "filter": "Ֆիլտր",
-    "loadingInvoices": "Հաշիվները բեռնվում են...",
-    "sizeSelected": "Ընտրված է՝ {size}՝",
-    "bulkActions": "Զանգվածային գործողություններ...",
     "clientinvoicestotalInvoiceValue": "Հաշիվներ՝ {clientInvoicesTotal}",
     "deleteInvoice": "Ջնջել հաշիվը",
-    "confirmBulkAction": "Հաստատեք զանգվածային գործողությունը",
-    "confirmBulkApply": "Կիրառե՞լ «{action}» ընտրված {count} հաշիվ-ապրանքագրին։ | Կիրառե՞լ «{action}» ընտրված {count} հաշիվ-ապրանքագրերին։",
     "confirmDeleteInvoice": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} հաշիվ-ապրանքագիրը։",
     "bulkActionDone": "Կատարվեց ընտրված հաշիվների համար։",
     "invoiceDeleted": "Հաշիվը ջնջվեց։"
   },
   "clientNav": {
-    "rail": "Հաճախորդի բաժիններ",
     "strip": "Հաճախորդի բաժինների ներդիրներ"
   },
   "clientLayout": {
-    "loadingClient": "Հաճախորդը բեռնվում է…",
     "exportData": "Տվյալների արտահանում"
   },
   "clientLog": {
     "activityLog": "Գործունեության մատյան",
     "filterLog": "Մատյանի ֆիլտր",
     "selectDate": "Ընտրեք ամսաթիվը",
-    "loadingActivityLog": "Գործունեության մատյանը բեռնվում է...",
     "logEntry": "Մատյանի գրառում",
     "user": "Օգտատեր",
     "totalcountEntrValue": "Գրառումներ՝ {totalCount}"
   },
   "clientOpenTicket": {
     "ticketSubject": "Տոմսի թեմա",
-    "describeTheIssue": "Նկարագրեք խնդիրը...",
+    "describeTheIssue": "Նկարագրեք խնդիրը",
     "openTicket": "Բացել տոմս"
   },
   "clientProfile": {
@@ -307,7 +296,6 @@
   },
   "clientQuotes": {
     "createNewQuote": "+ Ստեղծել նոր առաջարկ",
-    "loadingQuotes": "Առաջարկները բեռնվում են...",
     "createDate": "Ստեղծման ամսաթիվ",
     "noQuotesFound": "Առաջարկներ չեն գտնվել։",
     "clientquotestotalQuoteValue": "Առաջարկներ՝ {clientQuotesTotal}",
@@ -316,8 +304,7 @@
     "quoteDeleted": "Առաջարկը ջնջվեց։"
   },
   "clientServiceDetail": {
-    "loadingService": "Ծառայությունը բեռնվում է...",
-    "serviceIdProductname": "Ծառայություն №{id} — {productName}",
+    "serviceIdProductname": "Ծառայություն №{id}՝ {productName}",
     "loginToControlPanel": "Մուտք կառավարման վահանակ",
     "serviceInfo": "Տեղեկություններ ծառայության մասին",
     "order": "Պատվեր №",
@@ -373,19 +360,16 @@
     "terminated": "Ծառայությունը դադարեցված է։"
   },
   "clientServicesList": {
-    "loadingServices": "Ծառայությունները բեռնվում են...",
     "nextDue": "Հաջորդ վճարում",
     "totalcountServiceValue": "Ծառայություններ՝ {totalCount}",
     "noServicesFoundForThis": "Այս հաճախորդի համար ծառայություններ չեն գտնվել"
   },
   "clientsList": {
     "manageYourClientAccounts": "Հաճախորդների հաշիվների կառավարում",
+    "searchPlaceholder": "Որոնել ըստ անվան, ընկերության կամ ID-ի",
     "addClient": "Ավելացնել հաճախորդ",
-    "clientCompanyName": "Հաճախորդ / ընկերության անվանում",
-    "searchByName": "Որոնում ըստ անվան…",
-    "searchByEmail": "Որոնում ըստ էլ. փոստի…",
-    "searchByPhone": "Որոնում ըստ հեռախոսի…",
-    "loadingClients": "Հաճախորդները բեռնվում են…",
+    "searchByEmail": "Որոնում ըստ էլ. փոստի",
+    "searchByPhone": "Որոնում ըստ հեռախոսի",
     "2fa": "2FA",
     "joined": "Գրանցման ամսաթիվ",
     "userDeleted": "Օգտատերը ջնջված է",
@@ -393,7 +377,6 @@
     "on": "Միաց.",
     "twoFactorAuthenticationDisabled": "Երկգործոն նույնականացումն անջատված է",
     "off": "Անջ.",
-    "totalcountClientValue": "Հաճախորդներ՝ {totalCount}",
     "noClientsMatchYourFilters": "Ֆիլտրերին համապատասխան հաճախորդներ չկան",
     "noClientsFound": "Հաճախորդներ չեն գտնվել",
     "clearFilters": "Մաքրել ֆիլտրերը",
@@ -402,7 +385,6 @@
   },
   "clientSummary": {
     "summary": "Ամփոփում",
-    "loadingSummary": "Ամփոփումը բեռնվում է...",
     "clientInformation": "Տեղեկություններ հաճախորդի մասին",
     "stateRegion": "Մարզ/տարածաշրջան",
     "otherInformation": "Լրացուցիչ տեղեկություններ",
@@ -438,7 +420,7 @@
     "viewAllTickets": "Բոլոր տոմսերը",
     "recentEmails": "Վերջին նամակները",
     "noEmailsSent": "Նամակներ չեն ուղարկվել",
-    "addNotesAboutThisClient": "Ավելացրեք նշումներ այս հաճախորդի մասին...",
+    "addNotesAboutThisClient": "Ավելացրեք նշումներ այս հաճախորդի մասին",
     "productsServices2": "Ապրանքներ/ծառայություններ",
     "nextDue": "Հաջորդ վճարում",
     "noServicesFound": "Ծառայություններ չեն գտնվել",
@@ -449,11 +431,10 @@
     "notesSaved": "Նշումները պահպանվեցին։"
   },
   "clientTicketDetail": {
-    "loadingTicket": "Տոմսը բեռնվում է...",
     "reopen": "Վերաբացել",
     "ticketSettings": "Տոմսի կարգավորումներ",
     "noRepliesYet": "Պատասխաններ դեռ չկան",
-    "typeYourReply": "Մուտքագրեք ձեր պատասխանը...",
+    "typeYourReply": "Մուտքագրեք ձեր պատասխանը",
     "reply": "Պատասխանել",
     "conversation": "Նամակագրություն",
     "staff": "Աշխատակից",
@@ -467,7 +448,6 @@
   "clientTickets": {
     "tickets": "Տոմսեր",
     "openNewTicket": "Բացել նոր տոմս +",
-    "loadingTickets": "Տոմսերը բեռնվում են...",
     "openedThisMonth": "Բացվել է այս ամիս",
     "openedLastMonth": "Բացվել է անցյալ ամիս",
     "openedThisYear": "Բացվել է այս տարի",
@@ -479,7 +459,6 @@
   },
   "clientTransactions": {
     "addNewTransaction": "+ Ավելացնել նոր գործարք",
-    "loadingTransactions": "Գործարքները բեռնվում են...",
     "totalIn": "Ընդհանուր մուտք",
     "totalFees": "Ընդհանուր միջնորդավճարներ",
     "totalOut": "Ընդհանուր ելք",
@@ -490,14 +469,12 @@
     "transactionDeleted": "Գործարքը ջնջվեց։"
   },
   "clientUsers": {
-    "loadingUsers": "Օգտատերերը բեռնվում են...",
     "usersLength": "Օգտատերեր ({length})",
     "addUser": "+ Ավելացնել օգտատեր",
     "addUserToAccount": "Ավելացնել օգտատեր հաշվին",
     "searchExisting": "Գտնել առկա օգտատիրոջը",
     "inviteByEmail": "Հրավիրել էլ. փոստով",
     "permissions": "Թույլտվություններ",
-    "adding": "Ավելացվում է...",
     "addUser2": "Ավելացնել օգտատեր",
     "sendInvite": "Ուղարկել հրավեր",
     "role": "Դեր",
@@ -537,7 +514,7 @@
     "manageUsers": "Օգտատերերի կառավարում",
     "viewAndManageUserAccounts": "Օգտատերերի հաշիվների դիտում և կառավարում",
     "addClient": "Ավելացնել հաճախորդ",
-    "searchByNameOrEmail": "Որոնում ըստ անվան կամ էլ. փոստի…",
+    "searchByNameOrEmail": "Որոնում ըստ անվան կամ էլ. փոստի",
     "lastLogin": "Վերջին մուտք",
     "manageUser": "Օգտատիրոջ կառավարում",
     "sendPasswordResetEmail": "Ուղարկել գաղտնաբառի վերականգնման նամակ",

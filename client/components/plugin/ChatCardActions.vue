@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatCardActions - the row of actions under a chat's result card, and its details switch.
+ * PluginChatCardActions: the row of actions under a chat's result card, and its details switch.
  *
  * An action may hide itself by its `visibleWhen` condition (PluginChatCardAction). The row is hidden when no action
  * shows and the card has no details switch, so a card whose offers have all lapsed leaves no empty gap between its text

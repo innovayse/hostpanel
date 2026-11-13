@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 /**
- * UiAccentButton - a button, link or route link painted in the colour of the nearest `UiAccent`.
+ * UiAccentButton: a button, link or route link painted in the colour of the nearest `UiAccent`.
  *
  * Use it where the colour is data (a product's brand colour); everywhere else `UiButton` is the
  * button. `to` renders a NuxtLink, `href` an anchor (off-site ones open in a new tab with

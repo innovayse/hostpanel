@@ -88,12 +88,14 @@ const orderWith = (items: ReturnType<typeof line>[]) => ({
 })
 
 /**
- * Mounts the detail for order 8 and waits for its load.
+ * Mounts the detail for order 8, waits for its load and opens the items tab, where the lines are.
  *
  * @returns The wrapper.
  */
 const mountDetail = async () => {
   const { wrapper } = await mountRouted(OrderDetailView, '/orders/:id', '/orders/8')
+  await flushPromises()
+  await wrapper.get('[data-testid="order-tab-items"]').trigger('click')
   await flushPromises()
   return wrapper
 }

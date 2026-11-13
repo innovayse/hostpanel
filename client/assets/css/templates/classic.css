@@ -13,7 +13,7 @@
  * `on-brand` text, also at least 4.5:1, so dark mode never shows a pale pastel fill with dark text.
  * `border-strong` is the visible border of outline controls and idle chips (3:1 on page and surface).
  *
- * The shared kit (components/ui) carries hook classes (`ui-btn`, `ui-card`, `ui-field`, ...) that
+ * The shared kit (components/ui) carries hook classes (`ui-btn`, `ui-card`, `ui-field` and so on) that
  * do nothing by themselves. The second half of this file restyles them where classic is the
  * active template: under `.tpl-classic` (the layout root) and under `html[data-template='classic']`
  * (so teleported dialogs and drawers, which live outside the layout root, match).

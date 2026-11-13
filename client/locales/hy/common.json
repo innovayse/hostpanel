@@ -7,14 +7,14 @@
       "switchLight": "Բաց ռեժիմ"
     },
     "pagination": {
-      "showing": "{from}–{to} / {total} գրառում",
+      "showing": "{from}-{to} / {total} գրառում",
       "show": "Ցույց տալ",
       "entries": "գրառում",
       "prev": "Նախ.",
       "next": "Հաջ.",
       "label": "Էջավորում"
     },
-    "search": "Որոնում…",
+    "search": "Որոնում",
     "close": "Փակել",
     "loading": "Բեռնվում է",
     "showPassword": "Ցույց տալ գաղտնաբառը",

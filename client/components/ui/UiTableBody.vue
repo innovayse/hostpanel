@@ -6,6 +6,6 @@
 
 <script setup lang="ts">
 /**
- * TableBody (`UiTableBody`) - the body of a UiTable: rows separated by hairlines.
+ * TableBody (`UiTableBody`). The body of a UiTable: rows separated by hairlines.
  */
 </script>

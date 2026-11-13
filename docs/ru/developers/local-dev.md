@@ -73,10 +73,10 @@ docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml up -d
 ## Откройте приложения {#open-it}
 
 <SettingTable :settings="[
-  { name: 'CLIENT_HOST_PORT', type: 'number', default: '3001', description: 'Клиентский портал — http://localhost:3001' },
-  { name: 'ADMIN_HOST_PORT', type: 'number', default: '5174', description: 'Панель администратора — http://localhost:5174' },
-  { name: 'API_HOST_PORT', type: 'number', default: '5149', description: 'API и страница OpenAPI — http://localhost:5149/swagger' },
-  { name: 'MAILHOG_UI_HOST_PORT', type: 'number', default: '8027', description: 'Интерфейс локального почтового ящика — http://localhost:8027' },
+  { name: 'CLIENT_HOST_PORT', type: 'number', default: '3001', description: 'Клиентский портал: http://localhost:3001' },
+  { name: 'ADMIN_HOST_PORT', type: 'number', default: '5174', description: 'Панель администратора: http://localhost:5174' },
+  { name: 'API_HOST_PORT', type: 'number', default: '5149', description: 'API и страница OpenAPI: http://localhost:5149/swagger' },
+  { name: 'MAILHOG_UI_HOST_PORT', type: 'number', default: '8027', description: 'Интерфейс локального почтового ящика: http://localhost:8027' },
 ]" />
 
 Начальные данные для разработки создают такие учётные записи:

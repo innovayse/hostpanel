@@ -25,6 +25,9 @@ export const SEARCH_DEBOUNCE_MS = 300
 /** Rows per page of an ordinary list. */
 export const DEFAULT_PAGE_SIZE = 20
 
+/** Page sizes a list's rows-per-page select offers. */
+export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
+
 /** Rows per page of a ledger-style list (invoices, transactions, activity). */
 export const LEDGER_PAGE_SIZE = 25
 

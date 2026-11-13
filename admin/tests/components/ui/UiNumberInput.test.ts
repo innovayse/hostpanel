@@ -107,4 +107,15 @@ describe('UiNumberInput', () => {
 
     expect(wrapper.get('input').attributes('aria-invalid')).toBeUndefined()
   })
+
+  it('ties the field to its message and shows a disabled look without opacity', () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: 1, describedby: 'msg', invalid: true, disabled: true } })
+    const input = wrapper.get('input')
+
+    expect(input.attributes('aria-describedby')).toBe('msg')
+    expect(input.attributes('aria-invalid')).toBe('true')
+    expect(input.attributes('disabled')).toBeDefined()
+    expect(input.classes()).toEqual(expect.arrayContaining(['disabled:text-text-muted', 'rounded-control']))
+    expect(wrapper.classes()).not.toContain('opacity-50')
+  })
 })

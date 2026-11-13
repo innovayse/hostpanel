@@ -273,11 +273,11 @@ const confirmDelete = (): void => {
           </UiButton>
           <UiButton
             variant="primary"
-            :disabled="saving"
+            :loading="saving"
             data-testid="clients-userform-save"
             @click="handleSave"
           >
-            {{ saving ? t('shared.saving2') : t('shared.save') }}
+            {{ t('shared.save') }}
           </UiButton>
         </UiStack>
       </UiStack>
@@ -291,7 +291,6 @@ const confirmDelete = (): void => {
     :title="t('clients.userForm.deleteUser')"
     :message="t('clients.userForm.deleteMessage', { email })"
     :confirm-label="t('shared.delete')"
-    :loading-label="t('shared.deleting')"
     tone="danger"
     data-testid="clients-userform-delete-confirm"
     @confirm="confirmDelete"

@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
 /**
- * UiChatBubble - one message of a conversation, aligned and tinted by who wrote it. The content is the default
+ * UiChatBubble: one message of a conversation, aligned and tinted by who wrote it. The content is the default
  * slot, so nothing is bound as HTML; line breaks are kept. A `div`, because a reply holds paragraphs and lists.
  */
 import { UiChatBubbleSide } from '~/utils/ui/enums'

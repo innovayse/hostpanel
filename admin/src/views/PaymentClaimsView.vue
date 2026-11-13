@@ -75,7 +75,6 @@ onMounted(() => load(1))
       <UiTable
         :loading="store.loading && store.claims.length === 0"
         :empty="!store.loading && !store.error && store.claims.length === 0"
-        :colspan="6"
         data-testid="billing-payment-claims-table"
       >
         <UiTableHead>

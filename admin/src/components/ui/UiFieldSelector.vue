@@ -5,11 +5,15 @@
  * The compact trigger shows how many fields are selected. The parent owns the selection: this
  * component only reports `toggle`, `selectAll` and `clearAll`.
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, useId } from 'vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiLabel from '@/components/ui/UiLabel.vue'
+import { useDropdown } from '@/composables/useDropdown'
+import { fieldSizeClasses } from '@/utils/ui/size'
+import { fieldBaseClasses } from '@/utils/ui/input'
 
 const { t } = useI18n()
 
@@ -35,42 +39,34 @@ const emit = defineEmits<{
   clearAll: []
 }>()
 
-/** Whether the dropdown is open. */
-const open = ref(false)
+/** Open flag, outside-pointer and Escape handling shared with the other floating lists. */
+const { open, root, trigger, toggle: togglePanel, hide, onEscape } = useDropdown()
 
-/** Root element, used for outside-click detection. */
-const root = ref<HTMLElement | null>(null)
+/** Trigger classes: the kit's md field with a quiet label that brightens on hover. */
+const triggerClasses = `w-full flex items-center gap-2 ${fieldBaseClasses} ${fieldSizeClasses.md} text-text-secondary hover:text-text-primary hover:border-text-secondary`
+
+/** Id of the panel, named by the trigger's `aria-controls`. */
+const panelId = useId()
 
 /** Number of selected fields. */
 const selectedCount = computed<number>(() => props.selected.size)
 
 /** Number of available fields. */
 const totalCount = computed<number>(() => props.fields.length)
-
-/**
- * Closes the dropdown when the pointer goes down outside the component.
- *
- * @param e - The mouse event.
- */
-const onOutsideClick = (e: MouseEvent): void => {
-  if (root.value && !root.value.contains(e.target as Node)) {
-    open.value = false
-  }
-}
-
-onMounted(() => document.addEventListener('mousedown', onOutsideClick))
-onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
 </script>
 
 <template>
-  <div ref="root" class="relative">
+  <div ref="root" class="relative" @keydown="onEscape">
     <!-- Trigger -->
     <button
+      ref="trigger"
       type="button"
       data-testid="field-selector-trigger"
+      aria-haspopup="true"
       :aria-expanded="open"
-      class="w-full flex items-center gap-2 bg-surface-field border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-secondary hover:text-text-primary hover:border-text-secondary outline-none focus-visible:border-primary-500/50 focus-visible:ring-2 focus-visible:ring-primary-500/30 transition-colors"
-      @click="open = !open"
+      :aria-controls="open ? panelId : undefined"
+      :class="triggerClasses"
+      @click="togglePanel"
     >
       <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
@@ -82,10 +78,10 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
 
     <!-- Dropdown -->
     <UiTransition :kind="UiTransitionKind.Dropdown">
-      <div v-if="open" class="absolute z-50 mt-1.5 left-0 bg-surface-card border border-border rounded-[10px] shadow-xl w-[320px] overflow-hidden">
+      <div v-if="open" :id="panelId" role="group" :aria-label="t('shared.fieldsToInclude')" class="absolute z-50 mt-1.5 left-0 bg-surface-card border border-border rounded-[10px] shadow-xl w-[320px] overflow-hidden">
         <!-- Select all / clear all -->
         <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-surface-field">
-          <span class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-secondary">{{ t('ui.uiFieldSelector.fields') }}</span>
+          <UiLabel variant="field" as="span">{{ t('ui.uiFieldSelector.fields') }}</UiLabel>
           <div class="flex gap-2">
             <button type="button" data-testid="field-selector-select-all" class="text-[0.72rem] text-primary-600 light:text-primary-700 hover:text-primary-500 rounded outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-colors" @click="emit('selectAll')">
               {{ t('shared.selectAll') }}
@@ -120,8 +116,8 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
           <button
             type="button"
             data-testid="field-selector-apply"
-            class="px-3 py-1 gradient-brand text-white text-[0.72rem] font-semibold rounded-[7px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500/50"
-            @click="open = false"
+            class="h-8 px-3.5 gradient-brand text-text-on-primary text-[0.8125rem] font-semibold rounded-[9px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-text-accent"
+            @click="hide(true)"
           >
             {{ t('shared.apply') }}
           </button>

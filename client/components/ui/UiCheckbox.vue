@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 /**
- * UiCheckbox - a themed checkbox with an optional label and description.
+ * UiCheckbox: a themed checkbox with an optional label and description.
  *
  * A visually hidden native checkbox keeps form semantics; the visible box is a `role="checkbox"`
  * button so the look is fully ours. Both the box and the label toggle the value.

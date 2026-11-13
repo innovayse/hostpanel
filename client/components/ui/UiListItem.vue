@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
 /**
- * UiListItem - one entry of a UiList, optionally led by an icon (a check mark in a feature list).
+ * UiListItem: one entry of a UiList, optionally led by an icon (a check mark in a feature list).
  */
 import { computed } from 'vue'
 import type { Component } from 'vue'

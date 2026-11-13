@@ -5,7 +5,8 @@
  * Clear (after a confirmation, shown only while a link exists) removes it. The API is the only validator: its sentence
  * for a refused call (a conflict with another client included) shows under the buttons and its
  * per-field messages (the `fieldErrors` prop) show under their inputs, and go away, through
- * `clearFieldError`, as soon as the operator changes that field.
+ * `clearFieldError`, as soon as the operator changes that field. While the client loads (`loading`) the card keeps its
+ * real header and fields, disabled, with a placeholder bar for the current link.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,6 +17,7 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -31,6 +33,8 @@ const { t } = useI18n()
 const props = withDefaults(defineProps<{
   /** The link the client has now, null when there is none; Clear link shows only while there is one. */
   linked?: ClientExternalAccount | null
+  /** True while the client loads: the fields and buttons are disabled and the current link is a placeholder bar. */
+  loading?: boolean
   /** Whether a save or clear is in flight. */
   saving?: boolean
   /** The API's sentence for the last refused save or clear, null when none. */
@@ -41,6 +45,7 @@ const props = withDefaults(defineProps<{
   notice?: string | null
 }>(), {
   linked: null,
+  loading: false,
   saving: false,
   error: null,
   /**
@@ -124,7 +129,8 @@ useFieldErrorClear(
   <UiCard padding="md" data-testid="client-external-account">
     <UiStack>
       <UiHeading :level="2" variant="card">{{ t('clients.externalAccount.title') }}</UiHeading>
-      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="client-external-account-current">
+      <UiSkeletonBar v-if="loading" class="h-4 w-56 rounded-md" aria-hidden="true" data-testid="client-external-account-skeleton" />
+      <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="client-external-account-current">
         {{ linked ? t('clients.externalAccount.linkedTo', { provider: linked.provider, id: linked.id }) : t('clients.externalAccount.notLinked') }}
       </UiText>
       <UiField
@@ -138,6 +144,7 @@ useFieldErrorClear(
             :id="id"
             v-model="provider"
             :invalid="invalid"
+            :disabled="loading"
             :aria-describedby="describedby"
             :placeholder="t('clients.externalAccount.providerPlaceholder')"
             data-testid="client-external-account-provider"
@@ -155,6 +162,7 @@ useFieldErrorClear(
             :id="id"
             v-model="accountId"
             :invalid="invalid"
+            :disabled="loading"
             :aria-describedby="describedby"
             :placeholder="t('clients.externalAccount.accountIdPlaceholder')"
             data-testid="client-external-account-id"
@@ -165,11 +173,12 @@ useFieldErrorClear(
         <UiButton
           type="button"
           :variant="UiButtonVariant.Primary"
-          :disabled="saving || bothBlank"
+          :loading="saving"
+          :disabled="loading || bothBlank"
           data-testid="client-external-account-save"
           @click="handleSave"
         >
-          {{ saving ? t('shared.saving') : t('shared.save') }}
+          {{ t('shared.save') }}
         </UiButton>
         <UiButton
           v-if="linked"

@@ -14,6 +14,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -156,7 +157,7 @@ onBeforeUnmount(() => {
         :data-testid="`${testid}-search`"
         @input="emit('typing')"
       />
-      <UiText v-if="loading" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('shared.loading') }}</UiText>
+      <UiLoader v-if="loading" />
     </UiStack>
     <UiStack v-if="results.length > 0" gap="xs">
       <UiButton

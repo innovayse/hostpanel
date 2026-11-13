@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 /**
- * BalanceCard - the client's credit balance with the way to add funds.
+ * BalanceCard: the client's credit balance with the way to add funds.
  *
  * The balance is shown in the client's billing currency, as the backend sent it. The compact form is the dashboard widget:
  * the same figure and button, plus a link to the credit page where the history is.

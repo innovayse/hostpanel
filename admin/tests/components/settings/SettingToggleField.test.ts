@@ -1,12 +1,13 @@
 /**
  * Tests for SettingToggleField: the switch shows the stored value, an empty row reads as the
- * default, a flip saves the literal string, and an unseeded row is replaced by the warning.
+ * default, a flip is a draft of the page save bar that saves the literal string, and an unseeded row is replaced by the warning.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingToggleField from '@/components/settings/SettingToggleField.vue'
 import { SettingKey } from '@/types/setting'
 import type { Setting, SettingSave } from '@/types/setting'
 import { mountScreen } from '../../helpers/mount'
+import { mountSettingsCard } from '../../helpers/settingsPage'
 
 /** The save callback the card is given; it answers that the value was stored. */
 const save = vi.fn<SettingSave>(async () => ({ saved: true, error: null }))
@@ -29,7 +30,6 @@ const propsFor = (value: string, defaultOn = true) => ({
   hint: 'Frequently asked questions.',
   defaultOn,
   testid: 'field',
-  save,
 })
 
 describe('SettingToggleField', () => {
@@ -50,18 +50,21 @@ describe('SettingToggleField', () => {
   })
 
   it('saves the flipped value as the literal string', async () => {
-    const { wrapper } = await mountScreen(SettingToggleField, propsFor('true'))
+    const { settings, ...props } = propsFor('true')
+    const { wrapper, registry } = await mountSettingsCard(SettingToggleField, settings, props)
 
     await wrapper.get('[data-testid="field"]').trigger('click')
-    await wrapper.get('[data-testid="field-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[4, 'false']])
   })
 
-  it('does not save before anything changed', async () => {
-    const { wrapper } = await mountScreen(SettingToggleField, propsFor('true'))
+  it('has no Save button and leaves an unchanged switch out of the page save', async () => {
+    const { settings, ...props } = propsFor('true')
+    const { wrapper, registry } = await mountSettingsCard(SettingToggleField, settings, props)
 
-    await wrapper.get('[data-testid="field-save"]').trigger('click')
+    expect(wrapper.find('[data-testid="field-save"]').exists()).toBe(false)
+    await registry.saveAll(save)
 
     expect(save).not.toHaveBeenCalled()
   })

@@ -186,15 +186,24 @@ variables:
   variables:
     IMAGE: $CI_REGISTRY_IMAGE/$SERVICE
     DOCKER_BUILDKIT: "1"
+    # The version comes from the newest release tag, so the clone needs its whole history and its tags.
+    GIT_DEPTH: "0"
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - apk add --no-cache git
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
   script:
+    # The one place the image version is derived (scripts/image-version.sh). It fails the job when no release
+    # tag is reachable, so an image never ships with the Dockerfile placeholder 0.0.0-dev. Only the API image
+    # has a VERSION build argument; the client and admin Dockerfiles would ignore it with a warning.
+    - HOST_VERSION="$(sh scripts/image-version.sh)"
+    - if [ "$SERVICE" = "api" ]; then set -- --build-arg "VERSION=$HOST_VERSION"; else set --; fi
     # The API image restores the private authentication package during its build. The credential
     # reaches it as the BuildKit secret "nuget_credentials" (read from the job environment, never a
     # build arg), so it is not stored in the image layers or its history. The client and admin
     # Dockerfiles never mount the secret. NUXT_PUBLIC_PORTAL_CHAT_BASE_URL is the client's build-time
     # proxy target; an unset CI/CD variable expands to empty (no proxy).
-    - docker build --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
+    - docker build "$@" --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
     # Both tags come from the one build above. A push that stalls would hold the job until the job
     # timeout, so each push has its own limit and is retried a bounded number of times; layers
     # already uploaded are skipped on a retry. The worst case (two tags, three attempts of 240 s
@@ -350,6 +359,19 @@ edge:test:headers:
         - docker/nginx/**/*
         - scripts/check-edge-headers.sh
         - scripts/edge-headers-assert.sh
+
+# Runs scripts/image-version.sh in throwaway repositories: the version an image is built with.
+image-version:test:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - sh scripts/test-image-version.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - scripts/image-version.sh
+        - scripts/test-image-version.sh
 
 # Runs install.sh against a fake docker: the upgrade backup, its retention and --rollback.
 installer:test:backup:

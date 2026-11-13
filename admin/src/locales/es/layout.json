@@ -1,0 +1,31 @@
+{
+  "emailVerificationBanner": {
+    "verifyYourEmail": "Verifica tu correo electrónico",
+    "pleaseCheckYourInboxAnd": "Revisa tu bandeja de entrada y haz clic en el enlace de verificación para activar tu cuenta de administración. No podrás usar el panel de administración hasta que verifiques tu correo electrónico.",
+    "didnTReceiveTheEmail": "¿No recibiste el correo electrónico? Revisa tu carpeta de correo no deseado.",
+    "resend": "Reenviar el correo electrónico",
+    "resent": "Correo electrónico de verificación enviado."
+  },
+  "menu": "Menú",
+  "navigation": "Navegación principal",
+  "viewLoadFailed": "Esta página no se pudo cargar. Revisa tu conexión e inténtalo de nuevo.",
+  "reload": "Recargar",
+  "localeLabels": {
+    "en": "EN",
+    "hy": "Հայ",
+    "ru": "Рус",
+    "es": "ES"
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "releaseUpdate": {
+    "title": "Hostpanel {version} disponible",
+    "releaseNotes": "Notas de la versión",
+    "copy": "Copiar comando de actualización",
+    "copied": "¡Copiado!"
+  }
+}

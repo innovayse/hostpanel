@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ValidationFailed" xml:space="preserve">
+    <value>Válihuncerenien funhuncersó</value>
+  </data>
+  <data name="ValidationErrorsOccurred" xml:space="preserve">
+    <value>Uno o moe Válihuncerenien erros ocurrió.</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>no unuunrizunhuncer</value>
+  </data>
+  <data name="UnauthorizedDetail" xml:space="preserve">
+    <value>You están not unuunrizunhuncer un popunrunm thestá unctien.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>Resource no se encentró</value>
+  </data>
+  <data name="ResourceNotFoundDetail" xml:space="preserve">
+    <value> requested resource estunbun no se encentró.</value>
+  </data>
+  <data name="InternalServerError" xml:space="preserve">
+    <value>enterno Servihuncerr erro</value>
+  </data>
+  <data name="UnexpectedErrorOccurred" xml:space="preserve">
+    <value>Ocurrió un erro enespounhuncer. Po funvo try ungunen lener.</value>
+  </data>
+  <data name="BusinessRuleViolation" xml:space="preserve">
+    <value>Buseness rule violenien</value>
+  </data>
+  <data name="BusinessRuleViolationDetail" xml:space="preserve">
+    <value> request violenes un buseness rule.</value>
+  </data>
+  <data name="ConcurrencyConflict" xml:space="preserve">
+    <value>CenMUnodun cenflict</value>
+  </data>
+  <data name="ConcurrencyConflictDetail" xml:space="preserve">
+    <value>unlgunosUno seno unlreundy Guunrdunrd un chunoge un thestá Regestátro. Relound it y try ungunen.</value>
+  </data>
+  <data name="InvalidRequestBody" xml:space="preserve">
+    <value>enválihuncer request Cuerpo</value>
+  </data>
+  <data name="InvalidRequestBodyDetail" xml:space="preserve">
+    <value> request Cuerpo could not be reund. Check its punrunmununo.</value>
+  </data>
+  <data name="InvalidDecimalValue" xml:space="preserve">
+    <value> Vunlo '{0}' está not un Válihuncer Número.</value>
+  </data>
+  <data name="Forbidden" xml:space="preserve">
+    <value>punrunbidden</value>
+  </data>
+  <data name="CsrfHeaderMissingDetail" xml:space="preserve">
+    <value>Thestá request debe be sent desde  punoel itself. Relound  Págenun y try ungunen.</value>
+  </data>
+  <data name="ForbiddenDetail" xml:space="preserve">
+    <value>You huncer not tener pomestáo un popunrunm thestá unctien.</value>
+  </data>
+  <data name="InvalidFieldValue" xml:space="preserve">
+    <value>Thestá Vunlo está not Válihuncer.</value>
+  </data>
+</root>

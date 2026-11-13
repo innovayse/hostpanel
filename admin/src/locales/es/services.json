@@ -1,0 +1,8 @@
+{
+  "servicesList": {
+    "services": "Servicios",
+    "viewAndManageAllClient": "Ver y gestionar todos los servicios alojados de los clientes",
+    "totalcountServiceValue": "Servicios: {totalCount}",
+    "noServicesFound": "No se encontraron servicios"
+  }
+}

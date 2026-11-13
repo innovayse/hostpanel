@@ -37,6 +37,7 @@ export const useStorefrontLocaleTabs = (testidPrefix: string): StorefrontLocaleT
     { value: MessageLanguage.En, label: t('storefront.locales.en'), testid: `${testidPrefix}-en` },
     { value: MessageLanguage.Ru, label: t('storefront.locales.ru'), testid: `${testidPrefix}-ru` },
     { value: MessageLanguage.Hy, label: t('storefront.locales.hy'), testid: `${testidPrefix}-hy` },
+    { value: MessageLanguage.Es, label: t('storefront.locales.es'), testid: `${testidPrefix}-es` },
   ])
 
   /**

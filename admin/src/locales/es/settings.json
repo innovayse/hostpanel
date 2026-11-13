@@ -1,0 +1,608 @@
+{
+  "systemSettings": "Configuración del sistema",
+  "secret": {
+    "set": "••••••, configurado",
+    "notSet": "No configurado",
+    "replace": "Reemplazar",
+    "clear": "Limpiar",
+    "cancel": "Cancelar",
+    "placeholder": "Escribe el nuevo valor",
+    "pendingClear": "Se borrará cuando guardes"
+  },
+  "table": {
+    "key": "Clave",
+    "value": "Valor",
+    "description": "Descripción",
+    "noSettings": "No se encontraron configuraciones."
+  },
+  "siteIdentity": {
+    "title": "Identidad del sitio",
+    "description": "Cómo se llama la tienda. El nombre llega al título del navegador, previas sociales, texto alternativo del logotipo y datos estructurados; el eslogan es la descripción meta predeterminada.",
+    "name": {
+      "label": "Nombre del sitio",
+      "hint": "Dejar vacío para el nombre integrado"
+    },
+    "tagline": {
+      "label": "Eslogan",
+      "hint": "Una línea, usada como descripción predeterminada de la página"
+    }
+  },
+  "storefrontContent": {
+    "title": "Tienda",
+    "description": "Las cifras, la insignia del hero y los datos de contacto que muestra la tienda. El nombre y el eslogan del sitio están en la tarjeta de identidad de arriba.",
+    "statsClients": {
+      "label": "Cifra de clientes",
+      "hint": "ej. 5,000+"
+    },
+    "statsUptime": {
+      "label": "Cifra de disponibilidad",
+      "hint": "ej. 99.9%"
+    },
+    "statsRegions": {
+      "label": "Cifra de regiones",
+      "hint": "ej. 12"
+    },
+    "heroBadge": {
+      "label": "Insignia del hero",
+      "hint": "Línea corta sobre el encabezado del hero"
+    },
+    "contactEmail": {
+      "label": "Correo de contacto",
+      "hint": "support{'@'}example.com",
+      "invalid": "Ingresa una dirección de correo electrónico válida."
+    },
+    "contactPhone": {
+      "label": "Teléfono de contacto",
+      "hint": "+1 555 000 0000"
+    },
+    "contactWhatsapp": {
+      "label": "Número de WhatsApp",
+      "hint": "+1 555 000 0000"
+    },
+    "contactTelegram": {
+      "label": "Usuario de Telegram",
+      "hint": "{'@'}example"
+    },
+    "contactAddress": {
+      "label": "Dirección",
+      "hint": "Calle, ciudad, país"
+    },
+    "contactMapUrl": {
+      "label": "URL del mapa",
+      "hint": "https://www.openstreetmap.org/export/embed.html?bbox=0,0,1,1",
+      "invalid": "Ingresa una dirección que comience con https://."
+    },
+    "contactHours": {
+      "label": "Horario de trabajo",
+      "hint": "Lun-Vie 09:00-18:00"
+    },
+    "contactHoursRu": {
+      "label": "Horario de trabajo (ruso)",
+      "hint": "Mostrado a visitantes rusos; vacío usa el horario predeterminado"
+    },
+    "contactHoursHy": {
+      "label": "Horario de trabajo (armenio)",
+      "hint": "Mostrado a visitantes armenios; vacío usa el horario predeterminado"
+    },
+    "contactHoursEs": {
+      "label": "Horario de trabajo (español)",
+      "hint": "Mostrado a visitantes hispanohablantes; vacío usa el horario predeterminado"
+    },
+    "contactTimezone": {
+      "label": "Zona horaria",
+      "hint": "UTC+4"
+    },
+    "contactAddressRu": {
+      "label": "Dirección (ruso)",
+      "hint": "Mostrado a visitantes rusos; vacío usa la dirección predeterminada"
+    },
+    "contactAddressHy": {
+      "label": "Dirección (armenio)",
+      "hint": "Mostrado a visitantes armenios; vacío usa la dirección predeterminada"
+    },
+    "contactAddressEs": {
+      "label": "Dirección (español)",
+      "hint": "Mostrado a visitantes hispanohablantes; vacío usa la dirección predeterminada"
+    }
+  },
+  "portalAppearance": {
+    "title": "Apariencia del portal",
+    "description": "Qué plantilla representa la tienda pública y en qué modo de color comienza un visitante. Los cambios surten efecto en la próxima carga de página.",
+    "template": "Plantilla",
+    "notSeeded": "La configuración {key} no se ha sembrado todavía, por lo que no se puede cambiar aquí. Hasta que exista, el portal usa su variable de entorno {env}.",
+    "templates": {
+      "aurora": {
+        "label": "Aurora",
+        "hint": "Diseño con respaldo brillante — claro/oscuro, tipografía armenia"
+      },
+      "nova": {
+        "label": "Nova",
+        "hint": "Diseño editorial con una paleta teal — claro/oscuro"
+      },
+      "classic": {
+        "label": "Clásica",
+        "hint": "Predeterminada — el diseño original de la tienda, claro/oscuro"
+      }
+    },
+    "themeDefault": "Modo de color predeterminado",
+    "themeDefaultHint": "Para un visitante que no ha elegido uno. La propia elección del visitante se recuerda en una cookie.",
+    "themeModes": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Coincidir con el dispositivo del visitante"
+    },
+    "userToggle": "Permitir a los visitantes cambiar entre claro y oscuro",
+    "userToggleHint": "Desactivado oculta el botón de sol/luna en el encabezado."
+  },
+  "homeSections": {
+    "title": "Secciones del inicio",
+    "description": "Qué secciones muestra la página principal de la tienda. El hero siempre se muestra. Cada interruptor se guarda por separado.",
+    "sections": {
+      "stats": {
+        "label": "Franja de estadísticas",
+        "hint": "Las cifras debajo del hero, o la barra de confianza."
+      },
+      "partners": {
+        "label": "Socios",
+        "hint": "Logotipos de socios."
+      },
+      "services": {
+        "label": "Por qué elegirnos",
+        "hint": "Los bloques de servicios y beneficios."
+      },
+      "process": {
+        "label": "Cómo funciona",
+        "hint": "Los pasos desde el pedido hasta un sitio en funcionamiento."
+      },
+      "plans": {
+        "label": "Planes y precios",
+        "hint": "Tarjetas de plan, productos y precios."
+      },
+      "comparison": {
+        "label": "Tabla comparativa",
+        "hint": "La tabla de comparación de planes (Nova)."
+      },
+      "dashboard": {
+        "label": "Vista previa del panel",
+        "hint": "La vista previa del panel de control (Nova)."
+      },
+      "use_cases": {
+        "label": "Casos de uso",
+        "hint": "Lo que los clientes construyen en la plataforma (Nova)."
+      },
+      "migration": {
+        "label": "Migración",
+        "hint": "El bloque de migración gratuita."
+      },
+      "projects": {
+        "label": "Proyectos",
+        "hint": "Proyectos de portafolio. Desactivado hasta que lo actives."
+      },
+      "testimonials": {
+        "label": "Testimonios",
+        "hint": "Citas de clientes."
+      },
+      "faq": {
+        "label": "Preguntas frecuentes",
+        "hint": "Preguntas frecuentes."
+      },
+      "cta": {
+        "label": "Llamado a la acción",
+        "hint": "El banner de cierre."
+      },
+      "locations": {
+        "label": "Ubicaciones de servidores",
+        "hint": "Dónde están los servidores. Editado bajo Contenido de la tienda."
+      },
+      "performance": {
+        "label": "Rendimiento",
+        "hint": "Disponibilidad, tiempo de respuesta, sitios alojados y respuesta del soporte."
+      },
+      "security": {
+        "label": "Seguridad",
+        "hint": "SSL, copias de seguridad, DDoS, malware y protección de firewall."
+      },
+      "apps": {
+        "label": "Instalador con un clic",
+        "hint": "Las aplicaciones que puedes instalar con un clic."
+      },
+      "guarantees": {
+        "label": "Garantías",
+        "hint": "Migración gratuita, garantía de devolución y sin cargos ocultos."
+      },
+      "support": {
+        "label": "Soporte",
+        "hint": "Canales de chat, ticket, correo electrónico y teléfono."
+      },
+      "trusted": {
+        "label": "Confiado por",
+        "hint": "La franja de logotipos de los socios."
+      }
+    }
+  },
+  "hostingDetails": {
+    "title": "Detalles de hosting",
+    "description": "Las cifras y datos detrás del rendimiento, seguridad, instalador, garantía y soporte. Deja una cifra vacía para ocultarla.",
+    "statsResponseTime": {
+      "label": "Tiempo de respuesta",
+      "hint": "ej. 180 ms"
+    },
+    "statsSitesHosted": {
+      "label": "Sitios alojados",
+      "hint": "ej. 12,000+"
+    },
+    "statsSupportResponse": {
+      "label": "Respuesta del soporte",
+      "hint": "ej. 15 min"
+    },
+    "installerAppCount": {
+      "label": "Cantidad de aplicaciones del instalador",
+      "hint": "ej. 150+"
+    },
+    "guaranteeMoneyBackDays": {
+      "label": "Días de garantía de devolución",
+      "hint": "ej. 30"
+    },
+    "supportResponseChat": {
+      "label": "Tiempo de respuesta del chat",
+      "hint": "ej. 1 min"
+    },
+    "supportResponseTicket": {
+      "label": "Tiempo de respuesta de ticket",
+      "hint": "ej. 2 horas"
+    },
+    "supportResponseEmail": {
+      "label": "Tiempo de respuesta de correo electrónico",
+      "hint": "ej. 4 horas"
+    },
+    "supportResponsePhone": {
+      "label": "Tiempo de respuesta del teléfono",
+      "hint": "ej. 5 min"
+    },
+    "featuresSsl": {
+      "label": "SSL gratuito",
+      "hint": "Lista SSL en la sección de seguridad."
+    },
+    "featuresDdos": {
+      "label": "Protección contra DDoS",
+      "hint": "Lista la protección contra DDoS en la sección de seguridad."
+    },
+    "guaranteeNoHiddenFees": {
+      "label": "Sin cargos ocultos",
+      "hint": "Muestra la garantía de no cargos ocultos."
+    }
+  },
+  "branding": {
+    "title": "Marca",
+    "description": "Los logotipos y el icono de la pestaña del navegador de la tienda. Los cambios surten efecto en la próxima carga de página.",
+    "pasteUrl": "O pega la URL de la imagen...",
+    "logo": {
+      "label": "Logotipo (fondos claros)",
+      "hint": "JPEG, PNG, WebP — máximo 5 MB"
+    },
+    "logoDark": {
+      "label": "Logotipo (fondos oscuros)",
+      "hint": "Vacío recurre al logotipo claro"
+    },
+    "logoMark": {
+      "label": "Marca (ícono cuadrado)",
+      "hint": "Para encabezados compactos y páginas de inicio de sesión; vacío usa la marca integrada"
+    },
+    "favicon": {
+      "label": "Favicon",
+      "hint": "PNG, SVG, ICO — máximo 5 MB"
+    },
+    "remove": "Eliminar imagen"
+  },
+  "brandColors": {
+    "title": "Colores de la marca",
+    "description": "Dos colores de los cuales la tienda deriva toda su paleta — botones, enlaces, resaltados y correos electrónicos. Vacío mantiene los colores propios de cada plantilla.",
+    "primary": {
+      "label": "Primario",
+      "hint": "Botones, enlaces y resaltados. Los once tonos a continuación se derivan de él."
+    },
+    "accent": {
+      "label": "Acento",
+      "hint": "Degradados, insignias y resaltados secundarios."
+    },
+    "reset": "Restablecer al predeterminado",
+    "previewButton": "Botón",
+    "previewLink": "Enlace",
+    "contrastOk": "Texto blanco sobre este color: {ratio}:1 — cumple WCAG AA.",
+    "contrastDark": "Texto blanco sobre este color: {ratio}:1 — demasiado bajo, así que los botones usarán texto oscuro.",
+    "contrastLow": "Texto blanco sobre este color: {ratio}:1 — por debajo de WCAG AA para texto pequeño; adecuado para botones."
+  },
+  "typography": {
+    "title": "Tipografía",
+    "description": "Las tipografías que usa la tienda. Todas están incluidas con ella; nada se carga de un servicio de fuentes.",
+    "heading": "Encabezados",
+    "body": "Texto del cuerpo",
+    "templateDefault": "Predeterminado de la plantilla",
+    "sampleBody": "Dominios, hosting y correo electrónico en una cuenta, con una persona al otro lado de cada ticket.",
+    "fonts": {
+      "inter": "Inter",
+      "notoSansArmenian": "Noto Sans Armenian",
+      "notoSerifArmenian": "Noto Serif Armenian",
+      "system": "Sistema (propia del dispositivo)"
+    },
+    "sampleHy": "Ձեր ամբողջ թիվային ենթադ sortuությամբ",
+    "sampleRu": "Вся ваша цифровая инфраструктура",
+    "sampleEn": "Tu infraestructura digital completa"
+  },
+  "trackingChat": {
+    "title": "Seguimiento y chat",
+    "description": "Servicios de terceros con los que se comunica la tienda. Nada se carga hasta que se configura aquí.",
+    "gtm": {
+      "label": "Contenedor de Google Tag Manager",
+      "hint": "Se carga solo después de que un visitante acepta todas las cookies. Vacío no carga ninguna etiqueta."
+    },
+    "chat": {
+      "title": "Chat en vivo",
+      "baseUrl": "Servidor de chat",
+      "baseUrlHint": "https://chat.example.com",
+      "token": "Token del sitio web",
+      "tokenHint": "Desde la configuración de la bandeja de entrada de chat",
+      "tokenRu": "Token para visitantes rusos",
+      "tokenHy": "Token para visitantes armenios",
+      "tokenEs": "Token para visitantes hispanohablantes",
+      "tokenLocaleHint": "Opcional; vacío usa el token predeterminado",
+      "hint": "El widget aparece solo cuando un proveedor, el servidor y un token están configurados."
+    },
+    "provider": {
+      "label": "Proveedor",
+      "off": "Desactivado",
+      "chatwoot": "Chatwoot",
+      "innochat": "Innochat"
+    }
+  },
+  "productFeatures": {
+    "specification": "Especificación",
+    "shownInTheStorefrontS": "Mostrado en la tabla de comparación de planes de la tienda para",
+    "nothingSpecifiedYetTheComparison": "Aún no se especificó nada. La tabla de comparación permanece oculta hasta que al menos un plan tenga una línea.",
+    "disk": "Disco",
+    "10Gb": "10 GB",
+    "removeLine": "Eliminar línea",
+    "feature": "Función",
+    "adding": "Agregando…",
+    "add": "Agregar",
+    "plansLineUpByFeature": "Los planes se alinean por nombre de función, así que escríbelo igual en todos los productos — \"Disco\" y \"Espacio en disco\" se convierten en dos filas separadas. Dentro de un producto, un nombre solo puede usarse una vez; reutilizarlo se rechaza en lugar de guardarlo donde nunca se mostraría.",
+    "confirmRemoveTitle": "¿Eliminar esta línea?",
+    "confirmRemoveMessage": "La línea \"{label}\" se eliminará de la especificación."
+  },
+  "productForm": {
+    "editProduct": "Editar producto",
+    "createNewProduct": "Crear nuevo producto",
+    "productType": "Tipo de producto",
+    "productGroup": "Grupo de productos",
+    "selectAGroup": "Seleccionar un grupo",
+    "eGStarterHosting": "ej. Alojamiento Inicial",
+    "slugUrl": "Slug (URL)",
+    "eGStarterHosting2": "ej. starter-hosting",
+    "autoGeneratedFromNameEdit": "Generado automáticamente desde el nombre. Edita para anular.",
+    "packageName": "Nombre del paquete",
+    "eGStarterProBusiness": "ej. inicial, pro, negocio",
+    "hostingPackageNameUsedFor": "Nombre del paquete de alojamiento usado para aprovisionamiento en el servidor. Opcional.",
+    "serverGroup": "Grupo de servidores",
+    "noneAutoSelectByModule": "Ninguno (selección automática por módulo)",
+    "assignToAServerGroup": "Asignar a un grupo de servidores para aprovisionamiento con equilibrio de carga. Opcional.",
+    "briefProductDescription": "Descripción breve del producto...",
+    "pricing": "Precios",
+    "monthly": "Mensual",
+    "annual": "Anual",
+    "quarterly": "Trimestral",
+    "semiAnnual": "Semestral",
+    "biennial": "Bienal",
+    "base": "Base",
+    "aBlankCycleLeavesThe": "Un ciclo en blanco deja el producto no vendible en ese ciclo en esa moneda.",
+    "hideThisProductFromThe": "Ocultar este producto del formulario de pedido",
+    "featured": "Plan recomendado",
+    "featuredHint": "Mostrar este producto con una insignia \"Recomendado\" en la tienda. Solo un producto por grupo puede ser recomendado; al guardar esto borra los demás.",
+    "sortOrder": "Orden",
+    "sortOrderHint": "Posición dentro del grupo, el más bajo primero. Los productos con el mismo número se ordenan por nombre.",
+    "sortOrderPlaceholder": "ej. 1",
+    "sku": "SKU",
+    "skuHint": "Código único que nombra este producto, por ejemplo en un complemento de cumplimiento. Letras y dígitos unidos por guiones simples, guiones bajos o puntos, como máximo 64 caracteres. Deja vacío para ninguno.",
+    "skuPlaceholder": "ej. CREDITS-100",
+    "metadata": "Metadatos",
+    "metadataHint": "Objeto JSON opcional leído por un complemento de cumplimiento, como máximo 16 KB. Deja vacío para ninguno.",
+    "metadataPlaceholder": "{'{'}\"credits\": 100{'}'}",
+    "gracePeriod": "Período de gracia (días)",
+    "gracePeriodHint": "Días que un servicio sigue usable después de su fecha de vencimiento antes de ser suspendido.",
+    "gracePeriodPlaceholder": "ej. 7",
+    "createProduct": "Crear producto",
+    "sharedHosting": "Alojamiento compartido",
+    "dedicated": "Dedicado",
+    "email": "Correo electrónico",
+    "addon": "Complemento",
+    "backup": "Copia de seguridad",
+    "digital": "Digital",
+    "other": "Otro",
+    "vps": "VPS"
+  },
+  "currencies": {
+    "loadingCurrencies": "Cargando monedas..."
+  },
+  "emailTemplates": {
+    "emailTemplates": "Plantillas de correo electrónico",
+    "noTemplatesFound": "No se encontraron plantillas.",
+    "languages": "Idiomas",
+    "body": "Cuerpo (HTML)",
+    "missingVersion": "Esta plantilla no tiene una versión en este idioma todavía, por lo que el correo se envía en inglés. Al guardarlo se agrega.",
+    "subjectPlaceholder": "Asunto, se permiten variables",
+    "bodyPlaceholder": "Cuerpo HTML, se permiten variables",
+    "descriptionPlaceholder": "Cuándo se envía este correo"
+  },
+  "products": {
+    "products": "Productos",
+    "manageHostingPlansAndServices": "Gestionar planes de alojamiento y servicios disponibles para compra",
+    "createProduct": "Crear producto",
+    "loadingProducts": "Cargando productos...",
+    "group": "Grupo",
+    "editSpecification": "Editar especificación",
+    "editProduct": "Editar producto",
+    "noProductsFoundCreateYour": "No se encontraron productos. Crea tu primer producto para comenzar.",
+    "typeSharedHosting": "Alojamiento compartido",
+    "typeDedicated": "Dedicado",
+    "typeDomain": "Dominio",
+    "typeEmail": "Correo electrónico",
+    "typeAddon": "Complemento",
+    "typeBackup": "Copia de seguridad",
+    "typeDigital": "Digital",
+    "typeOther": "Otro",
+    "typeVps": "VPS",
+    "typeSsl": "SSL"
+  },
+  "slideForm": {
+    "slides": "Diapositivas",
+    "loadingSlideData": "Cargando datos de la diapositiva...",
+    "generalSettings": "Configuración general",
+    "icon": "Ícono",
+    "orTypeMdiIconName": "O escribe el nombre del ícono MDI (ej. cloud-check)",
+    "brandColor": "Color de marca",
+    "image": "Imagen",
+    "slidePreview": "Vista previa de la diapositiva",
+    "removeImage": "Eliminar imagen",
+    "jpegPngWebpSvgMax": "JPEG, PNG, WebP, SVG — máximo 5 MB",
+    "orPasteImageUrl": "O pega la URL de la imagen...",
+    "demoUrl": "URL de demostración",
+    "demoUrlPlaceholder": "https://demo.example.com",
+    "optionalTryDemoButtonLink": "Enlace opcional \"Probar demostración\" en la diapositiva",
+    "learnMoreUrl": "URL Saber más",
+    "productsExampleOrHttpsExample": "/products/example o https://example.com",
+    "optionalSecondaryLinkShownAs": "Enlace secundario opcional mostrado como \"Saber más\" en la diapositiva",
+    "linkedProduct": "Producto vinculado",
+    "sortOrder": "Orden",
+    "showThisSlideToVisitors": "Mostrar esta diapositiva a los visitantes",
+    "targetAudience": "Público objetivo",
+    "visibleFrom": "Visible desde",
+    "noStartDate": "Sin fecha de inicio",
+    "visibleUntil": "Visible hasta",
+    "noEndDate": "Sin fecha de finalización",
+    "translations": "Traducciones",
+    "slideTitle": "Título de la diapositiva",
+    "tagline": "Eslogan",
+    "shortSubtitle": "Subtítulo corto",
+    "slideBodyText": "Texto del cuerpo de la diapositiva...",
+    "features": "Características",
+    "removeFeature": "Eliminar característica",
+    "addFeature": "Agregar característica",
+    "ctaText": "Texto del CTA",
+    "getStarted": "Comenzar",
+    "ctaUrl": "URL del CTA",
+    "createSlide": "Crear diapositiva",
+    "unsavedChanges": "Cambios sin guardar",
+    "youHaveUnsavedChangesAre": "Tienes cambios sin guardar. ¿Estás seguro de que quieres irte?",
+    "leave": "Ir",
+    "all": "Todos",
+    "guest": "Invitado",
+    "authenticated": "Autenticado",
+    "hosting": "Alojamiento",
+    "globe": "Globo",
+    "analytics": "Análisis",
+    "education": "Educación",
+    "property": "Propiedad",
+    "eCommerce": "Comercio electrónico",
+    "restaurant": "Restaurante",
+    "launch": "Lanzamiento",
+    "security": "Seguridad",
+    "premium": "Premium",
+    "mobile": "Móvil",
+    "design": "Diseño",
+    "finance": "Finanzas",
+    "media": "Medios",
+    "health": "Salud",
+    "pageTitleEdit": "Editar diapositiva",
+    "pageTitleCreate": "Crear diapositiva",
+    "featureNumber": "Característica {number}",
+    "locales": {
+      "en": "Inglés",
+      "ru": "Ruso",
+      "hy": "Armenio",
+      "es": "Español"
+    },
+    "notFound": "Diapositiva #{id} no encontrada.",
+    "ai": "IA"
+  },
+  "slides": {
+    "slides": "Diapositivas",
+    "manageHomepageHeroSlidesDrag": "Gestionar diapositivas del hero de la página principal — arrastra para reordenar",
+    "savingOrder": "Guardando orden...",
+    "addSlide": "Agregar diapositiva",
+    "loadingSlides": "Cargando diapositivas...",
+    "image": "Imagen",
+    "audience": "Público",
+    "visibility": "Visibilidad",
+    "slide": "Diapositiva",
+    "editSlide": "Editar diapositiva",
+    "deleteSlide": "Eliminar diapositiva",
+    "noSlidesFoundAddYour": "No se encontraron diapositivas. Agrega tu primera diapositiva para comenzar.",
+    "deleteSlide2": "Eliminar diapositiva",
+    "always": "Siempre",
+    "from": "Desde {date}",
+    "until": "Hasta {date}",
+    "slideNumber": "Diapositiva #{id}",
+    "deleteMessage": "¿Eliminar \"{title}\"? Esta acción no se puede deshacer."
+  },
+  "tldConfigForm": {
+    "tldPricing": "Precios de TLD",
+    "loadingTldConfiguration": "Cargando configuración de TLD...",
+    "generalSettings": "Configuración general",
+    "tld": "TLD",
+    "domainExtensionWithoutTheDot": "Extensión de dominio sin el punto (ej. \"com\", \"net\", \"am\")",
+    "registrarProvider": "Proveedor de registrador",
+    "costCurrency": "Moneda de costo",
+    "currencyUsedByTheRegistrar": "Moneda usada por el registrador para precios de costo",
+    "sellCurrency": "Moneda de venta",
+    "currencyShownToClientsFor": "Moneda en la que se ingresan los precios de venta; los clientes facturados en otra moneda pagan el monto convertido con las tasas de cambio almacenadas",
+    "makeThisTldAvailableFor": "Hacer disponible este TLD para compra",
+    "sortOrder": "Orden",
+    "popularBusinessTech": "popular, business, tech",
+    "commaSeparatedCategoryTagsFor": "Etiquetas de categoría separadas por comas para filtrar",
+    "registrationPricing": "Precios de registro",
+    "period": "Período",
+    "costCostsymbol": "Costo ({costSymbol})",
+    "sellSellsymbol": "Venta ({sellSymbol})",
+    "margin": "Margen",
+    "years": "Años",
+    "transferPricing": "Precios de transferencia",
+    "renewalPricing": "Precios de renovación",
+    "createTld": "Crear TLD",
+    "unsavedChanges": "Cambios sin guardar",
+    "youHaveUnsavedChangesAre": "Tienes cambios sin guardar. ¿Estás seguro de que quieres irte?",
+    "leave": "Ir",
+    "tldIsRequired": "El TLD es obligatorio.",
+    "addTld": "Agregar TLD",
+    "editTld": "Editar TLD",
+    "notFound": "Configuración de TLD #{id} no encontrada."
+  },
+  "tldConfigs": {
+    "tldPricing": "Precios de TLD",
+    "configureDomainExtensionPricingAnd": "Configurar precios y proveedores de extensiones de dominio",
+    "importing": "Importando...",
+    "import": "Importar",
+    "nameAm": "Name.am",
+    "namecheap": "Namecheap",
+    "syncing": "Sincronizando...",
+    "syncPrices": "Sincronizar precios",
+    "addTld": "Agregar TLD",
+    "searchTlds": "Buscar TLDs...",
+    "loadingTldConfigurations": "Cargando configuraciones de TLD...",
+    "tld": "TLD",
+    "provider": "Proveedor",
+    "cost1yr": "Costo (1 año)",
+    "sell1yr": "Venta (1 año)",
+    "margin": "Margen",
+    "lastSynced": "Última sincronización",
+    "editTld": "Editar TLD",
+    "deleteTld": "Eliminar TLD",
+    "noTldConfigurationsFoundAdd": "No se encontraron configuraciones de TLD. Agrega tu primera TLD o importa de un proveedor.",
+    "showingValueValue2OfLength": "Mostrando {value}–{value2} de {length} TLDs",
+    "deleteTldConfiguration": "Eliminar configuración de TLD",
+    "allProviders": "Todos los proveedores",
+    "allStatus": "Todos los estados",
+    "priceSyncComplete": "Sincronización de precios completa.",
+    "deleteMessage": "¿Eliminar la configuración de TLD \".{tld}\"? Esta acción no se puede deshacer.",
+    "importComplete": "Importación completa: {imported} importado(s), {updated} actualizado(s).",
+    "never": "Nunca"
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "pluginCard": {
+    "builtIn": "Integrado",
+    "capabilities": {
+      "endpoints": "Sirve páginas",
+      "storedCredentials": "Métodos de pago guardados"
+    },
+    "pendingRestart": "Reinicio pendiente",
+    "categoryByAuthor": "{category} · por {author}",
+    "removing": "Eliminando…",
+    "remove": "Eliminar",
+    "refused": "Rechazado",
+    "staged": "Versión {version} preparada, se aplica tras el reinicio",
+    "brokenRule": "{id} · regla violada: {rule}",
+    "updateAvailable": "Actualización disponible: {version}"
+  },
+  "pluginUploader": {
+    "dropYourPlugin": "Suelta tu complemento",
+    "here": "aquí",
+    "zip": ".zip",
+    "orClickToBrowseFiles": "o haz clic para examinar archivos",
+    "valueKbReadyToInstall": "{value} KB · Listo para instalar",
+    "installPlugin": "Instalar Complemento"
+  },
+  "restartBanner": {
+    "restartRequired": "Reinicio requerido",
+    "pluginChangesWillTakeEffect": "Los cambios del complemento entrarán en vigor tras un reinicio del servidor.",
+    "restarting": "Reiniciando…",
+    "restartServer": "Reiniciar Servidor"
+  },
+  "pluginSigning": {
+    "title": "Firmas de complementos",
+    "description": "Los complementos cargados se ejecutan dentro del servidor, así que un servidor de producción acepta solo paquetes de complementos firmados con una clave de confianza.",
+    "warning": "Activar esto permite que el servidor instale y cargue paquetes de complementos que no están firmados, fueron modificados tras la firma o están firmados con una clave desconocida. Cualquiera que pueda cargar un paquete puede entonces ejecutar código en el servidor. Áctivalo solo para paquetes que hayas revisado tú mismo.",
+    "notSeeded": "La configuración {key} no se ha sembrado todavía, por lo que no se puede cambiar aquí.",
+    "active": "Se están aceptando complementos sin firma. El servidor ya no verifica quién hizo un complemento cargado.",
+    "label": "Permitir complementos sin firma",
+    "hint": "Desactivado por defecto. Un cambio se aplica a la siguiente carga de inmediato, y a los complementos ya instalados después del próximo reinicio del servidor. Cada cambio se registra en el registro de actividad. Un servidor en modo de desarrollo siempre acepta complementos sin firma."
+  },
+  "plugins": {
+    "pluginManager": "Gestor de Complementos",
+    "installAndManageProviderPlugins": "Instalar y gestionar complementos de proveedores",
+    "lengthInstalled": "· {length} instalados",
+    "noPluginsInstalledYet": "No hay complementos instalados todavía",
+    "uploadA": "Sube un",
+    "fileAboveToGetStarted": "archivo de arriba para comenzar",
+    "zip": ".zip",
+    "installedPlugins": "Complementos Instalados",
+    "pluginInstalled": "Complemento instalado.",
+    "pluginRemoved": "Complemento eliminado.",
+    "confirmRemoveTitle": "¿Eliminar este complemento?",
+    "confirmRemoveMessage": "El complemento {id} se eliminará del servidor. Su configuración y los datos almacenados se mantienen, así que instalarlo de nuevo los restaura. Puedes purgar los datos después.",
+    "dataPurged": "Datos del complemento eliminados.",
+    "confirmPurgeTitle": "¿Purgar datos del complemento?",
+    "confirmPurgeMessage": "Toda la configuración y los datos almacenados del complemento {id} se eliminarán para siempre. Esto no se puede deshacer.",
+    "confirmDowngradeTitle": "¿Instalar una versión anterior?",
+    "confirmDowngradeMessage": "Esta versión es anterior a la instalada. Retroceder puede romper los datos escritos por la versión más reciente.",
+    "forceDowngrade": "Retroceder de todos modos",
+    "pluginStaged": "Versión {version} cargada y preparada. Reemplaza la versión instalada tras el reinicio del servidor.",
+    "tabInstalled": "Instalados",
+    "tabBrowse": "Examinar",
+    "registryInstalled": "Complemento instalado desde el registro."
+  },
+  "pluginSlotWidgets": {
+    "title": "Widgets de ranura: {plugin}",
+    "description": "Widgets que los complementos añaden a las páginas. Elige los productos que un widget muestra; déjalo vacío para seguir la propia lista de productos del complemento.",
+    "slot": "Ranura {slot}",
+    "pluginWidget": "{plugin} · {widget}",
+    "addProduct": "Agregar un producto…",
+    "noProducts": "No se eligieron productos: se aplica la propia lista de productos del complemento.",
+    "orphaned": "Este widget está vinculado a productos que ya no existen, así que no se muestra en ningún sitio. Elige productos de nuevo, o borra el vínculo para seguir la propia lista del complemento.",
+    "removeProduct": "Eliminar {name}"
+  },
+  "keptData": {
+    "title": "Complementos eliminados con datos conservados",
+    "description": "Eliminar un complemento conserva su configuración y datos almacenados. Elimina los datos solo cuando no vayas a instalar el complemento de nuevo.",
+    "purge": "Eliminar datos",
+    "purging": "Eliminando…"
+  },
+  "pluginRegistry": {
+    "search": "Buscar en el registro",
+    "searchLabel": "Buscar",
+    "categoryPlaceholder": "Categoría",
+    "allCategories": "Todas las categorías",
+    "byAuthor": "por {author}",
+    "version": "v{version}",
+    "sdkVersion": "SDK {version}",
+    "verified": "Verificado",
+    "install": "Instalar",
+    "update": "Actualizar a {version}",
+    "installing": "Instalando…",
+    "installed": "Instalado {version}",
+    "emptyTitle": "No se encontraron complementos",
+    "emptyDescription": "Intenta otra búsqueda o categoría.",
+    "total": "{total} complementos",
+    "category": {
+      "Payment": "Pago",
+      "Provisioning": "Aprovisionamiento",
+      "Registrar": "Registrador",
+      "App": "Aplicación",
+      "Other": "Otro"
+    },
+    "pricing": {
+      "Free": "Gratis",
+      "Paid": "De pago",
+      "Private": "Privado"
+    }
+  },
+  "registryTrust": {
+    "title": "Confianza en el registro",
+    "description": "Elige los complementos de cuyos registros este servidor puede instalar. Los paquetes aún deben pasar todas las comprobaciones de firma y manifiesto.",
+    "label": "¿Quién puede ser instalado?",
+    "placeholder": "Elige un nivel de confianza",
+    "hint": "Un cambio se aplica a la siguiente instalación de inmediato.",
+    "notSeeded": "La configuración {key} no se ha sembrado todavía, por lo que no se puede cambiar aquí.",
+    "warning": "Cualquier editor de registro incluye editores que nadie ha verificado. Un complemento se ejecuta dentro del servidor, así que elige esto solo si aceptas ese riesgo.",
+    "options": {
+      "VerifiedOnly": "Solo editores verificados",
+      "AnyRegistryPublisher": "Cualquier editor de registro",
+      "OwnKeysOnly": "Paquetes firmados con mis propias claves solo"
+    }
+  },
+  "rules": {
+    "ManifestVersionUnknown": "La versión del manifiesto no es una que este servidor lea.",
+    "SdkAssemblyOutdated": "El complemento se compiló contra una versión del SDK anterior a la que usa este servidor.",
+    "PermissionUnknown": "Una entrada de cliente nombra un permiso que no existe.",
+    "AdminPermissionDeclared": "Una entrada de administración declara un permiso, pero el área de administración no toma ninguno.",
+    "RoutePathInvalid": "Una ruta de ruta no es válida: usa segmentos y parámetros en minúsculas únicamente.",
+    "RouteDuplicate": "El mismo método y ruta de ruta se declara dos veces.",
+    "LabelKeyMissing": "Una clave de texto usada por el complemento falta de sus textos en inglés.",
+    "SlotUnknown": "Un widget nombra una ranura que este servidor no ofrece.",
+    "SlotContextKeyNotOffered": "Un widget pide un valor de contexto que su ranura no ofrece.",
+    "AssemblyUnreadable": "Un archivo en la carpeta del complemento no se pudo leer.",
+    "SlotWidgetIdInvalid": "Un id de widget no es válido: usa letras minúsculas, dígitos, guiones y guiones bajos únicamente.",
+    "SlotWidgetDuplicate": "El mismo id de widget se declara dos veces para una ranura.",
+    "PluginIdInvalid": "El id del complemento no es válido: usa palabras en minúsculas unidas por guiones simples únicamente.",
+    "EndpointsNotDeclared": "El complemento declara rutas, páginas o ranuras, pero no es un complemento de aplicación y no declara la capacidad de puntos finales.",
+    "CapabilityNotAllowed": "El complemento declara una capacidad que este servidor no conoce o que su tipo de complemento no puede llevar."
+  },
+  "pluginSlot": {
+    "hide": "Ocultar widget",
+    "unavailable": "Este widget no se pudo mostrar.",
+    "timedOut": "Este widget tardó demasiado en cargar.",
+    "hideNotSeeded": "La configuración {key} no existe en este servidor, así que el widget no se puede ocultar."
+  }
+}

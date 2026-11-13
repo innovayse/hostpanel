@@ -1,0 +1,16 @@
+{
+  "permissionLabels": {
+    "modifyMasterAccountProfile": "Modificar Perfil de Cuenta Maestra",
+    "viewManageContacts": "Ver y Gestionar Contactos",
+    "viewProductsServices": "Ver Productos y Servicios",
+    "viewModifyProductPasswords": "Ver y Modificar Contraseñas de Productos",
+    "viewDomains": "Ver Dominios",
+    "manageDomainSettings": "Gestionar Configuración de Dominios",
+    "viewPayInvoices": "Ver y Pagar Facturas",
+    "viewAcceptQuotes": "Ver y Aceptar Cotizaciones",
+    "viewOpenSupportTickets": "Ver y Abrir Tickets de Soporte",
+    "viewManageAffiliateAccount": "Ver y Gestionar Cuenta de Afiliado",
+    "viewEmails": "Ver Correos Electrónicos",
+    "placeNewOrdersUpgradesCancellations": "Realizar Nuevos Pedidos/Actualizaciones/Cancelaciones"
+  }
+}

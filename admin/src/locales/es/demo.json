@@ -1,0 +1,17 @@
+{
+  "banner": {
+    "label": "Modo demo",
+    "resetsIn": "Los datos se restablecen en {time}.",
+    "soon": "menos de un minuto",
+    "minutes": "{minutes}m",
+    "hoursMinutes": "{hours}h {minutes}m",
+    "dataResets": "Todo lo que cambies aquí es temporal y se restablece según un programa.",
+    "guide": "¿Nuevo aquí? Lee la guía"
+  },
+  "login": {
+    "hint": "Esta es una demostración pública. Usa la cuenta de abajo para explorar.",
+    "useAccount": "Usar cuenta de demostración",
+    "email": "Correo electrónico: {email}",
+    "password": "Contraseña: {password}"
+  }
+}

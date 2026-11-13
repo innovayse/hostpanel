@@ -10,7 +10,7 @@ import { createI18n } from 'vue-i18n'
 import { MessageLanguage, messages } from '@/locales/messages'
 
 /** Locale codes the admin panel ships. */
-export const SUPPORTED_LOCALES = [MessageLanguage.En, MessageLanguage.Hy, MessageLanguage.Ru] as const
+export const SUPPORTED_LOCALES = [MessageLanguage.En, MessageLanguage.Hy, MessageLanguage.Ru, MessageLanguage.Es] as const
 
 /** One of the shipped locale codes. */
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]

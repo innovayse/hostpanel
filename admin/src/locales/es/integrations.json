@@ -1,0 +1,84 @@
+{
+  "cwpBrandHeader": {
+    "centosWebPanel": "CentOS Web Panel",
+    "provisioningProvider": "Proveedor de aprovisionamiento",
+    "connectionError": "Error de conexión",
+    "unknown": "Desconocido"
+  },
+  "integrationCard": {
+    "plugin": "Complemento",
+    "configure": "Configurar →",
+    "notConfigured": "No configurado"
+  },
+  "categories": {
+    "fulfilment": "Cumplimiento",
+    "identity": "Identidad",
+    "hosted": "Trabajos en segundo plano"
+  },
+  "pluginType": {
+    "provisioning": "Aprovisionamiento",
+    "payment": "Pago",
+    "registrar": "Registrador",
+    "identity": "Identidad",
+    "fulfilment": "Cumplimiento",
+    "hosted": "Trabajo en segundo plano"
+  },
+  "integrationStatusSidebar": {
+    "connectionStatus": "Estado de conexión",
+    "testingConnection": "Probando conexión…",
+    "connectionOk": "Conexión OK",
+    "connectionFailed": "Conexión fallida",
+    "endpoint": "Punto de conexión",
+    "tested": "Probado",
+    "roundTrip": "Viaje de ida y vuelta",
+    "notTestedYet": "No probado aún",
+    "setupNote": "Nota de configuración"
+  },
+  "cwp7Integration": {
+    "cwp7": "CWP7",
+    "controlWebPanel7Provisioning": "Control Web Panel 7 — Proveedor de aprovisionamiento para gestionar cuentas de hosting, paquetes y recursos del servidor.",
+    "hostingProvisioning": "Hosting / Aprovisionamiento",
+    "moduleType": "Tipo de módulo",
+    "serverModule": "Módulo de servidor",
+    "developer": "Desarrollador",
+    "createNewServer": "Crear nuevo servidor",
+    "addACwp7ServerWith": "Agrega un servidor CWP7 con nombre de host, credenciales y servidores de nombres",
+    "createNewProduct": "Crear nuevo producto",
+    "createAHostingPlanLinked": "Crea un plan de hosting vinculado a un servidor CWP7",
+    "cwp7Servers": "Servidores CWP7",
+    "lengthServerValue": "Servidores: {length}",
+    "noCwp7ServersConfiguredYet": "No hay servidores CWP7 configurados todavía.",
+    "addYourFirstServer": "Agrega tu primer servidor →",
+    "accountscountValueAccounts": "{accountsCount} / {value} cuentas"
+  },
+  "cwpIntegration": {
+    "centosWebPanel": "CentOS Web Panel"
+  },
+  "integrations": {
+    "lengthIntegrationValue": "Integraciones: {length}",
+    "activecountActive": "· {activeCount} activas",
+    "noIntegrationsInThisCategory": "No hay integraciones en esta categoría"
+  },
+  "common": {
+    "never": "Nunca"
+  },
+  "providerStatus": {
+    "notConnected": "No conectado",
+    "statusUnknown": "Estado desconocido",
+    "lastTested": "Última prueba",
+    "cwpVersion": "Versión de CWP"
+  },
+  "integrationConfigForm": {
+    "enterValue": "Ingresa {label}",
+    "chooseValue": "Elige {label}"
+  },
+  "integrationDetail": {
+    "saved": "Configuración guardada."
+  },
+  "connectionState": {
+    "Connected": "Conectado",
+    "Degraded": "Degradado",
+    "Unavailable": "No disponible",
+    "Inactive": "No comprobado"
+  }
+}

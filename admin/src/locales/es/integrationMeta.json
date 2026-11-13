@@ -1,0 +1,68 @@
+{
+  "bankTransfer": {
+    "shortDescription": "Permite a los clientes pagar mediante transferencia bancaria directa con tus datos bancarios.",
+    "fieldAccountName": "Nombre de la cuenta",
+    "fieldInstructions": "Instrucciones de pago"
+  },
+  "namecheap": {
+    "shortDescription": "Registrar y gestionar dominios a través de la API de revendedor de Namecheap.",
+    "fieldApiKey": "Clave de API",
+    "fieldClientIp": "IP de cliente en lista blanca",
+    "fieldApiUsername": "Nombre de usuario de API"
+  },
+  "nameam": {
+    "shortDescription": "Registrar y gestionar dominios .am a través de la API de registrador de Name.am.",
+    "fieldEmail": "Correo electrónico de la cuenta",
+    "fieldPassword": "Contraseña de la cuenta",
+    "fieldApiUrl": "URL de la API",
+    "fieldTest_mode": "Modo de prueba"
+  },
+  "resellerclub": {
+    "shortDescription": "Gestionar registros de dominio a través de la plataforma de revendedor de ResellerClub.",
+    "fieldResellerId": "ID de revendedor"
+  },
+  "enom": {
+    "shortDescription": "Conectar con eNom para el registro de dominios y la gestión de DNS.",
+    "fieldAccountId": "ID de cuenta"
+  },
+  "cpanel": {
+    "shortDescription": "Aprovisionar y gestionar cuentas de hosting a través de la API del servidor cPanel WHM.",
+    "fieldHost": "Host de WHM",
+    "fieldPort": "Puerto",
+    "fieldApiToken": "Token de API"
+  },
+  "plesk": {
+    "shortDescription": "Automatizar la gestión de servidores y hosting a través de la API XML de Plesk.",
+    "fieldHost": "Host de Plesk"
+  },
+  "cwp": {
+    "shortDescription": "Gestionar cuentas de hosting en servidores de CentOS Web Panel.",
+    "fieldHost": "Host de CWP"
+  },
+  "cwp7": {
+    "shortDescription": "Aprovisionar y gestionar cuentas de hosting a través de la API de Control Web Panel 7.",
+    "fieldMonthly_cost": "Costo Mensual",
+    "fieldDatacenter": "Datacenter/NOC",
+    "fieldAccess_hash": "Hash de Acceso",
+    "fieldPort": "Puerto de API",
+    "fieldMax_accounts": "Máximo Número de Cuentas",
+    "fieldNs1": "Servidor de Nombres Primario",
+    "fieldNs1_ip": "IP del Servidor de Nombres Primario",
+    "fieldNs2": "Servidor de Nombres Secundario",
+    "fieldNs2_ip": "IP del Servidor de Nombres Secundario",
+    "fieldSecure": "Usar SSL para Conexiones"
+  },
+  "smtp": {
+    "shortDescription": "Configurar la entrega de correo electrónico saliente a través de tu servidor SMTP.",
+    "fieldHost": "Host SMTP",
+    "fieldFromAddress": "Dirección Desde",
+    "fieldEncryption": "Cifrado"
+  },
+  "maxmind": {
+    "shortDescription": "Detectar pedidos fraudulentos con la puntuación de riesgo GeoIP de MaxMind.",
+    "fieldLicenseKey": "Clave de licencia",
+    "fieldRegistrars": "Registradores de Dominios",
+    "fieldEmail": "Correo / SMTP",
+    "fieldFraud": "Protección contra fraude"
+  }
+}

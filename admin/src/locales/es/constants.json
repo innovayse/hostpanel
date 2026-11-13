@@ -1,0 +1,33 @@
+{
+  "serviceStatusOptions": {
+    "pending": "Pendiente",
+    "terminated": "Terminado"
+  },
+  "domainStatusOptions": {
+    "pendingRegistration": "Registro Pendiente",
+    "pendingTransfer": "Transferencia Pendiente",
+    "redemption": "Redención",
+    "transferred": "Transferido"
+  },
+  "paymentMethodOptions": {
+    "bankTransfer": "Transferencia Bancaria"
+  },
+  "quoteStageOptions": {
+    "allStages": "Todas las Etapas"
+  },
+  "orderStatusOptions": {
+    "fraud": "Fraude"
+  },
+  "ticketFilterOptions": {
+    "allActiveTickets": "Todos los Tickets Activos",
+    "flagged": "Marcados",
+    "answered": "Respondidos",
+    "customerReply": "Respuesta del Cliente"
+  },
+  "recurringPeriodOptions": {
+    "weekly": "Semanal",
+    "monthly": "Mensual",
+    "quarterly": "Trimestral",
+    "annually": "Anual"
+  }
+}

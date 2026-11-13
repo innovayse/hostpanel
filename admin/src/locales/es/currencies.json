@@ -1,0 +1,82 @@
+{
+  "title": "Monedas",
+  "description": "Configurar monedas de facturación, tasas de cambio y la moneda base",
+  "updateRates": "Actualizar Tasas de Cambio",
+  "updatingRates": "Actualizando...",
+  "updateProductPrices": "Actualizar Precios de Productos",
+  "addCurrency": "Agregar Moneda",
+  "table": {
+    "code": "Código",
+    "numeric": "Numérico",
+    "format": "Formato",
+    "decimals": "Decimales",
+    "rateToBase": "Tasa a la Base",
+    "base": "Base",
+    "enabled": "Habilitada",
+    "actions": "Acciones"
+  },
+  "makeBase": "Establecer como base",
+  "baseBadge": "Base",
+  "enabledBadge": "Habilitada",
+  "disabledBadge": "Deshabilitada",
+  "editTooltip": "Editar moneda",
+  "empty": "No hay monedas configuradas todavía. Agrega tu primera moneda para comenzar.",
+  "makeBaseModal": {
+    "title": "Establecer Moneda Base",
+    "message": "¿Establecer {code} como moneda base? Las tasas de todas las demás monedas se reexpresan con respecto a la nueva base.",
+    "confirmLabel": "Establecer como Base",
+    "loadingLabel": "Cambiando..."
+  },
+  "pricesPicker": {
+    "title": "Actualizar Precios de Productos",
+    "description": "Elige qué monedas no base recalcular a partir de los precios base.",
+    "cancel": "Cancelar",
+    "continue": "Continuar"
+  },
+  "pricesConfirm": {
+    "title": "Sobrescribir Precios de Productos",
+    "message": "Esto sobrescribe {codes} precios de productos, recalculados desde la moneda base. Esto no se puede deshacer.",
+    "confirmLabel": "Sobrescribir",
+    "loadingLabel": "Actualizando..."
+  },
+  "toasts": {
+    "makeBaseSucceeded": "{code} es ahora la moneda base.",
+    "ratesUpdated": "Tasas actualizadas: {updated}{missing}",
+    "ratesMissing": "; no cotizadas: {codes}",
+    "pricesUpdated": "{count} fila de precio de producto recalculada. | {count} filas de precio de producto recalculadas.",
+    "none": "ninguna"
+  },
+  "form": {
+    "editTitle": "Editar Moneda",
+    "addTitle": "Agregar Moneda",
+    "code": {
+      "label": "Código ISO",
+      "placeholder": "ej. USD"
+    },
+    "numeric": {
+      "label": "Código Numérico",
+      "placeholder": "ej. 840"
+    },
+    "prefix": {
+      "label": "Prefijo",
+      "placeholder": "ej. $"
+    },
+    "suffix": {
+      "label": "Sufijo",
+      "placeholder": "ej. ֏"
+    },
+    "formatSample": "Ejemplo de formato: 2.99 → {sample}",
+    "decimals": "Decimales",
+    "rateToBase": "Tasa a la Base",
+    "rateToBaseBaseHint": "La moneda base siempre vale 1 de sí misma.",
+    "enabled": {
+      "label": "Habilitada",
+      "baseHint": "La moneda base siempre está habilitada.",
+      "hint": "Si los pagadores pueden ser facturados en esta moneda"
+    },
+    "cancel": "Cancelar",
+    "save": "Guardar Cambios",
+    "add": "Agregar Moneda",
+    "saving": "Guardando..."
+  }
+}

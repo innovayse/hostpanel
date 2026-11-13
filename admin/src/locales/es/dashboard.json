@@ -1,0 +1,16 @@
+{
+  "title": "Panel",
+  "subtitle": "Bienvenido de nuevo — aquí está lo que está sucediendo",
+  "recentActivity": "Actividad reciente",
+  "quickLinks": "Enlaces rápidos",
+  "live": "En vivo",
+  "loadingMetrics": "Cargando métricas…",
+  "stats": {
+    "totalRevenue": "Ingresos Totales",
+    "monthlyRevenue": "Ingresos Mensuales",
+    "activeServices": "Servicios Activos",
+    "overdueInvoices": "Facturas Vencidas",
+    "openTickets": "Tickets Abiertos",
+    "totalClients": "Total de Clientes"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "dashboard": "Panel",
+  "clients": "Clientes",
+  "clientsChildren": {
+    "view": "Ver/Buscar Clientes",
+    "users": "Gestionar Usuarios",
+    "sharedHostings": "Hostings Compartidos",
+    "addons": "Complementos de Servicios",
+    "domainRegistrations": "Registros de Dominios",
+    "cancellations": "Solicitudes de Cancelación",
+    "affiliates": "Gestionar Afiliados"
+  },
+  "billing": "Facturación",
+  "billingChildren": {
+    "transactions": "Lista de Transacciones",
+    "invoices": "Facturas",
+    "billableItems": "Elementos Facturables",
+    "quotes": "Cotizaciones",
+    "offlineCc": "Procesamiento de Tarjeta Sin Conexión",
+    "disputes": "Disputas",
+    "gatewayLog": "Registro de Pasarela",
+    "paymentClaims": "Reclamos de Pago",
+    "bankTransfers": "Transferencias Bancarias Pendientes",
+    "creditNotes": "Notas de Crédito",
+    "renewals": "Renovaciones Próximas"
+  },
+  "reports": "Informes",
+  "orders": "Órdenes",
+  "domains": "Dominios",
+  "support": "Soporte",
+  "supportChildren": {
+    "overview": "Resumen de Soporte",
+    "tickets": "Tickets de Soporte",
+    "newTicket": "Abrir Nuevo Ticket",
+    "predefinedReplies": "Respuestas Predefinidas",
+    "announcements": "Anuncios",
+    "downloads": "Descargas",
+    "knowledgebase": "Base de conocimientos",
+    "networkIssues": "Problemas de red"
+  },
+  "plugins": "Complementos",
+  "pluginManager": "Gestor de Complementos",
+  "servers": "Servidores",
+  "integrations": "Integraciones",
+  "migration": "Migración",
+  "settings": "Configuración",
+  "settingsChildren": {
+    "general": "General",
+    "products": "Productos",
+    "tldPricing": "Precios de TLD",
+    "slides": "Diapositivas",
+    "emailTemplates": "Plantillas de Correo",
+    "gateways": "Pasarelas de Pago",
+    "currencies": "Monedas"
+  },
+  "storefront": "Contenido de la tienda",
+  "storefrontChildren": {
+    "testimonials": "Testimonios",
+    "partners": "Socios",
+    "projects": "Proyectos",
+    "faqs": "Preguntas frecuentes",
+    "locations": "Ubicaciones de servidores"
+  },
+  "servicesTitle": "Servicios",
+  "documentation": "Documentación"
+}

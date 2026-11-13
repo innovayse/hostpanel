@@ -1,0 +1,43 @@
+{
+  "orderDetail": {
+    "backToOrders": "Volver a órdenes",
+    "loadingOrder": "Cargando orden...",
+    "accept": "Aceptar",
+    "orderInfo": "Información de la orden",
+    "created": "Creada",
+    "invoice": "Factura",
+    "noInvoiceLinkedToThis": "No hay ninguna factura vinculada a esta orden.",
+    "product": "Producto",
+    "firstPayment": "Pago inicial",
+    "recurring": "Recurrente",
+    "addNotesAboutThisOrder": "Agregar notas sobre esta orden...",
+    "notesAreOnlyVisibleTo": "Las notas solo son visibles para administradores.",
+    "deleteOrder": "Eliminar orden",
+    "areYouSureYouWant": "¿Estás seguro de que quieres eliminar permanentemente esta orden? Esta acción no se puede deshacer.",
+    "orderAccepted": "Orden aceptada.",
+    "orderCancelled": "Orden cancelada.",
+    "confirmCancelTitle": "¿Cancelar esta orden?",
+    "confirmCancelMessage": "La orden se cancelará. Esto no se puede deshacer.",
+    "cancelOrder": "Cancelar orden",
+    "linesSubtotal": "Subtotal de la orden (antes de impuestos y crédito)",
+    "invoiceTotal": "Total de la factura"
+  },
+  "ordersList": {
+    "orders": "Órdenes",
+    "manageCustomerOrders": "Gestionar órdenes de clientes",
+    "filterByStatus": "Filtrar por estado",
+    "order": "Orden #",
+    "items": "Elementos",
+    "accept": "Aceptar",
+    "totalcountOrderValue": "Órdenes: {totalCount}",
+    "noOrdersFound": "No se encontraron órdenes",
+    "orderAccepted": "Orden aceptada.",
+    "orderCancelled": "Orden cancelada.",
+    "confirmCancelTitle": "¿Cancelar esta orden?",
+    "confirmCancelMessage": "La orden se cancelará. Esto no se puede deshacer.",
+    "cancelOrder": "Cancelar orden"
+  },
+  "fulfillment": {
+    "acceptedWithFailedLines": "Orden aceptada, pero estas líneas no se pudieron cumplir: {lines}."
+  }
+}

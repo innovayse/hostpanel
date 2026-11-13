@@ -29,7 +29,7 @@ public sealed class GetServicesReportTests(IntegrationTestFactory factory) : ICl
             db.ProductGroups.Add(group);
             await db.SaveChangesAsync();
             var product = Product.Create(
-                group.Id, $"SvcProduct-{marker}", null, null, null, null, ProductType.SharedHosting, 10m, 100m, DateTimeOffset.UtcNow);
+                group.Id, $"SvcProduct-{marker}", null, null, null, null, ProductType.SharedHosting, 10m, 100m, TestMoments.Seeded);
             db.Products.Add(product);
             await db.SaveChangesAsync();
 

@@ -46,7 +46,7 @@ public sealed class ServiceChangeInvoicePaidHandlerTests(IntegrationTestFactory 
 
         await factory.Services.PublishAndWaitAsync(new PaymentReceivedEvent(unrelatedInvoice, seeded.ClientId, 5m, "tx-1")
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         (await ServiceChangeTestSeeds.ReadRequestAsync(factory, pendingId)).Status.Should().Be(ServiceChangeStatus.Approved);
@@ -64,7 +64,7 @@ public sealed class ServiceChangeInvoicePaidHandlerTests(IntegrationTestFactory 
 
         await factory.Services.PublishAndWaitAsync(new PaymentReceivedEvent(invoiceId, seeded.ClientId, 2m, "tx-part")
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         (await ServiceChangeTestSeeds.ReadRequestAsync(factory, requestId)).Status.Should().Be(ServiceChangeStatus.Approved);

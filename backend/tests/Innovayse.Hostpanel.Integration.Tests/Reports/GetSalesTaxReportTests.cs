@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -90,7 +91,7 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var now = DateTimeOffset.UtcNow;
+            var now = TestMoments.Seeded;
             var invoice = Invoice.Create(clientId, now.AddDays(7), "PLN", now);
             invoice.AddItem("Hosting", 100m, 1);
             invoice.UpdateOptions(now, now.AddDays(7), null, 20m);
@@ -101,8 +102,11 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
             invoiceId = invoice.Id;
         }
 
-        var admin = await ReportsTestSeeds.AdminClientAsync(factory);
-        var today = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd");
+        // The credit note takes its date from the host clock, so the host stands at the day of the payment.
+        using var host = new ClockedHost(factory, TestMoments.Seeded);
+        var admin = host.CreateClient();
+        admin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
+        var today = TestMoments.Seeded.ToString("yyyy-MM-dd");
         var before = await PlnTotalAsync(admin, today);
         before.GetProperty("taxLiability").GetDecimal().Should().Be(20m);
 

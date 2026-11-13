@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# What: prepare ONE existing CWP hosting account on srv4 for Innovayse Sites (Laravel) deploys - the manual "CWP spike".
+# What: prepare ONE existing CWP hosting account for Innovayse Sites (Laravel) deploys (agent op prepare-site).
 #       php-fpm 8.3 pool + CWP per-domain JSON + vhost handler for this domain only, MySQL db/user, deploy dir tree with
 #       group nobody (Apache serves static files as nobody), shared/.env, public_html -> current/public, PHP 8.3 CLI in the jail.
 #       Idempotent: every step is skipped when already done. Touches no other account; Apache/php-fpm are reloaded
@@ -59,7 +59,7 @@ elif ! grep -q 'opcache.revalidate_path' "$POOL" || ! grep -q 'realpath_cache_si
   # Symlink-switch deploys behind Apache: Apache passes the unresolved public_html/index.php, so OPcache would keep the
   # previous release's compiled index.php (its __DIR__ baked in) under that path and a worker's realpath cache would keep
   # the old target. revalidate_path=1 + realpath_cache_size=0 make every request resolve `current` again (nginx avoids
-  # this with $realpath_root; Apache cannot). Proven on srv4 2026-11-13 by switching `current` back and forth.
+  # this with $realpath_root; Apache cannot). Proven on a CWP server by switching `current` back and forth.
   cp -p "$POOL" "$BK/"
   grep -q 'opcache.validate_timestamps' "$POOL" || printf 'php_admin_value[opcache.validate_timestamps] = 1\nphp_admin_value[opcache.revalidate_freq] = 0\n' >> "$POOL"
   grep -q 'realpath_cache_size' "$POOL" || printf 'php_admin_value[realpath_cache_size] = 0\n' >> "$POOL"

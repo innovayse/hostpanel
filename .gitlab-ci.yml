@@ -197,19 +197,22 @@ variables:
     - docker build --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
     # Both tags come from the one build above. A push that stalls would hold the job until the job
     # timeout, so each push has its own limit and is retried a bounded number of times; layers
-    # already uploaded are skipped on a retry. The worst case (two tags, three attempts of 240 s
-    # plus a 10 s grace, and the pauses) stays near 26 minutes, well inside the job limit. Any
-    # failed push is retried, an authentication failure included.
+    # already uploaded are skipped on a retry, but a layer cut off half way starts again from zero.
+    # The limit is 900 s because the builder's upload can drop below 1 MB/s: on 2026-11-13 the API's
+    # largest layer did not fit in 240 s and all three attempts were cut off ("context canceled").
+    # The second tag only re-links layers that are already there. Worst case (two attempts of
+    # 900 s plus a 10 s grace and the pause) is about 31 minutes on top of the build, inside the
+    # 60 minute job limit. Any failed push is retried, an authentication failure included.
     - |
       for tag in "$TAG" "$CI_COMMIT_SHORT_SHA"; do
         attempt=1
-        until timeout -k 10 240 docker push "$IMAGE:$tag"; do
-          if [ "$attempt" -ge 3 ]; then
+        until timeout -k 10 900 docker push "$IMAGE:$tag"; do
+          if [ "$attempt" -ge 2 ]; then
             echo "Pushing $IMAGE:$tag failed after $attempt attempts" >&2
             exit 1
           fi
           attempt=$((attempt + 1))
-          echo "Push failed, attempt $attempt of 3 in 10 seconds"
+          echo "Push failed, attempt $attempt of 2 in 10 seconds"
           sleep 10
         done
       done

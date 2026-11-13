@@ -18,28 +18,17 @@ public sealed class CheckPluginUpdatesHandler
     /// <summary>Reads the plugins installed on disk.</summary>
     private readonly IPluginPackageStore _store;
 
-    /// <summary>Reads the stored licence keys.</summary>
-    private readonly IHostpanelDbContext _db;
-
-    /// <summary>Decrypts the stored licence keys.</summary>
-    private readonly ISecretSettingCipher _cipher;
-
-    /// <summary>Sets the installed state and the update offer on a row.</summary>
+    /// <summary>Reads the stored licence keys and sets the installed state and the update offer on a row.</summary>
     private readonly PluginUpdateOffer _offer;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
-    /// <param name="db">Reads the stored licence keys.</param>
-    /// <param name="cipher">Decrypts the stored licence keys.</param>
-    /// <param name="offer">Sets the installed state and the update offer on a row.</param>
-    public CheckPluginUpdatesHandler(
-        IPluginRegistryClient registry, IPluginPackageStore store, IHostpanelDbContext db, ISecretSettingCipher cipher, PluginUpdateOffer offer)
+    /// <param name="offer">Reads the stored licence keys and sets the installed state and the update offer on a row.</param>
+    public CheckPluginUpdatesHandler(IPluginRegistryClient registry, IPluginPackageStore store, PluginUpdateOffer offer)
     {
         _registry = registry;
         _store = store;
-        _db = db;
-        _cipher = cipher;
         _offer = offer;
     }
 
@@ -72,7 +61,7 @@ public sealed class CheckPluginUpdatesHandler
         var entries = latest.Value!.ToDictionary(e => e.Id, StringComparer.Ordinal);
         foreach (var id in uploaded.Keys)
         {
-            var licence = await _db.GetRegistryLicenceAsync(_cipher, id, ct);
+            var licence = await _offer.LicenceAsync(id, ct);
             if (licence is null)
             {
                 continue;

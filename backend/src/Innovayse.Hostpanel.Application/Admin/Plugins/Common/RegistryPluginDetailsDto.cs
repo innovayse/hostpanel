@@ -14,11 +14,18 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Category">The registry category.</param>
 /// <param name="Pricing">Whether the plugin is free, paid or private.</param>
 /// <param name="Verified">Whether the registry vouches for the publisher.</param>
-/// <param name="LatestVersion">The newest published version; <see langword="null"/> when nothing is published.</param>
+/// <param name="LatestVersion">
+/// The newest published version; <see langword="null"/> when nothing is published. When <paramref name="UpdateAvailable"/> is
+/// true it is the version the update installs: the newest published version that runs on this host, which can be older than the
+/// registry's newest.
+/// </param>
 /// <param name="Installed">Whether a plugin with this id is installed on this server.</param>
 /// <param name="InstalledVersion">The installed version; <see langword="null"/> when not installed.</param>
 /// <param name="StagedVersion">The version waiting for the restart; <see langword="null"/> when none.</param>
-/// <param name="UpdateAvailable">Whether <paramref name="LatestVersion"/> is newer than the installed and the staged one.</param>
+/// <param name="UpdateAvailable">
+/// Whether an update is offered: a published version that is newer than the installed one and than any staged upload and whose
+/// host range admits this host. It is chosen from the version list shown to this host (with the stored licence key).
+/// </param>
 /// <param name="RequiresLicence">Whether the plugin is paid or private, so the registry asks for a licence key.</param>
 /// <param name="HasLicenceKey">Whether a licence key is stored on this server for the plugin.</param>
 /// <param name="BuyUrl">Where to buy a paid plugin; <see langword="null"/> when not stated.</param>

@@ -63,6 +63,25 @@ public sealed class PluginUpdateRuleTests
         PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", "1.6.0").Should().BeNull();
     }
 
+    /// <summary>A pre-release ranks below its release and above the earlier release.</summary>
+    [Fact]
+    public void NewestOffer_RanksAPreReleaseBelowItsRelease()
+    {
+        PluginUpdateRule.NewestOffer([Version("1.1.0-rc.1"), Version("1.1.0")], "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0");
+        PluginUpdateRule.NewestOffer([Version("1.1.0"), Version("1.1.0-rc.1")], "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0");
+        PluginUpdateRule.NewestOffer([Version("1.1.0-rc.1"), Version("1.0.5")], "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0-rc.1");
+    }
+
+    /// <summary>With a staged upload only a version newer than the staged one is offered.</summary>
+    [Fact]
+    public void NewestOffer_OffersOnlyWhatIsNewerThanTheStagedVersion()
+    {
+        var versions = new[] { Version("1.5.0"), Version("1.6.0") };
+
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", "1.5.0")!.Version.Should().Be("1.6.0");
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", "1.5.5")!.Version.Should().Be("1.6.0");
+    }
+
     /// <summary>A host that is not a version (a local build) is not refused.</summary>
     [Fact]
     public void NewestOffer_DoesNotRefuseALocalBuild()

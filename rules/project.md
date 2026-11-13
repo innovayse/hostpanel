@@ -814,7 +814,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     that is newer than the installed one and than any staged upload and whose host range admits the running host
     (`PluginHostCompatibility`). `latestVersion` of a row with an update is that version, which is the one an update
     installs, so it can be older than the registry's newest; a newer version the host cannot run is not offered, and
-    neither is any update when the versions cannot be read. The details page uses the same rule.
+    neither is any update when the versions cannot be read. The versions are the list this host is shown: the plugin's page
+and version list read with the stored licence key, and for a host only plugin the signed list after the installation is
+verified (`RegistryInstanceEnrollment.EnsureVerifiedAsync`), exactly as the details page does. The scoped service reads each
+licence key once, verifies once, and stops asking the registry after its first outage in a request. The details page uses
+the same rule.
   - **What is sent to the registry.** Only `GET {BaseUrl}plugins?q&category&page&pageSize`, `POST {BaseUrl}plugins/latest` with
     the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}/versions/{version}` and the
     package address that reply names. No cookie, no token, no host name, no setting, no client or user data; an `Accept`

@@ -39,6 +39,9 @@ public sealed class SshProviderFailureConverter : ValueConverter<SshProviderFail
             [SshProviderFailure.AccountSuspended] = "account_suspended",
             [SshProviderFailure.AgentNotConfigured] = "agent_not_configured",
             [SshProviderFailure.BindingMismatch] = "binding_mismatch",
+            [SshProviderFailure.NotSupported] = "not_supported",
+            [SshProviderFailure.SiteNotOwned] = "site_not_owned",
+            [SshProviderFailure.SitePrepareFailed] = "site_prepare_failed",
         };
 
     /// <summary>The failure each stored form reads back as.</summary>

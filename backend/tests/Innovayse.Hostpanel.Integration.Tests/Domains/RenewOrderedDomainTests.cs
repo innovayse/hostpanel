@@ -41,7 +41,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var holderId = await DomainsTestSeeds.SeedClientAsync(context);
             context.Domains.Add(RegisteredDomain.Register(
-                holderId, name, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
+                holderId, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -65,7 +65,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             clientId = await DomainsTestSeeds.SeedClientAsync(context);
             context.Domains.Add(RegisteredDomain.Register(
-                clientId, name, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
+                clientId, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -147,7 +147,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, name, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.Activate("REF-RENEW", DateTimeOffset.UtcNow.AddYears(1), DateTimeOffset.UtcNow);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);

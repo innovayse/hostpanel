@@ -536,3 +536,48 @@ class TimeoutTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SitePrepareTests(AgentTestCase):
+    """op prepare-site (1.3.0): opt-in, validated, runs the provider helper root-side and maps its exit codes."""
+
+    def helper(self, exit_code=0, out="[provision alice] pool written\n[provision alice] done\nnoise\n"):
+        path = os.path.join(self.tmp.name, "prepare-site")
+        argv_file = os.path.join(self.tmp.name, "argv")
+        with open(path, "w") as handle:
+            handle.write("#!/bin/sh\necho \"$@\" > %s\nprintf '%s'\nexit %d\n" % (argv_file, out.replace("\n", "\\n"), exit_code))
+        os.chmod(path, 0o755)
+        self.config["site_prepare_command"] = path
+        return argv_file
+
+    def test_refused_when_not_configured(self):
+        response = self.call(op="prepare-site", account="alice", domain="alice.example.com")
+        self.assertEqual(response, {"v": 1, "ok": False, "error": "not_supported"})
+
+    def test_runs_helper_with_account_and_domain_and_returns_steps(self):
+        argv_file = self.helper()
+        response = self.call(op="prepare-site", account="alice", domain="alice.example.com")
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(response["steps"], ["pool written", "done"])
+        with open(argv_file) as handle:
+            self.assertEqual(handle.read().strip(), "alice alice.example.com")
+        with open(self.config["audit_log"]) as handle:
+            self.assertIn('"site_prepare"', handle.read())
+
+    def test_helper_exit_codes_map_to_stable_errors(self):
+        self.helper(exit_code=3)
+        self.assertEqual(self.call(op="prepare-site", account="alice", domain="other.example.com")["error"], "site_not_owned")
+        self.helper(exit_code=1)
+        self.assertEqual(self.call(op="prepare-site", account="alice", domain="alice.example.com")["error"], "site_prepare_failed")
+
+    def test_bad_domains_and_extra_fields_refused_before_the_helper(self):
+        argv_file = self.helper()
+        for domain in ["", "-x.com", "a..com", "x.com;rm", "../etc", "UPPER.com", "x" * 260 + ".com", 5]:
+            self.assertEqual(self.call(op="prepare-site", account="alice", domain=domain)["error"], "invalid_request", domain)
+        self.assertEqual(self.call(op="prepare-site", account="alice", domain="a.com", key_id=KEY_ID_A)["error"], "invalid_request")
+        self.assertFalse(os.path.exists(argv_file))
+
+    def test_unknown_account_refused_before_the_helper(self):
+        argv_file = self.helper()
+        self.assertFalse(self.call(op="prepare-site", account="mallory", domain="a.com")["ok"])
+        self.assertFalse(os.path.exists(argv_file))

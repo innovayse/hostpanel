@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# What: prepare ONE existing CWP hosting account on srv4 for Innovayse Sites (Laravel) deploys - the manual "CWP spike".
+#       php-fpm 8.3 pool + CWP per-domain JSON + vhost handler for this domain only, MySQL db/user, deploy dir tree with
+#       group nobody (Apache serves static files as nobody), shared/.env, public_html -> current/public, PHP 8.3 CLI in the jail.
+#       Idempotent: every step is skipped when already done. Touches no other account; Apache/php-fpm are reloaded
+#       gracefully only after their config tests pass, otherwise the vhost backups are restored.
+# Usage (root, called by hostpanel-ssh-key-agent op prepare-site): prepare-site <user> <domain>
+# Exit: 0 done, 2 bad arguments, 3 the domain is not this account's (or no vhost/jail), 4/5 refused safely, other = failed.
+# Needs: CWP layout (/usr/local/apache, /opt/alt/php-fpm83), jailkit jail at /home/jail/<user>, mysql as root.
+set -euo pipefail
+U="${1:?user}"; DOM="${2:?domain}"
+[[ "$U" =~ ^[a-z][a-z0-9]{1,15}$ ]] || { echo "bad user" >&2; exit 2; }
+[[ "$DOM" =~ ^[a-z0-9.-]+$ ]] || { echo "bad domain" >&2; exit 2; }
+H="/home/$U"; J="/home/jail/$U"; VH=/usr/local/apache/conf.d/vhosts; FPM=/opt/alt/php-fpm83
+POOL="$FPM/usr/etc/php-fpm.d/users/$U.conf"; SOCK="$FPM/usr/var/sockets/$U.sock"
+id "$U" >/dev/null && [ -d "$H" ] && [ -f "$VH/$DOM.conf" ] && [ -f "$VH/$DOM.ssl.conf" ] && [ -d "$J" ] || { echo "account/vhost/jail missing" >&2; exit 3; }
+# The domain must be this account's own: CWP writes "SuexecUserGroup <user> <user>" and "DocumentRoot /home/<user>/..." into it.
+for f in "$VH/$DOM.conf" "$VH/$DOM.ssl.conf"; do
+  grep -qE "^[[:space:]]*SuexecUserGroup $U $U[[:space:]]*$" "$f" && grep -qE "^[[:space:]]*DocumentRoot $H/" "$f" \
+    || { echo "$DOM is not a domain of $U" >&2; exit 3; }
+done
+TS="$(date +%Y%m%d%H%M%S)"; BK="/root/isites-provision-backup/$U-$TS"; install -d -m 700 "$BK"
+say() { echo "[provision $U] $*"; }
+
+# 1. php-fpm 8.3 pool for this user (same shape CWP writes for its other users).
+CREATED_POOL=0
+if [ ! -f "$POOL" ]; then
+  cat > "$POOL" <<POOL
+[$U]
+listen = $SOCK
+listen.allowed_clients = 127.0.0.1
+listen.group = "nobody"
+listen.mode = 0660
+user = "$U"
+group = "$U"
+pm = ondemand
+pm.max_children = 4
+pm.max_requests = 4000
+pm.process_idle_timeout = 15s
+rlimit_files = 131072
+rlimit_core = unlimited
+catch_workers_output = yes
+env[HOSTNAME] = \$HOSTNAME
+env[TMP] = $H/tmp
+env[TMPDIR] = $H/tmp
+env[TEMP] = $H/tmp
+env[PATH] = /usr/local/bin:/usr/bin:/bin
+php_admin_value[open_basedir] = $H/:/usr/local/lib/php/:/usr/share/php/
+php_admin_value[session.save_path] = $H/tmp
+php_admin_value[upload_tmp_dir] = $H/tmp
+php_admin_value[disable_functions] = exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec
+php_admin_value[opcache.validate_timestamps] = 1
+php_admin_value[opcache.revalidate_freq] = 0
+php_admin_value[realpath_cache_size] = 0
+php_admin_value[opcache.revalidate_path] = 1
+POOL
+  say "pool written"; NEW_POOL=1; CREATED_POOL=1
+elif ! grep -q 'opcache.revalidate_path' "$POOL" || ! grep -q 'realpath_cache_size' "$POOL" || ! grep -q 'opcache.validate_timestamps' "$POOL"; then
+  # Symlink-switch deploys behind Apache: Apache passes the unresolved public_html/index.php, so OPcache would keep the
+  # previous release's compiled index.php (its __DIR__ baked in) under that path and a worker's realpath cache would keep
+  # the old target. revalidate_path=1 + realpath_cache_size=0 make every request resolve `current` again (nginx avoids
+  # this with $realpath_root; Apache cannot). Proven on srv4 2026-11-13 by switching `current` back and forth.
+  cp -p "$POOL" "$BK/"
+  grep -q 'opcache.validate_timestamps' "$POOL" || printf 'php_admin_value[opcache.validate_timestamps] = 1\nphp_admin_value[opcache.revalidate_freq] = 0\n' >> "$POOL"
+  grep -q 'realpath_cache_size' "$POOL" || printf 'php_admin_value[realpath_cache_size] = 0\n' >> "$POOL"
+  grep -q 'opcache.revalidate_path' "$POOL" || printf 'php_admin_value[opcache.revalidate_path] = 1\n' >> "$POOL"
+  say "deploy-safe opcache/realpath lines added to the pool"; NEW_POOL=1
+else say "pool exists"; NEW_POOL=0; fi
+
+# 2. CWP's own per-domain record, so a later CWP vhost rebuild keeps php-fpm 8.3 for this domain.
+install -d -m 755 "$H/.conf/webservers"
+[ -f "$H/.conf/webservers/$DOM.conf" ] || { printf '{\n    "apache_template-type": "php-fpm",\n    "apache_template-name": "default",\n    "php-fpm_ver": "83",\n    "php-fpm": true,\n    "apache-main": true\n}\n' > "$H/.conf/webservers/$DOM.conf"; say "cwp webserver record written"; }
+
+# 3. vhost handler: inserted before the FIRST </VirtualHost> (the domain's own block) of the http and https files.
+EDITED=0
+for f in "$VH/$DOM.conf" "$VH/$DOM.ssl.conf"; do
+  grep -qF "$SOCK" "$f" && continue
+  cp -p "$f" "$BK/"
+  awk -v s="$SOCK" '!done && /^<\/VirtualHost>/ { print "\t<IfModule proxy_fcgi_module>\n\t\t<FilesMatch \\.php$>\n\t\t\tSetHandler \"proxy:unix:" s "|fcgi://localhost\"\n\t\t</FilesMatch>\n\t</IfModule>\n"; done=1 } { print }' "$f" > "$f.new"
+  cat "$f.new" > "$f"; rm -f "$f.new"; EDITED=1; say "handler added to $(basename "$f")"
+done
+restore_web() {
+  for b in "$BK"/*.conf; do [ -f "$b" ] || continue; [ "$(basename "$b")" = "$U.conf" ] && cat "$b" > "$POOL" || cat "$b" > "$VH/$(basename "$b")"; done
+  [ "$CREATED_POOL" = 1 ] && rm -f "$POOL"; return 0
+}
+"$FPM/usr/sbin/php-fpm" -t -y "$FPM/usr/etc/php-fpm.conf" >/dev/null 2>&1 || { restore_web; echo "php-fpm83 -t failed, restored" >&2; exit 4; }
+/usr/local/apache/bin/apachectl -t >/dev/null 2>&1 || { restore_web; echo "apachectl -t failed, restored" >&2; exit 4; }
+[ "$NEW_POOL" = 1 ] && { systemctl reload php-fpm83; say "php-fpm83 reloaded"; }
+[ "$EDITED" = 1 ] && { /usr/local/apache/bin/apachectl graceful; say "apache graceful"; }
+
+# 4. MySQL: <user>_site db and user (CWP naming), over TCP 127.0.0.1 from the jail and localhost.
+DB="${U}_site"; ENVF="$H/shared/.env"
+if [ -z "$(mysql -N -e "SHOW DATABASES LIKE '$DB'")" ]; then
+  [ ! -f "$ENVF" ] || { echo "$ENVF exists but db $DB does not - refusing to guess" >&2; exit 5; }
+  DBPASS="$(openssl rand -hex 20)"
+  mysql -e "CREATE DATABASE \`$DB\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            CREATE USER '$DB'@'localhost' IDENTIFIED BY '$DBPASS'; CREATE USER '$DB'@'127.0.0.1' IDENTIFIED BY '$DBPASS';
+            GRANT ALL ON \`$DB\`.* TO '$DB'@'localhost'; GRANT ALL ON \`$DB\`.* TO '$DB'@'127.0.0.1';"
+  say "database $DB created"
+else say "database $DB exists"; DBPASS=""; fi
+
+# 5. Deploy tree. releases/ and shared/ are setgid group nobody: Apache (nobody) serves the release's static files.
+for d in releases shared backups incoming deploys; do [ -d "$H/$d" ] || install -d -o "$U" -g "$U" -m 700 "$H/$d"; done
+chgrp nobody "$H/releases" "$H/shared"; chmod 2750 "$H/releases" "$H/shared"
+for d in shared/storage shared/storage/app shared/storage/app/public shared/storage/framework shared/storage/framework/cache \
+         shared/storage/framework/cache/data shared/storage/framework/sessions shared/storage/framework/views shared/storage/logs; do
+  [ -d "$H/$d" ] || install -d -o "$U" -g nobody -m 2750 "$H/$d"
+done
+
+# 6. shared/.env (secrets generated here, never printed).
+if [ ! -f "$ENVF" ]; then
+  [ -n "$DBPASS" ] || { echo "no db password for a new .env" >&2; exit 5; }
+  umask 077
+  cat > "$ENVF" <<ENV
+APP_NAME=$U
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=base64:$(openssl rand -base64 32)
+APP_URL=https://$DOM
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=$DB
+DB_USERNAME=$DB
+DB_PASSWORD=$DBPASS
+SESSION_DRIVER=file
+SESSION_SECURE_COOKIE=true
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
+LOG_CHANNEL=daily
+TRUSTED_PROXIES=127.0.0.1
+SITES_PHP_BIN=$FPM/usr/bin/php
+SITES_HEALTH_URL=https://$DOM/
+ENV
+  chown "$U:$U" "$ENVF"; chmod 600 "$ENVF"; say ".env written"
+else say ".env exists"; fi
+
+# 7. Docroot: public_html -> current/public (the old CWP placeholder is kept in the backup).
+if [ ! -L "$H/public_html" ]; then
+  mv "$H/public_html" "$BK/public_html"
+  ln -s current/public "$H/public_html"; chown -h "$U:$U" "$H/public_html"; say "public_html -> current/public"
+fi
+
+# 8. PHP 8.3 CLI inside the jail (jk_cp brings the shared libraries), as /usr/local/bin/php there only.
+if [ ! -x "$J$FPM/usr/bin/php" ]; then
+  jk_cp -f -j "$J" "$FPM/usr/bin/php" "$FPM/usr/php" "$FPM/usr/lib/php/extensions" >/dev/null
+  say "php 8.3 copied into the jail"
+fi
+install -d "$J/usr/local/bin"; ln -sfn "$FPM/usr/bin/php" "$J/usr/local/bin/php"
+chroot --userspec="$U:$U" "$J" /usr/local/bin/php -r 'echo "jail php ", PHP_VERSION, " pdo_mysql=", extension_loaded("pdo_mysql") ? "yes" : "NO", "\n";'
+say "done; backup in $BK"

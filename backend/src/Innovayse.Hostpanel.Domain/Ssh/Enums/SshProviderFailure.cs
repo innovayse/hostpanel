@@ -80,4 +80,13 @@ public enum SshProviderFailure
     /// this server's. Recorded by HostPanel's health check, never answered by an agent.
     /// </summary>
     BindingMismatch,
+
+    /// <summary>The agent does not offer the operation on this server (for example site preparation is not configured).</summary>
+    NotSupported,
+
+    /// <summary>The domain asked for is not one of the account's own; nothing was changed.</summary>
+    SiteNotOwned,
+
+    /// <summary>Preparing the account's site for deploys failed on the server.</summary>
+    SitePrepareFailed,
 }

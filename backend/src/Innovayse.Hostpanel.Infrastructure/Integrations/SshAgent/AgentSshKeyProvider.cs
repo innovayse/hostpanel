@@ -87,6 +87,22 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
         await SendAsync(request, ct);
     }
 
+    /// <summary>The longest a site preparation may run: the first one copies PHP into the jail.</summary>
+    private static readonly TimeSpan PrepareSiteTimeout = TimeSpan.FromMinutes(10);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<string>> PrepareSiteAsync(SshAccount account, string domain, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(domain);
+        var request = Request("prepare-site", account);
+        request["domain"] = domain.Trim().ToLowerInvariant();
+        var endpoint = _endpoint.OperationTimeout >= PrepareSiteTimeout ? _endpoint : _endpoint with { OperationTimeout = PrepareSiteTimeout };
+        var response = await SendAsync(request, endpoint, ct);
+        return response["steps"] is JsonArray steps
+            ? steps.Select(s => s?.GetValue<string>() ?? string.Empty).Where(s => s.Length > 0).ToList()
+            : [];
+    }
+
     /// <summary>Builds a request for an account, refusing an account of another server.</summary>
     /// <param name="op">Operation name.</param>
     /// <param name="account">The hosting account the request is for.</param>
@@ -108,10 +124,18 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The response object.</returns>
     /// <exception cref="SshProviderException">Thrown on transport failure or an agent refusal.</exception>
-    private async Task<JsonObject> SendAsync(JsonObject request, CancellationToken ct)
+    private Task<JsonObject> SendAsync(JsonObject request, CancellationToken ct) => SendAsync(request, _endpoint, ct);
+
+    /// <summary>Sends a request over <paramref name="endpoint"/> (the server's, possibly with a longer timeout).</summary>
+    /// <param name="request">The request (without version).</param>
+    /// <param name="endpoint">The endpoint to use.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The response object.</returns>
+    /// <exception cref="SshProviderException">Thrown on transport failure or an agent refusal.</exception>
+    private async Task<JsonObject> SendAsync(JsonObject request, SshAgentEndpoint endpoint, CancellationToken ct)
     {
         request["v"] = ContractVersion;
-        var raw = await _send(_endpoint, request.ToJsonString(), ct);
+        var raw = await _send(endpoint, request.ToJsonString(), ct);
 
         JsonObject? response;
         try

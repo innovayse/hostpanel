@@ -165,6 +165,25 @@ prints nothing: while the bind mount is active, `<jail_root>/<user>/home/<user>`
 customer's website, and `rm -rf` on the jail would delete it. Only when nothing is mounted, remove
 the jail with `rm -rf --one-file-system <jail_root>/<user>`.
 
+## Innovayse Sites site preparation (`prepare-site`, agent 1.3.0+)
+
+`{"v":1,"op":"prepare-site","account":"<user>","domain":"<the account's domain>"}` runs `site_prepare_command`
+(empty = the op answers `not_supported`) as root with `<user> <domain>`, after the usual account checks and under the
+account lock; with `jail_enrol` on, the jail is made first. The CWP profile ships the helper as
+`/usr/local/libexec/hostpanel-ssh-key-agent/prepare-site`; set `site_prepare_command` to it to enable the op.
+
+The CWP helper is idempotent and touches only that account: php-fpm 8.3 pool (with `opcache.validate_timestamps=1`,
+`revalidate_freq=0`, `revalidate_path=1`, `realpath_cache_size=0`, which a `current` symlink switch behind Apache needs),
+the vhost handler plus CWP's `~/.conf/webservers/<domain>.conf` record, a `<user>_site` database, `~/shared/.env`
+(secrets generated on the server, never printed), `releases/` and `shared/` setgid `nobody`, `public_html ->
+current/public` (the old placeholder is backed up), and PHP 8.3 in the jail. Everything it edits is copied to
+`/root/isites-provision-backup/<user>-<time>/` first; Apache and php-fpm are reloaded gracefully, only after their config
+tests pass, and the vhost is restored if a test fails.
+
+Answers: `{"ok":true,"prepared":true,"steps":[...]}`, or `not_supported`, `site_not_owned` (the vhost does not belong to
+the account, or no jail/vhost), `site_prepare_failed`. HostPanel calls it with a 10 minute timeout after provisioning a
+service whose product metadata holds `{"innovayseSites": {"prepare": true}}`.
+
 ## Lifecycle
 
 | Task | Command (as root on the server, in the unpacked bundle) |

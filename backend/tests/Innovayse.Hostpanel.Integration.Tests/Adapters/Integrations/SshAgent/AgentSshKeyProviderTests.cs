@@ -39,6 +39,45 @@ public sealed class AgentSshKeyProviderTests
         Assert.Equal(5, request.Count);
     }
 
+    /// <summary>
+    /// Preparing a site sends one <c>prepare-site</c> request with the lower-cased domain, over the server's endpoint
+    /// with a timeout long enough for the first preparation, and returns the steps the agent reported.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task PrepareSite_SendsDomainWithLongTimeout_AndReturnsStepsAsync()
+    {
+        var transport = new RecordingTransport("""{"v":1,"ok":true,"prepared":true,"steps":["pool written","done"]}""");
+
+        var steps = await new AgentSshKeyProvider(Endpoint, transport.SendAsync).PrepareSiteAsync(new SshAccount(7, "web"), " Web.Example.COM ", default);
+
+        Assert.Equal(["pool written", "done"], steps);
+        var (endpoint, request) = Assert.Single(transport.Sent);
+        Assert.Equal(Endpoint.ServerId, endpoint.ServerId);
+        Assert.True(endpoint.OperationTimeout >= TimeSpan.FromMinutes(10));
+        Assert.Equal("prepare-site", request["op"]!.GetValue<string>());
+        Assert.Equal("web", request["account"]!.GetValue<string>());
+        Assert.Equal("web.example.com", request["domain"]!.GetValue<string>());
+        Assert.Equal(4, request.Count);
+    }
+
+    /// <summary>The agent's site preparation refusals map to their own failures.</summary>
+    /// <param name="code">The agent error code.</param>
+    /// <param name="failure">The expected failure.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("not_supported", SshProviderFailure.NotSupported)]
+    [InlineData("site_not_owned", SshProviderFailure.SiteNotOwned)]
+    [InlineData("site_prepare_failed", SshProviderFailure.SitePrepareFailed)]
+    public async Task PrepareSite_RefusalsMapToTheirFailuresAsync(string code, SshProviderFailure failure)
+    {
+        var provider = new AgentSshKeyProvider(Endpoint, new RecordingTransport($$"""{"v":1,"ok":false,"error":"{{code}}"}""").SendAsync);
+
+        var ex = await Assert.ThrowsAsync<SshProviderException>(() => provider.PrepareSiteAsync(new SshAccount(7, "web"), "web.example.com", default));
+
+        Assert.Equal(failure, ex.Failure);
+    }
+
     /// <summary>Ping reads the version, profile and binding, and an agent older than bindings answers with neither.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

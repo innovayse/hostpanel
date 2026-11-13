@@ -29,6 +29,9 @@ internal static class AgentFailureCodes
             ["unsafe_path"] = SshProviderFailure.UnsafePath,
             ["file_too_large"] = SshProviderFailure.FileTooLarge,
             ["account_suspended"] = SshProviderFailure.AccountSuspended,
+            ["not_supported"] = SshProviderFailure.NotSupported,
+            ["site_not_owned"] = SshProviderFailure.SiteNotOwned,
+            ["site_prepare_failed"] = SshProviderFailure.SitePrepareFailed,
         };
 
     /// <summary>Translates an agent error code.</summary>

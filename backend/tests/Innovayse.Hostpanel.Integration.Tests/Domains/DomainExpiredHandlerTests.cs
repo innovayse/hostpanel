@@ -39,7 +39,7 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
 
         var (clientId, email, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -67,7 +67,7 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         var (clientId, _, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: true);
-        var evt = new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow };
+        var evt = new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = TestMoments.Seeded };
 
         await scope.ServiceProvider.PublishAndWaitAsync(evt);
         await scope.ServiceProvider.PublishAndWaitAsync(evt);
@@ -93,7 +93,7 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
 
         var (clientId, _, serviceId, domainId) = await SeedExpiredDomainAsync(scope.ServiceProvider, context, expire: false);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(domainId, clientId, serviceId) { OccurredAt = TestMoments.Seeded });
 
         var reloaded = await context.ClientServices.AsNoTracking()
             .FirstAsync(s => s.Id == serviceId, CancellationToken.None);
@@ -120,8 +120,8 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
             strangerDomainId = await DomainsTestSeeds.SeedActiveDomainAsync(context);
         }
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(strangerDomainId, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(int.MaxValue, clientId, serviceId) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(strangerDomainId, clientId, serviceId) { OccurredAt = TestMoments.Seeded });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiredEvent(int.MaxValue, clientId, serviceId) { OccurredAt = TestMoments.Seeded });
 
         Assert.Empty(emailSender.Sent);
         var reloaded = await context.ClientServices.AsNoTracking()

@@ -21,12 +21,12 @@ public sealed class DomainQueryExtensionsTests(IntegrationTestFactory factory) :
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var domain = RegisteredDomain.Register(
-            client.Id, $"children-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            client.Id, $"children-{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.SetNameservers(["ns1.example.test", "ns2.example.test"]);
         domain.AddDnsRecord(DnsRecordType.A, "www", "192.0.2.10", 3600, null);
         context.Domains.Add(domain);

@@ -20,12 +20,12 @@ public sealed class ListUpcomingDomainRenewalsTests(IntegrationTestFactory facto
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var domain = RegisteredDomain.Register(
-            client.Id, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(inDays),
+            client.Id, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(inDays),
             autoRenew: autoRenew, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);

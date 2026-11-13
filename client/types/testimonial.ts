@@ -1,5 +1,5 @@
 /**
- * Testimonial type - one client review served by `GET /api/public/testimonials`.
+ * Testimonial type: one client review served by `GET /api/public/testimonials`.
  *
  * @module types/testimonial
  */

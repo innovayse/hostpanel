@@ -31,7 +31,7 @@ public sealed class GetMyServiceInvoicesTests(IntegrationTestFactory factory) : 
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 2m, 20m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 2m, 20m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 

@@ -11,6 +11,7 @@ import {
   buildYearOptions,
   formatDisplayDate,
   formatIsoDate,
+  getDayKeysForMonth,
   getDaysForMonth,
   matchQuickDate,
   parsePartialDate,
@@ -18,6 +19,7 @@ import {
   partialToDate,
   presetRange,
   quickDateFor,
+  dateLibraryThemeClasses,
 } from '@/utils/ui/datePicker'
 
 /** Fixed reference day (a Wednesday) so every expectation is deterministic. */
@@ -59,6 +61,14 @@ describe('datePicker helpers', () => {
     expect(cells.slice(0, 5)).toEqual([null, null, null, null, null])
     expect(cells[5]).toBe(1)
     expect(cells).toHaveLength(36)
+  })
+
+  it('keys every grid cell by the ISO day it sits on', () => {
+    // The five leading blanks sit on 26 to 30 April; the grid then runs 1 to 31 May.
+    const keys = getDayKeysForMonth(new Date(2026, 4, 1))
+    expect(keys.slice(0, 6)).toEqual(['2026-04-26', '2026-04-27', '2026-04-28', '2026-04-29', '2026-04-30', '2026-05-01'])
+    expect(keys).toHaveLength(36)
+    expect(new Set(keys).size).toBe(36)
   })
 
   it('offers the configured year span', () => {
@@ -103,9 +113,10 @@ describe('datePicker helpers', () => {
 })
 
 describe('datePicker selected states', () => {
-  it('fills the selected cell and active preset with a deeper primary that carries white text', () => {
+  it('fills the selected cell and active preset with a primary fill that carries the ground colour as text', () => {
     expect(dateCellSelectedClasses).toContain('bg-primary-600')
-    expect(dateCellSelectedClasses).toContain('text-white')
+    expect(dateCellSelectedClasses).toContain('text-surface-base')
     expect(datePresetActiveClasses).toContain('bg-primary-600')
+    expect(dateLibraryThemeClasses).toContain('[--dp-background-color:var(--surface-elevated)]')
   })
 })

@@ -3,7 +3,7 @@
  * Announcement form shared by create and edit. The mode comes from the route: an `:id` param
  * means edit and loads the announcement first.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -12,16 +12,17 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
+import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { toDateInputValue } from '@/lib/format'
 import { useAnnouncementsStore } from '@/stores/announcements'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { AppRoute } from '@/lib/routes'
 
 const { t } = useI18n()
@@ -64,8 +65,8 @@ const form = ref<AnnouncementForm>({
 /** Whether the form is being submitted. */
 const saving = ref(false)
 
-/** Whether the existing announcement is being loaded. */
-const loading = ref(false)
+/** Whether the existing announcement is being loaded; true from the first paint of an edit, so the form never flashes empty. */
+const loading = ref(isEditMode.value)
 
 /** The sentence of a refused load of the announcement being edited, null when it loaded. */
 const loadError = ref<string | null>(null)
@@ -116,6 +117,9 @@ const handleSave = async (): Promise<void> => {
   }
 }
 
+// Every field of the form stays a placeholder while the announcement is read.
+provide(UI_FIELD_LOADING, loading)
+
 onMounted(() => {
   if (isEditMode.value) {
     fetchAnnouncement()
@@ -138,8 +142,6 @@ onMounted(() => {
       :subtitle="isEditMode ? t('support.announcementForm.updateTheAnnouncementDetailsBelow') : t('support.announcementForm.createANewClientFacing')"
     />
 
-    <UiSkeleton v-if="loading" :lines="4" data-testid="announcement-form-loading" />
-
     <UiErrorState
       v-if="loadError !== null"
       :message="loadError"
@@ -150,20 +152,25 @@ onMounted(() => {
 
     <UiAlert v-else-if="store.error" variant="error" data-testid="announcement-form-error">{{ store.error }}</UiAlert>
 
-    <UiCard v-if="!loading && loadError === null" padding="md">
+    <UiCard v-if="loadError === null" padding="md" :aria-busy="loading ? 'true' : undefined" data-testid="announcement-form-loading">
       <UiStack>
-        <UiStack v-if="form.createdOn" direction="row" gap="sm" align="center">
-          <UiText tone="muted" size="md">{{ t('shared.date') }}</UiText>
-          <UiText tone="secondary" size="md" data-testid="announcement-form-created-on">{{ form.createdOn }}</UiText>
-        </UiStack>
-
-        <UiField :label="t('shared.title')" :error="store.fieldErrors.title">
-          <UiInput
-            v-model="form.title"
-            :placeholder="t('support.announcementForm.announcementTitle')"
-            data-testid="announcement-form-title"
-          />
-        </UiField>
+        <UiGrid :columns="2">
+          <UiField :label="t('shared.title')" :error="store.fieldErrors.title">
+            <UiInput
+              v-model="form.title"
+              :placeholder="t('support.announcementForm.announcementTitle')"
+              data-testid="announcement-form-title"
+            />
+          </UiField>
+          <UiField v-if="form.createdOn || loading" :label="t('shared.date')">
+            <UiInput
+              :model-value="form.createdOn"
+              readonly
+              :placeholder="t('shared.date')"
+              data-testid="announcement-form-created-on"
+            />
+          </UiField>
+        </UiGrid>
 
         <UiField :label="t('support.announcementForm.announcement')" :error="store.fieldErrors.content">
           <UiTextarea
@@ -187,7 +194,7 @@ onMounted(() => {
             data-testid="announcement-form-save"
             @click="handleSave"
           >
-            {{ saving ? t('shared.saving') : isEditMode ? t('support.announcementForm.updateAnnouncement') : t('support.announcementForm.saveAnnouncement') }}
+            {{ isEditMode ? t('support.announcementForm.updateAnnouncement') : t('support.announcementForm.saveAnnouncement') }}
           </UiButton>
           <UiLink
             :to="AppRoute.SupportAnnouncements"

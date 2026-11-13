@@ -88,7 +88,7 @@ public sealed class DiskUsageService : IDiskUsageService
                 }
                 else
                 {
-                    _logger.LogWarning("Server {Name} has no ApiToken or AccessHash — skipping disk usage poll.", server.Name);
+                    _logger.LogWarning("Server {Name} has no ApiToken or AccessHash, so the disk usage poll is skipped.", server.Name);
                     continue;
                 }
 

@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatBlock - a chat with the plugin: earlier messages read from the `history` GET route, and each message
+ * PluginChatBlock. A chat with the plugin: earlier messages read from the `history` GET route, and each message
  * sent to the streaming `send` route (both `{ method, path }`), whose events are shown as they arrive: `delta` adds
  * text to the reply, `message` replaces it, `status` says what the plugin is doing, `error` shows the sentence (the
  * plugin's `text`, or the host's localised `message` when the plugin failed mid-stream), `link` (`{ text, url }`)

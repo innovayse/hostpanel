@@ -2,7 +2,7 @@
  * Pinia store for the Hostpanel release status.
  *
  * Fetched once after sign-in; the sidebar reads it to show the upgrade notice when a newer
- * version is available. No action throws — a refusal is kept as a sentence in `error`.
+ * version is available. No action throws, a refusal is kept as a sentence in `error`.
  */
 
 import { defineStore } from 'pinia'

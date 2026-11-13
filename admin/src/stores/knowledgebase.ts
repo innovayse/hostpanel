@@ -29,6 +29,9 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   /** Sentence for the last failed call, null when none. */
   const error = ref<string | null>(null)
 
+  /** Sentence for the last failed articles load; apart from `error`, so the categories and the articles load side by side without one clearing the other's refusal. */
+  const articlesError = ref<string | null>(null)
+
   /** Per-field messages of the last refused save, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
 
@@ -96,11 +99,11 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   /**
    * Loads every article, unpublished ones included.
    *
-   * @returns True when loaded; false when refused (see `error`).
+   * @returns True when loaded; false when refused (see `articlesError`).
    */
   const fetchArticles = async (): Promise<boolean> => {
     articlesLoading.value = true
-    const result = await runAction(error, () => api.listArticles())
+    const result = await runAction(articlesError, () => api.listArticles())
     articlesLoading.value = false
     if (result.ok) {
       articles.value = result.value
@@ -153,6 +156,7 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
     loading,
     articlesLoading,
     error,
+    articlesError,
     fieldErrors,
     fetchCategories,
     createCategory,

@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiText - body text with a size, a colour role and a weight.
+ * UiText: body text with a size, a colour role and a weight.
  *
  * Renders a paragraph by default; pass as="span" for inline text. Colour is a role (muted,
  * subtle, danger and so on), never a literal, so light and dark stay consistent.

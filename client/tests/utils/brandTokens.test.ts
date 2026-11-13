@@ -12,7 +12,7 @@ import { BrandFont, fontStack, FONT_STACKS, BRAND_FONTS } from '~/utils/brandFon
 const none = { primary: '', accent: '', fontHeading: '', fontBody: '' }
 
 describe('brandTokensCss', () => {
-  it('emits nothing when nothing is set — the stylesheets\' fallbacks then apply', () => {
+  it('emits nothing when nothing is set, the stylesheets\' fallbacks then apply', () => {
     expect(brandTokensCss(none)).toBe('')
   })
 

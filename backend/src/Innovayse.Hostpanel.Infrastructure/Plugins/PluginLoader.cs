@@ -124,7 +124,7 @@ public static class PluginLoader
                 var folderId = Path.GetFileName(pluginDir);
                 if (!claimedIds.Add(folderId))
                 {
-                    logger.LogWarning("Plugin folder {Dir} is refused and its id {Id} is already declared by an earlier folder — skipping", pluginDir, folderId);
+                    logger.LogWarning("Plugin folder {Dir} is refused and its id {Id} is already declared by an earlier folder, skipping", pluginDir, folderId);
                     continue;
                 }
 
@@ -142,7 +142,7 @@ public static class PluginLoader
             // stand in for a built-in plugin that failed to load.
             if (!claimedIds.Add(manifest.Id))
             {
-                logger.LogWarning("Plugin {Id} in {Dir} is already declared by an earlier folder — skipping", manifest.Id, pluginDir);
+                logger.LogWarning("Plugin {Id} in {Dir} is already declared by an earlier folder, skipping", manifest.Id, pluginDir);
                 continue;
             }
 
@@ -176,7 +176,7 @@ public static class PluginLoader
             var dllFiles = Directory.GetFiles(pluginDir, "*.dll");
             if (dllFiles.Length == 0)
             {
-                logger.LogError("No DLL found for plugin {Id} in {Dir} — skipping", manifest.Id, pluginDir);
+                logger.LogError("No DLL found for plugin {Id} in {Dir}, skipping", manifest.Id, pluginDir);
                 continue;
             }
 
@@ -210,7 +210,7 @@ public static class PluginLoader
             {
                 logger.LogError(
                     notDefined,
-                    "Entry point type '{EntryPoint}' not found for plugin {Id} — skipping",
+                    "Entry point type '{EntryPoint}' not found for plugin {Id}, skipping",
                     manifest.EntryPoint, manifest.Id);
                 continue;
             }
@@ -317,7 +317,7 @@ public static class PluginLoader
                 // An app plugin is registered as its endpoints below, like any plugin that declares the capability.
                 break;
             default:
-                logger.LogWarning("Unknown plugin type {Type} for plugin {Id} — skipping DI registration",
+                logger.LogWarning("Unknown plugin type {Type} for plugin {Id}, skipping DI registration",
                     manifest.Type, manifest.Id);
                 break;
         }

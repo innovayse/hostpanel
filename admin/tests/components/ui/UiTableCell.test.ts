@@ -6,6 +6,14 @@ import { mount } from '@vue/test-utils'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 
 describe('UiTableCell', () => {
+  it('hides the column below its breakpoint and shows it as a table cell from there', () => {
+    const wrapper = mount(UiTableCell, { props: { hideBelow: 'sm' } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['hidden', 'sm:table-cell']))
+    expect(mount(UiTableCell).classes()).not.toContain('hidden')
+    expect(mount(UiTableCell, { props: { hideBelow: 'xl' } }).classes()).toContain('xl:table-cell')
+  })
+
   it('renders the native td with its slot', () => {
     const wrapper = mount(UiTableCell, { slots: { default: 'content' } })
 
@@ -26,6 +34,10 @@ describe('UiTableCell', () => {
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['text-end', 'text-text-muted']))
   })
 
+  it('stresses the value with semibold primary text when strong', () => {
+    expect(mount(UiTableCell, { props: { strong: true } }).classes()).toEqual(expect.arrayContaining(['font-semibold', 'text-text-primary']))
+  })
+
   it('right aligns a numeric cell with tabular figures', () => {
     expect(mount(UiTableCell, { props: { numeric: true } }).classes()).toEqual(expect.arrayContaining(['text-end', 'tabular-nums']))
   })
@@ -33,11 +45,15 @@ describe('UiTableCell', () => {
   it('gives the actions cell the shared fixed width, right aligned, over any align', () => {
     const classes = mount(UiTableCell, { props: { actions: true, align: 'left' } }).classes()
 
-    expect(classes).toEqual(expect.arrayContaining(['w-28', 'text-end', 'whitespace-nowrap']))
+    expect(classes).toEqual(expect.arrayContaining(['w-16', 'sm:w-28', 'text-end', 'whitespace-nowrap']))
     expect(classes).not.toContain('text-start')
   })
 
   it('adds no padding outside a table and aligns left like the header', () => {
     expect(mount(UiTableCell).classes()).toEqual(['text-start'])
+  })
+
+  it('takes the remaining width and lets its content truncate when asked to', () => {
+    expect(mount(UiTableCell, { props: { truncate: true } }).classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0']))
   })
 })

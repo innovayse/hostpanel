@@ -63,4 +63,10 @@ describe('UiDateTimePicker', () => {
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([null])
   })
+
+  it('themes the library through its CSS variables on a wrapper', () => {
+    const wrapper = mount(UiDateTimePicker, { props: { modelValue: null } })
+
+    expect(wrapper.classes()).toContain('[&_.dp--main]:[--dp-background-color:var(--surface-elevated)]')
+  })
 })

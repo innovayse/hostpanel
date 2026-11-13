@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
- * Searchable client picker.
+ * Searchable client picker: a `UiSelect` over clients.
  *
- * A text field that filters the given clients by name, email or id and drops down a list to pick
- * from. The model is the chosen client's id as a string, empty when the field is cleared.
+ * The list filters by name, email or id; each row shows the account status, the name with the id
+ * and the email. The model is the chosen client's id as a string, empty when nothing is chosen (the
+ * first row clears the choice). With `remote` the owner looks clients up by id or name as the reader
+ * types (`search`) instead of handing over every client.
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import UiTransition from '@/components/ui/UiTransition.vue'
-import { UiTransitionKind } from '@/utils/ui/transition'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiSelect from '@/components/ui/UiSelect.vue'
+import type { UiSelectOption } from '@/utils/ui/select'
 
 const { t } = useI18n()
 
@@ -29,157 +31,68 @@ const props = defineProps<{
   /**
    * Id of the selected client, or `null` when nothing is selected.
    *
-   * Callers hold this as `number | null`; `String(null)` simply matches no client, which is
-   * how the placeholder is shown.
+   * Callers hold this as `number | null`; `null` and an unknown id both show the placeholder.
    */
   modelValue: string | number | null
   /** Clients to choose from. */
   clients: Client[]
-  /** Hint shown while the field is empty. */
+  /** Hint shown while nothing is chosen; also the text of the row that clears the choice. */
   placeholder?: string
+  /** The owner looks clients up as the reader types: the list is not filtered here and `search` is emitted. */
+  remote?: boolean
+  /** The owner is fetching clients. */
+  loading?: boolean
+  /** Name of the chosen client while it is not in `clients` (an id the owner has not loaded). */
+  selectedName?: string
 }>()
 
 const emit = defineEmits<{
-  /** Emitted with the chosen client's id, or an empty string when the field is cleared. */
+  /** Emitted with the chosen client's id, or an empty string when the choice is cleared. */
   'update:modelValue': [value: string]
+  /** Emitted by a `remote` picker with the term to look up. */
+  search: [term: string]
 }>()
 
-/** Whether the dropdown list is open. */
-const isOpen = ref(false)
+/** The hint text. */
+const hint = computed<string>(() => props.placeholder || t('shared.selectAClient'))
 
-/** Text typed into the field. */
-const searchQuery = ref('')
+/** The model as the string the options carry. */
+const value = computed<string>(() => (props.modelValue === null ? '' : String(props.modelValue)))
 
-/** Root element, used for outside-click detection. */
-const inputEl = ref<HTMLDivElement | null>(null)
-
-/** The text input, focused when the picker opens. */
-const inputField = ref<HTMLInputElement | null>(null)
-
-/** The client the model points at, if it is in the list. */
-const selectedClient = computed<Client | undefined>(() => {
-  const id = String(props.modelValue)
-  return props.clients.find(c => String(c.id) === id)
-})
-
-/** Text shown in the field: the search term while open, otherwise the chosen name. */
-const displayValue = computed<string>(() => {
-  if (isOpen.value) {
-    return searchQuery.value
-  }
-  return selectedClient.value?.name ?? ''
-})
-
-/** Clients matching the search term by name, email or id. */
-const filteredClients = computed<Client[]>(() => {
-  if (!searchQuery.value) {
-    return props.clients
-  }
-  const query = searchQuery.value.toLowerCase()
-  return props.clients.filter(client =>
-    client.name.toLowerCase().includes(query)
-    || client.email?.toLowerCase().includes(query)
-    || client.id.toString().includes(query),
-  )
-})
+/** The clients as listbox rows, behind the dim row that clears the choice. */
+const options = computed<UiSelectOption<string>[]>(() => [
+  { value: '', label: hint.value, muted: true },
+  ...props.clients.map(client => ({
+    value: String(client.id),
+    label: client.name,
+    displayLabel: `${client.name} - #${client.id}`,
+    caption: client.status,
+    description: client.email,
+    keywords: String(client.id),
+  })),
+])
 
 /**
- * Picks a client and closes the list.
+ * Passes the chosen id up.
  *
- * @param client - The chosen client.
+ * @param id - The id of the picked row, empty for the clearing row.
  */
-const selectClient = (client: Client): void => {
-  emit('update:modelValue', String(client.id))
-  isOpen.value = false
-  searchQuery.value = ''
+const pick = (id: string): void => {
+  emit('update:modelValue', id)
 }
-
-/**
- * Tracks typing; clears the selection when the field is emptied.
- *
- * @param e - The input event.
- */
-const handleInputChange = (e: Event): void => {
-  const value = (e.target as HTMLInputElement).value
-  searchQuery.value = value
-  if (!value && props.modelValue) {
-    emit('update:modelValue', '')
-  }
-}
-
-/** Opens the list; with a chosen client and an empty search it pre-fills the name. */
-const handleFocus = (): void => {
-  isOpen.value = true
-  if (selectedClient.value && !searchQuery.value) {
-    searchQuery.value = selectedClient.value.name
-  }
-  inputField.value?.focus()
-}
-
-/**
- * Closes the list on a click outside the component.
- *
- * @param e - The click event.
- */
-const handleClickOutside = (e: MouseEvent): void => {
-  if (inputEl.value && !inputEl.value.contains(e.target as Node)) {
-    isOpen.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 </script>
 
 <template>
-  <div ref="inputEl" class="relative">
-    <!-- Search input -->
-    <input
-      ref="inputField"
-      :value="displayValue"
-      type="text"
-      :placeholder="placeholder || t('shared.selectAClient')"
-      class="w-full px-3 py-2 text-[0.82rem] text-text-primary bg-surface-field border border-border rounded-[9px] placeholder:text-text-muted outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/10 transition-colors"
-      @input="handleInputChange"
-      @click="handleFocus"
-      @focus="handleFocus"
-    >
-
-    <!-- Dropdown list -->
-    <UiTransition :kind="UiTransitionKind.Dropdown">
-      <div
-        v-if="isOpen"
-        class="absolute z-50 top-full left-0 right-0 mt-2 bg-surface-card border border-border rounded-[9px] shadow-lg overflow-hidden"
-      >
-        <div class="max-h-64 overflow-y-auto">
-          <div v-if="filteredClients.length === 0" class="p-4 text-center text-text-secondary text-[0.82rem]">
-            {{ t('ui.uiClientSelect.noClientsFound') }}
-          </div>
-          <div
-            v-for="client in filteredClients"
-            :key="client.id"
-            :data-testid="`client-select-option-${client.id}`"
-            class="px-4 py-3 cursor-pointer transition-colors border-b border-border last:border-0 hover:bg-surface-hover"
-            :class="String(modelValue) === String(client.id) ? 'bg-primary-500/10 border-l-2 border-l-primary-500' : ''"
-            @click="selectClient(client)"
-          >
-            <div v-if="client.status" class="text-[0.68rem] font-semibold text-text-secondary mb-1">
-              {{ client.status }}
-            </div>
-            <div class="text-[0.82rem] font-medium text-text-primary">
-              {{ client.name }} - #{{ client.id }}
-            </div>
-            <div v-if="client.email" class="text-[0.75rem] text-text-secondary mt-0.5">
-              {{ client.email }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </UiTransition>
-  </div>
+  <UiSelect
+    :model-value="value"
+    :options="options"
+    :placeholder="hint"
+    :empty-label="t('ui.uiClientSelect.noClientsFound')"
+    :value-label="selectedName"
+    :remote="remote"
+    :loading="loading"
+    searchable
+    @update:model-value="pick"
+    @search="emit('search', $event)"
+  />
 </template>

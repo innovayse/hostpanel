@@ -22,7 +22,7 @@
       }
     },
     "seo": {
-      "title": "Бесплатный период — {product}",
+      "title": "Бесплатный период: {product}",
       "description": "Попробуйте {product} бесплатно."
     }
   }

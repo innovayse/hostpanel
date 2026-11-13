@@ -2,23 +2,24 @@
 /**
  * Guided SSH key management setup for one server:
  *
- * 1. Connection — where customers connect, and how HostPanel reaches the server's agent, with the
+ * 1. Connection: where customers connect, and how HostPanel reaches the server's agent, with the
  *    firewall and sshd lines that let only HostPanel reach the agent port.
- * 2. Install — HostPanel generates a per-server ED25519 identity and shows a one-command installer
+ * 2. Install: HostPanel generates a per-server ED25519 identity and shows a one-command installer
  *    that verifies the bundle's SHA256 before running anything.
- * 3. Host key — HostPanel reads the key the endpoint presents; the administrator compares it with
+ * 3. Host key: HostPanel reads the key the endpoint presents; the administrator compares it with
  *    what the installer printed on the server and pins it.
- * 4. Test — the agent must answer, and must have been installed for this server (binding).
- * 5. Enable — refused by the API until a test with the saved settings succeeded.
+ * 4. Test: the agent must answer, and must have been installed for this server (binding).
+ * 5. Enable: refused by the API until a test with the saved settings succeeded.
  *
  * The private key is write-only: generated and kept by HostPanel, or pasted under "advanced", and
  * never shown; leaving the field empty keeps the stored one. Requests, refusals and everything
  * derived from the loaded setup belong to the server SSH store; a refusal comes back as the API's
- * own sentence and per-field sentences. A save keeps the dialog open, since the later steps use
+ * own sentence and per-field sentences. While the settings load, every step is drawn with its real fields as
+ * placeholders (`UI_FIELD_LOADING`), so the dialog keeps the shape it will have. A save keeps the dialog open, since the later steps use
  * what was saved, and is confirmed beside its button. Save and the health check never run
  * together: both buttons are blocked while either is in flight.
  */
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, provide, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { SSH_KEY_AGENT_GUIDE } from '@/lib/docsGuides'
@@ -26,6 +27,7 @@ import { storeToRefs } from 'pinia'
 import { useServerSshStore } from '@/stores/serverssh'
 import type { ServerSshSettingsDto, ServerSshSettingsPayload, SshAgentNetworkLines } from '@/types/serverssh'
 import { SshProviderFailure } from '@/types/sshenums'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -40,7 +42,6 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -97,6 +98,11 @@ const {
   settings, setup, loading, saving, testing, generating, scanning, lastTest, lastScan, error, scanError, fieldErrors,
   installCommand, networkLines,
 } = storeToRefs(store)
+
+/** True while the first load of the settings runs; every field below draws as a placeholder. */
+const firstLoad = computed<boolean>(() => loading.value && !settings.value)
+
+provide(UI_FIELD_LOADING, firstLoad)
 
 /** The form as the inputs hold it. */
 const form = reactive<ServerSshSettingsPayload>({
@@ -283,7 +289,7 @@ watch(settings, (loaded) => {
 
 <template>
   <UiDialog :title="t('servers.ssh.title', { name: props.serverName })" size="lg" @close="emit('close')">
-    <UiStack gap="lg">
+    <UiStack gap="lg" :aria-busy="firstLoad ? 'true' : undefined" data-testid="server-ssh-body">
       <UiLink
         v-if="sshGuideUrl"
         :href="sshGuideUrl"
@@ -292,10 +298,9 @@ watch(settings, (loaded) => {
         data-testid="ssh-guide-link"
       >{{ t('common.help') }} →</UiLink>
       <UiAlert v-if="error" variant="error" data-testid="server-ssh-error">{{ error }}</UiAlert>
-      <UiSkeleton v-if="loading && !settings" :lines="4" data-testid="server-ssh-loading" />
 
-      <template v-else-if="settings">
-        <UiAlert v-if="!settings.isSupported" variant="warning" data-testid="server-ssh-unsupported">
+      <template v-if="settings || firstLoad">
+        <UiAlert v-if="settings && !settings.isSupported" variant="warning" data-testid="server-ssh-unsupported">
           {{ t('servers.ssh.unsupported') }}
         </UiAlert>
 
@@ -406,7 +411,7 @@ watch(settings, (loaded) => {
               type="button"
               variant="secondary"
               :loading="testing"
-              :disabled="busy || !settings.hasAgentPrivateKey || !hasEndpoint"
+              :disabled="busy || !settings?.hasAgentPrivateKey || !hasEndpoint"
               data-testid="server-ssh-test"
               @click="handleTest"
             >
@@ -425,7 +430,7 @@ watch(settings, (loaded) => {
         <UiStack gap="sm" data-testid="server-ssh-step-enable">
           <UiHeading :level="4">{{ t('servers.ssh.stepEnable') }}</UiHeading>
           <UiLabel variant="inline">
-            <UiToggle v-model="form.isEnabled" :disabled="!settings.isSupported" data-testid="server-ssh-enabled" />
+            <UiToggle v-model="form.isEnabled" :disabled="!settings?.isSupported" data-testid="server-ssh-enabled" />
             {{ t('servers.ssh.enabled') }}
           </UiLabel>
           <UiText size="sm" tone="muted">{{ t('servers.ssh.enabledHint') }}</UiText>
@@ -436,7 +441,7 @@ watch(settings, (loaded) => {
           <UiHeading :level="4">{{ t('servers.ssh.advanced') }}</UiHeading>
           <UiField
             :label="t('servers.ssh.privateKey')"
-            :hint="settings.hasAgentPrivateKey ? t('servers.ssh.privateKeyStoredHint') : t('servers.ssh.privateKeyHint')"
+            :hint="settings?.hasAgentPrivateKey ? t('servers.ssh.privateKeyStoredHint') : t('servers.ssh.privateKeyHint')"
             :error="fieldErrors.agentPrivateKey"
           >
             <template #default="{ id, invalid }">
@@ -445,7 +450,7 @@ watch(settings, (loaded) => {
                 v-model="form.agentPrivateKey"
                 rows="3"
                 :invalid="invalid"
-                :placeholder="settings.hasAgentPrivateKey ? t('servers.ssh.privateKeyKeepPlaceholder') : t('servers.ssh.privateKeyPlaceholder')"
+                :placeholder="settings?.hasAgentPrivateKey ? t('servers.ssh.privateKeyKeepPlaceholder') : t('servers.ssh.privateKeyPlaceholder')"
                 autocomplete="off"
                 spellcheck="false"
                 data-testid="server-ssh-private-key"

@@ -1,9 +1,9 @@
 {
   "orderDetail": {
     "backToOrders": "Վերադառնալ պատվերներին",
-    "loadingOrder": "Պատվերը բեռնվում է...",
     "accept": "Ընդունել",
     "orderInfo": "Տեղեկություններ պատվերի մասին",
+    "overview": "Ակնարկ",
     "created": "Ստեղծվել է",
     "bundle": "Ապրանքների փաթեթ",
     "invoice": "Հաշիվ",
@@ -11,7 +11,7 @@
     "product": "Ապրանք",
     "firstPayment": "Առաջին վճարում",
     "recurring": "Կրկնվող",
-    "addNotesAboutThisOrder": "Ավելացրեք նշումներ այս պատվերի համար...",
+    "addNotesAboutThisOrder": "Ավելացրեք նշումներ այս պատվերի համար",
     "notesAreOnlyVisibleTo": "Նշումները տեսանելի են միայն ադմինիստրատորներին։",
     "deleteOrder": "Ջնջել պատվերը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ընդմիշտ ջնջել այս պատվերը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
@@ -41,6 +41,8 @@
     "accept": "Ընդունել",
     "totalcountOrderValue": "Պատվերներ՝ {totalCount}",
     "noOrdersFound": "Պատվերներ չեն գտնվել",
+    "noOrdersMatchYourFilters": "Ֆիլտրին համապատասխան պատվերներ չկան",
+    "clearFilters": "Մաքրել ֆիլտրը",
     "orderAccepted": "Պատվերը ընդունված է։",
     "orderCancelled": "Պատվերը չեղարկված է։",
     "confirmCancelTitle": "Չեղարկե՞լ այս պատվերը",

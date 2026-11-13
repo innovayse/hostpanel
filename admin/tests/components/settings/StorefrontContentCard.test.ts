@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StorefrontContentCard from '@/components/settings/StorefrontContentCard.vue'
 import type { Setting, SettingSave } from '@/types/setting'
-import { mountScreen } from '../../helpers/mount'
+import { mountSettingsCard } from '../../helpers/settingsPage'
 
 /** The save callback the card is given; it answers that the value was stored. */
 const save = vi.fn<SettingSave>(async () => ({ saved: true, error: null }))
@@ -41,12 +41,12 @@ const rows: Setting[] = [
  * @param testid - The field's test id.
  * @returns The input's value.
  */
-const valueOf = (wrapper: Awaited<ReturnType<typeof mountScreen>>['wrapper'], testid: string): string =>
+const valueOf = (wrapper: Awaited<ReturnType<typeof mountSettingsCard>>['wrapper'], testid: string): string =>
   (wrapper.get(`[data-testid="${testid}"]`).element as HTMLInputElement).value
 
 describe('StorefrontContentCard', () => {
   it('shows the stored figures, badge and contact details', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
 
     expect(valueOf(wrapper, 'storefront-stats-clients')).toBe('5,000+')
     expect(valueOf(wrapper, 'storefront-stats-uptime')).toBe('99.9%')
@@ -66,30 +66,18 @@ describe('StorefrontContentCard', () => {
     expect(valueOf(wrapper, 'storefront-contact-address-hy')).toBe('Օրինակ փողոց 1')
   })
 
-  it('keeps Save disabled until a field changes, then emits that row only', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: rows })
-    const saveButton = wrapper.get('[data-testid="storefront-save-stats-uptime"]')
-    expect(saveButton.attributes('disabled')).toBeDefined()
+  it('draws no Save button of its own: the page bar saves the edited row only', async () => {
+    const { wrapper, registry } = await mountSettingsCard(StorefrontContentCard, rows)
+    expect(wrapper.find('[data-testid="storefront-save-stats-uptime"]').exists()).toBe(false)
 
     await wrapper.get('[data-testid="storefront-stats-uptime"]').setValue('99.99%')
-    expect(saveButton.attributes('disabled')).toBeUndefined()
-    await saveButton.trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[2, '99.99%']])
   })
 
-  it('saves on Enter', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: rows })
-    const telegram = wrapper.get('[data-testid="storefront-contact-telegram"]')
-
-    await telegram.setValue('@new')
-    await telegram.trigger('keyup.enter')
-
-    expect(save.mock.calls).toEqual([[8, '@new']])
-  })
-
   it('says which rows are missing instead of drawing dead fields', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: [rows[0] as Setting] })
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, [rows[0] as Setting])
 
     expect(wrapper.find('[data-testid="storefront-hero-badge"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-testid="setting-not-seeded"]')).toHaveLength(15)
@@ -97,47 +85,42 @@ describe('StorefrontContentCard', () => {
   })
 
   it('saves the working hours and the Russian address as their own rows', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(StorefrontContentCard, rows)
 
     await wrapper.get('[data-testid="storefront-contact-hours"]').setValue('Daily 08:00-20:00')
-    await wrapper.get('[data-testid="storefront-save-contact-hours"]').trigger('click')
     await wrapper.get('[data-testid="storefront-contact-address-ru"]').setValue('ул. Новая, 2')
-    await wrapper.get('[data-testid="storefront-contact-address-ru"]').trigger('keyup.enter')
+    await registry.saveAll(save)
 
-    expect(save.mock.calls).toEqual([[11, 'Daily 08:00-20:00'], [15, 'ул. Новая, 2']])
+    // The registry saves in the order the card registered its drafts, which is not the order the operator typed in.
+    expect(save.mock.calls).toHaveLength(2)
+    expect(save.mock.calls).toEqual(expect.arrayContaining([[11, 'Daily 08:00-20:00'], [15, 'ул. Новая, 2']]))
   })
 
-  it('refuses a malformed email before any save and says why', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: rows })
-    const email = wrapper.get('[data-testid="storefront-contact-email"]')
+  it('flags a malformed email under the field', async () => {
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
 
-    await email.setValue('not-an-address')
-    await email.trigger('keyup.enter')
-    await wrapper.get('[data-testid="storefront-save-contact-email"]').trigger('click')
+    await wrapper.get('[data-testid="storefront-contact-email"]').setValue('not-an-address')
 
-    expect(save).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="storefront-contact-email-invalid"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="storefront-save-contact-email"]').attributes('disabled')).toBeDefined()
   })
 
-  it('refuses a map address that is not https', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: rows })
+  it('flags a map address that is not https', async () => {
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
 
     await wrapper.get('[data-testid="storefront-contact-map-url"]').setValue('http://maps.example.com/x')
 
     expect(wrapper.find('[data-testid="storefront-contact-map-url-invalid"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="storefront-save-contact-map-url"]').attributes('disabled')).toBeDefined()
   })
 
   it('accepts a valid email and lets an empty one clear the field', async () => {
-    const { wrapper } = await mountScreen(StorefrontContentCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(StorefrontContentCard, rows)
     const email = wrapper.get('[data-testid="storefront-contact-email"]')
 
     await email.setValue('help@example.org')
     expect(wrapper.find('[data-testid="storefront-contact-email-invalid"]').exists()).toBe(false)
-    await wrapper.get('[data-testid="storefront-save-contact-email"]').trigger('click')
+    await registry.saveAll(save)
     await email.setValue('')
-    await wrapper.get('[data-testid="storefront-save-contact-email"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[5, 'help@example.org'], [5, '']])
   })

@@ -17,7 +17,7 @@
     "helpText": "If you need assistance, feel free to",
     "contactUs": "contact us",
     "default": {
-      "title": "Oops! Something Went Wrong",
+      "title": "Something went wrong",
       "message": "An unexpected error occurred. Please try again later."
     }
   }

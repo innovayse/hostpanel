@@ -1,0 +1,22 @@
+{
+  "title": "Command palette",
+  "open": "Search the panel",
+  "placeholder": "Search pages and actions",
+  "close": "Close",
+  "empty": "Nothing found for \"{query}\"",
+  "hintNavigate": "Up and down to move",
+  "hintOpen": "Enter to open",
+  "hintClose": "Esc to close",
+  "groups": {
+    "recent": "Recent",
+    "actions": "Actions",
+    "navigation": "Navigation"
+  },
+  "actions": {
+    "newClient": "Create client",
+    "newTicket": "Create support ticket",
+    "newQuote": "Create quote",
+    "addTransaction": "Add transaction",
+    "newBillableItem": "Create billable item"
+  }
+}

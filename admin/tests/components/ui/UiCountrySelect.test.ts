@@ -13,11 +13,11 @@ import { createTestI18n } from '../../helpers/i18n'
  * @returns The wrapper.
  */
 const mountCountry = (props: { modelValue: string; placeholder?: string }) =>
-  mount(UiCountrySelect, { props, global: { plugins: [createTestI18n()] } })
+  mount(UiCountrySelect, { props, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
 describe('UiCountrySelect', () => {
   it('shows the default placeholder while nothing is chosen', () => {
-    expect(mountCountry({ modelValue: '' }).get('button').text()).toBe('Select country...')
+    expect(mountCountry({ modelValue: '' }).get('button').text()).toBe('Select country')
   })
 
   it('prefers the caller placeholder', () => {
@@ -36,5 +36,15 @@ describe('UiCountrySelect', () => {
     await armenia?.trigger('mousedown')
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['AM'])
+  })
+
+  it('filters the long list by what is typed', async () => {
+    const wrapper = mountCountry({ modelValue: '' })
+
+    await wrapper.get('button').trigger('click')
+    await wrapper.get('input').setValue('armen')
+
+    expect(wrapper.findAll('[role="option"]').map(o => o.text())).toContain('Armenia')
+    expect(wrapper.findAll('[role="option"]').length).toBeLessThan(5)
   })
 })

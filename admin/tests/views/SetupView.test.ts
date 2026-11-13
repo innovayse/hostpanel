@@ -54,7 +54,7 @@ describe('SetupView', () => {
     stubRoutes({
       'POST /api/auth/register': () => json({ userId: 'u1' }),
       'POST /api/auth/login': () => json({ accessToken: 'token', expiresIn: 60 }),
-      'GET /api/auth/me': () => json({ email: 'ada@example.com', roles: [], emailVerified: true }),
+      'GET /api/auth/me': () => json({ email: 'ada@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: [], emailVerified: true }),
     })
     const { wrapper } = await mountRouted(SetupView, '/setup', '/setup')
 

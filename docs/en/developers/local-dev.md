@@ -73,10 +73,10 @@ Wait for "Now listening on" before opening the apps.
 ## Open it
 
 <SettingTable :settings="[
-  { name: 'CLIENT_HOST_PORT', type: 'number', default: '3001', description: 'Client portal — http://localhost:3001' },
-  { name: 'ADMIN_HOST_PORT', type: 'number', default: '5174', description: 'Admin panel — http://localhost:5174' },
-  { name: 'API_HOST_PORT', type: 'number', default: '5149', description: 'API and OpenAPI page — http://localhost:5149/swagger' },
-  { name: 'MAILHOG_UI_HOST_PORT', type: 'number', default: '8027', description: 'Local mail inbox UI — http://localhost:8027' },
+  { name: 'CLIENT_HOST_PORT', type: 'number', default: '3001', description: 'Client portal: http://localhost:3001' },
+  { name: 'ADMIN_HOST_PORT', type: 'number', default: '5174', description: 'Admin panel: http://localhost:5174' },
+  { name: 'API_HOST_PORT', type: 'number', default: '5149', description: 'API and OpenAPI page: http://localhost:5149/swagger' },
+  { name: 'MAILHOG_UI_HOST_PORT', type: 'number', default: '8027', description: 'Local mail inbox UI: http://localhost:8027' },
 ]" />
 
 The dev seed creates these accounts:

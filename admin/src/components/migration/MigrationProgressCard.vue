@@ -7,7 +7,8 @@
  * change, the plugin connection state with the "Check" and "Start Import" actions. A check tells
  * a plugin that did not answer apart from a request the API refused (whose sentence is shown), and a
  * refused import start shows the API's sentence beside its button. The job comes in as a prop; the
- * store owns the actions and their refusal sentences.
+ * store owns the actions and their refusal sentences. Without a job (still being read) the card keeps its layout and
+ * draws bars and loading tiles in place of the state, the checklist and the counts.
  */
 import { computed, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -22,18 +23,24 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiMetric from '@/components/ui/UiMetric.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { EMPTY_VALUE } from '@/lib/format'
+
+/** How many checklist rows the loading card draws. */
+const PLACEHOLDER_ROWS = 3
 
 /** Translation function. */
 const { t } = useI18n()
 
 /** Props for MigrationProgressCard. */
 const props = defineProps<{
-  /** The job to show. */
-  job: MigrationJob
+  /** The job to show; null while it is being read. */
+  job: MigrationJob | null
 }>()
 
 /** Migration store: owns the connection check and the import start. */
@@ -74,6 +81,10 @@ const checkResultTimer = ref<ReturnType<typeof setTimeout> | null>(null)
  * @returns Resolves when the check has settled.
  */
 const checkConnection = async (): Promise<void> => {
+  const target = props.job
+  if (target === null) {
+    return
+  }
   checking.value = true
   checkOutcome.value = null
   checkError.value = null
@@ -81,7 +92,7 @@ const checkConnection = async (): Promise<void> => {
     clearTimeout(checkResultTimer.value)
     checkResultTimer.value = null
   }
-  const job = await store.testConnection(props.job.id)
+  const job = await store.testConnection(target.id)
   checking.value = false
   if (job === null) {
     checkOutcome.value = CheckOutcome.Refused
@@ -100,15 +111,19 @@ const checkConnection = async (): Promise<void> => {
  * @returns Resolves when the request has settled.
  */
 const startImport = async (): Promise<void> => {
+  const target = props.job
+  if (target === null) {
+    return
+  }
   startError.value = null
   starting.value = true
-  const job = await store.startImport(props.job.id)
+  const job = await store.startImport(target.id)
   starting.value = false
   if (job === null) {
     startError.value = store.jobError ?? t('errors.noAnswer')
     return
   }
-  store.startPolling(props.job.id)
+  store.startPolling(target.id)
 }
 
 /**
@@ -117,41 +132,49 @@ const startImport = async (): Promise<void> => {
  * @returns Resolves when the request has settled.
  */
 const retryImport = async (): Promise<void> => {
+  const target = props.job
+  if (target === null) {
+    return
+  }
   startError.value = null
   starting.value = true
-  const job = await store.retryImport(props.job.id)
+  const job = await store.retryImport(target.id)
   starting.value = false
   if (job === null) {
     startError.value = store.jobError ?? t('errors.noAnswer')
     return
   }
-  store.startPolling(props.job.id)
+  store.startPolling(target.id)
 }
 
 /** Entity groups this job exports. */
-const activeKeys = computed<MigrationEntityKey[]>(() =>
-  MIGRATION_ENTITY_KEYS.filter(key => props.job.entitySelection[key]),
-)
+const activeKeys = computed<MigrationEntityKey[]>(() => {
+  const job = props.job
+  return job === null ? [] : MIGRATION_ENTITY_KEYS.filter(key => job.entitySelection[key])
+})
+
+/**
+ * Adds up one counter across the selected entity types.
+ *
+ * @param counter - Which counter to add up.
+ * @returns The sum, 0 while there is no job.
+ */
+const sumOf = (counter: 'imported' | 'skipped' | 'failed' | 'total'): number => {
+  const job = props.job
+  return job === null ? 0 : activeKeys.value.reduce((sum, key) => sum + job.progress[key][counter], 0)
+}
 
 /** Sum of imported records across the selected entity types. */
-const totalMigrated = computed<number>(() =>
-  activeKeys.value.reduce((sum, key) => sum + props.job.progress[key].imported, 0),
-)
+const totalMigrated = computed<number>(() => sumOf('imported'))
 
 /** Sum of skipped records across the selected entity types. */
-const totalSkipped = computed<number>(() =>
-  activeKeys.value.reduce((sum, key) => sum + props.job.progress[key].skipped, 0),
-)
+const totalSkipped = computed<number>(() => sumOf('skipped'))
 
 /** Sum of source records across the selected entity types. */
-const totalRecords = computed<number>(() =>
-  activeKeys.value.reduce((sum, key) => sum + props.job.progress[key].total, 0),
-)
+const totalRecords = computed<number>(() => sumOf('total'))
 
 /** Sum of records whose import failed, as the server counted them. */
-const totalFailed = computed<number>(() =>
-  activeKeys.value.reduce((sum, key) => sum + props.job.progress[key].failed, 0),
-)
+const totalFailed = computed<number>(() => sumOf('failed'))
 
 /** Stops the pending connection-check timer. */
 onUnmounted(() => {
@@ -162,10 +185,17 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="migration-progress-card">
+  <UiCard padding="md" :aria-busy="job === null ? 'true' : undefined" :data-testid="job === null ? 'migration-loading' : 'migration-progress-card'">
     <UiStack gap="md">
       <!-- Header -->
-      <UiStack direction="row" align="center" justify="between">
+      <UiStack v-if="job === null" direction="row" align="center" justify="between" aria-hidden="true">
+        <UiStack gap="xs">
+          <UiSkeletonBar class="h-6 w-48 rounded-md" />
+          <UiSkeletonBar class="h-3 w-20 rounded-md" />
+        </UiStack>
+        <UiMetric value="" loading />
+      </UiStack>
+      <UiStack v-else direction="row" align="center" justify="between">
         <UiStack gap="xs">
           <UiStack direction="row" align="center" gap="sm">
             <UiHeading :level="3" variant="card">
@@ -177,13 +207,17 @@ onUnmounted(() => {
           </UiStack>
           <UiText tone="muted" size="xs">{{ t('migration.migrationProgressCard.jobId', { id: job.id }) }}</UiText>
         </UiStack>
-        <UiText tone="primary" class="text-[2rem] font-black leading-none tabular-nums" data-testid="migration-job-percent">
-          {{ job.overallPercent }}%
-        </UiText>
+        <UiMetric :value="`${job.overallPercent}%`" data-testid="migration-job-percent" />
       </UiStack>
 
       <!-- Entity checklist -->
-      <UiStack gap="xs" data-testid="migration-entities">
+      <UiStack v-if="job === null" gap="xs" aria-hidden="true">
+        <UiStack v-for="row in PLACEHOLDER_ROWS" :key="row" direction="row" align="center" justify="between">
+          <UiSkeletonBar class="h-4 w-32 rounded-md" />
+          <UiSkeletonBar class="h-4 w-12 rounded-md" />
+        </UiStack>
+      </UiStack>
+      <UiStack v-else gap="xs" data-testid="migration-entities">
         <UiStack
           v-for="key in activeKeys"
           :key="key"
@@ -199,28 +233,29 @@ onUnmounted(() => {
             <template v-if="job.progress[key].total > 0">
               {{ job.progress[key].imported + job.progress[key].skipped }}/{{ job.progress[key].total }}
             </template>
-            <template v-else>—</template>
+            <template v-else>{{ EMPTY_VALUE }}</template>
           </UiText>
         </UiStack>
       </UiStack>
 
       <!-- KPI tiles -->
-      <UiGrid :columns="4" gap="sm">
-        <UiStatTile :label="t('migration.migrationProgressCard.migrated')" :value="totalMigrated" tone="success" />
-        <UiStatTile :label="t('migration.migrationProgressCard.skipped')" :value="totalSkipped" tone="warning" />
+      <UiGrid :columns="2" gap="sm">
+        <UiStatTile :label="t('migration.migrationProgressCard.migrated')" :value="totalMigrated" tone="success" :loading="job === null" />
+        <UiStatTile :label="t('migration.migrationProgressCard.skipped')" :value="totalSkipped" tone="warning" :loading="job === null" />
         <UiStatTile
           :label="t('migration.migrationProgressCard.failed')"
           :value="totalFailed"
           :tone="totalFailed > 0 ? 'danger' : 'neutral'"
+          :loading="job === null"
         />
-        <UiStatTile :label="t('shared.total')" :value="totalRecords" />
+        <UiStatTile :label="t('shared.total')" :value="totalRecords" :loading="job === null" />
       </UiGrid>
 
       <!-- Failure message the server recorded for the job -->
-      <UiAlert v-if="job.status === MigrationStatus.Failed && job.failure" variant="error" data-testid="migration-job-error">
+      <UiAlert v-if="job?.status === MigrationStatus.Failed && job.failure" variant="error" data-testid="migration-job-error">
         {{ t(migrationJobFailureLabelKey[job.failure]) }}
       </UiAlert>
-      <UiStack v-if="job.status === MigrationStatus.Failed" direction="row" gap="sm">
+      <UiStack v-if="job?.status === MigrationStatus.Failed" direction="row" gap="sm">
         <UiButton
           type="button"
           variant="primary"
@@ -234,7 +269,7 @@ onUnmounted(() => {
       </UiStack>
 
       <!-- Plugin connection + start -->
-      <UiStack v-if="isJobActive(job.status)" direction="row" align="center" gap="sm" wrap>
+      <UiStack v-if="job !== null && isJobActive(job.status)" direction="row" align="center" gap="sm" wrap>
         <UiBadge :tone="job.pluginConnected ? 'success' : 'neutral'" dot data-testid="migration-plugin-state">
           {{ job.pluginConnected ? t('migration.migrationProgressCard.pluginConnected') : t('migration.migrationProgressCard.waitingForPlugin') }}
         </UiBadge>
@@ -242,11 +277,11 @@ onUnmounted(() => {
           type="button"
           variant="secondary"
           size="sm"
-          :disabled="checking"
+          :loading="checking"
           data-testid="migration-check"
           @click="checkConnection"
         >
-          {{ checking ? t('migration.migrationProgressCard.checking') : t('migration.migrationProgressCard.check') }}
+          {{ t('migration.migrationProgressCard.check') }}
         </UiButton>
         <UiBadge
           v-if="checkOutcome === CheckOutcome.Reachable || checkOutcome === CheckOutcome.Unreachable"

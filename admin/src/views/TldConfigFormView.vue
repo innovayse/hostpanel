@@ -12,7 +12,6 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import TldPricingTable from '@/components/settings/TldPricingTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -21,7 +20,7 @@ import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSpinner from '@/components/ui/UiSpinner.vue'
+import UiStepper from '@/components/ui/UiStepper.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiTone } from '@/utils/ui/tone'
@@ -262,15 +261,13 @@ const handleCancel = (): void => {
   <UiStack gap="none" data-testid="tld-config-form-view">
     <SettingsBreadcrumb :items="breadcrumb" />
 
-    <SettingsLoading v-if="loadingConfig" :message="t('settings.tldConfigForm.loadingTldConfiguration')" />
-
-    <UiErrorState v-else-if="loadError" :message="loadError" testid="tld-config-form-load-error" @retry="loadConfig" />
+    <UiErrorState v-if="loadError" :message="loadError" testid="tld-config-form-load-error" @retry="loadConfig" />
 
     <template v-else>
 
       <UiGrid :columns="2" class="items-start">
         <!-- Left: general settings -->
-        <SettingsSection :title="t('settings.tldConfigForm.generalSettings')">
+        <SettingsSection :title="t('settings.tldConfigForm.generalSettings')" :loading="loadingConfig" data-testid="tld-config-form-general">
           <UiField :label="t('settings.tldConfigForm.tld')" :hint="t('settings.tldConfigForm.domainExtensionWithoutTheDot')">
             <template #default="{ id, describedby }">
               <UiStack direction="row" align="center" gap="sm">
@@ -326,7 +323,7 @@ const handleCancel = (): void => {
           </UiStack>
 
           <UiField :label="t('settings.tldConfigForm.sortOrder')">
-            <UiSpinner
+            <UiStepper
               v-model="sortOrder"
               :min="0"
               :step="1"
@@ -356,6 +353,7 @@ const handleCancel = (): void => {
             testid="tld-register"
             :cost-symbol="costSymbol"
             :sell-symbol="sellSymbol"
+            :loading="loadingConfig"
             :cost="costRegister"
             :sell="sellRegister"
             @update:cost="(period, value) => setPrice(costRegister, period, value)"
@@ -366,6 +364,7 @@ const handleCancel = (): void => {
             testid="tld-transfer"
             :cost-symbol="costSymbol"
             :sell-symbol="sellSymbol"
+            :loading="loadingConfig"
             :cost="costTransfer"
             :sell="sellTransfer"
             @update:cost="(period, value) => setPrice(costTransfer, period, value)"
@@ -376,6 +375,7 @@ const handleCancel = (): void => {
             testid="tld-renew"
             :cost-symbol="costSymbol"
             :sell-symbol="sellSymbol"
+            :loading="loadingConfig"
             :cost="costRenew"
             :sell="sellRenew"
             @update:cost="(period, value) => setPrice(costRenew, period, value)"
@@ -389,6 +389,7 @@ const handleCancel = (): void => {
       <SettingsFormFooter
         :save-label="isEditMode ? t('shared.saveChanges') : t('settings.tldConfigForm.createTld')"
         :saving="saving"
+        :dirty="!loadingConfig"
         @cancel="handleCancel"
         @save="handleSave"
       />

@@ -14,8 +14,8 @@ export interface FetchRoute {
   body: unknown
 }
 
-/** What a route handler receives: the parsed JSON body of the request, undefined when it had none. */
-export type RouteHandler = (body: unknown) => Response
+/** What a route handler receives: the parsed JSON body of the request, undefined when it had none. It answers with a response, or a promise of one (a never-settling promise scripts a request still in flight). */
+export type RouteHandler = (body: unknown) => Response | Promise<Response>
 
 /** Handlers by `"VERB /path"` (path after the `/api` prefix, without the query string). */
 export type RouteTable = Record<string, RouteHandler>

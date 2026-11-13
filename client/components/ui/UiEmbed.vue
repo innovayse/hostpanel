@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 /**
- * UiEmbed - a framed third-party page (a map, a video) inside the layout.
+ * UiEmbed: a framed third-party page (a map, a video) inside the layout.
  *
  * `title` is required: a frame without one is announced by screen readers as "frame" and nothing
  * else. The frame is lazy-loaded so an embed below the fold costs nothing until it is reached.

@@ -6,14 +6,18 @@
     "resend": "Resend the email",
     "resent": "Verification email sent."
   },
+  "collapseSidebar": "Collapse sidebar",
+  "expandSidebar": "Expand sidebar",
+  "userMenu": "Account menu",
   "menu": "Menu",
+  "openMenu": "Open menu",
   "navigation": "Main navigation",
   "viewLoadFailed": "This page could not be loaded. Check your connection and try again.",
   "reload": "Reload",
   "localeLabels": {
-    "en": "EN",
-    "hy": "Հայ",
-    "ru": "Рус"
+    "en": "English",
+    "hy": "Հայերեն",
+    "ru": "Русский"
   },
   "theme": {
     "label": "Theme",
@@ -29,5 +33,6 @@
     "releaseNotes": "Release notes",
     "copy": "Copy upgrade command",
     "copied": "Copied!"
-  }
+  },
+  "newClient": "New client"
 }

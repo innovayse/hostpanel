@@ -57,7 +57,7 @@ admin/.env.production
 # swallowed the storefront icons: apple-touch-icon.png and both android-chrome sizes were
 # generated, ignored, and never committed, so nuxt.config and the web manifest advertised
 # three files that answered 404 on every deployment including production. Anything directly
-# in client/public is a served asset, not a screenshot -- whitelist the folder rather than
+# in client/public is a served asset, not a screenshot, whitelist the folder rather than
 # naming files one at a time and losing the next one the same way.
 # The admin panel needs the same exemption for the same reason: it ships the identical
 # eight-file icon set, and the first pass here whitelisted only the storefront, so the

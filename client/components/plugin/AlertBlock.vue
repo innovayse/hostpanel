@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 /**
- * PluginAlertBlock - a plugin's notice, in one of the host's alert tones. It is part of the page, not news, so it
+ * PluginAlertBlock: a plugin's notice, in one of the host's alert tones. It is part of the page, not news, so it
  * is not a live region; its text is interpolated, never bound as HTML.
  */
 import type { PluginAlertBlock } from '~/types/pluginblock'

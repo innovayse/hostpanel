@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Client billable items page: displays uninvoiced and invoiced billable items and allows adding
- * new items, time billing entries, and invoicing or deleting selected items. Invoicing and deleting
+ * new items, time billing entries, and invoicing or deleting the selected items (`useRowSelection`,
+ * the floating `UiBulkBar`). Invoicing and deleting
  * are confirmed first; every action reports its outcome (success, or the API's sentence) above the
  * lists, and a refused load shows the sentence with a Retry.
  */
@@ -10,23 +11,26 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientBillableItemsStore } from '@/stores/clientBillableItems'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useRowSelection } from '@/composables/useRowSelection'
 import { formatPlainAmount } from '@/lib/money'
 import AddBillableItemModal from '@/components/clients/AddBillableItemModal.vue'
 import AddTimeBillingModal from '@/components/clients/AddTimeBillingModal.vue'
 import type { ClientBillableItem, CurrencyAmount } from '@/types/billableitem'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiBulkBar from '@/components/ui/UiBulkBar.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -40,6 +44,7 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -54,6 +59,9 @@ const clientId = computed(() => route.params.id as string)
 
 /** True while the initial load is in flight (owned by the store). */
 const loading = computed(() => store.loading)
+
+/** True while the first load is in flight and there is nothing to show yet; the sections then draw their placeholders. */
+const initialLoading = computed(() => loading.value && uninvoicedItems.value.length === 0 && invoicedItems.value.length === 0)
 
 /** The sentence of the last refused load, shown with Retry; null when the items loaded. */
 const loadError = ref<string | null>(null)
@@ -80,6 +88,9 @@ const report = (ok: boolean, successKey: string): void => {
 
 /** Uninvoiced billable items for this client. */
 const uninvoicedItems = ref<ClientBillableItem[]>([])
+
+/** The selected uninvoiced items. */
+const selection = useRowSelection(() => uninvoicedItems.value.map((item) => item.id))
 
 /** Invoiced billable items for this client (current page). */
 const invoicedItems = ref<ClientBillableItem[]>([])
@@ -109,12 +120,6 @@ const showAddItemModal = ref(false)
 
 /** Whether the time billing modal is visible. */
 const showTimeBillingModal = ref(false)
-
-/** Set of selected uninvoiced item IDs. */
-const selectedIds = ref<Set<number>>(new Set())
-
-/** Whether all uninvoiced items are selected. */
-const selectAll = ref(false)
 
 /** Whether the invoice confirmation modal is visible. */
 const showInvoiceConfirmModal = ref(false)
@@ -155,13 +160,12 @@ const fetchBillableItems = async (): Promise<void> => {
 const handleInvoiceSelected = async (): Promise<void> => {
   feedback.clear()
   invoicing.value = true
-  const invoiced = await store.invoiceSelected(clientId.value, Array.from(selectedIds.value))
+  const invoiced = await store.invoiceSelected(clientId.value, [...selection.ids.value])
   invoicing.value = false
   showInvoiceConfirmModal.value = false
   report(invoiced, 'clients.clientBillableItems.itemsInvoiced')
   if (invoiced) {
-    selectedIds.value = new Set()
-    selectAll.value = false
+    selection.clear()
     await fetchBillableItems()
   }
 }
@@ -192,14 +196,13 @@ const handleDelete = (id: number): void => {
 const confirmDelete = async (): Promise<void> => {
   feedback.clear()
   deleting.value = true
-  const ids = pendingDeleteId.value !== null ? [pendingDeleteId.value] : Array.from(selectedIds.value)
+  const ids = pendingDeleteId.value !== null ? [pendingDeleteId.value] : [...selection.ids.value]
   const deleted = await store.deleteItems(clientId.value, ids)
   showDeleteConfirmModal.value = false
   report(deleted, 'clients.clientBillableItems.itemsDeleted')
   if (deleted) {
     if (pendingDeleteId.value === null) {
-      selectedIds.value = new Set()
-      selectAll.value = false
+      selection.clear()
     }
     await fetchBillableItems()
   }
@@ -221,43 +224,11 @@ const dismissDelete = (): void => {
  * @returns Nothing.
  */
 const handleDeleteSelected = (): void => {
-  if (selectedIds.value.size === 0) {
+  if (selection.count.value === 0) {
     return
   }
   pendingDeleteId.value = null
   showDeleteConfirmModal.value = true
-}
-
-/**
- * Toggles selection of all uninvoiced items.
- *
- * @returns Nothing.
- */
-const toggleSelectAll = (): void => {
-  if (selectAll.value) {
-    selectedIds.value = new Set()
-    selectAll.value = false
-  } else {
-    selectedIds.value = new Set(uninvoicedItems.value.map(i => i.id))
-    selectAll.value = true
-  }
-}
-
-/**
- * Toggles selection of a single item.
- *
- * @param id - The item ID to toggle.
- * @returns Nothing.
- */
-const toggleSelect = (id: number): void => {
-  const next = new Set(selectedIds.value)
-  if (next.has(id)) {
-    next.delete(id)
-  } else {
-    next.add(id)
-  }
-  selectedIds.value = next
-  selectAll.value = next.size === uninvoicedItems.value.length && uninvoicedItems.value.length > 0
 }
 
 /**
@@ -299,7 +270,7 @@ const onTimeBillingSaved = (): void => {
  * @param item - The row.
  * @returns The action list passed to UiRowActions.
  */
-const billableItemActions = (item: ClientBillableItem): UiRowAction[] => [
+const billableItemActions = (item: ClientBillableItem): UiMenuAction[] => [
   {
     label: t('shared.delete'),
     testid: `client-billable-delete-${item.id}`,
@@ -322,9 +293,9 @@ onMounted(() => fetchBillableItems())
 
 <template>
   <UiStack>
-    <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-      <UiHeading :level="1" variant="card">{{ t('clients.clientBillableItems.billableItems') }}</UiHeading>
-      <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
+    <UiSectionHeader :level="1" variant="card">
+      {{ t('clients.clientBillableItems.billableItems') }}
+      <template #actions>
         <UiButton
           type="button"
           :variant="UiButtonVariant.Secondary"
@@ -341,18 +312,13 @@ onMounted(() => fetchBillableItems())
         >
           {{ t('clients.clientBillableItems.addBillableItem') }}
         </UiButton>
-      </UiStack>
-    </UiStack>
+      </template>
+    </UiSectionHeader>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-billable-feedback" />
 
-    <UiStack v-if="loading && uninvoicedItems.length === 0 && invoicedItems.length === 0" data-testid="client-billable-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientBillableItems.loadingBillableItems') }}</UiText>
-    </UiStack>
-
     <UiErrorState
-      v-else-if="loadError !== null"
+      v-if="loadError !== null"
       :message="loadError"
       :loading="loading"
       testid="client-billable-error"
@@ -361,24 +327,24 @@ onMounted(() => fetchBillableItems())
 
     <template v-else>
       <UiStack>
-        <UiHeading :level="2" variant="card">
+        <UiSkeletonBar v-if="initialLoading" class="h-6 w-48 rounded-md" aria-hidden="true" />
+        <UiHeading v-else :level="2" variant="card">
           {{ uninvoicedTotalLabel
             ? t('clients.clientBillableItems.uninvoicedItemsAmountLength', { amount: uninvoicedTotalLabel, length: uninvoicedItems.length })
             : t('clients.clientBillableItems.uninvoicedItemsLength', { length: uninvoicedItems.length }) }}
         </UiHeading>
 
-        <UiCard v-if="uninvoicedItems.length > 0" class="overflow-x-auto">
-          <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-uninvoiced-table">
+        <UiCard v-if="initialLoading" loading :skeleton-lines="4" data-testid="client-billable-loading" />
+
+        <UiCard v-else-if="uninvoicedItems.length > 0" class="overflow-x-auto">
+          <UiTable
+            :density="UiTableDensity.Comfortable"
+            :selection="selection"
+            select-all-testid="client-billable-select-all"
+            data-testid="client-billable-uninvoiced-table"
+          >
             <UiTableHead>
               <UiTableRow>
-                <UiTableHeader>
-                  <UiCheckbox
-                    :model-value="selectAll"
-                    :aria-label="t('shared.selectAll')"
-                    data-testid="client-billable-select-all"
-                    @update:model-value="toggleSelectAll"
-                  />
-                </UiTableHeader>
                 <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
                 <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
@@ -386,15 +352,13 @@ onMounted(() => fetchBillableItems())
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
-              <UiTableRow v-for="item in uninvoicedItems" :key="item.id" hoverable>
-                <UiTableCell>
-                  <UiCheckbox
-                    :model-value="selectedIds.has(item.id)"
-                    :aria-label="item.description"
-                    :data-testid="`client-billable-select-${item.id}`"
-                    @update:model-value="toggleSelect(item.id)"
-                  />
-                </UiTableCell>
+              <UiTableRow
+                v-for="item in uninvoicedItems"
+                :key="item.id"
+                hoverable
+                :row-id="item.id"
+                :select-testid="`client-billable-select-${item.id}`"
+              >
                 <UiTableCell muted>{{ item.id }}</UiTableCell>
                 <UiTableCell>{{ item.description }}</UiTableCell>
                 <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
@@ -404,29 +368,6 @@ onMounted(() => fetchBillableItems())
               </UiTableRow>
             </UiTableBody>
           </UiTable>
-          <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('shared.withSelected') }}</UiText>
-            <UiButton
-              type="button"
-              :variant="UiButtonVariant.Secondary"
-              :size="UiSize.Sm"
-              :disabled="selectedIds.size === 0 || invoicing"
-              data-testid="client-billable-invoice-selected"
-              @click="showInvoiceConfirmModal = true"
-            >
-              {{ t('clients.clientBillableItems.invoiceSelectedItems') }}
-            </UiButton>
-            <UiButton
-              type="button"
-              :variant="UiButtonVariant.Danger"
-              :size="UiSize.Sm"
-              :disabled="selectedIds.size === 0 || deleting"
-              data-testid="client-billable-delete-selected"
-              @click="handleDeleteSelected"
-            >
-              {{ t('shared.delete') }}
-            </UiButton>
-          </UiStack>
         </UiCard>
 
         <UiCard v-else>
@@ -437,7 +378,9 @@ onMounted(() => fetchBillableItems())
       <UiStack>
         <UiHeading :level="2" variant="card">{{ t('clients.clientBillableItems.invoicedItems') }}</UiHeading>
 
-        <UiCard v-if="invoicedItems.length > 0" class="overflow-x-auto">
+        <UiCard v-if="initialLoading" loading :skeleton-lines="4" />
+
+        <UiCard v-else-if="invoicedItems.length > 0" class="overflow-x-auto">
           <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-invoiced-table">
             <UiTableHead>
               <UiTableRow>
@@ -454,7 +397,7 @@ onMounted(() => fetchBillableItems())
                 <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell>
                   <template v-if="item.invoiceId">#{{ item.invoiceId }}</template>
-                  <template v-else>&mdash;</template>
+                  <template v-else>{{ EMPTY_VALUE }}</template>
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -484,13 +427,35 @@ onMounted(() => fetchBillableItems())
       </UiStack>
     </template>
 
+    <UiBulkBar :count="selection.count.value" data-testid="client-billable-bulk" @clear="selection.clear">
+      <UiButton
+        type="button"
+        :variant="UiButtonVariant.Primary"
+        :size="UiSize.Sm"
+        :disabled="invoicing"
+        data-testid="client-billable-invoice-selected"
+        @click="showInvoiceConfirmModal = true"
+      >
+        {{ t('clients.clientBillableItems.invoiceSelectedItems') }}
+      </UiButton>
+      <UiButton
+        type="button"
+        :variant="UiButtonVariant.Danger"
+        :size="UiSize.Sm"
+        :disabled="deleting"
+        data-testid="client-billable-delete-selected"
+        @click="handleDeleteSelected"
+      >
+        {{ t('shared.delete') }}
+      </UiButton>
+    </UiBulkBar>
+
     <UiDialog
       v-if="showInvoiceConfirmModal"
       variant="confirm"
       :title="t('clients.clientBillableItems.confirmInvoice')"
       :message="t('clients.clientBillableItems.areYouSureYouWant')"
       :confirm-label="t('shared.ok')"
-      :loading-label="t('shared.processing')"
       :loading="invoicing"
       @confirm="handleInvoiceSelected"
       @close="dismissInvoice"
@@ -502,9 +467,8 @@ onMounted(() => fetchBillableItems())
       :title="t('clients.clientBillableItems.confirmDelete')"
       :message="pendingDeleteId !== null
         ? t('clients.clientBillableItems.areYouSureYouWant2')
-        : t('clients.clientBillableItems.confirmDeleteSelected', { count: selectedIds.size }, selectedIds.size)"
+        : t('clients.clientBillableItems.confirmDeleteSelected', { count: selection.count.value }, selection.count.value)"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="confirmDelete"

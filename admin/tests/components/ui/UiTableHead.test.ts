@@ -13,8 +13,8 @@ describe('UiTableHead', () => {
     expect(wrapper.text()).toBe('content')
   })
 
-  it('draws the shared header hairline', () => {
-    expect(mount(UiTableHead).classes()).toEqual(expect.arrayContaining(['border-b', 'border-border']))
+  it('sticks to the top of the table box above the rows', () => {
+    expect(mount(UiTableHead).classes()).toEqual(expect.arrayContaining(['sticky', 'top-0', 'z-10']))
   })
 
   it('passes classes and data attributes through', () => {

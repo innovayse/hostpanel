@@ -19,7 +19,7 @@ const fields = [
  * @returns The wrapper.
  */
 const mountSelector = (selected: string[]) =>
-  mount(UiFieldSelector, { props: { fields, selected: new Set(selected) }, global: { plugins: [createTestI18n()] } })
+  mount(UiFieldSelector, { props: { fields, selected: new Set(selected) }, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
 describe('UiFieldSelector', () => {
   it('shows how many fields are selected', () => {
@@ -63,5 +63,40 @@ describe('UiFieldSelector', () => {
     document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="field-selector-apply"]').exists()).toBe(false)
+  })
+
+  it('names the panel it opens and closes on Escape with the focus back on the trigger', async () => {
+    const wrapper = mount(UiFieldSelector, { props: { fields, selected: new Set<string>() }, attachTo: document.body, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
+    const trigger = wrapper.get('[data-testid="field-selector-trigger"]')
+    expect(trigger.attributes('aria-expanded')).toBe('false')
+
+    await trigger.trigger('click')
+    expect(trigger.attributes('aria-controls')).toBe(wrapper.get('[role="group"]').attributes('id'))
+
+    await trigger.trigger('keydown', { key: 'Escape' })
+
+    expect(wrapper.find('[role="group"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(trigger.element)
+    wrapper.unmount()
+  })
+
+  it('draws the panel in the page body, fixed under the trigger, and closes on a pointer-down elsewhere only', async () => {
+    const wrapper = mount(UiFieldSelector, { props: { fields, selected: new Set<string>() }, attachTo: document.body, global: { plugins: [createTestI18n()] } })
+
+    await wrapper.get('[data-testid="field-selector-trigger"]').trigger('click')
+
+    const panel = document.body.querySelector('[role="group"]')
+    expect(panel).not.toBeNull()
+    expect(wrapper.element.contains(panel)).toBe(false)
+    expect(panel?.classList.contains('fixed')).toBe(true)
+
+    panel?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(document.body.querySelector('[role="group"]')).not.toBeNull()
+
+    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(document.body.querySelector('[role="group"]')).toBeNull()
+    wrapper.unmount()
   })
 })

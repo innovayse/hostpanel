@@ -28,6 +28,6 @@ describe('table vocabulary', () => {
   ])('the %s map is empty for plain and padded otherwise', (_name, map) => {
     expect(map[UiTableDensity.Plain]).toBe('')
     expect(map[UiTableDensity.Compact]).toMatch(/px-/)
-    expect(map[UiTableDensity.Comfortable]).toMatch(/py-/)
+    expect(map[UiTableDensity.Comfortable]).toMatch(/h-1\d/)
   })
 })

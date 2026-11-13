@@ -54,12 +54,12 @@ Click **Save**.
 Placeholders use the Liquid template language. A variable is written as <code v-pre>{{ name }}</code> or <code v-pre>{{ object.field }}</code>, with names in lowercase and underscores. Every template has access to the brand and site variables:
 
 ```liquid
-{{ brand.primary }}       — primary brand colour
-{{ brand.primary_dark }}  — dark variant of the primary colour
-{{ brand.on_primary }}    — text colour on the primary background
-{{ brand.accent }}        — accent colour
-{{ brand.logo_url }}      — URL of the brand logo
-{{ site.name }}           — the name of the site
+{{ brand.primary }}: primary brand colour
+{{ brand.primary_dark }}: dark variant of the primary colour
+{{ brand.on_primary }}: text colour on the primary background
+{{ brand.accent }}: accent colour
+{{ brand.logo_url }}: URL of the brand logo
+{{ site.name }}: the name of the site
 ```
 
 Example using a condition and a loop:

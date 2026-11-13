@@ -28,14 +28,14 @@ withDefaults(defineProps<{
     <em v-else-if="node.kind === MarkdownInlineKind.Emphasis">{{ node.text }}</em>
     <code
       v-else-if="node.kind === MarkdownInlineKind.Code"
-      class="rounded bg-surface-field px-1 py-0.5 font-mono text-[0.85em] text-text-primary"
+      class="rounded-md bg-surface-hover px-1.5 py-0.5 font-mono text-[0.85em] text-text-primary"
     >{{ node.text }}</code>
     <a
       v-else-if="links && node.kind === MarkdownInlineKind.Link && node.href !== null"
       :href="node.href"
       target="_blank"
       rel="noopener noreferrer nofollow"
-      class="text-primary-600 underline underline-offset-2 hover:text-primary-500"
+      class="text-text-accent underline underline-offset-2 hover:text-text-primary"
     >{{ node.text }}</a>
     <template v-else>{{ node.text }}</template>
   </template>

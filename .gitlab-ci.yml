@@ -13,7 +13,7 @@ workflow:
     # line is commented rather than deleted and every develop-gated job is left defined
     # and dormant, so bringing staging back is this one line.
     # - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "develop" # → staging
-    # ci-test stays. It is not a branch anything is developed on — it exists to try a
+    # ci-test stays. It is not a branch anything is developed on, it exists to try a
     # change to this file on a real pipeline, which is the only way to verify one, and
     # it only builds when somebody deliberately pushes that name.
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"   # throwaway verification branch
@@ -51,7 +51,7 @@ variables:
   # and sync their own checkout, so they run `git submodule update` themselves after each checkout.
   GIT_SUBMODULE_STRATEGY: recursive
 
-# ── Reusable templates (inlined — this project runs on a GitLab pull-mirror
+# ── Reusable templates (inlined, this project runs on a GitLab pull-mirror
 #    of the GitHub repo, so the shared job definitions are copied here) ───────────
 
 # The private package feed credential (see the note on .test-dotnet), composed here and nowhere else.
@@ -121,10 +121,10 @@ variables:
     - cd "$SERVICE"
     # -m:1 keeps MSBuild to a single node, so the solution's test projects build and run one
     # after another instead of all at once. The default fans them out, and each `dotnet test`
-    # host holds its own copy of the EF model -- roughly a gigabyte for the Infrastructure
+    # host holds its own copy of the EF model, roughly a gigabyte for the Infrastructure
     # suite alone. The runner host has limited memory and also runs other concurrent CI jobs,
     # so the parallel default exhausted it: the runner was killed mid-run and GitLab reported
-    # `no_updates_running` and `runner_system_failure` -- never a failing assertion, and never
+    # `no_updates_running` and `runner_system_failure`, never a failing assertion, and never
     # a line of test output explaining it.
     #
     # It costs wall-clock and buys the job the ability to finish. Revisit if the host grows.
@@ -168,7 +168,7 @@ variables:
     - yarn lint
     # Blocking: locale parity, unused keys and undefined literal keys fail the pipeline.
     - yarn lint:i18n
-    # Blocking: every conformance metric (raw tags, jsdoc, braces, placeholders, test ids ...) is zero.
+    # Blocking: every conformance metric (raw tags, jsdoc, braces, placeholders, test ids and so on) is zero.
     - yarn audit:conformance --strict
     - yarn typecheck
     - yarn test --maxWorkers=2
@@ -186,15 +186,30 @@ variables:
   variables:
     IMAGE: $CI_REGISTRY_IMAGE/$SERVICE
     DOCKER_BUILDKIT: "1"
+    # The version comes from the newest release tag, so the clone needs its whole history and its tags.
+    GIT_DEPTH: "0"
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - apk add --no-cache git
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
   script:
+    # The one place the image version is derived (scripts/image-version.sh). Only the API image has a VERSION
+    # build argument (the client and admin Dockerfiles would ignore it with a warning), so only its job derives
+    # it. The script fails the job when no release tag is reachable, so an image never ships with the Dockerfile
+    # placeholder 0.0.0-dev.
+    - |
+      if [ "$SERVICE" = "api" ]; then
+        HOST_VERSION="$(sh scripts/image-version.sh)"
+        set -- --build-arg "VERSION=$HOST_VERSION"
+      else
+        set --
+      fi
     # The API image restores the private authentication package during its build. The credential
     # reaches it as the BuildKit secret "nuget_credentials" (read from the job environment, never a
     # build arg), so it is not stored in the image layers or its history. The client and admin
     # Dockerfiles never mount the secret. NUXT_PUBLIC_PORTAL_CHAT_BASE_URL is the client's build-time
     # proxy target; an unset CI/CD variable expands to empty (no proxy).
-    - docker build --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
+    - docker build "$@" --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
     # Both tags come from the one build above. A push that stalls would hold the job until the job
     # timeout, so each push has its own limit and is retried a bounded number of times; layers
     # already uploaded are skipped on a retry, but a layer cut off half way starts again from zero.
@@ -249,7 +264,7 @@ variables:
     # The local image names docker/docker-compose.prod.yml builds and runs: the project's own registry path.
     IMAGE_REGISTRY: $CI_REGISTRY_IMAGE
     # Which tier the API believes it is running on. docker/docker-compose.dev.yml passes
-    # ${ASPNETCORE_ENVIRONMENT} through to it - the laptop .env sets Development, and
+    # ${ASPNETCORE_ENVIRONMENT} through to it, the laptop .env sets Development, and
     # a deployed host inherited that too unless someone had remembered to write the
     # variable into that host's .env by hand. An API left on Development serves developer
     # exception pages. Setting it per tier here is what makes it true of the deployment rather
@@ -261,7 +276,7 @@ variables:
     - test -n "$DEPLOY_DIR" || { echo "DEPLOY_DIR must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - test -n "$HEALTH_URL" || { echo "HEALTH_URL must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - cd "$DEPLOY_DIR"
-    # GIT_STRATEGY is none, so the runner never touches this checkout — but the
+    # GIT_STRATEGY is none, so the runner never touches this checkout, but the
     # deploy builds the api, client and admin images from it (neither compose file
     # gives those services an `image:`, so there is nothing to pull). Left alone it
     # deploys whatever was last checked out by hand. Sync it to the branch that
@@ -272,7 +287,7 @@ variables:
     - git submodule sync --recursive
     - sh scripts/clear-stale-submodule-dirs.sh .
     - git submodule update --init --recursive --force
-    # docker-compose.platform.yml joins the platform network - without it the containers are
+    # docker-compose.platform.yml joins the platform network, without it the containers are
     # unreachable by name from the reverse proxy. The chain (COMPOSE_FILE) is shared + prod + platform,
     # the same set every deployed tier runs. Compose reads docker/.env (the host's values) because
     # the files sit in docker/.
@@ -284,14 +299,14 @@ variables:
     - docker compose pull --ignore-buildable
     - docker compose build hostpanel-api hostpanel-client hostpanel-admin
     # Services named one by one to leave nginx out. It publishes 80 and 443, which
-    # on this host belong to the shared reverse proxy - so it can never bind. The platform overlay parks it too.
+    # on this host belong to the shared reverse proxy, so it can never bind. The platform overlay parks it too.
     - docker compose up -d hostpanel-db hostpanel-api hostpanel-client hostpanel-admin
     # The job is green only when the stack answers, not merely when its containers started.
     - sh scripts/wait-for-health.sh "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS"
   # This job has no `image:`, so it is the shell executor: the login above writes
   # the runner user's real ~/.docker/config.json on the host, and nothing
   # took it away again. CI_JOB_TOKEN dies with the job, but the entry stayed, and
-  # Docker sends it on every later pull from the registry - including
+  # Docker sends it on every later pull from the registry, including
   # public ones. That is how main-branch test jobs failed to pull the runner helper
   # image with "HTTP Basic: Access denied" before running a single
   # test. after_script runs even when the deploy fails, which is exactly when the
@@ -300,7 +315,7 @@ variables:
     - docker logout "$CI_REGISTRY" || true
   rules:
     # Off with the job that extends this. A rule here is overridden by any job that
-    # declares its own, so this is not what stops deploy:staging -- it is what stops a
+    # declares its own, so this is not what stops deploy:staging, it is what stops a
     # job added later that forgets to.
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "develop" && $DEPLOY_STAGING == "true"
 
@@ -353,6 +368,19 @@ edge:test:headers:
         - docker/nginx/**/*
         - scripts/check-edge-headers.sh
         - scripts/edge-headers-assert.sh
+
+# Runs scripts/image-version.sh in throwaway repositories: the version an image is built with.
+image-version:test:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - sh scripts/test-image-version.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - scripts/image-version.sh
+        - scripts/test-image-version.sh
 
 # Runs install.sh against a fake docker: the upgrade backup, its retention and --rollback.
 installer:test:backup:
@@ -611,7 +639,7 @@ deploy:staging:
   environment: { name: staging/hostpanel }
   rules:
     # Staging deploys are off: that host filled its disk and this job fails in get_sources,
-    # before the deploy script runs at all. Production is unaffected -- it deploys from main,
+    # before the deploy script runs at all. Production is unaffected, it deploys from main,
     # on another host, and is manual. Set DEPLOY_STAGING=true in CI/CD variables to turn it
     # back on; the condition below is the one this job had before, unchanged.
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "develop" && $DEPLOY_STAGING == "true"
@@ -842,7 +870,7 @@ deploy:prod:
       done < "$state/previous-images"
       sh scripts/wait-for-health.sh "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS" && echo "Rolled back; the site answers."
   environment: { name: production/hostpanel, url: "$PROD_PUBLIC_URL", deployment_tier: production }
-  # Manual on purpose — merging should not by itself change what customers see.
+  # Manual on purpose: merging should not by itself change what customers see.
   when: manual
   allow_failure: false
   # The three image builds are required, not optional: the deploy pulls what they pushed.

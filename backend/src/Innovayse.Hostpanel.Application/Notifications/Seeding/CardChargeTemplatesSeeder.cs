@@ -31,7 +31,7 @@ public static class CardChargeTemplatesSeeder
         DeclinedSlug,
         "Sent when a charge to the client's saved payment method was declined.",
         [
-            new SeededEmailVersion("Your card was declined for invoice #{{ invoice.id }} — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Your card was declined for invoice #{{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
                 "en",
                 "We could not charge your card",
                 ["Your saved payment method was declined for invoice #{{ invoice.id }} ({{ invoice.total }} {{ invoice.currency }}). Nothing was charged. Please open the invoice to pay it another way."],
@@ -39,7 +39,7 @@ public static class CardChargeTemplatesSeeder
                 "Pay invoice",
                 Note: null,
                 EchoButtonUrl: false)),
-            new SeededEmailVersion("Карта отклонена по счёту №{{ invoice.id }} — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Карта отклонена по счёту №{{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
                 "ru",
                 "Не удалось списать оплату с карты",
                 ["Ваш сохранённый способ оплаты был отклонён для счёта №{{ invoice.id }} ({{ invoice.total }} {{ invoice.currency }}). Деньги не списаны. Откройте счёт, чтобы оплатить его другим способом."],
@@ -47,7 +47,7 @@ public static class CardChargeTemplatesSeeder
                 "Оплатить счёт",
                 Note: null,
                 EchoButtonUrl: false)),
-            new SeededEmailVersion("Քարտը մերժվել է №{{ invoice.id }} հաշվի համար — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Քարտը մերժվել է №{{ invoice.id }} հաշվի համար | {{ site.name }}", new SeededEmailCopy(
                 "hy",
                 "Չհաջողվեց գանձել քարտից",
                 ["Ձեր պահված վճարման եղանակը մերժվել է №{{ invoice.id }} հաշվի համար ({{ invoice.total }} {{ invoice.currency }})։ Գումար չի գանձվել։ Բացեք հաշիվը՝ այն այլ եղանակով վճարելու համար։"],
@@ -63,7 +63,7 @@ public static class CardChargeTemplatesSeeder
         ActionRequiredSlug,
         "Sent when a charge to the client's saved payment method needs the client to confirm it with the bank.",
         [
-            new SeededEmailVersion("Confirm the payment for invoice #{{ invoice.id }} — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Confirm the payment for invoice #{{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
                 "en",
                 "Your card needs your confirmation",
                 ["Your bank asks you to confirm the payment of {{ invoice.total }} {{ invoice.currency }} for invoice #{{ invoice.id }}. The invoice stays unpaid until you do."],
@@ -71,7 +71,7 @@ public static class CardChargeTemplatesSeeder
                 "Confirm payment",
                 Note: null,
                 EchoButtonUrl: false)),
-            new SeededEmailVersion("Подтвердите оплату счёта №{{ invoice.id }} — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Подтвердите оплату счёта №{{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
                 "ru",
                 "Нужно подтверждение платежа",
                 ["Ваш банк просит подтвердить платёж на {{ invoice.total }} {{ invoice.currency }} по счёту №{{ invoice.id }}. Пока вы этого не сделаете, счёт остаётся неоплаченным."],
@@ -79,7 +79,7 @@ public static class CardChargeTemplatesSeeder
                 "Подтвердить платёж",
                 Note: null,
                 EchoButtonUrl: false)),
-            new SeededEmailVersion("Հաստատեք №{{ invoice.id }} հաշվի վճարումը — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Հաստատեք №{{ invoice.id }} հաշվի վճարումը | {{ site.name }}", new SeededEmailCopy(
                 "hy",
                 "Անհրաժեշտ է վճարման հաստատում",
                 ["Ձեր բանկը խնդրում է հաստատել {{ invoice.total }} {{ invoice.currency }} վճարումը №{{ invoice.id }} հաշվի համար։ Մինչև հաստատումը հաշիվը մնում է չվճարված։"],

@@ -9,13 +9,10 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
-import { Icon } from '@/lib/icons'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useProjectsStore } from '@/stores/projects'
@@ -79,7 +76,6 @@ const editRoute = (item: Project): string => editPath(AppRoute.StorefrontProject
     :title="t('storefront.projects.title')"
     :subtitle="t('storefront.projects.subtitle')"
     :add-label="t('storefront.projects.add')"
-    :loading-label="t('storefront.projects.loading')"
     :empty-label="t('storefront.projects.empty')"
     :delete-title="t('storefront.projects.deleteTitle')"
     :edit-label="t('storefront.projects.edit')"
@@ -107,16 +103,13 @@ const editRoute = (item: Project): string => editPath(AppRoute.StorefrontProject
     <template #row="{ item }">
       <UiTableCell>
         <UiImage
-          v-if="item.imageUrls[0]"
-          :src="storefrontAssetUrl(item.imageUrls[0])"
+          :src="item.imageUrls[0] ? storefrontAssetUrl(item.imageUrls[0]) : undefined"
           :alt="projectName(item)"
           fit="cover"
           rounded="md"
           class="h-10 w-16 border border-border"
+          fallback
         />
-        <UiStack v-else align="center" justify="center" gap="none" class="h-10 w-16 rounded-lg border border-border bg-surface-field text-text-muted">
-          <UiIcon :markup="Icon.Image" size="sm" />
-        </UiStack>
       </UiTableCell>
       <UiTableCell>
         <UiText tone="primary" size="lg" class="font-medium">{{ projectName(item) }}</UiText>

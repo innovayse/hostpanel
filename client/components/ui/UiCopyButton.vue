@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 /**
- * UiCopyButton - an icon button that copies a value to the clipboard and shows a check for a moment.
+ * UiCopyButton: an icon button that copies a value to the clipboard and shows a check for a moment.
  *
  * A clipboard the browser blocks leaves the value on screen to be selected by hand, so a refusal
  * needs no message and the button simply stays as it was.

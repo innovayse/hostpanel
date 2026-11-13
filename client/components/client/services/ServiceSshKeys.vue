@@ -146,7 +146,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceSshKeys - the SSH Keys panel of a hosting service: access status, connection details,
+ * ServiceSshKeys. The SSH Keys panel of a hosting service: access status, connection details,
  * the key list with revoke, the add form and key-generation instructions. Only the service id is
  * ever sent; the server, account, hostname and port all come back from the backend. Requests,
  * flags and refusals belong to the SSH key store.

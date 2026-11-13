@@ -92,7 +92,6 @@ const breadcrumb = computed(() => [
   <StorefrontFormShell
     testid="partner"
     :breadcrumb="breadcrumb"
-    :loading-label="t('storefront.partners.loading')"
     :save-label="flow.isEditMode.value ? t('shared.saveChanges') : t('storefront.partners.create')"
     :loading="flow.loadingEntry.value"
     :saving="flow.saving.value"

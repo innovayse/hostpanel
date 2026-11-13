@@ -5,10 +5,13 @@
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
-import { clientsPage } from './fixtures/clients'
+import { ada, clientsPage } from './fixtures/clients'
 import { ledgerAfterAdd, ledgerEmpty, newTransaction } from './fixtures/transactions'
 import { fieldOf } from './support/locators'
 import { json, stubApi } from './support/stubApi'
+
+/** The picker row of the client the specs choose: name, company in brackets, then the id. */
+const clientOptionLabel = `${newTransaction.clientName} (${ada.companyName}) - #${newTransaction.clientId}`
 
 test('adding a transaction posts it and returns to the ledger', async ({ page }) => {
   // The ledger as the "database" holds it; the POST makes the new entry appear.
@@ -33,8 +36,8 @@ test('adding a transaction posts it and returns to the ledger', async ({ page })
   await page.goto('/billing/add-transaction')
   await expect(page.getByTestId('billing-transaction-form')).toBeVisible()
 
-  await fieldOf(page, 'billing-transaction-client').click()
-  await page.getByTestId(`client-select-option-${newTransaction.clientId}`).click()
+  await page.getByTestId('billing-transaction-client').getByTestId('ui-select-trigger').click()
+  await page.getByTestId('ui-select-option').filter({ hasText: clientOptionLabel }).click()
   await fieldOf(page, 'billing-transaction-amount-in').fill(String(newTransaction.amountIn))
   await fieldOf(page, 'billing-transaction-amount-in').press('Tab')
   await fieldOf(page, 'billing-transaction-description').fill(newTransaction.description)
@@ -60,8 +63,8 @@ test('a refused transaction shows the API sentence and stays on the form', async
   })
 
   await page.goto('/billing/add-transaction')
-  await fieldOf(page, 'billing-transaction-client').click()
-  await page.getByTestId(`client-select-option-${newTransaction.clientId}`).click()
+  await page.getByTestId('billing-transaction-client').getByTestId('ui-select-trigger').click()
+  await page.getByTestId('ui-select-option').filter({ hasText: clientOptionLabel }).click()
   await page.getByTestId('billing-transaction-submit').click()
 
   await expect(page.getByTestId('billing-transaction-error')).toContainText(sentence)

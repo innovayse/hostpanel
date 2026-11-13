@@ -21,13 +21,13 @@ public static class ClaimedRenewalSeeds
         // sweep, which claims, applies or releases the line on its own while the test is setting its state up.
         using var scope = EventHandlerTestHost.WithFakeRelay(factory, new FakeEmailSender()).Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var expiry = DateTimeOffset.UtcNow.AddDays(5);
         var domain = RegisteredDomain.Register(
-            client.Id, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, expiry, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            client.Id, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiry, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
 

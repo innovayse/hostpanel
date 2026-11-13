@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /**
  * Client services list: shows all services belonging to the current client.
- * Navigates to the service detail page when a row is clicked.
+ * Navigates to the service detail page when a row is clicked. The page lives in the address (`useFilterQuery`),
+ * so a reload or a shared link opens the same page.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useServicesStore } from '@/stores/services'
 import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import type { ServiceListItem } from '@/types/service'
 import AddExistingServiceModal from '@/components/clients/AddExistingServiceModal.vue'
@@ -19,7 +20,6 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -32,6 +32,7 @@ import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
@@ -54,11 +55,14 @@ const services = ref<ServiceListItem[]>([])
 /** True while a request is in flight (owned by the store). */
 const loading = computed(() => store.loading)
 
+/** True while the first load is in flight and there are no rows yet; the table then draws its placeholder rows. */
+const initialLoading = computed(() => loading.value && services.value.length === 0)
+
 /** Error message, null when no error (owned by the store). */
 const error = computed(() => store.error)
 
-/** Current page (1-based). */
-const page = ref(1)
+/** The page of the list, kept in the address. */
+const { page, setPage } = useFilterQuery([])
 
 /** Items per page. */
 const pageSize = ref(DEFAULT_PAGE_SIZE)
@@ -77,17 +81,6 @@ const fetchServices = async (): Promise<void> => {
     services.value = result.items
     totalCount.value = result.totalCount
   }
-}
-
-/**
- * Navigate to a specific page and re-fetch.
- *
- * @param p - Target page number.
- * @returns Nothing.
- */
-const goToPage = (p: number): void => {
-  page.value = p
-  fetchServices()
 }
 
 /**
@@ -113,6 +106,9 @@ const onExistingAdded = (): void => {
   fetchServices()
 }
 
+// A page chosen, or the back button, loads the page the address names.
+watch(page, fetchServices)
+
 onMounted(() => fetchServices())
 </script>
 
@@ -130,21 +126,20 @@ onMounted(() => fetchServices())
       @close="showAddExisting = false"
     />
 
-    <UiStack v-if="loading && services.length === 0" data-testid="client-services-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientServicesList.loadingServices') }}</UiText>
-    </UiStack>
-
     <UiErrorState
-      v-else-if="error"
+      v-if="error"
       :message="error"
       :loading="loading"
       testid="client-services-error"
       @retry="fetchServices()"
     />
 
-    <UiCard v-else-if="services.length > 0" class="overflow-x-auto">
-      <UiTable :density="UiTableDensity.Comfortable" data-testid="client-services-table">
+    <UiCard v-else-if="initialLoading || services.length > 0">
+      <UiTable
+        :density="UiTableDensity.Comfortable"
+        :loading="initialLoading"
+        data-testid="client-services-table"
+      >
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
@@ -167,7 +162,7 @@ onMounted(() => fetchServices())
           >
             <UiTableCell muted>{{ service.id }}</UiTableCell>
             <UiTableCell>{{ service.productName }}</UiTableCell>
-            <UiTableCell muted>{{ service.domain ?? '—' }}</UiTableCell>
+            <UiTableCell muted>{{ service.domain ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
             <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
@@ -177,23 +172,26 @@ onMounted(() => fetchServices())
           </UiTableRow>
         </UiTableBody>
       </UiTable>
-      <UiStack
-        v-if="totalCount > pageSize"
-        direction="row"
-        :justify="UiJustify.Between"
-        :align="UiAlignItems.Center"
-      >
-        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-          {{ t('clients.clientServicesList.totalcountServiceValue', { totalCount }) }}
-        </UiText>
-        <UiPagination
-          :page="page"
-          :total="totalCount"
-          :page-size="pageSize"
-          testid="client-services-pagination"
-          @update:page="goToPage"
-        />
-      </UiStack>
+      <template v-if="initialLoading || totalCount > pageSize" #footer>
+        <UiStack
+          direction="row"
+          wrap
+          :justify="UiJustify.Between"
+          :align="UiAlignItems.Center"
+        >
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+            {{ t('clients.clientServicesList.totalcountServiceValue', { totalCount }) }}
+          </UiText>
+          <UiPagination
+            :page="page"
+            :total="totalCount"
+            :page-size="pageSize"
+            :loading="initialLoading"
+            testid="client-services-pagination"
+            @update:page="setPage"
+          />
+        </UiStack>
+      </template>
     </UiCard>
 
     <UiCard v-else>

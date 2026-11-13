@@ -34,7 +34,7 @@ public sealed class ClientClosedServicesHandlerTests(IntegrationTestFactory fact
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var closing = await context.ClientServices.AsNoTracking().FirstAsync(s => s.Id == closingServiceId, CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, "subject", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, "subject", TestMoments.Seeded));
 
         var (status, source) = await StateOfAsync(context, closingServiceId);
         status.Should().Be(ServiceStatus.Suspended);
@@ -51,7 +51,7 @@ public sealed class ClientClosedServicesHandlerTests(IntegrationTestFactory fact
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var service = await context.ClientServices.AsNoTracking().FirstAsync(s => s.Id == serviceId, CancellationToken.None);
-        var act = () => scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(service.ClientId, "subject", DateTimeOffset.UtcNow));
+        var act = () => scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(service.ClientId, "subject", TestMoments.Seeded));
 
         await act.Should().NotThrowAsync();
         (await StateOfAsync(context, serviceId)).Status.Should().Be(ServiceStatus.Terminated);

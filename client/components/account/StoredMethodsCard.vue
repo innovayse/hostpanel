@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 /**
- * StoredMethodsCard - the "Saved payment methods" section of the payment tab.
+ * StoredMethodsCard: the "Saved payment methods" section of the payment tab.
  *
  * The payer picks a gateway, ticks the consent to later charges and is sent to the gateway's
  * page; on return (`?storedReturn=1`) the card completes the session. The list is read on mount

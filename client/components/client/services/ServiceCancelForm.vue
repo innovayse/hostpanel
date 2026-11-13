@@ -48,7 +48,7 @@
         <template #actions>
           <UiButton type="submit" variant="danger" :loading="cancelSubmitting" data-testid="service-cancel-submit">
             <XCircle v-if="!cancelSubmitting" :size="14" :stroke-width="2" class="mr-1.5" />
-            {{ cancelSubmitting ? $t('client.services.cancelSubmitting') : $t('client.services.cancelBtn') }}
+            {{ $t('client.services.cancelBtn') }}
           </UiButton>
         </template>
       </UiForm>
@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceCancelForm - requests the cancellation of one service: when it takes effect, an
+ * ServiceCancelForm. Requests the cancellation of one service: when it takes effect, an
  * optional reason and a confirmation dialog before anything is sent. The request, its in-flight
  * flag and the API's refusal belong to the service management store.
  */

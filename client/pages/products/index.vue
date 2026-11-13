@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 /**
- * Products page - the product families with their plans and prices.
+ * Products page: the product families with their plans and prices.
  *
  * The page reads the catalogue through the catalogue store (prices are in the payer's currency, so
  * the read runs again when the payer's currency or the language changes), groups it into

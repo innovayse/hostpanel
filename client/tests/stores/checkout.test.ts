@@ -728,15 +728,6 @@ describe('useCheckoutStore cart helpers', () => {
     expect(useCheckoutStore().totalLabel).toBe('$0.00')
   })
 
-  it('labels the submit button for a hosted gateway differently from bank transfer', () => {
-    const store = useCheckoutStore()
-
-    store.selectedMethod = 'bank_transfer'
-    expect(store.submittingLabel).toBe('checkout.processing')
-    store.selectedMethod = 'hosted_gateway'
-    expect(store.submittingLabel).toBe('checkout.redirecting')
-  })
-
   it('explains the bank hand-off in a separate hint, only while a hosted gateway order is in flight', () => {
     const store = useCheckoutStore()
 

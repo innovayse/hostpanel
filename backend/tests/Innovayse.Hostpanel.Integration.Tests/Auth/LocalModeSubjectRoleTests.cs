@@ -73,7 +73,7 @@ public sealed class LocalModeSubjectRoleTests(IntegrationTestFactory factory)
         after.StatusCode.Should().NotBe(
             HttpStatusCode.Forbidden,
             "the role now sits in SubjectRoles, and every JWT scheme merges that store onto the "
-            + "principal at validation — this was 403 forever before SubjectRoleClaimsEnricher");
+            + "principal at validation, which was 403 forever before SubjectRoleClaimsEnricher");
         after.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // /api/auth/me reports the same store, so the new role is listed there too.

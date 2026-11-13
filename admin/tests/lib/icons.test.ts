@@ -18,6 +18,18 @@ describe('Icon', () => {
   })
 })
 
+describe('Icon.Users', () => {
+  it('draws two people from stroked paths and circles only, with no stray glyph', () => {
+    const nodes = svgNodes(Icon.Users)
+
+    expect(nodes.map((node) => node.type)).toEqual(['path', 'circle', 'path', 'path'])
+  })
+
+  it('is the icon the users report uses', () => {
+    expect(REPORT_ICONS['users']).toBe(Icon.Users)
+  })
+})
+
 describe('REPORT_ICONS', () => {
   it.each(Object.entries(REPORT_ICONS))('%s parses into shapes', (_name, markup) => {
     expect(svgNodes(markup).length).toBeGreaterThan(0)

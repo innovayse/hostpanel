@@ -31,7 +31,7 @@ describe('hexToRgb / rgbToHex', () => {
 })
 
 describe('buildScale', () => {
-  it("pins the picked colour at 500 — bg-primary-500 is exactly the operator's choice", () => {
+  it("pins the picked colour at 500, bg-primary-500 is exactly the operator's choice", () => {
     expect(buildScale('#0ea5e9')[500]).toEqual([14, 165, 233])
     expect(buildScale('#1a73e8')[500]).toEqual([26, 115, 232])
   })

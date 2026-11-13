@@ -34,7 +34,7 @@
       <UiText tone="muted" size="sm" class="leading-relaxed">{{ $t('client.acceptInvite.description') }}</UiText>
       <UiButton type="submit" variant="primary" size="lg" full-width :loading="loading" data-testid="invite-submit">
         <UserPlus v-if="!loading" :size="18" :stroke-width="2" class="mr-2" />
-        {{ loading ? $t('client.acceptInvite.submitting') : $t('client.acceptInvite.submit') }}
+        {{ $t('client.acceptInvite.submit') }}
       </UiButton>
       <UiStack align="center">
         <UiBackLink :to="CLIENT_LOGIN_PATH" testid="invite-back" compact>

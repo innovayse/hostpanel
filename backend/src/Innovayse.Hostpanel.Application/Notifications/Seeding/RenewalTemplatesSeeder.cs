@@ -34,7 +34,7 @@ public static class RenewalTemplatesSeeder
         ReminderSlug,
         "Sent before a renewal invoice is due, on each day listed in billing.renewal.reminder_days.",
         [
-            new SeededEmailVersion("Invoice #{{ invoice.id }} is due on {{ invoice.due_date }} — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Invoice #{{ invoice.id }} is due on {{ invoice.due_date }} | {{ site.name }}", new SeededEmailCopy(
                 "en",
                 "Your renewal is coming up",
                 ["Invoice #{{ invoice.id }} for {{ invoice.total }} {{ invoice.currency }} is due on {{ invoice.due_date }}. Pay it to keep your services running without interruption."],
@@ -42,7 +42,7 @@ public static class RenewalTemplatesSeeder
                 "View invoice",
                 Note: null,
                 EchoButtonUrl: false)),
-            new SeededEmailVersion("Счёт №{{ invoice.id }} нужно оплатить до {{ invoice.due_date }} — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("Счёт №{{ invoice.id }} нужно оплатить до {{ invoice.due_date }} | {{ site.name }}", new SeededEmailCopy(
                 "ru",
                 "Скоро продление",
                 ["Счёт №{{ invoice.id }} на {{ invoice.total }} {{ invoice.currency }} нужно оплатить до {{ invoice.due_date }}. Оплатите его, чтобы ваши услуги работали без перерыва."],
@@ -50,7 +50,7 @@ public static class RenewalTemplatesSeeder
                 "Открыть счёт",
                 Note: null,
                 EchoButtonUrl: false)),
-            new SeededEmailVersion("№{{ invoice.id }} հաշիվը պետք է վճարել մինչև {{ invoice.due_date }} — {{ site.name }}", new SeededEmailCopy(
+            new SeededEmailVersion("№{{ invoice.id }} հաշիվը պետք է վճարել մինչև {{ invoice.due_date }} | {{ site.name }}", new SeededEmailCopy(
                 "hy",
                 "Շուտով երկարաձգում",
                 ["№{{ invoice.id }} հաշիվը՝ {{ invoice.total }} {{ invoice.currency }}, պետք է վճարել մինչև {{ invoice.due_date }}։ Վճարեք այն, որպեսզի ձեր ծառայություններն աշխատեն առանց ընդհատման։"],

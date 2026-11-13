@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 /**
- * UiWidgetFrame - a framed, empty box a third-party widget mounts itself into.
+ * UiWidgetFrame: a framed, empty box a third-party widget mounts itself into.
  *
  * A payment card element or a captcha draws into a DOM node it is given, so the screen needs a
  * node it can hold a reference to without writing a styled `div` of its own. The node is exposed

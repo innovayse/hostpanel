@@ -12,6 +12,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
@@ -87,12 +88,7 @@ const formatSample = computed<string>(() => formatAffixed(SAMPLE_AMOUNT, { prefi
 const title = computed<string>(() => (isEditMode.value ? t('currencies.form.editTitle') : t('currencies.form.addTitle')))
 
 /** Label of the submit button. */
-const submitLabel = computed<string>(() => {
-  if (props.saving) {
-    return t('currencies.form.saving')
-  }
-  return isEditMode.value ? t('currencies.form.save') : t('currencies.form.add')
-})
+const submitLabel = computed<string>(() => (isEditMode.value ? t('currencies.form.save') : t('currencies.form.add')))
 
 /** Submits the form by emitting the save event with the current field values. */
 const handleSubmit = (): void => {
@@ -211,14 +207,14 @@ const handleSubmit = (): void => {
         <UiToggle v-model="isEnabled" :disabled="isBase" data-testid="currency-form-enabled" />
       </UiStack>
 
-      <UiStack direction="row" align="center" justify="end" gap="sm">
+      <UiFormActions>
         <UiButton type="button" variant="secondary" data-testid="currency-form-cancel" @click="emit('close')">
           {{ t('currencies.form.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :disabled="saving" data-testid="currency-form-save">
+        <UiButton type="submit" variant="primary" :loading="saving" data-testid="currency-form-save">
           {{ submitLabel }}
         </UiButton>
-      </UiStack>
+      </UiFormActions>
     </UiForm>
   </UiDialog>
 </template>

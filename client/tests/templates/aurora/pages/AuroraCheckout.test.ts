@@ -175,7 +175,7 @@ describe('AuroraCheckout', () => {
     expect(placedOrders()).toBe(1)
   })
 
-  it('keeps the busy label short on the button and puts the sentence in a polite line under it', async () => {
+  it('keeps the button label, marks it busy and puts the sentence in a polite line under it', async () => {
     // An order that never settles keeps the page in its busy state.
     table[writeOf(BillingEndpoint.OrderCreate)] = { hold: true }
     const wrapper = await mountCheckout()
@@ -185,7 +185,8 @@ describe('AuroraCheckout', () => {
     await flushPromises()
 
     const button = wrapper.find('[data-testid="checkout-place-order"]')
-    expect(button.text()).toBe('checkout.redirecting')
+    expect(button.text()).toBe('checkout.placeOrder')
+    expect(button.attributes('aria-busy')).toBe('true')
     expect(button.text()).not.toContain('checkout.redirectingToBank')
     expect(button.classes()).toContain('text-base')
     expect(button.classes()).not.toContain('text-lg')

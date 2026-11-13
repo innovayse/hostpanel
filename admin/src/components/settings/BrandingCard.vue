@@ -59,7 +59,7 @@ interface BrandingField {
   previewBg: string
 }
 
-/** The four images the card manages. */
+/** The four images the card manages. Each preview ground is the fixed white or dark the image is shown on in the storefront, so it is not a panel token. */
 const FIELDS: BrandingField[] = [
   {
     key: SettingKey.Logo,
@@ -191,6 +191,7 @@ const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
 
 <template>
   <SettingsSection
+    :columns="2"
     :title="t('settings.branding.title')"
     :description="t('settings.branding.description')"
   >
@@ -254,11 +255,11 @@ const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
               type="button"
               variant="primary"
               size="sm"
-              :disabled="savingField[field.key] === true"
+              :loading="savingField[field.key] === true"
               :data-testid="`branding-save-${field.kind}`"
               @click="saveField(field)"
             >
-              {{ savingField[field.key] === true ? t('common.saving') : t('common.save') }}
+              {{ t('common.save') }}
             </UiButton>
             <SettingOutcome :outcome="outcome[field.key] ?? null" />
           </UiStack>

@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 import ReportChartCard from '@/components/reports/ReportChartCard.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
 import ReportPeriodFilter from '@/components/reports/ReportPeriodFilter.vue'
+import ReportStatRow from '@/components/reports/ReportStatRow.vue'
 import ReportTable from '@/components/reports/ReportTable.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
@@ -15,10 +16,12 @@ import { reportPath } from '@/lib/reportsQuery'
 import { currentYear } from '@/lib/reportsPeriod'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
+import type { ReportStat } from '@/types/reportstat'
 import type { ReportMonthIncome } from '@/types/reportmonthincome'
 import { UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 import { UiAlign } from '@/utils/ui/table'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -44,6 +47,17 @@ const currency = computed<string>(() => rows.value[0]?.currency ?? '')
  */
 const formatMoney = (amount: number): string => formatCurrencyCode(amount, currency.value)
 
+/** Headline figures: the year's total, the monthly average and the best month. */
+const stats = computed<ReportStat[]>(() => {
+  const total = rows.value.reduce((sum, row) => sum + row.amount, 0)
+  const best = rows.value.reduce<ReportMonthIncome | undefined>((top, row) => (top === undefined || row.amount > top.amount ? row : top), undefined)
+  return [
+    { key: 'total', label: t('reports.annualIncome.totalIncome'), value: formatMoney(total) },
+    { key: 'average', label: t('reports.annualIncome.averageMonth'), value: formatMoney(rows.value.length === 0 ? 0 : total / rows.value.length) },
+    { key: 'best', label: t('reports.annualIncome.bestMonth'), value: best?.month ?? EMPTY_VALUE, hint: best ? formatMoney(best.amount) : undefined },
+  ]
+})
+
 /** Table columns. */
 const columns = computed<ReportColumn[]>(() => [
   { key: 'month', label: t('shared.month') },
@@ -62,6 +76,7 @@ const series = computed<UiChartSeries[]>(() => [{ label: t('reports.annualIncome
     <template #filters>
       <ReportPeriodFilter v-model:year="year" @generate="load" />
     </template>
+    <ReportStatRow :stats="stats" />
     <ReportChartCard :type="UiChartType.Bar" :labels="labels" :series="series" :value-formatter="formatMoney" />
     <ReportTable :columns="columns" :rows="rows" row-key="month" :format-money="formatMoney" />
     <UiText tone="muted" size="sm">

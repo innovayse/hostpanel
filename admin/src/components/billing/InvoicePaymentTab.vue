@@ -15,6 +15,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -143,7 +144,7 @@ const submit = async (): Promise<void> => {
               </template>
             </UiField>
           </UiGrid>
-          <UiStack direction="row" justify="center">
+          <UiFormActions>
             <UiButton
               type="submit"
               variant="primary"
@@ -153,7 +154,7 @@ const submit = async (): Promise<void> => {
             >
               {{ t('billing.invoicePaymentTab.addPayment') }}
             </UiButton>
-          </UiStack>
+          </UiFormActions>
           <UiStatusMessage :message="form.feedback.message.value" :tone="form.feedbackTone.value" data-testid="billing-invoice-payment-feedback" />
         </UiForm>
       </UiCard>

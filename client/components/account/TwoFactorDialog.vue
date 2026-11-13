@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 /**
- * TwoFactorDialog - the dialog that collects an authenticator code to enable or disable
+ * TwoFactorDialog: the dialog that collects an authenticator code to enable or disable
  * two-factor, and the current password when disabling.
  *
  * In enable mode it also shows the QR and the manual secret. Submitting goes through the
@@ -120,13 +120,8 @@ const currentPassword = ref('')
 /** Whether the dialog is enrolling (true) or disabling (false). */
 const isEnable = computed<boolean>(() => props.mode === TwoFactorMode.Enable)
 
-/** The submit button's text for the direction and the in-flight state. */
-const submitLabel = computed<string>(() => {
-  if (tfaSaving.value) {
-    return t('client.login.submitting')
-  }
-  return isEnable.value ? t('client.twoFactor.confirmEnable') : t('client.twoFactor.confirmDisable')
-})
+/** The submit button's text for the direction. */
+const submitLabel = computed<string>(() => (isEnable.value ? t('client.twoFactor.confirmEnable') : t('client.twoFactor.confirmDisable')))
 
 // Every opening starts from an empty code and no stale refusal.
 watch(() => props.modelValue, (open) => {

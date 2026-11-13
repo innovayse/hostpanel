@@ -70,3 +70,12 @@ export const countVHtml = (vueTexts) => countMatches(vueTexts.map(stripComments)
  * @returns {number} Total uses.
  */
 export const countAny = (texts) => countMatches(texts.map(stripComments), /:\s*any\b|\bas\s+any\b|<any>/g)
+
+/**
+ * Counts store sources that use the transport (`useApi`) in code. A store reaches the API only through its
+ * api composable, so a comment that names `useApi` (to explain what a token is not) is not a use of it.
+ *
+ * @param {string[]} storeTexts - Sources of the files under `stores/`.
+ * @returns {number} How many of them use `useApi` outside comments.
+ */
+export const countStoresCallingUseApi = (storeTexts) => storeTexts.filter((text) => /\buseApi\b/.test(stripComments(text))).length

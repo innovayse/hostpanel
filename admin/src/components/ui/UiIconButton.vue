@@ -6,7 +6,7 @@
  * the icon alone says nothing to a screen reader. The icon is the default slot.
  */
 import { computed } from 'vue'
-import { buttonBaseClasses, buttonVariantClasses } from '@/utils/ui/button'
+import { buttonBaseClasses, buttonRadiusClasses, buttonVariantClasses } from '@/utils/ui/button'
 import type { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { iconButtonSizeClasses } from '@/utils/ui/size'
 import type { UiSize } from '@/utils/ui/size'
@@ -35,7 +35,8 @@ const classes = computed<string[]>(() => [
   buttonBaseClasses,
   buttonVariantClasses[props.variant],
   iconButtonSizeClasses[props.size],
-  'rounded-lg shrink-0',
+  buttonRadiusClasses(props.variant, props.size),
+  'shrink-0',
 ])
 </script>
 

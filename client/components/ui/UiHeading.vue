@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiHeading - a heading whose semantic level and visual size are chosen separately.
+ * UiHeading: a heading whose semantic level and visual size are chosen separately.
  *
  * `level` picks h1 to h6 (what assistive technology and search engines read); `size` picks how
  * it looks, defaulting to the size that normally goes with that level. A card title can be an

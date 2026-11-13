@@ -29,9 +29,6 @@ export const useServicesStore = defineStore('services', () => {
   /** Loaded services list for the current page. */
   const services = ref<ServiceListItem[]>([])
 
-  /** Current page (1-based). */
-  const page = ref(1)
-
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
 
@@ -54,13 +51,14 @@ export const useServicesStore = defineStore('services', () => {
   const fieldErrors = ref<Record<string, string>>({})
 
   /**
-   * Loads one page of services.
+   * Loads one page of services. The page comes from the list's address, so the store keeps no copy of it.
    *
+   * @param page - Page to load, 1-based.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<boolean> => {
+  const fetchAll = async (page: number): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.listServices({ page: page.value, pageSize: pageSize.value }))
+    const result = await runAction(error, () => api.listServices({ page, pageSize: pageSize.value }))
     loading.value = false
     if (result.ok) {
       services.value = result.value.items
@@ -266,7 +264,7 @@ export const useServicesStore = defineStore('services', () => {
     mutate(() => api.terminateService(id, { reason }))
 
   return {
-    services, current, page, pageSize, totalCount, loading, error, actionError, fieldErrors,
+    services, current, pageSize, totalCount, loading, error, actionError, fieldErrors,
     fetchAll, fetchClientPage, fetchById, fetchClientServices,
     addExisting, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes, changeStatus, correctTerminationDate,
     fetchPanelLoginUrl, provision, changePassword, changePackage, suspend, unsuspend, terminate,

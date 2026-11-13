@@ -48,25 +48,29 @@ describe('UiSidebar', () => {
     expect(wrapper.get('[data-testid="int-payments"]').attributes('aria-current')).toBeUndefined()
   })
 
+  it('is drawn on the glass surface', () => {
+    expect(mountSidebar().classes()).toContain('glass')
+  })
+
   it('is narrow until hovered or focused, then shows the captions', async () => {
     const wrapper = mountSidebar()
 
-    expect(wrapper.classes()).toContain('w-[48px]')
+    expect(wrapper.classes()).toContain('w-[56px]')
 
     await wrapper.trigger('mouseenter')
     expect(wrapper.classes()).toContain('w-[230px]')
 
     await wrapper.trigger('mouseleave')
-    expect(wrapper.classes()).toContain('w-[48px]')
+    expect(wrapper.classes()).toContain('w-[56px]')
 
     await wrapper.trigger('focusin')
     expect(wrapper.classes()).toContain('w-[230px]')
   })
 
-  it('colours the active entry with the primary accent and idle entries with secondary text', () => {
+  it('marks the active entry with the navigation pill tokens and idle entries with secondary text', () => {
     const wrapper = mountSidebar('email')
 
-    expect(wrapper.get('[data-testid="int-email"]').classes()).toContain('text-primary-500')
+    expect(wrapper.get('[data-testid="int-email"]').classes()).toContain('bg-(--nav-active-bg)')
     expect(wrapper.get('[data-testid="int-payments"]').classes()).toContain('text-text-secondary')
   })
 })

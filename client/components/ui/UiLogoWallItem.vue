@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 /**
- * UiLogoWallItem - one cell of a `UiLogoWall`: the partner's logo, or its name as a plain
+ * UiLogoWallItem. One cell of a `UiLogoWall`: the partner's logo, or its name as a plain
  * wordmark when it has none, linked to the partner's site when it has one.
  *
  * Muted (grey, lower opacity) until hovered or focused, then the logo's real colours with a

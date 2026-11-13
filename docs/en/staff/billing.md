@@ -72,10 +72,10 @@ If you created a draft, click **Publish** in the draft banner when it is ready t
 
 On an open invoice, find **Invoice Items**:
 
-- **Add Item** — add a new line.
-- **Remove line** — remove a single line.
-- **With Selected: Delete** — remove multiple lines at once.
-- **Save Changes** / **Cancel Changes** — confirm or discard edits.
+- **Add Item**: add a new line.
+- **Remove line**: remove a single line.
+- **With Selected: Delete**: remove multiple lines at once.
+- **Save Changes** / **Cancel Changes**: confirm or discard edits.
 
 An invoice cannot be edited if it has been paid, cancelled, or refunded (`INVOICE_NOT_EDITABLE`). Reducing the total below what has already been paid is also refused (`INVOICE_TOTAL_BELOW_PAID`).
 
@@ -85,7 +85,7 @@ On the **Options** tab you can change:
 
 - **Invoice Date** and **Due Date**
 - **Payment Method**
-- **Tax Rate** — cannot be set on a tax-exempt client's invoice (`CLIENT_TAX_EXEMPT`)
+- **Tax Rate**: cannot be set on a tax-exempt client's invoice (`CLIENT_TAX_EXEMPT`)
 
 ## Record a payment
 
@@ -122,14 +122,14 @@ Mark Paid does not record a payment transaction. Use Add Payment to keep an accu
 
 ## Mark Unpaid
 
-**Mark Unpaid** reopens a Paid invoice. It is only available when the invoice is Paid and has no recorded payments (`INVOICE_HAS_PAYMENTS` if a payment is on record — remove the payment first).
+**Mark Unpaid** reopens a Paid invoice. It is only available when the invoice is Paid and has no recorded payments (`INVOICE_HAS_PAYMENTS` if a payment is on record, remove the payment first).
 
 ## Credit
 
 The client's credit balance is shown on their Summary page.
 
-- **Add Credit to Invoice** — applies credit from the client's balance toward this invoice.
-- **Remove Credit from Invoice** — returns the credit to the client's balance.
+- **Add Credit to Invoice**: applies credit from the client's balance toward this invoice.
+- **Remove Credit from Invoice**: returns the credit to the client's balance.
 
 Limits:
 - Cannot apply more credit than the client's balance (`CLIENT_CREDIT_INSUFFICIENT`).
@@ -190,9 +190,9 @@ Enter the **amount** (partial refunds are allowed).
 <li>
 
 Choose a **Refund Type**:
-- **Refund through Gateway** — sends the refund back through the original payment gateway.
-- **Manual Refund Processed Externally** — records a refund that you have already processed outside the system.
-- **Add to Client's Credit Balance** — credits the amount to the client's account.
+- **Refund through Gateway**: sends the refund back through the original payment gateway.
+- **Manual Refund Processed Externally**: records a refund that you have already processed outside the system.
+- **Add to Client's Credit Balance**: credits the amount to the client's account.
 
 </li>
 <li>
@@ -346,8 +346,8 @@ Deleting a rule does not change invoices already issued. They keep the rate they
 
 ## Cancel and delete
 
-- **Mark Cancelled** — cancels an unpaid invoice. Cannot cancel a paid, refunded, or already-cancelled invoice (`INVOICE_CANCEL_NOT_ALLOWED`). Cannot cancel an invoice that has a payment; refund or delete the payment first (`INVOICE_HAS_PAYMENTS`).
-- **Delete** — permanently removes the invoice. Only Draft or Cancelled invoices can be deleted (`INVOICE_NOT_DELETABLE`).
+- **Mark Cancelled**: cancels an unpaid invoice. Cannot cancel a paid, refunded, or already-cancelled invoice (`INVOICE_CANCEL_NOT_ALLOWED`). Cannot cancel an invoice that has a payment; refund or delete the payment first (`INVOICE_HAS_PAYMENTS`).
+- **Delete**: permanently removes the invoice. Only Draft or Cancelled invoices can be deleted (`INVOICE_NOT_DELETABLE`).
 
 ## PDF
 
@@ -362,7 +362,7 @@ The Pdf Batch screen is not available yet and is not documented here.
 
 ## Fulfilment
 
-The **Fulfilment** tab on an invoice shows the fulfilment status of any digital product lines — whether the fulfilment plugin has delivered the product, is retrying, or has failed.
+The **Fulfilment** tab on an invoice shows the fulfilment status of any digital product lines, whether the fulfilment plugin has delivered the product, is retrying, or has failed.
 
 ## Gateway payments
 

@@ -25,7 +25,6 @@
   },
   "integrationStatusSidebar": {
     "connectionStatus": "Միացման վիճակ",
-    "testingConnection": "Միացումը ստուգվում է…",
     "connectionOk": "Միացումը հաջողված է",
     "connectionFailed": "Միացումը ձախողվեց",
     "endpoint": "Վերջնակետ",
@@ -36,7 +35,7 @@
   },
   "cwp7Integration": {
     "cwp7": "CWP7",
-    "controlWebPanel7Provisioning": "Control Web Panel 7 — մատակարարման պրովայդեր հոսթինգ հաշիվների, փաթեթների և սերվերի ռեսուրսների կառավարման համար։",
+    "controlWebPanel7Provisioning": "Control Web Panel 7՝ մատակարարման պրովայդեր հոսթինգ հաշիվների, փաթեթների և սերվերի ռեսուրսների կառավարման համար։",
     "hostingProvisioning": "Հոսթինգ / մատակարարում",
     "moduleType": "Մոդուլի տեսակ",
     "serverModule": "Սերվերային մոդուլ",

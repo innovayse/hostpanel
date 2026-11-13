@@ -35,6 +35,18 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      // The dev compose file turns on polling (CHOKIDAR_USEPOLLING) because a Windows bind mount
+      // delivers no file events. Polling stats every watched file on a timer over a slow 9p mount, and
+      // the defaults (100 ms for text, 300 ms for binary files) over the whole project kept the dev
+      // server's event loop so busy that every page load waited ~40 s. Two cuts fix it at the root:
+      // - folders the browser never loads (test sources, e2e, the build output, reports) are not
+      //   watched at all, which removes more than half of the watched files;
+      // - the remaining source files are polled once a second, still instant for hot reload.
+      ignored: ['**/tests/**', '**/e2e/**', '**/dist/**', '**/coverage/**', '**/playwright-report/**'],
+      interval: 1000,
+      binaryInterval: 3000,
+    },
     // Extra names the dev server answers to besides localhost, from the environment (ADMIN_DEV_ALLOWED_HOSTS,
     // comma separated): a deployment's own host names are not written into the repository.
     allowedHosts: (process.env.ADMIN_DEV_ALLOWED_HOSTS ?? '').split(',').map((h) => h.trim()).filter(Boolean),

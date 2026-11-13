@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * PluginSlot - the cards plugins add to a named place on a host page, each an isolated widget. The
+ * PluginSlot: the cards plugins add to a named place on a host page, each an isolated widget. The
  * index is read after the page mounts and shows nothing at all with no plugin or when it cannot be
  * read, so the page looks exactly as it does without plugins.
  */

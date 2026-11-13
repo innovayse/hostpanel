@@ -5,20 +5,25 @@
  * The model is a `[start, end]` pair of ISO `YYYY-MM-DD` strings (or null). Clicking two days
  * picks a range and Apply commits it; a preset commits at once; typing a complete range commits
  * it, a partial one moves the calendar. The popup is teleported to the body so a clipped parent
- * cannot cut it off, and is placed through CSS variables set from script (no inline style).
+ * cannot cut it off, and is placed under the field (above it when there is no room below) through CSS variables
+ * set from script (no inline style).
  * Colours are theme tokens, so the popup follows the light/dark switch.
  */
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
+import UiButton from '@/components/ui/UiButton.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { useDropdown } from '@/composables/useDropdown'
+import { useFloatingPlace } from '@/composables/useFloatingPlace'
+import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { splitIsoDate } from '@/lib/format'
 import { translate } from '@/lib/translate'
 import {
   RangeEdge,
   buildYearOptions,
-  dateActionClasses,
   dateArrowClasses,
   dateCellBaseClasses,
   dateCellEmptyClasses,
@@ -31,6 +36,7 @@ import {
   dateRangePresets,
   formatDisplayDate,
   formatIsoDate,
+  getDayKeysForMonth,
   getDaysForMonth,
   parsePartialDate,
   parseTypedDate,
@@ -54,14 +60,22 @@ const emit = defineEmits<{
   'update:modelValue': [value: [string, string] | null]
 }>()
 
-/** Widest the popup grows, in pixels. */
+/** Widest the popup grows, in pixels (its class is `w-[900px]`). */
 const POPUP_MAX_WIDTH = 900
 
-/** Gap kept between the popup and the viewport edge, in pixels. */
-const POPUP_EDGE_GAP = 16
+/** Height of the popup in pixels: it opens above the field when less than this is free below it. */
+const POPUP_HEIGHT = 400
 
-/** Whether the popup is open. */
-const isOpen = ref(false)
+/** Gap between the field and the popup, in pixels. */
+const POPUP_GAP_PX = 8
+
+/** Open flag and outside-pointer handling shared with the other floating lists; `panel` is the teleported popup. */
+const { open: isOpen, root: wrapperRef, trigger: inputRef, panel, show, hide } = useDropdown()
+
+useFloatingPlace(inputRef, panel, isOpen, { align: FloatingAlign.Start, minRoom: POPUP_HEIGHT, gap: POPUP_GAP_PX, keepInsideWidth: POPUP_MAX_WIDTH })
+
+/** Classes of the popup: fixed at its place, over the cards of the page, in the kit's popup look (the lists of its month and year selects open later in the body, so they stay above it), as wide as the screen allows. */
+const popupClasses = `${FLOATING_PLACE_CLASSES} z-50 p-0 w-[900px] max-w-[calc(100vw-32px)] ${datePopupClasses}`
 
 /** First day of the range being picked. */
 const selectedStart = ref<Date | null>(null)
@@ -72,12 +86,6 @@ const selectedEnd = ref<Date | null>(null)
 /** First day of the left-hand month. */
 const currentMonth = ref(new Date())
 
-/** Popup panel, outside-click detection and CSS-variable target. */
-const popupRef = ref<HTMLElement | null>(null)
-
-/** Field wrapper, measured to place the popup. */
-const wrapperRef = ref<HTMLElement | null>(null)
-
 /** Text in the field. */
 const inputText = ref('')
 
@@ -86,12 +94,6 @@ const previewStart = ref<Date | null>(null)
 
 /** End typed so far, highlighted before the range is complete. */
 const previewEnd = ref<Date | null>(null)
-
-/** Popup top edge in viewport pixels. */
-const popupTop = ref(0)
-
-/** Popup left edge in viewport pixels. */
-const popupLeft = ref(0)
 
 /** Month names for the month selects. */
 const monthNames = Array.from({ length: 12 }, (_, i) => translate(`calendar.months.${i + 1}`))
@@ -116,6 +118,9 @@ const months = computed<Date[]>(() => {
 
 /** Cells of each shown month. */
 const monthCells = computed<(number | null)[][]>(() => months.value.map(getDaysForMonth))
+
+/** ISO day of each cell of each shown month, the cell's list key. */
+const monthCellKeys = computed<string[][]>(() => months.value.map(getDayKeysForMonth))
 
 /** Left month select value. */
 const currentMonthValue = computed<string>({
@@ -221,50 +226,6 @@ const clearPreview = (): void => {
   previewEnd.value = null
 }
 
-/** Computes where the popup sits: under the field, kept inside the viewport. */
-const updatePopupPosition = (): void => {
-  if (!wrapperRef.value) {
-    return
-  }
-  const rect = wrapperRef.value.getBoundingClientRect()
-  const width = Math.min(POPUP_MAX_WIDTH, window.innerWidth - 2 * POPUP_EDGE_GAP)
-  let left = rect.left
-  if (left + width > window.innerWidth - POPUP_EDGE_GAP) {
-    left = window.innerWidth - width - POPUP_EDGE_GAP
-  }
-  popupTop.value = rect.bottom + 8
-  popupLeft.value = Math.max(left, 8)
-}
-
-/** Hands the computed position to the popup as CSS variables its classes read. */
-const applyPopupPosition = async (): Promise<void> => {
-  // The popup is v-if'd, so it exists only after the next render.
-  await nextTick()
-  popupRef.value?.style.setProperty('--dp-top', `${popupTop.value}px`)
-  popupRef.value?.style.setProperty('--dp-left', `${popupLeft.value}px`)
-}
-
-/** Opens the popup under the field. */
-const openPopup = (): void => {
-  updatePopupPosition()
-  isOpen.value = true
-  void applyPopupPosition()
-}
-
-/**
- * Closes the popup on a click outside both the popup and the field.
- *
- * @param e - The document click.
- */
-const handleClickOutside = (e: MouseEvent): void => {
-  const target = e.target as Node
-  const outsidePopup = !popupRef.value || !popupRef.value.contains(target)
-  const outsideField = !wrapperRef.value || !wrapperRef.value.contains(target)
-  if (outsidePopup && outsideField) {
-    isOpen.value = false
-  }
-}
-
 /**
  * Tells which edge of the range a day is, preferring what is being typed.
  *
@@ -362,7 +323,7 @@ const applyRange = (): void => {
   const end = formatIsoDate(selectedEnd.value)
   emit('update:modelValue', [start, end])
   inputText.value = formatRangeText(start, end)
-  isOpen.value = false
+  hide()
 }
 
 /** Clears the range. */
@@ -386,7 +347,7 @@ const applyPreset = (start: Date, end: Date): void => {
   const endIso = formatIsoDate(end)
   emit('update:modelValue', [startIso, endIso])
   inputText.value = formatRangeText(startIso, endIso)
-  isOpen.value = false
+  hide()
 }
 
 /**
@@ -448,7 +409,7 @@ const handleInput = (): void => {
         inputText.value = formatRangeText(start, end)
         const { year, month } = splitIsoDate(start)
         currentMonth.value = new Date(year, month - 1, 1)
-        isOpen.value = false
+        hide()
       }
       return
     }
@@ -474,26 +435,20 @@ const nextMonth = (): void => {
   currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1)
 }
 
-onMounted(() => {
-  syncInputText()
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+onMounted(syncInputText)
 </script>
 
 <template>
   <div ref="wrapperRef" class="relative">
     <input
+      ref="inputRef"
       v-model="inputText"
       type="text"
       data-testid="date-range-input"
       :placeholder="fieldPlaceholder"
       :class="dateFieldClasses"
-      @click="openPopup"
-      @focus="openPopup"
+      @click="show"
+      @focus="show"
       @input="handleInput"
     >
 
@@ -501,9 +456,8 @@ onUnmounted(() => {
       <UiTransition :kind="UiTransitionKind.Dropdown">
         <div
           v-if="isOpen"
-          ref="popupRef"
-          :class="datePopupClasses"
-          class="fixed z-[9999] p-0 w-[900px] max-w-[calc(100vw-32px)] top-[var(--dp-top)] left-[var(--dp-left)]"
+          ref="panel"
+          :class="popupClasses"
         >
           <div class="flex h-[400px]">
             <div class="w-[150px] border-r border-border p-4 flex flex-col gap-2">
@@ -518,7 +472,7 @@ onUnmounted(() => {
               >
                 {{ t(item.labelKey) }}
               </button>
-              <div class="text-left px-3 py-2 text-primary-600 light:text-primary-700 font-semibold rounded text-sm bg-primary-500/10">{{ t('shared.custom') }}</div>
+              <div class="text-left px-3 py-2 text-text-accent font-semibold rounded-lg text-sm bg-tint-blue">{{ t('shared.custom') }}</div>
             </div>
 
             <div class="flex-1 p-4">
@@ -546,14 +500,14 @@ onUnmounted(() => {
               </div>
 
               <div class="flex gap-8">
-                <div v-for="(month, idx) in months" :key="idx" class="flex-1">
+                <div v-for="(month, idx) in months" :key="formatIsoDate(month)" class="flex-1">
                   <div class="grid grid-cols-7 gap-1 mb-2">
                     <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
                   </div>
                   <div class="grid grid-cols-7 gap-1">
                     <button
                       v-for="(day, i) in monthCells[idx]"
-                      :key="i"
+                      :key="monthCellKeys[idx]?.[i]"
                       type="button"
                       :data-testid="`date-range-day-${idx}-${i}`"
                       :disabled="day === null"
@@ -568,19 +522,14 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="flex items-center justify-between border-t border-border p-4 bg-surface-hover rounded-b-[10px]">
+          <div class="flex items-center justify-between border-t border-border p-4 bg-surface-hover rounded-b-control">
             <span v-if="pickedLabel" class="text-sm text-text-secondary">{{ pickedLabel }}</span>
             <span v-else class="text-sm text-text-secondary">{{ t('ui.uiDateRangePicker.selectDateRange') }}</span>
             <div class="flex gap-2">
-              <button type="button" data-testid="date-range-clear" :class="dateActionClasses" class="px-4 py-2" @click="clearRange">{{ t('shared.clear') }}</button>
-              <button
-                type="button"
-                data-testid="date-range-apply"
-                class="px-4 py-2 text-sm gradient-brand text-white rounded-[9px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary-500/50 font-semibold"
-                @click="applyRange"
-              >
+              <UiButton :variant="UiButtonVariant.Ghost" type="button" data-testid="date-range-clear" @click="clearRange">{{ t('shared.clear') }}</UiButton>
+              <UiButton :variant="UiButtonVariant.Primary" type="button" data-testid="date-range-apply" @click="applyRange">
                 {{ t('shared.apply') }}
-              </button>
+              </UiButton>
             </div>
           </div>
         </div>

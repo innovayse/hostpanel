@@ -20,7 +20,8 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -169,7 +170,7 @@ const dismiss = (): void => {
  * @param item - The row.
  * @returns The action list passed to UiRowActions.
  */
-const requestActions = (item: ServiceChangeRequestItem): UiRowAction[] =>
+const requestActions = (item: ServiceChangeRequestItem): UiMenuAction[] =>
   isDecidable(item)
     ? [
         {
@@ -251,7 +252,7 @@ onMounted(() => {
     />
 
     <UiCard v-if="hasRows || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" :colspan="8" data-testid="plan-changes-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" data-testid="plan-changes-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>

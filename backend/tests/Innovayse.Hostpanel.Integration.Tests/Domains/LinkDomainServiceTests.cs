@@ -30,7 +30,7 @@ public sealed class LinkDomainServiceTests(IntegrationTestFactory factory) : ICl
             clientId = await DomainsTestSeeds.SeedClientAsync(context);
             serviceId = await DomainsTestSeeds.SeedServiceAsync(context, clientId);
             var domain = RegisteredDomain.Register(
-                clientId, $"link-{Guid.NewGuid():N}"[..17] + ".example", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1),
+                clientId, $"link-{Guid.NewGuid():N}"[..17] + ".example", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
                 autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             context.Domains.Add(domain);
             await context.SaveChangesAsync(CancellationToken.None);
@@ -57,7 +57,7 @@ public sealed class LinkDomainServiceTests(IntegrationTestFactory factory) : ICl
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var clientId = await DomainsTestSeeds.SeedClientAsync(context);
             var domain = RegisteredDomain.Register(
-                clientId, $"link-{Guid.NewGuid():N}"[..17] + ".example", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1),
+                clientId, $"link-{Guid.NewGuid():N}"[..17] + ".example", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
                 autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             context.Domains.Add(domain);
             await context.SaveChangesAsync(CancellationToken.None);
@@ -94,7 +94,7 @@ public sealed class LinkDomainServiceTests(IntegrationTestFactory factory) : ICl
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var clientId = await DomainsTestSeeds.SeedClientAsync(context);
             var domain = RegisteredDomain.Register(
-                clientId, $"link-{Guid.NewGuid():N}"[..17] + ".example", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1),
+                clientId, $"link-{Guid.NewGuid():N}"[..17] + ".example", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
                 autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             domain.Cancel();
             context.Domains.Add(domain);

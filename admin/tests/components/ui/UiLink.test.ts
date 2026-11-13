@@ -46,6 +46,12 @@ describe('UiLink', () => {
   it('takes the accent look', () => {
     const wrapper = mount(UiLink, { props: { href: '/a', variant: 'link' } })
 
-    expect(wrapper.classes()).toContain('text-primary-400')
+    expect(wrapper.classes()).toContain('text-text-accent')
+  })
+
+  it('sets the type size of a text link by size', () => {
+    const wrapper = mount(UiLink, { props: { href: '/a', variant: 'link', size: 'sm' } })
+
+    expect(wrapper.classes()).toContain('text-[0.8125rem]')
   })
 })

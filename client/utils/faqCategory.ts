@@ -1,5 +1,5 @@
 /**
- * FAQ topic slugs - the one place the URL / locale-key spelling of a {@link FaqCategory} is decided.
+ * FAQ topic slugs: the one place the URL / locale-key spelling of a {@link FaqCategory} is decided.
  *
  * The enum values equal the names the API serializes (`General`, `Products`); the public URLs
  * (`/faq/general`), the `faq.categories.*` / `seo.faqCategory.*` locale keys and the test ids use

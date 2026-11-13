@@ -39,6 +39,8 @@ export interface MountWithAppOptions {
   props?: Record<string, unknown>
   /** Components to stub by name (a chart cannot draw without a canvas, for example). */
   stubs?: Record<string, boolean>
+  /** Slot content by slot name, as markup. */
+  slots?: Record<string, string>
 }
 
 /** Where the mounted view sits in the router. */
@@ -147,12 +149,12 @@ export const mountRouted = async (component: Component, routePath: string, url: 
  * Mounts a component inside the app plugins, synchronously.
  *
  * @param component - The component.
- * @param options - Props and stubs.
+ * @param options - Props, stubs and slot content.
  * @returns The mounted wrapper.
  */
 export const mountWithApp = (component: Component, options: MountWithAppOptions = {}): VueWrapper => {
   const { global } = createApp([{ path: '/:pathMatch(.*)*', component: Blank }], options.stubs)
-  return mount(component, { props: options.props, global })
+  return mount(component, { props: options.props, slots: options.slots, global })
 }
 
 /**

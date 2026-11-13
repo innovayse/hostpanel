@@ -129,7 +129,7 @@ describe('UiChatInput', () => {
   it('dims and blocks a disabled field', () => {
     const wrapper = mountInput({ disabled: true })
 
-    expect(wrapper.classes()).toContain('opacity-60')
+    expect(wrapper.classes()).toContain('cursor-not-allowed')
     expect(wrapper.get('[data-testid="field"]').attributes('disabled')).toBeDefined()
   })
 })

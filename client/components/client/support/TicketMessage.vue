@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 /**
- * TicketMessage - one message of a support ticket thread: who wrote it, when, a badge naming the
+ * TicketMessage. One message of a support ticket thread: who wrote it, when, a badge naming the
  * side (you / staff) and the text with its line breaks kept.
  */
 

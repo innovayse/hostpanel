@@ -44,7 +44,7 @@
             :disabled="selectedProductId === null"
             data-testid="service-plan-change-submit"
           >
-            {{ submitting ? $t('client.services.planChangeSubmitting') : $t('client.services.planChangeBtn') }}
+            {{ $t('client.services.planChangeBtn') }}
           </UiButton>
         </template>
       </UiForm>
@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 /**
- * ServicePlanChange - moves one service to another plan: lists the plans it can move to, each
+ * ServicePlanChange. Moves one service to another plan: lists the plans it can move to, each
  * with the prorated amount and whether the move is an upgrade (charged on an invoice) or a
  * downgrade (credited), sends the chosen one and shows what the request came to. The options,
  * the request, its in-flight flag and the API's refusal belong to the plan change store.

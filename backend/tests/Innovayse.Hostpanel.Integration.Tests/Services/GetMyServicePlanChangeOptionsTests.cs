@@ -36,7 +36,7 @@ public sealed class GetMyServicePlanChangeOptionsTests(IntegrationTestFactory fa
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var groupId = (await context.Products.AsNoTracking().FirstAsync(p => p.Id == seeded.FromProductId)).GroupId;
-        var product = Product.Create(groupId, name, null, null, null, name.ToLowerInvariant(), ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(groupId, name, null, null, null, name.ToLowerInvariant(), ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         if (usdMonthly is { } price)
         {
             product.SetPrice("USD", BillingCycle.Monthly, price);

@@ -34,7 +34,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = reference,
             amount = 19.99m,
@@ -62,7 +62,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = 19.99m,
@@ -84,7 +84,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = reference,
             amount = 19.99m,
@@ -117,7 +117,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = 19.99m,
@@ -144,7 +144,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{BillingTestSeeds.NoSuchId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = 10m,
@@ -162,7 +162,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     {
         var response = await factory.CreateClient().PostAsJsonAsync("/api/billing/1/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = "ext",
             amount = 10m,
@@ -183,7 +183,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = 150m,
@@ -205,7 +205,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     private static Task<HttpResponseMessage> PayAsync(HttpClient admin, int invoiceId, decimal amount) =>
         admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount,

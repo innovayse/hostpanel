@@ -70,10 +70,10 @@ The installer accepts these flags:
 
 Running the installer again upgrades the agent binary and updates the binding while keeping the existing `agent.conf`. The installer creates and writes:
 
-- `/usr/local/sbin/hostpanel-ssh-key-agent` — the agent binary
-- `/etc/sudoers.d/hostpanel-ssh-key-agent` — the sudoers rule
-- `/etc/hostpanel-ssh-key-agent/agent.conf` — the agent configuration (from the profile)
-- `/var/lib/hpsshkeys/.ssh/authorized_keys` — the management user's forced-command key
+- `/usr/local/sbin/hostpanel-ssh-key-agent`: the agent binary
+- `/etc/sudoers.d/hostpanel-ssh-key-agent`: the sudoers rule
+- `/etc/hostpanel-ssh-key-agent/agent.conf`: the agent configuration (from the profile)
+- `/var/lib/hpsshkeys/.ssh/authorized_keys`: the management user's forced-command key
 
 The installer never touches sshd, the firewall, any VPN, Jailkit, or customer accounts.
 
@@ -97,9 +97,9 @@ If **Read host key** fails:
 
 **Test the connection.** Click **Test agent**. The status line shows one of:
 
-- **Agent reachable** — agent responded and the binding matches.
-- **Agent unreachable** — connection failed; see "Last check failed" for the reason.
-- **Not tested** — settings were changed since the last test.
+- **Agent reachable**: agent responded and the binding matches.
+- **Agent unreachable**: connection failed; see "Last check failed" for the reason.
+- **Not tested**: settings were changed since the last test.
 
 The agent version is shown as "Agent _version_" or "Agent _version_ (_provider_)". A successful test is required before the server can be enabled. Changing the agent host, port, user, key, or pinned fingerprint clears the test.
 
@@ -109,7 +109,7 @@ If the test fails the reason is shown as "Last check failed: _reason_" (`servers
 |--------|---------|
 | the server could not be reached | No network path to the agent host (`Unreachable`) |
 | the agent timed out | Connection opened but the agent did not respond in time (`Timeout`) |
-| the agent was installed for a different server | Correct host but wrong binding — check the agent host or run this server's install command on it (`BindingMismatch`) |
+| the agent was installed for a different server | Correct host but wrong binding, check the agent host or run this server's install command on it (`BindingMismatch`) |
 | the agent version is not supported | Agent is too old for this Hostpanel version (`UnsupportedVersion`) |
 | the agent failed internally | Agent-side error; check `/var/log/hostpanel-ssh-key-agent.log` (`InternalError`) |
 | the agent rejected the request | Unexpected refusal from the agent (`InvalidRequest`) |
@@ -167,7 +167,7 @@ The installer writes the base configuration from the chosen profile. An administ
 | Event | Keys on the server | In Hostpanel |
 |-------|--------------------|--------------|
 | Service suspended in Hostpanel | Taken off the server (a key not confirmed removed stays and is logged for staff) | Suspended; put back under the same ID on unsuspension; InstallFailed if not confirmed |
-| Account suspended in the panel only | Stay and keep logging in — the password lock does not stop keys. Suspend through Hostpanel instead | Unchanged |
+| Account suspended in the panel only | Stay and keep logging in, the password lock does not stop keys. Suspend through Hostpanel instead | Unchanged |
 | Service terminated | Revoked automatically | Revoked; if the server did not confirm, RevokeFailed with reason, visible to staff |
 | Service moved to another server | Stay on the old server until manually revoked | Listed as from the previous server; nothing is sent to the new server |
 | SSH key management switched off | Stay | Client can still revoke but cannot add |
@@ -197,7 +197,7 @@ These codes come from the agent itself and appear in Hostpanel's error responses
 
 ## Uninstall
 
-Before uninstalling the agent, revoke all managed keys so clients cannot continue logging in with orphaned keys. There is no button in the admin panel yet — use the admin API directly:
+Before uninstalling the agent, revoke all managed keys so clients cannot continue logging in with orphaned keys. There is no button in the admin panel yet, use the admin API directly:
 
 1. Call `POST /api/admin/servers/{id}/ssh-keys/revoke-all`. This removes all managed keys from the server.
 2. On the server, in the unpacked installer bundle, run:
@@ -218,7 +218,7 @@ grep -rl 'hostpanel:' /home/*/.ssh/authorized_keys
 
 ## What customers see
 
-Clients manage their SSH keys from the **SSH Keys** tab on their service in the client portal. They can add a key by pasting a public key and giving it a label, see the fingerprint and label of each installed key, and revoke any key individually. Adding and revoking operations go directly to the agent on the server; only the key fingerprint is stored in Hostpanel — never the private key.
+Clients manage their SSH keys from the **SSH Keys** tab on their service in the client portal. They can add a key by pasting a public key and giving it a label, see the fingerprint and label of each installed key, and revoke any key individually. Adding and revoking operations go directly to the agent on the server; only the key fingerprint is stored in Hostpanel, never the private key.
 
 A plugin that declares SSH host access can be issued a key for a client's service whose product the operator bound one of the plugin's service widgets to on the **Plugins** page. A product listed only in the plugin's own manifest does not count: until an operator binds it, the plugin reaches no hosting. Hostpanel generates the key pair, installs the public half through this agent exactly like a key the client adds, and hands the private key to the plugin once; Hostpanel never stores or logs it. Such a key is listed on the service's **SSH Keys** tab like any other, and the client can revoke it at any time. Switching the plugin off keeps its keys (the plugin cannot use the host while it is off); removing the plugin revokes them.
 

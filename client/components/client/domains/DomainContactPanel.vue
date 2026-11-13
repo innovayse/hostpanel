@@ -57,7 +57,7 @@
           </UiButton>
           <UiButton type="submit" size="sm" :loading="whoisSaving" data-testid="domain-contact-save">
             <Save v-if="!whoisSaving" :size="14" :stroke-width="2" class="mr-1.5" />
-            {{ whoisSaving ? $t('client.domains.saving') : $t('client.domains.saveChanges') }}
+            {{ $t('client.domains.saveChanges') }}
           </UiButton>
         </template>
       </UiForm>
@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 /**
- * DomainContactPanel - the WHOIS registrant contact of a domain, either pre-filled from the
+ * DomainContactPanel: the WHOIS registrant contact of a domain, either pre-filled from the
  * registrar's current record, the account's profile or contacts, or typed in, beside the
  * registry's read-only WHOIS record (registrar, registrant, dates). The form starts from the
  * registrant the registrar holds and falls back to the account's primary profile when the

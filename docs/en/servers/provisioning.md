@@ -12,8 +12,8 @@ Provisioning is the process by which Hostpanel creates, suspends and removes hos
 
 When a client pays an order, Hostpanel accepts it and marks each service line as **Pending**. It does not create the hosting account at that moment. The account is created in one of two ways:
 
-- **Client completes the setup wizard** — the client opens the service in the client portal and clicks "Set Up My Service" to enter the domain, username and billing details. Provisioning runs once the setup is saved.
-- **Staff press Create** — on a Pending service in the admin panel, click **Create** in the Module Commands card.
+- **Client completes the setup wizard**: the client opens the service in the client portal and clicks "Set Up My Service" to enter the domain, username and billing details. Provisioning runs once the setup is saved.
+- **Staff press Create**: on a Pending service in the admin panel, click **Create** in the Module Commands card.
 
 The setup wizard is refused until the service's first invoice is paid in full (`SERVICE_FIRST_INVOICE_UNPAID`).
 
@@ -82,8 +82,8 @@ Staff can also change the status directly with the **Status** drop-down in the s
 
 A service is suspended in two ways:
 
-- **Manually by staff** — click **Suspend** in Module Commands.
-- **Automatically by the billing job** — the **Suspend Overdue Services** job suspends services whose invoices are overdue beyond the `billing.renewal.suspend_after_overdue_days` grace period.
+- **Manually by staff**: click **Suspend** in Module Commands.
+- **Automatically by the billing job**: the **Suspend Overdue Services** job suspends services whose invoices are overdue beyond the `billing.renewal.suspend_after_overdue_days` grace period.
 
 Hostpanel calls the panel first and updates its own record only after the panel confirms. A panel refusal returns `SERVICE_SUSPEND_UPSTREAM_FAILED`.
 
@@ -99,11 +99,11 @@ Suspend through Hostpanel, not directly in the control panel. A panel-side suspe
 
 A service is terminated in three ways:
 
-- **Manually by staff** — click **Terminate** in Module Commands.
-- **Automatically at end of billing cycle** — tick **Auto-Terminate End of Cycle** on the service's Auto-Management tab and optionally set a **Termination Reason**.
-- **Automatically after long suspension** — the **Auto-Terminate Suspended** job terminates services that have been suspended for more than `billing.renewal.terminate_after_suspended_days` days.
+- **Manually by staff**: click **Terminate** in Module Commands.
+- **Automatically at end of billing cycle**: tick **Auto-Terminate End of Cycle** on the service's Auto-Management tab and optionally set a **Termination Reason**.
+- **Automatically after long suspension**: the **Auto-Terminate Suspended** job terminates services that have been suspended for more than `billing.renewal.terminate_after_suspended_days` days.
 
-When a service is terminated manually, Hostpanel contacts the panel first. If the panel refuses, it returns `SERVICE_TERMINATE_UPSTREAM_FAILED` and the service remains unchanged — no status change is written. If the panel accepts, the service is set to Terminated and the SSH keys are revoked.
+When a service is terminated manually, Hostpanel contacts the panel first. If the panel refuses, it returns `SERVICE_TERMINATE_UPSTREAM_FAILED` and the service remains unchanged, no status change is written. If the panel accepts, the service is set to Terminated and the SSH keys are revoked.
 
 If the panel refused and the service stayed as it was, the daily auto-terminate job retries when the service is next due for auto-terminate, and staff receive the `service-termination-failed-admin` email at that point.
 

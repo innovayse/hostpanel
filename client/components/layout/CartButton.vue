@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 /**
- * LayoutCartButton - the header's cart icon with the item-count badge; a click opens the cart
+ * LayoutCartButton: the header's cart icon with the item-count badge; a click opens the cart
  * drawer. The badge is client-only because the cart lives in localStorage and the server render
  * cannot know it. It wears the classic header's shared control frame (height, radius, border).
  */

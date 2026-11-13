@@ -125,12 +125,6 @@ export const useCheckoutStore = defineStore('checkout', () => {
     }
   }, { flush: 'sync' })
 
-  /** Short submit-button label while the order is being placed; the sentence lives in {@link submittingHint}. */
-  const submittingLabel = computed(() =>
-    isHostedGateway.value
-      ? translate('checkout.redirecting')
-      : translate('checkout.processing'))
-
   /**
    * Longer explanation shown under the submit button while a hosted gateway hands off to the bank.
    * Empty when nothing is in flight or the method does not leave the site, so the line only exists
@@ -444,7 +438,6 @@ export const useCheckoutStore = defineStore('checkout', () => {
     pendingOrder,
     staleItems,
     totalLabel,
-    submittingLabel,
     submittingHint,
     itemPrice,
     changeGuestCurrency,

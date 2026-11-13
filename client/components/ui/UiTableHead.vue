@@ -6,6 +6,6 @@
 
 <script setup lang="ts">
 /**
- * TableHead (`UiTableHead`) - the header band of a UiTable; holds a row of TableTh cells.
+ * TableHead (`UiTableHead`): the header band of a UiTable; holds a row of TableTh cells.
  */
 </script>

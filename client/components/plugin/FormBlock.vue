@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 /**
- * PluginFormBlock - fields sent as one JSON object to one of the plugin's routes, named by `{ method, path }`:
+ * PluginFormBlock. Fields sent as one JSON object to one of the plugin's routes, named by `{ method, path }`:
  * text, number, address, secret, several lines, a choice or a switch. A refusal's sentence is shown by the form and
  * its field sentences under their fields (both from the store, so from the API's `detail` and `errors`); a success
  * shows the plugin's `message`, if any, reads the named blocks again, empties every field when the submit asks for

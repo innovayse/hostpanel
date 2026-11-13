@@ -37,7 +37,6 @@ defineProps<{
       <UiTable
         :density="UiTableDensity.Compact"
         :empty="reminders.length === 0"
-        :colspan="3"
         data-testid="clients-domain-reminders-table"
       >
         <UiTableHead>

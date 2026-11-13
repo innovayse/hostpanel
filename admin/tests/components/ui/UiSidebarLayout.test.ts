@@ -25,4 +25,10 @@ describe('UiSidebarLayout', () => {
 
     expect(wrapper.element.firstElementChild?.getAttribute('data-testid')).toBe('side')
   })
+
+  it('cancels the shell gutter exactly, so the sidebar starts on the top bar line', () => {
+    const wrapper = mount(UiSidebarLayout, { slots: { sidebar: '<nav />', default: '<p />' } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['lg:-mx-8', 'lg:-my-7', 'sm:-my-6', '-my-4']))
+  })
 })

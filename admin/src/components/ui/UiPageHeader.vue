@@ -2,33 +2,51 @@
 /**
  * Header of a screen: title, optional subtitle, and an actions area on the right.
  *
- * The `actions` slot takes the screen's primary buttons; the default slot renders under the title
- * (breadcrumbs, filters summary).
+ * The `actions` slot takes the screen's primary buttons and wraps onto further lines on a narrow screen instead of
+ * overflowing it; the default slot renders under the title (breadcrumbs, filters summary). `loading` draws a
+ * title bar (and a subtitle bar when a subtitle is passed) of the heading sizes instead of the text, for a title
+ * that comes from data still loading; the actions stay where they will be.
+ *
+ * The header sits 22px (the concept's section gap) above the content on every screen: its bottom margin is 22px less the
+ * gap of the stack it is in (`--stack-gap`, published by `gapClasses`), so a screen's own stack gap never adds to it.
  */
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiText from '@/components/ui/UiText.vue'
 
 /** Props for UiPageHeader. */
-defineProps<{
-  /** Screen title (already translated). */
-  title: string
+withDefaults(defineProps<{
+  /** Screen title (already translated); may be left out while `loading`, when its bar stands in for it. */
+  title?: string
   /** Line under the title. */
   subtitle?: string
-}>()
+  /** Shows placeholder bars in place of the title and the subtitle. */
+  loading?: boolean
+}>(), {
+  title: undefined,
+  subtitle: undefined,
+  loading: false,
+})
 </script>
 
 <template>
-  <header class="flex flex-wrap items-start justify-between gap-4 mb-6">
+  <header class="flex flex-wrap items-end justify-between gap-4 mb-[calc(1.375rem-var(--stack-gap,0rem))]" :aria-busy="loading ? 'true' : undefined">
     <div class="min-w-0">
-      <UiHeading :level="1" variant="page" class="mb-1.5">
-        {{ title }}
-      </UiHeading>
-      <UiText v-if="subtitle" tone="secondary" size="md">
-        {{ subtitle }}
-      </UiText>
+      <div v-if="loading" aria-hidden="true" data-testid="ui-page-header-skeleton">
+        <UiSkeletonBar class="h-9 w-64 max-w-full rounded-md" />
+        <UiSkeletonBar v-if="subtitle" class="mt-1.5 h-3.5 w-72 max-w-full rounded-md" />
+      </div>
+      <template v-else>
+        <UiHeading :level="1" variant="page">
+          {{ title }}
+        </UiHeading>
+        <UiText v-if="subtitle" tone="muted" size="md" class="mt-1.5">
+          {{ subtitle }}
+        </UiText>
+      </template>
       <slot />
     </div>
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex min-w-0 max-w-full flex-wrap items-center gap-2">
       <slot name="actions" />
     </div>
   </header>

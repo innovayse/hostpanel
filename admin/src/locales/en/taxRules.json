@@ -3,7 +3,6 @@
   "description": "Set the tax rate new invoices are taxed at, per country or per region of a country",
   "addRule": "Add Tax Rule",
   "empty": "No tax rules yet. Add a rule to tax new invoices automatically.",
-  "loading": "Loading tax rules...",
   "table": {
     "name": "Name",
     "country": "Country",
@@ -18,8 +17,7 @@
   "deleteModal": {
     "title": "Delete Tax Rule",
     "message": "Delete the tax rule {name}? Invoices already issued keep the rate they were taxed at.",
-    "confirmLabel": "Delete",
-    "loadingLabel": "Deleting..."
+    "confirmLabel": "Delete"
   },
   "toasts": {
     "deleted": "The tax rule was deleted."
@@ -50,7 +48,6 @@
     },
     "cancel": "Cancel",
     "add": "Add",
-    "save": "Save",
-    "saving": "Saving..."
+    "save": "Save"
   }
 }

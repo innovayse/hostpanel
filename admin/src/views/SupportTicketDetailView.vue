@@ -1,37 +1,39 @@
 <script setup lang="ts">
 /**
- * Support ticket detail: the ticket's admin controls (department, priority, close/reopen,
- * delete), the staff reply form and the conversation thread. A refused load offers a retry; each
- * action shows its outcome (success, or the API's sentence) next to its own controls; deleting is
- * confirmed in a danger prompt and returns to the list.
+ * Support ticket detail: the conversation as chat bubbles (the client on the left, staff on the right)
+ * with the reply composer pinned to the bottom of the page, and a side card with the ticket's details
+ * and its department and priority controls. Below the `lg` breakpoint the side card moves into a bottom
+ * sheet opened from the header. Close, reopen and delete sit in the header. A refused load offers a
+ * retry; each action shows its outcome (success, or the API's sentence) next to its own controls;
+ * deleting is confirmed in a danger prompt and returns to the list.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
+import SupportTicketMessage from '@/components/support/SupportTicketMessage.vue'
+import SupportTicketMeta from '@/components/support/SupportTicketMeta.vue'
+import SupportTicketPriorityBadge from '@/components/support/SupportTicketPriorityBadge.vue'
 import SupportTicketStatusBadge from '@/components/support/SupportTicketStatusBadge.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiChatBubble, { UiChatBubbleSide } from '@/components/ui/UiChatBubble.vue'
+import UiChatInput from '@/components/ui/UiChatInput.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import type { ResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import UiText from '@/components/ui/UiText.vue'
-import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
-import { formatDateTimeCompact } from '@/lib/format'
+import { UiSplitRatio } from '@/utils/ui/layout'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import type { UpdateTicketPayload } from '@/types/ticket'
@@ -99,10 +101,13 @@ const report = (banner: ResultBanner, ok: boolean, successKey: string): void => 
   }
 }
 
+/** Whether the details sheet is open. */
+const detailsOpen = ref(false)
+
 /** Department options mapped for UiSelect. */
 const departmentOptions = computed(() => store.departments.map((department) => ({ value: department.id, label: department.name })))
 
-/** Whether the reply form can be sent. */
+/** Whether the reply composer can be sent. */
 const canReply = computed<boolean>(() => replyMessage.value.trim() !== '')
 
 /** Last reply timestamp from the ticket's replies, null when there is none. */
@@ -221,18 +226,16 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiSkeleton v-if="store.loading && !store.currentTicket" :lines="4" data-testid="ticket-loading" />
-
     <UiErrorState
-      v-else-if="store.error && !store.currentTicket"
+      v-if="store.error && !store.currentTicket"
       :message="store.error"
       :loading="store.loading"
       testid="ticket-error"
       @retry="reload"
     />
 
-    <template v-else-if="store.currentTicket">
-      <UiStack direction="row" justify="between" align="center" wrap>
+    <template v-else>
+      <UiStack direction="row" justify="between" align="center" wrap :aria-busy="store.currentTicket ? undefined : 'true'">
         <UiStack direction="row" align="center" wrap>
           <UiLink
             :to="AppRoute.SupportTickets"
@@ -243,15 +246,34 @@ onMounted(() => {
             <UiIcon :markup="Icon.Back" :size="UiSize.Sm" />
             {{ t('shared.back') }}
           </UiLink>
-          <UiHeading :level="1" variant="card" data-testid="ticket-title">
-            {{ t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) }}
-          </UiHeading>
-          <SupportTicketStatusBadge :status="store.currentTicket.status" />
+          <template v-if="store.currentTicket">
+            <UiHeading :level="1" variant="card" data-testid="ticket-title">
+              {{ t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) }}
+            </UiHeading>
+            <SupportTicketStatusBadge :status="store.currentTicket.status" />
+            <SupportTicketPriorityBadge :priority="store.currentTicket.priority" />
+          </template>
+          <UiStack v-else direction="row" align="center" wrap aria-hidden="true" data-testid="ticket-loading">
+            <UiSkeletonBar class="h-6 w-64 max-w-full rounded-md" />
+            <UiSkeletonBar class="h-5 w-20 rounded-full" />
+            <UiSkeletonBar class="h-5 w-16 rounded-full" />
+          </UiStack>
         </UiStack>
-        <UiStack direction="row" gap="sm">
+        <UiStack direction="row" gap="sm" wrap>
           <UiButton
-            v-if="store.currentTicket.status !== TicketStatus.Closed"
             :variant="UiButtonVariant.Secondary"
+            class="lg:hidden"
+            :disabled="!store.currentTicket"
+            data-testid="ticket-details-open"
+            @click="detailsOpen = true"
+          >
+            <UiIcon :markup="Icon.Clipboard" :size="UiSize.Sm" />
+            {{ t('support.supportTicketDetail.details') }}
+          </UiButton>
+          <UiButton
+            v-if="store.currentTicket?.status !== TicketStatus.Closed"
+            :variant="UiButtonVariant.Secondary"
+            :disabled="!store.currentTicket"
             data-testid="ticket-close"
             @click="handleClose"
           >
@@ -265,7 +287,7 @@ onMounted(() => {
           >
             {{ t('support.supportTicketDetail.reopen') }}
           </UiButton>
-          <UiButton :variant="UiButtonVariant.Danger" data-testid="ticket-delete" @click="showDeleteDialog = true">
+          <UiButton :variant="UiButtonVariant.Danger" :disabled="!store.currentTicket" data-testid="ticket-delete" @click="showDeleteDialog = true">
             {{ t('shared.delete') }}
           </UiButton>
         </UiStack>
@@ -273,123 +295,92 @@ onMounted(() => {
 
       <UiStatusMessage :message="headerFeedback.message.value" :tone="toneOf(headerFeedback)" data-testid="ticket-action-feedback" />
 
-      <UiCard padding="md">
+      <UiSplit v-model:open="detailsOpen" :ratio="UiSplitRatio.ThreeQuarters" :aside-title="t('support.supportTicketDetail.ticketSettings')">
         <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('support.supportTicketDetail.ticketSettings') }}</UiHeading>
-          <UiGrid :columns="4">
-            <UiField :label="t('shared.department')">
-              <UiErrorState
-                v-if="store.departmentsError !== null"
-                :message="store.departmentsError"
-                testid="ticket-departments-error"
-                @retry="store.fetchDepartments"
-              />
-              <UiSelect
-                v-else
-                v-model="editDepartmentId"
-                :options="departmentOptions"
-                :placeholder="t('shared.selectDepartment')"
-                data-testid="ticket-department"
-              />
-            </UiField>
-            <UiField :label="t('shared.priority')">
-              <UiSelect
-                v-model="editPriority"
-                :options="TICKET_PRIORITY_OPTIONS"
-                :placeholder="t('shared.selectPriority')"
-                data-testid="ticket-priority"
-              />
-            </UiField>
-            <UiField :label="t('shared.status')">
-              <SupportTicketStatusBadge :status="store.currentTicket.status" />
-            </UiField>
-            <UiField :label="t('shared.lastReply')">
-              <UiText tone="secondary" size="md" data-testid="ticket-last-reply">
-                {{ lastReplyAt ? formatDateTimeCompact(lastReplyAt) : t('support.supportTicketDetail.noRepliesYet') }}
-              </UiText>
-            </UiField>
-          </UiGrid>
-          <UiStack direction="row">
-            <UiButton
-              :variant="UiButtonVariant.Primary"
-              :loading="store.loading"
-              data-testid="ticket-save"
-              @click="handleSaveChanges"
-            >
-              {{ store.loading ? t('shared.saving') : t('shared.saveChanges') }}
-            </UiButton>
-          </UiStack>
-          <UiStatusMessage :message="saveFeedback.message.value" :tone="toneOf(saveFeedback)" data-testid="ticket-save-feedback" />
-        </UiStack>
-      </UiCard>
+          <UiCard padding="md" data-testid="ticket-thread">
+            <UiStack>
+              <UiHeading :level="2" variant="card">{{ t('support.supportTicketDetail.conversation') }}</UiHeading>
 
-      <UiCard padding="md">
-        <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('shared.addReply') }}</UiHeading>
-          <UiField :label="t('shared.message')">
-            <UiTextarea
-              v-model="replyMessage"
-              rows="5"
-              :placeholder="t('support.supportTicketDetail.typeYourReply')"
-              data-testid="ticket-reply-message"
-            />
-          </UiField>
-          <UiStack direction="row">
-            <UiButton
-              :variant="UiButtonVariant.Primary"
-              :disabled="store.loading || !canReply"
-              data-testid="ticket-reply-submit"
-              @click="handleReply"
-            >
-              {{ store.loading ? t('shared.sending') : t('support.supportTicketDetail.reply') }}
-            </UiButton>
-          </UiStack>
-          <UiStatusMessage :message="replyFeedback.message.value" :tone="toneOf(replyFeedback)" data-testid="ticket-reply-feedback" />
-        </UiStack>
-      </UiCard>
+              <template v-if="store.currentTicket">
+                <SupportTicketMessage
+                  :author="t('shared.client')"
+                  :created-at="store.currentTicket.createdAt"
+                  :staff="false"
+                  data-testid="ticket-initial-message"
+                >
+                  {{ store.currentTicket.message }}
+                </SupportTicketMessage>
 
-      <UiCard padding="md">
-        <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('support.supportTicketDetail.conversation') }}</UiHeading>
+                <SupportTicketMessage
+                  v-for="reply in store.currentTicket.replies"
+                  :key="reply.id"
+                  :author="orUnknown(reply.authorName)"
+                  :created-at="reply.createdAt"
+                  :staff="reply.isStaffReply"
+                  data-testid="ticket-reply"
+                >
+                  {{ reply.message }}
+                </SupportTicketMessage>
 
-          <UiCard padding="sm" data-testid="ticket-initial-message">
-            <UiStack gap="sm">
-              <UiStack direction="row" justify="between">
-                <UiText tone="primary" size="md">{{ t('shared.client') }}</UiText>
-                <UiText tone="muted" size="sm">{{ formatDateTimeCompact(store.currentTicket.createdAt) }}</UiText>
-              </UiStack>
-              <UiText tone="secondary" size="md" class="whitespace-pre-wrap">{{ store.currentTicket.message }}</UiText>
+                <UiEmptyState
+                  v-if="store.currentTicket.replies.length === 0"
+                  :title="t('support.supportTicketDetail.noRepliesYet')"
+                  data-testid="ticket-no-replies"
+                />
+              </template>
+              <template v-else>
+                <UiChatBubble :side="UiChatBubbleSide.Other" loading data-testid="ticket-message-loading" />
+                <UiChatBubble :side="UiChatBubbleSide.Own" loading data-testid="ticket-message-loading" />
+                <UiChatBubble :side="UiChatBubbleSide.Other" loading data-testid="ticket-message-loading" />
+              </template>
             </UiStack>
           </UiCard>
 
-          <UiCard
-            v-for="reply in store.currentTicket.replies"
-            :key="reply.id"
-            padding="sm"
-            :elevated="reply.isStaffReply"
-            data-testid="ticket-reply"
-          >
+          <!-- Pinned to the bottom of the scrolling page, so the reply field is always in reach. -->
+          <UiCard padding="sm" elevated class="sticky bottom-0 z-10" data-testid="ticket-composer">
             <UiStack gap="sm">
-              <UiStack direction="row" justify="between">
-                <UiStack direction="row" gap="sm" align="center">
-                  <UiText tone="primary" size="md">{{ orUnknown(reply.authorName) }}</UiText>
-                  <UiBadge v-if="reply.isStaffReply" :tone="UiTone.Primary" small>
-                    {{ t('support.supportTicketDetail.staff') }}
-                  </UiBadge>
-                </UiStack>
-                <UiText tone="muted" size="sm">{{ formatDateTimeCompact(reply.createdAt) }}</UiText>
-              </UiStack>
-              <UiText tone="secondary" size="md" class="whitespace-pre-wrap">{{ reply.message }}</UiText>
+              <UiChatInput
+                v-model="replyMessage"
+                :label="t('shared.addReply')"
+                :placeholder="t('support.supportTicketDetail.typeYourReply')"
+                :disabled="!store.currentTicket"
+                testid="ticket-reply-message"
+                @submit="handleReply"
+              >
+                <template #action>
+                  <UiIconButton
+                    :label="t('support.supportTicketDetail.reply')"
+                    :variant="UiButtonVariant.Primary"
+                    :size="UiSize.Sm"
+                    :disabled="store.loading || !canReply || !store.currentTicket"
+                    data-testid="ticket-reply-submit"
+                    @click="handleReply"
+                  >
+                    <UiIcon :markup="Icon.ArrowUp" :size="UiSize.Sm" />
+                  </UiIconButton>
+                </template>
+              </UiChatInput>
+              <UiStatusMessage :message="replyFeedback.message.value" :tone="toneOf(replyFeedback)" data-testid="ticket-reply-feedback" />
             </UiStack>
           </UiCard>
+        </UiStack>
 
-          <UiEmptyState
-            v-if="store.currentTicket.replies.length === 0"
-            :title="t('support.supportTicketDetail.noRepliesYet')"
-            data-testid="ticket-no-replies"
+        <template #aside>
+          <SupportTicketMeta
+            v-model:department-id="editDepartmentId"
+            v-model:priority="editPriority"
+            :ticket="store.currentTicket"
+            :department-options="departmentOptions"
+            :departments-error="store.departmentsError"
+            :last-reply-at="lastReplyAt"
+            :saving="store.loading"
+            :feedback="saveFeedback.message.value"
+            :feedback-tone="toneOf(saveFeedback)"
+            @save="handleSaveChanges"
+            @retry-departments="store.fetchDepartments"
           />
-        </UiStack>
-      </UiCard>
+        </template>
+      </UiSplit>
     </template>
 
     <UiDialog
@@ -398,7 +389,6 @@ onMounted(() => {
       :title="t('support.supportTicketDetail.deleteTicket')"
       :message="t('support.supportTicketDetail.deleteTicketMessage', { id: ticketId })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="store.loading"
       :tone="UiTone.Danger"
       @confirm="handleDelete"

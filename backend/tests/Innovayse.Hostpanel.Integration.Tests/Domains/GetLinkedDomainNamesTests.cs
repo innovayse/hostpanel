@@ -28,7 +28,7 @@ public sealed class GetLinkedDomainNamesTests(IntegrationTestFactory factory) : 
             var clientId = await DomainsTestSeeds.SeedClientAsync(context);
             serviceId = await DomainsTestSeeds.SeedServiceAsync(context, clientId);
             var domain = RegisteredDomain.Register(
-                clientId, name, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+                clientId, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             domain.LinkService(serviceId);
             context.Domains.Add(domain);
             await context.SaveChangesAsync(CancellationToken.None);

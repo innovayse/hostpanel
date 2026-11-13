@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiGradientText - text painted by a background gradient.
+ * UiGradientText: text painted by a background gradient.
  *
  * The component only turns the text transparent and clips the background to it; the caller
  * supplies the gradient itself as classes (`bg-gradient-to-r from-cyan-400 to-primary-400`).

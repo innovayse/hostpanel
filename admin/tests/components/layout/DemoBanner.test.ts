@@ -51,6 +51,12 @@ describe('DemoBanner', () => {
     expect(text).toContain('reset on a schedule')
   })
 
+  it('is a fixed one-line strip that never shrinks, so the shell below it keeps its header lines', () => {
+    const classes = mountBanner(true, null).get('[data-testid="demo-banner"]').classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['h-9', 'shrink-0']))
+  })
+
   it('omits the countdown when no reset is scheduled', () => {
     const wrapper = mountBanner(true, null)
 

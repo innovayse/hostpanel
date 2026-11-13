@@ -19,7 +19,7 @@
 #   ssh prod 'sh -s' < scripts/check-client-owner-ids.sh
 #
 # The SQL travels on stdin rather than in a -c argument. It is quoted three times
-# over before it arrives — ssh, sh -lc, psql — and every layer wanted its own
+# over before it arrives, ssh, sh -lc, psql, and every layer wanted its own
 # escaping of the string literals; sending it as a file leaves it alone.
 set -eu
 

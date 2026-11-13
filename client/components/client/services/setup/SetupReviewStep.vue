@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 /**
- * SetupReviewStep - the last step of the setup wizard: a recap of the plan, domain and username,
+ * SetupReviewStep. The last step of the setup wizard: a recap of the plan, domain and username,
  * the API's refusal when provisioning failed, and the button that starts provisioning.
  */
 import { Rocket, Zap } from 'lucide-vue-next'

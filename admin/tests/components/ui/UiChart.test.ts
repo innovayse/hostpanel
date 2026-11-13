@@ -12,7 +12,7 @@ interface CapturedConfig {
   type: string
   data: {
     labels: string[]
-    datasets: { label: string; data: number[]; borderColor?: string; backgroundColor?: unknown }[]
+    datasets: { type?: string; label: string; data: number[]; borderColor?: string; backgroundColor?: unknown; borderDash?: number[] }[]
   }
   options: {
     indexAxis: string
@@ -99,6 +99,86 @@ describe('UiChart', () => {
     const datasets = created[0]?.config.data.datasets
     expect(datasets?.[0]?.borderColor).toBeTruthy()
     expect(datasets?.[1]?.borderColor).toBe('#123456')
+  })
+
+  it('fills bars with a gradient and lines with the plain colour', async () => {
+    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ type: 'line', labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    await flushPromises()
+
+    expect(typeof created[0]?.config.data.datasets[0]?.backgroundColor).toBe('function')
+    expect(typeof created[1]?.config.data.datasets[0]?.backgroundColor).toBe('string')
+  })
+
+  it('draws an optional dashed target line across a vertical chart', async () => {
+    mountChart({ type: 'bar', labels: ['a', 'b'], series: [{ label: 'A', data: [1, 2] }], target: 5 })
+    await flushPromises()
+
+    const datasets = created[0]?.config.data.datasets
+    expect(datasets).toHaveLength(2)
+    expect(datasets?.[1]).toMatchObject({ type: 'line', label: 'Target', data: [5, 5], borderDash: [4, 4], borderWidth: 1 })
+  })
+
+  it('rounds bars as the concept does and fades the ones below the target', async () => {
+    mountChart({ type: 'bar', labels: ['a', 'b'], series: [{ label: 'A', data: [1, 9] }], target: 5 })
+    await flushPromises()
+
+    const dataset = created[0]?.config.data.datasets[0] as { borderRadius?: unknown, maxBarThickness?: number, backgroundColor?: (context: unknown) => unknown }
+    expect(dataset.borderRadius).toEqual({ topLeft: 8, topRight: 8, bottomLeft: 3, bottomRight: 3 })
+    expect(dataset.maxBarThickness).toBe(28)
+    expect(dataset.backgroundColor?.({ raw: 1, chart: {} })).toBe('rgb(124 160 255 / 0.28)')
+  })
+
+  it('drops the value axis and adds the glow in the minimal look', async () => {
+    mountChart({ type: 'bar', labels: ['a', 'b'], series: [{ label: 'A', data: [1, 9] }], target: 5, variant: 'minimal' })
+    await flushPromises()
+
+    const options = created[0]?.config.options as unknown as { scales: { y: { display: boolean } }, plugins: { barGlow: unknown } }
+    expect(options.scales.y.display).toBe(false)
+    expect(options.plugins.barGlow).toMatchObject({ target: 5 })
+  })
+
+  it('keeps the value axis and draws no glow in the default look', async () => {
+    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5 })
+    await flushPromises()
+
+    const options = created[0]?.config.options as unknown as { scales: { y: { display: boolean } }, plugins: { barGlow: unknown } }
+    expect(options.scales.y.display).toBe(true)
+    expect(options.plugins.barGlow).toBe(false)
+  })
+
+  it('sizes the plot by the height option', async () => {
+    const wrapper = mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], height: 'short' })
+    await flushPromises()
+
+    expect(wrapper.classes()).toContain('h-52')
+  })
+
+  it('draws placeholder bars and builds no chart while loading', async () => {
+    const wrapper = mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], loading: true })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="chart-skeleton"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(20)
+    expect(wrapper.find('canvas').exists()).toBe(false)
+    expect(created).toHaveLength(0)
+    expect(wrapper.attributes('aria-busy')).toBe('true')
+  })
+
+  it('names the target line as the screen asks', async () => {
+    mountChart({ type: 'line', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 3, targetLabel: 'Goal' })
+    await flushPromises()
+
+    expect(created[0]?.config.data.datasets[1]?.label).toBe('Goal')
+  })
+
+  it('draws no target line without a target, on a horizontal chart or on a pie', async () => {
+    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5, horizontal: true })
+    mountChart({ type: 'pie', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5 })
+    await flushPromises()
+
+    expect(created.map(chart => chart.config.data.datasets.length)).toEqual([1, 1, 1])
   })
 
   it('colours each slice of a pie and drops the axes', async () => {

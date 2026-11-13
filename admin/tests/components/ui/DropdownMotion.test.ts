@@ -34,8 +34,8 @@ const cases: Case[] = [
   { name: 'UiSelect', mountIt: () => mount(UiSelect, { props: { modelValue: 'a', options: [{ value: 'a', label: 'A' }] }, global }), opener: 'button' },
   { name: 'UiDatePicker', mountIt: () => mount(UiDatePicker, { props: { modelValue: null }, global }), opener: 'input' },
   { name: 'UiDateRangePicker', mountIt: () => mount(UiDateRangePicker, { props: { modelValue: null }, global }), opener: 'input' },
-  { name: 'UiClientSelect', mountIt: () => mount(UiClientSelect, { props: { modelValue: null, clients: [{ id: 1, name: 'Acme' }] }, global }), opener: 'input' },
-  { name: 'UiPhoneInput', mountIt: () => mount(UiPhoneInput, { global }), opener: '[data-testid="phone-country-trigger"]' },
+  { name: 'UiClientSelect', mountIt: () => mount(UiClientSelect, { props: { modelValue: null, clients: [{ id: 1, name: 'Acme' }] }, global }), opener: 'button' },
+  { name: 'UiPhoneInput', mountIt: () => mount(UiPhoneInput, { global }), opener: '[data-testid="ui-select-trigger"]' },
   { name: 'UiFieldSelector', mountIt: () => mount(UiFieldSelector, { props: { fields: [{ key: 'a', label: 'A' }], selected: new Set<string>() }, global }), opener: '[data-testid="field-selector-trigger"]' },
   { name: 'UiRowActions', mountIt: () => mount(UiRowActions, { props: { actions: [{ label: 'Edit', onSelect: () => undefined }, { label: 'View', onSelect: () => undefined }] }, global }), opener: '[data-testid="row-actions-trigger"]' },
 ]
@@ -60,12 +60,11 @@ describe('floating panels use the shared dropdown transition', () => {
     const before = new Set(elementsOf(wrapper))
     await wrapper.get(opener).trigger('click')
 
-    // Open: the one element that appeared at the top of the new markup sits directly in the transition (the
-    // test utils render it as a stub element), so the panel is what the transition animates.
-    const appeared = elementsOf(wrapper).filter((element) => !before.has(element))
-    const panels = appeared.filter((element) => element.parentElement === null || before.has(element.parentElement))
+    // Open: the one element that appeared directly inside the transition (the test utils render it as a stub
+    // element, possibly under an inlined teleport) is the panel, so the panel is what the transition animates.
+    const transitionElement = wrapper.findComponent(UiTransition).element
+    const panels = elementsOf(wrapper).filter((element) => !before.has(element) && element.parentElement === transitionElement)
     expect(panels).toHaveLength(1)
-    expect(panels[0]?.parentElement).toBe(wrapper.findComponent(UiTransition).element)
     wrapper.unmount()
   })
 })

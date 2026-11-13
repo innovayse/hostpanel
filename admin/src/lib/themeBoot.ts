@@ -38,14 +38,18 @@ export interface ThemeBootConfig {
 /** localStorage key holding the operator's theme choice. */
 export const THEME_STORAGE_KEY = 'admin.theme'
 
-/** The panel's theme configuration, shared by the pre-paint script and the store. */
+/**
+ * The panel's theme configuration, shared by the pre-paint script and the store. The two `colors` repeat
+ * `--surface-base` of each theme in `assets/main.css` on purpose: the boot script runs in `<head>` before
+ * the stylesheet has loaded, so it cannot read the token; `tests/assets/mainCss.test.ts` fails when they drift.
+ */
 export const THEME_BOOT_CONFIG: ThemeBootConfig = {
   storageKey: THEME_STORAGE_KEY,
   light: AdminTheme.Light,
   dark: AdminTheme.Dark,
   lightQuery: '(prefers-color-scheme: light)',
   lightClass: 'light',
-  colors: { light: '#f4f6fb', dark: '#0a0a0f' },
+  colors: { light: '#f5f7fc', dark: '#070b18' },
 }
 
 /**

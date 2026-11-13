@@ -7,7 +7,9 @@
  * `data-testid` and classes land on the root element.
  */
 import { computed } from 'vue'
-import { fieldInvalidClasses } from '@/utils/ui/input'
+import { fieldBaseClasses, fieldInvalidClasses } from '@/utils/ui/input'
+import { fieldSizeClasses } from '@/utils/ui/size'
+import { StepDirection, stepValue } from '@/utils/ui/stepper'
 
 /** Props for UiNumberInput. */
 const props = withDefaults(defineProps<{
@@ -34,6 +36,8 @@ const props = withDefaults(defineProps<{
   id?: string
   /** Marks the value as refused by the server (red border, `aria-invalid`). */
   invalid?: boolean
+  /** Id of the element that describes the value (a hint or the error line, from `UiField`). */
+  describedby?: string
   /**
    * Lets the admin clear the field: when the typed text becomes empty the model is set to `null`.
    * Off by default, so a required field keeps its last number while the text is being retyped.
@@ -47,6 +51,7 @@ const props = withDefaults(defineProps<{
   disabled: false,
   id: undefined,
   invalid: false,
+  describedby: undefined,
   nullable: false,
 })
 
@@ -63,14 +68,19 @@ const emit = defineEmits<{
  */
 const numericValue = computed<number>(() => Number(props.modelValue))
 
-/** Extra classes of a field flagged invalid. */
-const invalidClasses = fieldInvalidClasses
+/** Classes of the typed text: the kit's field look, room on the right for the spinner column. */
+const inputClasses = computed<string[]>(() => [
+  'w-full pr-8 [appearance:textfield]',
+  fieldBaseClasses,
+  fieldSizeClasses.md,
+  props.invalid ? fieldInvalidClasses : '',
+])
 
-/** Whether decrement is allowed. */
-const canDecrement = computed<boolean>(() => props.min === undefined || numericValue.value - props.step >= props.min)
+/** The value one step down, or `null` at the lower edge. */
+const decremented = computed<number | null>(() => stepValue(numericValue.value, props.step, StepDirection.Down, props.min, props.max))
 
-/** Whether increment is allowed. */
-const canIncrement = computed<boolean>(() => props.max === undefined || numericValue.value + props.step <= props.max)
+/** The value one step up, or `null` at the upper edge. */
+const incremented = computed<number | null>(() => stepValue(numericValue.value, props.step, StepDirection.Up, props.min, props.max))
 
 /**
  * Clamps a value to the min/max range.
@@ -86,17 +96,6 @@ const clamp = (v: number): number => {
     return props.max
   }
   return v
-}
-
-/**
- * Rounds to the step's precision (at least two decimals) to avoid floating point drift.
- *
- * @param v - Value to round.
- * @returns The rounded value.
- */
-const round = (v: number): number => {
-  const decimals = (props.step.toString().split('.')[1] || '').length
-  return parseFloat(v.toFixed(Math.max(decimals, 2)))
 }
 
 /**
@@ -140,23 +139,23 @@ const onBlur = (e: Event): void => {
 
 /** Decrements the value by one step. */
 const decrement = (): void => {
-  if (!canDecrement.value || props.disabled) {
+  if (decremented.value === null || props.disabled) {
     return
   }
-  emit('update:modelValue', clamp(round(numericValue.value - props.step)))
+  emit('update:modelValue', decremented.value)
 }
 
 /** Increments the value by one step. */
 const increment = (): void => {
-  if (!canIncrement.value || props.disabled) {
+  if (incremented.value === null || props.disabled) {
     return
   }
-  emit('update:modelValue', clamp(round(numericValue.value + props.step)))
+  emit('update:modelValue', incremented.value)
 }
 </script>
 
 <template>
-  <div class="relative flex items-stretch" :class="disabled ? 'opacity-50 cursor-not-allowed' : ''">
+  <div class="relative flex items-stretch">
     <input
       type="text"
       inputmode="decimal"
@@ -165,8 +164,8 @@ const increment = (): void => {
       :disabled="disabled"
       :id="id"
       :aria-invalid="invalid || undefined"
-      class="w-full bg-surface-field border border-border rounded-[10px] pl-3 pr-8 py-2 text-[0.82rem] text-text-primary placeholder:text-text-muted outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/10 transition-colors disabled:cursor-not-allowed [appearance:textfield]"
-      :class="invalid ? invalidClasses : ''"
+      :aria-describedby="describedby"
+      :class="inputClasses"
       @input="onInput"
       @blur="onBlur"
     >
@@ -177,8 +176,8 @@ const increment = (): void => {
         tabindex="-1"
         aria-hidden="true"
         data-testid="number-increment"
-        :disabled="disabled || !canIncrement"
-        class="flex-1 flex items-center justify-center bg-surface-elevated text-text-secondary hover:bg-primary-600 hover:text-white transition-colors rounded-tr-[10px] disabled:opacity-30 disabled:cursor-not-allowed"
+        :disabled="disabled || incremented === null"
+        class="flex-1 flex items-center justify-center bg-surface-elevated text-text-secondary not-disabled:hover:bg-primary-400 light:not-disabled:hover:bg-primary-600 not-disabled:hover:text-surface-base transition-colors rounded-tr-control disabled:text-text-muted disabled:cursor-not-allowed"
         @mousedown.prevent="increment"
       >
         <svg class="w-2.5 h-2.5" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -191,8 +190,8 @@ const increment = (): void => {
         tabindex="-1"
         aria-hidden="true"
         data-testid="number-decrement"
-        :disabled="disabled || !canDecrement"
-        class="flex-1 flex items-center justify-center bg-surface-elevated text-text-secondary hover:bg-primary-600 hover:text-white transition-colors rounded-br-[10px] disabled:opacity-30 disabled:cursor-not-allowed"
+        :disabled="disabled || decremented === null"
+        class="flex-1 flex items-center justify-center bg-surface-elevated text-text-secondary not-disabled:hover:bg-primary-400 light:not-disabled:hover:bg-primary-600 not-disabled:hover:text-surface-base transition-colors rounded-br-control disabled:text-text-muted disabled:cursor-not-allowed"
         @mousedown.prevent="decrement"
       >
         <svg class="w-2.5 h-2.5" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

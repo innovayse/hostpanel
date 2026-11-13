@@ -39,7 +39,13 @@ describe('UiToggle', () => {
   })
 
   it('colours the track from the state', () => {
-    expect(mount(UiToggle, { props: { modelValue: true } }).classes()).toContain('bg-primary-500')
-    expect(mount(UiToggle, { props: { modelValue: false } }).classes()).toContain('bg-border-strong')
+    expect(mount(UiToggle, { props: { modelValue: true } }).classes()).toContain('not-disabled:gradient-brand')
+    expect(mount(UiToggle, { props: { modelValue: false } }).classes()).toContain('bg-control-track')
+  })
+
+  it('shows a focus ring and a muted disabled track', () => {
+    const wrapper = mount(UiToggle, { props: { modelValue: true, disabled: true } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['focus-visible:ring-2', 'disabled:bg-surface-hover', 'disabled:cursor-not-allowed']))
   })
 })

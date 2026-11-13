@@ -7,14 +7,14 @@
       "switchLight": "Switch to light mode"
     },
     "pagination": {
-      "showing": "Showing {from}–{to} of {total} entries",
+      "showing": "Showing {from} to {to} of {total} entries",
       "show": "Show",
       "entries": "entries",
       "prev": "Previous",
       "next": "Next",
       "label": "Pagination"
     },
-    "search": "Search…",
+    "search": "Search",
     "close": "Close",
     "loading": "Loading",
     "showPassword": "Show password",

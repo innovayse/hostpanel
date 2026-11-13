@@ -17,15 +17,14 @@ import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
-import { UiJustify } from '@/utils/ui/layout'
 import { UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
@@ -81,7 +80,7 @@ const productOptions = computed(() => settingsStore.products.map(p => ({ value: 
 
 /** Server options for the select. */
 const serverOptions = computed(() =>
-  serversStore.servers.map(s => ({ value: s.id, label: `${s.name} — ${s.endpoint.hostname}` })),
+  serversStore.servers.map(s => ({ value: s.id, label: `${s.name} (${s.endpoint.hostname})` })),
 )
 
 /** True when every required field has a value. */
@@ -172,17 +171,18 @@ onMounted(() => {
           />
         </UiField>
       </UiGrid>
-      <UiStack direction="row" :justify="UiJustify.End">
+      <UiFormActions>
         <UiButton type="button" :variant="UiButtonVariant.Secondary" data-testid="add-existing-service-cancel" @click="emit('close')">{{ t('shared.cancel') }}</UiButton>
         <UiButton
           type="submit"
           :variant="UiButtonVariant.Primary"
-          :disabled="!complete || saving"
+          :loading="saving"
+          :disabled="!complete"
           data-testid="add-existing-service-save"
         >
-          {{ saving ? t('shared.saving') : t('clients.addExistingService.add') }}
+          {{ t('clients.addExistingService.add') }}
         </UiButton>
-      </UiStack>
+      </UiFormActions>
     </UiForm>
   </UiDialog>
 </template>

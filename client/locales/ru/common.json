@@ -7,14 +7,14 @@
       "switchLight": "Светлая тема"
     },
     "pagination": {
-      "showing": "Показано {from}–{to} из {total}",
+      "showing": "Показано {from}-{to} из {total}",
       "show": "Показать",
       "entries": "записей",
       "prev": "Назад",
       "next": "Вперёд",
       "label": "Постраничная навигация"
     },
-    "search": "Поиск…",
+    "search": "Поиск",
     "close": "Закрыть",
     "loading": "Загрузка",
     "showPassword": "Показать пароль",

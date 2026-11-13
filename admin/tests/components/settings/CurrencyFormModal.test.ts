@@ -76,7 +76,7 @@ describe('CurrencyFormModal', () => {
     const { wrapper } = await mountScreen(CurrencyFormModal, { currency: eur, saving: true })
 
     expect(wrapper.get('[data-testid="currency-form-save"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[data-testid="currency-form-save"]').text()).toBe('Saving...')
+    expect(wrapper.get('[data-testid="currency-form-save"]').text()).toBe('Save Changes')
     await wrapper.get('[data-testid="currency-form-cancel"]').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })

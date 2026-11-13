@@ -13,6 +13,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate } from '@/lib/format'
 import type { RegistryPluginVersionDto } from '@/types/plugin'
+import { UiTextTag } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -45,8 +46,8 @@ const heading = computed<string>(() =>
     <UiText tone="secondary" size="sm" class="font-semibold" data-testid="plugin-update-changes-heading">{{ heading }}</UiText>
     <UiStack v-for="entry in changes" :key="entry.version" gap="xs" :data-testid="`plugin-update-change-${entry.version}`">
       <UiText tone="primary" size="sm" class="font-semibold">
-        <span class="font-mono">{{ entry.version }}</span>
-        <span class="font-normal text-text-muted"> · {{ formatDate(entry.publishedAt) }}</span>
+        <UiText :as="UiTextTag.Span" class="font-mono">{{ entry.version }}</UiText>
+        <UiText :as="UiTextTag.Span" tone="muted" size="sm" class="font-normal"> · {{ formatDate(entry.publishedAt) }}</UiText>
       </UiText>
       <UiMarkdown :source="entry.changelog" :empty="t('pluginDetails.versions.noChangelog')" />
     </UiStack>

@@ -13,7 +13,6 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiColorField from '@/components/ui/UiColorField.vue'
@@ -40,6 +39,7 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import UiUploadZone from '@/components/ui/UiUploadZone.vue'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { Icon } from '@/lib/icons'
+import { nextRowKey } from '@/lib/rowKey'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
 import { enumValueOf } from '@/lib/enumValue'
 import { useSettingsStore } from '@/stores/settings'
@@ -65,6 +65,14 @@ const slidesStore = useSlidesStore()
 /** Settings store: owns the products a slide can be linked to. */
 const settingsStore = useSettingsStore()
 
+/** One feature input: its text and a stable key that survives removals above it. */
+interface FeatureField {
+  /** Stable key of the row for list rendering. */
+  key: number
+  /** The feature text as typed. */
+  text: string
+}
+
 /** One translation tab's field values. */
 interface TranslationForm {
   /** Slide headline. */
@@ -74,7 +82,7 @@ interface TranslationForm {
   /** Optional body text. */
   description: string
   /** Dynamic feature list. */
-  features: string[]
+  features: FeatureField[]
   /** Optional CTA button label. */
   ctaText: string
   /** Optional CTA button link. */
@@ -325,7 +333,7 @@ const loadSlide = async (): Promise<void> => {
         title: stored.title,
         tagline: stored.tagline ?? '',
         description: stored.description ?? '',
-        features: stored.features ? [...stored.features] : [],
+        features: (stored.features ?? []).map((text) => ({ key: nextRowKey(), text })),
         ctaText: stored.ctaText ?? '',
         ctaUrl: stored.ctaUrl ?? '',
       }
@@ -349,7 +357,7 @@ onMounted(async () => {
  * @param locale - The locale to add the feature to.
  */
 const addFeature = (locale: MessageLanguage): void => {
-  translations[locale].features.push('')
+  translations[locale].features.push({ key: nextRowKey(), text: '' })
 }
 
 /**
@@ -372,7 +380,7 @@ const collectTranslations = (): SlideTranslation[] => {
   for (const locale of Object.values(MessageLanguage)) {
     const form = translations[locale]
     if (form.title.trim()) {
-      const features = form.features.filter((f) => f.trim())
+      const features = form.features.map((f) => f.text).filter((text) => text.trim())
       collected.push({
         locale,
         title: form.title.trim(),
@@ -435,14 +443,12 @@ const handleCancel = (): void => {
   <UiStack gap="none" class="pb-24" data-testid="slide-form-view">
     <SettingsBreadcrumb :items="breadcrumb" />
 
-    <SettingsLoading v-if="loadingSlide" :message="t('settings.slideForm.loadingSlideData')" />
-
-    <UiErrorState v-else-if="loadError" :message="loadError" testid="slide-form-load-error" @retry="loadSlide" />
+    <UiErrorState v-if="loadError" :message="loadError" testid="slide-form-load-error" @retry="loadSlide" />
 
     <template v-else>
 
       <!-- Section 1: General settings -->
-      <SettingsSection :title="t('settings.slideForm.generalSettings')">
+      <SettingsSection :title="t('settings.slideForm.generalSettings')" :loading="loadingSlide">
         <!-- Icon -->
         <UiField :label="t('settings.slideForm.icon')" :error="slidesStore.fieldErrors.iconName">
           <UiStack gap="sm">
@@ -493,7 +499,7 @@ const handleCancel = (): void => {
               align="center"
               justify="center"
               gap="none"
-              class="group relative h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-border"
+              class="group relative h-20 w-32 shrink-0 overflow-hidden rounded-control border border-border"
             >
               <UiImage
                 :src="storefrontAssetUrl(imageUrl)"
@@ -624,7 +630,7 @@ const handleCancel = (): void => {
       </SettingsSection>
 
       <!-- Section 2: Translations -->
-      <SettingsSection :title="t('settings.slideForm.translations')">
+      <SettingsSection :title="t('settings.slideForm.translations')" :loading="loadingSlide">
         <UiTabs :items="localeTabs" :model-value="activeLocale" @update:model-value="selectLocale" />
 
         <UiField :label="t('shared.title')">
@@ -668,14 +674,14 @@ const handleCancel = (): void => {
         <UiField :label="t('settings.slideForm.features')">
           <UiStack gap="sm">
             <UiStack
-              v-for="(_, featureIndex) in translations[activeLocale].features"
-              :key="featureIndex"
+              v-for="(feature, featureIndex) in translations[activeLocale].features"
+              :key="feature.key"
               direction="row"
               align="center"
               gap="sm"
             >
               <UiInput
-                v-model="translations[activeLocale].features[featureIndex]"
+                v-model="feature.text"
                 type="text"
                 :placeholder="t('settings.slideForm.featureNumber', { number: featureIndex + 1 })"
                 :data-testid="`slide-form-feature-${featureIndex}`"
@@ -736,6 +742,7 @@ const handleCancel = (): void => {
       <SettingsFormFooter
         :save-label="isEditMode ? t('shared.saveChanges') : t('settings.slideForm.createSlide')"
         :saving="saving"
+        :dirty="!loadingSlide"
         @cancel="handleCancel"
         @save="handleSave"
       />

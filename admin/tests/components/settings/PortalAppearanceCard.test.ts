@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PortalAppearanceCard from '@/components/settings/PortalAppearanceCard.vue'
 import type { Setting, SettingSave } from '@/types/setting'
-import { mountScreen } from '../../helpers/mount'
+import { mountSettingsCard } from '../../helpers/settingsPage'
 import { pickOption, selectText } from '../../helpers/select'
 
 /** The save callback the card is given; it answers that the value was stored. */
@@ -24,7 +24,7 @@ const rows: Setting[] = [
 
 describe('PortalAppearanceCard', () => {
   it('shows the stored template with its hint', async () => {
-    const { wrapper } = await mountScreen(PortalAppearanceCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(PortalAppearanceCard, rows)
 
     expect(selectText(wrapper, 'portal-template')).toBe('Aurora')
     expect(wrapper.text()).toContain('Glow-backed design')
@@ -32,44 +32,44 @@ describe('PortalAppearanceCard', () => {
 
   it('falls back to the classic template when the row is empty', async () => {
     const empty = rows.map((r) => (r.key === 'portal.template' ? { ...r, value: '' } : r))
-    const { wrapper } = await mountScreen(PortalAppearanceCard, { save, settings: empty })
+    const { wrapper } = await mountSettingsCard(PortalAppearanceCard, empty)
 
     expect(selectText(wrapper, 'portal-template')).toBe('Classic')
     expect(wrapper.text()).toContain('the original storefront design')
   })
 
   it('saves a different template', async () => {
-    const { wrapper } = await mountScreen(PortalAppearanceCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(PortalAppearanceCard, rows)
 
     await pickOption(wrapper, 'portal-template', 'Nova')
-    await wrapper.get('[data-testid="portal-template-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[1, 'nova']])
   })
 
   it('saves a different colour mode from the radios', async () => {
-    const { wrapper } = await mountScreen(PortalAppearanceCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(PortalAppearanceCard, rows)
     expect((wrapper.get('[data-testid="portal-theme-dark"]').element as HTMLInputElement).checked).toBe(true)
 
     await wrapper.get('[data-testid="portal-theme-light"]').setValue(true)
-    await wrapper.get('[data-testid="portal-theme-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[2, 'light']])
   })
 
   it('turns the visitor switch off and saves the literal false', async () => {
-    const { wrapper } = await mountScreen(PortalAppearanceCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(PortalAppearanceCard, rows)
     const toggle = wrapper.get('[data-testid="portal-user-toggle"]')
     expect(toggle.attributes('aria-checked')).toBe('true')
 
     await toggle.trigger('click')
-    await wrapper.get('[data-testid="portal-user-toggle-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[3, 'false']])
   })
 
   it('names every unseeded key and hides its control', async () => {
-    const { wrapper } = await mountScreen(PortalAppearanceCard, { save, settings: [rows[0] as Setting] })
+    const { wrapper } = await mountSettingsCard(PortalAppearanceCard, [rows[0] as Setting])
 
     const warnings = wrapper.findAll('[data-testid="setting-not-seeded"]')
     expect(warnings).toHaveLength(2)

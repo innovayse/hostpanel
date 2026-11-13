@@ -33,7 +33,7 @@ describe('parseColorModeSetting', () => {
 })
 
 describe('parseColorMode', () => {
-  it('never returns system — a page cannot be in that mode', () => {
+  it('never returns system, a page cannot be in that mode', () => {
     expect(parseColorMode(ColorModeSystem.System)).toBeNull()
     expect(parseColorMode(ColorMode.Light)).toBe(ColorMode.Light)
   })

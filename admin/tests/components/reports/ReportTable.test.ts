@@ -4,7 +4,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import ReportTable from '@/components/reports/ReportTable.vue'
+import { REPORT_LOADING } from '@/lib/reportLoading'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
 import { createTestI18n } from '../../helpers/i18n'
@@ -24,6 +26,12 @@ interface Row {
   /** Free text. */
   note: string | null
 }
+
+/**
+ * The `rowKey` that names the `id` property. Mounting a generic component types its row as `object`,
+ * whose property names are `never`, so the name is typed by hand here.
+ */
+const ID_KEY = 'id' as never
 
 /** One column per cell format. */
 const columns: ReportColumn[] = [
@@ -49,7 +57,7 @@ const rows: Row[] = [
  * @returns The wrapper.
  */
 const mountTable = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
-  mount(ReportTable, { props: { columns, rows, ...props }, slots, global: { plugins: [createTestI18n()] } })
+  mount(ReportTable, { props: { columns, rows, rowKey: ID_KEY, ...props }, slots, global: { plugins: [createTestI18n()] } })
 
 describe('ReportTable', () => {
   it('draws one header per column and one row per item', () => {
@@ -57,6 +65,18 @@ describe('ReportTable', () => {
 
     expect(wrapper.findAll('th').map(header => header.text())).toEqual(['ID', 'Amount', 'Rate', 'Period', 'Status', 'Note'])
     expect(wrapper.findAll('[data-testid="report-table-row"]')).toHaveLength(2)
+  })
+
+  it('keeps the real columns and draws skeleton rows instead of the data while the report loads', () => {
+    const wrapper = mount(ReportTable, {
+      props: { columns, rows, rowKey: ID_KEY, totals: { amount: 5 } },
+      global: { plugins: [createTestI18n()], provide: { [REPORT_LOADING as symbol]: ref(true) } },
+    })
+
+    expect(wrapper.findAll('th').map(header => header.text())).toEqual(['ID', 'Amount', 'Rate', 'Period', 'Status', 'Note'])
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="report-table-row"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="report-totals"]').exists()).toBe(false)
   })
 
   it('formats each cell by its column format', () => {
@@ -88,6 +108,7 @@ describe('ReportTable', () => {
         columns: [{ key: 'amount', label: 'Amount', format: ReportCellFormat.Money, currencyKey: 'currency' }],
         rows: [{ amount: 12.5, currency: 'EUR' }],
         formatMoney: (amount: number) => `${amount} ignored`,
+        rowKey: () => 'only',
       },
       global: { plugins: [createTestI18n()] },
     })
@@ -131,10 +152,17 @@ describe('ReportTable', () => {
   it('reads a column named by a dot path from a nested record', () => {
     const nested = [{ dates: { paid: '2026-10-05' } }]
     const wrapper = mount(ReportTable, {
-      props: { columns: [{ key: 'dates.paid', label: 'Paid' }], rows: nested },
+      props: { columns: [{ key: 'dates.paid', label: 'Paid' }], rows: nested, rowKey: () => 'only' },
       global: { plugins: [createTestI18n()] },
     })
 
     expect(wrapper.get('td').text()).toBe('2026-10-05')
+  })
+
+  it('keys rows by a key built from the row and fails loudly without a rowKey', () => {
+    const keyed = mountTable({ rowKey: (row: Row) => `row-${row.id}-${row.status}` })
+
+    expect(keyed.findAll('[data-testid="report-table-row"]')).toHaveLength(2)
+    expect(() => mountTable({ rowKey: undefined })).toThrow('rowKey is required')
   })
 })

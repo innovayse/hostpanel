@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 /**
- * UiTextarea - a labelled multi-line field with error, hint and optional character counter.
+ * UiTextarea: a labelled multi-line field with error, hint and optional character counter.
  *
  * Shares its frame with UiInput through `fieldStateClasses`, so the two never drift apart.
  */

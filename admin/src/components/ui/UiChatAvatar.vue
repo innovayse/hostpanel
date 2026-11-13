@@ -20,7 +20,7 @@ withDefaults(defineProps<{
 
 <template>
   <span
-    class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary-500/15 text-primary-400 light:text-primary-600"
+    class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-tint-blue text-text-accent"
     :title="label"
     aria-hidden="true"
     data-testid="ui-chat-avatar"

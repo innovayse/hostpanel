@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 /**
- * ProfileView - the read-only account details: identity, billing address and email preferences.
+ * ProfileView. The read-only account details: identity, billing address and email preferences.
  *
  * Empty values render the kit's dash; the labels it is given are already worded by the tab.
  *

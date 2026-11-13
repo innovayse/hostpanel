@@ -49,7 +49,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// <returns>The saved client (still tracked).</returns>
     private static async Task<Client> SeedClientAsync(IHostpanelDbContext context)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
         return client;

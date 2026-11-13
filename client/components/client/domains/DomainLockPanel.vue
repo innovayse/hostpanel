@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 /**
- * DomainLockPanel - the registrar lock, the ID protection (hides the owner's data from public
+ * DomainLockPanel: the registrar lock, the ID protection (hides the owner's data from public
  * lookup) and the EPP code request of a domain. Each change goes through the domains store and
  * the switch only moves when the API accepted it.
  */

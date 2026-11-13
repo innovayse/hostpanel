@@ -2,9 +2,10 @@
  * Unit tests for UiField: caption wired to the control, hint, and the server's error sentence.
  */
 import { describe, expect, it } from 'vitest'
-import { h } from 'vue'
+import { h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import UiField from '@/components/ui/UiField.vue'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 
 /**
  * Mounts a field whose control is a bare input bound to the slot props.
@@ -22,6 +23,24 @@ const mountField = (props: InstanceType<typeof UiField>['$props']) =>
   })
 
 describe('UiField', () => {
+  it('draws a skeleton in place of the control while loading and keeps the caption', () => {
+    const wrapper = mountField({ label: 'Name', loading: true })
+
+    expect(wrapper.find('[data-testid="ui-field-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('input').exists()).toBe(false)
+    expect(wrapper.get('label').text()).toBe('Name')
+  })
+
+  it('follows the loading flag a parent form provides', () => {
+    const wrapper = mount(UiField, {
+      props: { label: 'Name' },
+      slots: { default: () => h('input') },
+      global: { provide: { [UI_FIELD_LOADING as symbol]: ref(true) } },
+    })
+
+    expect(wrapper.find('[data-testid="ui-field-skeleton"]').exists()).toBe(true)
+  })
+
   it('links the caption to the control', () => {
     const wrapper = mountField({ label: 'Name' })
 
@@ -58,5 +77,11 @@ describe('UiField', () => {
     expect(wrapper.find('label').exists()).toBe(false)
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
     expect(wrapper.get('input').attributes('aria-describedby')).toBeUndefined()
+  })
+
+  it('hides the required asterisk from assistive technology', () => {
+    const wrapper = mount(UiField, { props: { label: 'Name', required: true } })
+
+    expect(wrapper.get('span[aria-hidden="true"]').text()).toBe('*')
   })
 })

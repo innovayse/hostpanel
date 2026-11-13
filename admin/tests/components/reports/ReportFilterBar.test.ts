@@ -1,5 +1,5 @@
 /**
- * Tests for ReportFilterBar: the slots and the actions the screen switches on.
+ * Tests for ReportFilterBar: the slots and the Generate and Clear actions.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -27,8 +27,6 @@ describe('ReportFilterBar', () => {
     expect(wrapper.find('[data-testid="extra-slot"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="report-generate"]').text()).toBe('Generate')
     expect(wrapper.find('[data-testid="report-clear"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="report-export"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="report-print"]').exists()).toBe(false)
   })
 
   it('uses the given caption for the main button', () => {
@@ -36,16 +34,12 @@ describe('ReportFilterBar', () => {
   })
 
   it('emits each action when its button is pressed', async () => {
-    const wrapper = mountBar({ clearable: true, exportable: true, printable: true })
+    const wrapper = mountBar({ clearable: true })
 
     await wrapper.get('[data-testid="report-generate"]').trigger('click')
     await wrapper.get('[data-testid="report-clear"]').trigger('click')
-    await wrapper.get('[data-testid="report-export"]').trigger('click')
-    await wrapper.get('[data-testid="report-print"]').trigger('click')
 
     expect(wrapper.emitted('generate')).toHaveLength(1)
     expect(wrapper.emitted('clear')).toHaveLength(1)
-    expect(wrapper.emitted('export')).toHaveLength(1)
-    expect(wrapper.emitted('print')).toHaveLength(1)
   })
 })

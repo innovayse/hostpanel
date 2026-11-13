@@ -7,7 +7,7 @@
  * sentence with a Retry; a refused department lookup shows its sentence with a Retry in place of
  * the department selector.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, provide, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
@@ -20,6 +20,7 @@ import { TicketPriority, TicketStatus } from '@/types/ticket'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiChatBubble, { UiChatBubbleSide } from '@/components/ui/UiChatBubble.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -28,12 +29,13 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
@@ -224,6 +226,12 @@ const dismissDelete = (): void => {
   }
 }
 
+/** True while the ticket is read for the first time: the page keeps its real layout and draws it as placeholders. */
+const initialLoading = computed<boolean>(() => store.currentTicket === null && store.error === null)
+
+// Every field of the page stays a placeholder until the ticket has arrived.
+provide(UI_FIELD_LOADING, initialLoading)
+
 // Populate form when ticket loads
 watch(() => store.currentTicket, () => {
   populateForm()
@@ -237,21 +245,16 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiStack v-if="store.loading && !store.currentTicket" data-testid="client-ticket-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientTicketDetail.loadingTicket') }}</UiText>
-    </UiStack>
-
     <UiErrorState
-      v-else-if="store.error && !store.currentTicket"
+      v-if="store.error && !store.currentTicket"
       :message="store.error"
       :loading="store.loading"
       testid="client-ticket-error"
       @retry="load"
     />
 
-    <template v-else-if="store.currentTicket">
-      <UiStack direction="row" wrap :justify="UiJustify.Between" :align="UiAlignItems.Center">
+    <template v-else>
+      <UiStack direction="row" wrap :justify="UiJustify.Between" :align="UiAlignItems.Center" :aria-busy="store.currentTicket ? undefined : 'true'">
         <UiStack direction="row" :align="UiAlignItems.Center">
           <UiLink
             :to="clientSectionPath(clientId, ClientSection.Tickets)"
@@ -261,18 +264,25 @@ onMounted(() => {
             <UiIcon :markup="BACK_ICON" :size="UiSize.Sm" />
             {{ t('shared.back') }}
           </UiLink>
-          <UiHeading :level="1" variant="card">
-            {{ t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) }}
-          </UiHeading>
-          <UiBadge :tone="ticketStatusTone[store.currentTicket.status]" small>
-            {{ ticketStatusLabel(store.currentTicket.status) }}
-          </UiBadge>
+          <template v-if="store.currentTicket">
+            <UiHeading :level="1" variant="card">
+              {{ t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) }}
+            </UiHeading>
+            <UiBadge :tone="ticketStatusTone[store.currentTicket.status]" small>
+              {{ ticketStatusLabel(store.currentTicket.status) }}
+            </UiBadge>
+          </template>
+          <UiStack v-else direction="row" :align="UiAlignItems.Center" aria-hidden="true" data-testid="client-ticket-loading">
+            <UiSkeletonBar class="h-6 w-64 rounded-md" />
+            <UiSkeletonBar class="h-5 w-20 rounded-full" />
+          </UiStack>
         </UiStack>
         <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
           <UiButton
-            v-if="store.currentTicket.status !== TicketStatus.Closed"
+            v-if="store.currentTicket?.status !== TicketStatus.Closed"
             type="button"
             :variant="UiButtonVariant.Secondary"
+            :disabled="!store.currentTicket"
             data-testid="client-ticket-close"
             @click="handleClose"
           >
@@ -290,6 +300,7 @@ onMounted(() => {
           <UiButton
             type="button"
             :variant="UiButtonVariant.Danger"
+            :disabled="!store.currentTicket"
             data-testid="client-ticket-delete"
             @click="showDeleteModal = true"
           >
@@ -317,7 +328,7 @@ onMounted(() => {
               <UiSelect v-model="editPriority" :options="priorityOptions" :placeholder="t('shared.selectPriority')" data-testid="client-ticket-priority" />
             </UiField>
             <UiField :label="t('shared.status')">
-              <UiBadge :tone="ticketStatusTone[store.currentTicket.status]">
+              <UiBadge v-if="store.currentTicket" :tone="ticketStatusTone[store.currentTicket.status]">
                 {{ ticketStatusLabel(store.currentTicket.status) }}
               </UiBadge>
             </UiField>
@@ -331,11 +342,12 @@ onMounted(() => {
             <UiButton
               type="button"
               :variant="UiButtonVariant.Primary"
-              :disabled="store.loading"
+              :loading="store.loading"
+              :disabled="!store.currentTicket"
               data-testid="client-ticket-save"
               @click="handleSaveChanges"
             >
-              {{ store.loading ? t('shared.saving') : t('shared.saveChanges') }}
+              {{ t('shared.saveChanges') }}
             </UiButton>
           </UiStack>
         </UiStack>
@@ -359,11 +371,12 @@ onMounted(() => {
             <UiButton
               type="button"
               :variant="UiButtonVariant.Primary"
-              :disabled="store.loading || replyIncomplete"
+              :loading="store.loading"
+              :disabled="replyIncomplete || !store.currentTicket"
               data-testid="client-ticket-reply"
               @click="handleReply"
             >
-              {{ store.loading ? t('shared.sending') : t('clients.clientTicketDetail.reply') }}
+              {{ t('clients.clientTicketDetail.reply') }}
             </UiButton>
           </UiStack>
         </UiStack>
@@ -373,7 +386,12 @@ onMounted(() => {
         <UiStack data-testid="client-ticket-thread">
           <UiHeading :level="2" variant="card">{{ t('clients.clientTicketDetail.conversation') }}</UiHeading>
 
-          <UiCard padding="sm">
+          <template v-if="!store.currentTicket">
+            <UiChatBubble :side="UiChatBubbleSide.Other" loading data-testid="client-ticket-message-loading" />
+            <UiChatBubble :side="UiChatBubbleSide.Own" loading data-testid="client-ticket-message-loading" />
+          </template>
+
+          <UiCard v-else padding="sm">
             <UiStack gap="sm">
               <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
                 <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Sm">{{ t('shared.client') }}</UiText>
@@ -383,7 +401,7 @@ onMounted(() => {
             </UiStack>
           </UiCard>
 
-          <UiCard v-for="reply in store.currentTicket.replies" :key="reply.id" padding="sm">
+          <UiCard v-for="reply in store.currentTicket?.replies ?? []" :key="reply.id" padding="sm">
             <UiStack gap="sm">
               <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
                 <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
@@ -398,7 +416,7 @@ onMounted(() => {
             </UiStack>
           </UiCard>
 
-          <UiText v-if="store.currentTicket.replies.length === 0" :tone="UiTextTone.Muted">
+          <UiText v-if="store.currentTicket?.replies.length === 0" :tone="UiTextTone.Muted">
             {{ t('clients.clientTicketDetail.noRepliesYet') }}
           </UiText>
         </UiStack>
@@ -411,7 +429,6 @@ onMounted(() => {
       :title="t('clients.clientTicketDetail.deleteTicket')"
       :message="t('clients.clientTicketDetail.confirmDeleteTicket', { id: ticketId })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="handleDelete"

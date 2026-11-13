@@ -54,12 +54,12 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         await context.SaveChangesAsync(CancellationToken.None);
 
         var domain = RegisteredDomain.Register(
-            client.Id, "example.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            client.Id, "example.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.LinkService(service.Id);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -107,12 +107,12 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         await context.SaveChangesAsync(CancellationToken.None);
 
         var domain = RegisteredDomain.Register(
-            client.Id, "manual.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            client.Id, "manual.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.LinkService(service.Id);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -168,12 +168,12 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
             .ExecuteUpdateAsync(set => set.SetProperty(s => s.SuspensionSource, (SuspensionSource?)null), CancellationToken.None);
 
         var domain = RegisteredDomain.Register(
-            client.Id, $"legacy-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            client.Id, $"legacy-{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.LinkService(service.Id);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = TestMoments.Seeded });
 
         var reloaded = await context.ClientServices.AsNoTracking()
             .FirstAsync(s => s.Id == service.Id, CancellationToken.None);
@@ -198,7 +198,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
         var service = ClientService.Create(stranger.Id, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
         var domain = RegisteredDomain.Register(
-            stranger.Id, $"stale-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            stranger.Id, $"stale-{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
         {
             await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref", DateTimeOffset.UtcNow);
@@ -209,7 +209,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainRenewedEvent(domain.Id, client.Id, DateTimeOffset.UtcNow.AddYears(2)) { OccurredAt = TestMoments.Seeded });
 
         Assert.Empty(emailSender.Sent);
         var reloaded = await context.ClientServices.AsNoTracking()

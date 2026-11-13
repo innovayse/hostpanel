@@ -70,7 +70,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         Seller: new InvoicePdfParty("Fairhaven Hosting", ["1 Market Street", "Tax ID: 123456"]),
         BillTo: new InvoicePdfParty("Арам Петросян", ["Ծաղկաձոր, Հայաստան"]),
         LogoPath: null,
-        Lines: [new InvoicePdfLine("Shared hosting — Starter", 1, 12.50m, 12.50m)],
+        Lines: [new InvoicePdfLine("Shared hosting: Starter", 1, 12.50m, 12.50m)],
         SubTotal: 12.50m,
         TaxRate: 20m,
         Tax: 2.50m,

@@ -13,18 +13,24 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Description">A short description.</param>
 /// <param name="IconUrl">An https address of the icon on the registry's host; <see langword="null"/> when none.</param>
 /// <param name="Category">The registry category.</param>
-/// <param name="LatestVersion">The newest version the registry publishes.</param>
-/// <param name="SdkVersion">The plugin SDK version the newest version targets.</param>
+/// <param name="LatestVersion">
+/// The newest version the registry publishes. For an installed plugin with an update offered it is the version the update
+/// installs: the newest published version that runs on this host, which can be older than the registry's newest.
+/// </param>
+/// <param name="SdkVersion">The plugin SDK version <paramref name="LatestVersion"/> targets.</param>
 /// <param name="Verified">Whether the registry vouches for the publisher.</param>
 /// <param name="Pricing">Whether the plugin is free, paid or private.</param>
 /// <param name="Installed">Whether a plugin with this id is installed on this server.</param>
 /// <param name="InstalledVersion">The installed version; <see langword="null"/> when not installed.</param>
-/// <param name="UpdateAvailable">Whether <paramref name="LatestVersion"/> is newer than the installed one and not already staged.</param>
+/// <param name="UpdateAvailable">
+/// Whether an update is offered: a published version that is newer than the installed one and than any staged upload and whose
+/// host range admits this host. When it is true <paramref name="LatestVersion"/> is that version.
+/// </param>
 /// <param name="Distribution">Where the package can be obtained from; a host only plugin is asked for with a signed request.</param>
 /// <param name="PublisherKind">Whether a person or an organization publishes the plugin; <see langword="null"/> when the registry does not say.</param>
 /// <param name="Tags">The plugin's tags, cleaned and capped; <see langword="null"/> when the source carries none (the update list).</param>
 /// <param name="Downloads">Downloads of every version added up; <see langword="null"/> when the registry does not say.</param>
-/// <param name="LatestChangelog">The release notes of <paramref name="LatestVersion"/> as Markdown text, cleaned and capped; <see langword="null"/> when the registry sends none.</param>
+/// <param name="LatestChangelog">The release notes of <paramref name="LatestVersion"/>, cleaned and capped; <see langword="null"/> when the registry sends none.</param>
 /// <param name="Rating">The reviews summary; <see langword="null"/> when the plugin has no reviews or the registry sends no usable summary.</param>
 public sealed record RegistryPluginDto(
     string Id,

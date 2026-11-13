@@ -65,7 +65,7 @@
 }
 
 
-/* Hide Innochat default launcher — controlled via UiFloatingActions FAB */
+/* Hide the live chat widget default launcher, controlled via UiFloatingActions FAB */
 .woot-widget-bubble,
 .woot--bubble-holder {
   display: none !important;

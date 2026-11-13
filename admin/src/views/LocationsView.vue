@@ -17,6 +17,7 @@ import { useLocationsStore } from '@/stores/locations'
 import type { ServerLocation } from '@/types/serverlocation'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -82,7 +83,6 @@ const editRoute = (item: ServerLocation): string => editPath(AppRoute.Storefront
     :title="t('storefront.locations.title')"
     :subtitle="t('storefront.locations.subtitle')"
     :add-label="t('storefront.locations.add')"
-    :loading-label="t('storefront.locations.loading')"
     :empty-label="t('storefront.locations.empty')"
     :delete-title="t('storefront.locations.deleteTitle')"
     :edit-label="t('storefront.locations.edit')"
@@ -114,7 +114,7 @@ const editRoute = (item: ServerLocation): string => editPath(AppRoute.Storefront
       <UiTableCell>
         <UiText tone="primary" size="lg" class="font-medium">{{ nameOf(item) }}</UiText>
       </UiTableCell>
-      <UiTableCell muted>{{ cityOf(item) || '—' }}</UiTableCell>
+      <UiTableCell muted>{{ cityOf(item) || EMPTY_VALUE }}</UiTableCell>
       <UiTableCell>
         <UiBadge :tone="item.isActive ? 'success' : 'neutral'" small>
           {{ item.isActive ? t('shared.active') : t('shared.inactive') }}

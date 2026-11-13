@@ -1,5 +1,5 @@
 /**
- * Partner type - one partner company served by `GET /api/public/partners`.
+ * Partner type: one partner company served by `GET /api/public/partners`.
  *
  * @module types/partner
  */

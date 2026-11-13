@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceQuickActions - the "what would you like to do today" shortcuts of the service overview:
+ * ServiceQuickActions. The "what would you like to do today" shortcuts of the service overview:
  * sign in to the control panel, reload the related invoices, start a cancellation.
  */
 import { ChevronRight } from 'lucide-vue-next'

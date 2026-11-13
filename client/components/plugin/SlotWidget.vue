@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * PluginSlotWidget - one plugin widget on a host page, isolated from the page and from the other
+ * PluginSlotWidget: one plugin widget on a host page, isolated from the page and from the other
  * widgets. It reads its own view after it mounts and shows its own loading state; an error while
  * it renders is caught here and goes no further; a view that cannot be read, or a view and first
  * data that have not all arrived within the time limit, give way to a small neutral note. Either

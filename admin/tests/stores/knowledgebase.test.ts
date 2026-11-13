@@ -42,7 +42,8 @@ describe('knowledgebaseStore', () => {
     const store = useKnowledgebaseStore()
     stubFetch(problem('Not allowed.', 403))
     expect(await store.fetchArticles()).toBe(false)
-    expect(store.error).toBe('Not allowed.')
+    expect(store.articlesError).toBe('Not allowed.')
+    expect(store.error).toBeNull()
 
     stubOffline()
     expect(await store.fetchCategories()).toBe(false)
@@ -139,5 +140,19 @@ describe('knowledgebaseStore', () => {
     release()
     await pending
     expect(store.articlesLoading).toBe(false)
+  })
+
+  it('a refused categories load keeps its sentence while the articles load succeeds beside it', async () => {
+    const store = useKnowledgebaseStore()
+    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(
+      url.endsWith('/categories') ? problem('Not allowed.', 403) : json([{ id: 2 }]),
+    )))
+
+    const [categoriesLoaded, articlesLoaded] = await Promise.all([store.fetchCategories(), store.fetchArticles()])
+
+    expect(categoriesLoaded).toBe(false)
+    expect(articlesLoaded).toBe(true)
+    expect(store.error).toBe('Not allowed.')
+    expect(store.articlesError).toBeNull()
   })
 })

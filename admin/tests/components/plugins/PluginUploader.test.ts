@@ -1,6 +1,6 @@
 /**
  * Unit tests for PluginUploader: choosing an archive shows it with its size, install emits it,
- * cancel forgets it, and a dropped file is taken like a chosen one.
+ * cancel forgets it, and a file dropped on the kit's upload zone is taken like a chosen one.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -61,7 +61,7 @@ describe('PluginUploader', () => {
   it('takes a dropped file like a chosen one', async () => {
     const wrapper = mountUploader()
 
-    await wrapper.get('[data-testid="plugin-uploader"]').trigger('drop', { dataTransfer: { files: [zip] } })
+    await wrapper.get('label').trigger('drop', { dataTransfer: { files: [zip] } })
 
     expect(wrapper.get('[data-testid="plugin-selected-name"]').text()).toBe('plugin.zip')
   })

@@ -1,9 +1,9 @@
 {
   "orderDetail": {
     "backToOrders": "Back to orders",
-    "loadingOrder": "Loading order...",
     "accept": "Accept",
     "orderInfo": "Order Info",
+    "overview": "Overview",
     "created": "Created",
     "bundle": "Product bundle",
     "invoice": "Invoice",
@@ -11,7 +11,7 @@
     "product": "Product",
     "firstPayment": "First Payment",
     "recurring": "Recurring",
-    "addNotesAboutThisOrder": "Add notes about this order...",
+    "addNotesAboutThisOrder": "Add notes about this order",
     "notesAreOnlyVisibleTo": "Notes are only visible to admins.",
     "deleteOrder": "Delete Order",
     "areYouSureYouWant": "Are you sure you want to permanently delete this order? This action cannot be undone.",
@@ -41,6 +41,8 @@
     "accept": "Accept",
     "totalcountOrderValue": "Orders: {totalCount}",
     "noOrdersFound": "No orders found",
+    "noOrdersMatchYourFilters": "No orders match your filter",
+    "clearFilters": "Clear filter",
     "orderAccepted": "Order accepted.",
     "orderCancelled": "Order cancelled.",
     "confirmCancelTitle": "Cancel this order?",

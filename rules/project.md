@@ -1,8 +1,8 @@
-# hostpanel — Project Rules
+# hostpanel: Project Rules
 
 > ## ⚠ REQUIRED FOR EVERYTHING: DOCUMENTATION
 >
-> **Doc comments are mandatory on every file, type, member, component and composable — no
+> **Doc comments are mandatory on every file, type, member, component and composable, no
 > exceptions.** XML docs in C# ([xml-docs.md](xml-docs.md)), JSDoc on the frontend
 > ([jsdoc.md](jsdoc.md)), plus inline comments wherever the *reason* for the code is not
 > visible from the code. Undocumented code is unfinished code.
@@ -11,23 +11,23 @@
 > `GenerateDocumentationFile` **and** `TreatWarningsAsErrors`, so an undocumented public member
 > under `src/` or `tests/` is a build failure, not a review comment.
 
-**What it is:** the self-hosted hosting-management platform — open-source hosting billing and
+**What it is:** the self-hosted hosting-management platform: open-source hosting billing and
 automation. Clients order services, manage domains, pay invoices and open tickets; staff run
 products, billing, provisioning and integrations. A public demo
 is the same build with `Demo__Enabled=true` (`deploy:demo`); its sign-in page shows the demo accounts,
-served by `GET /api/public/demo` — they are not written in `README.md`.
+served by `GET /api/public/demo`: they are not written in `README.md`.
 
 **This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Hostpanel.Sdk`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**. Anything written here
 is read by people who only have a clone of this repository, and the repo must build from
-a clone of itself alone (with its submodule) — that is why `Innovayse.Auth` is consumed as an optional package (only in an
+a clone of itself alone (with its submodule), that is why `Innovayse.Auth` is consumed as an optional package (only in an
 `InnovayseSso=true` build, see `backend/Directory.Build.props`) rather than a project reference, and why `backend/nuget.config` restricts `auditSources` to nuget.org.
 
-**Read first:** the six rules files beside this one — [clean-architecture.md](clean-architecture.md),
+**Read first:** the six rules files beside this one: [clean-architecture.md](clean-architecture.md),
 [csharp-style.md](csharp-style.md), [dotnet-format.md](dotnet-format.md),
-[xml-docs.md](xml-docs.md), [jsdoc.md](jsdoc.md), [vuejs-style.md](vuejs-style.md) — then this
+[xml-docs.md](xml-docs.md), [jsdoc.md](jsdoc.md), [vuejs-style.md](vuejs-style.md), then this
 file. They are part of this repository: change them here.
 
-## This project's own rules — read this before your first review
+## This project's own rules: read this before your first review
 
 This backend follows one shape: no primary constructors on handlers or controllers, no
 `*Request` records, no exception-only refusals, no feature-local `Interfaces/` folders, no
@@ -111,7 +111,7 @@ repositories. What is specific to this project is short:
   `Application/Resources/ApplicationValidationMessages*.resx` (validator sentences; the marker is named differently from the
   Shared one so the two resource sets can never share a base name),
   in en/ru/hy, with `ResourceCoverageTests` failing on a code with no sentence or a sentence with
-  no code. The marker type's full name is the resource base name — moving either half makes every
+  no code. The marker type's full name is the resource base name, moving either half makes every
   lookup answer with the key. Culture comes from the `X-Language` header only
   (`PlatformLocalizationExtensions` clears the other providers), through
   `app.UseRequestLocalization(...)` registered **above** `ExceptionHandlingMiddleware` in
@@ -123,7 +123,7 @@ repositories. What is specific to this project is short:
   are written in the frontend: the offline fallback (`errors.noAnswer`), and
   `client.acceptInvite.signInRequired` (refused by the Nuxt BFF before any API call exists).
 
-## Architecture — Clean Architecture, four layers plus a plugin SDK
+## Architecture: Clean Architecture, four layers plus a plugin SDK
 
 `backend/Innovayse.Hostpanel.sln`, 15 projects:
 
@@ -141,8 +141,8 @@ backend/src/
   Hostpanel.Sdk/                     the plugin contract third parties compile against (git submodule, own repository)
   Innovayse.Providers.CWP/ CWP7/   provisioning providers (payment gateways are external plugins, none ships here)
 backend/tests/                       Domain, Integration, Architecture, CWP
-client/  admin/                    Nuxt 4 portal, Vite admin SPA — each owns its Dockerfile (backend/Dockerfile too)
-docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example — docker/README.md
+client/  admin/                    Nuxt 4 portal, Vite admin SPA, each owns its Dockerfile (backend/Dockerfile too)
+docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example, see docker/README.md
 ```
 
 - **SharedKernel holds `Domain/SecretMembers.cs` and `Domain/SecretMemberAttribute.cs`, and has no
@@ -158,7 +158,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ConcurrencyConflictException`. There is no separate unit-of-work port.
   Domain has no `Interfaces/` folders.
 - **Every application port is in `Application/Common/Interfaces/`** (`IPaymentPluginResolver`,
-  `IProvisioningProvider`, `IEmailSender`, `IIdentityProvider`, `IUserService`, …) and
+  `IProvisioningProvider`, `IEmailSender`, `IIdentityProvider`, `IUserService` and so on) and
   `PortPlacementTests` fails on one anywhere else. Adapters sit in Infrastructure under a
   capability folder (`Storage/`, `Email/`, `Integrations/<Provider>/`, `Auth/`); EF configurations sit in `Persistence/Configurations/`.
   Two documented exceptions in `PortPlacementTests`. A request-scoped adapter lives under `API/` and
@@ -187,7 +187,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   integration in `Infrastructure/Integrations/<Provider>/` (today `NameAmConnectionProbe`, which
   logs in with the saved credentials) and every implementation is registered in
   `DependencyInjection`; `TestIntegrationConnectionHandler` picks the one whose `Slug` matches once
-  every required field is stored. A probe failure is logged and answered with a fixed sentence —
+  every required field is stored. A probe failure is logged and answered with a fixed sentence,
   the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
   API URL and test mode saved on the admin Integrations page over the bound options
   (`IsConfiguredAsync`), so the page configures what requests use.
@@ -809,13 +809,28 @@ docker/                              compose set (shared·dev·prod·platform), 
     (`GET /api/admin/plugins/registry?q=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
     (`GET .../registry/updates`) and `InstallRegistryPluginCommand` (`POST .../registry/{id}/install`, body `{version}`,
     demo restricted). One type each for a plugin (`RegistryPluginDto`) and a page (`RegistryPluginPageDto`): the client fills
-    the registry's members, the handler sets `installed`, `installedVersion` and `updateAvailable` (`PluginUpdateRule`, a
-    newer semantic version than the installed one and than any staged upload).
+    the registry's members, `PluginUpdateOffer` (shared by the browser and the update check, reading through `RegistryPluginReader`) sets `installed`,
+    `installedVersion` and `updateAvailable`. The offer is `PluginUpdateRule.NewestOffer`: the newest published version
+    that is newer than the installed one and than any staged upload and whose host range admits the running host
+    (`PluginHostCompatibility`). `latestVersion` of a row with an update is that version, which is the one an update
+    installs, so it can be older than the registry's newest; a newer version the host cannot run is not offered, and
+    neither is any update when the versions cannot be read.
+    The versions are the list this host is shown, read by `RegistryPluginReader` (shared with the details page): the plugin's
+    page and version list with the stored licence key, and for a host only plugin the signed list after the installation is
+    verified (`RegistryInstanceEnrollment.EnsureVerifiedAsync`). The scoped reader reads each licence key and page once,
+    verifies once, and answers every call after the first outage of the registry (switched off, unreachable, too slow or an
+    answer that cannot be read; the last is treated as an outage because a registry that answers with unreadable data cannot be relied on for the rest of the request) with that outage. The details page uses the same rule. Reading a host only plugin can register
+    and verify this installation, so the browser and the update check can have that one write effect.
   - **What is sent to the registry.** Only `GET {BaseUrl}plugins?q&category&page&pageSize`, `POST {BaseUrl}plugins/latest` with
-    the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}/versions/{version}` and the
-    package address that reply names. No cookie, no token, no host name, no setting, no client or user data; an `Accept`
-    header per request. The update check sends plugin ids, so an operator who does not want
-    that leaves the registry off.
+    the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}` and
+    `GET {BaseUrl}plugins/{id}/versions` (the details page for any plugin it shows; the browser and the update check only for
+    an installed plugin that has a newer version, and the update check also reads the page of a plugin with a stored key),
+    `GET {BaseUrl}plugins/{id}/versions/{version}` and the package address that reply names. A plugin
+    with a stored licence key sends it as `X-Licence-Key` on its page and version list. For a host only plugin the
+    version list is signed with this installation's registry identity (and carries no licence key), after the installation
+    registered and verified itself with `POST {BaseUrl}instances` and `.../verify`. No cookie, no token, no host name, no
+    setting, no client or user data; an `Accept` header per request. The update check sends plugin ids, so an operator who
+    does not want that leaves the registry off.
   - **Network rules.** Every request, redirect hop and package address must have the registry's scheme, host and port; a
     redirect is followed by hand (GET only, three hops) and only inside that origin, otherwise `PLUGIN_REGISTRY_PACKAGE_REFUSED`.
     `PluginRegistryConnector` (the handler's connect callback) resolves the name itself and refuses loopback, link-local
@@ -1260,15 +1275,16 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ui` or `slots` before the id was reserved stays listable and removable, and its data is still purged. #647 (admin plugin pages)
   builds on these shapes.
 
-## CQRS — Wolverine, conforming
+## CQRS: Wolverine, conforming
 
 Wolverine 6.61.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
 Application assemblies; handlers are never registered by hand and never called directly. One
 folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
 
 - **Handler code is generated at image build time and loaded, never compiled, in production.**
-  `MessagingRegistration.TypeLoadModeFor` picks `Static` everywhere except Development (`Auto`) and the
-  Testing environment of the integration suite (`Dynamic`). The API Dockerfile runs `codegen write`, which
+  `MessagingRegistration.TypeLoadModeFor` picks `Static` everywhere except Development and the
+  Testing environment of the integration suite (both `Dynamic`: compiled in memory, nothing written into the
+  watched source tree, which `Auto` did and crashed `dotnet watch`). The API Dockerfile runs `codegen write`, which
   compiles with Roslyn and so needs the `WolverineFx.RuntimeCompilation` package (Wolverine 6 moved the
   compiler out of core), then restores and publishes the API with `OmitRuntimeCompilation=true`, which the
   API csproj honours by leaving that one reference out: the published image carries neither the package
@@ -1867,7 +1883,7 @@ registry, so `backend/Directory.Build.props` defines `InnovayseSso`: true when
 `NuGetPackageSourceCredentials_innovayse` is set (CI and deployments that use the external identity provider), false
 otherwise, and forceable with `-p:InnovayseSso=true|false`. When true the package is referenced
 (`Innovayse.Hostpanel.API` and `Innovayse.Hostpanel.Infrastructure`) and `INNOVAYSE_SSO` is
-defined; when false nothing private is restored and the build is `AUTH_MODE=local` only — a
+defined; when false nothing private is restored and the build is `AUTH_MODE=local` only, a
 standalone build started with `AUTH_MODE=sso` throws at startup from `AddHostpanelAuthentication`
 naming the property. Every file that touches the package is inside `#if INNOVAYSE_SSO`:
 `API/Program.cs` (`UseInnovayseAuth`/`MapInnovayseAuth`), `API/Extensions/AuthenticationRegistration.cs`
@@ -1894,7 +1910,7 @@ docker run --rm `
   -w /src mcr.microsoft.com/dotnet/sdk:9.0 bash -lc "dotnet build Innovayse.Hostpanel.sln"
 ```
 
-**A cold full solution build takes about eight minutes** — 7m43s measured, 14 projects, 0
+**A cold full solution build takes about eight minutes**: 7m43s measured, 14 projects, 0
 warnings. It prints nothing for minutes at a stretch and **appears to stop after
 `Innovayse.Hostpanel.Infrastructure`**; that project is simply the slow one, and `Innovayse.Hostpanel.API`, the
 test projects and the rest land minutes later. Only treat it as hung well past ten minutes.
@@ -1904,7 +1920,7 @@ the cross-project signal it exists for.
 The host package cache covers the private feed for a local build: `nuget.config`'s
 `packageSourceMapping` sends only `Innovayse.Auth` to the private registry, and that package is
 already cached. Where a credential *is* needed it is
-`NuGetPackageSourceCredentials_innovayse=Username=<account>;Password=<token>` — the exact
+`NuGetPackageSourceCredentials_innovayse=Username=<account>;Password=<token>`: the exact
 spelling NuGet reads; a CI job token user name answers 401 with a personal token. The feed is addressed by **numeric project id**, not by the encoded
 namespace path, which answers 400 to everything and reports as NU1301.
 
@@ -1912,22 +1928,22 @@ namespace path, which answers 400 to everything and reports as NU1301.
 both `-e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal` and
 `--add-host=host.docker.internal:host-gateway`. Without them the resource reaper cannot start
 and every test in the suite fails with a stack trace that looks nothing like a networking
-problem. **Do not pass `--no-build` to the integration suite** — it silently produces no output
+problem. **Do not pass `--no-build` to the integration suite**: it silently produces no output
 and exits 0 whether or not the assembly is there. The Domain, Architecture and CWP suites are fine with it.
 
 Containers: `hostpanel-api` (5148), `hostpanel-client` (3000, published 3001),
 `hostpanel-admin`, `hostpanel-db`, plus `hostpanel-redis`, `hostpanel-rabbitmq`,
 `hostpanel-mailhog` locally. Services address each other by **network alias**
-(`hostpanel-api`), never by the bare `api` — that name can also belong to another product's
+(`hostpanel-api`), never by the bare `api`, that name can also belong to another product's
 backend on the shared network, and Docker's DNS round-robins between the two.
 
 ## Operational scripts at the repo root (`scripts/`)
 
-- `scripts/check-client-owner-ids.sh [container]` — read-only check of what `clients.UserId` points at
+- `scripts/check-client-owner-ids.sh [container]`: read-only check of what `clients.UserId` points at
   (the local `AspNetUsers.Id` or the external identity provider's subject), run before and after switching
   `AUTH_MODE`. Defaults to the `hostpanel-db` container; on a remote host pipe it as
   `ssh <host> 'sh -s' < scripts/check-client-owner-ids.sh`.
-- `scripts/check-duplicate-gateway-payments.sh [container]` — read-only list of the ledger rows that would stop the
+- `scripts/check-duplicate-gateway-payments.sh [container]`: read-only list of the ledger rows that would stop the
   unique gateway payment reference. Every `Transactions` row has a `Source` (`GatewayPayment`, `GatewayRefund`,
   `Manual`, `Import`; `TransactionSource` in Domain, set by the creating path and never changed), and a filtered
   unique index on `PaymentMethod` and `TransactionId` covers the `GatewayPayment` rows only, so manual entries
@@ -1937,9 +1953,9 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   only the rows: a staff entry typed under a name that is also a gateway (with a reference and a description a gateway
   path writes) is classified as a gateway row, and counts toward a duplicate. A second gateway payment saved under one reference surfaces as `ConcurrencyConflictException`
   (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
-- `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
+- `scripts/pack-cwp-plugin.sh`: publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
-- `scripts/test-install-backup.sh [install.sh]` — runs `install.sh` against a fake `docker` and `curl` (no Docker, no
+- `scripts/test-install-backup.sh [install.sh]`: runs `install.sh` against a fake `docker` and `curl` (no Docker, no
   network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
   and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
   newest backup of another version, the safety copy, restore before the compose files change, a failed restore, the
@@ -1949,10 +1965,15 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   file). Needs bash and GNU `stat`. With
   `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
   (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
-- `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a
+- `scripts/check-empty-plugins.sh <test project> ...`: fails when `plugins/` or `plugins-installed/` in a
   built test project's output holds anything. Every backend test job of both pipelines runs it between the
   build and the tests, so the whole suite is proven green with no plugin loaded in the jobs that already
   run it, not in a duplicate set. A test that needs a plugin stages it itself and removes it.
+
+- `scripts/image-version.sh` prints the version an image is built with: the newest release tag
+  (`vMAJOR.MINOR.PATCH`, pre-releases ignored) reachable from `HEAD`, without the `v`, plus `+<8 character commit id>`,
+  for example `0.5.0+1a2b3c4d`. It fails when no release tag is reachable. `scripts/test-image-version.sh` tests it in
+  throwaway repositories (GitLab `image-version:test`, GitHub `image-version`).
 
 All are `*.sh`, which `.gitattributes` (`*.sh text eol=lf`) pins to LF: the ssh pipe above fails with
 "Illegal option" on a CRLF copy.
@@ -1962,7 +1983,7 @@ A Held stored charge claim (the gateway took money the invoice could not record)
 ## CI is on GitLab. Pull requests are on GitHub. Both halves are load-bearing.
 
 `origin` is GitHub; merges happen there. `.github/workflows/mirror-to-gitlab.yml` pushes
-**only `main` and `develop`** to the CI mirror, whose `.gitlab-ci.yml`
+**only `main` and `develop`** (and the `v*` release tags with them) to the CI mirror, whose `.gitlab-ci.yml`
 starts the pipeline. The consequences are not obvious and cost time every few months:
 
 - **A feature branch never gets a pipeline.** Nothing is mirrored, so nothing builds or tests
@@ -1985,12 +2006,26 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
 - `.gitlab-ci.yml` inlines its templates. This repo cannot see the shared templates they
   came from, so the hidden jobs are copied in. Changing one here does not change those.
 
-**`deploy:prod` builds the images on the production host** — it consumes no registry images
-and declares `needs: []`, because the build jobs want a `builder` runner this project's prod
-host does not have. It dumps the database with `pg_dump -Fc` into `backups/` **before**
+**`deploy:prod` pulls the images the same pipeline built** (`backend:build:api:prod`, `client:build:prod` and
+`admin:build:prod`, tagged with the commit id) and starts them with `--no-build`. It dumps the database with `pg_dump -Fc` into `backups/` **before**
 anything is rebuilt and fails the deploy if the dump fails: the API applies pending EF
 migrations on startup, so `up -d` is the moment the schema changes, and a deploy that cannot be
 undone should not start. The last ten dumps are kept.
+
+**The host version is the release tag, never the Dockerfile placeholder.** The API image takes its version from the
+`VERSION` build argument (`HostVersion` in `backend/src/Directory.Build.props`), and the host reports it as its own
+version (`InstalledVersionProvider`), which every plugin range (`minHostVersion`, `maxHostVersion`) is checked against.
+The Dockerfile default `0.0.0-dev` parses as a real version below every minimum, so an image built without the
+argument refuses every plugin that declares a range. The GitLab `.build-image` template therefore derives the version
+once with `scripts/image-version.sh` (full clone, `GIT_DEPTH: "0"`) and passes it as `--build-arg VERSION` to the API
+image; the job fails when no release tag is reachable. The GitHub image publisher passes the tag it is run for.
+The mirror workflow pushes the `v*` tags with the branch, because GitLab can only see a tag that was mirrored; a
+tag push alone starts nothing, it travels with the next push to `main` or `develop`, and a release tag is never
+moved. **Releasing:** tag the release commit `vMAJOR.MINOR.PATCH` and push the tag (`git tag v0.6.0 <develop tip>`
+then `git push origin v0.6.0`) before the `develop` to `main` pull request is merged, and merge that pull request
+with a merge commit (never squash or rebase, which would leave the tag unreachable from `main`), so the
+production build already carries the new version. A tag made on `main` after the merge only reaches the next main
+build. Without a new tag the version stays at the last release plus the commit id.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on
 these hosts belong to the host's shared reverse proxy; naming it would fail the whole deploy.
@@ -2021,11 +2056,11 @@ Its own nginx exists for a standalone install.
   data every `Demo__ResetIntervalHours`. Everything stateful is `hostpanel-demo-*` so it can sit beside prod; its db, broker, redis and mailhog live on a demo-private network and only the api, client and admin (compose services `hostpanel-demo-*`, the names the edge proxy uses) also join the dedicated external network `hostpanel_demo_edge`, **never** the shared network, so the demo can neither resolve nor reach any production container (the edge proxy is the one production-side container on both networks; `deploy:demo` creates the network when missing, with the **fixed subnet 172.29.0.0/16**, which the operator's edge denies on every host except the two demo ones, so a demo container cannot reach production by sending a production `Host` header; the subnet lives in `deploy:demo`, the edge's configuration and `docker/README.md`, and changes in all three together); `deploy:demo` uses its own `DEPLOY_DIR` (one of the demo deployment's CI variables), never prod's;
   the demo passwords are `:?`-required like any secret. Deployed by the manual `deploy:demo` job; it needs
   `AUTH_MODE=local`. Fake adapters live behind the existing ports, never in a code path guarded by a literal.
-- **Settings bind into a sealed `*Options` class naming its own `SectionName`** —
+- **Settings bind into a sealed `*Options` class naming its own `SectionName`**,
   `BillingOptions`, `NamecheapOptions`, `NameAmOptions`, each
   in an `Options/` folder inside the feature or integration that owns it.
 
-## Storefront content — in the database, not in the code
+## Storefront content: in the database, not in the code
 
 Testimonials, partners, server locations, projects and FAQs are rows in the database, each with English, Russian and Armenian
 translations, managed in the admin under **Storefront content**. The public endpoints are
@@ -2074,21 +2109,21 @@ FAQ: the default language `SupportedLanguages.Default` (`en`) is required, `en/r
 **The header you are looking at is almost certainly not `components/layout/Header.vue`.**
 `layouts/default.vue` renders `<component :is="header" />`, and `header` comes from
 `useTemplate().slot('header')`, which resolves through `templates/registry.ts`. There are three
-templates — `aurora`, `nova`, `classic` — and the active one is decided by, in order: the
+templates: `aurora`, `nova`, `classic`, and the active one is decided by, in order: the
 operator's `portal.template` admin setting, then `NUXT_PUBLIC_PORTAL_TEMPLATE`, then the
 built-in default **`classic`** (`DEFAULT_TEMPLATE`, mirrored by `PortalSettingKeys.DefaultTemplate`); anything unrecognised falls back to `classic` rather than
 rendering nothing. `components/layout/Header.vue` is reached only through
-`templates/classic/layout/ClassicHeader.vue`, a two-line wrapper — so on an aurora or nova deployment it is
+`templates/classic/layout/ClassicHeader.vue`, a two-line wrapper, so on an aurora or nova deployment it is
 live code that nothing renders. Editing it and reloading changes nothing, and that has cost
 real time. Start from `templates/<active>/layout/<Active>Header.vue` (`AuroraHeader.vue`, `NovaHeader.vue`,
 `ClassicHeader.vue`).
 
 `nova` deliberately reuses `aurora`'s `pages/AuroraDomains.vue` and `pages/AuroraCheckout.vue` (see
-`templates/registry.ts`) — the checkout is the ordering path and a second copy is a second place for a
+`templates/registry.ts`): the checkout is the ordering path and a second copy is a second place for a
 payment bug to live.
 
 **Runtime config in a production image.** A production Nitro build freezes `runtimeConfig`
-defaults — `nuxt.config.ts` is not re-evaluated at container start as it is in dev. Nitro's own
+defaults: `nuxt.config.ts` is not re-evaluated at container start as it is in dev. Nitro's own
 escape hatch is reading `NUXT_<KEY>` / `NUXT_PUBLIC_<KEY>` at runtime and overriding the frozen
 default, so `docker/docker-compose.prod.yml` spells every one of them that way. **The plain names used
 in `docker/docker-compose.dev.yml` are silently ignored on a deployed host**, so the value stays
@@ -2125,13 +2160,13 @@ dark until something says otherwise. Do not add `document.documentElement.classL
 anywhere, and do not read the mode from anything but `useAppColorMode()`.
 `portal.theme.user_toggle = false` hides `UiThemeToggle` and makes `toggle()` a no-op.
 
-**The logo a template renders comes from `useBrandLogo()`, and nowhere else — and a header
+**The logo a template renders comes from `useBrandLogo()`, and nowhere else, and a header
 renders both wordmarks, swapped by CSS, never one picked in JavaScript.** `light` and `dark` are
 the two wordmarks with their fallbacks (each falls back to the other); a header renders
 `<img :src="light" class="dark:hidden">` beside `<img :src="dark" class="hidden dark:block">`
 when `hasDarkVariant`. The reason is hydration: under the `system` default the server does not
 know the mode and renders as dark, and **production Vue does not patch an attribute that
-disagrees after hydration** — a `:src` chosen from `isDark` left a light-device visitor looking
+disagrees after hydration**: a `:src` chosen from `isDark` left a light-device visitor looking
 at the dark logo, and a `v-if` on the toggle's icon left them looking at the sun. Both were seen
 in a browser before the swap. `logoOnDark` is for surfaces that are always dark whatever the
 page mode (the sign-in pages, classic's header and footer); `mark` is `portal.logo.mark` with the
@@ -2142,7 +2177,7 @@ with told a screen reader the brand was decorative. The rule itself is
 name; the literal `Hostpanel` survives as its fallback and in the locale copy, and nowhere else
 in a `.vue` or `.ts` file.
 
-**Every colour a template ships is a `var()` with the template's literal as its fallback —
+**Every colour a template ships is a `var()` with the template's literal as its fallback,
 a literal on its own is a colour the operator cannot change.** `client/plugins/brand-tokens.ts`
 renders one `<style id="brand-tokens">` into `<head>` from `portal.brand.primary` / `.accent`
 and the two typefaces: the eleven-step `--brand-primary-N` / `--brand-accent-N` scales (as
@@ -2154,7 +2189,7 @@ and the two typefaces: the eleven-step `--brand-primary-N` / `--brand-accent-N` 
 which is what makes "unset renders exactly what it did" true; check it by reading the computed
 tokens with the rows empty before touching any of them. Text on a filled brand surface is
 `text-on-primary` / `text-on-tint` / `text-nova-on-brand` / `text-nova-on-accent`, never
-`text-white` or a literal — a brand yellow needs dark text. The ramp lives in
+`text-white` or a literal: a brand yellow needs dark text. The ramp lives in
 `client/utils/brandPalette.ts` (OKLCH, gamut-mapped by reducing chroma, the picked colour pinned
 at 500); `admin/src/lib/brandPalette.ts` is a byte-for-byte copy below its header because the
 admin cannot import across the repository (`brandPalette.shared.test.ts` fails on drift), and
@@ -2163,7 +2198,7 @@ reference numbers in `BrandPaletteTests`. Change the client file first; then the
 
 **Third-party scripts come from settings and never from a literal.** The tag-manager container
 (`portal.analytics.gtm_id`) loads in `plugins/tracking.client.ts` only when set **and** the
-visitor's `cookie-consent` is `all` — `useCookieConsent()` is the one owner of that cookie, the
+visitor's `cookie-consent` is `all`: `useCookieConsent()` is the one owner of that cookie, the
 banner writes it, the loader watches it. The live-chat widget (`portal.chat.provider`,
 `.base_url`, `.website_token[.ru|.hy]`) loads in `plugins/live-chat.ts` when all three are set,
 without waiting for consent, because it is how a visitor reaches a person. `app.vue` adds no
@@ -2179,7 +2214,7 @@ absolute against `ClientBaseUrl`. A stored template that wants the brand uses
 `{{ brand.accent }}`, `{{ brand.logo_url }}` and `{{ site.name }}`; the seeded password-reset
 layout does, but a row seeded before this existed keeps its literals until an operator re-saves it.
 
-**`PortalSettingKeys` (Domain) is the backend's one list of `portal.*` keys** — the seeder's
+**`PortalSettingKeys` (Domain) is the backend's one list of `portal.*` keys**: the seeder's
 `Defaults` and the anonymous endpoint's `Public` set are derived from the same array, and
 `AllowedValues` is the vocabulary `UpdateSettingHandler` enforces (`INVALID_SETTING_VALUE`, 400).
 The Nuxt BFF's `PUBLIC_KEYS` in `client/server/api/portal/public/settings.get.ts` is a **manual
@@ -2192,7 +2227,7 @@ twin** of that list; it cannot import the class, so a new key is added in both p
 `client/` is a Nuxt app, where `admin/` is a Vite SPA: it has public, crawlable pages
 (SEO, SSR) beside the session-gated `/client/**` area. The frontend rules in this folder
 ([vuejs-style.md](vuejs-style.md), [jsdoc.md](jsdoc.md)) hold in full; the Nuxt specifics
-are these, and **no part of the client is exempt any more — the ratchet that once scoped the
+are these, and **no part of the client is exempt any more, the ratchet that once scoped the
 rules is deleted and the ESLint conformance block applies to every `.vue` and `.ts` file.**
 
 - **Data flow, as everywhere:** `.vue` → `stores/<area>.ts` → `composables/apis/use<Area>Api.ts` →
@@ -2368,12 +2403,12 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   (`components/<area>/`) compose the kit and may not hold a card-styled `div` or an interactive
   raw element. A new visual need is a new `Ui*` first. Styling is Tailwind classes written out
   literally and theme tokens (`assets/css/ui.css`, `tailwind.config.ts`); per-item colours that
-  are data go through `UiAccent`. No `<style>`, no `style=`, no `bg-[#...]`, no `v-html` —
+  are data go through `UiAccent`. No `<style>`, no `style=`, no `bg-[#...]`, no `v-html`,
   operator HTML is rendered by `UiRichText` (`utils/ui/richText.ts`, an allow-list tokenizer that
   builds nodes with `h()`; it has an XSS-corpus test). Every field has a `placeholder`, every
   interactive element a `data-testid` (`<area>-<element>`).
 - **Types and closed sets.** One concept per file in `types/`, imported with `import type`;
-  every closed value set is an enum (`AppLocale`, `TemplateName`, `TicketStatus`, ...), never a
+  every closed value set is an enum (`AppLocale`, `TemplateName`, `TicketStatus` and so on), never a
   string union or a repeated literal. The language list is `APP_LOCALES` (`constants/appLocales.ts`),
   derived from `AppLocale`; nothing spells `['en','ru','hy']` out. Server and client share
   `types/` and `utils/transportLanguage.ts` only.
@@ -2405,7 +2440,7 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
 ### The admin's shape (Vite SPA)
 
 `admin/` is a standard Vite SPA with no exception to the frontend rules ([vuejs-style.md](vuejs-style.md),
-[jsdoc.md](jsdoc.md)): the operator back office is session-gated, so it has no crawlable pages. **No part of it is exempt — the ratchet
+[jsdoc.md](jsdoc.md)): the operator back office is session-gated, so it has no crawlable pages. **No part of it is exempt, the ratchet
 that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` applies to every `.vue` and
 `.ts` file under `src/`** (the one carve-out is `lib/brandPalette.ts`, a generated byte-for-byte copy).
 
@@ -2429,7 +2464,7 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `no-restricted-imports` enforces the layering.
 - **Errors are chosen in one place.** `lib/errorHandler.ts` returns `detail`, then `title`, then the
   client's own `errors.noAnswer`; `errors.signInLoop` is the second client-authored sentence. There
-  is no status-to-sentence table. The admin is localised in en/ru/hy like the client — it is no
+  is no status-to-sentence table. The admin is localised in en/ru/hy like the client, it is no
   longer an English-only panel.
 - **The kit is `components/ui/` (`Ui*`), and screens are composed from it.** Views, layouts and area
   components carry no raw `button/input/select/textarea/table/form/dialog/a` (`vue/no-restricted-html-elements`);
@@ -2439,9 +2474,9 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   and every interactive element a `data-testid` (`<area>-<element>[-<id>]`). chart.js is only used
   behind `UiChart`; reports share one scaffold (`ReportPage`, `ReportTable`, `ReportQueryPage`).
 - **Closed sets are enums or `as const` objects with a derived union** (`AuthMode`, `TicketStatus`,
-  `InvoiceBulkAction`, `CancellationType`, `UiTone`, ...); tones for API status words live in
+  `InvoiceBulkAction`, `CancellationType`, `UiTone` and so on); tones for API status words live in
   `lib/tones.ts`. A screen whose feature is not built (affiliates, addons, disputes, offline card
-  processing) renders `ComingSoonPage` — never placeholder records.
+  processing) renders `ComingSoonPage`: never placeholder records.
 - **Locales.** `src/locales/{en,ru,hy}/<area>.json`, one file per area, the file name being the first
   key segment (`nav.json` holds `nav.*`); `locales/messages.ts` assembles them with
   `import.meta.glob` and `i18n.ts` loads the result. All three languages change together.
@@ -2505,12 +2540,12 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
 
 `backend/tests/` has four projects: `Domain.Tests`, `Integration.Tests`, `Architecture.Tests`,
 `Innovayse.CWP.Tests`. **There is no `Application.Tests` or
-`Infrastructure.Tests`** — use-case tests are `Integration.Tests/<Feature>/<UseCase>Tests.cs`
+`Infrastructure.Tests`**: use-case tests are `Integration.Tests/<Feature>/<UseCase>Tests.cs`
 (Testcontainers Postgres, fakes in `Fixtures/` for external ports only), and adapter tests live in
 `Integration.Tests/Adapters/{Auth,Billing,Integrations}`. Do not add either project.
 `Integration.Tests/Security/LeakGuardTests` guards against leaking secrets/internals in
 responses; `Fixtures/StubHttpServer` is the in-process HTTP fake for external APIs. The admin SPA
-has vitest (`npm test`, `admin/tests/`) and Playwright (`npm run e2e`, `admin/e2e/`) — see "The admin's shape".
+has vitest (`npm test`, `admin/tests/`) and Playwright (`npm run e2e`, `admin/e2e/`), see "The admin's shape".
 `Integration.Tests/Persistence/ModelDiffBaselineTests` is the schema guard (the spec's "snapshot unchanged" test): the EF differ's operations between the migrations snapshot and the live model must equal `Fixtures/model-diff-baseline.txt` (`(no differences)`), so an entity change without a migration fails.
 
 **The Integration suite runs in five shards, one at a time, because one `dotnet test` host holds
@@ -2539,10 +2574,10 @@ the letters of a split folder do not cover A to Z exactly once.
   AGPL repository cannot hand to downstream users; `.github/dependabot.yml` ignores that package.
   `SkiaSharp` and `SkiaSharp.NativeAssets.Linux.NoDependencies` (so the Alpine image needs no apk
   packages) must stay on one version. What the safety of an upload still rests on is unchanged: the
-  processor sniffs magic bytes first (PNG/JPEG/GIF/WebP/BMP only — Skia would otherwise also try
+  processor sniffs magic bytes first (PNG/JPEG/GIF/WebP/BMP only, Skia would otherwise also try
   ICO, WBMP and raw codecs), reads the header to enforce the edge and pixel ceilings before decoding
   any pixels, refuses SVG, and encodes PNG only. Keep that true. Downscales use mipmapped
-  (trilinear) sampling on purpose — Skia's cubic filter aliases a 1024px mark reduced to a 16px
+  (trilinear) sampling on purpose: Skia's cubic filter aliases a 1024px mark reduced to a 16px
   favicon. A refusal is a `Result` failure (`BRANDING_IMAGE_INVALID` / `BRANDING_IMAGE_TOO_LARGE`);
   the precise cause is logged, never returned.
 
@@ -2571,7 +2606,7 @@ the letters of a split folder do not cover A to Z exactly once.
   stored inside a column keeps the camelCase wire shape. A migration or configuration that emits a
   non-PascalCase identifier is a review failure.
 
-## Debt — recorded, not endorsed
+## Debt: recorded, not endorsed
 
 Never spread one of these, and never restructure as a side effect of a feature.
 
@@ -2585,7 +2620,7 @@ Never spread one of these, and never restructure as a side effect of a feature.
   `api/me/payment-methods`) is gone; a ledger row recorded as `Card` with no hosted session behind it is refunded by a
   manual refund (`INVOICE_NOT_GATEWAY_PAID` for a Gateway refund). The plugin's stored `integration:<slug>:*` settings and
   the payment rows are untouched and read by the plugin under the same slug. Manual bank transfer is built into the host (module `bank_transfer`, settings under the `bank-transfer` integration) while bank gateways are plugins.
-- **Vendor names that remain, on purpose.** Integration slugs (`cwp`, ...) in
+- **Vendor names that remain, on purpose.** Integration slugs (`cwp` and so on) in
   `IntegrationSlugs` / `BuiltInPaymentModules` and the `Integrations/<Vendor>/` adapter folders are
   plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/cwp`)
   and chosen in the admin UI, so renaming them would break stored configuration. They are the only
@@ -2637,11 +2672,11 @@ Never spread one of these, and never restructure as a side effect of a feature.
 
 | Kind | Path |
 |---|---|
-| HTTP endpoint | `backend/src/Innovayse.Hostpanel.API/Controllers/<Name>Controller.cs` (or the feature folder that already holds its siblings) — derives `BaseApiController` |
+| HTTP endpoint | `backend/src/Innovayse.Hostpanel.API/Controllers/<Name>Controller.cs` (or the feature folder that already holds its siblings), derives `BaseApiController` |
 | Command / query + handler + validator | `backend/src/Innovayse.Hostpanel.Application/<Feature>/{Commands,Queries}/<UseCase>/` |
 | DTO shared by several use cases in a feature | `.../Application/<Feature>/Common/` |
 | DTO used by exactly one use case | that use case's own folder |
-| Port | `.../Application/Common/Interfaces/I<Port>.cs` — nowhere else |
+| Port | `.../Application/Common/Interfaces/I<Port>.cs`: nowhere else |
 | Error code → status | `backend/src/Shared/Controllers/StatusMapping.cs` |
 | Sentence a person reads for a refusal | `.../Application/Resources/ErrorMessages*.resx` (en, ru, hy together) |
 | Entity, domain event, enum | `backend/src/Innovayse.Hostpanel.Domain/<Area>/` (`Events/`, `Enums/`) |
@@ -2665,7 +2700,7 @@ Never spread one of these, and never restructure as a side effect of a feature.
   a loop, and enumerating a directory being written to occasionally returns an entry twice over
   the Docker Desktop mount. It is a mount artefact, not your build. Recover with
   `stop` then `up -d`, never `restart`. The API itself serves fine; only hot reload is lost.
-  This is also why `Innovayse.Hostpanel.API.csproj` carries `<Watch Remove="logs/**/*" />` — and
+  This is also why `Innovayse.Hostpanel.API.csproj` carries `<Watch Remove="logs/**/*" />`, and
   `<Content Remove>`, so a publish does not ship yesterday's logs.
 - **Wolverine logs `Invocation of {Message} failed!` at Error with a stack trace for every
   handler exception**, before its own policies get a say, and 5.31.0 has no knob for it. A

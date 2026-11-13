@@ -59,6 +59,9 @@ export const useBrandingStore = defineStore('branding', () => {
    */
   const logoOnLightUrl = computed(() => logoUrl.value || logoDarkUrl.value)
 
+  /** Whether the operator has uploaded a logo of either kind, so the panel shows it instead of the built-in tile. */
+  const hasLogo = computed(() => logoOnDarkUrl.value !== '')
+
   /** Operator's favicon URL; empty string means "leave index.html's links alone". */
   const faviconUrl = ref('')
 
@@ -91,5 +94,5 @@ export const useBrandingStore = defineStore('branding', () => {
     faviconUrl.value = rows.find(r => r.key === FAVICON_KEY)?.value?.trim() ?? ''
   }
 
-  return { logoUrl, logoDarkUrl, logoOnDarkUrl, logoOnLightUrl, faviconUrl, loaded, load }
+  return { logoUrl, logoDarkUrl, logoOnDarkUrl, logoOnLightUrl, hasLogo, faviconUrl, loaded, load }
 })

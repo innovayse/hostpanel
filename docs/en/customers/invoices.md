@@ -63,7 +63,7 @@ The payment result page shows one of the following:
 | **Payment is being confirmed** | The gateway has not responded yet. Click **Check again** to refresh. |
 | **Payment was not completed** | No money was taken. Click **Try paying again**. |
 | **We couldn't confirm your payment** | Do not pay again yet. Contact support to check what happened. |
-| **No payment to check** | Nothing to show — you may have arrived here by mistake. |
+| **No payment to check** | Nothing to show: you may have arrived here by mistake. |
 
 ## Your credit
 

@@ -1,20 +1,19 @@
 <script setup lang="ts">
 /**
- * Admin top navigation bar.
+ * Admin top navigation bar, a slim blurred strip under the ground.
  *
- * Shows the current page title, the theme and language switches, the notification feed (in a side drawer), the
- * signed-in account and the sign-out action. On mobile it emits `toggle-sidebar` to open the
- * navigation drawer.
+ * Shows the current page title, the wide search trigger (it announces Ctrl K and opens the command palette), the
+ * theme and language switches, the notification feed (in a side drawer, a bottom sheet on a phone) and the primary
+ * action. The signed-in account lives in the sidebar. Below lg it carries the menu button, which emits `toggle-sidebar` to open the navigation drawer; from lg up the
+ * sidebar's own header button folds the sidebar, so the bar has no second control for it.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { SUPPORTED_LOCALES, setLocale } from '@/i18n'
-import type { SupportedLocale } from '@/i18n'
 import { activityEventLink } from '@/lib/activityEventLink'
 import { formatRelativeFromNow } from '@/lib/format'
 import { useActivityStore } from '@/stores/activity'
-import { useAuthStore } from '@/stores/auth'
+import { useCommandPaletteStore } from '@/stores/commandPalette'
 import type { ActivityEvent } from '@/types/activityevent'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -23,16 +22,19 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiLink from '@/components/ui/UiLink.vue'
-import UiSelect from '@/components/ui/UiSelect.vue'
-import ThemeSelect from '@/components/layout/ThemeSelect.vue'
+import ThemeMenu from '@/components/layout/ThemeMenu.vue'
+import LocaleMenu from '@/components/layout/LocaleMenu.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { Icon } from '@/lib/icons'
 import { AppRoute } from '@/lib/routes'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiBreakpoint } from '@/utils/ui/layout'
 
-/** Emitted when the hamburger button is clicked on mobile. */
+/** Emitted by the hamburger button on a phone. */
 const emit = defineEmits<{
   /** Emitted to toggle the sidebar drawer on mobile/tablet. */
   'toggle-sidebar': []
@@ -44,14 +46,17 @@ const { t, locale } = useI18n()
 /** Current route, to derive the page title. */
 const route = useRoute()
 
-/** Router, for sign-out and the notification links. */
+/** Router, for the notification links. */
 const router = useRouter()
 
-/** Auth store: the signed-in account and the sign-out action. */
-const auth = useAuthStore()
+/** Command palette store: the search trigger opens it. */
+const palette = useCommandPaletteStore()
 
 /** Activity store: the notification feed. */
 const activity = useActivityStore()
+
+/** The keys the search trigger announces for the command palette. */
+const SEARCH_SHORTCUT = 'Ctrl K'
 
 /** Hamburger glyph. */
 const MENU_MARKUP = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>'
@@ -76,13 +81,6 @@ const titleKeys: Record<string, string> = {
   [AppRoute.Notifications]: 'common.notifications',
 }
 
-/** Display labels for the language switcher. */
-const localeLabels = computed<Record<SupportedLocale, string>>(() => ({
-  en: t('layout.localeLabels.en'),
-  hy: t('layout.localeLabels.hy'),
-  ru: t('layout.localeLabels.ru'),
-}))
-
 /** Controls the notification drawer. */
 const showNotifications = ref(false)
 
@@ -92,36 +90,8 @@ const pageTitle = computed<string>(() => {
   return match ? t(match[1]) : t('common.admin')
 })
 
-/** Options of the language select. */
-const localeOptions = computed(() =>
-  SUPPORTED_LOCALES.map(code => ({ value: code, label: localeLabels.value[code] })),
-)
-
 /** Number of events in the feed, shown as the badge and header count. */
 const notificationCount = computed<number>(() => activity.events.length)
-
-/**
- * The signed-in operator's address, or a neutral label before the profile has loaded.
- *
- * Naming the account lets an operator tell which account they are acting as, which matters on a
- * panel where several people share one screen.
- *
- * @returns The email, or the neutral admin label.
- */
-const accountLabel = computed<string>(() => auth.user?.email ?? t('common.admin'))
-
-/**
- * Switches the active locale when the chosen code is one the panel ships.
- *
- * @param code - The code picked in the select.
- * @returns Nothing; the active locale is updated.
- */
-const chooseLocale = (code: string): void => {
-  const chosen = SUPPORTED_LOCALES.find(supported => supported === code)
-  if (chosen !== undefined) {
-    setLocale(chosen)
-  }
-}
 
 /** Text of the count badge: the exact number up to 9, "9+" beyond. */
 const notificationBadge = computed<string>(() => (notificationCount.value > 9 ? '9+' : String(notificationCount.value)))
@@ -163,16 +133,6 @@ const goToActivityEvent = (event: ActivityEvent): void => {
   void router.push(activityEventLink(event))
 }
 
-/**
- * Ends the session and returns to the sign-in screen.
- *
- * @returns Promise that resolves once the operator is on the sign-in screen.
- */
-const signOut = async (): Promise<void> => {
-  await auth.logout()
-  await router.push(AppRoute.Login)
-}
-
 /** Loads the notification feed once on mount so the badge reflects real data immediately. */
 onMounted(() => {
   void activity.fetchActivity()
@@ -180,52 +140,57 @@ onMounted(() => {
 </script>
 
 <template>
-  <header class="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface-panel px-4 lg:px-6" data-testid="app-topbar">
+  <header class="flex h-[calc(var(--shell-header-h)+env(safe-area-inset-top))] shrink-0 items-center gap-4 border-b border-border-shell bg-surface-topbar px-4 pt-[env(safe-area-inset-top)] backdrop-blur-[14px] lg:px-8" data-testid="app-topbar">
     <!-- Left: hamburger + page title -->
-    <!-- The left side may shrink (min-w-0) so the title is cut with an ellipsis before the controls on the right are pushed off a phone screen; a long Armenian or Russian title would otherwise do that. -->
+    <!-- The title may shrink (min-w-0) so it is cut with an ellipsis before the controls on the right are pushed off a phone screen; a long Armenian or Russian title would otherwise do that. -->
     <UiStack direction="row" align="center" gap="sm" class="min-w-0">
-      <!-- Hamburger: visible on mobile/tablet -->
-      <UiIconButton :label="t('common.toggleSidebar')" class="lg:hidden" data-testid="topbar-toggle-sidebar" @click="emit('toggle-sidebar')">
+      <!-- Hamburger: opens the navigation drawer, so only below lg; from lg up the sidebar's own header button folds the sidebar -->
+      <UiIconButton :label="t('layout.openMenu')" class="lg:hidden" data-testid="topbar-toggle-sidebar" @click="emit('toggle-sidebar')">
         <UiIcon :markup="MENU_MARKUP" />
       </UiIconButton>
 
-      <UiHeading :level="2" variant="card" class="min-w-0 truncate" data-testid="topbar-title">{{ pageTitle }}</UiHeading>
+      <UiHeading :level="2" class="min-w-0 truncate font-sans text-sm font-normal text-text-muted" data-testid="topbar-title">{{ pageTitle }}</UiHeading>
     </UiStack>
 
-    <!-- Right: theme + language + notifications + account -->
-    <UiStack direction="row" align="center" gap="sm" class="shrink-0">
-      <!-- The theme picker and the Settings link do not fit a phone's top bar; on a phone both are in the menu drawer. -->
-      <UiStack :visible-from="UiBreakpoint.Sm">
-        <ThemeSelect compact class="w-28" data-testid="topbar-theme" />
+    <!-- Opens the command palette; the shortcut is only announced here. From a tablet up it is a wide field, on a phone the icon alone, drawn like the other icon triggers of the bar (ghost: no fill, no border). -->
+    <UiButton
+      type="button"
+      :aria-label="t('commandPalette.open')"
+      class="flex h-[2.625rem] min-w-0 items-center gap-2.5 rounded-control border border-border bg-surface-field px-3.5 text-sm text-text-muted transition-colors hover:bg-surface-hover max-md:w-10.5 max-md:justify-center max-md:border-transparent max-md:bg-transparent max-md:px-0 max-md:text-text-secondary max-md:hover:bg-surface-hover max-md:hover:text-text-primary md:ml-6 md:w-full md:max-w-[460px] md:flex-1"
+      data-testid="topbar-search"
+      @click="palette.open()"
+    >
+      <UiIcon :markup="Icon.Search" size="sm" class="shrink-0" />
+      <UiText :tone="UiTextTone.Muted" class="hidden flex-1 truncate text-left md:block">{{ t('commandPalette.placeholder') }}</UiText>
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="hidden shrink-0 rounded-md border border-border-strong px-[7px] py-0.5 md:block" data-testid="topbar-search-shortcut">{{ SEARCH_SHORTCUT }}</UiText>
+    </UiButton>
+
+    <!-- Right: theme + language + notifications + the primary action -->
+    <UiStack direction="row" align="center" gap="sm" class="ml-auto shrink-0">
+      <!-- The theme and language pickers do not fit a phone's top bar; on a phone they are in the menu drawer. -->
+      <UiStack direction="row" align="center" gap="sm" :visible-from="UiBreakpoint.Sm">
+        <ThemeMenu testid="topbar-theme" />
+        <LocaleMenu testid="topbar-locale" />
       </UiStack>
-      <UiSelect
-        :model-value="locale"
-        :options="localeOptions"
-        :placeholder="localeLabels.en"
-        compact
-        class="w-20"
-        data-testid="topbar-locale"
-        @update:model-value="chooseLocale"
-      />
 
       <!--
         The badge is overlaid on the bell's top-right corner; the ring cuts it out of the bar surface. On a phone
         it is a marker dot (the bar has no room for a number; the button's label still says how many).
       -->
       <UiStack direction="row" align="center" class="relative">
-        <UiIconButton :label="notificationLabel" data-testid="topbar-notifications" class="hover:bg-surface-hover" @click="openNotifications">
+        <UiIconButton :label="notificationLabel" data-testid="topbar-notifications" @click="openNotifications">
           <UiIcon :markup="BELL_MARKUP" />
         </UiIconButton>
         <template v-if="notificationCount > 0">
           <UiStack :hidden-from="UiBreakpoint.Sm" class="pointer-events-none absolute right-0.5 top-0.5">
-            <UiBadge tone="primary" marker aria-hidden="true" class="ring-2 ring-surface-panel" data-testid="topbar-notification-dot" />
+            <UiBadge tone="primary" marker aria-hidden="true" class="ring-2 ring-surface-elevated" data-testid="topbar-notification-dot" />
           </UiStack>
           <UiStack :visible-from="UiBreakpoint.Sm" class="pointer-events-none absolute -right-1 -top-1">
             <UiBadge
               tone="primary"
               small
               aria-hidden="true"
-              class="min-w-[1.125rem] justify-center ring-2 ring-surface-panel"
+              class="min-w-[1.125rem] justify-center ring-2 ring-surface-elevated"
               data-testid="topbar-notification-count"
             >
               {{ notificationBadge }}
@@ -234,21 +199,16 @@ onMounted(() => {
         </template>
       </UiStack>
 
-      <UiText tone="secondary" size="md" class="hidden max-w-[12rem] truncate font-medium sm:block" data-testid="topbar-account">
-        {{ accountLabel }}
-      </UiText>
-      <UiStack :visible-from="UiBreakpoint.Sm">
-        <UiLink :to="AppRoute.Settings" variant="ghost" size="sm" data-testid="topbar-settings">
-          {{ t('nav.settings') }}
+      <!-- The primary action: the gradient button, from a tablet up. -->
+      <UiStack :visible-from="UiBreakpoint.Md">
+        <UiLink :to="AppRoute.ClientsAdd" :variant="UiButtonVariant.Primary" class="h-[2.625rem] rounded-control px-[18px]" data-testid="topbar-primary-action">
+          {{ t('layout.newClient') }}
         </UiLink>
       </UiStack>
-      <UiButton type="button" variant="danger" size="sm" class="whitespace-nowrap" data-testid="topbar-sign-out" @click="signOut">
-        {{ t('common.signOut') }}
-      </UiButton>
     </UiStack>
 
     <!-- Notification feed -->
-    <UiDrawer :open="showNotifications" :title="t('common.notifications')" @close="showNotifications = false">
+    <UiDrawer :open="showNotifications" :title="t('common.notifications')" sheet @close="showNotifications = false">
       <UiStack gap="sm" data-testid="notifications-drawer">
         <UiBadge tone="primary" small>{{ t('common.newCount', { count: notificationCount }, notificationCount) }}</UiBadge>
 
@@ -257,7 +217,7 @@ onMounted(() => {
         <UiStack v-else gap="xs">
           <UiButton
             v-for="(event, index) in activity.events"
-            :key="`${event.type}-${event.occurredAt}-${index}`"
+            :key="`${event.type}-${event.entityId}-${event.occurredAt}`"
             type="button"
             variant="ghost"
             class="w-full !justify-start text-left"

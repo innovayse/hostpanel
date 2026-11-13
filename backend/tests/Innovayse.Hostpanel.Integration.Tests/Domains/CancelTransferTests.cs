@@ -26,7 +26,7 @@ public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClass
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var domain = RegisteredDomain.CreateTransfer(clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, priceCurrency: TestCurrencies.Base);
+        var domain = RegisteredDomain.CreateTransfer(clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, priceCurrency: TestCurrencies.Base);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -54,7 +54,7 @@ public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClass
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var domain = RegisteredDomain.CreateTransfer(clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, priceCurrency: TestCurrencies.Base);
+        var domain = RegisteredDomain.CreateTransfer(clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, priceCurrency: TestCurrencies.Base);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 

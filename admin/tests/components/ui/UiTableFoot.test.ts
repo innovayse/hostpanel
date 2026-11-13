@@ -16,4 +16,10 @@ describe('UiTableFoot', () => {
     expect(wrapper.classes()).toContain('border-t')
     expect(wrapper.text()).toBe('Total')
   })
+
+  it('is set apart from the rows by a hairline above it', () => {
+    const wrapper = mount(UiTableFoot, { attachTo: document.createElement('table') })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['border-t', 'border-border-subtle', 'font-semibold']))
+  })
 })

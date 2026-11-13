@@ -16,8 +16,8 @@ import { useRoute } from 'vue-router'
 import PluginView from '@/components/plugins/view/PluginView.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { usePluginUiStore } from '@/stores/pluginUi'
 import { PluginBlockKind } from '@/types/pluginview'
@@ -72,7 +72,10 @@ watch(locale, load)
 
 <template>
   <UiStack :gap="UiGap.Lg" class="w-full" data-testid="plugin-page">
-    <UiSkeleton v-if="store.pageLoading" :lines="4" data-testid="plugin-page-loading" />
+    <template v-if="store.pageLoading">
+      <UiPageHeader v-if="!ownHeader" loading data-testid="plugin-page-loading-header" />
+      <UiCard padding="md" loading :skeleton-lines="4" data-testid="plugin-page-loading" />
+    </template>
     <UiEmptyState
       v-else-if="store.pageNotFound"
       :title="t('plugins.pluginPage.notFoundTitle')"

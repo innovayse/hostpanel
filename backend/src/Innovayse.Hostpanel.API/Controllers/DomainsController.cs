@@ -42,7 +42,7 @@ public sealed class DomainsController : BaseApiController
     }
 
     /// <summary>Returns a paginated list of all domains in the system.</summary>
-    /// <param name="query">Pagination and optional client filter.</param>
+    /// <param name="query">Pagination, optional client filter and optional domain name search.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the page; 401 without a session; 403 for a caller who is not staff; 400 when the body, query or route fails validation; 429 when the rate limit is hit.</returns>
     [HttpGet]

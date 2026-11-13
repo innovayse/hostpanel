@@ -13,16 +13,14 @@ import { useI18n } from 'vue-i18n'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
-import SettingSaveButton from '@/components/settings/SettingSaveButton.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { BRAND_FONT_OPTIONS, previewClass } from '@/lib/brandFonts'
 import { SettingEnv, SettingKey } from '@/types/setting'
-import type { Setting, SettingSave } from '@/types/setting'
+import type { Setting } from '@/types/setting'
 
 const { t } = useI18n()
 
@@ -30,8 +28,6 @@ const { t } = useI18n()
 const props = defineProps<{
   /** All system settings, as loaded from the backend. */
   settings: Setting[]
-  /** Persists one row and answers how it went; each control shows its own outcome. */
-  save: SettingSave
 }>()
 
 /** The settings list as a ref, which is what the draft composable watches. */
@@ -43,7 +39,7 @@ const heading = useSettingDraft(settings, SettingKey.BrandFontHeading)
 /** Draft of the body face. */
 const body = useSettingDraft(settings, SettingKey.BrandFontBody)
 
-/** The two selects, saved separately like every other control on the page. */
+/** The two selects, drafts of the page's save bar like every other control on it. */
 const FIELDS = [
   { key: SettingKey.BrandFontHeading, env: SettingEnv[SettingKey.BrandFontHeading], testid: 'heading', labelKey: 'settings.typography.heading', draft: heading },
   { key: SettingKey.BrandFontBody, env: SettingEnv[SettingKey.BrandFontBody], testid: 'body', labelKey: 'settings.typography.body', draft: body },
@@ -65,38 +61,31 @@ const fontOptions = computed(() => [
 
 <template>
   <SettingsSection
+    :columns="2"
     :title="t('settings.typography.title')"
     :description="t('settings.typography.description')"
   >
-    <UiGrid :columns="2">
-      <template v-for="field in FIELDS" :key="field.key">
-        <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="field.env" />
-        <UiStack v-else gap="xs">
-          <UiText tone="secondary" size="md">
-            {{ t(field.labelKey) }}
-          </UiText>
-          <UiStack direction="row" align="center">
-            <UiSelect
-              v-model="field.draft.value.value"
-              :options="fontOptions"
-              :placeholder="t('settings.typography.templateDefault')"
-              :data-testid="`typography-${field.testid}`"
-              class="min-w-48 flex-1"
-            />
-            <SettingSaveButton
-              :dirty="field.draft.dirty.value"
-              :saving="field.draft.saving.value"
-              :data-testid="`typography-save-${field.testid}`"
-              @click="field.draft.submit(save)"
-            />
-            <SettingOutcome :outcome="field.draft.outcome.value" />
-          </UiStack>
+    <template v-for="field in FIELDS" :key="field.key">
+      <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="field.env" />
+      <UiStack v-else gap="xs">
+        <UiText tone="secondary" size="md">
+          {{ t(field.labelKey) }}
+        </UiText>
+        <UiStack direction="row" align="center">
+          <UiSelect
+            v-model="field.draft.value.value"
+            :options="fontOptions"
+            :placeholder="t('settings.typography.templateDefault')"
+            :data-testid="`typography-${field.testid}`"
+            class="min-w-48 flex-1"
+          />
+          <SettingOutcome :outcome="field.draft.outcome.value" />
         </UiStack>
-      </template>
-    </UiGrid>
+      </UiStack>
+    </template>
 
     <!-- The pair as the storefront will set it: a heading in the heading face, a line in the body face. -->
-    <UiCard padding="md" elevated data-testid="typography-preview">
+    <UiCard padding="md" elevated class="md:col-span-2" data-testid="typography-preview">
       <UiStack v-for="sampleKey in SAMPLE_KEYS" :key="sampleKey" gap="xs" class="mb-2 last:mb-0">
         <UiText tone="primary" size="lg" class="font-bold" :class="previewClass(heading.value.value)">
           {{ t(sampleKey) }}

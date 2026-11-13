@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 /**
- * UiChatInput - the message field of a chat: a frame holding a textarea that grows from one line to six as the reader
+ * UiChatInput. The message field of a chat: a frame holding a textarea that grows from one line to six as the reader
  * types, with the send control inside it (the `action` slot).
  *
  * Enter asks to send (`submit`) and Shift+Enter makes a new line; an Enter that confirms an input-method composition is

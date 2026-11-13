@@ -12,7 +12,7 @@ restore them on the same or a different server.
 
 | Item | Why |
 |---|---|
-| `/opt/hostpanel/.env` | Contains `ENCRYPTION_KEY` — without it, encrypted columns cannot be read after a restore. |
+| `/opt/hostpanel/.env` | Contains `ENCRYPTION_KEY`: without it, encrypted columns cannot be read after a restore. |
 | `hostpanel_pgdata` volume (or a SQL dump) | All application data: clients, orders, invoices, services, settings. |
 | `hostpanel_hostpanel_branding` volume | Logos, favicons and other branding files uploaded in the admin panel. |
 | `hostpanel_hostpanel_plugins` volume | Plugins installed through the admin panel. |
@@ -26,7 +26,7 @@ if you want to avoid re-issuance, but it is not required for a data restore.
 
 <Callout type="danger">
 Without the same <code>ENCRYPTION_KEY</code> from <code>.env</code>, a restored database cannot
-be read — server passwords, API tokens and access hashes are stored encrypted.
+be read: server passwords, API tokens and access hashes are stored encrypted.
 Always back up <code>.env</code> together with every dump.
 </Callout>
 

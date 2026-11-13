@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 /**
- * PluginBlock - picks the host component of one plugin block by its kind (`PluginViews.BlockKinds`). A kind this
+ * PluginBlock: picks the host component of one plugin block by its kind (`PluginViews.BlockKinds`). A kind this
  * host does not know renders nothing, so a view written for a newer minor schema still shows what this host can;
  * the install check already refuses a kind outside the schema the host accepts. A block with `visibleWhen` shows only
  * while its condition holds (`usePluginCondition`), read again whenever its own id is refreshed.

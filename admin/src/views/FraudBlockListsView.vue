@@ -13,7 +13,8 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -153,7 +154,7 @@ const confirmDelete = async (): Promise<void> => {
  * @param entry - The row.
  * @returns The action list passed to UiRowActions.
  */
-const entryActions = (entry: BlockListEntry): UiRowAction[] => [
+const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
   {
     label: t('shared.delete'),
     danger: true,
@@ -213,7 +214,6 @@ onMounted(() => load(1))
       <UiTable
         :loading="store.loading && store.entries.length === 0"
         :empty="!store.loading && store.entries.length === 0"
-        :colspan="4"
         data-testid="fraud-block-list-table"
       >
         <UiTableHead>

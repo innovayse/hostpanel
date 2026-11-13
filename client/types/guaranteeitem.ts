@@ -1,5 +1,5 @@
 /**
- * Guarantee item type - one promise of the guarantees section.
+ * Guarantee item type: one promise of the guarantees section.
  *
  * @module types/guaranteeitem
  */

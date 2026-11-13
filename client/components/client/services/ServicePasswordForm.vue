@@ -29,7 +29,7 @@
       <template #actions>
         <UiButton type="submit" :loading="passwordChanging" data-testid="service-password-submit">
           <KeyRound v-if="!passwordChanging" :size="14" :stroke-width="2" class="mr-1.5" />
-          {{ passwordChanging ? $t('client.services.passwordChanging') : $t('client.services.passwordBtn') }}
+          {{ $t('client.services.passwordBtn') }}
         </UiButton>
       </template>
     </UiForm>
@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 /**
- * ServicePasswordForm - changes the control-panel password of one service. The two typed values
+ * ServicePasswordForm: changes the control-panel password of one service. The two typed values
  * are checked here for length and match before anything is sent; the request, its in-flight flag
  * and the API's refusal belong to the service management store.
  */

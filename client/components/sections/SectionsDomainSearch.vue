@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 /**
- * SectionsDomainSearch - the domain search bar of the classic home page (hero and closing band).
+ * SectionsDomainSearch: the domain search bar of the classic home page (hero and closing band).
  *
  * It does not look the name up itself: it opens the domains page with the typed name in `?domain=` (see `DOMAIN_SEARCH_QUERY_PARAM`),
  * and that page runs the availability search and shows the result and the cart actions.

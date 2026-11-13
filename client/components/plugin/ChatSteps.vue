@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatSteps - the compact list of steps a plugin's reply reports, each with the icon of its state, and how many
+ * PluginChatSteps: the compact list of steps a plugin's reply reports, each with the icon of its state, and how many
  * have finished.
  */
 import { UiCrossAlign, UiDirection, UiGap, UiTextSize, UiTextTone } from '~/utils/ui/enums'

@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 /**
- * PluginStatBlock - a labelled value, written in the view or read from a GET route, formatted with the host's
+ * PluginStatBlock: a labelled value, written in the view or read from a GET route, formatted with the host's
  * locale formatters and shown as text in a tile. A failed read shows the store's sentence (the API's `detail`) in place of
  * the value, so one failing block never hides the rest of the page. `format: badge` draws the word as a badge.
  */

@@ -1,7 +1,7 @@
 name: Branch flow
 
 # The GitLab side of this repo has protected branches, but merge requests do not
-# happen there -- GitLab is a mirror, and every merge into main happens here. So
+# happen there, GitLab is a mirror, and every merge into main happens here. So
 # the rule that main is only ever fed by develop or a hotfix has to be enforced
 # on this side, and neither GitHub nor GitLab has a setting for it: branch
 # protection answers "who may merge", never "from where".
@@ -39,7 +39,7 @@ jobs:
               echo "BLOCKED: main only accepts pull requests from 'develop' or 'hotfix/*'."
               echo "  this PR:  $SRC -> main"
               echo ""
-              echo "Retarget it at develop instead — Edit -> base: develop."
+              echo "Retarget it at develop instead: Edit -> base: develop."
               echo "main is then updated by a single develop -> main pull request."
               exit 1
               ;;

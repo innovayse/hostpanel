@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 /**
- * PluginTextBlock - plain text from a plugin. Interpolated, never bound as HTML, so markup a plugin writes is
+ * PluginTextBlock: plain text from a plugin. Interpolated, never bound as HTML, so markup a plugin writes is
  * shown as the characters it is; line breaks are kept.
  */
 import type { PluginTextBlock } from '~/types/pluginblock'

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
@@ -11,6 +12,9 @@ public sealed class ListDomainsValidator : LocalizedValidator<ListDomainsQuery>
     /// <summary>Largest page size an admin listing may ask for.</summary>
     private const int MaxPageSize = PagingLimits.MaxPageSize;
 
+    /// <summary>Longest name search accepted; far above any domain name (253 characters at most).</summary>
+    private const int MaxSearchLength = 255;
+
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
     public ListDomainsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
@@ -18,5 +22,6 @@ public sealed class ListDomainsValidator : LocalizedValidator<ListDomainsQuery>
     {
         RuleFor(x => x.Page).MustBePage(L["DomainPageRequired"]);
         RuleFor(x => x.PageSize).MustBePageSize(MaxPageSize, L["DomainPageSizeRange"]);
+        RuleFor(x => x.Search).MaximumLength(MaxSearchLength).WithMessage(L["DomainListSearchTooLong", MaxSearchLength]);
     }
 }

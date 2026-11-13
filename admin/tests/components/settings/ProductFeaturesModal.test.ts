@@ -51,6 +51,16 @@ describe('ProductFeaturesModal', () => {
     expect((wrapper.get('[data-testid="product-feature-value-8"]').element as HTMLInputElement).value).toBe('1 GB')
   })
 
+  it('draws placeholder rows and a disabled add row while the lines load', async () => {
+    stubRouteTable({ 'GET /product-features': () => new Promise<Response>(() => undefined) })
+    const { wrapper } = await mountScreen(ProductFeaturesModal, { product })
+
+    expect(wrapper.find('[data-testid="product-features-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="product-features-list"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="product-feature-new-label"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="product-feature-add"]').attributes('disabled')).toBeDefined()
+  })
+
   it('explains an empty specification', async () => {
     stubRouteTable({ 'GET /product-features': () => json([]) })
     const { wrapper } = await mountScreen(ProductFeaturesModal, { product })

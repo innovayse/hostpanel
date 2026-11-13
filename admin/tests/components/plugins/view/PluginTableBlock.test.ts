@@ -8,7 +8,7 @@ import { usePluginUiStore } from '@/stores/pluginUi'
 import { PluginBlockKind, PluginTableDisplay, PluginValueFormat } from '@/types/pluginview'
 import type { PluginTableBlock } from '@/types/pluginview'
 import { json, problem } from '../../../helpers/fetch'
-import { ext, mountPluginView } from '../../../helpers/pluginView'
+import { ext, mountLoadingPluginView, mountPluginView } from '../../../helpers/pluginView'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -81,5 +81,14 @@ describe('PluginTableBlock', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/apps/sites/sites/2')
+  })
+
+  it('keeps the header and shows skeleton rows while the source is read', async () => {
+    const wrapper = await mountLoadingPluginView([table({ pageSize: 2 })])
+
+    expect(wrapper.text()).toContain('Name')
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-table-row"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-table-pagination-range"]').exists()).toBe(true)
   })
 })

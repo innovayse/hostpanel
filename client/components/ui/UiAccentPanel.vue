@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiAccentPanel - a pricing-style panel that is neutral by default and takes the colour of the
+ * UiAccentPanel: a pricing-style panel that is neutral by default and takes the colour of the
  * nearest `UiAccent` for its frame and glow when it is `highlighted` (the recommended plan).
  */
 import { computed } from 'vue'

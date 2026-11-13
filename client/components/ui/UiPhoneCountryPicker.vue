@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 /**
- * UiPhoneCountryPicker - the country part of the phone field: a trigger showing the flag and
+ * UiPhoneCountryPicker. The country part of the phone field: a trigger showing the flag and
  * calling code, and a searchable listbox opened from it.
  *
  * The search field starts empty and filters by country name, native name, ISO code and calling

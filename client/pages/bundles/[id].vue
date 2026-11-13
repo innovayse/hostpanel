@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 /**
- * Bundle page - the order screen of one product bundle.
+ * Bundle page: the order screen of one product bundle.
  * Route: /bundles/[id]
  *
  * The page only wires: `useBundlePage` reads the bundle and owns the visitor's choices, and

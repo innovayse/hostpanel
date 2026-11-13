@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 /**
- * DescriptionItem (`UiDescriptionItem`) - one label/value pair of a description list; place it
+ * DescriptionItem (`UiDescriptionItem`): one label/value pair of a description list; place it
  * inside a `dl`-style grid. An empty value shows an em dash; the default slot overrides the value.
  */
 

@@ -33,7 +33,7 @@ describe('UiButton', () => {
     const primary = mount(UiButton, { props: { variant: 'primary' } })
     const danger = mount(UiButton, { props: { variant: 'danger' } })
 
-    expect(primary.classes()).toContain('gradient-brand')
+    expect(primary.classes()).toContain('not-disabled:gradient-brand')
     expect(danger.classes()).toContain('text-status-red')
   })
 
@@ -41,7 +41,7 @@ describe('UiButton', () => {
     const small = mount(UiButton, { props: { variant: 'secondary', size: 'sm' } })
     const large = mount(UiButton, { props: { variant: 'secondary', size: 'lg' } })
 
-    expect(small.classes()).toContain('px-2.5')
+    expect(small.classes()).toContain('px-3.5')
     expect(large.classes()).toContain('px-6')
   })
 
@@ -49,7 +49,7 @@ describe('UiButton', () => {
     const link = mount(UiButton, { props: { variant: UiButtonVariant.Link, size: UiSize.Sm } })
 
     expect(link.classes().some((c) => /^p[xy]?-/.test(c))).toBe(false)
-    expect(link.classes()).toContain('text-[0.75rem]')
+    expect(link.classes()).toContain('text-[0.8125rem]')
     expect(link.classes()).toContain('focus-visible:ring-2')
   })
 
@@ -62,12 +62,31 @@ describe('UiButton', () => {
     expect(mount(UiButton, { props: { type: 'submit' } }).attributes('type')).toBe('submit')
   })
 
-  it('hides the label, disables the button and marks it busy while loading', () => {
+  it('keeps the label, shows a spinner, disables the button and marks it busy while loading', () => {
     const wrapper = mount(UiButton, { props: { loading: true }, slots: { default: 'Save' } })
 
-    expect(wrapper.text()).toBe('')
+    expect(wrapper.text()).toBe('Save')
+    expect(wrapper.find('[data-testid="ui-button-spinner"]').exists()).toBe(true)
     expect(wrapper.attributes('disabled')).toBeDefined()
     expect(wrapper.attributes('aria-busy')).toBe('true')
+  })
+
+  it('shows a disabled look that is readable and not-allowed, with no hover applied', () => {
+    const primary = mount(UiButton, { props: { variant: 'primary', disabled: true }, slots: { default: 'Save' } })
+    const secondary = mount(UiButton, { props: { variant: 'secondary', disabled: true } })
+
+    expect(primary.attributes('disabled')).toBeDefined()
+    expect(primary.classes()).toEqual(expect.arrayContaining(['disabled:text-text-muted', 'disabled:cursor-not-allowed', 'disabled:bg-surface-hover']))
+    expect(primary.classes()).toContain('not-disabled:gradient-brand')
+    expect(primary.classes().some((c) => c.includes('opacity'))).toBe(false)
+    expect(secondary.classes()).toContain('not-disabled:hover:bg-surface-active')
+    expect(secondary.classes()).not.toContain('hover:bg-surface-active')
+  })
+
+  it('draws the primary look as the glowing gradient with a ground-coloured label', () => {
+    const primary = mount(UiButton, { props: { variant: 'primary' } })
+
+    expect(primary.classes()).toEqual(expect.arrayContaining(['not-disabled:gradient-brand', 'not-disabled:shadow-glow-primary', 'text-text-on-primary', 'rounded-control']))
   })
 
   it('does not emit click while disabled', async () => {

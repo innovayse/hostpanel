@@ -84,9 +84,11 @@ export const useClientsStore = defineStore('clients', () => {
    * Fetches a paginated, filtered client list.
    *
    * @param filters - Optional filter parameters.
+   * @param pageNumber - The page to load (1-based); the page already held when omitted.
    * @returns Promise that resolves when data is loaded.
    */
-  const fetchAll = async (filters?: ClientFilters): Promise<void> => {
+  const fetchAll = async (filters?: ClientFilters, pageNumber: number = page.value): Promise<void> => {
+    page.value = pageNumber
     loading.value = true
     const result = await runAction(error, () => api.list(page.value, pageSize.value, filters))
     loading.value = false

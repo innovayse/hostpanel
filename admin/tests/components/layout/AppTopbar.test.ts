@@ -1,14 +1,14 @@
 /**
  * Mount tests for AppTopbar: page title from the route, the notification badge and drawer, the
- * language select, the theme select, the hamburger event, and the account actions.
+ * language select, the theme select, the hamburger event, and the primary action.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
+import { useCommandPaletteStore } from '@/stores/commandPalette'
 import { stubRoutes } from '../../helpers/routes'
 import { json } from '../../helpers/fetch'
 import { mountView } from '../../helpers/mount'
-import { pickOption, selectText } from '../../helpers/select'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
 import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
 import { AdminTheme } from '@/types/admintheme'
@@ -34,6 +34,12 @@ const mountBar = async (path: string, feed: unknown[] = events) => {
 describe('AppTopbar', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('takes its height from the shell header token the sidebar brand row shares', async () => {
+    const wrapper = await mountBar('/dashboard')
+
+    expect(wrapper.get('[data-testid="app-topbar"]').classes()).toContain('h-[calc(var(--shell-header-h)+env(safe-area-inset-top))]')
   })
 
   it('titles the bar after the current section', async () => {
@@ -75,7 +81,7 @@ describe('AppTopbar', () => {
     expect(dot.classes()).toEqual(expect.arrayContaining(['rounded-full', 'bg-primary-500']))
     expect(dot.element.parentElement?.classList).toContain('sm:hidden')
     const count = wrapper.get('[data-testid="topbar-notification-count"]')
-    expect(count.classes()).toEqual(expect.arrayContaining(['rounded-full', 'border']))
+    expect(count.classes()).toEqual(expect.arrayContaining(['rounded-pill', 'ring-2']))
     expect(count.element.parentElement?.classList).toContain('hidden')
     expect(count.element.parentElement?.classList).toContain('sm:flex')
   })
@@ -91,6 +97,14 @@ describe('AppTopbar', () => {
     expect(wrapper.get('[data-testid="notifications-drawer"]').text()).toContain('No notifications')
   })
 
+  it('has the menu button only for the phone drawer: named for opening, hidden from lg up', async () => {
+    const wrapper = await mountBar('/dashboard')
+    const button = wrapper.get('[data-testid="topbar-toggle-sidebar"]')
+
+    expect(button.attributes('aria-label')).toBe('Open menu')
+    expect(button.classes()).toContain('lg:hidden')
+  })
+
   it('emits toggle-sidebar from the hamburger', async () => {
     const wrapper = await mountBar('/dashboard')
 
@@ -99,37 +113,68 @@ describe('AppTopbar', () => {
     expect(wrapper.emitted('toggle-sidebar')).toHaveLength(1)
   })
 
-  it('offers the language select, settings and sign-out', async () => {
+  it('offers the language menu and leaves the account to the sidebar', async () => {
     const wrapper = await mountBar('/dashboard')
 
     expect(wrapper.find('[data-testid="topbar-locale"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="topbar-settings"]').attributes('href')).toBe('/settings')
-    expect(wrapper.find('[data-testid="topbar-sign-out"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="topbar-user-menu"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="topbar-avatar"]').exists()).toBe(false)
   })
 
-  it('keeps the theme picker and the settings link out of a phone top bar', async () => {
+  it('offers the gradient primary action that opens the new client form', async () => {
+    const wrapper = await mountBar('/dashboard')
+    const action = wrapper.get('[data-testid="topbar-primary-action"]')
+
+    expect(action.attributes('href')).toBe('/clients/add')
+    expect(action.text()).toBe('New client')
+  })
+
+  it('opens the command palette from the search trigger, which announces the shortcut', async () => {
+    const wrapper = await mountBar('/dashboard')
+    const trigger = wrapper.get('[data-testid="topbar-search"]')
+
+    expect(trigger.attributes('aria-label')).toBe('Search the panel')
+    expect(trigger.classes()).toEqual(expect.arrayContaining(['bg-surface-field', 'rounded-control', 'md:max-w-[460px]']))
+    // On a phone it is a bare icon like the bell, theme and language triggers.
+    expect(trigger.classes()).toEqual(expect.arrayContaining(['max-md:bg-transparent', 'max-md:border-transparent', 'max-md:w-10.5']))
+    expect(trigger.text()).toContain('Search pages and actions')
+    expect(wrapper.get('[data-testid="topbar-search-shortcut"]').text()).toBe('Ctrl K')
+    expect(useCommandPaletteStore().isOpen).toBe(false)
+
+    await trigger.trigger('click')
+
+    expect(useCommandPaletteStore().isOpen).toBe(true)
+  })
+
+  it('blurs the bar, hairlines it and keeps clear of the top safe area', async () => {
     const wrapper = await mountBar('/dashboard')
 
-    for (const id of ['topbar-theme', 'topbar-settings']) {
-      const holder = wrapper.get(`[data-testid="${id}"]`).element.parentElement
-      expect(holder?.classList).toContain('hidden')
-      expect(holder?.classList).toContain('sm:flex')
-    }
+    expect(wrapper.get('[data-testid="app-topbar"]').classes()).toEqual(expect.arrayContaining(['bg-surface-topbar', 'border-b', 'backdrop-blur-[14px]', 'pt-[env(safe-area-inset-top)]']))
   })
 
-  it('switches the theme from the theme select and remembers it', async () => {
+  it('keeps the theme picker out of a phone top bar', async () => {
+    const wrapper = await mountBar('/dashboard')
+
+    // The menu sits in a stack that is hidden below the sm breakpoint.
+    const holder = wrapper.get('[data-testid="topbar-theme"]').element.closest('.hidden')
+    expect(holder?.classList).toContain('sm:flex')
+  })
+
+  it('switches the theme from the theme menu and remembers it', async () => {
     resetThemeDocument()
     stubSchemeQuery(false)
     const wrapper = await mountBar('/dashboard')
 
-    expect(selectText(wrapper, 'topbar-theme')).toBe('System')
-    await pickOption(wrapper, 'topbar-theme', 'Light')
+    await wrapper.get('[data-testid="topbar-theme"]').trigger('click')
+    expect(wrapper.get('[data-testid="theme-option-system"]').attributes('aria-checked')).toBe('true')
+    await wrapper.get('[data-testid="theme-option-light"]').trigger('click')
 
-    expect(selectText(wrapper, 'topbar-theme')).toBe('Light')
     expect(document.documentElement.classList.contains('light')).toBe(true)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
 
-    await pickOption(wrapper, 'topbar-theme', 'Dark')
+    await wrapper.get('[data-testid="topbar-theme"]').trigger('click')
+    expect(wrapper.get('[data-testid="theme-option-light"]').attributes('aria-checked')).toBe('true')
+    await wrapper.get('[data-testid="theme-option-dark"]').trigger('click')
     expect(document.documentElement.classList.contains('light')).toBe(false)
   })
 })

@@ -25,6 +25,7 @@ describe('UiStatusMessage', () => {
     expect(wrapper.element).toBe(region)
     expect(wrapper.text()).toBe('Saved.')
     expect(wrapper.classes()).toContain('text-status-green')
+    expect(wrapper.classes()).toContain('rounded-card')
   })
 
   it('announces a failure assertively in the danger look', () => {

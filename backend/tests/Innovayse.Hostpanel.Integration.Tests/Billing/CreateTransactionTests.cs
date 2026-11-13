@@ -28,7 +28,7 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
         var created = await admin.PostAsJsonAsync("/api/transactions", new
         {
             clientId,
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Manual top-up",
             transactionId = $"txn-{Guid.NewGuid():N}",
             invoiceId = (int?)null,
@@ -61,7 +61,7 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
         var response = await factory.CreateClient().PostAsJsonAsync("/api/transactions", new
         {
             clientId = 1,
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Manual top-up",
             transactionId = "txn-x",
             invoiceId = (int?)null,
@@ -85,7 +85,7 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
         var response = await admin.PostAsJsonAsync("/api/transactions", new
         {
             clientId = BillingTestSeeds.NoSuchId,
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Manual top-up",
             transactionId = $"txn-{Guid.NewGuid():N}",
             invoiceId = (int?)null,
@@ -111,7 +111,7 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
         var response = await admin.PostAsJsonAsync("/api/transactions", new
         {
             clientId = clientId,
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Manual top-up",
             transactionId = $"txn-{Guid.NewGuid():N}",
             invoiceId = BillingTestSeeds.NoSuchId,

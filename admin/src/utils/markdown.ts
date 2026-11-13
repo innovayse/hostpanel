@@ -120,14 +120,6 @@ export const safeLinkHref = (href: string): string | null => {
 }
 
 /**
- * Tells whether an address is safe to link to: an absolute https:// address with a host.
- *
- * @param href - The address from the text.
- * @returns True when it may become a link.
- */
-export const isSafeLink = (href: string): boolean => safeLinkHref(href) !== null
-
-/**
  * Reads the inline constructs of one line of text.
  *
  * @param source - The text of a heading, paragraph, quote line or list item.

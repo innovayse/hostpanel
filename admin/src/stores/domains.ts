@@ -27,23 +27,14 @@ export const useDomainsStore = defineStore('domains', () => {
   /** Loaded domain registrations list. */
   const domains = ref<DomainRegistration[]>([])
 
-  /** Domains for a specific client. */
-  const clientDomains = ref<DomainRegistration[]>([])
-
   /** Currently loaded domain detail. */
   const current = ref<DomainDetail | null>(null)
-
-  /** Current page (1-based). */
-  const page = ref(1)
 
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /** Total number of matching items. */
   const totalCount = ref(0)
-
-  /** Search term for filtering domains by name. */
-  const search = ref('')
 
   /** True while a load is in flight. */
   const loading = ref(false)
@@ -58,37 +49,21 @@ export const useDomainsStore = defineStore('domains', () => {
   const fieldErrors = ref<Record<string, string>>({})
 
   /**
-   * Loads the paged domain registrations for the current search.
+   * Loads one page of domain registrations. The page and the search come from the list's address, so the store
+   * keeps no copy of them.
    *
+   * @param page - Page to load, 1-based.
+   * @param search - Name search text; empty for none.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<boolean> => {
+  const fetchAll = async (page: number, search: string): Promise<boolean> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listDomains({ page: page.value, pageSize: pageSize.value, search: search.value.trim() }),
+      api.listDomains({ page, pageSize: pageSize.value, search: search.trim() }),
     )
     loading.value = false
     if (result.ok) {
       domains.value = result.value.items
-      totalCount.value = result.value.totalCount
-    }
-    return result.ok
-  }
-
-  /**
-   * Loads a client's domains into `clientDomains`.
-   *
-   * @param clientId - The client identifier to filter by.
-   * @returns True when loaded; false when refused (see `error`).
-   */
-  const fetchByClient = async (clientId: number | string): Promise<boolean> => {
-    loading.value = true
-    const result = await runAction(error, () =>
-      api.listDomains({ clientId, page: page.value, pageSize: pageSize.value }),
-    )
-    loading.value = false
-    if (result.ok) {
-      clientDomains.value = result.value.items
       totalCount.value = result.value.totalCount
     }
     return result.ok
@@ -312,8 +287,8 @@ export const useDomainsStore = defineStore('domains', () => {
   const cancelTransfer = (id: number | string): Promise<boolean> => mutate(() => api.cancelTransfer(id))
 
   return {
-    domains, clientDomains, current, page, pageSize, totalCount, search, loading, error, actionError, fieldErrors,
-    fetchAll, fetchByClient, fetchClientPage, fetchById, update, register, renew,
+    domains, current, pageSize, totalCount, loading, error, actionError, fieldErrors,
+    fetchAll, fetchClientPage, fetchById, update, register, renew,
     setAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
     modifyContact, getEppCode, cancelTransfer,
     addDnsRecord, updateDnsRecord, deleteDnsRecord,

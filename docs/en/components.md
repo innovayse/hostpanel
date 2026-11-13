@@ -4,7 +4,7 @@ title: Components
 
 # Components
 
-This page showcases the reusable Vue components available to all contributors writing documentation pages. Import is not required — every component is registered globally and can be used directly in any `.md` file.
+This page showcases the reusable Vue components available to all contributors writing documentation pages. Import is not required, every component is registered globally and can be used directly in any `.md` file.
 
 ---
 
@@ -12,7 +12,7 @@ This page showcases the reusable Vue components available to all contributors wr
 
 A highlighted callout box with a colored left border. Use it to draw attention to important information.
 
-**Prop:** `type` — `note` (default) | `warning` | `danger` | `tip`
+**Prop:** `type`: `note` (default) | `warning` | `danger` | `tip`
 
 **Usage:**
 
@@ -128,7 +128,7 @@ See the [VitePress docs on code groups](https://vitepress.dev/guide/markdown#cod
 
 A structured table for documenting configuration options or settings objects.
 
-**Prop:** `settings` — array of `{ name, type, default, description }` objects.
+**Prop:** `settings`: array of `{ name, type, default, description }` objects.
 
 **Usage:**
 
@@ -157,8 +157,8 @@ A structured table for documenting configuration options or settings objects.
 An inline badge for tagging headings, settings, or features.
 
 **Props:**
-- `type` — `admin` | `new` | `local` | `sso`
-- `version` _(optional)_ — when `type="new"`, renders "New in `<version>`"
+- `type`: `admin` | `new` | `local` | `sso`
+- `version` _(optional)_: when `type="new"`, renders "New in `<version>`"
 
 **Usage:**
 

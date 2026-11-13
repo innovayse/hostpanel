@@ -15,7 +15,7 @@
         <UiSelect
           v-model="form.departmentId"
           :label="$t('client.tickets.deptLabel')"
-          :placeholder="deptPending ? $t('client.tickets.deptLoading') : $t('client.tickets.deptPlaceholder')"
+          :placeholder="$t('client.tickets.deptPlaceholder')"
           :options="deptOptions"
           :disabled="deptPending"
           :error="fieldErrors.departmentId"
@@ -46,7 +46,7 @@
         <template #actions>
           <UiButton type="submit" :loading="ticketLoading" full-width data-testid="ticket-submit">
             <Send v-if="!ticketLoading" :size="16" :stroke-width="2" class="mr-2" />
-            {{ ticketLoading ? $t('client.tickets.submitting') : $t('client.tickets.submit') }}
+            {{ $t('client.tickets.submit') }}
           </UiButton>
         </template>
       </UiForm>

@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 /**
- * FloatingActions (`UiFloatingActions`) - the floating contact button that fans out three actions
+ * FloatingActions (`UiFloatingActions`): the floating contact button that fans out three actions
  * (live chat, WhatsApp, Telegram) up and to the left of the bottom-right corner.
  *
  * Contact channels come from the operator's settings rather than being baked in, so a self-hosted

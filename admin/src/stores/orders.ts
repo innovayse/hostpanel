@@ -24,17 +24,11 @@ export const useOrdersStore = defineStore('orders', () => {
   /** Currently viewed order detail. */
   const currentOrder = ref<OrderDetail | null>(null)
 
-  /** Current page (1-based). */
-  const page = ref(1)
-
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /** Total number of matching items across all pages. */
   const totalCount = ref(0)
-
-  /** Optional status filter. */
-  const statusFilter = ref<OrderStatus | null>(null)
 
   /** True while a load is in flight. */
   const loading = ref(false)
@@ -60,15 +54,16 @@ export const useOrdersStore = defineStore('orders', () => {
   )
 
   /**
-   * Loads one page of orders for the active status filter.
+   * Loads one page of orders. The page and the status come from the list's address, so the store keeps
+   * no copy of them.
    *
+   * @param page - Page to load, 1-based.
+   * @param status - Status to keep; null for all.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<boolean> => {
+  const fetchAll = async (page: number, status: OrderStatus | null): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () =>
-      api.listOrders({ page: page.value, pageSize: pageSize.value, status: statusFilter.value }),
-    )
+    const result = await runAction(error, () => api.listOrders({ page, pageSize: pageSize.value, status }))
     loading.value = false
     if (result.ok) {
       orders.value = result.value.items
@@ -193,26 +188,21 @@ export const useOrdersStore = defineStore('orders', () => {
   }
 
   /**
-   * Deletes an order, then refreshes the list.
+   * Deletes an order. The list screen reads the list again when the reader returns to it.
    *
    * @param id - The order primary key.
    * @returns True when deleted; false when refused (see `actionError`).
    */
   const deleteOrder = async (id: number): Promise<boolean> => {
     const result = await runAction(actionError, () => api.deleteOrder(id))
-    if (result.ok) {
-      await fetchAll()
-    }
     return result.ok
   }
 
   return {
     orders,
     currentOrder,
-    page,
     pageSize,
     totalCount,
-    statusFilter,
     loading,
     error,
     actionError,

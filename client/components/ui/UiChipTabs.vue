@@ -27,7 +27,7 @@
 
 <script setup lang="ts" generic="T extends string">
 /**
- * UiChipTabs - a row of pill chips that filters one list (domain category, FAQ topic, month).
+ * UiChipTabs: a row of pill chips that filters one list (domain category, FAQ topic, month).
  *
  * A real tab list: `role="tablist"` with `role="tab"` chips, `aria-selected`, one tab stop (the
  * chosen chip) and arrow / Home / End keys that move the choice and focus. The chosen chip

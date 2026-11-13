@@ -18,7 +18,7 @@
         "email": "john{'@'}example.com",
         "phone": "+1 555 0100",
         "service": "Select a service",
-        "message": "Tell us what you need help with..."
+        "message": "Tell us what you need help with"
       },
       "serviceOptions": {
         "hosting": "Hosting",

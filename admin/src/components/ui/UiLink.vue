@@ -9,8 +9,8 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { RouteLocationRaw } from 'vue-router'
-import { buttonBaseClasses, buttonVariantClasses, UiButtonVariant } from '@/utils/ui/button'
-import { buttonSizeClasses } from '@/utils/ui/size'
+import { buttonBaseClasses, buttonRadiusClasses, buttonVariantClasses, UiButtonVariant } from '@/utils/ui/button'
+import { buttonLinkSizeClasses, buttonSizeClasses } from '@/utils/ui/size'
 import type { UiSize } from '@/utils/ui/size'
 
 /** Props for UiLink. */
@@ -23,7 +23,7 @@ const props = withDefaults(defineProps<{
   external?: boolean
   /** Visual look; `plain` adds no colours. */
   variant?: UiButtonVariant
-  /** Padding for the button-like looks. */
+  /** Padding for the button-like looks, type size for the text-link look. */
   size?: UiSize
 }>(), {
   to: undefined,
@@ -38,8 +38,10 @@ const classes = computed<string[]>(() => {
   if (props.variant === UiButtonVariant.Plain) {
     return []
   }
-  const padding = props.variant === UiButtonVariant.Link ? '' : buttonSizeClasses[props.size]
-  return [buttonBaseClasses, buttonVariantClasses[props.variant], padding]
+  const isTextLink = props.variant === UiButtonVariant.Link
+  const sizing = isTextLink ? buttonLinkSizeClasses[props.size] : buttonSizeClasses[props.size]
+  const radius = isTextLink ? '' : buttonRadiusClasses(props.variant, props.size)
+  return [buttonBaseClasses, buttonVariantClasses[props.variant], sizing, radius]
 })
 </script>
 

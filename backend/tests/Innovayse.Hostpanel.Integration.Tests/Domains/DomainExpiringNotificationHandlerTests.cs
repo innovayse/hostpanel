@@ -35,7 +35,7 @@ public sealed class DomainExpiringNotificationHandlerTests(IntegrationTestFactor
         await EnsureTemplateAsync(context);
         var domainId = await SeedDomainAsync(scope.ServiceProvider, context, client.Id);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(domainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(domainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -59,8 +59,8 @@ public sealed class DomainExpiringNotificationHandlerTests(IntegrationTestFactor
         await EnsureTemplateAsync(context);
         var strangerDomainId = await SeedDomainAsync(scope.ServiceProvider, context, stranger.Id);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(strangerDomainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow });
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(int.MaxValue, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(strangerDomainId, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = TestMoments.Seeded });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainExpiringEvent(int.MaxValue, client.Id, "example.test", DateTimeOffset.UtcNow.AddDays(7)) { OccurredAt = TestMoments.Seeded });
 
         Assert.Empty(emailSender.Sent);
     }
@@ -87,7 +87,7 @@ public sealed class DomainExpiringNotificationHandlerTests(IntegrationTestFactor
         using (services.GetRequiredService<IDomainEventGate>().Suppress())
         {
             var domain = RegisteredDomain.Register(
-                clientId, $"event-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1),
+                clientId, $"event-{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
                 autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             context.Domains.Add(domain);
             await context.SaveChangesAsync(CancellationToken.None);

@@ -1,8 +1,9 @@
 {
+  "loading": "Բեռնվում է",
   "uiAdvancedFilters": {
     "filterValue": "Ֆիլտր՝ {value}",
-    "selectField": "Ընտրեք դաշտը...",
-    "enterValue": "Մուտքագրեք արժեքը...",
+    "selectField": "Ընտրեք դաշտը",
+    "enterValue": "Մուտքագրեք արժեքը",
     "addFilter": "Ավելացնել ֆիլտր",
     "exactMatch": "Ճշգրիտ համընկնում",
     "containing": "Պարունակում է"
@@ -11,7 +12,7 @@
     "noClientsFound": "Հաճախորդներ չեն գտնվել"
   },
   "uiCountrySelect": {
-    "selectCountry": "Ընտրեք երկիրը..."
+    "selectCountry": "Ընտրեք երկիրը"
   },
   "uiDatePicker": {
     "ddMmYyyy": "ՕՕ/ԱԱ/ՏՏՏՏ",
@@ -43,35 +44,60 @@
     "fields": "Դաշտեր",
     "clearAll": "Մաքրել բոլորը"
   },
+  "uiFilterTrigger": {
+    "filters": "Ֆիլտրներ",
+    "title": "Ֆիլտրներ",
+    "apply": "Կիրառել",
+    "reset": "Վերակայել",
+    "cancel": "Չեղարկել"
+  },
+  "uiFilterChips": {
+    "label": "Ակտիվ ֆիլտրներ",
+    "remove": "Հեռացնել ֆիլտրը {label}՝ {value}",
+    "clearAll": "Մաքրել բոլորը"
+  },
   "uiSelect": {
     "noResults": "Արդյունքներ չկան"
   },
+  "uiLimitField": {
+    "unlimited": "Առանց սահմանափակման"
+  },
   "phoneInput": {
-    "countryCode": "Երկրի կոդ",
-    "searchCountry": "Որոնել երկիր կամ կոդ"
+    "countryCode": "Երկրի կոդ"
   },
   "selectCountry": "Ընտրեք երկիրը",
   "dialog": {
     "close": "Փակել",
-    "confirm": "Հաստատել",
-    "processing": "Մշակվում է..."
+    "confirm": "Հաստատել"
   },
   "pagination": {
     "navigation": "Էջավորում",
     "previous": "Նախորդ",
     "next": "Հաջորդ",
-    "page": "Էջ"
+    "page": "Էջ",
+    "range": "{from} - {to} / {total}",
+    "pageOf": "Էջ {page} / {count}",
+    "rowsPerPage": "Տողեր էջում"
   },
   "table": {
     "empty": "Տվյալներ չկան"
   },
+  "bulkBar": {
+    "label": "Խմբային գործողություններ",
+    "clear": "Հեռացնել ընտրությունը",
+    "selected": "Ընտրված է {count} տող | Ընտրված է {count} տող"
+  },
   "chart": {
-    "empty": "Գրաֆիկի համար տվյալներ չկան"
+    "empty": "Գրաֆիկի համար տվյալներ չկան",
+    "target": "Նպատակ"
   },
   "uploadZone": {
     "dropOr": "Քաշեք ֆայլը կամ",
-    "browse": "ընտրեք",
-    "uploading": "Վերբեռնվում է..."
+    "browse": "ընտրեք"
+  },
+  "input": {
+    "showPassword": "Ցուցադրել գաղտնաբառը",
+    "hidePassword": "Թաքցնել գաղտնաբառը"
   },
   "errorState": {
     "retry": "Կրկնել"

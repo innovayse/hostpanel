@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 /**
- * PayPanel - the "Make payment" card of the invoice payment page.
+ * PayPanel: the "Make payment" card of the invoice payment page.
  *
  * Offers a gateway button when a gateway plugin is enabled, which hands the browser to the bank, and a bank transfer button
  * when the admin switched the manual transfer on, which moves the invoice to waiting and shows the bank details. Once a

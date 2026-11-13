@@ -156,15 +156,13 @@ onMounted(() => load(1))
         </UiField>
       </UiGrid>
       <template #actions>
-        <UiStack direction="row" justify="center" gap="sm">
-          <UiButton variant="primary" data-testid="billing-gateway-log-search" @click="applyFilters">
-            <UiIcon :markup="Icon.Search" size="sm" />
-            {{ t('shared.search2') }}
-          </UiButton>
-          <UiButton variant="ghost" data-testid="billing-gateway-log-clear" @click="clearFilters">
-            {{ t('shared.clear') }}
-          </UiButton>
-        </UiStack>
+        <UiButton variant="primary" data-testid="billing-gateway-log-search" @click="applyFilters">
+          <UiIcon :markup="Icon.Search" size="sm" />
+          {{ t('shared.search2') }}
+        </UiButton>
+        <UiButton variant="ghost" data-testid="billing-gateway-log-clear" @click="clearFilters">
+          {{ t('shared.clear') }}
+        </UiButton>
       </template>
     </UiFilterCard>
 
@@ -184,7 +182,6 @@ onMounted(() => load(1))
       <UiTable
         :loading="store.loading && store.entries.length === 0"
         :empty="!store.loading && store.entries.length === 0"
-        :colspan="4"
         data-testid="billing-gateway-log-table"
       >
         <UiTableHead>

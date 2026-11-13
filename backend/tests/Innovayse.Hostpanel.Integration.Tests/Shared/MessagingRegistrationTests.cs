@@ -31,8 +31,8 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
 {
     /// <summary>
     /// A deployed host loads handler code generated at build time and refuses a handler it has none for;
-    /// Development compiles on demand when nothing was generated, and the test host always compiles in
-    /// memory, so the code of its test doubles is never written into the API's source folder.
+    /// Development and the test host compile in memory and write nothing, so neither the watched source tree nor
+    /// the API's source folder ever receives generated files.
     /// </summary>
     /// <param name="environment">The environment name.</param>
     /// <param name="expected">The mode that environment gets.</param>
@@ -40,7 +40,7 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
     [InlineData("Production", TypeLoadMode.Static)]
     [InlineData("Staging", TypeLoadMode.Static)]
     [InlineData("Demo", TypeLoadMode.Static)]
-    [InlineData("Development", TypeLoadMode.Auto)]
+    [InlineData("Development", TypeLoadMode.Dynamic)]
     [InlineData("Testing", TypeLoadMode.Dynamic)]
     public void TypeLoadMode_FollowsTheEnvironment(string environment, TypeLoadMode expected)
     {

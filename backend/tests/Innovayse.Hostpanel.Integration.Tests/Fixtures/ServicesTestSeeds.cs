@@ -53,14 +53,14 @@ public static class ServicesTestSeeds
     {
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
 
         var group = ProductGroup.Create($"services-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         if (monthlyPrice is { } price)
         {
             product.SetPrice("USD", BillingCycle.Monthly, price);

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error The helpers are plain ES modules without type declarations.
-import { countAny, countInputsWithoutPlaceholder, countVHtml, stripComments } from '../../scripts/auditCounts.mjs'
+import { countAny, countInputsWithoutPlaceholder, countStoresCallingUseApi, countVHtml, stripComments } from '../../scripts/auditCounts.mjs'
 
 describe('stripComments', () => {
   it('removes block, line and HTML comments but keeps a URL inside a string', () => {
@@ -40,5 +40,15 @@ describe('countInputsWithoutPlaceholder', () => {
     const vue = '<template><UiInput v-model="a" /><UiInput type="checkbox" v-model="b" /></template>'
 
     expect(countInputsWithoutPlaceholder(vue)).toBe(1)
+  })
+})
+
+describe('countStoresCallingUseApi', () => {
+  it('ignores a store that only names useApi in a comment and counts one that calls it', () => {
+    const commentOnly = '/** Not a credential for {@link useApi}. */\nconst a = 1'
+    const calling = "import { useApi } from '@/composables/useApi'\nconst api = useApi()"
+
+    expect(countStoresCallingUseApi([commentOnly])).toBe(0)
+    expect(countStoresCallingUseApi([commentOnly, calling])).toBe(1)
   })
 })

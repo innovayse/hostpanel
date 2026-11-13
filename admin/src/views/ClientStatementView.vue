@@ -5,6 +5,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ReportField from '@/components/reports/ReportField.vue'
+import ReportActions from '@/components/reports/ReportActions.vue'
 import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
 import ReportTable from '@/components/reports/ReportTable.vue'
@@ -16,6 +17,7 @@ import { useReport } from '@/composables/useReport'
 import { useReportClients } from '@/composables/useReportClients'
 import { formatCurrencyCode } from '@/lib/money'
 import { reportPath } from '@/lib/reportsQuery'
+import { statementLineKey } from '@/lib/reportsRows'
 import { ReportStatementLineType } from '@/types/reportclientstatement'
 import type { ReportClientStatement, ReportStatementLine } from '@/types/reportclientstatement'
 import { ReportCellFormat } from '@/types/reportcolumn'
@@ -87,8 +89,12 @@ const describeLine = (line: ReportStatementLine): string => {
     :description="t('reports.clientStatement.thisReportProvidesAStatement')"
     :retry="generate"
   >
+    <template #actions>
+      <ReportActions printable @print="print" />
+    </template>
+
     <template #filters>
-      <ReportFilterBar printable @generate="generate" @print="print">
+      <ReportFilterBar @generate="generate">
         <template #fields>
           <ReportField :label="t('reports.clientStatement.selectClient')" width="grow">
             <UiClientSelect v-model="selectedClient" :clients="clients" :placeholder="t('shared.selectAClient')" />
@@ -109,6 +115,7 @@ const describeLine = (line: ReportStatementLine): string => {
       <ReportTable
         :columns="columns"
         :rows="data.lines"
+        :row-key="statementLineKey"
         :empty-text="t('reports.clientStatement.noEntriesForThisPeriod')"
       >
         <template #cell-description="{ row }">

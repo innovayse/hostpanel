@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * Strip shown at the top of the layout while the deployment runs in demo mode: the "Demo mode"
- * label, the time left until the next data reset and the note that data is reset.
+ * Slim glass strip shown across the full width at the top of the layout, above the sidebar and the main column, while the deployment runs in demo mode: the "Demo mode"
+ * label, the time left until the next data reset and, from the small breakpoint up, the note that data is reset.
  *
- * Renders nothing when demo mode is off. The countdown ticks once a minute.
+ * Renders nothing when demo mode is off. The countdown ticks once a minute. The strip has a fixed one-line height, so
+ * the shell below it does not shift when the countdown or the guide link appears.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDemoStore } from '@/stores/demo'
-import UiAlert from '@/components/ui/UiAlert.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -81,13 +81,20 @@ const timeLeft = computed<string | null>(() => {
 </script>
 
 <template>
-  <UiAlert v-if="demo.enabled" variant="info" data-testid="demo-banner">
-    <UiStack direction="row" gap="sm" align="center" wrap>
-      <UiBadge tone="info" small data-testid="demo-banner-label">{{ t('demo.banner.label') }}</UiBadge>
-      <UiText v-if="timeLeft !== null" tone="primary" size="sm" data-testid="demo-banner-countdown">
-        {{ t('demo.banner.resetsIn', { time: timeLeft }) }}
-      </UiText>
-      <UiText size="sm" tone="secondary">{{ t('demo.banner.dataResets') }}</UiText>
+  <UiStack
+    v-if="demo.enabled"
+    direction="row"
+    gap="sm"
+    align="center"
+    class="glass h-9 shrink-0 border-b border-border px-4 lg:px-6"
+    data-testid="demo-banner"
+  >
+    <UiBadge tone="info" small dot data-testid="demo-banner-label">{{ t('demo.banner.label') }}</UiBadge>
+    <UiText v-if="timeLeft !== null" tone="primary" size="sm" class="truncate" data-testid="demo-banner-countdown">
+      {{ t('demo.banner.resetsIn', { time: timeLeft }) }}
+    </UiText>
+    <UiStack visible-from="sm" class="min-w-0">
+      <UiText size="sm" tone="secondary" class="truncate">{{ t('demo.banner.dataResets') }}</UiText>
     </UiStack>
     <UiLink
       v-if="docsUrl"
@@ -96,5 +103,5 @@ const timeLeft = computed<string | null>(() => {
       class="ml-auto shrink-0 text-xs font-medium underline"
       data-testid="demo-banner-guide"
     >{{ t('demo.banner.guide') }}</UiLink>
-  </UiAlert>
+  </UiStack>
 </template>

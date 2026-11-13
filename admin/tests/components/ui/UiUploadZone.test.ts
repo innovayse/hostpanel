@@ -58,18 +58,26 @@ describe('UiUploadZone', () => {
     const file = new File(['x'], 'a.png')
 
     await wrapper.trigger('dragover')
-    expect(wrapper.classes()).toContain('border-primary-500')
+    expect(wrapper.classes()).toContain('border-text-accent')
 
     await wrapper.trigger('drop', { dataTransfer: { files: [file] } })
 
     expect(wrapper.emitted('select')?.[0]).toEqual([file])
-    expect(wrapper.classes()).not.toContain('border-primary-500')
+    expect(wrapper.classes()).not.toContain('border-text-accent')
   })
 
-  it('shows the progress caption instead of the invitation while uploading', () => {
+  it('shows the loader instead of the invitation while uploading', () => {
     const wrapper = mountZone({ uploading: true })
 
-    expect(wrapper.get('[role="status"]').text()).toContain('Uploading')
+    expect(wrapper.get('[role="status"]').attributes('aria-busy')).toBe('true')
     expect(wrapper.text()).not.toContain('browse')
+  })
+
+  it('keeps the input focusable (screen-reader-only) and rings the zone when it is focused', () => {
+    const wrapper = mountZone()
+
+    expect(wrapper.get('input').classes()).toContain('sr-only')
+    expect(wrapper.get('input').classes()).not.toContain('hidden')
+    expect(wrapper.classes()).toContain('has-focus-visible:ring-2')
   })
 })

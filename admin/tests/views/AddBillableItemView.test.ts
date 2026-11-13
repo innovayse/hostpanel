@@ -71,7 +71,7 @@ describe('AddBillableItemView', () => {
     const { wrapper } = await mountForm()
     expect(wrapper.find('[data-testid="billing-add-billable-item-recurring-period"]').exists()).toBe(false)
 
-    wrapper.findAllComponents(UiSelect)[1]?.vm.$emit('update:modelValue', BillableItemType.Recurring)
+    wrapper.findAllComponents(UiSelect).find((select) => select.attributes('data-testid') === 'billing-add-billable-item-type')?.vm.$emit('update:modelValue', BillableItemType.Recurring)
     await flushPromises()
     expect(wrapper.find('[data-testid="billing-add-billable-item-recurring-period"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="billing-add-billable-item-next-due-date-field"]').text()).toContain('Next due date')

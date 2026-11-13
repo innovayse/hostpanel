@@ -6,7 +6,7 @@
  * load offers a retry; each action's outcome shows under the header; deleting is confirmed in a
  * danger prompt.
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import QuoteItemsEditor from '@/components/billing/QuoteItemsEditor.vue'
@@ -24,7 +24,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -35,8 +35,10 @@ import { formatDate } from '@/lib/format'
 import { useClientCurrency } from '@/composables/useClientCurrency'
 import { useQuotesStore } from '@/stores/quotes'
 import { QuoteStage } from '@/types/quote'
-import type { QuoteItemUpdate } from '@/types/quote'
+import { blankQuoteLine, quoteLineFrom, quoteLinesPayload } from '@/lib/quoteLines'
+import type { QuoteLineDraft } from '@/types/quote'
 import { invoicePath, quotePath } from '@/lib/routes'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -45,18 +47,17 @@ const route = useRoute()
 const router = useRouter()
 const store = useQuotesStore()
 
-/**
- * A blank line for a quote that has none yet.
- *
- * @returns The blank line.
- */
-const blankLine = (): QuoteItemUpdate => ({ quantity: 1, description: '', unitPrice: 0, discountPercent: 0, taxed: false })
-
 /** True when the route names no quote, so the screen creates one. */
 const isNew = computed<boolean>(() => route.params.id === undefined)
 
 /** Id of the quote from the route; 0 when creating. */
 const quoteId = computed<number>(() => (isNew.value ? 0 : Number(route.params.id)))
+
+/** True while a stored quote is read for the first time: the page keeps its real sections and draws them as placeholders. */
+const initialLoading = computed<boolean>(() => store.loading && store.currentQuote === null && !isNew.value)
+
+// Every field of the form below stays a placeholder until the quote has arrived.
+provide(UI_FIELD_LOADING, initialLoading)
 
 /** Client the new quote is for, from the query; 0 when absent. */
 const queryClientId = computed<number>(() => Number(route.query.clientId ?? 0))
@@ -96,7 +97,7 @@ const customerNotes = ref('')
 const adminNotes = ref('')
 
 /** The quote lines. */
-const items = ref<QuoteItemUpdate[]>([blankLine()])
+const items = ref<QuoteLineDraft[]>([blankQuoteLine()])
 
 /** Sentence for a problem found before any request went out, null when none. */
 const localError = ref<string | null>(null)
@@ -125,14 +126,7 @@ const populate = (): void => {
   proposalText.value = quote.proposalText ?? ''
   customerNotes.value = quote.customerNotes ?? ''
   adminNotes.value = quote.adminNotes ?? ''
-  items.value = quote.items.map((item) => ({
-    id: item.id,
-    quantity: item.quantity,
-    description: item.description,
-    unitPrice: item.unitPrice,
-    discountPercent: item.discountPercent,
-    taxed: item.taxed,
-  }))
+  items.value = quote.items.map(quoteLineFrom)
 }
 
 /**
@@ -166,14 +160,14 @@ const save = async (): Promise<void> => {
     const id = await store.createQuote({
       clientId: queryClientId.value,
       ...fields(),
-      items: items.value,
+      items: quoteLinesPayload(items.value),
     })
     if (id !== null) {
       await router.push(quotePath(id))
     }
     return
   }
-  await store.updateQuote(quoteId.value, { ...fields(), items: items.value })
+  await store.updateQuote(quoteId.value, { ...fields(), items: quoteLinesPayload(items.value) })
 }
 
 /** Duplicates the quote and opens the copy. */
@@ -232,10 +226,8 @@ onMounted(() => {
 
 <template>
   <UiStack data-testid="billing-quote-detail-view">
-    <UiSkeleton v-if="store.loading && store.currentQuote === null && !isNew" shape="block" data-testid="billing-quote-loading" />
-
     <UiErrorState
-      v-else-if="store.error && store.currentQuote === null && !isNew"
+      v-if="store.error && store.currentQuote === null && !isNew"
       :message="store.error"
       :loading="store.loading"
       testid="billing-quote-load-error"
@@ -244,7 +236,8 @@ onMounted(() => {
 
     <template v-else>
       <UiPageHeader :title="isNew ? t('billing.quoteDetail.newQuote') : t('billing.quoteDetail.quoteNumber', { id: quoteId })">
-        <UiBadge v-if="!isNew" :tone="quoteStageTone(stage)" data-testid="billing-quote-stage">{{ statusLabel(QUOTE_STAGE_OPTIONS, stage) }}</UiBadge>
+        <UiSkeletonBar v-if="initialLoading" class="h-5 w-20 rounded-full" aria-hidden="true" data-testid="billing-quote-loading" />
+        <UiBadge v-else-if="!isNew" :tone="quoteStageTone(stage)" data-testid="billing-quote-stage">{{ statusLabel(QUOTE_STAGE_OPTIONS, stage) }}</UiBadge>
         <template #actions>
           <UiButton variant="ghost" data-testid="billing-quote-back" @click="goBack">
             <UiIcon :markup="Icon.Back" size="sm" />
@@ -300,9 +293,9 @@ onMounted(() => {
             <UiField :label="t('shared.stage')" :error="store.fieldErrors.stage">
               <UiSelect v-model="stage" :options="stageOptions" :placeholder="t('billing.quoteDetail.selectStage')" />
             </UiField>
-            <UiField v-if="!isNew && store.currentQuote" :label="t('billing.quoteDetail.dateCreated')">
+            <UiField v-if="!isNew" :label="t('billing.quoteDetail.dateCreated')">
               <UiText tone="secondary" size="md" data-testid="billing-quote-created">
-                {{ formatDate(store.currentQuote.dateCreated) }}
+                {{ store.currentQuote ? formatDate(store.currentQuote.dateCreated) : '' }}
               </UiText>
             </UiField>
             <UiField :label="t('shared.validUntil')" :error="store.fieldErrors.validUntil">
@@ -312,7 +305,7 @@ onMounted(() => {
         </UiStack>
       </UiCard>
 
-      <QuoteItemsEditor v-model="items" :currency="quoteCurrency" />
+      <QuoteItemsEditor v-model="items" :currency="quoteCurrency" :loading="initialLoading" />
 
       <UiCard padding="md">
         <UiStack>
@@ -353,7 +346,6 @@ onMounted(() => {
       :title="t('billing.quoteDetail.deleteQuote')"
       :message="t('billing.quoteDetail.deleteMessage', { id: quoteId })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="store.loading"
       :tone="UiTone.Danger"
       @confirm="remove"
@@ -366,7 +358,6 @@ onMounted(() => {
       :title="t('billing.quoteDetail.convertToInvoice')"
       :message="t('billing.quoteDetail.convertMessage', { id: quoteId })"
       :confirm-label="t('billing.quoteDetail.convert')"
-      :loading-label="t('shared.converting')"
       :loading="store.loading"
       tone="primary"
       @confirm="convert"

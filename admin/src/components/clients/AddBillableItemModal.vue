@@ -244,10 +244,10 @@ onMounted(async () => {
           <UiButton
             type="submit"
             :variant="UiButtonVariant.Primary"
-            :disabled="saving"
+            :loading="saving"
             data-testid="clients-add-billable-item-save"
           >
-            {{ saving ? t('shared.saving') : t('shared.save') }}
+            {{ t('shared.save') }}
           </UiButton>
         </UiStack>
       </UiForm>

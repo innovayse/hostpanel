@@ -45,6 +45,18 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     /// <summary>How many packages were downloaded.</summary>
     public int DownloadCount { get; private set; }
 
+    /// <summary>Versions the registry shows only to a caller that sends a licence key, by plugin id; they are added to <see cref="Versions"/> for that caller.</summary>
+    public Dictionary<string, IReadOnlyList<RegistryPluginVersion>> LicensedVersions { get; } = [];
+
+    /// <summary>A failure code the version list answers with, while the rest of the registry keeps answering; <see langword="null"/> for none.</summary>
+    public string? VersionsFailureCode { get; set; }
+
+    /// <summary>How many times a plugin's page was asked for.</summary>
+    public int GetPluginCount { get; private set; }
+
+    /// <summary>How many times the version list was asked for.</summary>
+    public int ListVersionsCount { get; private set; }
+
     /// <summary>Lists a plugin version in the registry and stores its package.</summary>
     /// <param name="pluginId">The plugin id.</param>
     /// <param name="version">The version; the newest published one is listed as the latest.</param>
@@ -144,6 +156,7 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     public Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct)
     {
         LastLicenceKey = licenceKey;
+        GetPluginCount++;
         PluginPageKeys[pluginId] = licenceKey;
         return Task.FromResult(FailureCode is not null
             ? Result<RegistryPluginDetails?>.FailureCode(FailureCode)
@@ -155,8 +168,20 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
         string pluginId, string? licenceKey, CancellationToken ct, PluginRegistryDistribution distribution = PluginRegistryDistribution.Download)
     {
         LastLicenceKey = licenceKey;
-        return Task.FromResult(FailureCode is not null
-            ? Result<IReadOnlyList<RegistryPluginVersion>>.FailureCode(FailureCode)
-            : Result<IReadOnlyList<RegistryPluginVersion>>.Success(Versions.GetValueOrDefault(pluginId) ?? []));
+        ListVersionsCount++;
+        var failure = FailureCode ?? VersionsFailureCode;
+        return Task.FromResult(failure is not null
+            ? Result<IReadOnlyList<RegistryPluginVersion>>.FailureCode(failure)
+            : Result<IReadOnlyList<RegistryPluginVersion>>.Success(VisibleVersions(pluginId, licenceKey)));
+    }
+
+    /// <summary>The versions a caller sees: the public ones, and the licensed only ones when it sends a licence key.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <param name="licenceKey">The licence key the caller sends, or <see langword="null"/>.</param>
+    /// <returns>The versions.</returns>
+    private IReadOnlyList<RegistryPluginVersion> VisibleVersions(string pluginId, string? licenceKey)
+    {
+        var shown = Versions.GetValueOrDefault(pluginId) ?? [];
+        return string.IsNullOrEmpty(licenceKey) || !LicensedVersions.TryGetValue(pluginId, out var licensed) ? shown : [.. shown, .. licensed];
     }
 }

@@ -21,13 +21,19 @@ import IntegrationBreadcrumb from '@/components/integrations/IntegrationBreadcru
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatusSidebar.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiField from '@/components/ui/UiField.vue'
+import UiGrid from '@/components/ui/UiGrid.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { AppRoute } from '@/lib/routes'
 
 const { t } = useI18n()
+
+/** Placeholder fields the form card draws while the integration loads; the real fields come from the API, so only their count is a guess. */
+const LOADING_FIELD_COUNT = 4
 
 /** Current route, whose param is the slug. */
 const route = useRoute()
@@ -144,7 +150,27 @@ onMounted(() => {
     />
 
     <!-- Loading -->
-    <UiSkeleton v-if="store.loading && !store.current" :lines="4" data-testid="integration-loading" />
+    <UiSplit v-if="store.loading && !store.current" aria-busy="true" data-testid="integration-loading">
+      <UiCard padding="md">
+        <UiStack gap="lg" aria-hidden="true">
+          <UiStack direction="row" align="center" gap="md">
+            <UiSkeletonBar class="h-10 w-10 shrink-0 rounded-control" />
+            <UiStack gap="xs" class="min-w-0 flex-1">
+              <UiSkeletonBar class="h-5 w-40 rounded-md" />
+              <UiSkeletonBar class="h-3.5 w-64 max-w-full rounded-md" />
+            </UiStack>
+            <UiSkeletonBar class="h-6 w-24 shrink-0 rounded-full" />
+          </UiStack>
+          <UiGrid :columns="2" gap="md">
+            <UiField v-for="field in LOADING_FIELD_COUNT" :key="field" loading />
+          </UiGrid>
+          <UiStack direction="row" gap="sm">
+            <UiSkeletonBar class="h-10 w-32 rounded-control" />
+          </UiStack>
+        </UiStack>
+      </UiCard>
+      <IntegrationStatusSidebar :test-result="null" loading />
+    </UiSplit>
 
     <!-- Error -->
     <UiErrorState

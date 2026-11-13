@@ -21,6 +21,12 @@ describe('layout maps', () => {
     }
   })
 
+  it('publishes every gap as --stack-gap, which the page header subtracts from its margin', () => {
+    for (const gap of Object.values(UiGap)) {
+      expect(gapClasses[gap]).toContain('[--stack-gap:')
+    }
+  })
+
   it('covers every alignment with an items- class', () => {
     for (const align of Object.values(UiAlignItems)) {
       expect(alignItemsClasses[align]).toBe(`items-${align}`)

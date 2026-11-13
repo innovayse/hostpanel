@@ -19,6 +19,7 @@ import type { ReportFeedbackScores } from '@/types/reportfeedback'
 import { UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 import { UiAlign } from '@/utils/ui/table'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -73,7 +74,7 @@ const series = computed<UiChartSeries[]>(() => [
         :empty-text="t('shared.noDataFoundForThis2')"
       >
         <template v-for="rating in RATINGS" #[`cell-r${rating}`]="{ value }">
-          {{ value || '—' }}
+          {{ value || EMPTY_VALUE }}
         </template>
         <template #cell-averageRating="{ row }">
           {{ row.averageRating.toFixed(2) }}

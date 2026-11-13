@@ -35,7 +35,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, Price);
         var paid = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = Price,

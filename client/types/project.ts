@@ -1,5 +1,5 @@
 /**
- * Project type - one portfolio project served by `GET /api/public/projects`.
+ * Project type: one portfolio project served by `GET /api/public/projects`.
  *
  * @module types/project
  */

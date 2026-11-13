@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiToneCard - a card with a coloured band down its left edge that says how something ended.
+ * UiToneCard: a card with a coloured band down its left edge that says how something ended.
  */
 import { UiTone } from '~/utils/ui/enums'
 

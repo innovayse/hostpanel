@@ -14,13 +14,13 @@ import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { TRANSACTION_METHOD_OPTIONS } from '@/lib/constants'
 import type { ClientOption } from '@/types/clientoption'
@@ -203,7 +203,10 @@ const patch = (change: Partial<TransactionFormValues>): void => {
         {{ t('billing.addTransaction.addToClientSCredit') }}
       </UiLabel>
 
-      <UiStack direction="row" gap="md" align="center">
+      <UiFormActions>
+        <UiLink :to="AppRoute.BillingTransactions" variant="ghost" data-testid="billing-transaction-cancel">
+          {{ t('shared.cancel') }}
+        </UiLink>
         <UiButton
           type="submit"
           variant="primary"
@@ -212,10 +215,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
         >
           {{ submitLabel }}
         </UiButton>
-        <UiLink :to="AppRoute.BillingTransactions" variant="ghost" data-testid="billing-transaction-cancel">
-          {{ t('shared.cancel') }}
-        </UiLink>
-      </UiStack>
+      </UiFormActions>
     </UiForm>
   </UiCard>
 </template>

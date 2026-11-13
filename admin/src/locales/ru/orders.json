@@ -1,9 +1,9 @@
 {
   "orderDetail": {
     "backToOrders": "Назад к заказам",
-    "loadingOrder": "Загрузка заказа...",
     "accept": "Принять",
     "orderInfo": "Информация о заказе",
+    "overview": "Обзор",
     "created": "Создан",
     "bundle": "Комплект продуктов",
     "invoice": "Счёт",
@@ -11,7 +11,7 @@
     "product": "Продукт",
     "firstPayment": "Первый платёж",
     "recurring": "Регулярный",
-    "addNotesAboutThisOrder": "Добавьте заметки к этому заказу...",
+    "addNotesAboutThisOrder": "Добавьте заметки к этому заказу",
     "notesAreOnlyVisibleTo": "Заметки видны только администраторам.",
     "deleteOrder": "Удалить заказ",
     "areYouSureYouWant": "Вы уверены, что хотите безвозвратно удалить этот заказ? Это действие нельзя отменить.",
@@ -41,6 +41,8 @@
     "accept": "Принять",
     "totalcountOrderValue": "Заказов: {totalCount}",
     "noOrdersFound": "Заказы не найдены",
+    "noOrdersMatchYourFilters": "Нет заказов по этому фильтру",
+    "clearFilters": "Сбросить фильтр",
     "orderAccepted": "Заказ принят.",
     "orderCancelled": "Заказ отменён.",
     "confirmCancelTitle": "Отменить этот заказ?",

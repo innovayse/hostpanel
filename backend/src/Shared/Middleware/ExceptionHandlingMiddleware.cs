@@ -188,7 +188,7 @@ public class ExceptionHandlingMiddleware
         if (context.Response.HasStarted)
         {
             _logger.LogWarning(
-                "Response already started — cannot write ProblemDetails for {ErrorType}", response.Type);
+                "Response already started, cannot write ProblemDetails for {ErrorType}", response.Type);
             return;
         }
 

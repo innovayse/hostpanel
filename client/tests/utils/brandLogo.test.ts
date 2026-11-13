@@ -20,7 +20,7 @@ describe('pickBrandLogo', () => {
     expect(pickBrandLogo(all, true)).toBe('/d.png')
   })
 
-  it('falls back to the light logo in dark mode — the pre-existing behaviour', () => {
+  it('falls back to the light logo in dark mode, the pre-existing behaviour', () => {
     expect(pickBrandLogo(lightOnly, true)).toBe('/l.png')
   })
 

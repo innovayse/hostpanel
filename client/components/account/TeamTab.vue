@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 /**
- * TeamTab - the "User Management" tab: who has access, and the form to invite someone.
+ * TeamTab. The "User Management" tab: who has access, and the form to invite someone.
  *
  * Both halves ask this tab for a fresh list after they change it; the list itself lives in the
  * account store.

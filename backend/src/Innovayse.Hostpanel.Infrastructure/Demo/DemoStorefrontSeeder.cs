@@ -289,7 +289,7 @@ internal sealed class DemoStorefrontSeeder
              "Եվրոպայում և Հյուսիսային Ամերիկայում։ Վայրն ընտրվում է սերվեր պատվիրելիս։"]),
         new(FaqCategory.Products, ["Can I host several sites on one plan?", "Можно ли разместить несколько сайтов на одном тарифе?", "Կարո՞ղ եմ մեկ փաթեթում տեղադրել մի քանի կայք"],
             ["Yes. Business Hosting allows ten sites and Pro Hosting allows unlimited sites.",
-             "Да. Business Hosting вмещает десять сайтов, а Pro Hosting — без ограничений.",
+             "Да. Business Hosting вмещает десять сайтов, а Pro Hosting без ограничений.",
              "Այո։ Business Hosting-ը թույլ է տալիս տասը կայք, իսկ Pro Hosting-ը՝ անսահմանափակ։"]),
         new(FaqCategory.Products, ["Do you offer managed site hosting?", "Есть ли управляемый хостинг сайтов?", "Առաջարկո՞ւմ եք կառավարվող կայքերի հոսթինգ"],
             ["Yes. Managed Site Hosting keeps the site engine and its plugins up to date for you.",

@@ -20,6 +20,13 @@ describe('UiGrid', () => {
     expect(mount(UiGrid, { props: { columns } }).classes()).toContain(expected)
   })
 
+  it('fills the row with as many columns as fit when given a minimum item width', () => {
+    const classes = mount(UiGrid, { props: { minItemWidth: 'md', columns: 3 } }).classes()
+
+    expect(classes).toContain('sm:grid-cols-[repeat(auto-fill,minmax(18rem,1fr))]')
+    expect(classes).not.toContain('lg:grid-cols-3')
+  })
+
   it('applies the chosen gap', () => {
     expect(mount(UiGrid, { props: { gap: 'xl' } }).classes()).toContain('gap-8')
   })

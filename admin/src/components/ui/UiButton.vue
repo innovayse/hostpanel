@@ -4,12 +4,12 @@
  *
  * `variant` picks the look (primary gradient, secondary, ghost, danger, link) and `size` the
  * padding; both read theme tokens so the button follows light/dark. The default `plain` look adds
- * no colours, which keeps screens that still pass their own classes unchanged. `loading` swaps the
- * label for a progress indicator and blocks clicks; `block` stretches it to the container.
+ * no colours, which keeps screens that still pass their own classes unchanged. `loading` shows a
+ * spinner beside the label (the label stays), marks the button busy and blocks clicks; `block` stretches it to the container.
  * `data-testid` and listeners fall through to the native `<button>`.
  */
 import { computed } from 'vue'
-import { buttonBaseClasses, buttonVariantClasses, UiButtonVariant } from '@/utils/ui/button'
+import { buttonBaseClasses, buttonRadiusClasses, buttonSpinnerClasses, buttonVariantClasses, UiButtonVariant } from '@/utils/ui/button'
 import type { UiButtonType } from '@/utils/ui/button'
 import { buttonLinkSizeClasses, buttonSizeClasses } from '@/utils/ui/size'
 import type { UiSize } from '@/utils/ui/size'
@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<{
   size?: UiSize
   /** Native button type; omitted so a button inside a form keeps the browser default. */
   type?: UiButtonType
-  /** Replaces the label with a progress indicator and blocks clicks. */
+  /** Shows a spinner beside the label, marks the button busy and blocks clicks. */
   loading?: boolean
   /** Blocks clicks without showing progress. */
   disabled?: boolean
@@ -44,7 +44,7 @@ const classes = computed<string[]>(() => {
     return [width]
   }
   const sizing = props.variant === UiButtonVariant.Link ? buttonLinkSizeClasses[props.size] : buttonSizeClasses[props.size]
-  return [buttonBaseClasses, buttonVariantClasses[props.variant], sizing, width]
+  return [buttonBaseClasses, buttonVariantClasses[props.variant], sizing, buttonRadiusClasses(props.variant, props.size), width]
 })
 </script>
 
@@ -55,11 +55,7 @@ const classes = computed<string[]>(() => {
     :aria-busy="loading || undefined"
     :class="classes"
   >
-    <span v-if="loading" class="flex items-center justify-center gap-1.5" aria-hidden="true">
-      <span class="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0s]" />
-      <span class="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.15s]" />
-      <span class="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.3s]" />
-    </span>
-    <slot v-else />
+    <span v-if="loading" :class="buttonSpinnerClasses" aria-hidden="true" data-testid="ui-button-spinner" />
+    <slot />
   </button>
 </template>

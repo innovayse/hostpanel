@@ -10,7 +10,11 @@ export const localMode: AuthModeResponse = { mode: 'local' }
 export const setupDone: SetupRequiredResponse = { required: false }
 
 /** The operator `GET /api/auth/me` answers with once a session exists. */
-export const adminMe: MeResponse = { email: 'admin@example.test', roles: ['Admin'], emailVerified: true }
+export const adminMe: MeResponse = {
+  email: 'admin@example.test',
+  firstName: 'Ada',
+  lastName: 'Lovelace',
+  roles: ['Admin'], emailVerified: true }
 
 /** Credentials the stubbed `POST /api/auth/login` accepts. */
 export const validCredentials = { email: 'admin@example.test', password: 'correct-horse' } as const

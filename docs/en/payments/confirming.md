@@ -7,14 +7,14 @@ keywords: "payment confirmation, reconciliation, gateway transaction log, gatewa
 # How online payments are confirmed <Label type="admin" />
 
 <Callout type="note">
-Hostpanel does not use webhooks. There is nothing to register at the gateway side — all payment confirmation is done by polling.
+Hostpanel does not use webhooks. There is nothing to register at the gateway side, all payment confirmation is done by polling.
 </Callout>
 
 ## Hosted page payments
 
 When a client pays through an installed payment gateway plugin, they are redirected to the gateway's hosted page. After they complete (or abandon) the payment, the gateway sends them back to Hostpanel's payment result page. Hostpanel then queries the gateway for the final result.
 
-Because the redirect can be interrupted (browser closed, network lost), Hostpanel does not rely solely on the return visit — the reconciliation job asks again on its own schedule.
+Because the redirect can be interrupted (browser closed, network lost), Hostpanel does not rely solely on the return visit, the reconciliation job asks again on its own schedule.
 
 ## Reconciliation
 
@@ -22,7 +22,7 @@ The `ReconcileGatewayPaymentsCronCommand` job runs every `ReconcileGatewayPaymen
 
 The timing works as follows:
 
-1. A payment session is created. Hostpanel waits `GatewaySessionSettleMinutes` (default **25 minutes**) before asking the gateway — this gives the client time to complete the hosted page flow without the job racing ahead.
+1. A payment session is created. Hostpanel waits `GatewaySessionSettleMinutes` (default **25 minutes**) before asking the gateway, this gives the client time to complete the hosted page flow without the job racing ahead.
 2. After the first check, each subsequent check waits longer. The wait starts at `GatewayCheckBackoffStartMinutes` (default **5 minutes**) and doubles each time, up to `GatewayCheckMaxIntervalMinutes` (default **360 minutes** / 6 hours).
 3. After `GatewayStalledAfterHours` (default **24 hours**) without a final answer, staff receive the `gateway-payment-stalled-admin` email **once**.
 
@@ -50,16 +50,16 @@ Go to **Billing → Gateway Transaction Log**. Subtitle: "View payment gateway t
 
 **Filters:** Date Range, Debug Data (search in the raw gateway response), Gateway, Result (Payment, Refund, Credit, Pending).
 
-Each row shows the gateway, result, amount and date. Click a row to see the full debug data — useful for answering "did this payment arrive" when a client says they paid but the invoice is still open.
+Each row shows the gateway, result, amount and date. Click a row to see the full debug data, useful for answering "did this payment arrive" when a client says they paid but the invoice is still open.
 
 ## Troubleshooting
 
 | Error | What to check |
 |-------|--------------|
-| `GATEWAY_SESSION_ALREADY_STARTED` — "A payment attempt is already in progress for this invoice." | A concurrent checkout attempt is running. Wait a moment and try again. |
-| `GATEWAY_SESSION_NOT_FOUND` — "This invoice has no gateway payment session to verify." | The session expired or was never created. Ask the client to start the payment again. |
-| `GATEWAY_PAYMENT_MISMATCH` — "The payment gateway reported an amount or currency that does not match the invoice." | The gateway settled for a different amount or currency. Check the gateway log debug data. |
-| `GATEWAY_REFUND_REFUSED` — "The payment gateway refused or failed the refund." | The gateway did not accept the refund request. Check the gateway log and retry manually through the gateway dashboard. |
-| `PAYMENT_PLUGIN_NOT_CONFIGURED` — "No payment plugin is configured for that invoice's gateway." | The plugin for this gateway is not installed or the integration has no credentials. |
-| `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE` — "The payment gateway is temporarily unavailable." | The gateway is down or unreachable. Try again later. |
-| `GATEWAY_CURRENCY_MISMATCH` — "This payment method does not charge in the currency this invoice bills in." | Configure a gateway that supports the invoice currency, or change the invoice currency. |
+| `GATEWAY_SESSION_ALREADY_STARTED`: "A payment attempt is already in progress for this invoice." | A concurrent checkout attempt is running. Wait a moment and try again. |
+| `GATEWAY_SESSION_NOT_FOUND`: "This invoice has no gateway payment session to verify." | The session expired or was never created. Ask the client to start the payment again. |
+| `GATEWAY_PAYMENT_MISMATCH`: "The payment gateway reported an amount or currency that does not match the invoice." | The gateway settled for a different amount or currency. Check the gateway log debug data. |
+| `GATEWAY_REFUND_REFUSED`: "The payment gateway refused or failed the refund." | The gateway did not accept the refund request. Check the gateway log and retry manually through the gateway dashboard. |
+| `PAYMENT_PLUGIN_NOT_CONFIGURED`: "No payment plugin is configured for that invoice's gateway." | The plugin for this gateway is not installed or the integration has no credentials. |
+| `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`: "The payment gateway is temporarily unavailable." | The gateway is down or unreachable. Try again later. |
+| `GATEWAY_CURRENCY_MISMATCH`: "This payment method does not charge in the currency this invoice bills in." | Configure a gateway that supports the invoice currency, or change the invoice currency. |

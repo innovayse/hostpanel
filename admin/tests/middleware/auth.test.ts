@@ -37,7 +37,7 @@ const stubSession = (options: { mode: 'local' | 'sso'; setup: boolean; signedIn:
     'GET /api/auth/setup-required': () => json({ required: options.setup }),
     'GET /api/auth/me': () =>
       options.signedIn
-        ? json({ email: 'a@b.c', roles: options.roles ?? ['Admin'], emailVerified: true })
+        ? json({ email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: options.roles ?? ['Admin'], emailVerified: true })
         : problem('Unauthorized', 401),
   })
 
@@ -70,7 +70,7 @@ describe('authMiddleware', () => {
   it('keeps a signed-in customer without the Admin role out of a protected route', async () => {
     stubSession({ mode: 'sso', setup: false, signedIn: true, roles: ['Client'] })
 
-    expect(await authMiddleware(route({ requiresAuth: true }, '/dashboard'))).toBe('/login')
+    expect(await authMiddleware(route({ requiresAuth: true }, '/dashboard'))).toBe('/forbidden')
   })
 
   it('leaves a signed-in customer without the Admin role on the sign-in page', async () => {
@@ -157,7 +157,7 @@ describe('authMiddleware', () => {
       if (url.endsWith('/api/auth/setup-required')) {
         return json({ required: false })
       }
-      return json({ email: 'a@b.c', roles: ['Admin'], emailVerified: true })
+      return json({ email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'], emailVerified: true })
     }
     // Nothing is answered until all calls are on the wire, so a guard that waited for one answer
     // before asking the next would never get past two calls.

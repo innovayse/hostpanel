@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PluginBlockKind, PluginValueFormat } from '@/types/pluginview'
 import { json, problem } from '../../../helpers/fetch'
-import { ext, mountPluginView } from '../../../helpers/pluginView'
+import { ext, mountLoadingPluginView, mountPluginView } from '../../../helpers/pluginView'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -49,5 +49,12 @@ describe('PluginStatBlock', () => {
     })
 
     expect(wrapper.get('[data-testid="plugin-stat"]').text()).toContain('Usage is not available.')
+  })
+
+  it('keeps the tile in place and draws its skeleton while the source is read', async () => {
+    const wrapper = await mountLoadingPluginView([{ kind: PluginBlockKind.Stat, label: 'Spent', source: usage }])
+
+    expect(wrapper.get('[data-testid="plugin-stat"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="ui-stat-tile-skeleton"]').exists()).toBe(true)
   })
 })

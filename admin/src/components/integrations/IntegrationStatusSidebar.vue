@@ -3,7 +3,8 @@
  * Right sidebar for the integration detail page.
  *
  * Displays the connection test state (in flight, the result of this session's test, the plugin's
- * last reported connection state, or not tested yet) and an optional contextual hint.
+ * last reported connection state, or not tested yet) and an optional contextual hint. `loading` keeps the card and its
+ * caption and draws a badge-sized bar in place of the state while the integration is still being read.
  */
 import { useI18n } from 'vue-i18n'
 import { formatClock } from '@/lib/format'
@@ -13,6 +14,7 @@ import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { MS_PER_SECOND } from '@/lib/limits'
@@ -22,6 +24,8 @@ const { t, locale } = useI18n()
 
 /** Props for IntegrationStatusSidebar. */
 defineProps<{
+  /** Draws a placeholder instead of the connection state while the integration is read. */
+  loading?: boolean
   /** Result of the most recent in-session test, or null. */
   testResult: IntegrationTestResult | null
   /** True while a connection test is in flight. */
@@ -49,17 +53,16 @@ const formatDuration = (ms: number): string =>
     <!-- Status card -->
     <UiCard padding="md">
       <UiStack gap="sm">
-        <UiText tone="muted" size="xs" class="font-semibold uppercase tracking-[0.08em]">
+        <UiText tone="muted" size="sm">
           {{ t('integrations.integrationStatusSidebar.connectionStatus') }}
         </UiText>
 
         <!-- Test in flight. Checked first: the store clears the previous result when a test
              starts, so without this branch the card would show "Not tested yet" for the
              duration of the probe. -->
-        <UiStack v-if="testing" gap="xs" data-testid="integration-status-testing">
-          <UiText tone="primary" size="md" class="font-medium">
-            {{ t('integrations.integrationStatusSidebar.testingConnection') }}
-          </UiText>
+        <UiSkeletonBar v-if="loading" class="h-5 w-28 rounded-full" aria-hidden="true" data-testid="integration-status-loading" />
+
+        <UiStack v-else-if="testing" gap="xs" aria-busy="true" data-testid="integration-status-testing">
           <UiSkeleton :lines="2" />
         </UiStack>
 
@@ -110,7 +113,7 @@ const formatDuration = (ms: number): string =>
     <!-- Hint callout -->
     <UiAlert v-if="hint" variant="warning" data-testid="integration-status-hint">
       <UiStack gap="xs">
-        <UiText tone="warning" size="xs" class="font-semibold uppercase tracking-[0.08em]">
+        <UiText tone="warning" size="sm" class="font-medium">
           {{ t('integrations.integrationStatusSidebar.setupNote') }}
         </UiText>
         <UiText tone="secondary" size="sm">{{ hint }}</UiText>

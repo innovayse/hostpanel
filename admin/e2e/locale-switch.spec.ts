@@ -17,8 +17,8 @@ test('switching to Russian re-renders the shell, survives a reload and stamps th
   await page.goto('/notifications')
   await expect(page.getByTestId('topbar-title')).not.toHaveText(russianTitle)
 
-  await page.getByTestId('topbar-locale').getByTestId('ui-select-trigger').click()
-  await page.getByTestId('ui-select-option').nth(2).click()
+  await page.getByTestId('topbar-locale').click()
+  await page.getByTestId('locale-option-ru').click()
   await expect(page.getByTestId('topbar-title')).toHaveText(russianTitle)
 
   // The choice is remembered, and the first request after the reload already carries it.

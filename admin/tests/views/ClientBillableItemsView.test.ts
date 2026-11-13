@@ -81,7 +81,7 @@ describe('ClientBillableItemsView', () => {
 
     expect(wrapper.get('[data-testid="client-billable-uninvoiced-table"]').text()).toContain('12.00 AMD')
     expect(wrapper.get('[data-testid="client-billable-invoiced-table"]').text()).toContain('5000.00 AMD')
-    expect(wrapper.text()).toContain('Uninvoiced Items — 12.00 AMD (1)')
+    expect(wrapper.text()).toContain('Uninvoiced items: 12.00 AMD (1)')
     expect(wrapper.text()).not.toContain('$')
     expect(wrapper.text()).not.toContain('USD')
   })

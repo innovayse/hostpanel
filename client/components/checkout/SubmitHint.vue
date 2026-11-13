@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 /**
- * SubmitHint - the small muted line under a busy submit button.
+ * SubmitHint: the small muted line under a busy submit button.
  *
  * The button itself only shows a spinner and a short label ("Redirecting"); anything longer, such
  * as why the page is about to change, goes here so it can never overflow or resize the button.

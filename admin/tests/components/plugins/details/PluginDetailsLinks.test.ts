@@ -21,6 +21,16 @@ const mountLinks = (details: Parameters<typeof makeDetails>[0] = {}) =>
   })
 
 describe('PluginDetailsLinks', () => {
+  it('keeps the heading and draws bars instead of the links while the details load', () => {
+    const wrapper = mount(PluginDetailsLinks, {
+      props: { details: null },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    expect(wrapper.get('[data-testid="plugin-details-links"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(0)
+  })
+
   it('shows the links the registry gives, opened in a new tab, and the licence name', () => {
     const wrapper = mountLinks({ buyUrl: 'https://shop.example.org/pay' })
 

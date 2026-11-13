@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceInvoicesCard - the invoices raised against one service, read through the service
+ * ServiceInvoicesCard: the invoices raised against one service, read through the service
  * management store, with a note about invoices the platform could not attribute to any service.
  */
 import { CLIENT_INVOICES_PATH, clientInvoicePath } from '~/constants/clientRoutes'

@@ -15,6 +15,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -22,7 +23,6 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -154,7 +154,20 @@ onMounted(() => load(1))
     />
 
     <UiStack v-else-if="store.credit === null" data-testid="client-credit-loading">
-      <UiSkeleton :lines="3" />
+      <UiGrid :columns="2">
+        <UiStatTile :label="t('clients.clientCredit.balance')" value="" loading />
+        <UiStatTile :label="t('clients.clientCredit.currency')" value="" loading />
+      </UiGrid>
+      <UiCard padding="md" loading :skeleton-lines="4">
+        <template #header>
+          <UiHeading :level="3" variant="card">{{ t('clients.clientCredit.adjustTitle') }}</UiHeading>
+        </template>
+      </UiCard>
+      <UiCard padding="md" loading :skeleton-lines="5">
+        <template #header>
+          <UiHeading :level="3" variant="card">{{ t('clients.clientCredit.history') }}</UiHeading>
+        </template>
+      </UiCard>
     </UiStack>
 
     <template v-else>
@@ -195,11 +208,11 @@ onMounted(() => load(1))
             </template>
           </UiField>
           <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-credit-feedback" />
-          <UiStack direction="row" :justify="UiJustify.Center">
+          <UiFormActions>
             <UiButton type="submit" variant="primary" :loading="processing" :disabled="!canAdjust" data-testid="client-credit-submit">
               {{ t('clients.clientCredit.apply') }}
             </UiButton>
-          </UiStack>
+          </UiFormActions>
         </UiForm>
       </UiCard>
 

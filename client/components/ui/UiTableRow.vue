@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 /**
- * TableRow (`UiTableRow`) - a row of a UiTable with an optional hover highlight and a `group`
+ * TableRow (`UiTableRow`): a row of a UiTable with an optional hover highlight and a `group`
  * marker so cells can react to row hover (`group-hover:`).
  */
 

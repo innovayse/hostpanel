@@ -25,7 +25,6 @@
   },
   "integrationStatusSidebar": {
     "connectionStatus": "Состояние соединения",
-    "testingConnection": "Проверка соединения…",
     "connectionOk": "Соединение в порядке",
     "connectionFailed": "Соединение не удалось",
     "endpoint": "Конечная точка",
@@ -36,7 +35,7 @@
   },
   "cwp7Integration": {
     "cwp7": "CWP7",
-    "controlWebPanel7Provisioning": "Control Web Panel 7 — провайдер провижининга для управления хостинг-аккаунтами, пакетами и ресурсами сервера.",
+    "controlWebPanel7Provisioning": "Control Web Panel 7: провайдер провижининга для управления хостинг-аккаунтами, пакетами и ресурсами сервера.",
     "hostingProvisioning": "Хостинг / провижининг",
     "moduleType": "Тип модуля",
     "serverModule": "Серверный модуль",

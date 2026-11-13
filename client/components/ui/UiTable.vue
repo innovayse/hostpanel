@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 /**
- * UiTable - the framed table shell; compose it with TableHead, TableBody, TableRow, TableTh and
+ * UiTable: the framed table shell; compose it with TableHead, TableBody, TableRow, TableTh and
  * TableTd (`UiTableHead` and the rest). The frame clips the corners; `scrollable` lets wide tables scroll
  * sideways inside it.
  */

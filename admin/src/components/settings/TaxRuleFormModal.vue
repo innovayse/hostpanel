@@ -13,6 +13,7 @@ import UiCountrySelect from '@/components/ui/UiCountrySelect.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -72,12 +73,7 @@ watch(() => props.rule, (current) => {
 const title = computed<string>(() => (isEditMode.value ? t('taxRules.form.editTitle') : t('taxRules.form.addTitle')))
 
 /** Label of the submit button. */
-const submitLabel = computed<string>(() => {
-  if (props.saving) {
-    return t('taxRules.form.saving')
-  }
-  return isEditMode.value ? t('taxRules.form.save') : t('taxRules.form.add')
-})
+const submitLabel = computed<string>(() => (isEditMode.value ? t('taxRules.form.save') : t('taxRules.form.add')))
 
 /** Submits the form by emitting the save event with the current field values. */
 const handleSubmit = (): void => {
@@ -158,14 +154,14 @@ const handleSubmit = (): void => {
         <UiToggle v-model="isEnabled" data-testid="tax-rule-form-enabled" />
       </UiStack>
 
-      <UiStack direction="row" align="center" justify="end" gap="sm">
+      <UiFormActions>
         <UiButton type="button" variant="secondary" data-testid="tax-rule-form-cancel" @click="emit('close')">
           {{ t('taxRules.form.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :disabled="saving" data-testid="tax-rule-form-save">
+        <UiButton type="submit" variant="primary" :loading="saving" data-testid="tax-rule-form-save">
           {{ submitLabel }}
         </UiButton>
-      </UiStack>
+      </UiFormActions>
     </UiForm>
   </UiDialog>
 </template>

@@ -10,7 +10,7 @@
  * {@link KNOWN_REMAINDER}: the tests written before this guard existed that still fake a composable of
  * ours. That list may only shrink. A file that no longer fakes one fails the guard until it is removed
  * from the list, and a new file that fakes one fails until it uses the real composable instead.
- * Stubbing a Nuxt or Vue framework global (`useRoute`, `useHead`, `useCookie`, `navigateTo`, `fetch`, ...)
+ * Stubbing a Nuxt or Vue framework global (`useRoute`, `useHead`, `useCookie`, `navigateTo`, `fetch` and so on)
  * is not replacing code of ours and is always allowed, and so is registering the real composable under its own
  * name (`vi.stubGlobal('useX', useX)`), which only makes the real one reachable as the global it is in the app.
  *

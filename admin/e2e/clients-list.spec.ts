@@ -29,13 +29,37 @@ test('searching by name sends the filter and shows only the matching client', as
   await page.goto('/clients')
   await expect(page.getByTestId('client-row')).toHaveCount(2)
 
+  // The search box writes to the address after a pause and the list reloads from it.
   await fieldOf(page, 'clients-list-filter-name').fill('Grace')
-  await page.getByTestId('clients-list-search').click()
+  await expect(page).toHaveURL(/search=Grace/)
 
   await expect(page.getByTestId('client-row')).toHaveCount(1)
   await expect(page.getByTestId('client-row')).toContainText(grace.email)
   await expect(page.getByTestId('client-row')).not.toContainText(ada.email)
   expect(api.callsTo(HttpMethod.Get, '/api/clients').at(-1)?.search).toContain('search=Grace')
+})
+
+test('a filter chosen in the filters dialog is a chip, is sent to the API and is removed from its chip', async ({ page }) => {
+  const api = await stubApi(page, {
+    signedIn: true,
+    routes: [json(HttpMethod.Get, '/api/clients', clientsPage)],
+  })
+
+  await page.goto('/clients')
+  await expect(page.getByTestId('client-row')).toHaveCount(2)
+
+  await page.getByTestId('filter-trigger').click()
+  await fieldOf(page, 'clients-list-filter-email').fill('grace')
+  await page.getByTestId('filter-apply').click()
+
+  await expect(page).toHaveURL(/email=grace/)
+  await expect(page.getByTestId('filter-chip-email')).toContainText('grace')
+  expect(api.callsTo(HttpMethod.Get, '/api/clients').at(-1)?.search).toContain('email=grace')
+
+  await page.getByTestId('filter-chip-remove-email').click()
+
+  await expect(page.getByTestId('filter-chip-email')).toHaveCount(0)
+  expect(api.callsTo(HttpMethod.Get, '/api/clients').at(-1)?.search).not.toContain('email=')
 })
 
 test('the pagination control loads the page that was clicked', async ({ page }) => {

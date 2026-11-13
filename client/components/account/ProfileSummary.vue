@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 /**
- * ProfileSummary - the avatar, name and email of the signed-in client with the two-factor badge.
+ * ProfileSummary: the avatar, name and email of the signed-in client with the two-factor badge.
  *
  * @module components/account/ProfileSummary
  */

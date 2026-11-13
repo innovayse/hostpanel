@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 /**
- * UiConfirmDialog - a small "are you sure?" dialog with a cancel and a confirm button.
+ * UiConfirmDialog: a small "are you sure?" dialog with a cancel and a confirm button.
  *
  * A thin wrapper over UiDialog kept because it is used all over the client area. `variant`
  * `danger` shows a bin icon and a red confirm button; any other value shows a warning icon.

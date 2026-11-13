@@ -1,7 +1,9 @@
 namespace Innovayse.Hostpanel.Application.Auth.Common;
 
-/// <summary>The caller's email, local roles and client account permissions, for clients that cannot decode them from the token.</summary>
+/// <summary>The caller's email, name, local roles and client account permissions, for clients that cannot decode them from the token.</summary>
 /// <param name="Email">The account's email address.</param>
+/// <param name="FirstName">The account's given name; empty when the account holds none.</param>
+/// <param name="LastName">The account's family name; empty when the account holds none.</param>
 /// <param name="Roles">The roles granted locally to the account.</param>
 /// <param name="EmailVerified">Whether the credential says the email is confirmed; <c>null</c> when it carries no claim.</param>
 /// <param name="ClientPermissions">
@@ -20,6 +22,8 @@ namespace Innovayse.Hostpanel.Application.Auth.Common;
 /// </param>
 public sealed record MyAccountDto(
     string Email,
+    string FirstName,
+    string LastName,
     IReadOnlyList<string> Roles,
     bool? EmailVerified,
     int ClientPermissions,

@@ -14,7 +14,8 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -99,7 +100,7 @@ const confirmRelease = async (): Promise<void> => {
  * @param testid - The `data-testid` of the action button.
  * @returns The action list passed to UiRowActions.
  */
-const generateActions = (clientId: number, testid: string): UiRowAction[] => [
+const generateActions = (clientId: number, testid: string): UiMenuAction[] => [
   {
     label: t('billing.renewals.generateInvoice'),
     testid,
@@ -121,7 +122,7 @@ const generateActions = (clientId: number, testid: string): UiRowAction[] => [
  * @param claim - The row.
  * @returns The action list passed to UiRowActions.
  */
-const releaseActions = (claim: ClaimedDomainRenewal): UiRowAction[] => [
+const releaseActions = (claim: ClaimedDomainRenewal): UiMenuAction[] => [
   {
     label: t('billing.renewals.releaseClaim'),
     testid: `renewals-claim-release-${claim.itemId}`,
@@ -170,7 +171,6 @@ onMounted(() => store.fetchAll())
           <UiTable
             :loading="store.loading && store.services.length === 0"
             :empty="!store.loading && store.services.length === 0"
-            :colspan="7"
             data-testid="renewals-services-table"
           >
             <UiTableHead>
@@ -228,7 +228,6 @@ onMounted(() => store.fetchAll())
           <UiTable
             :loading="store.loading && store.domains.length === 0"
             :empty="!store.loading && store.domains.length === 0"
-            :colspan="6"
             data-testid="renewals-domains-table"
           >
             <UiTableHead>
@@ -285,7 +284,6 @@ onMounted(() => store.fetchAll())
           <UiTable
             :loading="store.loading && store.claims.length === 0"
             :empty="!store.loading && store.claims.length === 0"
-            :colspan="5"
             data-testid="renewals-claims-table"
           >
             <UiTableHead>
@@ -330,7 +328,6 @@ onMounted(() => store.fetchAll())
       :title="t('billing.renewals.releaseTitle')"
       :message="t('billing.renewals.releaseMessage', { line: releaseTarget?.description ?? '' })"
       :confirm-label="t('billing.renewals.releaseClaim')"
-      :loading-label="t('billing.renewals.releasing')"
       :loading="store.acting"
       tone="danger"
       @confirm="confirmRelease"

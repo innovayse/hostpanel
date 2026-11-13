@@ -27,6 +27,25 @@ describe('UiCheckbox', () => {
     expect(wrapper.emitted('change')).toHaveLength(1)
   })
 
+  it('hands the click to the change listener, so a caller can read the Shift key', async () => {
+    const wrapper = mount(UiCheckbox, { props: { modelValue: false } })
+
+    await wrapper.trigger('click', { shiftKey: true })
+
+    const click = wrapper.emitted('change')?.[0]?.[0] as MouseEvent | undefined
+
+    expect(click?.shiftKey).toBe(true)
+  })
+
+  it('shows a dash and reports mixed when indeterminate', () => {
+    const wrapper = mount(UiCheckbox, { props: { modelValue: false, indeterminate: true } })
+
+    expect(wrapper.attributes('aria-checked')).toBe('mixed')
+    expect(wrapper.find('line').exists()).toBe(true)
+    expect(wrapper.find('polyline').exists()).toBe(false)
+    expect(wrapper.classes()).toContain('not-disabled:gradient-brand')
+  })
+
   it('does nothing while disabled', async () => {
     const wrapper = mount(UiCheckbox, { props: { modelValue: false, disabled: true } })
 
@@ -39,5 +58,12 @@ describe('UiCheckbox', () => {
     const wrapper = mount(UiCheckbox, { props: { modelValue: false }, attrs: { 'data-testid': 'probe' } })
 
     expect(wrapper.attributes('data-testid')).toBe('probe')
+  })
+
+  it('shows a disabled box as muted with a not-allowed cursor', () => {
+    const wrapper = mount(UiCheckbox, { props: { modelValue: true, disabled: true } })
+
+    expect(wrapper.attributes('disabled')).toBeDefined()
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['disabled:bg-surface-hover', 'disabled:cursor-not-allowed', 'focus-visible:ring-2']))
   })
 })

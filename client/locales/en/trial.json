@@ -22,7 +22,7 @@
       }
     },
     "seo": {
-      "title": "Start Free Trial — {product}",
+      "title": "Start Free Trial: {product}",
       "description": "Try {product} free."
     }
   }

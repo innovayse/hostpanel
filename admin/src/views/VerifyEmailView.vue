@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/auth'
 import AuthShell from '@/components/auth/AuthShell.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
@@ -56,14 +56,10 @@ onMounted(async () => {
 
 <template>
   <AuthShell
-    :title="loading
-      ? t('auth.verifyEmail.verifyingYourEmail')
-      : success
-        ? t('auth.verifyEmail.emailVerified')
-        : t('auth.verifyEmail.verificationFailed')"
+    :title="loading ? t('auth.verifyEmail.title') : success ? t('auth.verifyEmail.emailVerified') : t('auth.verifyEmail.verificationFailed')"
   >
     <!-- Loading -->
-    <UiSkeleton v-if="loading" :lines="2" data-testid="verify-email-loading" />
+    <UiLoader v-if="loading" data-testid="verify-email-loading" />
 
     <!-- Success -->
     <UiStack v-else-if="success" gap="md" data-testid="verify-email-success">

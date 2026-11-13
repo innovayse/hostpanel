@@ -16,7 +16,8 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -26,7 +27,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
 import { fulfilmentStatusTone } from '@/lib/tones'
 import { useBillingStore } from '@/stores/billing'
 import { FulfilmentKind, FulfilmentStatus } from '@/types/invoice'
@@ -172,7 +173,7 @@ const retry = async (): Promise<void> => {
  * @param record - The row.
  * @returns The action list passed to UiRowActions.
  */
-const recordActions = (record: FulfilmentRecord): UiRowAction[] => {
+const recordActions = (record: FulfilmentRecord): UiMenuAction[] => {
   if (!record.canRetry || props.readonly) {
     return []
   }
@@ -232,7 +233,6 @@ watch(
           :density="UiTableDensity.Compact"
           :loading="loading"
           :empty="!loading && records.length === 0"
-          :colspan="7"
           data-testid="billing-invoice-fulfilment-table"
         >
           <UiTableHead>
@@ -258,7 +258,7 @@ watch(
               <UiTableCell numeric muted>{{ record.attempts }}</UiTableCell>
               <UiTableCell muted>
                 <UiText v-if="record.lastError" :tone="UiTextTone.Danger">{{ record.lastError }}</UiText>
-                <template v-else>—</template>
+                <template v-else>{{ EMPTY_VALUE }}</template>
               </UiTableCell>
               <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>
               <UiTableCell actions>

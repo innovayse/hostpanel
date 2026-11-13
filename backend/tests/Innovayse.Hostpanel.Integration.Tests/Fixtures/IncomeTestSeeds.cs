@@ -64,15 +64,15 @@ public static class IncomeTestSeeds
             foreign.UpdateRate(ForeignRate);
         }
 
-        var baseClient = Client.Create($"income-{Guid.NewGuid():N}", "Base", "Payer", $"base-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
-        var foreignClient = Client.Create($"income-{Guid.NewGuid():N}", "Foreign", "Payer", $"foreign-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var baseClient = Client.Create($"income-{Guid.NewGuid():N}", "Base", "Payer", $"base-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
+        var foreignClient = Client.Create($"income-{Guid.NewGuid():N}", "Foreign", "Payer", $"foreign-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         var group = ProductGroup.Create($"income-{Guid.NewGuid():N}", null);
         context.Clients.Add(baseClient);
         context.Clients.Add(foreignClient);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, $"Income plan {Guid.NewGuid():N}", null, null, null, "income", ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, $"Income plan {Guid.NewGuid():N}", null, null, null, "income", ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 

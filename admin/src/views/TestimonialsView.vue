@@ -9,19 +9,18 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
-import { Icon } from '@/lib/icons'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useTestimonialsStore } from '@/stores/testimonials'
 import type { Testimonial } from '@/types/testimonial'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -68,7 +67,7 @@ const authorLine = (item: Testimonial): string =>
  * @param item - The testimonial shown in the row.
  * @returns The quote, or a dash when no translation is stored.
  */
-const quoteOf = (item: Testimonial): string => displayTranslation(item.translations)?.quote ?? '—'
+const quoteOf = (item: Testimonial): string => displayTranslation(item.translations)?.quote ?? EMPTY_VALUE
 
 /** Route of the create page, opened by the Add link. */
 const createRoute = createPath(AppRoute.StorefrontTestimonials)
@@ -88,7 +87,6 @@ const editRoute = (item: Testimonial): string => editPath(AppRoute.StorefrontTes
     :title="t('storefront.testimonials.title')"
     :subtitle="t('storefront.testimonials.subtitle')"
     :add-label="t('storefront.testimonials.add')"
-    :loading-label="t('storefront.testimonials.loading')"
     :empty-label="t('storefront.testimonials.empty')"
     :delete-title="t('storefront.testimonials.deleteTitle')"
     :edit-label="t('storefront.testimonials.edit')"
@@ -117,16 +115,13 @@ const editRoute = (item: Testimonial): string => editPath(AppRoute.StorefrontTes
       <UiTableCell>
         <UiStack direction="row" align="center" gap="sm">
           <UiImage
-            v-if="item.avatarUrl"
-            :src="storefrontAssetUrl(item.avatarUrl)"
+            :src="item.avatarUrl ? storefrontAssetUrl(item.avatarUrl) : undefined"
             :alt="item.name"
             fit="cover"
             rounded="md"
             class="h-10 w-10 border border-border"
+            fallback
           />
-          <UiStack v-else align="center" justify="center" gap="none" class="h-10 w-10 rounded-lg border border-border bg-surface-field text-text-muted">
-            <UiIcon :markup="Icon.Image" size="sm" />
-          </UiStack>
           <UiStack gap="none">
             <UiText tone="primary" size="lg" class="font-medium">{{ item.name }}</UiText>
             <UiText tone="muted" size="xs">{{ authorLine(item) }}</UiText>

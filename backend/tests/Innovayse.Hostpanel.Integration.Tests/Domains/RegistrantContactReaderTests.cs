@@ -25,7 +25,7 @@ public sealed class RegistrantContactReaderTests(IntegrationTestFactory factory)
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ani", "Hakobyan", "ignored@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ani", "Hakobyan", "ignored@example.test", TestMoments.Seeded);
         if (withAddress)
         {
             client.Update("Ani", "Hakobyan", "Acme LLC", "+374.10123456");

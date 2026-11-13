@@ -66,7 +66,7 @@ const onError = (): void => {
 </script>
 
 <template>
-  <span class="inline-flex shrink-0 overflow-hidden rounded-xl" :class="sizeClasses[size]" data-testid="plugin-avatar">
+  <span class="inline-flex shrink-0 overflow-hidden rounded-control" :class="sizeClasses[size]" data-testid="plugin-avatar">
     <UiImage
       v-if="showIcon"
       :src="iconUrl ?? undefined"

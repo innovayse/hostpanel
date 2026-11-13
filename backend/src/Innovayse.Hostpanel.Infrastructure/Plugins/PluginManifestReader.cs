@@ -125,7 +125,7 @@ internal sealed class PluginManifestReader
             if (manifest.SdkVersion != SupportedSdkVersion)
             {
                 _logger.LogWarning(
-                    "Plugin {Id} requires SDK version {Required}, supported is {Supported} — skipping",
+                    "Plugin {Id} requires SDK version {Required}, supported is {Supported}, skipping",
                     manifest.Id, manifest.SdkVersion, SupportedSdkVersion);
                 return null;
             }

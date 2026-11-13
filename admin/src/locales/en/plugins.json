@@ -8,7 +8,6 @@
     },
     "pendingRestart": "Pending restart",
     "categoryByAuthor": "{category} · by {author}",
-    "removing": "Removing…",
     "remove": "Remove",
     "details": "Details",
     "refused": "Refused",
@@ -23,10 +22,6 @@
     "hideUpdateNotes": "Hide what is new"
   },
   "pluginUploader": {
-    "dropYourPlugin": "Drop your plugin",
-    "here": "here",
-    "zip": ".zip",
-    "orClickToBrowseFiles": "or click to browse files",
     "valueKbReadyToInstall": "{value} KB · Ready to install",
     "installPlugin": "Install Plugin"
   },
@@ -54,7 +49,6 @@
   "restartBanner": {
     "restartRequired": "Restart required",
     "pluginChangesWillTakeEffect": "Plugin changes will take effect after a server restart.",
-    "restarting": "Restarting…",
     "restartServer": "Restart Server"
   },
   "pluginSigning": {
@@ -75,6 +69,7 @@
     "fileAboveToGetStarted": "file above to get started",
     "zip": ".zip",
     "installedPlugins": "Installed Plugins",
+    "noPluginsMatch": "No installed plugin matches the filters",
     "pluginInstalled": "Plugin installed.",
     "pluginRemoved": "Plugin removed.",
     "confirmRemoveTitle": "Remove this plugin?",
@@ -98,7 +93,7 @@
     "description": "Widgets that plugins add to pages. Choose the products a widget shows for; leave it empty to follow the plugin's own product list.",
     "slot": "Slot {slot}",
     "pluginWidget": "{plugin} · {widget}",
-    "addProduct": "Add a product…",
+    "addProduct": "Add a product",
     "noProducts": "No products chosen: the plugin's own product list applies.",
     "orphaned": "This widget is bound to products that no longer exist, so it is shown nowhere. Choose products again, or clear the binding to follow the plugin's own list.",
     "removeProduct": "Remove {name}"
@@ -106,13 +101,11 @@
   "keptData": {
     "title": "Removed plugins with kept data",
     "description": "Removing a plugin keeps its settings and stored data. Purge the data only when you will not install the plugin again.",
-    "purge": "Purge data",
-    "purging": "Purging…"
+    "purge": "Purge data"
   },
   "pluginRegistry": {
-    "search": "Search the registry",
-    "searchLabel": "Search",
     "categoryPlaceholder": "Category",
+    "search": "Search the registry",
     "allCategories": "All categories",
     "byAuthor": "by {author}",
     "version": "v{version}",
@@ -122,7 +115,6 @@
     "update": "Update to {version}",
     "details": "Details",
     "uninstall": "Uninstall",
-    "installing": "Installing…",
     "installed": "Installed {version}",
     "emptyTitle": "No plugins found",
     "emptyDescription": "Try another search or category.",

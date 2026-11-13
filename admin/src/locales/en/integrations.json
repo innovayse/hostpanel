@@ -25,7 +25,6 @@
   },
   "integrationStatusSidebar": {
     "connectionStatus": "Connection Status",
-    "testingConnection": "Testing connection…",
     "connectionOk": "Connection OK",
     "connectionFailed": "Connection Failed",
     "endpoint": "Endpoint",
@@ -36,7 +35,7 @@
   },
   "cwp7Integration": {
     "cwp7": "CWP7",
-    "controlWebPanel7Provisioning": "Control Web Panel 7 — Provisioning provider for managing hosting accounts, packages, and server resources.",
+    "controlWebPanel7Provisioning": "Control Web Panel 7: provisioning provider for managing hosting accounts, packages, and server resources.",
     "hostingProvisioning": "Hosting / Provisioning",
     "moduleType": "Module Type",
     "serverModule": "Server Module",

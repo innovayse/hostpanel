@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Client-scoped invoices list: shows invoices for a specific client with filtering, bulk actions,
- * pagination, and create functionality. Deleting and cancelling are confirmed first; every action
+ * Client-scoped invoices list: shows invoices for a specific client with filtering, bulk actions on the
+ * selected rows (`useRowSelection`, the floating `InvoiceBulkBar`), pagination, and create functionality. Deleting and cancelling are confirmed first; every action
  * reports its outcome (success, or the API's sentence) above the list, and a refused load shows
  * the sentence with a Retry.
  */
@@ -10,16 +10,19 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBillingStore } from '@/stores/billing'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useRowSelection } from '@/composables/useRowSelection'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
 import { invoiceStatusTone } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
-import { InvoiceBulkAction, InvoiceOpenAction } from '@/types/invoice'
+import { InvoiceOpenAction } from '@/types/invoice'
+import type { InvoiceBulkAction } from '@/types/invoice'
+import InvoiceBulkBar from '@/components/billing/InvoiceBulkBar.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -34,18 +37,19 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import type { Invoice } from '@/types/invoice'
+import type { Invoice, InvoiceItemInput } from '@/types/invoice'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
@@ -54,6 +58,7 @@ import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { invoicePath } from '@/lib/routes'
+import { nextRowKey } from '@/lib/rowKey'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
@@ -69,6 +74,9 @@ const router = useRouter()
 
 /** Billing store, the only caller of the invoice endpoints. */
 const store = useBillingStore()
+
+/** True while the first load is in flight and there are no invoices yet; the table then draws its placeholder rows. */
+const initialLoading = computed<boolean>(() => store.loading && store.clientInvoices.length === 0)
 
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
@@ -88,17 +96,8 @@ const filterFrom = ref('')
 /** Date to filter. */
 const filterTo = ref('')
 
-/** Whether the select-all checkbox is checked. */
-const selectAll = ref(false)
-
-/** Set of selected invoice IDs. */
-const selectedIds = ref<Set<number>>(new Set())
-
-/** Bulk action dropdown value. */
-const bulkActionValue = ref('')
-
-/** Whether the bulk confirm modal is visible. */
-const showBulkConfirmModal = ref(false)
+/** The selected invoices of the page. */
+const selection = useRowSelection(() => store.clientInvoices.map((invoice) => invoice.id))
 
 /** Whether the inline create form is visible. */
 const showCreateForm = ref(false)
@@ -106,10 +105,21 @@ const showCreateForm = ref(false)
 /** New invoice due date. */
 const newDueDate = ref('')
 
+/** A line of the invoice being created: the wire fields plus a stable key for list rendering. */
+interface NewInvoiceLine extends InvoiceItemInput {
+  /** Stable key of the row; never sent to the API. */
+  key: number
+}
+
+/**
+ * A blank line with a fresh key.
+ *
+ * @returns The blank line.
+ */
+const blankInvoiceLine = (): NewInvoiceLine => ({ key: nextRowKey(), description: '', unitPrice: 0, quantity: 1 })
+
 /** New invoice items. */
-const newItems = ref<Array<{ description: string; unitPrice: number; quantity: number }>>([
-  { description: '', unitPrice: 0, quantity: 1 },
-])
+const newItems = ref<NewInvoiceLine[]>([blankInvoiceLine()])
 
 /** Whether to create as draft. */
 const newIsDraft = ref(true)
@@ -143,27 +153,6 @@ const report = (ok: boolean, successKey: string): void => {
   }
 }
 
-/** Whether any items are selected. */
-const hasSelection = computed(() => selectedIds.value.size > 0)
-
-/** Bulk action options. */
-const bulkActions = [
-  { value: '', label: t('clients.clientInvoices.bulkActions') },
-  { value: InvoiceBulkAction.MarkPaid, label: t('billing.invoiceSummaryTab.markPaid') },
-  { value: InvoiceBulkAction.MarkUnpaid, label: t('billing.invoiceDetail.markUnpaid') },
-  { value: InvoiceBulkAction.MarkCancelled, label: t('shared.markCancelled') },
-  { value: InvoiceBulkAction.Duplicate, label: t('billing.quoteDetail.duplicate') },
-  { value: InvoiceBulkAction.Delete, label: t('shared.delete') },
-]
-
-/** True when the chosen bulk action deletes or cancels invoices, so its prompt is in danger style. */
-const bulkIsDestructive = computed<boolean>(() =>
-  bulkActionValue.value === InvoiceBulkAction.Delete || bulkActionValue.value === InvoiceBulkAction.MarkCancelled,
-)
-
-/** Caption of the chosen bulk action. */
-const bulkActionLabel = computed<string>(() => bulkActions.find(a => a.value === bulkActionValue.value)?.label ?? '')
-
 /**
  * Fetches client invoices with current filters.
  *
@@ -178,23 +167,13 @@ const fetchInvoices = async (): Promise<void> => {
 }
 
 /**
- * Clears the row selection.
- *
- * @returns Nothing.
- */
-const clearSelection = (): void => {
-  selectedIds.value = new Set()
-  selectAll.value = false
-}
-
-/**
  * Applies filters and resets to page 1.
  *
  * @returns Nothing.
  */
 const applyFilters = (): void => {
   page.value = 1
-  clearSelection()
+  selection.clear()
   fetchInvoices()
 }
 
@@ -206,81 +185,24 @@ const applyFilters = (): void => {
  */
 const goToPage = (p: number): void => {
   page.value = p
-  clearSelection()
+  selection.clear()
   fetchInvoices()
 }
 
 /**
- * Toggles selection of all invoices.
+ * Applies a bulk action to the selected invoices, shows its outcome and reloads the list on success.
  *
- * @returns Nothing.
- */
-const toggleSelectAll = (): void => {
-  if (selectAll.value) {
-    clearSelection()
-  } else {
-    selectedIds.value = new Set(store.clientInvoices.map(i => i.id))
-    selectAll.value = true
-  }
-}
-
-/**
- * Toggles selection of a single invoice.
- *
- * @param id - The invoice ID.
- * @returns Nothing.
- */
-const toggleSelect = (id: number): void => {
-  const next = new Set(selectedIds.value)
-  if (next.has(id)) {
-    next.delete(id)
-  } else {
-    next.add(id)
-  }
-  selectedIds.value = next
-  selectAll.value = next.size === store.clientInvoices.length && store.clientInvoices.length > 0
-}
-
-/**
- * Executes the selected bulk action, shows its outcome and reloads the list on success.
- *
+ * @param action - What to do with them.
  * @returns Promise that resolves when the action and the reload finish.
  */
-const executeBulkAction = async (): Promise<void> => {
-  if (!bulkActionValue.value || selectedIds.value.size === 0) {
-    showBulkConfirmModal.value = false
-    return
-  }
+const runBulk = async (action: InvoiceBulkAction): Promise<void> => {
   feedback.clear()
-  processing.value = true
-  const ok = await store.bulkAction(Array.from(selectedIds.value), bulkActionValue.value)
-  processing.value = false
-  showBulkConfirmModal.value = false
+  const ok = await store.bulkAction([...selection.ids.value], action)
   report(ok, 'clients.clientInvoices.bulkActionDone')
   if (ok) {
-    clearSelection()
-    bulkActionValue.value = ''
+    selection.clear()
     await fetchInvoices()
   }
-}
-
-/** Closes the bulk confirmation; ignored while the action runs. */
-const dismissBulk = (): void => {
-  if (!processing.value) {
-    showBulkConfirmModal.value = false
-  }
-}
-
-/**
- * Opens the bulk confirm modal.
- *
- * @returns Nothing.
- */
-const handleBulkApply = (): void => {
-  if (!bulkActionValue.value || selectedIds.value.size === 0) {
-    return
-  }
-  showBulkConfirmModal.value = true
 }
 
 /**
@@ -292,7 +214,7 @@ const toggleCreateForm = (): void => {
   showCreateForm.value = !showCreateForm.value
   if (showCreateForm.value) {
     newDueDate.value = ''
-    newItems.value = [{ description: '', unitPrice: 0, quantity: 1 }]
+    newItems.value = [blankInvoiceLine()]
     newIsDraft.value = true
   }
 }
@@ -303,7 +225,7 @@ const toggleCreateForm = (): void => {
  * @returns Nothing.
  */
 const addNewItem = (): void => {
-  newItems.value.push({ description: '', unitPrice: 0, quantity: 1 })
+  newItems.value.push(blankInvoiceLine())
 }
 
 /**
@@ -324,7 +246,7 @@ const removeNewItem = (index: number): void => {
 const handleCreate = async (): Promise<void> => {
   feedback.clear()
   creating.value = true
-  const id = await store.createInvoice(Number(clientId.value), newDueDate.value, newItems.value, newIsDraft.value)
+  const id = await store.createInvoice(Number(clientId.value), newDueDate.value, newItems.value.map(({ description, unitPrice, quantity }) => ({ description, unitPrice, quantity })), newIsDraft.value)
   creating.value = false
   if (id) {
     showCreateForm.value = false
@@ -397,7 +319,7 @@ const openInvoice = (id: number, mode: InvoiceOpenAction): void => {
  * @param invoice - The row.
  * @returns The action list passed to UiRowActions.
  */
-const invoiceActions = (invoice: Invoice): UiRowAction[] => [
+const invoiceActions = (invoice: Invoice): UiMenuAction[] => [
   {
     label: t('shared.view'),
     testid: `client-invoices-view-${invoice.id}`,
@@ -443,17 +365,19 @@ onMounted(() => fetchInvoices())
 
 <template>
   <UiStack>
-    <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-      <UiHeading :level="1" variant="card">{{ t('shared.invoices') }}</UiHeading>
-      <UiButton
-        type="button"
-        :variant="UiButtonVariant.Primary"
-        data-testid="invoice-create-toggle"
-        @click="toggleCreateForm"
-      >
-        {{ t('clients.clientInvoices.createInvoice') }}
-      </UiButton>
-    </UiStack>
+    <UiSectionHeader :level="1" variant="card">
+      {{ t('shared.invoices') }}
+      <template #actions>
+        <UiButton
+          type="button"
+          :variant="UiButtonVariant.Primary"
+          data-testid="invoice-create-toggle"
+          @click="toggleCreateForm"
+        >
+          {{ t('clients.clientInvoices.createInvoice') }}
+        </UiButton>
+      </template>
+    </UiSectionHeader>
 
     <UiCollapse :open="showCreateForm">
       <UiCard padding="md" data-testid="invoice-create-form">
@@ -478,7 +402,7 @@ onMounted(() => fetchInvoices())
             <UiStack gap="sm">
               <UiStack
                 v-for="(item, idx) in newItems"
-                :key="idx"
+                :key="item.key"
                 direction="row"
                 gap="sm"
                 :align="UiAlignItems.Center"
@@ -537,11 +461,11 @@ onMounted(() => fetchInvoices())
             <UiButton
               type="button"
               :variant="UiButtonVariant.Primary"
-              :disabled="creating"
+              :loading="creating"
               data-testid="invoice-create-submit"
               @click="handleCreate"
             >
-              {{ creating ? t('shared.creating') : t('clients.clientInvoices.createInvoice2') }}
+              {{ t('clients.clientInvoices.createInvoice2') }}
             </UiButton>
           </UiStack>
         </UiStack>
@@ -572,48 +496,18 @@ onMounted(() => fetchInvoices())
       @retry="fetchInvoices()"
     />
 
-    <UiStack v-if="store.loading && store.clientInvoices.length === 0" data-testid="client-invoices-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientInvoices.loadingInvoices') }}</UiText>
-    </UiStack>
-
     <template v-else>
-      <UiCard v-if="hasSelection" padding="sm" data-testid="client-invoices-bulk">
-        <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-            {{ t('clients.clientInvoices.sizeSelected', { size: selectedIds.size }) }}
-          </UiText>
-          <UiSelect v-model="bulkActionValue" :options="bulkActions" :placeholder="t('clients.clientInvoices.bulkActions')" data-testid="client-invoices-bulk-action" />
-          <UiButton
-            type="button"
-            :variant="UiButtonVariant.Secondary"
-            :size="UiSize.Sm"
-            :disabled="!bulkActionValue"
-            data-testid="client-invoices-bulk-apply"
-            @click="handleBulkApply"
-          >
-            {{ t('shared.apply') }}
-          </UiButton>
-        </UiStack>
-      </UiCard>
-
       <UiCard class="overflow-x-auto">
         <UiTable
           :density="UiTableDensity.Comfortable"
-          :empty="store.clientInvoices.length === 0"
-          :colspan="9"
+          :loading="initialLoading"
+          :empty="!initialLoading && store.clientInvoices.length === 0"
+          :selection="selection"
+          select-all-testid="client-invoices-select-all"
           data-testid="client-invoices-table"
         >
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader>
-                <UiCheckbox
-                  :model-value="selectAll"
-                  :aria-label="t('shared.selectAll')"
-                  data-testid="client-invoices-select-all"
-                  @update:model-value="toggleSelectAll"
-                />
-              </UiTableHeader>
               <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.invoiceDate') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.dueDate') }}</UiTableHeader>
@@ -625,15 +519,13 @@ onMounted(() => fetchInvoices())
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
-            <UiTableRow v-for="invoice in store.clientInvoices" :key="invoice.id" hoverable>
-              <UiTableCell>
-                <UiCheckbox
-                  :model-value="selectedIds.has(invoice.id)"
-                  :aria-label="`#${invoice.id}`"
-                  :data-testid="`client-invoices-select-${invoice.id}`"
-                  @update:model-value="toggleSelect(invoice.id)"
-                />
-              </UiTableCell>
+            <UiTableRow
+              v-for="invoice in store.clientInvoices"
+              :key="invoice.id"
+              hoverable
+              :row-id="invoice.id"
+              :select-testid="`client-invoices-select-${invoice.id}`"
+            >
               <UiTableCell muted>#{{ invoice.id }}</UiTableCell>
               <UiTableCell muted>{{ formatDate(invoice.invoiceDate) }}</UiTableCell>
               <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
@@ -653,7 +545,7 @@ onMounted(() => fetchInvoices())
           </template>
         </UiTable>
         <UiStack
-          v-if="store.clientInvoicesTotal > pageSize"
+          v-if="initialLoading || store.clientInvoicesTotal > pageSize"
           direction="row"
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
@@ -665,6 +557,7 @@ onMounted(() => fetchInvoices())
             :page="page"
             :total="store.clientInvoicesTotal"
             :page-size="pageSize"
+            :loading="initialLoading"
             testid="client-invoices-pagination"
             @update:page="goToPage"
           />
@@ -678,24 +571,17 @@ onMounted(() => fetchInvoices())
       :title="t('clients.clientInvoices.deleteInvoice')"
       :message="t('clients.clientInvoices.confirmDeleteInvoice', { id: deleteTargetId })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="processing"
       tone="danger"
       @confirm="executeDelete"
       @close="dismissDelete"
     />
 
-    <UiDialog
-      v-if="showBulkConfirmModal"
-      variant="confirm"
-      :title="t('clients.clientInvoices.confirmBulkAction')"
-      :message="t('clients.clientInvoices.confirmBulkApply', { action: bulkActionLabel, count: selectedIds.size }, selectedIds.size)"
-      :confirm-label="bulkActionLabel"
-      :loading-label="t('shared.processing')"
-      :loading="processing"
-      :tone="bulkIsDestructive ? UiTone.Danger : UiTone.Primary"
-      @confirm="executeBulkAction"
-      @close="dismissBulk"
+    <InvoiceBulkBar
+      :count="selection.count.value"
+      :perform="runBulk"
+      testid="client-invoices-bulk"
+      @clear="selection.clear"
     />
   </UiStack>
 </template>

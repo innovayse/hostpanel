@@ -28,7 +28,6 @@
       "cta": "Search",
       "available": "available",
       "taken": "taken",
-      "searching": "Searching…",
       "empty": "Type a name and press Search.",
       "noZones": "No domain extensions are priced yet.",
       "unknown": "check failed",
@@ -108,7 +107,7 @@
       "viewAll": "View all questions"
     },
     "cta": {
-      "title": "Let's start with your project",
+      "title": "Tell us about your project",
       "lead": "A consultation on choosing a domain, hosting and a server.",
       "primary": "Book a call",
       "secondary": "See the plans"

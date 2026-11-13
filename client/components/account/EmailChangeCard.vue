@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 /**
- * EmailChangeCard - shows the address the account signs in with and starts changing it.
+ * EmailChangeCard: shows the address the account signs in with and starts changing it.
  *
  * A change is only asked for here; it takes effect when the link mailed to the new address is
  * followed. Until then the card says where the link went, so the person knows to check that inbox.

@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 /**
- * DomainOverview - the domain's details as a description list, a warning while the registrar
+ * DomainOverview: the domain's details as a description list, a warning while the registrar
  * lock is off, and shortcuts to the other panels. Amounts are formatted in the domain's own
  * currency.
  */

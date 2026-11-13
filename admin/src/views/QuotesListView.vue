@@ -1,20 +1,20 @@
 <script setup lang="ts">
 /**
- * Quotes list: every client's quotes, paged by the server and narrowed on the page by subject,
- * stage, client and validity as the operator types.
+ * Quotes list: every client's quotes, paged by the server, with a search box and a filter dialog (stage, client,
+ * validity) whose applied filters show as chips. The server pages the list; the search text and the filters narrow
+ * the loaded page as the operator types. The filters, the search text and the page live in the address
+ * (`useFilterQuery`), so a reload or a shared link shows the same list.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiFilterCard from '@/components/ui/UiFilterCard.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
@@ -28,6 +28,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { Icon } from '@/lib/icons'
 import { quoteStageTone, statusLabel } from '@/lib/tones'
 import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
@@ -36,101 +37,101 @@ import { formatPlainAmount } from '@/lib/money'
 import { useQuotesStore } from '@/stores/quotes'
 import type { QuoteListItem } from '@/types/quote'
 import { AppRoute, quotePath } from '@/lib/routes'
+import type { UiFilterChip } from '@/utils/ui/filter'
 
 const { t } = useI18n()
 
-/** Whether a quote's validity date is still ahead. */
+/** Whether a quote's validity date is still ahead; an empty filter value means either. */
 const ValidityPeriod = {
-  Any: 'any',
   Valid: 'valid',
   Expired: 'expired',
 } as const
 
+/** The filter fields kept in the address, beside the search text and the page. */
+const FilterKey = {
+  Stage: 'stage',
+  ClientId: 'clientId',
+  Validity: 'validity',
+} as const
+
+/** One of the {@link FilterKey} values. */
+type FilterKey = (typeof FilterKey)[keyof typeof FilterKey]
+
 const store = useQuotesStore()
 const { clients, load: loadClients } = useClientOptions()
 
-/** Current page (1-based). */
-const page = ref(1)
-
-/** True while the filter card is open. */
-const filtersOpen = ref(false)
-
-/** Subject text the list is narrowed by. */
-const filterSubject = ref('')
-
-/** Stage the list is narrowed by; empty means every stage. */
-const filterStage = ref('')
-
-/** Client the list is narrowed by, as the picker holds the id; empty means every client. */
-const filterClientId = ref('')
-
-/** Validity the list is narrowed by. */
-const filterValidity = ref<string>(ValidityPeriod.Any)
+/** The filters, the search text and the page of the list, as the address holds them. */
+const filters = useFilterQuery<FilterKey>([FilterKey.Stage, FilterKey.ClientId, FilterKey.Validity])
 
 /** Options of the validity select. */
 const validityOptions = computed(() => [
-  { value: ValidityPeriod.Any, label: t('shared.any') },
+  { value: '', label: t('shared.any') },
   { value: ValidityPeriod.Valid, label: t('billing.quotesList.valid') },
   { value: ValidityPeriod.Expired, label: t('billing.quotesList.expired') },
 ])
 
+/** The applied filters as chips, in the order they are shown. */
+const chips = computed<UiFilterChip<FilterKey>[]>(() => {
+  const applied = filters.applied.value
+  const result: UiFilterChip<FilterKey>[] = []
+  if (applied.stage !== '') {
+    result.push({ key: FilterKey.Stage, label: t('shared.stage'), value: statusLabel(QUOTE_STAGE_OPTIONS, applied.stage) })
+  }
+  if (applied.clientId !== '') {
+    const name = clients.value.find(client => String(client.id) === applied.clientId)?.name ?? applied.clientId
+    result.push({ key: FilterKey.ClientId, label: t('shared.client'), value: name })
+  }
+  if (applied.validity !== '') {
+    result.push({ key: FilterKey.Validity, label: t('billing.quotesList.validityPeriod'), value: statusLabel(validityOptions.value, applied.validity) })
+  }
+  return result
+})
+
 /**
- * Tells whether a quote passes the filter card.
+ * Tells whether a quote passes the search text and the applied filters.
  *
  * @param quote - A quote of the loaded page.
- * @returns True when the quote matches every filter that is set.
+ * @returns True when the quote matches every filter that is set and contains the search text.
  */
 const matches = (quote: QuoteListItem): boolean => {
-  if (filterClientId.value !== '' && String(quote.clientId) !== filterClientId.value) {
+  const applied = filters.applied.value
+  const term = filters.search.value.trim().toLowerCase()
+  if (term !== '' && ![String(quote.id), quote.subject, quote.clientName].some(field => field.toLowerCase().includes(term))) {
     return false
   }
-  if (filterSubject.value !== '' && !quote.subject.toLowerCase().includes(filterSubject.value.toLowerCase())) {
+  if (applied.clientId !== '' && String(quote.clientId) !== applied.clientId) {
     return false
   }
-  if (filterStage.value !== '' && quote.stage !== filterStage.value) {
+  if (applied.stage !== '' && quote.stage !== applied.stage) {
     return false
   }
-  if (filterValidity.value !== ValidityPeriod.Any) {
+  if (applied.validity !== '') {
     const expired = new Date(quote.validUntil) < new Date()
-    return filterValidity.value === ValidityPeriod.Expired ? expired : !expired
+    return applied.validity === ValidityPeriod.Expired ? expired : !expired
   }
   return true
 }
 
-/** The loaded page, narrowed by the filter card. */
+/** The loaded page, narrowed by the search text and the filters. */
 const shownQuotes = computed<QuoteListItem[]>(() => store.quotes.filter(matches))
 
 /**
- * Loads a page of quotes.
+ * Loads the page named by the address.
  *
- * @param next - Page number (1-based).
+ * @returns Resolves when the request has settled.
  */
-const load = async (next: number): Promise<void> => {
-  page.value = next
-  await store.fetchAll(next)
-}
+const load = (): Promise<void> => store.fetchAll(filters.page.value)
 
-/** Clears every filter. */
-const clearFilters = (): void => {
-  filterSubject.value = ''
-  filterStage.value = ''
-  filterClientId.value = ''
-  filterValidity.value = ValidityPeriod.Any
-}
+// The address is the source of truth: the first load and every change of the page read the list.
+watch(filters.page, load, { immediate: true })
 
-onMounted(() => {
-  void load(1)
-  void loadClients()
-})
+onMounted(loadClients)
 </script>
 
 <template>
   <UiStack data-testid="billing-quotes-view">
     <UiPageHeader :title="t('shared.quotes')" :subtitle="t('billing.quotesList.customerQuotesAndProposals')">
       <template #actions>
-        <UiButton variant="secondary" data-testid="billing-quotes-filter-toggle" @click="filtersOpen = !filtersOpen">
-          {{ filtersOpen ? t('shared.hideFilters') : t('shared.searchFilter') }}
-        </UiButton>
         <UiLink :to="AppRoute.BillingQuotesAdd" variant="primary" data-testid="billing-quotes-create">
           <UiIcon :markup="Icon.Add" size="sm" />
           {{ t('billing.quotesList.createQuote') }}
@@ -138,48 +139,40 @@ onMounted(() => {
       </template>
     </UiPageHeader>
 
-    <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="2">
-        <UiField :label="t('shared.subject')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="filterSubject"
-              type="text"
-              :placeholder="t('shared.search')"
-              data-testid="billing-quotes-filter-subject"
-            />
-          </template>
-        </UiField>
+    <UiListToolbar
+      v-model:search="filters.search.value"
+      search-testid="billing-quotes-search"
+      :active-count="filters.activeCount.value"
+      :chips="chips"
+      @apply="filters.apply"
+      @reset="filters.reset"
+      @cancel="filters.cancel"
+      @remove="filters.remove"
+      @clear="filters.clearAll"
+    >
+      <UiStack gap="md">
         <UiField :label="t('shared.client')">
           <UiClientSelect
-            v-model="filterClientId"
+            v-model="filters.draft.value.clientId"
             :clients="clients"
             :placeholder="t('shared.startTypingToSearchClients')"
           />
         </UiField>
         <UiField :label="t('shared.stage')">
-          <UiSelect v-model="filterStage" :options="QUOTE_STAGE_OPTIONS" :placeholder="t('shared.stage')" />
+          <UiSelect v-model="filters.draft.value.stage" :options="QUOTE_STAGE_OPTIONS" :placeholder="t('shared.stage')" />
         </UiField>
         <UiField :label="t('billing.quotesList.validityPeriod')">
-          <UiSelect v-model="filterValidity" :options="validityOptions" :placeholder="t('billing.quotesList.validityPeriod')" />
+          <UiSelect v-model="filters.draft.value.validity" :options="validityOptions" :placeholder="t('billing.quotesList.validityPeriod')" />
         </UiField>
-      </UiGrid>
-      <template #actions>
-        <UiStack direction="row" justify="center">
-          <UiButton variant="ghost" data-testid="billing-quotes-clear" @click="clearFilters">
-            {{ t('shared.clear') }}
-          </UiButton>
-        </UiStack>
-      </template>
-    </UiFilterCard>
+      </UiStack>
+    </UiListToolbar>
 
     <UiErrorState
       v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="billing-quotes-error"
-      @retry="load(page)"
+      @retry="load"
     />
 
     <UiText tone="muted" size="md" data-testid="billing-quotes-count">
@@ -190,7 +183,6 @@ onMounted(() => {
       <UiTable
         :loading="store.loading && store.quotes.length === 0"
         :empty="!store.loading && shownQuotes.length === 0"
-        :colspan="7"
         data-testid="billing-quotes-table"
       >
         <UiTableHead>
@@ -222,17 +214,17 @@ onMounted(() => {
           </UiTableRow>
         </UiTableBody>
         <template #empty>
-          {{ t('billing.quotesList.noQuotesFound') }}
+          <UiEmptyState :title="t('billing.quotesList.noQuotesFound')" data-testid="billing-quotes-empty" />
         </template>
       </UiTable>
     </UiCard>
 
     <UiPagination
-      :page="page"
+      :page="filters.page.value"
       :total="store.totalCount"
       :page-size="store.pageSize"
       testid="billing-quotes-pagination"
-      @update:page="load"
+      @update:page="filters.setPage"
     />
   </UiStack>
 </template>

@@ -8,6 +8,8 @@ import { flushPromises } from '@vue/test-utils'
 import type { RouteLocationNormalized } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useCommandPaletteStore } from '@/stores/commandPalette'
+import { useDemoStore } from '@/stores/demo'
 import { useNavigationStore } from '@/stores/navigation'
 import { useReleaseStatusStore } from '@/stores/releaseStatus'
 import { stubRoutes } from '../helpers/routes'
@@ -26,6 +28,44 @@ describe('AppLayout', () => {
     expect(wrapper.find('[data-testid="app-layout"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="app-sidebar-desktop"] [data-testid="app-sidebar"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="app-topbar"]').exists()).toBe(true)
+  })
+
+  it('shows the persistent sidebar and its folded rail only from lg up, never on a smaller screen', async () => {
+    window.localStorage.setItem('hostpanel.sidebar.collapsed', '1')
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
+    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+
+    const desktop = wrapper.get('[data-testid="app-sidebar-desktop"]').classes()
+    expect(desktop).toEqual(expect.arrayContaining(['hidden', 'lg:flex']))
+    expect(desktop).not.toContain('flex')
+    window.localStorage.clear()
+  })
+
+  it('stands on the glowing ground, scrolls only the content area and mounts the command palette once', async () => {
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
+    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+
+    expect(wrapper.get('[data-testid="app-layout"]').classes()).toEqual(expect.arrayContaining(['ground', 'h-dvh', 'overflow-hidden']))
+    expect(wrapper.get('main').classes()).toEqual(expect.arrayContaining(['min-h-0', 'min-w-0', 'overflow-x-hidden', 'overflow-y-auto']))
+
+    useCommandPaletteStore().open()
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-testid="command-palette"]')).toHaveLength(1)
+  })
+
+  it('puts the demo strip across the full width above both the sidebar and the main column', async () => {
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
+    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    useDemoStore().enabled = true
+    await flushPromises()
+
+    const shell = wrapper.get('[data-testid="app-layout"]').element
+    const banner = wrapper.get('[data-testid="demo-banner"]').element
+    expect(banner.parentElement).toBe(shell)
+    expect(banner.nextElementSibling?.contains(wrapper.get('[data-testid="app-sidebar-desktop"]').element)).toBe(true)
+    expect(banner.nextElementSibling?.contains(wrapper.get('[data-testid="app-topbar"]').element)).toBe(true)
+    expect(wrapper.get('[data-testid="app-topbar"]').element.parentElement?.contains(banner)).toBe(false)
   })
 
   it('opens the navigation drawer from the hamburger', async () => {
@@ -75,7 +115,7 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/version': () => json({ installedVersion: '1.4.0' }),
     })
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })
-    useAuthStore().user = { email: 'staff@example.com', roles: ['Reseller'] }
+    useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller'] }
     await flushPromises()
     await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
     await flushPromises()
@@ -93,7 +133,7 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/release-status': () => json({ installedVersion: '1.4.0', latestVersion: '2.0.0', isUpgradeAvailable: true }),
     })
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })
-    useAuthStore().user = { email: 'admin@example.com', roles: ['Admin'] }
+    useAuthStore().user = { email: 'admin@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'] }
     await flushPromises()
 
     expect(callsTo(mock, '/admin/release-status')).toBe(1)
@@ -108,13 +148,13 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/version': () => (refuse ? problem('No access.', 403) : json({ installedVersion: '1.4.0' })),
     })
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })
-    useAuthStore().user = { email: 'staff@example.com', roles: ['Reseller'] }
+    useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller'] }
     await flushPromises()
 
     expect(wrapper.find('[data-testid="sidebar-version"]').exists()).toBe(false)
 
     refuse = false
-    useAuthStore().user = { email: 'staff@example.com', roles: ['Reseller', 'Admin'] }
+    useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller', 'Admin'] }
     await flushPromises()
 
     expect(wrapper.get('[data-testid="sidebar-version"]').text()).toBe('Hostpanel 1.4.0')
@@ -126,7 +166,7 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/version': () => json({ installedVersion: '1.4.0' }),
     })
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })
-    useAuthStore().user = { email: 'staff@example.com', roles: ['Reseller'] }
+    useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller'] }
     await flushPromises()
     expect(wrapper.find('[data-testid="sidebar-version"]').exists()).toBe(true)
 

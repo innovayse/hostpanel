@@ -83,7 +83,7 @@
         :data-testid="`nova-plan-cta-${plan.id}`"
       >
         {{ t('nova.plans.cta') }}
-        <span class="sr-only"> — {{ plan.name }}</span>
+        <span class="sr-only"> {{ plan.name }}</span>
       </NovaCta>
     </UiCard>
   </article>

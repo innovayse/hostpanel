@@ -11,5 +11,6 @@ describe('ReportGroupRow', () => {
 
     expect(wrapper.text()).toBe('Hosting')
     expect(wrapper.get('[data-testid="report-group-label"]').attributes('colspan')).toBe('5')
+    expect(wrapper.get('[data-testid="report-group-label"]').classes()).toContain('font-semibold')
   })
 })

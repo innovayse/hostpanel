@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 /**
- * DomainAutoRenewPanel - the auto-renew switch of a domain. The change goes through the domains
+ * DomainAutoRenewPanel: the auto-renew switch of a domain. The change goes through the domains
  * store; the switch only moves when the API accepted it.
  */
 import { RefreshCw } from 'lucide-vue-next'

@@ -220,7 +220,7 @@ describe('InvoiceRefundTab', () => {
     })
 
     const options = (wrapper.getComponent(UiSelect).props() as { options: { label: string }[] }).options
-    expect(options.map((option) => option.label)).toContain('#21 — 24000.00 AMD (Example Gateway)')
+    expect(options.map((option) => option.label)).toContain('#21 24000.00 AMD (Example Gateway)')
     expect(options.map((option) => option.label).join(' ')).not.toContain('$')
   })
 })

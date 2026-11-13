@@ -64,7 +64,7 @@ internal static class TaxRuleTestSeeds
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var client = Client.Create(
-            $"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         client.UpdateAddress(null, null, null, state, null, country);
         if (taxExempt)
         {

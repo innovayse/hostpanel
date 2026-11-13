@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 /**
- * ProfileTab - the "Account Details" tab: summary, details or edit form, the sign-in address and two-factor.
+ * ProfileTab. The "Account Details" tab: summary, details or edit form, the sign-in address and two-factor.
  *
  * Reads the profile from the client store and the gateways from the account store; it derives
  * the human wording (default payment method, language) once and hands it to the view and the

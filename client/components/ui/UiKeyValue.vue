@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 /**
- * UiKeyValue - a label on the left and its value on the right, one line of a summary
+ * UiKeyValue: a label on the left and its value on the right, one line of a summary
  * (an order recap, a totals block).
  */
 

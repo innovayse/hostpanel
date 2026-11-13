@@ -56,7 +56,7 @@ const icons: Record<CalloutType, string> = {
   margin-bottom: 0;
 }
 
-/* note — blue */
+/* note: blue */
 .callout--note {
   border-color: var(--vp-c-brand-1);
   background-color: var(--vp-c-brand-soft);
@@ -66,7 +66,7 @@ const icons: Record<CalloutType, string> = {
   color: var(--vp-c-brand-1);
 }
 
-/* tip — green */
+/* tip: green */
 .callout--tip {
   border-color: var(--vp-c-tip-2, #10b981);
   background-color: var(--vp-c-tip-soft, rgba(16, 185, 129, 0.1));
@@ -76,7 +76,7 @@ const icons: Record<CalloutType, string> = {
   color: var(--vp-c-tip-2, #10b981);
 }
 
-/* warning — yellow */
+/* warning: yellow */
 .callout--warning {
   border-color: var(--vp-c-warning-2, #f59e0b);
   background-color: var(--vp-c-warning-soft, rgba(245, 158, 11, 0.1));
@@ -86,7 +86,7 @@ const icons: Record<CalloutType, string> = {
   color: var(--vp-c-warning-2, #f59e0b);
 }
 
-/* danger — red */
+/* danger: red */
 .callout--danger {
   border-color: var(--vp-c-danger-2, #ef4444);
   background-color: var(--vp-c-danger-soft, rgba(239, 68, 68, 0.1));

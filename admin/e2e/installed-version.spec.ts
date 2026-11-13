@@ -35,7 +35,7 @@ test('the sidebar and the Settings page show the installed version from one requ
     ],
   })
 
-  await page.goto('/settings')
+  await page.goto('/settings/general')
 
   await expect(page.getByTestId('sidebar-version')).toHaveText('Hostpanel 1.4.0')
   await expect(page.getByTestId('settings-version')).toHaveText('Hostpanel 1.4.0')
@@ -52,7 +52,7 @@ test('the version shows even when the release status is refused', async ({ page 
     ],
   })
 
-  await page.goto('/settings')
+  await page.goto('/settings/general')
 
   await expect(page.getByTestId('sidebar-version')).toHaveText('Hostpanel 1.4.0')
   await expect(page.getByTestId('settings-version')).toHaveText('Hostpanel 1.4.0')
@@ -68,7 +68,7 @@ test('a refused load shows no version and no error', async ({ page }) => {
     ],
   })
 
-  await page.goto('/settings')
+  await page.goto('/settings/general')
 
   await expect(page.getByTestId(`setting-value-${timezone.id}`)).toBeVisible()
   await expect(page.getByTestId('sidebar-version')).toHaveCount(0)

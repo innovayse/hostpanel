@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 /**
- * UiInput - a labelled single-line text field with error and hint lines.
+ * UiInput: a labelled single-line text field with error and hint lines.
  *
  * Owns the field frame (via the shared `fieldStateClasses`), the password reveal toggle and the
  * left icon/prefix. `data-testid` placed on the component lands on the wrapper; `testid` lands on

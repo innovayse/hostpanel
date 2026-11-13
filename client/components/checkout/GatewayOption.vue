@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 /**
- * GatewayOption - one payment gateway as a selectable row of a checkout picker.
+ * GatewayOption: one payment gateway as a selectable row of a checkout picker.
  *
  * Picks the icon and the short description ("Pay by card") from the gateway's kind, so every
  * picker that lists gateways shows them the same way. Attributes it does not declare, such as

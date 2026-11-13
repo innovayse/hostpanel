@@ -25,7 +25,7 @@ public static class EmailVerificationTemplateSeeder
             Slug,
             "Sent after a local registration, and when a user asks for the verification link again.",
             [
-                new SeededEmailVersion("Verify your email — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Verify your email | {{ site.name }}", new SeededEmailCopy(
                     "en",
                     "Verify Your Email",
                     ["Click the button below to confirm your email address and finish setting up your account."],
@@ -33,7 +33,7 @@ public static class EmailVerificationTemplateSeeder
                     "Verify Email",
                     "If you didn't create this account, you can safely ignore this email.",
                     EchoButtonUrl: true)),
-                new SeededEmailVersion("Подтвердите email — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Подтвердите email | {{ site.name }}", new SeededEmailCopy(
                     "ru",
                     "Подтвердите email",
                     ["Нажмите кнопку ниже, чтобы подтвердить адрес электронной почты и завершить настройку аккаунта."],
@@ -41,7 +41,7 @@ public static class EmailVerificationTemplateSeeder
                     "Подтвердить email",
                     "Если вы не создавали этот аккаунт, просто проигнорируйте это письмо.",
                     EchoButtonUrl: true)),
-                new SeededEmailVersion("Հաստատեք ձեր էլ. հասցեն — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Հաստատեք ձեր էլ. հասցեն | {{ site.name }}", new SeededEmailCopy(
                     "hy",
                     "Հաստատեք ձեր էլ. հասցեն",
                     ["Սեղմեք ստորև կոճակը՝ ձեր էլ. հասցեն հաստատելու և հաշվի կարգավորումն ավարտելու համար։"],

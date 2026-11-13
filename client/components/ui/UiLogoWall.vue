@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 /**
- * UiLogoWall - the partner and "trusted by" strips: logos in one consistent muted style, with a
+ * UiLogoWall. The partner and "trusted by" strips: logos in one consistent muted style, with a
  * clean wordmark for a partner that has no logo. No cards or pills.
  *
  * Three layouts: a balanced grid for a few partners, a compact row for a strip, and a looping

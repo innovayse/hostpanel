@@ -7,7 +7,14 @@
  */
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiButton from '@/components/ui/UiButton.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiInput from '@/components/ui/UiInput.vue'
+import UiLabel from '@/components/ui/UiLabel.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { Icon } from '@/lib/icons'
+import { nextRowKey } from '@/lib/rowKey'
 import { UiFilterCondition } from '@/utils/ui/filter'
 
 const { t } = useI18n()
@@ -20,6 +27,12 @@ export interface FilterRow {
   condition: UiFilterCondition
   /** Value to match. */
   value: string
+}
+
+/** A filter row as the editor holds it: the row plus a stable key for list rendering. */
+interface FilterDraft extends FilterRow {
+  /** Stable key of the row; never emitted. */
+  key: number
 }
 
 /** One field the filters can target. */
@@ -46,10 +59,15 @@ const emit = defineEmits<{
 /** Row limit, fixed when the component is created. */
 const maxFilters = props.max ?? 5
 
+/**
+ * An empty row with a fresh key.
+ *
+ * @returns The empty row.
+ */
+const blankFilter = (): FilterDraft => ({ key: nextRowKey(), field: '', condition: UiFilterCondition.Exact, value: '' })
+
 /** The rows being edited; there is always at least one. */
-const filters = ref<FilterRow[]>([
-  { field: '', condition: UiFilterCondition.Exact, value: '' },
-])
+const filters = ref<FilterDraft[]>([blankFilter()])
 
 /** Options of the field dropdown: an empty "none" entry plus the caller's fields. */
 const fieldOptions = [{ value: '', label: t('shared.none') }, ...props.fields]
@@ -63,7 +81,7 @@ const conditionOptions = [
 /** Appends an empty row while below the limit. */
 const addFilter = (): void => {
   if (filters.value.length < maxFilters) {
-    filters.value.push({ field: '', condition: UiFilterCondition.Exact, value: '' })
+    filters.value.push(blankFilter())
   }
 }
 
@@ -75,12 +93,12 @@ const addFilter = (): void => {
 const removeFilter = (i: number): void => {
   filters.value.splice(i, 1)
   if (filters.value.length === 0) {
-    filters.value.push({ field: '', condition: UiFilterCondition.Exact, value: '' })
+    filters.value.push(blankFilter())
   }
 }
 
 watch(filters, (val) => {
-  emit('update:filters', val.filter(f => f.field && f.value))
+  emit('update:filters', val.filter(f => f.field && f.value).map(({ field, condition, value }) => ({ field, condition, value })))
 }, { deep: true })
 </script>
 
@@ -88,48 +106,45 @@ watch(filters, (val) => {
   <div class="space-y-3">
     <div
       v-for="(f, i) in filters"
-      :key="i"
-      class="bg-surface-field border border-border rounded-xl p-3"
+      :key="f.key"
+      class="bg-surface-field border border-border rounded-control p-3"
     >
       <!-- Header: label + remove -->
       <div class="flex items-center justify-between mb-2">
-        <span class="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-secondary">{{ t('ui.uiAdvancedFilters.filterValue', { value: i + 1 }) }}</span>
-        <button
+        <UiLabel variant="field" as="span">{{ t('ui.uiAdvancedFilters.filterValue', { value: i + 1 }) }}</UiLabel>
+        <UiIconButton
           v-if="filters.length > 1"
-          type="button"
-          :aria-label="t('shared.delete')"
+          :label="t('shared.delete')"
+          size="sm"
           :data-testid="`advanced-filters-remove-${i}`"
-          class="w-6 h-6 flex items-center justify-center text-text-secondary hover:text-status-red transition-colors rounded-md hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-primary-500"
           @click="removeFilter(i)"
         >
-          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-        </button>
+          <UiIcon :markup="Icon.Close" size="sm" />
+        </UiIconButton>
       </div>
 
-      <!-- Controls: field + condition + value in an even grid -->
-      <div class="grid grid-cols-3 gap-3">
+      <!-- Controls: one column on a phone, field + condition + value side by side from sm up -->
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <UiSelect v-model="f.field" :options="fieldOptions" :placeholder="t('ui.uiAdvancedFilters.selectField')" />
         <UiSelect v-model="f.condition" :options="conditionOptions" :placeholder="t('ui.uiAdvancedFilters.exactMatch')" />
-        <input
+        <UiInput
           v-model="f.value"
-          type="text"
           :placeholder="t('ui.uiAdvancedFilters.enterValue')"
           :data-testid="`advanced-filters-value-${i}`"
-          class="w-full bg-surface-field border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary placeholder:text-text-muted outline-none focus:border-primary-500/50 focus-visible:ring-2 focus-visible:ring-primary-500/30 transition-colors"
-        >
+        />
       </div>
     </div>
 
     <!-- Add filter -->
-    <button
+    <UiButton
       v-if="filters.length < maxFilters"
-      type="button"
+      variant="link"
+      size="sm"
       data-testid="advanced-filters-add"
-      class="flex items-center gap-1.5 text-[0.78rem] text-primary-400 hover:text-primary-300 light:text-primary-600 light:hover:text-primary-700 transition-colors px-1 rounded-md focus-visible:outline-2 focus-visible:outline-primary-500"
       @click="addFilter"
     >
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+      <UiIcon :markup="Icon.Add" size="sm" />
       {{ t('ui.uiAdvancedFilters.addFilter') }}
-    </button>
+    </UiButton>
   </div>
 </template>

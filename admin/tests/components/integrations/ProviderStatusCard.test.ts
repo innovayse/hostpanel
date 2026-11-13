@@ -56,4 +56,11 @@ describe('ProviderStatusCard', () => {
 
     expect(wrapper.emitted('test')).toHaveLength(1)
   })
+
+  it('draws the large figure as a kit metric and no label in capitals', () => {
+    const wrapper = mountCard({ info: { connected: true, lastTestedAt: null, errorMessage: null } })
+
+    expect(wrapper.get('p.font-display').text()).toBe('42')
+    expect(wrapper.find('.uppercase').exists()).toBe(false)
+  })
 })

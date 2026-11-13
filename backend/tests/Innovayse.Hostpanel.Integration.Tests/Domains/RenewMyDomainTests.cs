@@ -88,7 +88,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
             context.ProductGroups.Add(group);
             await context.SaveChangesAsync(CancellationToken.None);
             context.Products.Add(Product.Create(
-                group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, DateTimeOffset.UtcNow));
+                group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

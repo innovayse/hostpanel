@@ -1,5 +1,5 @@
 /**
- * Performance stat type - one figure of the performance section.
+ * Performance stat type: one figure of the performance section.
  *
  * @module types/performancestat
  */

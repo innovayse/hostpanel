@@ -2,7 +2,7 @@
 /**
  * Billable items: the uninvoiced and recurring charges of every client, narrowed as the operator
  * types by client, description, amount and status, paged on the page, with a confirmed bulk
- * delete of the ticked rows. The outcome of the delete (success, or the API's sentence) shows above
+ * delete of the selected rows (`useRowSelection`, the floating `UiBulkBar`). The outcome of the delete (success, or the API's sentence) shows above
  * the table; a refused load shows the sentence with a Retry.
  */
 import { computed, onMounted, ref, watch } from 'vue'
@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiBulkBar from '@/components/ui/UiBulkBar.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -34,6 +34,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useRowSelection } from '@/composables/useRowSelection'
 import { useBillableItemsStore } from '@/stores/billableItems'
 import { pageSlice } from '@/lib/paging'
 import { BillableItemType } from '@/types/billableitem'
@@ -75,9 +76,6 @@ const filterAmount = ref(0)
 
 /** Status filter. */
 const filterStatus = ref<string>(ItemStatus.Any)
-
-/** Ids of the ticked rows. */
-const selectedIds = ref<number[]>([])
 
 /** True while the bulk-delete confirmation is open. */
 const deleteOpen = ref(false)
@@ -168,26 +166,8 @@ const pageItems = computed<BillableItem[]>(() =>
   pageSlice(filteredItems.value, page.value, DEFAULT_PAGE_SIZE),
 )
 
-/** True when every row on the page is ticked (and there is at least one). */
-const allSelected = computed<boolean>(
-  () => pageItems.value.length > 0 && pageItems.value.every((item) => selectedIds.value.includes(item.id)),
-)
-
-/**
- * Ticks or unticks one row.
- *
- * @param id - The item id.
- */
-const toggleSelected = (id: number): void => {
-  selectedIds.value = selectedIds.value.includes(id)
-    ? selectedIds.value.filter((selected) => selected !== id)
-    : [...selectedIds.value, id]
-}
-
-/** Ticks every row on the page, or clears the ticks when all were ticked. */
-const toggleAll = (): void => {
-  selectedIds.value = allSelected.value ? [] : pageItems.value.map((item) => item.id)
-}
+/** The selected rows of the page. */
+const selection = useRowSelection(() => pageItems.value.map((item) => item.id))
 
 /** Clears every filter. */
 const clearFilters = (): void => {
@@ -198,7 +178,7 @@ const clearFilters = (): void => {
 }
 
 /**
- * Deletes the ticked rows one by one (the store reloads the list after each), stopping at the
+ * Deletes the selected rows one by one (the store reloads the list after each), stopping at the
  * first refusal, and shows the outcome.
  *
  * @returns Resolves when the deletes have settled.
@@ -207,7 +187,7 @@ const deleteSelected = async (): Promise<void> => {
   feedback.clear()
   deleting.value = true
   let refused = false
-  for (const id of selectedIds.value) {
+  for (const id of selection.ids.value) {
     if (!(await store.removeItem(id))) {
       refused = true
       break
@@ -215,7 +195,7 @@ const deleteSelected = async (): Promise<void> => {
   }
   deleting.value = false
   deleteOpen.value = false
-  selectedIds.value = []
+  selection.clear()
   if (refused) {
     feedback.show(store.error ?? t('errors.noAnswer'), true)
   } else {
@@ -230,10 +210,10 @@ const dismissDelete = (): void => {
   }
 }
 
-/** Filtering from the first page again, with nothing ticked, so a bulk delete never takes rows the filter hides. */
+/** Filtering from the first page again, with nothing selected, so a bulk delete never takes rows the filter hides. */
 watch([filterClientId, filterDescription, filterAmount, filterStatus], () => {
   page.value = 1
-  selectedIds.value = []
+  selection.clear()
 })
 
 /** Loads the items and the client picker's options. */
@@ -284,11 +264,9 @@ onMounted(() => {
         </UiField>
       </UiGrid>
       <template #actions>
-        <UiStack direction="row" justify="center">
-          <UiButton variant="ghost" data-testid="billing-billable-items-clear" @click="clearFilters">
-            {{ t('shared.clear') }}
-          </UiButton>
-        </UiStack>
+        <UiButton variant="ghost" data-testid="billing-billable-items-clear" @click="clearFilters">
+          {{ t('shared.clear') }}
+        </UiButton>
       </template>
     </UiFilterCard>
 
@@ -310,19 +288,12 @@ onMounted(() => {
       <UiTable
         :loading="store.loading && store.items.length === 0"
         :empty="!store.loading && pageItems.length === 0"
-        :colspan="7"
+        :selection="selection"
+        select-all-testid="billing-billable-items-select-all"
         data-testid="billing-billable-items-table"
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>
-              <UiCheckbox
-                :model-value="allSelected"
-                :aria-label="t('shared.selectAll')"
-                data-testid="billing-billable-items-select-all"
-                @update:model-value="toggleAll"
-              />
-            </UiTableHeader>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
@@ -332,15 +303,13 @@ onMounted(() => {
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
-          <UiTableRow v-for="item in pageItems" :key="item.id" hoverable :selected="selectedIds.includes(item.id)">
-            <UiTableCell>
-              <UiCheckbox
-                :model-value="selectedIds.includes(item.id)"
-                :aria-label="t('shared.selectRow')"
-                :data-testid="`billing-billable-item-select-${item.id}`"
-                @update:model-value="toggleSelected(item.id)"
-              />
-            </UiTableCell>
+          <UiTableRow
+            v-for="item in pageItems"
+            :key="item.id"
+            hoverable
+            :row-id="item.id"
+            :select-testid="`billing-billable-item-select-${item.id}`"
+          >
             <UiTableCell muted>{{ item.id }}</UiTableCell>
             <UiTableCell>{{ item.clientName }}</UiTableCell>
             <UiTableCell>{{ item.description }}</UiTableCell>
@@ -366,22 +335,18 @@ onMounted(() => {
       testid="billing-billable-items-pagination"
     />
 
-    <UiCard v-if="selectedIds.length > 0" padding="md" data-testid="billing-billable-items-bulk">
-      <UiStack direction="row" gap="sm" align="center">
-        <UiText tone="secondary" size="md">{{ t('shared.withSelected') }}</UiText>
-        <UiButton variant="danger" data-testid="billing-billable-items-delete" @click="deleteOpen = true">
-          {{ t('shared.delete') }}
-        </UiButton>
-      </UiStack>
-    </UiCard>
+    <UiBulkBar :count="selection.count.value" data-testid="billing-billable-items-bulk" @clear="selection.clear">
+      <UiButton variant="danger" size="sm" data-testid="billing-billable-items-delete" @click="deleteOpen = true">
+        {{ t('shared.delete') }}
+      </UiButton>
+    </UiBulkBar>
 
     <UiDialog
       variant="confirm"
       :open="deleteOpen"
       :title="t('billing.billableItems.deleteItems')"
-      :message="t('billing.billableItems.deleteItemsMessage', { count: selectedIds.length }, selectedIds.length)"
+      :message="t('billing.billableItems.deleteItemsMessage', { count: selection.count.value }, selection.count.value)"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="deleteSelected"

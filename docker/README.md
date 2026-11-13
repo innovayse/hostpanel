@@ -44,7 +44,7 @@ platform's broker and Redis, and takes its mail settings from `SMTP_*`), and kee
 services carry no `container_name`, so their names never collide with the platform's.
 
 Compose reads `docker/.env` because the files sit in `docker/`. Every compose file pins
-`name: hostpanel`, and volumes carry fixed names (`hostpanel_pgdata`, ...), so moving the files did
+`name: hostpanel`, and volumes carry fixed names (`hostpanel_pgdata` and so on), so moving the files did
 not rename any volume or network.
 
 ## Run from Docker Hub

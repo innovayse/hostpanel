@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * PluginView - renders a plugin view document (schema 1), block by block, with the host's own components.
+ * PluginView: renders a plugin view document (schema 1), block by block, with the host's own components.
  *
  * It owns the view's context for the blocks below it: the plugin id, the values a route's `{param}` segments are
  * filled from (the page's path parameters or the slot's verified context), the origins a link may open, the

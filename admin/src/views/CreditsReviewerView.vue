@@ -13,7 +13,7 @@ import ReportTable from '@/components/reports/ReportTable.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSpinner from '@/components/ui/UiSpinner.vue'
+import UiStepper from '@/components/ui/UiStepper.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
@@ -98,10 +98,10 @@ const columns = computed<ReportColumn[]>(() => [
             <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
           </ReportField>
           <ReportField :label="t('reports.creditsReviewer.minAmount')">
-            <UiSpinner v-model="minAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
+            <UiStepper v-model="minAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
           </ReportField>
           <ReportField :label="t('reports.creditsReviewer.maxAmount')">
-            <UiSpinner v-model="maxAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
+            <UiStepper v-model="maxAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
           </ReportField>
         </template>
       </ReportFilterBar>

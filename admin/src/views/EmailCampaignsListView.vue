@@ -14,7 +14,8 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -37,9 +38,6 @@ import { UiTone } from '@/utils/ui/tone'
 const { t } = useI18n()
 
 const store = useEmailCampaignsStore()
-
-/** Number of columns of the table (width of the status row). */
-const COLUMN_COUNT = 6
 
 /** ID of the campaign waiting for delete confirmation; null when no dialog is open. */
 const deleteTarget = ref<number | null>(null)
@@ -105,9 +103,9 @@ onMounted(() => {
  * @param campaign - The campaign of the row.
  * @returns The action list passed to UiRowActions.
  */
-const rowActions = (campaign: EmailCampaignListItem): UiRowAction[] => {
+const rowActions = (campaign: EmailCampaignListItem): UiMenuAction[] => {
   const isDraft = campaign.status === CampaignStatus.Draft
-  const actions: UiRowAction[] = [
+  const actions: UiMenuAction[] = [
     {
       label: isDraft ? t('shared.edit') : t('shared.view'),
       testid: `email-campaigns-${campaign.id}-open`,
@@ -158,7 +156,6 @@ const rowActions = (campaign: EmailCampaignListItem): UiRowAction[] => {
         :density="UiTableDensity.Comfortable"
         :loading="store.loading && store.campaigns.length === 0"
         :empty="!store.loading && store.campaigns.length === 0"
-        :colspan="COLUMN_COUNT"
         data-testid="email-campaigns-table"
       >
         <UiTableHead>
@@ -213,7 +210,6 @@ const rowActions = (campaign: EmailCampaignListItem): UiRowAction[] => {
       :title="t('emailCampaigns.list.deleteTitle')"
       :message="t('emailCampaigns.list.deleteMessage')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       tone="danger"
       @confirm="handleDelete"

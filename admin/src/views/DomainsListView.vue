@@ -2,22 +2,24 @@
 /**
  * Domains list view: paged, searchable table of all domain registrations.
  *
- * Shows domain name, client, status, expiry date, renewal price and auto-renew flag. A domain
+ * The search text and the page live in the address (`useFilterQuery`), so a reload or a shared link opens the same
+ * list; the domains endpoint takes no other filter. Shows domain name, client, status, expiry date, renewal price and auto-renew flag. A domain
  * name opens its detail page under the owning client. Reads `stores/domains`; a refused load
  * shows `store.error`.
  */
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -35,43 +37,25 @@ import { useDomainsStore } from '@/stores/domains'
 import type { DomainRegistration } from '@/types/domain'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
 
 const { t } = useI18n()
 
 const store = useDomainsStore()
 
-/** Debounce timer handle for the search input. */
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-
-/** Local search model bound to the input. */
-const searchInput = ref('')
+/** The search text and the page of the list, kept in the address. */
+const { search, appliedSearch, page, setPage } = useFilterQuery([])
 
 /** Whether the current page has any domain to list. */
 const hasRows = computed<boolean>(() => store.domains.length > 0)
 
 /**
- * Moves to a page of the list and loads it.
+ * Loads the page and the search the address holds.
  *
- * @param page - Target page, 1-based.
+ * @returns True when loaded; false when refused (see `store.error`).
  */
-const goToPage = (page: number): void => {
-  store.page = page
-  void store.fetchAll()
-}
-
-/** Sends the typed search to the store after the pause, restarting from page 1. */
-const handleSearch = (): void => {
-  if (searchTimer) {
-    clearTimeout(searchTimer)
-  }
-  searchTimer = setTimeout(() => {
-    store.search = searchInput.value
-    store.page = 1
-    void store.fetchAll()
-  }, SEARCH_DEBOUNCE_MS)
-}
+const load = (): Promise<boolean> => store.fetchAll(page.value, appliedSearch.value)
 
 /**
  * The row actions of a domain: its one action opens the domain under its client as a real link.
@@ -79,7 +63,7 @@ const handleSearch = (): void => {
  * @param domain - The domain of the row.
  * @returns The action list passed to UiRowActions.
  */
-const domainActions = (domain: DomainRegistration): UiRowAction[] => [
+const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
   {
     label: t('shared.view'),
     testid: `domains-view-${domain.id}`,
@@ -87,16 +71,10 @@ const domainActions = (domain: DomainRegistration): UiRowAction[] => [
   },
 ]
 
-watch(searchInput, handleSearch)
+// A search, a page or the back button loads the list the address names.
+watch([appliedSearch, page], load)
 
-onMounted(() => store.fetchAll())
-
-// A pending search must not fire after the screen is gone.
-onUnmounted(() => {
-  if (searchTimer) {
-    clearTimeout(searchTimer)
-  }
-})
+onMounted(() => load())
 </script>
 
 <template>
@@ -107,28 +85,26 @@ onUnmounted(() => {
       data-testid="domains-header"
     />
 
-    <UiInput
-      v-model="searchInput"
-      type="text"
-      class="max-w-sm"
-      :placeholder="t('domains.domainsList.searchDomains')"
-      data-testid="domains-search"
-    >
-      <template #icon>
-        <UiIcon :markup="Icon.Search" />
-      </template>
-    </UiInput>
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="domains-search"
+      :search-placeholder="t('domains.domainsList.searchDomains')"
+    />
 
     <UiErrorState
       v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="domains-error"
-      @retry="store.fetchAll()"
+      @retry="load"
     />
 
     <UiCard v-else-if="hasRows || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="domains-table">
+      <UiTable
+        :density="UiTableDensity.Comfortable"
+        :loading="store.loading && !hasRows"
+        data-testid="domains-table"
+      >
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.domainName') }}</UiTableHeader>
@@ -181,24 +157,26 @@ onUnmounted(() => {
         </UiTableBody>
       </UiTable>
 
-      <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiText tone="muted" size="xs">
-          {{ t('shared.totalcountDomainValue', { totalCount: store.totalCount }) }}
-        </UiText>
-        <UiPagination
-          :page="store.page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          testid="domains-pagination"
-          @update:page="goToPage"
-        />
-      </UiStack>
+      <template #footer>
+        <UiStack direction="row" justify="between" align="center" wrap>
+          <UiText tone="muted" size="xs">
+            {{ t('shared.totalcountDomainValue', { totalCount: store.totalCount }) }}
+          </UiText>
+          <UiPagination
+            :page="page"
+            :total="store.totalCount"
+            :page-size="store.pageSize"
+            testid="domains-pagination"
+            @update:page="setPage"
+          />
+        </UiStack>
+      </template>
     </UiCard>
 
     <UiCard v-else>
       <UiEmptyState
-        :title="searchInput ? t('domains.domainsList.noDomainsMatchYourSearch') : t('domains.domainsList.noDomainsFound')"
-        :description="searchInput ? t('domains.domainsList.tryAdjustingYourSearchTerm') : undefined"
+        :title="appliedSearch ? t('domains.domainsList.noDomainsMatchYourSearch') : t('domains.domainsList.noDomainsFound')"
+        :description="appliedSearch ? t('domains.domainsList.tryAdjustingYourSearchTerm') : undefined"
         data-testid="domains-empty"
       >
         <template #icon>

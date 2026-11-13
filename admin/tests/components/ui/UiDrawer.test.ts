@@ -64,4 +64,53 @@ describe('UiDrawer', () => {
     expect(mountDrawer({ open: true, title: 'x' }).find('.border-t').exists()).toBe(false)
     expect(mountDrawer({ open: true, title: 'x' }, { footer: '<b data-testid="f" />' }).find('[data-testid="f"]').exists()).toBe(true)
   })
+
+  it('stacks the footer actions at full width on phones, right-aligned above', () => {
+    const footer = mountDrawer({ open: true, title: 'x' }, { footer: '<b />' }).get('[data-testid="ui-drawer-footer"]')
+
+    expect(footer.classes()).toEqual(expect.arrayContaining(['justify-end', 'max-sm:flex-col-reverse', 'max-sm:items-stretch']))
+  })
+})
+
+describe('UiDrawer header row', () => {
+  it('has the shell header height, so its hairline meets the top bar line', () => {
+    const header = mountDrawer({ open: true, title: 'x' }).get('[data-testid="drawer-close"]').element.parentElement
+
+    expect(header?.classList).toContain('h-(--shell-header-h)')
+  })
+})
+
+describe('UiDrawer as a sheet', () => {
+  it('is an opaque elevated surface, sheet or not', () => {
+    expect(mountDrawer({ open: true, title: 'x' }).get('aside').classes()).toContain('glass-strong')
+    expect(mountDrawer({ open: true, title: 'x', sheet: true }).get('aside').classes()).toContain('glass-strong')
+  })
+
+  it('is a bottom sheet on a phone with the safe-area inset and rounded top corners', () => {
+    const classes = mountDrawer({ open: true, title: 'x', sheet: true }).get('aside').classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['bottom-0', 'rounded-t-panel', 'max-h-[85dvh]', 'max-sm:pb-[env(safe-area-inset-bottom)]']))
+    expect(classes).toContain('sm:top-0')
+    expect(classes).toContain('sm:border-l')
+  })
+
+  it('keeps the side panel for a drawer that is not a sheet', () => {
+    const classes = mountDrawer({ open: true, title: 'x' }).get('aside').classes()
+
+    expect(classes).toContain('top-0')
+    expect(classes).not.toContain('rounded-t-panel')
+  })
+
+  it('moves the sheet limit and the edge to sm and up', () => {
+    const left = mountDrawer({ open: true, title: 'x', sheet: true, side: 'left', narrow: true }).get('aside').classes()
+
+    expect(left).toContain('sm:max-w-xs')
+    expect(left).toContain('sm:border-r')
+    expect(left).not.toContain('max-w-xs')
+  })
+
+  it('draws a grip only for a sheet', () => {
+    expect(mountDrawer({ open: true, title: 'x', sheet: true }).find('[data-testid="drawer-grip"]').exists()).toBe(true)
+    expect(mountDrawer({ open: true, title: 'x' }).find('[data-testid="drawer-grip"]').exists()).toBe(false)
+  })
 })

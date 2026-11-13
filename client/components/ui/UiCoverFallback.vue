@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 /**
- * UiCoverFallback - the picture of a project that has none: a soft dotted pattern, the project's
+ * UiCoverFallback. The picture of a project that has none: a soft dotted pattern, the project's
  * initials and an icon for the kind of site it is.
  *
  * The caller paints the background and the text colour (`bg-brand text-on-brand`) and the size

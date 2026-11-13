@@ -139,8 +139,8 @@ any role to be ticked.
 
 Click **Check**. Hostpanel calls the addon's ping endpoint. The card shows one of:
 - **Plugin connected**: the key was accepted.
-- **Checking…**: the request is in flight.
-- **Waiting for plugin…**: waiting to retry.
+- **Checking**: the request is in flight.
+- **Waiting for plugin**: waiting to retry.
 - **Not reachable**: the addon did not answer or refused the key. Check the source URL, confirm the
   addon is active in WHMCS, and confirm the key in the addon settings matches the one on the card.
 

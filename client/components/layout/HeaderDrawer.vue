@@ -135,7 +135,7 @@
 
 <script setup lang="ts">
 /**
- * LayoutHeaderDrawer - the classic header's menu below the desktop breakpoint.
+ * LayoutHeaderDrawer: the classic header's menu below the desktop breakpoint.
  *
  * A side drawer that holds everything the bar shows on a wide screen: every navigation entry
  * (groups open, as headed lists), the signed-in client's links or the sign-in pair, the language

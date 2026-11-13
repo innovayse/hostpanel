@@ -35,7 +35,7 @@ public sealed class DomainTransferredNotificationHandlerTests(IntegrationTestFac
         await EnsureTemplateAsync(context);
         var domainId = await SeedDomainAsync(scope.ServiceProvider, context, client.Id);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainTransferredInEvent(domainId, client.Id, "example.test") { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainTransferredInEvent(domainId, client.Id, "example.test") { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -59,8 +59,8 @@ public sealed class DomainTransferredNotificationHandlerTests(IntegrationTestFac
         await EnsureTemplateAsync(context);
         var strangerDomainId = await SeedDomainAsync(scope.ServiceProvider, context, stranger.Id);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainTransferredInEvent(strangerDomainId, client.Id, "example.test") { OccurredAt = DateTimeOffset.UtcNow });
-        await scope.ServiceProvider.PublishAndWaitAsync(new DomainTransferredInEvent(int.MaxValue, client.Id, "example.test") { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainTransferredInEvent(strangerDomainId, client.Id, "example.test") { OccurredAt = TestMoments.Seeded });
+        await scope.ServiceProvider.PublishAndWaitAsync(new DomainTransferredInEvent(int.MaxValue, client.Id, "example.test") { OccurredAt = TestMoments.Seeded });
 
         Assert.Empty(emailSender.Sent);
     }
@@ -87,7 +87,7 @@ public sealed class DomainTransferredNotificationHandlerTests(IntegrationTestFac
         using (services.GetRequiredService<IDomainEventGate>().Suppress())
         {
             var domain = RegisteredDomain.Register(
-                clientId, $"event-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1),
+                clientId, $"event-{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
                 autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             context.Domains.Add(domain);
             await context.SaveChangesAsync(CancellationToken.None);

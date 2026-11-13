@@ -2,7 +2,7 @@
  * aurora template design tokens.
  *
  * The dark palette is declared on :root, not only under .dark, because
- * useAppColorMode applies its class on the client — server-rendered HTML has no
+ * useAppColorMode applies its class on the client, server-rendered HTML has no
  * class yet, and tokens defined only under .dark would resolve to nothing.
  *
  * Every token holds a complete colour value, several of them rgba. Tailwind's

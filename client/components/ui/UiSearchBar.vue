@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 /**
- * SearchBar (`UiSearchBar`) - a search field with a submit button, for hero-style searches
+ * SearchBar (`UiSearchBar`): a search field with a submit button, for hero-style searches
  * (domain lookup, knowledge base). Enter in the field and the button both emit `search`. The field
  * and the button share one `size` step, so they have the same height and type size.
  */

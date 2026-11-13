@@ -67,10 +67,12 @@ describe('UiButton', () => {
     expect(wrapper.attributes('disabled')).toBeDefined()
   })
 
-  it('is disabled and shows a spinner while loading', () => {
+  it('is disabled, marked busy and shows a spinner beside its label while loading', () => {
     const wrapper = mountWithKit(UiButton, { props: { loading: true }, slots: { default: 'Save' } })
 
     expect(wrapper.attributes('disabled')).toBeDefined()
+    expect(wrapper.attributes('aria-busy')).toBe('true')
+    expect(wrapper.text()).toContain('Save')
     expect(wrapper.find('svg.animate-spin').exists()).toBe(true)
   })
 

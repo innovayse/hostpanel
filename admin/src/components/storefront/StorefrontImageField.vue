@@ -71,7 +71,7 @@ const onSelect = async (file: File): Promise<void> => {
 
 <template>
   <UiField :label="label" :error="shownError">
-    <UiStack direction="row" align="start">
+    <UiStack direction="row" align="start" wrap>
       <UiStack
         v-if="modelValue"
         align="center"

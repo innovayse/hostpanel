@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 /**
- * SearchInput (`UiSearchInput`) - a compact filter field with a search icon and a clear button;
+ * SearchInput (`UiSearchInput`): a compact filter field with a search icon and a clear button;
  * Escape clears it too. For filtering lists in place (no submit).
  */
 import { computed } from 'vue'

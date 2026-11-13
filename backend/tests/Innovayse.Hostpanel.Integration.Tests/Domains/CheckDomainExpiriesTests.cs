@@ -32,7 +32,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(-1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(-1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-3", domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -56,7 +56,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(20), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddHours(20), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-4", domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -83,7 +83,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-9", domain.ExpiresAt, DateTimeOffset.UtcNow);
         domain.AddReminder(DomainReminderType.FourteenDaysBeforeExpiry, $"client-{clientId}", DateTimeOffset.UtcNow.AddYears(-1));
         await context.SaveChangesAsync(CancellationToken.None);
@@ -191,7 +191,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     {
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(5), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(5), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, registrarRef, domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain;

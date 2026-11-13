@@ -53,8 +53,8 @@ Never put registrar credentials in a screenshot or shared document. API keys and
 
 On the integrations page for a registrar that supports connection probing, click **Test Connection**. The **Connection Status** panel shows:
 
-- **Connection OK** — credentials are valid and the registrar API is reachable.
-- **Connection Failed** — check the credentials and the whitelisted IP address.
+- **Connection OK**: credentials are valid and the registrar API is reachable.
+- **Connection Failed**: check the credentials and the whitelisted IP address.
 
 The panel also shows the **Endpoint** the client called and the **Round trip** time.
 
@@ -75,19 +75,19 @@ Attempting to look up a TLD configuration that does not exist returns `TLD_CONFI
 Click **Add TLD** and fill in the form.
 
 **General Settings:**
-- **TLD** — the extension without the leading dot (e.g. `com`, `net`, `am`).
-- **Registrar Provider** — which registrar handles this extension.
-- **Cost Currency** — the currency the registrar charges you in.
-- **Sell Currency** — the currency you charge clients in.
-- **Enabled** — tick to make this TLD available for purchase.
-- **Sort Order** — position on the storefront, lowest first.
-- **Categories** — comma-separated labels used as storefront filter tabs (e.g. `Popular,Business`).
+- **TLD**: the extension without the leading dot (e.g. `com`, `net`, `am`).
+- **Registrar Provider**: which registrar handles this extension.
+- **Cost Currency**: the currency the registrar charges you in.
+- **Sell Currency**: the currency you charge clients in.
+- **Enabled**: tick to make this TLD available for purchase.
+- **Sort Order**: position on the storefront, lowest first.
+- **Categories**: comma-separated labels used as storefront filter tabs (e.g. `Popular,Business`).
 
-**Pricing tables** — fill in **Registration Pricing**, **Transfer Pricing** and **Renewal Pricing**. Each table has one row per period (1 to 10 years) with:
-- **Period** — number of years.
-- **Cost** — what the registrar charges you.
-- **Sell** — what you charge the client.
-- **Margin** — calculated automatically.
+**Pricing tables**: fill in **Registration Pricing**, **Transfer Pricing** and **Renewal Pricing**. Each table has one row per period (1 to 10 years) with:
+- **Period**: number of years.
+- **Cost**: what the registrar charges you.
+- **Sell**: what you charge the client.
+- **Margin**: calculated automatically.
 
 Clients billed in a currency other than the sell currency pay the sell price converted using the stored exchange rates. An order with no matching pricing row returns `ORDER_DOMAIN_PRICING_INVALID`.
 

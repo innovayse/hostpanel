@@ -2,7 +2,8 @@
  * Tests for ClientServiceDetailView: it renders against the real kit and settles on an API refusal,
  * each section of a loaded service saves through its own endpoint with only its own fields and
  * shows its outcome beside its own, distinctly named button, a pressed save keeps focus while it
- * runs, and a terminal status is confirmed before it is sent.
+ * runs, a terminal status is confirmed before it is sent, and the sections sit on the account, billing and
+ * notes tabs under a header that names the service and its status.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
@@ -13,6 +14,7 @@ import ClientServiceDetailView from '@/views/ClientServiceDetailView.vue'
 import { BillingCycle, ServiceStatus, type ServiceDetail } from '@/types/service'
 import { mountClientView } from '../helpers/clientViews'
 import { callOf, json, problem } from '../helpers/fetch'
+import { mountRouted } from '../helpers/mount'
 import { createTestI18n } from '../helpers/i18n'
 import { stubRoutes } from '../helpers/routes'
 
@@ -92,11 +94,33 @@ const putsOf = (mock: ReturnType<typeof vi.fn>) =>
     .map((_, index) => callOf(mock, index))
     .filter((call) => call.method === 'PUT')
 
+/**
+ * Opens a tab of the page.
+ *
+ * @param wrapper - The mounted page.
+ * @param tab - The tab to open.
+ */
+const openTab = async (wrapper: VueWrapper, tab: 'account' | 'billing' | 'notes') => {
+  await wrapper.get(`[data-testid="client-service-tab-${tab}"]`).trigger('click')
+  await flushPromises()
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
 describe('ClientServiceDetailView', () => {
+  it('keeps the real header, tabs and sections as placeholders while the service loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountRouted(ClientServiceDetailView, '/clients/:id/services/:serviceId', '/clients/5/services/9')
+
+    expect(wrapper.find('[data-testid="client-service-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="client-service-tab-billing"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Service Info')
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="client-service-status-save"]').attributes('disabled')).toBeDefined()
+  })
+
   it('mounts without throwing', async () => {
     const wrapper = await mountClientView(ClientServiceDetailView)
 
@@ -107,6 +131,29 @@ describe('ClientServiceDetailView', () => {
     const wrapper = await mountClientView(ClientServiceDetailView, 'Server said no')
 
     expect(wrapper.text()).toContain('Server said no')
+  })
+
+  it('names the service and its status in the header', async () => {
+    const { wrapper } = await mountLoaded()
+
+    expect(wrapper.get('[data-testid="client-service-header"]').text()).toContain('Starter')
+    expect(wrapper.get('[data-testid="client-service-status-badge"]').text()).toBe('Terminated')
+  })
+
+  it('shows one tab at a time', async () => {
+    const { wrapper } = await mountLoaded()
+
+    expect(wrapper.find('[data-testid="client-service-hosting-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="client-service-billing-form"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="client-service-notes-form"]').exists()).toBe(false)
+
+    await openTab(wrapper, 'billing')
+    expect(wrapper.find('[data-testid="client-service-hosting-form"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="client-service-billing-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="client-service-automation-form"]').exists()).toBe(true)
+
+    await openTab(wrapper, 'notes')
+    expect(wrapper.find('[data-testid="client-service-notes-form"]').exists()).toBe(true)
   })
 
   it('links to the plan change history of the service', async () => {
@@ -134,6 +181,7 @@ describe('ClientServiceDetailView', () => {
 
   it('saves the notes alone through the notes endpoint', async () => {
     const { wrapper, mock } = await mountLoaded()
+    await openTab(wrapper, 'notes')
 
     await wrapper.find('[data-testid="client-service-admin-notes"]').setValue('  New note  ')
     await wrapper.find('[data-testid="client-service-notes-form"]').trigger('submit')
@@ -143,6 +191,7 @@ describe('ClientServiceDetailView', () => {
       expect.objectContaining({ url: '/api/services/9/notes', body: { adminNotes: 'New note' } }),
     ])
     expect(wrapper.get('[data-testid="client-service-outcome-notes"]').text()).toBe('Changes saved successfully.')
+    await openTab(wrapper, 'billing')
     expect(wrapper.get('[data-testid="client-service-outcome-billing"]').text()).toBe('')
   })
 
@@ -151,14 +200,17 @@ describe('ClientServiceDetailView', () => {
     const { wrapper } = await mountLoaded(detail, () =>
       refuse ? problem('Notes are too long.', 400) : new Response(null, { status: 204 }),
     )
+    await openTab(wrapper, 'notes')
 
     await wrapper.find('[data-testid="client-service-notes-form"]').trigger('submit')
     await flushPromises()
     expect(wrapper.get('[data-testid="client-service-outcome-notes"]').text()).toBe('Notes are too long.')
     expect(wrapper.get('[data-testid="client-service-outcome-notes"]').attributes('data-tone')).toBe('danger')
+    await openTab(wrapper, 'account')
     expect(wrapper.get('[data-testid="client-service-outcome-hosting-account"]').text()).toBe('')
 
     refuse = false
+    await openTab(wrapper, 'notes')
     await wrapper.find('[data-testid="client-service-notes-form"]').trigger('submit')
     await flushPromises()
     expect(wrapper.get('[data-testid="client-service-outcome-notes"]').text()).toBe('Changes saved successfully.')
@@ -166,13 +218,18 @@ describe('ClientServiceDetailView', () => {
 
   it('gives every section save button its own name', async () => {
     const { wrapper } = await mountLoaded()
-    const names = [
-      'client-service-save-hosting',
-      'client-service-save-billing',
-      'client-service-save-automation',
-      'client-service-save-notes',
-      'client-service-save-termination-date',
-    ].map((testid) => wrapper.get(`[data-testid="${testid}"]`).text())
+    const saves = [
+      ['account', 'client-service-save-hosting'],
+      ['billing', 'client-service-save-billing'],
+      ['billing', 'client-service-save-automation'],
+      ['notes', 'client-service-save-notes'],
+      ['account', 'client-service-save-termination-date'],
+    ] as const
+    const names: string[] = []
+    for (const [tab, testid] of saves) {
+      await openTab(wrapper, tab)
+      names.push(wrapper.get(`[data-testid="${testid}"]`).text())
+    }
 
     expect(new Set(names).size).toBe(names.length)
     expect(names).not.toContain('Save Changes')
@@ -180,6 +237,7 @@ describe('ClientServiceDetailView', () => {
 
   it('keeps the pressed save focusable while it runs and marks its form busy', async () => {
     const { wrapper } = await mountLoaded()
+    await openTab(wrapper, 'notes')
     /** Settles the pending save; replaced once the request starts. */
     let release: (answer: Response) => void = () => undefined
     const pending = vi.fn(() => new Promise<Response>((resolve) => {
@@ -252,11 +310,14 @@ describe('ClientServiceDetailView', () => {
   it('keeps unsaved edits in other sections after one section is saved', async () => {
     const { wrapper } = await mountLoaded()
 
+    await openTab(wrapper, 'billing')
     await wrapper.find('[data-testid="client-service-payment-method"]').setValue('Bank transfer')
+    await openTab(wrapper, 'notes')
     await wrapper.find('[data-testid="client-service-admin-notes"]').setValue('New note')
     await wrapper.find('[data-testid="client-service-notes-form"]').trigger('submit')
     await flushPromises()
 
+    await openTab(wrapper, 'billing')
     const paymentMethod = wrapper.find('[data-testid="client-service-payment-method"]').element as HTMLInputElement
     expect(paymentMethod.value).toBe('Bank transfer')
   })
@@ -264,6 +325,7 @@ describe('ClientServiceDetailView', () => {
   it('refreshes the saved section from the reloaded service', async () => {
     const { wrapper } = await mountLoaded()
 
+    await openTab(wrapper, 'notes')
     await wrapper.find('[data-testid="client-service-admin-notes"]').setValue('  New note  ')
     await wrapper.find('[data-testid="client-service-notes-form"]').trigger('submit')
     await flushPromises()
@@ -288,6 +350,7 @@ describe('ClientServiceDetailView', () => {
 
   it('saves the billing terms with the product through the billing endpoint', async () => {
     const { wrapper, mock } = await mountLoaded()
+    await openTab(wrapper, 'billing')
 
     await wrapper.find('[data-testid="client-service-billing-form"]').trigger('submit')
     await flushPromises()
@@ -302,6 +365,7 @@ describe('ClientServiceDetailView', () => {
 
   it('sends no hold date or reason while their switches are off', async () => {
     const { wrapper, mock } = await mountLoaded()
+    await openTab(wrapper, 'billing')
 
     await wrapper.find('[data-testid="client-service-automation-form"]').trigger('submit')
     await flushPromises()
@@ -316,6 +380,7 @@ describe('ClientServiceDetailView', () => {
 
   it('sends manual billing when the automatic billing switch is turned off', async () => {
     const { wrapper, mock } = await mountLoaded()
+    await openTab(wrapper, 'billing')
 
     await wrapper.find('[data-testid="client-service-auto-renew"]').trigger('click')
     await wrapper.find('[data-testid="client-service-automation-form"]').trigger('submit')

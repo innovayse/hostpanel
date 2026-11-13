@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 /**
- * TicketRow - one row of the ticket list: subject, department, dates, priority and status, the
+ * TicketRow. One row of the ticket list: subject, department, dates, priority and status, the
  * whole row being a link to the ticket.
  */
 import { clientTicketPath } from '~/constants/clientRoutes'

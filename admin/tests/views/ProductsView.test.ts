@@ -7,7 +7,7 @@ import ProductsView from '@/views/ProductsView.vue'
 import type { CurrencyDto } from '@/types/currency'
 import type { Product, ProductGroup } from '@/types/product'
 import { invalid, json, problem } from '../helpers/fetch'
-import { mountScreen } from '../helpers/mount'
+import { mountRouted, mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 
 /** The base currency. */
@@ -59,6 +59,16 @@ afterEach(() => {
 })
 
 describe('ProductsView', () => {
+  it('keeps the table header in place and draws placeholder rows while the products load', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
+
+    const { wrapper } = await mountRouted(ProductsView, '/', '/')
+
+    expect(wrapper.find('thead').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="settings-loading"]').exists()).toBe(false)
+  })
+
   it('lists the products with group, type, base-currency price and status', async () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(ProductsView)

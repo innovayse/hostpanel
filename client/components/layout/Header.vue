@@ -110,7 +110,7 @@
 
 <script setup lang="ts">
 /**
- * LayoutHeader - the classic template's site header.
+ * LayoutHeader: the classic template's site header.
  *
  * A white bar with one brand colour: the shared logo lockup, the catalogue-driven navigation
  * (Hosting as a dropdown of the plan groups including VPS and dedicated servers, Domains,

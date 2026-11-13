@@ -18,7 +18,7 @@ const dto = { installedVersion: '1.4.0' }
  * @param roles - Roles the account holds.
  */
 const signIn = (roles: string[]): void => {
-  useAuthStore().user = { email: 'staff@example.com', roles }
+  useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles }
 }
 
 describe('versionStore', () => {

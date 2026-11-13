@@ -16,7 +16,7 @@ defineProps<{
 
 <template>
   <UiTableRow data-testid="report-group-row">
-    <UiTableCell :colspan="colspan" class="font-semibold text-text-primary bg-surface-hover" data-testid="report-group-label">
+    <UiTableCell :colspan="colspan" strong data-testid="report-group-label">
       {{ label }}
     </UiTableCell>
   </UiTableRow>

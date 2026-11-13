@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 /**
- * LayoutHeaderDropdown - a classic header entry that opens a panel of links (Hosting, Support).
+ * LayoutHeaderDropdown: a classic header entry that opens a panel of links (Hosting, Support).
  *
  * Opens and closes on click, so it works the same for a mouse, a finger and the keyboard. The
  * panel closes on Escape (focus returns to the trigger), on a click outside, when focus leaves

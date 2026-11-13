@@ -153,12 +153,12 @@ const submit = (): void => {
       <UiButton
         type="button"
         :variant="UiButtonVariant.Primary"
-        :disabled="!dirty || saving"
+        :disabled="!dirty"
         :loading="saving"
         data-testid="plugin-widget-save"
         @click="submit"
       >
-        {{ saving ? t('common.saving') : t('common.save') }}
+        {{ t('common.save') }}
       </UiButton>
     </UiStack>
     <UiText v-if="error" :tone="UiTextTone.Danger" :size="UiTextSize.Sm" data-testid="plugin-widget-error">

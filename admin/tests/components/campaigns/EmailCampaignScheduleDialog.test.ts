@@ -29,9 +29,9 @@ describe('EmailCampaignScheduleDialog', () => {
     const wrapper = mountWithApp(EmailCampaignScheduleDialog, { props: { loading: false } })
     const confirm = wrapper.get('[data-testid="email-campaign-schedule-confirm"]')
     expect(confirm.attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[data-testid="email-campaign-schedule-at"]').attributes('data-placeholder')).toBe('Choose date and time')
+    expect(wrapper.get('[data-testid="email-campaign-schedule-at"] button').attributes('data-placeholder')).toBe('Choose date and time')
 
-    await wrapper.get('[data-testid="email-campaign-schedule-at"]').trigger('click')
+    await wrapper.get('[data-testid="email-campaign-schedule-at"] button').trigger('click')
     expect(confirm.attributes('disabled')).toBeUndefined()
     await confirm.trigger('click')
 

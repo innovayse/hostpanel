@@ -74,7 +74,7 @@ describe('TaxRuleFormModal', () => {
     const { wrapper } = await mountScreen(TaxRuleFormModal, { rule: bavaria, saving: true, error: null })
 
     expect(wrapper.get('[data-testid="tax-rule-form-save"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[data-testid="tax-rule-form-save"]').text()).toBe('Saving...')
+    expect(wrapper.get('[data-testid="tax-rule-form-save"]').text()).toBe('Save')
     await wrapper.get('[data-testid="tax-rule-form-cancel"]').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })

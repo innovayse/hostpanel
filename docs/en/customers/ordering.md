@@ -16,7 +16,7 @@ Browse the hosting plans and click **Configure** on the one you want.
 </li>
 <li>
 
-Choose a **Billing Cycle** — Monthly or Annual. The page shows **Setup Fees** and **Total Due Today**.
+Choose a **Billing Cycle**: Monthly or Annual. The page shows **Setup Fees** and **Total Due Today**.
 
 </li>
 <li>
@@ -52,7 +52,7 @@ The pricing table shows **New Price**, **Renewal** and **Transfer** prices for e
 
 Go to **Your Cart** to review your order. You can:
 
-- Change the **Currency** — note that changing currency clears your cart.
+- Change the **Currency**: note that changing currency clears your cart.
 - Click **Remove** to remove a single item.
 - Click **Clear Cart** to remove everything.
 - Click **Proceed to Checkout** when you are ready to pay.

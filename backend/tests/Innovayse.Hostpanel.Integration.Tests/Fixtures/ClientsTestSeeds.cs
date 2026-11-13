@@ -77,7 +77,7 @@ public static class ClientsTestSeeds
         var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         var userId = $"user-{Guid.NewGuid():N}";
-        var client = Client.Create(userId, firstName, lastName, $"{firstName.ToLowerInvariant()}-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create(userId, firstName, lastName, $"{firstName.ToLowerInvariant()}-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
         return new SeededClient(client.Id, userId);
@@ -167,7 +167,7 @@ public static class ClientsTestSeeds
         var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         var userId = $"user-{Guid.NewGuid():N}";
-        var client = Client.Create(userId, "Closed", "Account", $"closed-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create(userId, "Closed", "Account", $"closed-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         client.Close(DateTimeOffset.UtcNow);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);

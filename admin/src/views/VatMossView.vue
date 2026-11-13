@@ -17,6 +17,7 @@ import { formatDate } from '@/lib/format'
 import { formatCurrencyCode } from '@/lib/money'
 import { reportCountryName } from '@/lib/reportsCountry'
 import { reportPath } from '@/lib/reportsQuery'
+import { vatRowKey } from '@/lib/reportsRows'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportVat } from '@/types/reportvat'
@@ -115,6 +116,7 @@ const formatTotal = (amount: number): string => formatCurrencyCode(amount, share
       <ReportTable
         :columns="columns"
         :rows="rows"
+        :row-key="vatRowKey"
         :totals="totals"
         :totals-label="t('reports.vatMoss.totals')"
         :format-money="formatTotal"

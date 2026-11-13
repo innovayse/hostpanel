@@ -4,6 +4,7 @@
  * tested through the store and the transport it really uses.
  */
 import { flushPromises } from '@vue/test-utils'
+import { vi } from 'vitest'
 import type { VueWrapper } from '@vue/test-utils'
 import PluginView from '@/components/plugins/view/PluginView.vue'
 import type { PluginBlock } from '@/types/pluginview'
@@ -75,4 +76,20 @@ export const mountPluginView = async (
   await flushPromises()
   await flushPromises()
   return { wrapper, fetch }
+}
+
+/**
+ * Mounts the view renderer around the given blocks while every route they read is still in flight, so a
+ * block's loading state can be asserted.
+ *
+ * @param blocks - The blocks of the view document.
+ * @returns The wrapper.
+ */
+export const mountLoadingPluginView = async (blocks: PluginBlock[]): Promise<VueWrapper> => {
+  vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+  const wrapper = mountWithApp(PluginView, {
+    props: { pluginId: SAMPLE_PLUGIN, view: { schema: 1, blocks }, values: {}, externalOrigins: [] },
+  })
+  await flushPromises()
+  return wrapper
 }

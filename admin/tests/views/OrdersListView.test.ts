@@ -1,9 +1,11 @@
 /**
  * Mount tests for OrdersListView: the table renders what the API sent, a pending order can be
- * accepted (and the list reloads), and a refused load or command shows the API's sentence.
+ * accepted (and the list reloads), a refused load or command shows the API's sentence, and the status
+ * filter and the page live in the address.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import OrdersListView from '@/views/OrdersListView.vue'
 import { OrderStatus } from '@/types/order'
@@ -34,14 +36,40 @@ const pendingOrder = {
 const activeOrder = { ...pendingOrder, id: 2, orderNumber: 'ORD-0002', status: OrderStatus.Active }
 
 /**
- * Mounts the list and waits for its first load.
+ * Mounts the list at an address and waits for its first load.
+ *
+ * @param url - The address to open, with its query.
+ * @returns The wrapper and the router.
+ */
+const mountListAt = async (url: string) => {
+  const screen = await mountRouted(OrdersListView, '/orders', url)
+  await flushPromises()
+  return screen
+}
+
+/**
+ * Mounts the list at its plain address and waits for its first load.
  *
  * @returns The wrapper.
  */
-const mountList = async () => {
-  const { wrapper } = await mountRouted(OrdersListView, '/orders', '/orders')
+const mountList = async () => (await mountListAt('/orders')).wrapper
+
+/**
+ * Chooses a status in the filter dialog and applies it.
+ *
+ * @param wrapper - The mounted list.
+ * @param status - The status to choose.
+ */
+const applyStatus = async (wrapper: VueWrapper, status: OrderStatus) => {
+  await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
   await flushPromises()
-  return wrapper
+  wrapper
+    .findAllComponents(UiSelect)
+    .find((select) => select.attributes('data-testid') === 'orders-filter-status')
+    ?.vm.$emit('update:modelValue', status)
+  await flushPromises()
+  await wrapper.get('[data-testid="filter-apply"]').trigger('click')
+  await flushPromises()
 }
 
 describe('OrdersListView', () => {
@@ -195,17 +223,29 @@ describe('OrdersListView', () => {
     expect(wrapper.get('[data-testid="orders-row-1"]').text()).toContain('ORD-0001')
   })
 
-  it('sends the chosen status filter and clears it again on all statuses', async () => {
+  it('puts the applied status in the address, shows its chip and sends it', async () => {
     const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
-    const wrapper = await mountList()
+    const { wrapper, router } = await mountListAt('/orders')
 
-    wrapper.findComponent(UiSelect).vm.$emit('update:modelValue', OrderStatus.Fraud)
-    await flushPromises()
-    wrapper.findComponent(UiSelect).vm.$emit('update:modelValue', '')
-    await flushPromises()
+    await applyStatus(wrapper, OrderStatus.Fraud)
 
+    expect(router.currentRoute.value.query).toEqual({ status: OrderStatus.Fraud })
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Fraud')
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('1')
     const urls = mock.mock.calls.map(([url]) => url as string)
-    expect(urls).toContain('/api/orders?page=1&pageSize=20&status=Fraud')
+    expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=Fraud')
+  })
+
+  it('clears the status from the address and reloads when its chip is removed', async () => {
+    const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
+    const { wrapper, router } = await mountListAt('/orders?status=Fraud')
+
+    await wrapper.get('[data-testid="filter-chip-remove-status"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(wrapper.find('[data-testid="filter-chip-status"]').exists()).toBe(false)
+    const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20')
   })
 
@@ -213,11 +253,31 @@ describe('OrdersListView', () => {
     const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
     const wrapper = await mountList()
 
-    wrapper.findComponent(UiSelect).vm.$emit('update:modelValue', OrderStatus.Incomplete)
-    await flushPromises()
+    await applyStatus(wrapper, OrderStatus.Incomplete)
 
     const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=Incomplete')
+  })
+
+  it('restores the status and the page from the address and sends them', async () => {
+    const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 45 }) })
+    const { wrapper } = await mountListAt('/orders?status=Pending&page=2')
+
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls[0]).toBe('/api/orders?page=2&pageSize=20&status=Pending')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Pending')
+  })
+
+  it('moves to the next page through the address', async () => {
+    const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 45 }) })
+    const { wrapper, router } = await mountListAt('/orders')
+
+    await wrapper.get('[data-testid="orders-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls.at(-1)).toBe('/api/orders?page=2&pageSize=20')
   })
 
   it('shows the fraud score and the IP address of an order held for review, and none on an unscored one', async () => {
@@ -233,11 +293,12 @@ describe('OrdersListView', () => {
 
   it('opens the review queue from its button, filtering the list to orders pending review', async () => {
     const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
-    const wrapper = await mountList()
+    const { wrapper, router } = await mountListAt('/orders')
 
     await wrapper.get('[data-testid="orders-review-queue"]').trigger('click')
     await flushPromises()
 
+    expect(router.currentRoute.value.query).toEqual({ status: OrderStatus.UnderReview })
     const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=UnderReview')
   })
@@ -247,5 +308,16 @@ describe('OrdersListView', () => {
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="orders-empty"]').text()).toContain('No orders found')
+  })
+
+  it('names the filter in the empty state of a filtered list and clears it from there', async () => {
+    stubRoutes({ 'GET /api/orders?': () => json({ items: [], totalCount: 0 }) })
+    const { wrapper, router } = await mountListAt('/orders?status=Fraud')
+
+    expect(wrapper.get('[data-testid="orders-empty"]').text()).toContain('No orders match your filter')
+    await wrapper.get('[data-testid="orders-clear-filters"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
   })
 })

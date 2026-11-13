@@ -3,7 +3,8 @@
  * The line items of an invoice: a read-only table with the totals, or, when `readonly` is off,
  * an editor that adds, removes and re-prices lines and saves them through the billing store.
  * Every invoice tab shows this block, so the logic lives here once. The outcome of a save
- * (success, or the API's sentence) shows next to the save button.
+ * (success, or the API's sentence) shows next to the save button. While the invoice loads (`invoice` is
+ * null, `loading` is on) the same card draws its real table columns with placeholder rows and the totals as bars.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -12,7 +13,9 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -25,6 +28,7 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { formatPlainAmount } from '@/lib/money'
+import { nextRowKey } from '@/lib/rowKey'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail, InvoiceItemUpdate } from '@/types/invoice'
 import { MAX_PERCENT } from '@/lib/limits'
@@ -34,19 +38,24 @@ import { UiTableDensity } from '@/utils/ui/injection'
 const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
-  /** The invoice whose lines are shown. */
-  invoice: InvoiceDetail
+  /** The invoice whose lines are shown; null while it loads. */
+  invoice: InvoiceDetail | null
+  /** True while the invoice loads: the table draws placeholder rows and the totals placeholder bars. */
+  loading?: boolean
   /** True to show the lines without editing controls. */
   readonly?: boolean
   /** Tax percentage previewed on the sub-total; 0 adds no tax row. */
   taxPercent?: number
 }>(), {
+  loading: false,
   readonly: false,
   taxPercent: 0,
 })
 
 /** One line while it is being edited. */
 interface EditableLine {
+  /** Stable client key of the row; unlike `id` it exists from the moment the row is created. */
+  key: number
   /** Existing line id; absent for a line added in the editor. */
   id?: number
   /** Charge description. */
@@ -126,16 +135,16 @@ const previewSubTotal = computed<number>(() => lines.value.reduce((sum, line) =>
 const previewTax = computed<number>(() => previewSubTotal.value * (props.taxPercent / MAX_PERCENT))
 
 /** Total due after the invoice credit, as the editor previews it. */
-const previewTotal = computed<number>(() => previewSubTotal.value + previewTax.value - (props.invoice.amounts.credit ?? 0))
+const previewTotal = computed<number>(() => previewSubTotal.value + previewTax.value - (props.invoice?.amounts.credit ?? 0))
 
 /** The totals block: what the API computed when read-only, the live preview while editing. */
 const totalRows = computed<TotalRow[]>(() => {
-  const credit = props.invoice.amounts.credit ?? 0
+  const credit = props.invoice?.amounts.credit ?? 0
   const rows: TotalRow[] = [
     {
       key: 'subtotal',
       label: t('shared.subTotal'),
-      value: props.readonly ? (props.invoice.amounts.subTotal ?? 0) : previewSubTotal.value,
+      value: props.readonly ? (props.invoice?.amounts.subTotal ?? 0) : previewSubTotal.value,
       strong: false,
     },
   ]
@@ -146,7 +155,7 @@ const totalRows = computed<TotalRow[]>(() => {
   rows.push({
     key: 'total',
     label: t('shared.totalDue'),
-    value: props.readonly ? (props.invoice.amounts.total ?? 0) : previewTotal.value,
+    value: props.readonly ? (props.invoice?.amounts.total ?? 0) : previewTotal.value,
     strong: true,
   })
   return rows
@@ -154,7 +163,8 @@ const totalRows = computed<TotalRow[]>(() => {
 
 /** Resets the editable lines from the invoice. */
 const populate = (): void => {
-  lines.value = (props.invoice.items ?? []).map((item) => ({
+  lines.value = (props.invoice?.items ?? []).map((item) => ({
+    key: nextRowKey(),
     id: item.id,
     description: item.description,
     quantity: item.quantity,
@@ -167,7 +177,7 @@ const populate = (): void => {
 
 /** Appends a blank line. */
 const addLine = (): void => {
-  lines.value.push({ description: '', quantity: 1, unitPrice: 0, selected: false })
+  lines.value.push({ key: nextRowKey(), description: '', quantity: 1, unitPrice: 0, selected: false })
 }
 
 /**
@@ -203,6 +213,9 @@ const deleteSelected = (): void => {
  * @returns Resolves when the request has settled.
  */
 const save = async (): Promise<void> => {
+  if (props.invoice === null) {
+    return
+  }
   feedback.clear()
   saving.value = true
   // The API changes only the lines it is told about, so a removed line must be sent as a deletion.
@@ -237,7 +250,7 @@ const save = async (): Promise<void> => {
  * @param index - The line position.
  * @returns The action list passed to UiRowActions.
  */
-const lineActions = (index: number): UiRowAction[] => [
+const lineActions = (index: number): UiMenuAction[] => [
   {
     label: t('billing.invoiceItems.removeItem'),
     testid: `billing-invoice-item-remove-${index}`,
@@ -278,8 +291,8 @@ watch(
         <UiTable
           v-if="readonly"
           :density="UiTableDensity.Compact"
-          :empty="(invoice.items ?? []).length === 0"
-          :colspan="2"
+          :loading="loading"
+          :empty="!loading && (invoice?.items ?? []).length === 0"
           data-testid="billing-invoice-items-table"
         >
           <UiTableHead>
@@ -289,9 +302,9 @@ watch(
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
-            <UiTableRow v-for="item in invoice.items ?? []" :key="item.id" hoverable>
+            <UiTableRow v-for="item in invoice?.items ?? []" :key="item.id" hoverable>
               <UiTableCell>{{ item.description }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(item.amount, props.invoice.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.amount, props.invoice?.currency) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>
@@ -303,8 +316,8 @@ watch(
         <UiTable
           v-else
           :density="UiTableDensity.Compact"
-          :empty="lines.length === 0"
-          :colspan="6"
+          :loading="loading"
+          :empty="!loading && lines.length === 0"
           data-testid="billing-invoice-items-editor"
         >
           <UiTableHead>
@@ -325,7 +338,7 @@ watch(
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
-            <UiTableRow v-for="(line, index) in lines" :key="line.id ?? `new-${index}`">
+            <UiTableRow v-for="(line, index) in lines" :key="line.key">
               <UiTableCell>
                 <UiCheckbox
                   v-model="line.selected"
@@ -360,7 +373,7 @@ watch(
                 />
               </UiTableCell>
               <UiTableCell numeric>
-                {{ formatPlainAmount(lineTotal(line), props.invoice.currency) }}
+                {{ formatPlainAmount(lineTotal(line), props.invoice?.currency) }}
               </UiTableCell>
               <UiTableCell actions>
                 <UiRowActions :actions="lineActions(index)" :testid="`billing-invoice-item-actions-${index}`" />
@@ -378,14 +391,14 @@ watch(
             <UiButton
               variant="danger"
               size="sm"
-              :disabled="selectedCount === 0"
+              :disabled="loading || selectedCount === 0"
               data-testid="billing-invoice-items-delete-selected"
               @click="deleteSelected"
             >
               {{ t('shared.delete') }}
             </UiButton>
           </UiStack>
-          <UiButton variant="secondary" size="sm" data-testid="billing-invoice-items-add" @click="addLine">
+          <UiButton variant="secondary" size="sm" :disabled="loading" data-testid="billing-invoice-items-add" @click="addLine">
             {{ t('shared.addItem') }}
           </UiButton>
         </UiStack>
@@ -393,8 +406,9 @@ watch(
         <UiStack align="end" gap="xs" data-testid="billing-invoice-totals">
           <UiStack v-for="row in totalRows" :key="row.key" direction="row" gap="lg" align="center">
             <UiText :tone="row.strong ? 'primary' : 'muted'" size="md">{{ row.label }}</UiText>
-            <UiText :tone="row.strong ? 'primary' : 'secondary'" size="md" :data-testid="`billing-invoice-total-${row.key}`">
-              {{ formatPlainAmount(row.value, props.invoice.currency) }}
+            <UiSkeletonBar v-if="loading" class="h-4 w-20 rounded-md" aria-hidden="true" :data-testid="`billing-invoice-total-${row.key}-skeleton`" />
+            <UiText v-else :tone="row.strong ? 'primary' : 'secondary'" size="md" :data-testid="`billing-invoice-total-${row.key}`">
+              {{ formatPlainAmount(row.value, props.invoice?.currency) }}
             </UiText>
           </UiStack>
         </UiStack>
@@ -405,7 +419,7 @@ watch(
       <UiButton
         variant="primary"
         :loading="saving"
-        :disabled="saving"
+        :disabled="saving || loading"
         data-testid="billing-invoice-items-save"
         @click="save"
       >

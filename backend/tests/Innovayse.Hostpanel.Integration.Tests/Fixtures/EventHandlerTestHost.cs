@@ -79,7 +79,7 @@ public static class EventHandlerTestHost
         var created = await userManager.CreateAsync(user, "Pass@123!");
         Assert.True(created.Succeeded);
 
-        var client = Client.Create(user.Id, firstName, lastName, email, DateTimeOffset.UtcNow);
+        var client = Client.Create(user.Id, firstName, lastName, email, TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
         return new SeededIdentityClient(client, email);

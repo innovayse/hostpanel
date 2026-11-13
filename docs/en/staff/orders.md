@@ -76,8 +76,8 @@ Orders that were accepted before lines kept their own state have all their lines
 
 ## Cancel and delete
 
-- **Cancel this order?** — cancels a Pending order only (`ORDER_NOT_PENDING` if the order is not Pending). Cancelling also cancels the linked invoice. If the invoice already has a recorded payment, the cancel is refused (`INVOICE_HAS_PAYMENTS`) — refund or delete the payment first.
-- **Delete Order** — available only for Pending or Cancelled orders (`ORDER_NOT_DELETABLE`). Deleting removes the order record permanently.
+- **Cancel this order?** Cancels a Pending order only (`ORDER_NOT_PENDING` if the order is not Pending). Cancelling also cancels the linked invoice. If the invoice already has a recorded payment, the cancel is refused (`INVOICE_HAS_PAYMENTS`), refund or delete the payment first.
+- **Delete Order**: available only for Pending or Cancelled orders (`ORDER_NOT_DELETABLE`). Deleting removes the order record permanently.
 
 ## Order numbers
 

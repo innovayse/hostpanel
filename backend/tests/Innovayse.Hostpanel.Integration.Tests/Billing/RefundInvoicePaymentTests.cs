@@ -35,7 +35,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, price);
         var paid = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = price,
@@ -258,7 +258,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 100m);
         var paid = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = 30m,

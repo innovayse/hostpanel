@@ -8,7 +8,6 @@
  */
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import TaxRuleFormModal from '@/components/settings/TaxRuleFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -18,7 +17,8 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -41,9 +41,6 @@ const store = useTaxRulesStore()
 
 /** The result banner for a delete. */
 const banner = useResultBanner()
-
-/** Number of columns of the table (width of the empty row). */
-const COLUMN_COUNT = 6
 
 /** Whether the add/edit tax rule dialog is visible. */
 const showModal = ref(false)
@@ -123,7 +120,7 @@ const dismissDelete = (): void => {
  * @param rule - The row.
  * @returns The action list passed to UiRowActions.
  */
-const ruleActions = (rule: TaxRuleDto): UiRowAction[] => [
+const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `tax-rule-edit-${rule.id}`,
@@ -174,10 +171,8 @@ onMounted(() => store.fetchAll())
       {{ banner.message.value }}
     </UiAlert>
 
-    <SettingsLoading v-if="store.loading && store.taxRules.length === 0" :message="t('taxRules.loading')" />
-
     <UiErrorState
-      v-else-if="store.error"
+      v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="tax-rules-error"
@@ -185,7 +180,7 @@ onMounted(() => store.fetchAll())
     />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="store.taxRules.length === 0" :colspan="COLUMN_COUNT">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="store.taxRules.length === 0" :loading="store.loading">
         <template #empty>
           {{ t('taxRules.empty') }}
         </template>
@@ -240,7 +235,6 @@ onMounted(() => store.fetchAll())
       :title="t('taxRules.deleteModal.title')"
       :message="t('taxRules.deleteModal.message', { name: deleteTarget.name })"
       :confirm-label="t('taxRules.deleteModal.confirmLabel')"
-      :loading-label="t('taxRules.deleteModal.loadingLabel')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="confirmDelete"

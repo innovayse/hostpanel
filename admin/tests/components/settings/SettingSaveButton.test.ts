@@ -31,10 +31,11 @@ describe('SettingSaveButton', () => {
     expect(wrapper.emitted('click')).toHaveLength(1)
   })
 
-  it('shows the saving label and blocks the click while a save is in flight', async () => {
+  it('keeps the label, marks it busy and blocks the click while a save is in flight', async () => {
     const wrapper = mountButton({ dirty: true, saving: true })
 
-    expect(wrapper.text()).toBe('Saving…')
+    expect(wrapper.text()).toBe('Save')
+    expect(wrapper.get('button').attributes('aria-busy')).toBe('true')
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('click')).toBeUndefined()

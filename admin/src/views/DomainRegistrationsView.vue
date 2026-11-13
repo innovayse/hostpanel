@@ -3,9 +3,10 @@
  * Domain registrations: paged table of every domain registration across clients.
  *
  * Shows ID, domain, client, registration period, registrar, price, next due date, expiry date and
- * status. Reads `stores/domains`; a refused load shows the API's sentence.
+ * status. The page lives in the address (`useFilterQuery`), so a reload or a shared link opens the same page.
+ * Reads `stores/domains`; a refused load shows the API's sentence.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -25,12 +26,13 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { DOMAIN_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { formatPrice } from '@/lib/money'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
 import { useDomainsStore } from '@/stores/domains'
 import { clientPath } from '@/lib/routes'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
@@ -46,17 +48,20 @@ const store = useDomainsStore()
 /** Whether the current page has any domain to list. */
 const hasRows = computed<boolean>(() => store.domains.length > 0)
 
-/**
- * Moves to a page of the list and loads it.
- *
- * @param page - Target page, 1-based.
- */
-const goToPage = (page: number): void => {
-  store.page = page
-  void store.fetchAll()
-}
+/** The page of the list, kept in the address. */
+const { page, setPage } = useFilterQuery([])
 
-onMounted(() => store.fetchAll())
+/**
+ * Loads the page the address names.
+ *
+ * @returns True when loaded; false when refused (see `store.error`).
+ */
+const load = (): Promise<boolean> => store.fetchAll(page.value, '')
+
+// A page chosen, or the back button, loads the page the address names.
+watch(page, load)
+
+onMounted(() => load())
 </script>
 
 <template>
@@ -72,14 +77,13 @@ onMounted(() => store.fetchAll())
       :message="store.error"
       :loading="store.loading"
       testid="domain-registrations-error"
-      @retry="store.fetchAll()"
+      @retry="load"
     />
 
     <UiCard v-else-if="hasRows || store.loading">
       <UiTable
         :density="UiTableDensity.Comfortable"
         :loading="store.loading && !hasRows"
-        :colspan="9"
         data-testid="domain-registrations-table"
       >
         <UiTableHead>
@@ -115,7 +119,7 @@ onMounted(() => store.fetchAll())
               </UiLink>
             </UiTableCell>
             <UiTableCell>{{ yearsLabel(domain.regPeriodYears) }}</UiTableCell>
-            <UiTableCell>{{ domain.registrar ?? '—' }}</UiTableCell>
+            <UiTableCell>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.nextDueDate) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
@@ -128,18 +132,20 @@ onMounted(() => store.fetchAll())
         </UiTableBody>
       </UiTable>
 
-      <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiText tone="muted" size="xs">
-          {{ t('shared.totalcountDomainValue', { totalCount: store.totalCount }) }}
-        </UiText>
-        <UiPagination
-          :page="store.page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          testid="domain-registrations-pagination"
-          @update:page="goToPage"
-        />
-      </UiStack>
+      <template #footer>
+        <UiStack direction="row" justify="between" align="center" wrap>
+          <UiText tone="muted" size="xs">
+            {{ t('shared.totalcountDomainValue', { totalCount: store.totalCount }) }}
+          </UiText>
+          <UiPagination
+            :page="page"
+            :total="store.totalCount"
+            :page-size="store.pageSize"
+            testid="domain-registrations-pagination"
+            @update:page="setPage"
+          />
+        </UiStack>
+      </template>
     </UiCard>
 
     <UiCard v-else>

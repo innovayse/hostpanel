@@ -53,7 +53,7 @@ const statusLabel = computed<string>(() => {
 <template>
   <UiCard padding="md" data-testid="cwp-brand-header">
     <UiStack direction="row" align="center" gap="md" wrap>
-      <UiStack align="center" justify="center" class="h-11 w-11 shrink-0 rounded-xl p-2" :class="meta.color">
+      <UiStack align="center" justify="center" class="h-11 w-11 shrink-0 rounded-control p-2" :class="meta.color">
         <UiImage :src="meta.logo" alt="" class="h-full w-full object-contain brightness-0 invert" />
       </UiStack>
       <UiStack gap="xs" class="min-w-0 flex-1">

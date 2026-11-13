@@ -65,6 +65,25 @@ describe('billingStore loads', () => {
   })
 })
 
+describe('billingStore invoice picker lookup', () => {
+  it('fetchClientInvoiceOptions returns the invoices and leaves the screen lists and error alone', async () => {
+    const store = useBillingStore()
+    const mock = stubFetch(json({ items: [{ id: 2 }], totalCount: 1 }))
+
+    expect(await store.fetchClientInvoiceOptions(9)).toEqual([{ id: 2 }])
+    expect(callOf(mock).url).toBe('/api/billing/client/9?page=1&pageSize=100')
+    expect(store.clientInvoices).toEqual([])
+  })
+
+  it('fetchClientInvoiceOptions answers an empty list without an error when refused', async () => {
+    const store = useBillingStore()
+    stubFetch(problem('Billing is disabled.', 403))
+
+    expect(await store.fetchClientInvoiceOptions(9)).toEqual([])
+    expect(store.error).toBeNull()
+  })
+})
+
 describe('billingStore mutations', () => {
   it('createInvoice returns the new id and null with a field error on refusal', async () => {
     const store = useBillingStore()
@@ -116,16 +135,14 @@ describe('billingStore mutations', () => {
     expect(store.error).toBe('Invoice has payments.')
   })
 
-  it('bulkAction clears the selection on success and keeps it on refusal', async () => {
+  it('bulkAction reports whether the API applied the action', async () => {
     const store = useBillingStore()
-    store.selectedIds = [1, 2]
     stubFetch(problem('Not allowed.', 403))
     expect(await store.bulkAction([1, 2], 'Delete')).toBe(false)
-    expect(store.selectedIds).toEqual([1, 2])
+    expect(store.error).toBe('Not allowed.')
 
     stubFetch(new Response(null, { status: 204 }))
     expect(await store.bulkAction([1, 2], 'Delete')).toBe(true)
-    expect(store.selectedIds).toEqual([])
   })
 
   it('the remaining mutations post to their endpoints and reload', async () => {

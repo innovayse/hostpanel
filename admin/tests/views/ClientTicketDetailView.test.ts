@@ -42,6 +42,17 @@ afterEach(() => {
 })
 
 describe('ClientTicketDetailView', () => {
+  it('draws the real layout with chat bubble and field placeholders while the ticket loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountTicket()
+
+    expect(wrapper.find('[data-testid="client-ticket-loading"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="client-ticket-message-loading"]')).toHaveLength(2)
+    expect(wrapper.text()).toContain('Ticket Settings')
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.get('[data-testid="client-ticket-save"]').attributes('disabled')).toBeDefined()
+  })
+
   it('mounts without throwing', async () => {
     const wrapper = await mountClientView(ClientTicketDetailView)
 

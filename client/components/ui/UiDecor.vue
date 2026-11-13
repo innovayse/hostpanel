@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiDecor - a decorative, non-interactive layer: a glow, a floating dot, a corner frame, a line.
+ * UiDecor. A decorative, non-interactive layer: a glow, a floating dot, a corner frame, a line.
  *
  * It is absolutely positioned inside the nearest positioned ancestor, never takes pointer events
  * and is hidden from assistive technology. Position, size, colour, blur and motion come from the

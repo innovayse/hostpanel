@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 /**
- * LanguageSwitcher (`UiLanguageSwitcher`) - the one language picker of the portal.
+ * LanguageSwitcher (`UiLanguageSwitcher`): the one language picker of the portal.
  *
  * Two layouts share one implementation: `dropdown` is a trigger with a menu, and `responsive` is
  * the same dropdown from `xl` up with a row of flag cards below it (used in the mobile menu).

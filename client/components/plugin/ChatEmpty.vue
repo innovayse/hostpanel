@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatEmpty - what an empty chat shows: the plugin's introduction (the block's `intro`, else its placeholder as
+ * PluginChatEmpty. What an empty chat shows: the plugin's introduction (the block's `intro`, else its placeholder as
  * the sentence) and its ready-made messages as chips. Pressing a chip asks the chat to send that message.
  */
 import type { PluginChatSuggestion } from '~/types/pluginblock'

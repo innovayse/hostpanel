@@ -7,6 +7,8 @@
  * attributes fall through to the button.
  */
 
+import { focusRingClasses } from '@/utils/ui/input'
+
 /** Props for UiToggle. */
 const props = withDefaults(defineProps<{
   /** Current state (two-way bound with `v-model`). */
@@ -26,6 +28,9 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
 
+/** Classes of the track that do not depend on its state. */
+const baseClasses = `group w-9 h-5 rounded-full transition-colors duration-200 flex items-center px-0.5 shrink-0 cursor-pointer focus-visible:ring-offset-1 focus-visible:ring-offset-surface-base disabled:cursor-not-allowed disabled:bg-surface-hover disabled:shadow-[inset_0_0_0_1px_var(--text-muted)] ${focusRingClasses}`
+
 /** Flips the state unless the switch is disabled. */
 const flip = (): void => {
   if (props.disabled) {
@@ -41,12 +46,11 @@ const flip = (): void => {
     role="switch"
     :aria-checked="modelValue"
     :disabled="disabled"
-    class="w-9 h-5 rounded-full transition-colors duration-200 flex items-center px-0.5 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-card disabled:opacity-40 disabled:cursor-not-allowed"
-    :class="modelValue ? 'bg-primary-500' : 'bg-border-strong'"
+    :class="[baseClasses, modelValue ? 'not-disabled:gradient-brand' : 'bg-control-track']"
     @click="flip"
   >
     <span
-      class="w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+      class="w-4 h-4 rounded-full bg-text-on-primary shadow transition-transform duration-200 group-disabled:bg-text-muted"
       :class="modelValue ? 'translate-x-[14px]' : 'translate-x-0'"
     />
   </button>

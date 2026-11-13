@@ -1,6 +1,6 @@
 <script lang="ts">
 /**
- * UiRichText - renders operator-authored HTML (knowledge-base articles, announcements) safely.
+ * UiRichText: renders operator-authored HTML (knowledge-base articles, announcements) safely.
  *
  * The string is never injected as markup. `parseRichText` reads it into a tree containing only
  * allow-listed tags and attributes (see `utils/ui/richText.ts`) and this component turns that

@@ -135,7 +135,6 @@ onMounted(load)
       <UiTable
         :loading="store.loading && store.notes.length === 0"
         :empty="!store.loading && store.notes.length === 0"
-        :colspan="6"
         data-testid="billing-invoice-credit-notes-table"
       >
         <UiTableHead>

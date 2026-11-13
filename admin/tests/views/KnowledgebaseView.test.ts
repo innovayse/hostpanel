@@ -137,9 +137,14 @@ describe('KnowledgebaseView', () => {
   })
 
   it('reloads the categories from the Retry of a refused load', async () => {
-    stubFetch(problem('Not allowed.', 403), json([category]))
+    let refuse = true
+    stubRoutes({
+      'GET /api/admin/knowledgebase/categories': () => (refuse ? problem('Not allowed.', 403) : json([category])),
+      'GET /api/admin/knowledgebase': () => json([]),
+    })
     const wrapper = await mountView(KnowledgebaseView)
 
+    refuse = false
     await wrapper.get('[data-testid="knowledgebase-error-retry"]').trigger('click')
     await flushPromises()
 

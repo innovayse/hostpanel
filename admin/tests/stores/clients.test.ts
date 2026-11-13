@@ -205,6 +205,15 @@ describe('clientsStore loads', () => {
     expect(callOf(mock).url).toBe('/api/clients?page=1&pageSize=20&search=acme')
   })
 
+  it('fetchAll loads the page it is given and keeps it as the current page', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 45 }))
+    const store = useClientsStore()
+
+    await store.fetchAll({}, 3)
+    expect(store.page).toBe(3)
+    expect(callOf(mock).url).toBe('/api/clients?page=3&pageSize=20')
+  })
+
   it('fetchAll shows the API sentence on refusal and the no-answer sentence offline', async () => {
     const store = useClientsStore()
     stubFetch(problem('Clients are hidden.', 403))

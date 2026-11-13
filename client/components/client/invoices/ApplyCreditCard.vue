@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 /**
- * ApplyCreditCard - pays part or all of an invoice from the client's credit balance.
+ * ApplyCreditCard: pays part or all of an invoice from the client's credit balance.
  *
  * Shown only while there is something to pay with and something to pay: the invoice owes money, is not itself a credit top-up (credit
  * cannot pay for credit), and the balance is above zero. The most that can be applied is the smaller of the balance and what the

@@ -18,7 +18,8 @@ import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -185,7 +186,7 @@ const handleReject = async (): Promise<void> => {
  * @param transfer - The row.
  * @returns The action list passed to UiRowActions.
  */
-const transferActions = (transfer: PendingBankTransfer): UiRowAction[] => [
+const transferActions = (transfer: PendingBankTransfer): UiMenuAction[] => [
   {
     label: t('billing.bankTransfers.confirm'),
     testid: `billing-bank-transfer-confirm-${transfer.invoiceId}`,
@@ -241,7 +242,6 @@ onMounted(() => load(1))
       <UiTable
         :loading="store.loading && !hasRows"
         :empty="!store.loading && loadError === null && !hasRows"
-        :colspan="6"
         data-testid="billing-bank-transfers-table"
       >
         <UiTableHead>

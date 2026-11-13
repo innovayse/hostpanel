@@ -57,9 +57,9 @@ export const authMiddleware = async (
   }
 
   // Signed in without the Admin role (a customer through the shared sign-on): the API refuses
-  // every admin call anyway, but the panel must not open its screens either.
+  // every admin call anyway, but the panel must not open its screens either: the access-denied screen says so.
   if (to.meta.requiresAuth && !auth.isAdmin) {
-    return AppRoute.Login
+    return AppRoute.Forbidden
   }
 
   return true

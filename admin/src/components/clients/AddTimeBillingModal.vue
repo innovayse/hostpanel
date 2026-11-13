@@ -19,6 +19,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { nextRowKey } from '@/lib/rowKey'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 
@@ -53,6 +54,8 @@ const serviceOptions = ref<{ value: number; label: string }[]>([])
 
 /** Single time billing row entry. */
 interface TimeBillingRow {
+  /** Stable key of the row for list rendering. */
+  key: number
   /** Selected service ID. */
   serviceId: number
   /** Entry description. */
@@ -66,6 +69,7 @@ interface TimeBillingRow {
 /** Pre-created array of 10 empty rows. */
 const rows = reactive<TimeBillingRow[]>(
   Array.from({ length: 10 }, () => ({
+    key: nextRowKey(),
     serviceId: 0,
     description: '',
     hours: 0,
@@ -140,7 +144,7 @@ onMounted(() => fetchServices())
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
-          <UiTableRow v-for="(row, idx) in rows" :key="idx">
+          <UiTableRow v-for="(row, idx) in rows" :key="row.key">
             <UiTableCell>
               <UiSelect
                 v-model="row.serviceId"
@@ -179,11 +183,11 @@ onMounted(() => fetchServices())
       <UiButton
         type="button"
         :variant="UiButtonVariant.Primary"
-        :disabled="internalSaving"
+        :loading="internalSaving"
         data-testid="clients-time-billing-save"
         @click="handleSave"
       >
-        {{ internalSaving ? t('shared.saving') : t('clients.addTimeBilling.saveEntries') }}
+        {{ t('clients.addTimeBilling.saveEntries') }}
       </UiButton>
     </template>
   </UiDialog>

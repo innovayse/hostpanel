@@ -17,6 +17,13 @@ const mountSidebar = (props: Record<string, unknown> = {}) =>
   mountWithApp(IntegrationStatusSidebar, { props: { testResult: null, ...props } })
 
 describe('IntegrationStatusSidebar', () => {
+  it('draws a placeholder instead of the connection state while loading', () => {
+    const wrapper = mountSidebar({ loading: true })
+
+    expect(wrapper.find('[data-testid="integration-status-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-status-idle"]').exists()).toBe(false)
+  })
+
   it('shows "not tested yet" when nothing was tested on the page', () => {
     const wrapper = mountSidebar()
 

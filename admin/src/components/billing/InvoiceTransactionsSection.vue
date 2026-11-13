@@ -17,7 +17,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { transactionTypeTone } from '@/lib/tones'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceTransactionType } from '@/types/invoice'
 import type { InvoiceDetail, InvoiceTransaction } from '@/types/invoice'
@@ -50,7 +50,6 @@ const payments = computed<InvoiceTransaction[]>(() =>
         <UiTable
           :density="UiTableDensity.Compact"
           :empty="payments.length === 0"
-          :colspan="5"
           data-testid="billing-invoice-payments-table"
         >
           <UiTableHead>
@@ -66,7 +65,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
             <UiTableRow v-for="transaction in payments" :key="transaction.id" hoverable>
               <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
               <UiTableCell>{{ transaction.gateway }}</UiTableCell>
-              <UiTableCell muted>{{ transaction.transactionId || '—' }}</UiTableCell>
+              <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
               <UiTableCell numeric>
                 <UiText tone="success">{{ formatPlainAmount(transaction.amount, props.invoice.currency) }}</UiText>
               </UiTableCell>
@@ -88,7 +87,6 @@ const payments = computed<InvoiceTransaction[]>(() =>
         <UiTable
           :density="UiTableDensity.Compact"
           :empty="allTransactions.length === 0"
-          :colspan="5"
           data-testid="billing-invoice-history-table"
         >
           <UiTableHead>
@@ -104,11 +102,11 @@ const payments = computed<InvoiceTransaction[]>(() =>
             <UiTableRow v-for="transaction in allTransactions" :key="transaction.id" hoverable>
               <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
               <UiTableCell>{{ transaction.gateway }}</UiTableCell>
-              <UiTableCell muted>{{ transaction.transactionId || '—' }}</UiTableCell>
+              <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
               <UiTableCell>
                 <UiBadge :tone="transactionTypeTone(transaction.type)">{{ transaction.type }}</UiBadge>
               </UiTableCell>
-              <UiTableCell muted>{{ transaction.notes || '—' }}</UiTableCell>
+              <UiTableCell muted>{{ transaction.notes || EMPTY_VALUE }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>

@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * PluginProgressBlock - a progress bar, its value written in the view or read from a GET route, shown as a share
+ * PluginProgressBlock: a progress bar, its value written in the view or read from a GET route, shown as a share
  * of `max` (100 when absent or not positive) and clamped to 0..100, so a plugin cannot draw past the bar.
  */
 import { usePluginSource } from '~/composables/usePluginView'

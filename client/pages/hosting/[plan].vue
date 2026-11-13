@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 /**
- * Hosting plan page - one plan with its price, billing cycles and included features.
+ * Hosting plan page: one plan with its price, billing cycles and included features.
  * Route: /hosting/[plan]
  *
  * The plan is found among the hosting products by id, slug or normalised name. The page owns the
@@ -42,6 +42,7 @@ import type { PricingCycleOption } from '~/types/pricingcycleoption'
 import { parseDescription } from '~/utils/catalogGroups'
 import { formatMoney } from '~/utils/formatMoney'
 import { isFreePlan } from '~/utils/isFreePlan'
+import { detailTitle } from '~/utils/seoTitle'
 import { cycleAmount } from '~/utils/productFamilies'
 import { buildSeoLinks } from '~/utils/seoLinks'
 
@@ -203,7 +204,7 @@ useSeoMeta({
   ogDescription: () => planSummary.value || t('seo.hostingPlan.description'),
   ogType: 'website',
   twitterCard: 'summary_large_image',
-  twitterTitle: () => currentPlan.value ? `${currentPlan.value.name} | ${siteName.value}` : t('seo.hostingPlan.title'),
+  twitterTitle: () => currentPlan.value ? detailTitle(currentPlan.value.name, siteName.value) : t('seo.hostingPlan.title'),
   twitterDescription: () => planSummary.value || t('seo.hostingPlan.description'),
 })
 

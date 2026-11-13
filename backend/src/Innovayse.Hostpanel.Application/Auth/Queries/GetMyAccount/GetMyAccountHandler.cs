@@ -80,6 +80,8 @@ public sealed class GetMyAccountHandler
 
         return Result<MyAccountDto>.Success(new MyAccountDto(
             account.Email,
+            account.FirstName,
+            account.LastName,
             held.Select(r => r.ToString()).ToList(),
             account.EmailVerified ?? _caller.IsEmailVerified,
             (int)access.Permissions,

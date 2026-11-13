@@ -57,7 +57,7 @@
         appears to work but returns nothing reads as a broken site. Say why.
       -->
       <UiText v-if="!hasZones" size="sm" tone="inherit" class="text-mut2">{{ t('aurora.domainSearch.noZones') }}</UiText>
-      <UiText v-else-if="pending" size="sm" tone="inherit" class="text-mut2">{{ t('aurora.domainSearch.searching') }}</UiText>
+      <UiSkeleton v-else-if="pending" :lines="3" data-testid="domain-search-pending" />
       <UiText v-else-if="results.length === 0" size="sm" tone="inherit" class="text-mut2">
         {{ t('aurora.domainSearch.empty') }}
       </UiText>

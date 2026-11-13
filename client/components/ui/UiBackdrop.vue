@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 /**
- * UiBackdrop - a decorative background for marketing sections (aurora glows, nova wash, grid,
+ * UiBackdrop: a decorative background for marketing sections (aurora glows, nova wash, grid,
  * dots). It fills its nearest positioned ancestor, never takes pointer events and is hidden from
  * assistive technology. Colours come from the template tokens, so it follows light and dark.
  */

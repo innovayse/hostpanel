@@ -77,7 +77,7 @@ public sealed class KbSlugAllocator
     /// <summary>Returns the candidate, or the first numbered variant of it, that is not taken.</summary>
     /// <param name="candidate">The candidate.</param>
     /// <param name="taken">Every value that may not be given out, including the ones this method tried.</param>
-    /// <returns>The first of <c>candidate</c>, <c>candidate-2</c>, <c>candidate-3</c>, ... not in <paramref name="taken"/>.</returns>
+    /// <returns>The first of <c>candidate</c>, <c>candidate-2</c>, <c>candidate-3</c> and so on, not in <paramref name="taken"/>.</returns>
     private static string FirstFree(string candidate, HashSet<string> taken)
     {
         var slug = candidate;

@@ -1,11 +1,11 @@
 /**
  * Tests for HostingDetailsCard: the performance, installer, guarantee and support-response text
- * fields saved one by one, the SSL / DDoS / no hidden fees switches, and the unseeded warning.
+ * fields as drafts of the page save bar, the SSL / DDoS / no hidden fees switches, and the unseeded warning.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HostingDetailsCard from '@/components/settings/HostingDetailsCard.vue'
 import type { Setting, SettingSave } from '@/types/setting'
-import { mountScreen } from '../../helpers/mount'
+import { mountSettingsCard } from '../../helpers/settingsPage'
 
 /** The save callback the card is given; it answers that the value was stored. */
 const save = vi.fn<SettingSave>(async () => ({ saved: true, error: null }))
@@ -37,12 +37,12 @@ const rows: Setting[] = [
  * @param testid - The field's test id.
  * @returns The input's value.
  */
-const valueOf = (wrapper: Awaited<ReturnType<typeof mountScreen>>['wrapper'], testid: string): string =>
+const valueOf = (wrapper: Awaited<ReturnType<typeof mountSettingsCard>>['wrapper'], testid: string): string =>
   (wrapper.get(`[data-testid="${testid}"]`).element as HTMLInputElement).value
 
 describe('HostingDetailsCard', () => {
   it('shows the stored figures', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(HostingDetailsCard, rows)
 
     expect(valueOf(wrapper, 'hosting-stats-response-time')).toBe('180 ms')
     expect(valueOf(wrapper, 'hosting-installer-app-count')).toBe('150+')
@@ -51,31 +51,31 @@ describe('HostingDetailsCard', () => {
   })
 
   it('saves an edited figure on its own', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(HostingDetailsCard, rows)
 
     await wrapper.get('[data-testid="hosting-stats-sites-hosted"]').setValue('12,000+')
-    await wrapper.get('[data-testid="hosting-save-stats-sites-hosted"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[2, '12,000+']])
   })
 
   it('saves the support response time of a channel', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(HostingDetailsCard, rows)
 
     await wrapper.get('[data-testid="hosting-support-response-phone"]').setValue('5 min')
-    await wrapper.get('[data-testid="hosting-save-support-response-phone"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[9, '5 min']])
   })
 
   it('limits the money back days to three characters', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(HostingDetailsCard, rows)
 
     expect(wrapper.get('[data-testid="hosting-guarantee-money-back-days"]').attributes('maxlength')).toBe('3')
   })
 
   it('shows the switches by their stored value, an empty row being off', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(HostingDetailsCard, rows)
 
     expect(wrapper.get('[data-testid="hosting-features-ssl"]').attributes('aria-checked')).toBe('true')
     expect(wrapper.get('[data-testid="hosting-features-ddos"]').attributes('aria-checked')).toBe('false')
@@ -83,25 +83,25 @@ describe('HostingDetailsCard', () => {
   })
 
   it('turns a switch on and saves the literal true', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(HostingDetailsCard, rows)
 
     await wrapper.get('[data-testid="hosting-features-ddos"]').trigger('click')
-    await wrapper.get('[data-testid="hosting-features-ddos-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[11, 'true']])
   })
 
   it('turns a switch off and saves the literal false', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(HostingDetailsCard, rows)
 
     await wrapper.get('[data-testid="hosting-features-ssl"]').trigger('click')
-    await wrapper.get('[data-testid="hosting-features-ssl-save"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[10, 'false']])
   })
 
   it('warns about a row the API never seeded and hides its control', async () => {
-    const { wrapper } = await mountScreen(HostingDetailsCard, { save, settings: rows.filter((row) => row.key !== 'portal.stats.response_time') })
+    const { wrapper } = await mountSettingsCard(HostingDetailsCard, rows.filter((row) => row.key !== 'portal.stats.response_time'))
 
     const warnings = wrapper.findAll('[data-testid="setting-not-seeded"]')
     expect(warnings).toHaveLength(1)

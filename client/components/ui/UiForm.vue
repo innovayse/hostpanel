@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 /**
- * UiForm - the standard form wrapper.
+ * UiForm: the standard form wrapper.
  *
  * Handles `submit.prevent`, an error and a success banner (the store's `error` / success text),
  * the vertical rhythm between fields, and a right-aligned actions row.

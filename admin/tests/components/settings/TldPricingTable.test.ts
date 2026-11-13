@@ -27,6 +27,15 @@ describe('TldPricingTable', () => {
     expect(wrapper.findAll('tbody tr')).toHaveLength(TLD_PERIODS.length)
   })
 
+  it('keeps the title and header and draws a placeholder row per period while loading', async () => {
+    const { wrapper } = await mountScreen(TldPricingTable, { ...props, loading: true })
+
+    expect(wrapper.get('h2').text()).toBe('Registration pricing')
+    expect(wrapper.text()).toContain('Cost ($)')
+    expect(wrapper.findAll('[data-testid="ui-table-skeleton"] tr')).toHaveLength(TLD_PERIODS.length)
+    expect(wrapper.find('[data-testid="tld-register-cost-1"]').exists()).toBe(false)
+  })
+
   it('writes the singular for one year and the plural after', async () => {
     const { wrapper } = await mountScreen(TldPricingTable, props)
     const rows = wrapper.findAll('tbody tr')

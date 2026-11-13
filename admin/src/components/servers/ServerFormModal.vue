@@ -21,6 +21,7 @@ import UiForm from '@/components/ui/UiForm.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
+import UiLimitField from '@/components/ui/UiLimitField.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -363,13 +364,17 @@ const handleSubmit = (): void => {
               </template>
             </UiField>
             <UiField :label="t('servers.serverForm.maxAccounts')" :error="props.fieldErrors['limits.maxAccounts']">
-              <UiNumberInput
-                v-model="form.maxAccounts"
-                :min="1"
-                nullable
-                :placeholder="t('servers.serverForm.unlimited')"
-                data-testid="server-form-max-accounts"
-              />
+              <template #default="{ id, invalid }">
+                <UiLimitField
+                  :id="id"
+                  v-model="form.maxAccounts"
+                  :unlimited-value="null"
+                  :min="1"
+                  :invalid="invalid"
+                  :placeholder="t('servers.serverForm.unlimited')"
+                  data-testid="server-form-max-accounts"
+                />
+              </template>
             </UiField>
           </UiGrid>
 

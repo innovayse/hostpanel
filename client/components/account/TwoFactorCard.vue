@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 /**
- * TwoFactorCard - shows whether two-factor is on and starts enabling or disabling it.
+ * TwoFactorCard: shows whether two-factor is on and starts enabling or disabling it.
  *
  * Enabling asks the store for a fresh secret and QR first, and opens the dialog only when that
  * worked (a failure stays in the store). Disabling opens the same dialog to collect a code.

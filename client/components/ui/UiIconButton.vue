@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 /**
- * UiIconButton - a square button that holds only an icon.
+ * UiIconButton: a square button that holds only an icon.
  *
  * `label` is required because an icon alone tells a screen reader nothing; it becomes the
  * `aria-label` (and the tooltip unless `title` says otherwise). The icon is a lucide component

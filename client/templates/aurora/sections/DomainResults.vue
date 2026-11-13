@@ -4,9 +4,7 @@
       <UiText v-if="!hasZones" tone="inherit" class="text-center text-[15px] text-mut2" data-testid="domain-results-no-zones">
         {{ t('aurora.domainSearch.noZones') }}
       </UiText>
-      <UiText v-else-if="pending" tone="inherit" class="text-center text-[15px] text-mut2" data-testid="domain-results-pending">
-        {{ t('aurora.domainSearch.searching') }}
-      </UiText>
+      <UiSkeleton v-else-if="pending" :lines="3" data-testid="domain-results-pending" />
       <UiText v-else-if="results.length === 0" tone="inherit" class="text-center text-[15px] text-mut2" data-testid="domain-results-empty">
         {{ t('aurora.domainSearch.empty') }}
       </UiText>

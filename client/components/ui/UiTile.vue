@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 /**
- * UiTile - a small square (or round) tile that centres an icon or a short label.
+ * UiTile: a small square (or round) tile that centres an icon or a short label.
  *
  * Structure by default: the screen paints the tile (`bg-brand text-on-brand`, a gradient token)
  * through its class, so one component serves brand marks, service tiles, avatars and count

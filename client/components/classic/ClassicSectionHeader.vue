@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 /**
- * ClassicSectionHeader - the heading block every classic home section opens with.
+ * ClassicSectionHeader: the heading block every classic home section opens with.
  *
  * A small brand-coloured label, a solid charcoal title and a muted lead line, all centred. There
  * is no pill, no highlighted word and no motion: the classic template reads as a plain, trusted

@@ -14,9 +14,9 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -342,7 +342,7 @@ onMounted(loadAll)
  * @param category - The category of the row.
  * @returns The action list passed to UiRowActions.
  */
-const categoryActions = (category: PredefinedReplyCategory): UiRowAction[] => {
+const categoryActions = (category: PredefinedReplyCategory): UiMenuAction[] => {
   /**
    * Opens this category's in-place edit field.
    *
@@ -371,7 +371,7 @@ const categoryActions = (category: PredefinedReplyCategory): UiRowAction[] => {
  * @param reply - The reply of the row.
  * @returns The action list passed to UiRowActions.
  */
-const replyActions = (reply: PredefinedReply): UiRowAction[] => {
+const replyActions = (reply: PredefinedReply): UiMenuAction[] => {
   /**
    * Opens this reply's in-place edit form.
    *
@@ -442,10 +442,8 @@ const replyActions = (reply: PredefinedReply): UiRowAction[] => {
         <UiText tone="secondary" size="md" class="font-medium">{{ t('support.predefinedReplies.topLevel') }}</UiText>
       </UiStack>
 
-      <UiSkeleton v-if="store.loading" :lines="3" data-testid="predefined-replies-loading" />
-
-      <UiCard v-else-if="store.categories.length > 0" data-testid="predefined-replies-categories">
-        <UiTable :density="UiTableDensity.Comfortable">
+      <UiCard v-if="store.loading || store.categories.length > 0" data-testid="predefined-replies-categories">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
@@ -549,10 +547,8 @@ const replyActions = (reply: PredefinedReply): UiRowAction[] => {
         </UiStack>
       </UiCard>
 
-      <UiSkeleton v-if="store.loading" :lines="3" data-testid="predefined-replies-replies-loading" />
-
-      <UiCard v-else-if="store.replies.length > 0" data-testid="predefined-replies-replies">
-        <UiTable :density="UiTableDensity.Comfortable">
+      <UiCard v-if="store.loading || store.replies.length > 0" data-testid="predefined-replies-replies">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
@@ -636,10 +632,8 @@ const replyActions = (reply: PredefinedReply): UiRowAction[] => {
         data-testid="predefined-replies-search"
       />
 
-      <UiSkeleton v-if="searching" :lines="2" data-testid="predefined-replies-searching" />
-
-      <UiCard v-else-if="searchResults.length > 0" data-testid="predefined-replies-results">
-        <UiTable :density="UiTableDensity.Comfortable">
+      <UiCard v-if="searching || searchResults.length > 0" data-testid="predefined-replies-results">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="searching">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
@@ -685,7 +679,6 @@ const replyActions = (reply: PredefinedReply): UiRowAction[] => {
       :title="t('support.predefinedReplies.deleteCategory')"
       :message="t('support.predefinedReplies.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deletingCategory"
       :tone="UiTone.Danger"
       @confirm="handleDeleteCategory"
@@ -698,7 +691,6 @@ const replyActions = (reply: PredefinedReply): UiRowAction[] => {
       :title="t('support.predefinedReplies.deletePredefinedReply')"
       :message="t('support.predefinedReplies.areYouSureYouWant2')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deletingReply"
       :tone="UiTone.Danger"
       @confirm="handleDeleteReply"

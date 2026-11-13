@@ -84,7 +84,7 @@ describe('paymentsToDate', () => {
 })
 
 describe('balanceDue', () => {
-  it('reports what is left on a part-paid invoice — the bug this replaced', () => {
+  it('reports what is left on a part-paid invoice, the bug this replaced', () => {
     // The whole reason this file exists. `balance ?? total` rendered the full 20000 here,
     // on the screen that then asks the customer to pay.
     const partPaid = invoice({ total: 20000, amountDue: 15000, transactions: [txn(5000)] })

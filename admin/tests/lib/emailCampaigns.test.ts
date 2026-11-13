@@ -12,6 +12,7 @@ import {
   isFilterValueValid,
   newSegmentDraft,
   offeredFilterTypes,
+  segmentKey,
   segmentsFromDrafts,
 } from '@/lib/emailCampaigns'
 import { CampaignFilterType } from '@/types/emailcampaign'
@@ -151,5 +152,12 @@ describe('segment conversion', () => {
       { filterType: CampaignFilterType.AllActive, filterValue: null },
       { filterType: CampaignFilterType.Product, filterValue: '12' },
     ])
+  })
+})
+
+describe('segmentKey', () => {
+  it('names the rule and its value, and treats a missing value as empty', () => {
+    expect(segmentKey({ filterType: CampaignFilterType.Country, filterValue: 'AM' })).toBe('Country|AM')
+    expect(segmentKey({ filterType: CampaignFilterType.AllActive, filterValue: null })).toBe('AllActive|')
   })
 })

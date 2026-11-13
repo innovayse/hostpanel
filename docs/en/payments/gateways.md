@@ -25,10 +25,10 @@ The gateways shown in your admin panel depend on which plugins are installed. To
 
 Go to **Integrations**, category **Payment Gateways**. Bank Transfer and each installed gateway appear as a card showing:
 
-- **Active** — configured and enabled
-- **Inactive** — configured but not enabled
-- **Not configured** — fields required for connection are empty
-- **Plugin** badge — the integration is provided by a plugin rather than built in to the server
+- **Active**: configured and enabled
+- **Inactive**: configured but not enabled
+- **Not configured**: fields required for connection are empty
+- **Plugin** badge: the integration is provided by a plugin rather than built in to the server
 
 Click **Configure →** on a card to open the integration page.
 
@@ -107,6 +107,6 @@ Clients choose their payment method on the checkout page (for example "Pay by ba
 
 ## Screens that are not built yet
 
-- **List Disputes** — disputes will be listed here once a payment gateway reports them (coming soon).
-- **Offline Credit Card Processing** — offline card processing will be available here (coming soon).
-- **Direct Debit Processing** — a read-only report page; no actions are available.
+- **List Disputes**: disputes will be listed here once a payment gateway reports them (coming soon).
+- **Offline Credit Card Processing**: offline card processing will be available here (coming soon).
+- **Direct Debit Processing**: a read-only report page; no actions are available.

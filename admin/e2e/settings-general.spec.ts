@@ -33,7 +33,7 @@ test('editing a setting saves the new value', async ({ page }) => {
     ],
   })
 
-  await page.goto('/settings')
+  await page.goto('/settings/general')
   await expect(page.getByTestId(`setting-save-${timezone.id}`)).toHaveCount(0)
 
   await fieldOf(page, `setting-value-${timezone.id}`).fill('Asia/Yerevan')
@@ -59,7 +59,7 @@ test('a refused save shows the API sentence and keeps the draft', async ({ page 
     ],
   })
 
-  await page.goto('/settings')
+  await page.goto('/settings/general')
   await fieldOf(page, `setting-value-${timezone.id}`).fill('Asia/Nowhere')
   await page.getByTestId(`setting-save-${timezone.id}`).click()
 

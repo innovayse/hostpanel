@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 /**
- * TeamMembersList - the people with access to the account, with a confirmed "remove access".
+ * TeamMembersList: the people with access to the account, with a confirmed "remove access".
  *
  * The owner cannot be removed. A removal that the API refuses leaves its sentence in the
  * account store (shown by the invitation form); the dialog closes either way.

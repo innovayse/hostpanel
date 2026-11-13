@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 /**
- * UiCarouselDots - the pagination dots of a carousel.
+ * UiCarouselDots: the pagination dots of a carousel.
  *
  * Small round dots in a muted token; the active one stretches to a pill in the classic fill. One colour
  * logic: a dot is the current slide or it is not (no "visited" colour). Every dot is a real button with a

@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 /**
- * UiNavGroup - a titled panel of UiNavItem entries (the side menu of a detail page).
+ * UiNavGroup: a titled panel of UiNavItem entries (the side menu of a detail page).
  */
 import type { Component } from 'vue'
 

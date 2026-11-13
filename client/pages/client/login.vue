@@ -61,7 +61,7 @@
         :disabled="code.length < 6"
         data-testid="login-2fa-submit"
       >
-        {{ authStore.loading ? $t('client.login.submitting') : $t('client.login.twoFactorSubmit') }}
+        {{ $t('client.login.twoFactorSubmit') }}
       </UiButton>
       <UiButton variant="ghost" size="sm" full-width data-testid="login-2fa-cancel" @click="cancelTwoFactor">
         {{ $t('client.login.twoFactorBack') }}
@@ -96,7 +96,7 @@
         </UiLink>
       </UiStack>
       <UiButton type="submit" variant="primary" size="lg" full-width :loading="authStore.loading" data-testid="login-submit">
-        {{ authStore.loading ? $t('client.login.submitting') : $t('client.login.signIn') }}
+        {{ $t('client.login.signIn') }}
       </UiButton>
     </UiForm>
 

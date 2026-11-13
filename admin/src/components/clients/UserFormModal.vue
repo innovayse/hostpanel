@@ -29,6 +29,7 @@ import type { UserDetail } from '@/types/useraccount'
 import { ClientPermission, PERMISSION_LABELS } from '@/types/clientuser'
 import { LANGUAGE_OPTIONS } from '@/lib/constants'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -251,8 +252,8 @@ const confirmDelete = (): void => {
             <UiTableRow v-for="acc in user.accounts" :key="acc.clientId">
               <UiTableCell muted>{{ acc.clientId }}</UiTableCell>
               <UiTableCell>{{ acc.firstName }} {{ acc.lastName }}</UiTableCell>
-              <UiTableCell muted>{{ acc.companyName || '—' }}</UiTableCell>
-              <UiTableCell :muted="!acc.isOwner">{{ acc.isOwner ? '✓' : '—' }}</UiTableCell>
+              <UiTableCell muted>{{ acc.companyName || EMPTY_VALUE }}</UiTableCell>
+              <UiTableCell :muted="!acc.isOwner">{{ acc.isOwner ? '✓' : EMPTY_VALUE }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>
@@ -273,11 +274,11 @@ const confirmDelete = (): void => {
           </UiButton>
           <UiButton
             variant="primary"
-            :disabled="saving"
+            :loading="saving"
             data-testid="clients-userform-save"
             @click="handleSave"
           >
-            {{ saving ? t('shared.saving2') : t('shared.save') }}
+            {{ t('shared.save') }}
           </UiButton>
         </UiStack>
       </UiStack>
@@ -291,7 +292,6 @@ const confirmDelete = (): void => {
     :title="t('clients.userForm.deleteUser')"
     :message="t('clients.userForm.deleteMessage', { email })"
     :confirm-label="t('shared.delete')"
-    :loading-label="t('shared.deleting')"
     tone="danger"
     data-testid="clients-userform-delete-confirm"
     @confirm="confirmDelete"

@@ -58,7 +58,7 @@
 
 <script setup lang="ts">
 /**
- * UiPageHero - the opening band of a public page: aurora backdrop, corner accents, an optional
+ * UiPageHero. The opening band of a public page: aurora backdrop, corner accents, an optional
  * badge, the h1 title (with an optional gradient-highlighted word), a lead sentence, and a
  * default slot for what belongs under them (category links, a "last updated" line).
  *

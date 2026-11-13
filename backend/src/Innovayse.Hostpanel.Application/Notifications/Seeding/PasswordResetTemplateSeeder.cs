@@ -30,7 +30,7 @@ public static class PasswordResetTemplateSeeder
             Slug,
             "Sent when a password reset is requested, whether by the user or an admin.",
             [
-                new SeededEmailVersion("Reset your password — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Reset your password | {{ site.name }}", new SeededEmailCopy(
                     "en",
                     "Reset Your Password",
                     ["Click the button below to reset your password. This link will expire in 24 hours."],
@@ -38,7 +38,7 @@ public static class PasswordResetTemplateSeeder
                     "Reset Password",
                     "If you didn't request this, you can safely ignore this email.",
                     EchoButtonUrl: true)),
-                new SeededEmailVersion("Сброс пароля — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Сброс пароля | {{ site.name }}", new SeededEmailCopy(
                     "ru",
                     "Сброс пароля",
                     ["Нажмите кнопку ниже, чтобы сбросить пароль. Ссылка действует 24 часа."],
@@ -46,7 +46,7 @@ public static class PasswordResetTemplateSeeder
                     "Сбросить пароль",
                     "Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.",
                     EchoButtonUrl: true)),
-                new SeededEmailVersion("Գաղտնաբառի վերականգնում — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Գաղտնաբառի վերականգնում | {{ site.name }}", new SeededEmailCopy(
                     "hy",
                     "Գաղտնաբառի վերականգնում",
                     ["Սեղմեք ստորև կոճակը՝ գաղտնաբառը վերականգնելու համար։ Հղումը գործում է 24 ժամ։"],

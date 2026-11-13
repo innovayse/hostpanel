@@ -8,7 +8,6 @@
     },
     "pendingRestart": "Ожидает перезапуска",
     "categoryByAuthor": "{category} · автор: {author}",
-    "removing": "Удаление…",
     "remove": "Удалить",
     "details": "Подробнее",
     "refused": "Отклонён",
@@ -23,10 +22,6 @@
     "hideUpdateNotes": "Скрыть, что нового"
   },
   "pluginUploader": {
-    "dropYourPlugin": "Перетащите плагин",
-    "here": "сюда",
-    "zip": ".zip",
-    "orClickToBrowseFiles": "или нажмите, чтобы выбрать файл",
     "valueKbReadyToInstall": "{value} КБ · готово к установке",
     "installPlugin": "Установить плагин"
   },
@@ -54,7 +49,6 @@
   "restartBanner": {
     "restartRequired": "Требуется перезапуск",
     "pluginChangesWillTakeEffect": "Изменения плагинов вступят в силу после перезапуска сервера.",
-    "restarting": "Перезапуск…",
     "restartServer": "Перезапустить сервер"
   },
   "pluginSigning": {
@@ -75,6 +69,7 @@
     "fileAboveToGetStarted": "файл выше, чтобы начать",
     "zip": ".zip",
     "installedPlugins": "Установленные плагины",
+    "noPluginsMatch": "Нет установленных плагинов по этим фильтрам",
     "pluginInstalled": "Плагин установлен.",
     "pluginRemoved": "Плагин удалён.",
     "confirmRemoveTitle": "Удалить этот плагин?",
@@ -98,7 +93,7 @@
     "description": "Виджеты, которые плагины добавляют на страницы. Выберите продукты, для которых виджет показывается; оставьте пустым, чтобы действовал собственный список продуктов плагина.",
     "slot": "Слот {slot}",
     "pluginWidget": "{plugin} · {widget}",
-    "addProduct": "Добавить продукт…",
+    "addProduct": "Добавить продукт",
     "noProducts": "Продукты не выбраны: действует собственный список продуктов плагина.",
     "orphaned": "Виджет привязан к продуктам, которых больше нет, поэтому он нигде не показывается. Выберите продукты заново или очистите привязку, чтобы действовал список плагина.",
     "removeProduct": "Убрать {name}"
@@ -106,13 +101,11 @@
   "keptData": {
     "title": "Удалённые плагины с сохранёнными данными",
     "description": "При удалении плагина его настройки и данные сохраняются. Удаляйте данные, только если не будете устанавливать плагин снова.",
-    "purge": "Удалить данные",
-    "purging": "Удаление…"
+    "purge": "Удалить данные"
   },
   "pluginRegistry": {
-    "search": "Поиск по каталогу",
-    "searchLabel": "Поиск",
     "categoryPlaceholder": "Категория",
+    "search": "Поиск по каталогу",
     "allCategories": "Все категории",
     "byAuthor": "автор: {author}",
     "version": "v{version}",
@@ -122,7 +115,6 @@
     "update": "Обновить до {version}",
     "details": "Подробнее",
     "uninstall": "Удалить",
-    "installing": "Установка…",
     "installed": "Установлен {version}",
     "emptyTitle": "Плагины не найдены",
     "emptyDescription": "Попробуйте другой запрос или категорию.",

@@ -13,8 +13,8 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -138,14 +138,14 @@ const handleSubmit = (): void => {
         {{ error }}
       </UiAlert>
 
-      <UiStack direction="row" align="center" justify="end" gap="sm">
+      <UiFormActions>
         <UiButton type="button" variant="secondary" data-testid="email-template-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :disabled="saving" data-testid="email-template-save">
-          {{ saving ? t('shared.saving') : t('shared.save') }}
+        <UiButton type="submit" variant="primary" :loading="saving" data-testid="email-template-save">
+          {{ t('shared.save') }}
         </UiButton>
-      </UiStack>
+      </UiFormActions>
     </UiForm>
   </UiDialog>
 </template>

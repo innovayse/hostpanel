@@ -1,13 +1,13 @@
 {
   "seo": {
     "home": {
-      "title": "{site} - Web Hosting, Domains and Servers {'|'} Client Portal",
+      "title": "{site}: Web Hosting, Domains and Servers {'|'} Client Portal",
       "h1": "Web hosting, domains and servers with a self-service client portal",
       "description": "{site} offers web hosting, domain registration, VPS and dedicated servers with automatic setup, online billing and a client portal to manage services, invoices and support.",
       "keywords": "web hosting, domain registration, VPS, dedicated servers, SSL certificates, client portal, online billing, hosting control panel"
     },
     "contact": {
-      "title": "Contact Us - Get in Touch {'|'} {site}",
+      "title": "Contact Us: Get in Touch {'|'} {site}",
       "description": "Contact {site} for help with hosting, domains, servers or billing. Email: contact{'@'}yourdomain.com, Phone: +1 000 000 0000.",
       "keywords": "contact {site}, hosting support, billing questions, domain help, sales inquiry"
     },
@@ -17,31 +17,31 @@
       "keywords": "hosting services, VPS, dedicated servers, domains, SSL certificates, add-on services, order online"
     },
     "faq": {
-      "title": "FAQ - Frequently Asked Questions {'|'} {site}",
+      "title": "FAQ: Frequently Asked Questions {'|'} {site}",
       "description": "Find answers to frequently asked questions about {site} hosting, domains, servers, billing and your client account.",
       "keywords": "FAQ, hosting questions, domain questions, billing, invoices, support, client account"
     },
     "faqCategory": {
       "general": {
-        "title": "General FAQ - Common Questions {'|'} {site}",
+        "title": "General FAQ: Common Questions {'|'} {site}",
         "h1": "General Questions",
         "description": "Answers to the most common questions about ordering, billing, your client account and support.",
         "keywords": "general FAQ, ordering, billing, client account, support, getting started"
       },
       "products": {
-        "title": "Hosting and Services FAQ - Plans and Setup Questions {'|'} {site}",
+        "title": "Hosting and Services FAQ: Plans and Setup Questions {'|'} {site}",
         "h1": "Hosting and Service Questions",
         "description": "Answers to questions about hosting plans, domains, servers, pricing, setup and renewals.",
         "keywords": "hosting FAQ, domain FAQ, server questions, pricing, setup, renewals"
       }
     },
     "hosting": {
-      "title": "Web Hosting Plans - Fast & Reliable Hosting {'|'} {site}",
+      "title": "Web Hosting Plans: Fast & Reliable Hosting {'|'} {site}",
       "description": "Choose the right web hosting plan for your website. SSD storage, free SSL certificate and expert support. Order online and get set up automatically.",
       "keywords": "web hosting, SSD hosting, cloud hosting, web hosting plans, managed hosting, SSL hosting, hosting control panel"
     },
     "hostingPlan": {
-      "named": "{name} - Web Hosting Plan {'|'} {site}",
+      "named": "{name}: Web Hosting Plan {'|'} {site}",
       "title": "Hosting Plan Details {'|'} {site}",
       "description": "Get detailed information about our hosting plan. SSD storage, free SSL, high performance and support included.",
       "keywords": "hosting plan, web hosting, SSD storage, SSL certificate, managed hosting"

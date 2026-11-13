@@ -280,7 +280,8 @@ describe('ClassicCheckout', () => {
     await flushPromises()
 
     const button = wrapper.find('[data-testid="checkout-submit"]')
-    expect(button.text()).toBe('checkout.redirecting')
+    expect(button.text()).toBe('checkout.placeOrder')
+    expect(button.attributes('aria-busy')).toBe('true')
     expect(button.classes()).toContain('text-base')
     expect(button.classes()).not.toContain('text-lg')
     const hint = wrapper.find('[data-testid="checkout-submit-hint"]')

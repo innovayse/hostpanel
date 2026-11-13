@@ -22,6 +22,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { formatPlainAmount } from '@/lib/money'
+import { nextRowKey } from '@/lib/rowKey'
 import { CreditNoteMethod } from '@/types/creditnote'
 import type { IssueCreditNotePayload } from '@/types/creditnote'
 import type { InvoiceDetail } from '@/types/invoice'
@@ -70,15 +71,12 @@ interface FormLine {
   quantity: number | null
 }
 
-/** The next row key. */
-let nextKey = 0
-
 /**
  * Builds an empty line.
  *
  * @returns A row with no description, no price and one unit.
  */
-const emptyLine = (): FormLine => ({ key: nextKey++, description: '', unitPrice: 0, quantity: 1 })
+const emptyLine = (): FormLine => ({ key: nextRowKey(), description: '', unitPrice: 0, quantity: 1 })
 
 /** The lines being typed. */
 const lines = reactive<FormLine[]>([emptyLine()])
@@ -178,7 +176,7 @@ const useInvoiceLines = (): void => {
     0,
     lines.length,
     ...props.invoice.items.map((item) => ({
-      key: nextKey++,
+      key: nextRowKey(),
       description: item.description,
       unitPrice: item.unitPrice,
       quantity: item.quantity,

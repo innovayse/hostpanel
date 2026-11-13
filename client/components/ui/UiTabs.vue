@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 /**
- * UiTabs - a tab bar with an optional panel slot that receives the active tab value. The bar scrolls sideways when
+ * UiTabs: a tab bar with an optional panel slot that receives the active tab value. The bar scrolls sideways when
  * the tabs do not fit the width, so none is cut off on a phone.
  */
 

@@ -18,8 +18,8 @@ describe('UiIconButton', () => {
     const small = mount(UiIconButton, { props: { label: 'a', size: 'sm' } })
     const large = mount(UiIconButton, { props: { label: 'a', size: 'lg' } })
 
-    expect(small.classes()).toContain('w-7')
-    expect(large.classes()).toContain('w-10')
+    expect(small.classes()).toContain('w-8')
+    expect(large.classes()).toContain('w-12')
   })
 
   it('is disabled when asked and keeps data-testid', () => {

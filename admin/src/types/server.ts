@@ -30,6 +30,19 @@ export const ServerFillType = {
 /** Account distribution strategy for a server group. */
 export type ServerFillType = (typeof ServerFillType)[keyof typeof ServerFillType]
 
+/** Closed set of the last known connection states of a server, used by the list filter. */
+export const ServerState = {
+  /** The last connection test succeeded. */
+  Online: 'online',
+  /** The last connection test failed. */
+  Offline: 'offline',
+  /** The server has never been tested. */
+  Untested: 'untested',
+} as const
+
+/** One of the {@link ServerState} values. */
+export type ServerState = (typeof ServerState)[keyof typeof ServerState]
+
 /** Where and how a server's API is reached. */
 export interface ServerEndpoint {
   /** Hostname or IP used for API access. */

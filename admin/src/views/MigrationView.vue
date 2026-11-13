@@ -35,7 +35,6 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -284,18 +283,17 @@ onUnmounted(() => {
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="migration-feedback" />
 
-    <!-- Loading -->
-    <UiSkeleton v-if="store.loading" :lines="4" data-testid="migration-loading" />
-
-    <!-- Body: history + selected job -->
-    <UiStack v-else direction="row" align="start" gap="md" wrap>
+    <!-- Body: history + selected job; the cards stay in place while the list loads -->
+    <UiStack direction="row" align="start" gap="md" wrap>
       <!-- History -->
-      <UiCard padding="sm" class="w-full lg:w-72 shrink-0" data-testid="migration-history">
-        <UiStack gap="sm">
+      <UiCard padding="sm" class="w-full lg:w-72 shrink-0" :loading="store.loading" data-testid="migration-history">
+        <template #header>
           <UiStack direction="row" align="center" justify="between">
             <UiHeading :level="3" variant="card">{{ t('migration.migration.history') }}</UiHeading>
             <UiText v-if="store.jobs.length > 0" tone="muted" size="xs">{{ store.jobs.length }}</UiText>
           </UiStack>
+        </template>
+        <UiStack gap="sm" class="mt-3">
 
           <UiText v-if="store.jobs.length === 0" tone="muted" size="sm" data-testid="migration-history-empty">
             {{ t('migration.migration.noMigrationsYet') }}
@@ -345,7 +343,7 @@ onUnmounted(() => {
 
       <!-- Selected job -->
       <UiStack gap="md" class="min-w-0 flex-1">
-        <UiCard v-if="!store.activeJob" data-testid="migration-none-selected">
+        <UiCard v-if="!store.activeJob && !store.loading" data-testid="migration-none-selected">
           <UiEmptyState
             :title="t('migration.migration.noMigrationSelected')"
             :description="t('migration.migration.createANewMigrationOr')"
@@ -358,7 +356,7 @@ onUnmounted(() => {
           </UiEmptyState>
         </UiCard>
 
-        <MigrationProgressCard v-if="store.activeJob" :job="store.activeJob" />
+        <MigrationProgressCard v-if="store.activeJob || store.loading" :job="store.activeJob" />
 
         <!-- Setup instructions (pending jobs only) -->
         <UiCard v-if="store.activeJob?.status === MigrationStatus.Pending" padding="md" data-testid="migration-setup">
@@ -503,7 +501,6 @@ onUnmounted(() => {
       :title="t('migration.migration.deleteMigration')"
       :message="t('migration.migration.confirmDeleteMigration', { id: deleteTarget?.id ?? 0 })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       :tone="UiTone.Danger"
       data-testid="migration-delete-dialog"

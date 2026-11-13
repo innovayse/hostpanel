@@ -149,34 +149,34 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 
 The backend list above covers the core error and validation messages. The following places also need updating for a complete language addition:
 
-**Required — the language will not work without these:**
+**Required (the language will not work without these):**
 
 - `SupportedLanguages.All` and `LocaleOptions.SupportedLocales` as shown above.
 
 **Client portal extras (required for a fully translated storefront):**
 
-- `client/composables/useSeo.ts` — add an entry to `ogLocaleMap` so Open Graph and hreflang tags use the correct locale code, e.g. `[AppLocale.Fr]: 'fr_FR'`.
-- `client/server/utils/clientMenuLabels.ts` — add a new `[AppLocale.Fr]: { ... }` block to `CLIENT_MENU_MESSAGES` with the translated labels for the SSO widget menu.
+- `client/composables/useSeo.ts`: add an entry to `ogLocaleMap` so Open Graph and hreflang tags use the correct locale code, e.g. `[AppLocale.Fr]: 'fr_FR'`.
+- `client/server/utils/clientMenuLabels.ts`: add a new `[AppLocale.Fr]: { ... }` block to `CLIENT_MENU_MESSAGES` with the translated labels for the SSO widget menu.
 
 **Admin panel extras (required):**
 
-- `admin/src/lib/constants.ts` — add an entry to the `LANGUAGE_OPTIONS` list for the new language so it appears in the language selectors of the client and user forms. Its label reads a new key, `clients.clientForm.french` (use the name of your language), which you add to every language file of `admin/src/locales/<lang>/clients.json`, next to `english`, `russian` and `armenian`.
-- `admin/src/lib/storefrontTranslations.ts` — add the new locale to `STOREFRONT_LOCALES` and add a `[MessageLanguage.Fr]: blank()` entry to `blankTranslations` so storefront content forms carry a tab for the new language.
-- `admin/src/composables/useStorefrontLocaleTabs.ts` — add a tab entry for the new locale to the `tabs` computed array.
+- `admin/src/lib/constants.ts`: add an entry to the `LANGUAGE_OPTIONS` list for the new language so it appears in the language selectors of the client and user forms. Its label reads a new key, `clients.clientForm.french` (use the name of your language), which you add to every language file of `admin/src/locales/<lang>/clients.json`, next to `english`, `russian` and `armenian`.
+- `admin/src/lib/storefrontTranslations.ts`: add the new locale to `STOREFRONT_LOCALES` and add a `[MessageLanguage.Fr]: blank()` entry to `blankTranslations` so storefront content forms carry a tab for the new language.
+- `admin/src/composables/useStorefrontLocaleTabs.ts`: add a tab entry for the new locale to the `tabs` computed array.
 
 **Settings with a language suffix (optional):**
 
 The contact address, the working hours, the live chat token and the company story of the About page (`portal.about.text`) each have one value per language, for example `portal.contact.address.ru` and `portal.chat.website_token.hy`. A language without its own value uses the default one, so a new language works without any of this. Add them only if the operator needs a different address, hours, chat token or company story for the new language. Then every one of these places needs the new key, with the same suffix:
 
-- `backend/src/Innovayse.Hostpanel.Domain/Settings/PortalSettingKeys.cs` — the constants, for example `ContactAddressFr = "portal.contact.address.fr"`, and their entries in the list of defaults, with an empty default and a description such as "Office address for French visitors. Empty uses the default address."
-- `admin/src/types/setting.ts` — the `SettingKey` entries (`ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`) and their `SettingEnv` entries, for example `CONTACT_ADDRESS_FR`. The company story has no field in the admin panel, so it needs nothing here.
-- `client/constants/portalSettingKey.ts` — the same keys in the `PortalSettingKey` enum.
-- `client/constants/publicPortalSettingKeys.ts` — the keys in the allow-lists, so the storefront endpoint exposes them: the contact keys, the chat token key and the company story key.
-- `client/nuxt.config.ts` — the runtime config entries `portalContactAddressFr`, `portalContactHoursFr`, `portalChatWebsiteTokenFr` and `portalAboutTextFr`, each read from `NUXT_PUBLIC_PORTAL_..._FR`. They are the values a deployment sets in the environment.
-- `client/composables/useContactDetails.ts` (address), `client/composables/useContactHours.ts` (hours), `client/composables/useAboutText.ts` (company story) and `client/composables/useLocalizedSetting.ts` — a branch for the new locale, so the right value is read.
-- `client/plugins/live-chat.ts` — the token branch, and `languageOf` for the language name the chat widget shows.
-- `admin/src/components/settings/StorefrontContentCard.vue` (address and hours fields) and `admin/src/components/settings/TrackingChatCard.vue` (token field) — one field for each new key.
-- The admin locale files — the labels of those fields: `settings.storefrontContent.contactAddressFr`, `settings.storefrontContent.contactHoursFr` (each with `label` and `hint`) and `settings.trackingChat.chat.tokenFr`, in every language of `admin/src/locales/<lang>/settings.json`.
+- `backend/src/Innovayse.Hostpanel.Domain/Settings/PortalSettingKeys.cs`: the constants, for example `ContactAddressFr = "portal.contact.address.fr"`, and their entries in the list of defaults, with an empty default and a description such as "Office address for French visitors. Empty uses the default address."
+- `admin/src/types/setting.ts`: the `SettingKey` entries (`ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`) and their `SettingEnv` entries, for example `CONTACT_ADDRESS_FR`. The company story has no field in the admin panel, so it needs nothing here.
+- `client/constants/portalSettingKey.ts`: the same keys in the `PortalSettingKey` enum.
+- `client/constants/publicPortalSettingKeys.ts`: the keys in the allow-lists, so the storefront endpoint exposes them: the contact keys, the chat token key and the company story key.
+- `client/nuxt.config.ts`: the runtime config entries `portalContactAddressFr`, `portalContactHoursFr`, `portalChatWebsiteTokenFr` and `portalAboutTextFr`, each read from `NUXT_PUBLIC_PORTAL_..._FR`. They are the values a deployment sets in the environment.
+- `client/composables/useContactDetails.ts` (address), `client/composables/useContactHours.ts` (hours), `client/composables/useAboutText.ts` (company story) and `client/composables/useLocalizedSetting.ts`, a branch for the new locale, so the right value is read.
+- `client/plugins/live-chat.ts`: the token branch, and `languageOf` for the language name the chat widget shows.
+- `admin/src/components/settings/StorefrontContentCard.vue` (address and hours fields) and `admin/src/components/settings/TrackingChatCard.vue` (token field), one field for each new key.
+- The admin locale files: the labels of those fields: `settings.storefrontContent.contactAddressFr`, `settings.storefrontContent.contactHoursFr` (each with `label` and `hint`) and `settings.trackingChat.chat.tokenFr`, in every language of `admin/src/locales/<lang>/settings.json`.
 
 The public demo has its own sample values in `DemoPortalSettingsSeeder.cs`. Add the new language there only if the demo should show it.
 

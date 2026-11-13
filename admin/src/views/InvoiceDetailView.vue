@@ -11,7 +11,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import InvoiceCreditTab from '@/components/billing/InvoiceCreditTab.vue'
 import InvoiceCreditNotesTab from '@/components/billing/InvoiceCreditNotesTab.vue'
+import InvoiceFactTiles from '@/components/billing/InvoiceFactTiles.vue'
 import InvoiceFulfilmentTab from '@/components/billing/InvoiceFulfilmentTab.vue'
+import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
 import InvoiceNotesTab from '@/components/billing/InvoiceNotesTab.vue'
 import InvoiceOptionsTab from '@/components/billing/InvoiceOptionsTab.vue'
 import InvoicePaymentTab from '@/components/billing/InvoicePaymentTab.vue'
@@ -22,10 +24,12 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
+import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceOpenAction, InvoiceTab, InvoiceStatus } from '@/types/invoice'
@@ -154,7 +158,25 @@ watch(invoiceId, load)
       @retry="load"
     />
 
-    <UiSkeleton v-if="invoice === null && store.loading" shape="block" data-testid="billing-invoice-loading" />
+    <UiStack v-if="invoice === null && store.loading" aria-busy="true" data-testid="billing-invoice-loading">
+      <UiTabs v-model="activeTab" :items="tabs" />
+      <InvoiceFactTiles :invoice="null" />
+      <UiCard padding="md">
+        <UiStack gap="lg" aria-hidden="true">
+          <UiStack direction="row" gap="md" justify="between" align="start" wrap>
+            <UiStack gap="xs">
+              <UiText tone="muted" size="sm">{{ t('shared.clientName') }}</UiText>
+              <UiSkeletonBar class="h-7 w-56 rounded-md" />
+            </UiStack>
+            <UiStack gap="xs" align="end">
+              <UiSkeletonBar class="h-5 w-20 rounded-full" />
+              <UiSkeletonBar class="h-3.5 w-40 rounded-md" />
+            </UiStack>
+          </UiStack>
+        </UiStack>
+      </UiCard>
+      <InvoiceItemsSection :invoice="null" loading :readonly="!manageMode" />
+    </UiStack>
 
     <template v-if="invoice !== null">
       <UiAlert v-if="showDraftNotice" variant="info" data-testid="billing-invoice-draft-banner">

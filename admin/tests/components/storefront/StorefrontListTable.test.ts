@@ -50,7 +50,6 @@ const baseProps = {
   addLabel: 'Add widget',
   addTo: '/storefront/faqs/create',
   editTo: (item: { id: number }): string => `/storefront/faqs/${item.id}/edit`,
-  loadingLabel: 'Loading widgets...',
   emptyLabel: 'No widgets.',
   deleteTitle: 'Delete widget',
   editLabel: 'Edit widget',
@@ -118,21 +117,22 @@ describe('StorefrontListTable', () => {
     expect(wrapper.text()).toContain('No widgets.')
   })
 
-  it('shows the loading caption and the load error instead of the table', async () => {
+  it('keeps the table header and shows skeleton rows while loading, and the load error instead of the table', async () => {
     const loading = await mountScreen(hostWith({ loading: true }))
-    expect(loading.wrapper.text()).toContain('Loading widgets...')
+    expect(loading.wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(loading.wrapper.find('thead').exists()).toBe(true)
     expect(loading.wrapper.find('[data-testid^="widget-row-"]').exists()).toBe(false)
 
     const failed = await mountScreen(hostWith({ error: 'Could not load.' }))
     expect(failed.wrapper.get('[data-testid="widgets-error"]').text()).toBe('Could not load.')
   })
 
-  it('shows the action error and the saving-order notice', async () => {
+  it('shows the action error and the saving-order loader', async () => {
     const { wrapper } = await mountScreen(hostWith({ actionError: 'Refused.', savingOrder: true }))
 
     expect(wrapper.get('[data-testid="widgets-action-error"]').text()).toBe('Refused.')
     expect(wrapper.get('[data-testid="widgets-action-error"]').attributes('data-tone')).toBe('danger')
-    expect(wrapper.get('[data-testid="widgets-saving-order"]').text()).toBe('Saving order...')
+    expect(wrapper.get('[data-testid="widgets-saving-order"]').attributes('aria-busy')).toBe('true')
   })
 
   it('confirms a finished delete or reorder in the outcome line', async () => {

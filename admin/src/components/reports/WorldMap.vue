@@ -100,7 +100,7 @@ const caption = computed<string>(() => {
     return t('reports.clientsByCountry.mapHint')
   }
   const clients = t('reports.common.clientCount', { count: marker.count }, marker.count)
-  return `${marker.city}, ${reportCountryName(marker.country, locale.value)} — ${clients}`
+  return `${marker.city}, ${reportCountryName(marker.country, locale.value)}: ${clients}`
 })
 </script>
 

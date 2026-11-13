@@ -10,7 +10,7 @@ import { useClientSummaryStore } from '@/stores/clientSummary'
 import { useClientsStore } from '@/stores/clients'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { BILLING_CYCLE_OPTIONS, QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
 import ClientExternalAccountCard from '@/components/clients/ClientExternalAccountCard.vue'
@@ -22,8 +22,10 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -38,6 +40,7 @@ import type { ServiceListItem } from '@/types/service'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
+import type { ClientInvoiceStatuses, ClientRecordCounts, ClientSummaryData } from '@/types/client'
 import type { CurrencyAmount } from '@/types/currency'
 import { PluginSlotId } from '@/types/pluginslot'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -48,9 +51,6 @@ import { ClientSection, clientItemPath, clientSectionPath, clientTicketNewPath, 
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
-
-/** Empty-value dash. */
-const DASH = '—'
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -72,6 +72,9 @@ const client = computed(() => clientsStore.current)
 
 /** Shorthand for the summary data. */
 const summary = computed(() => summaryStore.summary)
+
+/** True while the summary is read for the first time: every card keeps its heading and captions and draws its values as placeholders. */
+const initialLoading = computed<boolean>(() => summaryStore.loading && summary.value === null)
 
 /**
  * Billing currency of the client, used only to print a zero for a figure the client has no records
@@ -100,8 +103,8 @@ const savingNotes = ref(false)
 interface InfoRow {
   /** Translated caption. */
   label: string
-  /** Value text. */
-  value: string
+  /** Value text; null while it is still loading. */
+  value: string | null
 }
 
 /** One yes/no line of the "other information" card. */
@@ -110,8 +113,8 @@ interface FlagRow {
   label: string
   /** Whether the flag is on. */
   on: boolean
-  /** Text shown for the flag. */
-  text: string
+  /** Text shown for the flag; null while it is still loading. */
+  text: string | null
 }
 
 /**
@@ -122,11 +125,11 @@ interface FlagRow {
  */
 const computeDuration = (iso: string | null | undefined): string => {
   if (!iso) {
-    return DASH
+    return EMPTY_VALUE
   }
   const start = new Date(iso)
   if (isNaN(start.getTime())) {
-    return DASH
+    return EMPTY_VALUE
   }
   const now = new Date()
   let years = now.getFullYear() - start.getFullYear()
@@ -148,21 +151,18 @@ const computeDuration = (iso: string | null | undefined): string => {
 /** Personal and address lines of the client. */
 const clientInfoRows = computed<InfoRow[]>(() => {
   const c = client.value
-  if (!c) {
-    return []
-  }
   return [
-    { label: t('shared.firstName'), value: c.firstName || DASH },
-    { label: t('shared.lastName'), value: c.lastName || DASH },
-    { label: t('shared.companyName'), value: c.companyName || DASH },
-    { label: t('shared.emailAddress'), value: c.email || DASH },
-    { label: t('shared.phoneNumber'), value: c.phone || DASH },
-    { label: t('shared.address1'), value: c.address.street || DASH },
-    { label: t('shared.address2'), value: c.address.address2 || DASH },
-    { label: t('shared.city'), value: c.address.city || DASH },
-    { label: t('clients.clientSummary.stateRegion'), value: c.address.state || DASH },
-    { label: t('shared.postcode'), value: c.address.postCode || DASH },
-    { label: t('shared.country'), value: c.address.country || DASH },
+    { label: t('shared.firstName'), value: c ? c.firstName || EMPTY_VALUE : null },
+    { label: t('shared.lastName'), value: c ? c.lastName || EMPTY_VALUE : null },
+    { label: t('shared.companyName'), value: c ? c.companyName || EMPTY_VALUE : null },
+    { label: t('shared.emailAddress'), value: c ? c.email || EMPTY_VALUE : null },
+    { label: t('shared.phoneNumber'), value: c ? c.phone || EMPTY_VALUE : null },
+    { label: t('shared.address1'), value: c ? c.address.street || EMPTY_VALUE : null },
+    { label: t('shared.address2'), value: c ? c.address.address2 || EMPTY_VALUE : null },
+    { label: t('shared.city'), value: c ? c.address.city || EMPTY_VALUE : null },
+    { label: t('clients.clientSummary.stateRegion'), value: c ? c.address.state || EMPTY_VALUE : null },
+    { label: t('shared.postcode'), value: c ? c.address.postCode || EMPTY_VALUE : null },
+    { label: t('shared.country'), value: c ? c.address.country || EMPTY_VALUE : null },
   ]
 })
 
@@ -174,13 +174,18 @@ const clientInfoRows = computed<InfoRow[]>(() => {
  * @param text - Text shown for the flag.
  * @returns The line.
  */
-const flag = (label: string, on: boolean, text: string): FlagRow => ({ label, on, text })
+const flag = (label: string, on: boolean, text: string | null): FlagRow => ({ label, on, text })
 
 /** Yes/no lines of the "other information" card. */
 const flagRows = computed<FlagRow[]>(() => {
   const c = client.value
   if (!c) {
-    return []
+    return [
+      flag(t('shared.taxExempt'), false, null),
+      flag(t('clients.clientSummary.autoCcProcessing'), false, null),
+      flag(t('clients.clientSummary.overdueReminders'), false, null),
+      flag(t('clients.clientSummary.twoFactorAuth'), false, null),
+    ]
   }
   /**
    * Translates a boolean.
@@ -201,9 +206,9 @@ const flagRows = computed<FlagRow[]>(() => {
 interface InvoiceRow {
   /** Translated caption. */
   label: string
-  /** Number of invoices. */
-  count: number
-  /** Sum of the invoices, one text per currency. */
+  /** Number of invoices; null while it is still loading. */
+  count: number | null
+  /** Sum of the invoices, one text per currency; empty while it is still loading. */
   totals: string[]
 }
 
@@ -215,67 +220,137 @@ interface AmountRow {
   values: string[]
 }
 
-/** Invoice status lines of the billing card. */
+/** Invoice status lines of the billing card: the caption key and the status bucket each line reads. */
+const INVOICE_LINES: { label: string; status: keyof ClientInvoiceStatuses }[] = [
+  { label: 'clients.clientSummary.paid', status: 'paid' },
+  { label: 'clients.clientSummary.draft', status: 'draft' },
+  { label: 'clients.clientSummary.unpaidDue', status: 'unpaid' },
+  { label: 'clients.clientSummary.overdue', status: 'overdue' },
+  { label: 'clients.clientSummary.cancelled', status: 'cancelled' },
+  { label: 'clients.clientSummary.partiallyRefunded', status: 'partiallyRefunded' },
+  { label: 'clients.clientSummary.refunded', status: 'refunded' },
+]
+
+/** Invoice status lines of the billing card; the figures stay empty while the summary loads. */
 const invoiceRows = computed<InvoiceRow[]>(() => {
-  const s = summary.value
-  if (!s) {
-    return []
-  }
-  return [
-    { label: t('clients.clientSummary.paid'), count: s.invoices.paid.count, totals: amountTexts(s.invoices.paid.totals) },
-    { label: t('clients.clientSummary.draft'), count: s.invoices.draft.count, totals: amountTexts(s.invoices.draft.totals) },
-    { label: t('clients.clientSummary.unpaidDue'), count: s.invoices.unpaid.count, totals: amountTexts(s.invoices.unpaid.totals) },
-    { label: t('clients.clientSummary.overdue'), count: s.invoices.overdue.count, totals: amountTexts(s.invoices.overdue.totals) },
-    { label: t('clients.clientSummary.cancelled'), count: s.invoices.cancelled.count, totals: amountTexts(s.invoices.cancelled.totals) },
-    { label: t('clients.clientSummary.partiallyRefunded'), count: s.invoices.partiallyRefunded.count, totals: amountTexts(s.invoices.partiallyRefunded.totals) },
-    { label: t('clients.clientSummary.refunded'), count: s.invoices.refunded.count, totals: amountTexts(s.invoices.refunded.totals) },
-  ]
+  const invoices = summary.value?.invoices
+  return INVOICE_LINES.map(({ label, status }) => ({
+    label: t(label),
+    count: invoices ? invoices[status].count : null,
+    totals: invoices ? amountTexts(invoices[status].totals) : [],
+  }))
 })
 
-/** Income lines of the billing card. */
+/** Income lines of the billing card: the caption key and the amounts each line reads. */
+const INCOME_LINES: { label: string; amounts: (data: ClientSummaryData) => CurrencyAmount[] }[] = [
+  {
+    label: 'clients.clientSummary.grossRevenue',
+    /**
+     * Gross revenue per currency.
+     *
+     * @param data - The loaded summary.
+     * @returns The gross revenue amounts.
+     */
+    amounts: data => data.transactions.grossRevenue,
+  },
+  {
+    label: 'clients.clientSummary.clientExpenses',
+    /**
+     * Client expenses per currency.
+     *
+     * @param data - The loaded summary.
+     * @returns The expense amounts.
+     */
+    amounts: data => data.transactions.clientExpenses,
+  },
+  {
+    label: 'clients.clientSummary.netIncome',
+    /**
+     * Net income per currency.
+     *
+     * @param data - The loaded summary.
+     * @returns The net income amounts.
+     */
+    amounts: data => data.transactions.netIncome,
+  },
+  {
+    label: 'clients.clientSummary.creditBalance',
+    /**
+     * The credit balance, a single amount.
+     *
+     * @param data - The loaded summary.
+     * @returns The credit balance as a one-element list.
+     */
+    amounts: data => [data.creditBalance],
+  },
+]
+
+/** Income lines of the billing card; the amounts stay empty while the summary loads. */
 const incomeRows = computed<AmountRow[]>(() => {
-  const s = summary.value
-  if (!s) {
-    return []
-  }
-  return [
-    { label: t('clients.clientSummary.grossRevenue'), values: amountTexts(s.transactions.grossRevenue) },
-    { label: t('clients.clientSummary.clientExpenses'), values: amountTexts(s.transactions.clientExpenses) },
-    { label: t('clients.clientSummary.netIncome'), values: amountTexts(s.transactions.netIncome) },
-    { label: t('clients.clientSummary.creditBalance'), values: amountTexts([s.creditBalance]) },
-  ]
+  const data = summary.value
+  return INCOME_LINES.map(({ label, amounts }) => ({
+    label: t(label),
+    values: data ? amountTexts(amounts(data)) : [],
+  }))
 })
 
-/** Count lines of the products card. */
+/** Count lines of the products card: the caption key and the value text each line reads. */
+const COUNT_LINES: { label: string; text: (counts: ClientRecordCounts) => string }[] = [
+  {
+    label: 'clients.clientSummary.activeServices',
+    /**
+     * Active over total services.
+     *
+     * @param counts - The record counts of the summary.
+     * @returns The translated "active of total" text.
+     */
+    text: counts => t('clients.clientSummary.activeservicescountTotalservicescountTotal', {
+      activeServicesCount: counts.activeServicesCount,
+      totalServicesCount: counts.totalServicesCount,
+    }),
+  },
+  {
+    label: 'shared.domains',
+    /**
+     * Total domains.
+     *
+     * @param counts - The record counts of the summary.
+     * @returns The domain count as text.
+     */
+    text: counts => String(counts.totalDomainsCount),
+  },
+  {
+    label: 'clients.clientSummary.acceptedQuotes',
+    /**
+     * Accepted over total quotes.
+     *
+     * @param counts - The record counts of the summary.
+     * @returns The translated "accepted of total" text.
+     */
+    text: counts => t('clients.clientSummary.acceptedquotescountTotalquotescountTotal', {
+      acceptedQuotesCount: counts.acceptedQuotesCount,
+      totalQuotesCount: counts.totalQuotesCount,
+    }),
+  },
+  {
+    label: 'clients.clientSummary.openTickets',
+    /**
+     * Open over total tickets.
+     *
+     * @param counts - The record counts of the summary.
+     * @returns The translated "open of total" text.
+     */
+    text: counts => t('clients.clientSummary.openticketscountTotalticketscountTotal', {
+      openTicketsCount: counts.openTicketsCount,
+      totalTicketsCount: counts.totalTicketsCount,
+    }),
+  },
+]
+
+/** Count lines of the products card; the values stay empty while the summary loads. */
 const countRows = computed<InfoRow[]>(() => {
-  const s = summary.value
-  if (!s) {
-    return []
-  }
-  return [
-    {
-      label: t('clients.clientSummary.activeServices'),
-      value: t('clients.clientSummary.activeservicescountTotalservicescountTotal', {
-        activeServicesCount: s.counts.activeServicesCount,
-        totalServicesCount: s.counts.totalServicesCount,
-      }),
-    },
-    { label: t('shared.domains'), value: String(s.counts.totalDomainsCount) },
-    {
-      label: t('clients.clientSummary.acceptedQuotes'),
-      value: t('clients.clientSummary.acceptedquotescountTotalquotescountTotal', {
-        acceptedQuotesCount: s.counts.acceptedQuotesCount,
-        totalQuotesCount: s.counts.totalQuotesCount,
-      }),
-    },
-    {
-      label: t('clients.clientSummary.openTickets'),
-      value: t('clients.clientSummary.openticketscountTotalticketscountTotal', {
-        openTicketsCount: s.counts.openTicketsCount,
-        totalTicketsCount: s.counts.totalTicketsCount,
-      }),
-    },
-  ]
+  const counts = summary.value?.counts
+  return COUNT_LINES.map(({ label, text }) => ({ label: t(label), value: counts ? text(counts) : null }))
 })
 
 /** The outcome line of the last notes save, shown under the Save button. */
@@ -381,7 +456,7 @@ const openQuote = (id: number): void => {
  * @param service - The service row.
  * @returns The action list passed to UiRowActions.
  */
-const serviceActions = (service: ServiceListItem): UiRowAction[] => [
+const serviceActions = (service: ServiceListItem): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `client-summary-service-open-${service.id}`,
@@ -402,7 +477,7 @@ const serviceActions = (service: ServiceListItem): UiRowAction[] => [
  * @param domain - The domain row.
  * @returns The action list passed to UiRowActions.
  */
-const domainActions = (domain: DomainRegistration): UiRowAction[] => [
+const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `client-summary-domain-open-${domain.id}`,
@@ -423,7 +498,7 @@ const domainActions = (domain: DomainRegistration): UiRowAction[] => [
  * @param quote - The quote row.
  * @returns The action list passed to UiRowActions.
  */
-const quoteActions = (quote: QuoteListItem): UiRowAction[] => [
+const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
   {
     label: t('shared.edit'),
     testid: `client-summary-quote-open-${quote.id}`,
@@ -472,53 +547,57 @@ onMounted(() => {
       @retry="summaryStore.fetchAll(clientId)"
     />
 
-    <UiStack v-if="summaryStore.loading && !summary" data-testid="client-summary-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientSummary.loadingSummary') }}</UiText>
-    </UiStack>
-
     <template v-else>
-      <UiGrid :columns="3">
-        <UiCard v-if="client" padding="md" data-testid="client-summary-info">
+      <UiGrid :columns="3" :aria-busy="initialLoading ? 'true' : undefined" :data-testid="initialLoading ? 'client-summary-loading' : undefined">
+        <UiCard v-if="client || initialLoading" padding="md" data-testid="client-summary-info">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.clientInformation') }}</UiHeading>
             <UiStack gap="sm">
               <UiStack v-for="row in clientInfoRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ row.value }}</UiText>
+                <UiSkeletonBar v-if="row.value === null" class="h-4 w-28 rounded-md" aria-hidden="true" />
+                <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ row.value }}</UiText>
               </UiStack>
             </UiStack>
           </UiStack>
         </UiCard>
 
-        <UiCard v-if="client" padding="md" data-testid="client-summary-other">
+        <UiCard v-if="client || initialLoading" padding="md" data-testid="client-summary-other">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.otherInformation') }}</UiHeading>
             <UiStack gap="sm">
               <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('shared.status') }}</UiText>
-                <UiBadge :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
+                <UiSkeletonBar v-if="!client" class="h-5 w-16 rounded-full" aria-hidden="true" />
+                <UiBadge v-else :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
               </UiStack>
               <UiStack direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('clients.clientSummary.signupDate') }}</UiText>
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ formatDate(client.createdAt) }}</UiText>
+                <UiSkeletonBar v-if="!client" class="h-4 w-24 rounded-md" aria-hidden="true" />
+                <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ formatDate(client.createdAt) }}</UiText>
               </UiStack>
               <UiStack direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('clients.clientSummary.clientFor') }}</UiText>
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ computeDuration(client.createdAt) }}</UiText>
+                <UiSkeletonBar v-if="!client" class="h-4 w-24 rounded-md" aria-hidden="true" />
+                <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ computeDuration(client.createdAt) }}</UiText>
               </UiStack>
               <UiStack v-for="row in flagRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
-                <UiText :tone="row.on ? UiTextTone.Success : UiTextTone.Danger" :size="UiTextSize.Md">{{ row.text }}</UiText>
+                <UiSkeletonBar v-if="row.text === null" class="h-4 w-12 rounded-md" aria-hidden="true" />
+                <UiText v-else :tone="row.on ? UiTextTone.Success : UiTextTone.Danger" :size="UiTextSize.Md">{{ row.text }}</UiText>
               </UiStack>
             </UiStack>
           </UiStack>
         </UiCard>
 
-        <UiCard v-if="client" padding="md" data-testid="client-summary-contacts">
+        <UiCard v-if="client || initialLoading" padding="md" data-testid="client-summary-contacts">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.contacts') }}</UiHeading>
-            <UiStack v-if="client.contacts.length > 0">
+            <UiStack v-if="!client" gap="sm" aria-hidden="true">
+              <UiSkeletonBar class="h-4 w-40 rounded-md" />
+              <UiSkeletonBar class="h-4 w-32 rounded-md" />
+            </UiStack>
+            <UiStack v-else-if="client.contacts.length > 0">
               <UiStack
                 v-for="contact in client.contacts"
                 :key="contact.id"
@@ -547,15 +626,17 @@ onMounted(() => {
           </UiStack>
         </UiCard>
 
-        <UiCard v-if="summary" padding="md" data-testid="client-summary-billing">
+        <UiCard v-if="summary || initialLoading" padding="md" data-testid="client-summary-billing">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.invoicesBilling') }}</UiHeading>
             <UiStack gap="sm">
               <UiStack v-for="row in invoiceRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
                 <UiStack direction="row" gap="md">
-                  <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="w-6 text-right tabular-nums" data-testid="client-summary-billing-count">{{ row.count }}</UiText>
-                  <UiStack align="end" gap="xs" class="min-w-[5.5rem]" data-testid="client-summary-billing-amount">
+                  <UiSkeletonBar v-if="row.count === null" class="h-4 w-6 rounded-md" aria-hidden="true" />
+                  <UiText v-else :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="w-6 text-right tabular-nums" data-testid="client-summary-billing-count">{{ row.count }}</UiText>
+                  <UiSkeletonBar v-if="row.count === null" class="h-4 w-20 rounded-md" aria-hidden="true" />
+                  <UiStack v-else align="end" gap="xs" class="min-w-[5.5rem]" data-testid="client-summary-billing-amount">
                     <UiText v-for="text in row.totals" :key="text" :tone="UiTextTone.Primary" :size="UiTextSize.Md" class="tabular-nums">{{ text }}</UiText>
                   </UiStack>
                 </UiStack>
@@ -564,7 +645,8 @@ onMounted(() => {
             <UiStack gap="sm">
               <UiStack v-for="row in incomeRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
-                <UiStack align="end" gap="xs" class="min-w-[5.5rem]">
+                <UiSkeletonBar v-if="row.values.length === 0" class="h-4 w-20 rounded-md" aria-hidden="true" />
+                <UiStack v-else align="end" gap="xs" class="min-w-[5.5rem]">
                   <UiText v-for="text in row.values" :key="text" :tone="UiTextTone.Primary" :size="UiTextSize.Md" class="tabular-nums">{{ text }}</UiText>
                 </UiStack>
               </UiStack>
@@ -583,13 +665,14 @@ onMounted(() => {
           </UiStack>
         </UiCard>
 
-        <UiCard v-if="summary" padding="md" data-testid="client-summary-products">
+        <UiCard v-if="summary || initialLoading" padding="md" data-testid="client-summary-products">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.productsServices') }}</UiHeading>
             <UiStack gap="sm">
               <UiStack v-for="row in countRows" :key="row.label" direction="row" :justify="UiJustify.Between" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ row.label }}</UiText>
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ row.value }}</UiText>
+                <UiSkeletonBar v-if="row.value === null" class="h-4 w-16 rounded-md" aria-hidden="true" />
+                <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ row.value }}</UiText>
               </UiStack>
             </UiStack>
             <UiStack direction="row" wrap>
@@ -603,10 +686,14 @@ onMounted(() => {
           </UiStack>
         </UiCard>
 
-        <UiCard v-if="summary" padding="md" data-testid="client-summary-emails">
+        <UiCard v-if="summary || initialLoading" padding="md" data-testid="client-summary-emails">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.recentEmails') }}</UiHeading>
-            <UiStack v-if="summary.recentEmails.length > 0" gap="sm">
+            <UiStack v-if="!summary" gap="sm" aria-hidden="true">
+              <UiSkeletonBar class="h-4 w-full rounded-md" />
+              <UiSkeletonBar class="h-4 w-2/3 rounded-md" />
+            </UiStack>
+            <UiStack v-else-if="summary.recentEmails.length > 0" gap="sm">
               <UiStack v-for="email in summary.recentEmails" :key="email.id" direction="row" gap="sm">
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ formatDate(email.sentAt) }}</UiText>
                 <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ email.subject }}</UiText>
@@ -625,10 +712,12 @@ onMounted(() => {
           </UiStack>
         </UiCard>
 
-        <UiCard v-if="client" padding="md" data-testid="client-summary-notes">
+        <UiCard v-if="client || initialLoading" padding="md" data-testid="client-summary-notes">
           <UiStack>
             <UiHeading :level="2" variant="card">{{ t('shared.adminNotes') }}</UiHeading>
+            <UiSkeletonBar v-if="!client" class="h-32 w-full rounded-control" aria-hidden="true" />
             <UiTextarea
+              v-else
               v-model="adminNotes"
               rows="6"
               :placeholder="t('clients.clientSummary.addNotesAboutThisClient')"
@@ -638,11 +727,12 @@ onMounted(() => {
               <UiButton
                 type="button"
                 :variant="UiButtonVariant.Primary"
-                :disabled="savingNotes"
+                :loading="savingNotes"
+                :disabled="!client"
                 data-testid="client-summary-notes-save"
                 @click="saveNotes"
               >
-                {{ savingNotes ? t('shared.saving') : t('shared.save') }}
+                {{ t('shared.save') }}
               </UiButton>
             </UiStack>
             <UiStatusMessage :message="notesFeedback.message.value" :tone="notesFeedbackTone" data-testid="client-summary-notes-feedback" />
@@ -650,10 +740,11 @@ onMounted(() => {
         </UiCard>
 
         <ClientExternalAccountCard
-          v-if="client"
+          v-if="client || initialLoading"
           v-model:provider="externalProvider"
           v-model:account-id="externalAccountId"
-          :linked="client.externalAccount ?? null"
+          :linked="client?.externalAccount ?? null"
+          :loading="initialLoading"
           :saving="clientsStore.externalAccountSaving"
           :error="clientsStore.externalAccountError"
           :field-errors="clientsStore.externalAccountFieldErrors"
@@ -665,16 +756,19 @@ onMounted(() => {
       </UiGrid>
 
       <UiStack>
-        <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-          <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.productsServices2') }}</UiHeading>
-          <UiLink :to="clientSectionPath(clientId, ClientSection.Services)" :variant="UiButtonVariant.Link" data-testid="client-summary-services-all">
-            {{ t('clients.clientSummary.viewAll') }}
-          </UiLink>
-        </UiStack>
+        <UiSectionHeader :level="2" variant="card">
+          {{ t('clients.clientSummary.productsServices2') }}
+          <template #actions>
+            <UiLink :to="clientSectionPath(clientId, ClientSection.Services)" :variant="UiButtonVariant.Link" data-testid="client-summary-services-all">
+              {{ t('clients.clientSummary.viewAll') }}
+            </UiLink>
+          </template>
+        </UiSectionHeader>
         <UiCard class="overflow-x-auto">
           <UiTable
             :density="UiTableDensity.Comfortable"
             :empty="summaryStore.services.length === 0"
+            :loading="initialLoading"
             :colspan="8"
             data-testid="client-summary-services"
           >
@@ -700,7 +794,7 @@ onMounted(() => {
               >
                 <UiTableCell muted>{{ service.id }}</UiTableCell>
                 <UiTableCell>{{ service.productName }}</UiTableCell>
-                <UiTableCell muted>{{ service.domain ?? DASH }}</UiTableCell>
+                <UiTableCell muted>{{ service.domain ?? EMPTY_VALUE }}</UiTableCell>
                 <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
                 <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
@@ -720,16 +814,19 @@ onMounted(() => {
       </UiStack>
 
       <UiStack>
-        <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-          <UiHeading :level="2" variant="card">{{ t('shared.domains') }}</UiHeading>
-          <UiLink :to="clientSectionPath(clientId, ClientSection.Domains)" :variant="UiButtonVariant.Link" data-testid="client-summary-domains-all">
-            {{ t('clients.clientSummary.viewAll') }}
-          </UiLink>
-        </UiStack>
+        <UiSectionHeader :level="2" variant="card">
+          {{ t('shared.domains') }}
+          <template #actions>
+            <UiLink :to="clientSectionPath(clientId, ClientSection.Domains)" :variant="UiButtonVariant.Link" data-testid="client-summary-domains-all">
+              {{ t('clients.clientSummary.viewAll') }}
+            </UiLink>
+          </template>
+        </UiSectionHeader>
         <UiCard class="overflow-x-auto">
           <UiTable
             :density="UiTableDensity.Comfortable"
             :empty="summaryStore.domains.length === 0"
+            :loading="initialLoading"
             :colspan="7"
             data-testid="client-summary-domains"
           >
@@ -754,7 +851,7 @@ onMounted(() => {
               >
                 <UiTableCell muted>{{ domain.id }}</UiTableCell>
                 <UiTableCell>{{ domain.name }}</UiTableCell>
-                <UiTableCell muted>{{ domain.registrar ?? DASH }}</UiTableCell>
+                <UiTableCell muted>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge :tone="domainStatusTone(domain.status)" small>{{ domain.status }}</UiBadge>
                 </UiTableCell>
@@ -777,16 +874,19 @@ onMounted(() => {
       </UiStack>
 
       <UiStack>
-        <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-          <UiHeading :level="2" variant="card">{{ t('clients.clientSummary.currentQuotes') }}</UiHeading>
-          <UiLink :to="clientSectionPath(clientId, ClientSection.Quotes)" :variant="UiButtonVariant.Link" data-testid="client-summary-quotes-all">
-            {{ t('clients.clientSummary.viewAll') }}
-          </UiLink>
-        </UiStack>
+        <UiSectionHeader :level="2" variant="card">
+          {{ t('clients.clientSummary.currentQuotes') }}
+          <template #actions>
+            <UiLink :to="clientSectionPath(clientId, ClientSection.Quotes)" :variant="UiButtonVariant.Link" data-testid="client-summary-quotes-all">
+              {{ t('clients.clientSummary.viewAll') }}
+            </UiLink>
+          </template>
+        </UiSectionHeader>
         <UiCard class="overflow-x-auto">
           <UiTable
             :density="UiTableDensity.Comfortable"
             :empty="summaryStore.quotes.length === 0"
+            :loading="initialLoading"
             :colspan="7"
             data-testid="client-summary-quotes"
           >

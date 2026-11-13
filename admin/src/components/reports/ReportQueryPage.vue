@@ -2,11 +2,12 @@
 /**
  * Screen of a filterable query report (clients, domains, invoices, services, transactions).
  *
- * Draws the shared layout: the column picker and date ranges, the advanced filters, the actions, the
+ * Draws the shared layout: the header with export and print, the column picker and date ranges, the advanced filters, the actions, the
  * found-count line, the table of the chosen columns and the pager. The state and the loading live
  * in `useQueryReport`, which the screen calls and passes in as `report`.
  */
 import { useI18n } from 'vue-i18n'
+import ReportActions from '@/components/reports/ReportActions.vue'
 import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportField from '@/components/reports/ReportField.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
@@ -17,10 +18,14 @@ import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiFieldSelector from '@/components/ui/UiFieldSelector.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportQueryRange, ReportQueryView } from '@/types/reportquery'
 
 const { t } = useI18n()
+
+/** The reports store, read for the loading flag the pager follows. */
+const reports = useReportsStore()
 
 /** Props for ReportQueryPage. */
 defineProps<{
@@ -47,14 +52,12 @@ defineProps<{
 
 <template>
   <ReportPage :title="title" :description="description" :retry="report.load">
+    <template #actions>
+      <ReportActions printable :exportable="exportable" @print="report.print()" @export="report.exportCsv()" />
+    </template>
+
     <template #filters>
-      <ReportFilterBar
-        printable
-        :exportable="exportable"
-        @generate="report.generate()"
-        @print="report.print()"
-        @export="report.exportCsv()"
-      >
+      <ReportFilterBar @generate="report.generate()">
         <template #fields>
           <ReportField :label="t('shared.fieldsToInclude')" width="md">
             <UiFieldSelector
@@ -83,12 +86,13 @@ defineProps<{
       {{ foundText }}
     </UiText>
 
-    <ReportTable :columns="report.activeColumns" :rows="report.rows" :empty-text="emptyText" />
+    <ReportTable :columns="report.activeColumns" :rows="report.rows" row-key="id" :empty-text="emptyText" />
 
     <UiPagination
       :page="report.page"
       :total="report.totalCount"
       :page-size="report.pageSize"
+      :loading="reports.loading"
       testid="report-pagination"
       @update:page="report.goToPage"
     />

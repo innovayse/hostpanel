@@ -7,7 +7,7 @@
  */
 import { computed } from 'vue'
 import { fieldBaseClasses, fieldInvalidClasses, fieldWidthClasses } from '@/utils/ui/input'
-import { fieldSizeClasses } from '@/utils/ui/size'
+import { textareaSizeClasses } from '@/utils/ui/size'
 import type { UiSize } from '@/utils/ui/size'
 
 /** Props for UiTextarea. */
@@ -42,7 +42,7 @@ const emit = defineEmits<{
 const classes = computed<string[]>(() => [
   fieldWidthClasses,
   fieldBaseClasses,
-  fieldSizeClasses[props.size],
+  textareaSizeClasses[props.size],
   'resize-y',
   props.invalid ? fieldInvalidClasses : '',
 ])

@@ -76,10 +76,10 @@ describe('DomainSearch', () => {
     expect(row.text()).toContain('$10')
   })
 
-  it('shows the searching line while a lookup runs', () => {
+  it('shows the loading skeleton while a lookup runs', () => {
     stubAuroraGlobals()
     const wrapper = mountWithKit(DomainSearch, { props: { pending: true } })
 
-    expect(wrapper.text()).toContain('aurora.domainSearch.searching')
+    expect(wrapper.find('[data-testid="domain-search-pending"]').exists()).toBe(true)
   })
 })

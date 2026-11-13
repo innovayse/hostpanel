@@ -339,7 +339,7 @@
 
 <script setup lang="ts">
 /**
- * ClassicHosting - the classic template's hosting page: hero, billing-cycle tabs, the free plan,
+ * ClassicHosting. The classic template's hosting page: hero, billing-cycle tabs, the free plan,
  * the plan grid, the agency plan and the comparison table, whose cells are each plan's own
  * catalogue feature lines.
  *
@@ -408,7 +408,7 @@ onMounted(() => {
   cart.init()
 })
 
-/** The payer's currency to format and price with - never chosen by the page's language. */
+/** The payer's currency to format and price with, never chosen by the page's language. */
 const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStore.payerCode))
 
 /** Currency symbol shown before an amount, when the currency puts it there. */
@@ -459,7 +459,7 @@ const freePlan = computed(() => catalogPlans.value.find(p => isFreePlan(p.pricin
 /** The agency plan, shown in its own banner. */
 const agencyPlan = computed(() => catalogPlans.value.find(p => !isFreePlan(p.pricing) && isAgencyPlan(p)))
 
-/** Every plan that is neither the free nor the agency one - the grid. */
+/** Every plan that is neither the free nor the agency one: the grid. */
 const otherPlans = computed(() => catalogPlans.value.filter(p => !isFreePlan(p.pricing) && !isAgencyPlan(p)))
 
 /** The billing cycle the prices are shown for. */
@@ -483,13 +483,13 @@ const cycleLabel = (cycle: PricingCycle): string =>
  */
 const planPrice = (plan: HostingPlan, cycle: PricingCycle): number | null => cycleAmount(plan.pricing, cycle)
 
-/** Cycles at least one plan is priced in - the segments of the cycle switch. */
+/** Cycles at least one plan is priced in: the segments of the cycle switch. */
 const cycleOptions = computed<SegmentedOption<PricingCycle>[]>(() =>
   pricedCycles(catalogPlans.value, (plan, key) => planPrice(plan, key) !== null)
     .map(key => ({ value: key, label: cycleLabel(key), testid: `classic-hosting-cycle-${key}` })))
 
 /**
- * Formats just the grouped digits of an amount - no currency symbol - for markup that renders
+ * Formats just the grouped digits of an amount (no currency symbol) for markup that renders
  * the symbol separately at a different size. Decimal count comes from the payer's own
  * currency configuration, never a locale guess.
  *
@@ -504,7 +504,7 @@ const formatAmount = (amount: number | null): string => {
 }
 
 /**
- * The cycles a plan is priced in, each with its formatted price - the mini price list.
+ * The cycles a plan is priced in, each with its formatted price: the mini price list.
  *
  * @param plan - The plan.
  * @returns One entry per priced cycle.

@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 /**
- * UiBadge - a small label for status, counts and tags.
+ * UiBadge: a small label for status, counts and tags.
  *
  * Colours come from the shared tone map (`utils/ui/tones.ts`), so a "success" badge is the same
  * green as every other success surface.

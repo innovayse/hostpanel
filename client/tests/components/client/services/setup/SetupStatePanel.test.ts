@@ -1,5 +1,5 @@
 /**
- * Unit tests for SetupStatePanel: the texts, the spinner and the action slot.
+ * Unit tests for SetupStatePanel: the texts, the icon tile and the action slot.
  */
 import { describe, expect, it } from 'vitest'
 import { AlertCircle } from 'lucide-vue-next'
@@ -14,13 +14,12 @@ describe('SetupStatePanel', () => {
     expect(wrapper.text()).toContain('Try later.')
   })
 
-  it('shows a spinner instead of the icon tile while loading', () => {
-    const loading = mountClient(SetupStatePanel, { props: { title: 't', description: 'd', loading: true } })
-    const idle = mountClient(SetupStatePanel, { props: { title: 't', description: 'd', icon: AlertCircle } })
+  it('shows the icon tile only when an icon is given', () => {
+    const bare = mountClient(SetupStatePanel, { props: { title: 't', description: 'd' } })
+    const withIcon = mountClient(SetupStatePanel, { props: { title: 't', description: 'd', icon: AlertCircle } })
 
-    expect(loading.find('svg').classes()).toContain('animate-spin')
-    expect(loading.find('[data-testid="ui-tile"]').exists()).toBe(false)
-    expect(idle.find('[data-testid="ui-tile"]').exists()).toBe(true)
+    expect(bare.find('[data-testid="ui-tile"]').exists()).toBe(false)
+    expect(withIcon.find('[data-testid="ui-tile"]').exists()).toBe(true)
   })
 
   it('renders the action slot', () => {

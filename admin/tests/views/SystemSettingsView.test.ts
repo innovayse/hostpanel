@@ -23,6 +23,17 @@ afterEach(() => {
 })
 
 describe('SystemSettingsView', () => {
+  it('draws every card with its real title and the table header as placeholders on the first load', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountScreen(SystemSettingsView)
+
+    const loading = wrapper.get('[data-testid="system-settings-loading"]')
+    expect(loading.text()).toContain('Site identity')
+    expect(loading.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Key')
+  })
+
   it('renders the cards and a table row per setting once loaded', async () => {
     stubRouteTable({ 'GET /admin/settings': () => json(stored) })
     const { wrapper } = await mountScreen(SystemSettingsView)
@@ -96,7 +107,7 @@ describe('SystemSettingsView', () => {
     const { wrapper } = await mountScreen(SystemSettingsView)
 
     await wrapper.get('[data-testid="site-identity-name"]').setValue('Acme Cloud')
-    await wrapper.get('[data-testid="site-identity-save-name"]').trigger('click')
+    await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
 
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('Name is too long.')
@@ -119,6 +130,35 @@ describe('SystemSettingsView', () => {
       expect(wrapper.get('[data-testid="setting-outcome-21"]').text()).toBe('Not a valid e-mail address.')
     })
     expect((wrapper.get('[data-testid="setting-value-21"]').element as HTMLInputElement).value).toBe('nope')
+  })
+
+  it('counts unsaved edits in the sticky bar and saves them all at once', async () => {
+    const mock = stubRouteTable({
+      'GET /admin/settings': () => json(stored),
+      'PUT /admin/settings/1': () => new Response(null, { status: 204 }),
+    })
+    const { wrapper } = await mountScreen(SystemSettingsView)
+    expect(wrapper.get('[data-testid="settings-form-status"]').text()).toBe('No unsaved changes')
+    expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeDefined()
+
+    await wrapper.get('[data-testid="site-identity-name"]').setValue('Acme Cloud')
+    expect(wrapper.get('[data-testid="settings-form-status"]').text()).toBe('1 unsaved change')
+
+    await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
+    await vi.waitFor(() => {
+      expect(requestsOf(mock)).toContain('PUT /admin/settings/1')
+    })
+  })
+
+  it('drops every unsaved edit from the bar', async () => {
+    stubRouteTable({ 'GET /admin/settings': () => json(stored) })
+    const { wrapper } = await mountScreen(SystemSettingsView)
+
+    await wrapper.get('[data-testid="site-identity-name"]').setValue('Acme Cloud')
+    await wrapper.get('[data-testid="settings-form-cancel"]').trigger('click')
+
+    expect((wrapper.get('[data-testid="site-identity-name"]').element as HTMLInputElement).value).toBe('Acme')
+    expect(wrapper.get('[data-testid="settings-form-status"]').text()).toBe('No unsaved changes')
   })
 
   it('says so when there are no settings', async () => {

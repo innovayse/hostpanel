@@ -2,6 +2,7 @@
   <component
     :is="tag"
     v-bind="tagAttrs"
+    :aria-busy="loading || undefined"
     :class="buttonClasses"
   >
     <Loader2 v-if="loading" :size="16" :stroke-width="2" class="animate-spin mr-2" />
@@ -12,12 +13,12 @@
 
 <script setup lang="ts">
 /**
- * UiButton - the one button of the portal.
+ * UiButton: the one button of the portal.
  *
  * Renders a `<button>`, an `<a>` (when `href` is set) or a `NuxtLink` (when `to` is set) with the
  * variant, size and focus look of the theme. `@click` and every other listener fall through to
- * the root element, so there is no emit to declare. While `loading` the button is disabled and
- * shows a spinner in place of the icon.
+ * the root element, so there is no emit to declare. While `loading` the button is disabled, marked
+ * `aria-busy` and shows a spinner in place of the icon; its label stays.
  */
 import { computed, resolveComponent } from 'vue'
 import { Loader2 } from 'lucide-vue-next'

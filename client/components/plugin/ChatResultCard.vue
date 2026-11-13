@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatResultCard - one result card of a plugin's reply: a tone edge, a title and a sentence, the card's actions,
+ * PluginChatResultCard. One result card of a plugin's reply: a tone edge, a title and a sentence, the card's actions,
  * and the detail lines behind a switch the card keeps open or closed itself.
  */
 import { UiGap, UiTextSize, UiTextTone, UiTextWeight } from '~/utils/ui/enums'

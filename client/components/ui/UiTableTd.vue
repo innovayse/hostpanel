@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * TableTd (`UiTableTd`) - a data cell with the standard padding. Use the `class` attribute for
+ * TableTd (`UiTableTd`): a data cell with the standard padding. Use the `class` attribute for
  * colour or weight overrides.
  */
 import { computed } from 'vue'

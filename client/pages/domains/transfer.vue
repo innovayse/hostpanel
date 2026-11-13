@@ -10,6 +10,7 @@
  * transfer flow with both in the query string; `DomainsTransfer` only renders the form.
  */
 import { CLIENT_DOMAIN_TRANSFER_PATH } from '~/constants/clientRoutes'
+import { detailTitle } from '~/utils/seoTitle'
 
 const { t } = useI18n()
 
@@ -41,7 +42,7 @@ const goTransfer = (): void => {
 }
 
 useSeo({
-  title: `${t('domains.tabTransfer')} - ${t('domains.card.name')} | ${siteName.value}`,
+  title: detailTitle(`${t('domains.tabTransfer')}: ${t('domains.card.name')}`, siteName.value),
   description: t('domains.promoTransferDesc'),
   path: '/domains/transfer',
 })

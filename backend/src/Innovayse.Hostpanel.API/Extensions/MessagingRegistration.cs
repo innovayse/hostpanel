@@ -45,27 +45,29 @@ public static class MessagingRegistration
     /// Chooses how Wolverine gets the code of its message handlers. Compiling a handler at runtime costs
     /// tens of megabytes that stay resident, for every handler on its first use, so a deployed host loads
     /// code generated at image build time (<c>codegen write</c>, see the API Dockerfile) and refuses to
-    /// start a handler it has no generated code for. Development has no generated code to load and
-    /// compiles on demand, using generated code only when it is there. The test host always compiles in
-    /// memory and writes nothing: a test host swaps services for test doubles, so its handler code names
-    /// test types, and written into the API's source folder it would break the next build of the API
-    /// or be loaded, stale, by a later host.
+    /// start a handler it has no generated code for. Development and the test host compile in memory and
+    /// write nothing. Development must not use <see cref="TypeLoadMode.Auto"/>: Auto writes the generated
+    /// files into <c>Internal/Generated</c> inside the source tree while the API runs, and
+    /// <c>dotnet watch</c> polling that tree sees every new file, then crashes on its own directory
+    /// enumeration (<c>An item with the same key has already been added</c>) and takes the API with it.
+    /// A test host swaps services for test doubles, so its handler code names test types, and written into
+    /// the API's source folder it would break the next build of the API or be loaded, stale, by a later host.
     /// </summary>
     /// <param name="environment">The environment the host runs in.</param>
     /// <returns>
-    /// <see cref="TypeLoadMode.Auto"/> in Development, <see cref="TypeLoadMode.Dynamic"/> in Testing,
+    /// <see cref="TypeLoadMode.Dynamic"/> in Development and in Testing,
     /// <see cref="TypeLoadMode.Static"/> everywhere else.
     /// </returns>
     public static TypeLoadMode TypeLoadModeFor(IHostEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(environment);
 
-        if (environment.IsEnvironment(EnvironmentNames.Testing))
+        if (environment.IsEnvironment(EnvironmentNames.Testing) || environment.IsDevelopment())
         {
             return TypeLoadMode.Dynamic;
         }
 
-        return environment.IsDevelopment() ? TypeLoadMode.Auto : TypeLoadMode.Static;
+        return TypeLoadMode.Static;
     }
 
     /// <summary>

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import SupportOverviewView from '@/views/SupportOverviewView.vue'
-import { mountView } from '../helpers/mount'
+import { mountRouted, mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 
@@ -24,6 +24,16 @@ afterEach(() => {
 })
 
 describe('SupportOverviewView', () => {
+  it('keeps the tiles and the cards in place with placeholders while the overview loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
+
+    const { wrapper } = await mountRouted(SupportOverviewView, '/', '/')
+
+    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(5)
+    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="chart-skeleton"]').exists()).toBe(true)
+  })
+
   it('asks for today and shows the figures', async () => {
     const mock = stubPathRoutes([{ path: '/tickets/overview', body: stats }])
 

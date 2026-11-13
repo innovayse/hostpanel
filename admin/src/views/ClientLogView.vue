@@ -8,7 +8,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientLogStore } from '@/stores/clientLog'
-import { formatDateTimeCompact } from '@/lib/format'
+import { formatDateTimeCompact, EMPTY_VALUE } from '@/lib/format'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCollapse from '@/components/ui/UiCollapse.vue'
@@ -16,10 +16,9 @@ import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -41,6 +40,9 @@ const route = useRoute()
 
 /** Client log store, the only caller of the activity-log endpoint. */
 const store = useClientLogStore()
+
+/** True while the first load is in flight and there are no entries yet; the table then draws its placeholder rows. */
+const initialLoading = computed<boolean>(() => store.loading && store.logs.length === 0)
 
 /** Client ID from route params. */
 const clientId = computed(() => Number(route.params.id))
@@ -127,17 +129,19 @@ onMounted(load)
 
 <template>
   <UiStack>
-    <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-      <UiHeading :level="1" variant="card">{{ t('clients.clientLog.activityLog') }}</UiHeading>
-      <UiButton
-        type="button"
-        :variant="UiButtonVariant.Secondary"
-        data-testid="client-log-toggle-filters"
-        @click="showFilters = !showFilters"
-      >
-        {{ showFilters ? t('shared.hideFilters') : t('clients.clientLog.filterLog') }}
-      </UiButton>
-    </UiStack>
+    <UiSectionHeader :level="1" variant="card">
+      {{ t('clients.clientLog.activityLog') }}
+      <template #actions>
+        <UiButton
+          type="button"
+          :variant="UiButtonVariant.Secondary"
+          data-testid="client-log-toggle-filters"
+          @click="showFilters = !showFilters"
+        >
+          {{ showFilters ? t('shared.hideFilters') : t('clients.clientLog.filterLog') }}
+        </UiButton>
+      </template>
+    </UiSectionHeader>
 
     <UiCollapse :open="showFilters">
       <UiCard padding="md" data-testid="client-log-filters">
@@ -210,16 +214,11 @@ onMounted(load)
       @retry="load"
     />
 
-    <UiStack v-if="store.loading && store.logs.length === 0" data-testid="client-log-loading">
-      <UiSkeleton :lines="3" />
-      <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientLog.loadingActivityLog') }}</UiText>
-    </UiStack>
-
     <UiCard v-else class="overflow-x-auto">
       <UiTable
         :density="UiTableDensity.Comfortable"
-        :empty="store.logs.length === 0"
-        :colspan="4"
+        :loading="initialLoading"
+        :empty="!initialLoading && store.logs.length === 0"
         data-testid="client-log-table"
       >
         <UiTableHead>
@@ -236,11 +235,11 @@ onMounted(load)
             <UiTableCell>{{ log.description }}</UiTableCell>
             <UiTableCell>
               <UiStack gap="none">
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ log.adminName ?? '—' }}</UiText>
+                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ log.adminName ?? EMPTY_VALUE }}</UiText>
                 <UiText v-if="log.adminEmail" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ log.adminEmail }}</UiText>
               </UiStack>
             </UiTableCell>
-            <UiTableCell muted>{{ log.ipAddress ?? '—' }}</UiTableCell>
+            <UiTableCell muted>{{ log.ipAddress ?? EMPTY_VALUE }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
         <template #empty>
@@ -248,7 +247,7 @@ onMounted(load)
         </template>
       </UiTable>
       <UiStack
-        v-if="store.totalCount > pageSize"
+        v-if="initialLoading || store.totalCount > pageSize"
         direction="row"
         :justify="UiJustify.Between"
         :align="UiAlignItems.Center"
@@ -260,6 +259,7 @@ onMounted(load)
           :page="page"
           :total="store.totalCount"
           :page-size="pageSize"
+          :loading="initialLoading"
           testid="client-log-pagination"
           @update:page="goToPage"
         />

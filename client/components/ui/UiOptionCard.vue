@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 /**
- * UiOptionCard - one selectable row of a single-choice picker (payment gateway, saved card).
+ * UiOptionCard: one selectable row of a single-choice picker (payment gateway, saved card).
  *
  * The whole row is the click target. A hidden native radio sits inside the label, so the row is
  * keyboard operable with the arrow keys within its `name` group, and a keyboard focus draws a

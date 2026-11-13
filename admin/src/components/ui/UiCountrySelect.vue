@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Country picker: a `UiSelect` over a fixed list of countries.
+ * Country picker: a searchable `UiSelect` over a fixed list of countries.
  *
  * The model is the ISO 3166 alpha-2 code. Names come from the geo atlas, the list every country picker shares.
  */
@@ -57,5 +57,7 @@ const selectedValue = computed({
     v-model="selectedValue"
     :options="countryOptions"
     :placeholder="placeholder || t('ui.uiCountrySelect.selectCountry')"
+    searchable
+    wide
   />
 </template>

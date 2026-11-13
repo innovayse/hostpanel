@@ -3,11 +3,15 @@
  * Modal for adding a new financial transaction to a client account.
  * Two-column form with date, description, amounts, and payment method.
  */
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useBillingStore } from '@/stores/billing'
 import { useClientTransactionsStore } from '@/stores/clientTransactions'
 import { GATEWAY_OPTIONS } from '@/lib/constants'
 import { toDateInputValue } from '@/lib/format'
+import { formatPlainAmount } from '@/lib/money'
+import type { Invoice } from '@/types/invoice'
+import type { UiSelectOption } from '@/utils/ui/select'
 import { PaymentGateway } from '@/types/gateway'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -46,6 +50,12 @@ const emit = defineEmits<{
 /** Client transactions store, the only caller of the transaction endpoints. */
 const store = useClientTransactionsStore()
 
+/** Billing store, the only caller of the invoice endpoints. */
+const billingStore = useBillingStore()
+
+/** The client's latest invoices, the choices of the invoice picker; empty until loaded. */
+const invoices = ref<Invoice[]>([])
+
 /** True while save is in progress. */
 const internalSaving = ref(false)
 
@@ -61,8 +71,19 @@ const description = ref('')
 /** External gateway transaction reference. */
 const transactionId = ref('')
 
-/** Optional linked invoice ID. */
-const invoiceId = ref<number>(0)
+/** The linked invoice id; null when the transaction belongs to no invoice. */
+const invoiceId = ref<number | null>(null)
+
+/** The empty row first, then one row per invoice of the client. */
+const invoiceOptions = computed<UiSelectOption<number | null>[]>(() => [
+  { value: null, label: t('clients.addTransaction.noInvoice') },
+  ...invoices.value.map(invoice => ({
+    value: invoice.id,
+    label: `#${invoice.id}`,
+    description: `${invoice.status} · ${formatPlainAmount(invoice.total, invoice.currency)}`,
+    keywords: invoice.status,
+  })),
+])
 
 /** Selected payment method. */
 const paymentMethod = ref<string>(PaymentGateway.None)
@@ -92,7 +113,7 @@ const handleSave = async (): Promise<void> => {
     date: date.value || new Date().toISOString(),
     description: description.value,
     transactionId: transactionId.value,
-    invoiceId: invoiceId.value || null,
+    invoiceId: invoiceId.value,
     paymentMethod: paymentMethod.value,
     amountIn: amountIn.value,
     amountOut: amountOut.value,
@@ -106,6 +127,10 @@ const handleSave = async (): Promise<void> => {
     saveError.value = store.error ?? t('clients.addTransaction.failedToSaveTransaction')
   }
 }
+
+onMounted(async () => {
+  invoices.value = await billingStore.fetchClientInvoiceOptions(props.clientId)
+})
 </script>
 
 <template>
@@ -144,7 +169,16 @@ const handleSave = async (): Promise<void> => {
               </template>
             </UiField>
             <UiField :label="t('clients.addTransaction.invoiceIdOptional')">
-              <UiNumberInput v-model="invoiceId" :min="0" placeholder="0" data-testid="clients-add-transaction-invoice-id" />
+              <template #default="{ id }">
+                <UiSelect
+                  :id="id"
+                  v-model="invoiceId"
+                  :options="invoiceOptions"
+                  :placeholder="t('clients.addTransaction.selectInvoice')"
+                  searchable
+                  data-testid="clients-add-transaction-invoice-id"
+                />
+              </template>
             </UiField>
             <UiField :label="t('shared.paymentMethod')">
               <UiSelect
@@ -188,10 +222,10 @@ const handleSave = async (): Promise<void> => {
           <UiButton
             type="submit"
             :variant="UiButtonVariant.Primary"
-            :disabled="internalSaving"
+            :loading="internalSaving"
             data-testid="clients-add-transaction-save"
           >
-            {{ internalSaving ? t('shared.saving') : t('shared.save') }}
+            {{ t('shared.save') }}
           </UiButton>
         </UiStack>
       </UiForm>

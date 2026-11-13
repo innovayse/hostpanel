@@ -214,11 +214,13 @@ describe('PluginCard', () => {
     expect(wrapper.find('[data-testid^="plugin-capability-example-pay"]').exists()).toBe(false)
   })
 
-  it('disables the remove button while removing', () => {
+  it('disables the remove button and marks it busy while removing, keeping its label', () => {
     const wrapper = mountCard({ removing: true })
+    const button = wrapper.get('[data-testid="plugin-remove-example-pay"]')
 
-    expect(wrapper.get('[data-testid="plugin-remove-example-pay"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.text()).toContain('Removing')
+    expect(button.attributes('disabled')).toBeDefined()
+    expect(button.attributes('aria-busy')).toBe('true')
+    expect(button.text()).toBe('Remove')
   })
 
   it('shows the plugin icon when it has one and the colour block with the initial when not', () => {
@@ -228,5 +230,13 @@ describe('PluginCard', () => {
     expect(withIcon.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/api/admin/plugins/example-pay/icon')
     expect(without.find('[data-testid="plugin-avatar-image"]').exists()).toBe(false)
     expect(without.get('[data-testid="plugin-avatar-fallback"] text').text()).toBe('E')
+  })
+
+  it('draws the same card as placeholders while the list loads, with remove disabled', () => {
+    const wrapper = mountCard({ plugin: null, loading: true })
+
+    expect(wrapper.get('[data-testid="plugin-card-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(0)
+    expect(wrapper.get('[data-testid="plugin-remove-"]').attributes('disabled')).toBeDefined()
   })
 })

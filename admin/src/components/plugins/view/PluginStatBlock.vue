@@ -7,7 +7,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import { usePluginSource } from '@/composables/usePluginView'
 import { formatPluginValue } from '@/lib/pluginView'
@@ -35,9 +34,8 @@ const badge = computed<boolean>(() => props.block.format === PluginValueFormat.B
 </script>
 
 <template>
-  <UiSkeleton v-if="loading" :lines="2" data-testid="plugin-stat-loading" />
-  <!-- A status word is drawn as a badge in the tile; a failed read still shows the sentence as a plain value. -->
-  <UiStatTile v-else :label="block.label" :value="error || formatted" data-testid="plugin-stat">
+  <!-- The tile keeps its place while the source is read. A status word is drawn as a badge in the tile; a failed read still shows the sentence as a plain value. -->
+  <UiStatTile :label="block.label" :value="error || formatted" :loading="loading" data-testid="plugin-stat">
     <template v-if="badge" #value>
       <UiBadge data-testid="plugin-stat-badge">{{ formatted }}</UiBadge>
     </template>

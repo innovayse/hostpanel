@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 /**
- * UiSelect - a styled single-choice select with a keyboard-operable listbox.
+ * UiSelect: a styled single-choice select with a keyboard-operable listbox.
  *
  * Draws its own popup (a native `<select>` cannot be themed), shares the field frame with
  * UiInput through `fieldStateClasses`, and closes on outside click or Escape.

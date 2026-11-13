@@ -75,9 +75,11 @@
   "servicesTitle": "Услуги",
   "documentation": "Документация",
   "sections": {
-    "daily": "Ежедневная работа",
+    "sales": "Продажи",
+    "support": "Поддержка",
+    "catalog": "Каталог",
+    "infrastructure": "Инфраструктура",
     "insights": "Аналитика",
-    "setup": "Настройка",
     "addons": "Дополнения",
     "system": "Система"
   }

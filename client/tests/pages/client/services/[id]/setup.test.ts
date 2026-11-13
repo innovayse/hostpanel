@@ -102,7 +102,7 @@ describe('hosting setup page', () => {
     stubClientRuntime({ params: { id: '4' } })
 
     const wrapper = await mountPage(SetupPage)
-    await waitUntil(() => expect(wrapper.text()).toContain('client.setup.loading'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="setup-loading"]').exists()).toBe(true))
 
     expect(wrapper.find(WIZARD).exists()).toBe(false)
   })

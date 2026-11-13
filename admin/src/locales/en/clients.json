@@ -1,6 +1,6 @@
 {
   "addBillableItem": {
-    "describeTheCharge": "Describe the charge..."
+    "describeTheCharge": "Describe the charge"
   },
   "addTimeBilling": {
     "addTimeBillingEntries": "Add Time Billing Entries",
@@ -12,9 +12,11 @@
   },
   "addTransaction": {
     "addNewTransaction": "Add New Transaction",
-    "transactionDescription": "Transaction description...",
-    "externalReference": "External reference...",
-    "invoiceIdOptional": "Invoice ID (optional)",
+    "transactionDescription": "Transaction description",
+    "externalReference": "External reference",
+    "invoiceIdOptional": "Invoice (optional)",
+    "noInvoice": "No invoice",
+    "selectInvoice": "Select an invoice",
     "selectGateway": "Select gateway",
     "addToClientSCredit": "Add to Client's Credit Balance",
     "failedToSaveTransaction": "Failed to save transaction."
@@ -28,7 +30,6 @@
     "exportData": "Export Data",
     "chooseWhichDataPointsTo": "Choose which data points to include in the export.",
     "generatingAnExportForA": "Generating an export for a client with a substantial amount of history may take a while.",
-    "generating": "Generating…",
     "profileData": "Profile Data",
     "payMethods": "Pay Methods",
     "users": "Linked Users",
@@ -140,9 +141,8 @@
     "billableItems": "Billable Items",
     "addTimeBillingEntries": "Add Time Billing Entries",
     "addBillableItem": "+ Add Billable Item",
-    "loadingBillableItems": "Loading billable items...",
     "uninvoicedItemsLength": "Uninvoiced Items ({length})",
-    "uninvoicedItemsAmountLength": "Uninvoiced Items — {amount} ({length})",
+    "uninvoicedItemsAmountLength": "Uninvoiced items: {amount} ({length})",
     "invoiceSelectedItems": "Invoice Selected Items",
     "noUninvoicedBillableItems": "No uninvoiced billable items.",
     "invoicedItems": "Invoiced Items",
@@ -169,8 +169,7 @@
     "contactDeletedSuccessfully": "Contact deleted successfully."
   },
   "clientDomainDetail": {
-    "loadingDomain": "Loading domain...",
-    "domainName": "Domain — {name}",
+    "domainName": "Domain: {name}",
     "domainInfo": "Domain Info",
     "order": "Order #:",
     "orderType": "Order Type:",
@@ -215,12 +214,10 @@
     "contactSaved": "Contact details saved."
   },
   "clientDomainsList": {
-    "loadingDomains": "Loading domains...",
     "noDomainsFoundForThis": "No domains found for this client"
   },
   "clientEmails": {
     "emails": "Emails",
-    "loadingEmails": "Loading emails...",
     "totalcountEmailValue": "Emails: {totalCount}",
     "status": "Status",
     "delivered": "Delivered",
@@ -245,37 +242,29 @@
     "allStatuses": "All Statuses",
     "from": "From",
     "filter": "Filter",
-    "loadingInvoices": "Loading invoices...",
-    "sizeSelected": "{size} selected:",
-    "bulkActions": "Bulk Actions...",
     "clientinvoicestotalInvoiceValue": "Invoices: {clientInvoicesTotal}",
     "deleteInvoice": "Delete Invoice",
-    "confirmBulkAction": "Confirm Bulk Action",
-    "confirmBulkApply": "Apply '{action}' to {count} selected invoice? | Apply '{action}' to {count} selected invoices?",
     "confirmDeleteInvoice": "Are you sure you want to delete invoice #{id}?",
     "bulkActionDone": "Done for the selected invoices.",
     "invoiceDeleted": "Invoice deleted."
   },
   "clientNav": {
-    "rail": "Client sections",
     "strip": "Client section tabs"
   },
   "clientLayout": {
-    "loadingClient": "Loading client…",
     "exportData": "Export Data"
   },
   "clientLog": {
     "activityLog": "Activity Log",
     "filterLog": "Filter Log",
     "selectDate": "Select date",
-    "loadingActivityLog": "Loading activity log...",
     "logEntry": "Log Entry",
     "user": "User",
     "totalcountEntrValue": "Entries: {totalCount}"
   },
   "clientOpenTicket": {
     "ticketSubject": "Ticket subject",
-    "describeTheIssue": "Describe the issue...",
+    "describeTheIssue": "Describe the issue",
     "openTicket": "Open Ticket"
   },
   "clientProfile": {
@@ -307,7 +296,6 @@
   },
   "clientQuotes": {
     "createNewQuote": "+ Create New Quote",
-    "loadingQuotes": "Loading quotes...",
     "createDate": "Create Date",
     "noQuotesFound": "No quotes found.",
     "clientquotestotalQuoteValue": "Quotes: {clientQuotesTotal}",
@@ -316,8 +304,7 @@
     "quoteDeleted": "Quote deleted."
   },
   "clientServiceDetail": {
-    "loadingService": "Loading service...",
-    "serviceIdProductname": "Service #{id} — {productName}",
+    "serviceIdProductname": "Service #{id}: {productName}",
     "loginToControlPanel": "Login to Control Panel",
     "serviceInfo": "Service Info",
     "order": "Order #",
@@ -373,19 +360,16 @@
     "terminated": "Service terminated."
   },
   "clientServicesList": {
-    "loadingServices": "Loading services...",
     "nextDue": "Next Due",
     "totalcountServiceValue": "Services: {totalCount}",
     "noServicesFoundForThis": "No services found for this client"
   },
   "clientsList": {
     "manageYourClientAccounts": "Manage your client accounts",
+    "searchPlaceholder": "Search by name, company or ID",
     "addClient": "Add Client",
-    "clientCompanyName": "Client / Company Name",
-    "searchByName": "Search by name…",
-    "searchByEmail": "Search by email…",
-    "searchByPhone": "Search by phone…",
-    "loadingClients": "Loading clients…",
+    "searchByEmail": "Search by email",
+    "searchByPhone": "Search by phone",
     "2fa": "2FA",
     "joined": "Joined",
     "userDeleted": "User Deleted",
@@ -393,7 +377,6 @@
     "on": "On",
     "twoFactorAuthenticationDisabled": "Two-Factor Authentication disabled",
     "off": "Off",
-    "totalcountClientValue": "Clients: {totalCount}",
     "noClientsMatchYourFilters": "No clients match your filters",
     "noClientsFound": "No clients found",
     "clearFilters": "Clear filters",
@@ -402,7 +385,6 @@
   },
   "clientSummary": {
     "summary": "Summary",
-    "loadingSummary": "Loading summary...",
     "clientInformation": "Client Information",
     "stateRegion": "State/Region",
     "otherInformation": "Other Information",
@@ -438,7 +420,7 @@
     "viewAllTickets": "View all Tickets",
     "recentEmails": "Recent Emails",
     "noEmailsSent": "No emails sent",
-    "addNotesAboutThisClient": "Add notes about this client...",
+    "addNotesAboutThisClient": "Add notes about this client",
     "productsServices2": "Products/Services",
     "nextDue": "Next Due",
     "noServicesFound": "No services found",
@@ -449,11 +431,10 @@
     "notesSaved": "Notes saved."
   },
   "clientTicketDetail": {
-    "loadingTicket": "Loading ticket...",
     "reopen": "Reopen",
     "ticketSettings": "Ticket Settings",
     "noRepliesYet": "No replies yet",
-    "typeYourReply": "Type your reply...",
+    "typeYourReply": "Type your reply",
     "reply": "Reply",
     "conversation": "Conversation",
     "staff": "Staff",
@@ -467,7 +448,6 @@
   "clientTickets": {
     "tickets": "Tickets",
     "openNewTicket": "Open New Ticket +",
-    "loadingTickets": "Loading tickets...",
     "openedThisMonth": "Opened This Month",
     "openedLastMonth": "Opened Last Month",
     "openedThisYear": "Opened This Year",
@@ -479,7 +459,6 @@
   },
   "clientTransactions": {
     "addNewTransaction": "+ Add New Transaction",
-    "loadingTransactions": "Loading transactions...",
     "totalIn": "Total In",
     "totalFees": "Total Fees",
     "totalOut": "Total Out",
@@ -490,14 +469,12 @@
     "transactionDeleted": "Transaction deleted."
   },
   "clientUsers": {
-    "loadingUsers": "Loading users...",
     "usersLength": "Users ({length})",
     "addUser": "+ Add User",
     "addUserToAccount": "Add User to Account",
     "searchExisting": "Search Existing",
     "inviteByEmail": "Invite by Email",
     "permissions": "Permissions",
-    "adding": "Adding...",
     "addUser2": "Add User",
     "sendInvite": "Send Invite",
     "role": "Role",
@@ -537,7 +514,7 @@
     "manageUsers": "Manage Users",
     "viewAndManageUserAccounts": "View and manage user accounts",
     "addClient": "Add Client",
-    "searchByNameOrEmail": "Search by name or email…",
+    "searchByNameOrEmail": "Search by name or email",
     "lastLogin": "Last Login",
     "manageUser": "Manage User",
     "sendPasswordResetEmail": "Send Password Reset Email",

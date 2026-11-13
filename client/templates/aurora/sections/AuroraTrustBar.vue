@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 /**
- * aurora trust bar - the guarantees, centred in one card with even gaps, each with its icon in a
+ * aurora trust bar: the guarantees, centred in one card with even gaps, each with its icon in a
  * tinted chip. Accepted payment methods are not listed: which gateways are live is the
  * operator's configuration, and a fixed list of brands would be a claim nothing backs.
  */

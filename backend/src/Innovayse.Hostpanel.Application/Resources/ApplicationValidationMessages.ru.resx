@@ -251,7 +251,7 @@
     <value>Комиссия не может быть отрицательной.</value>
   </data>
 <data name="TransactionAmountRequired" xml:space="preserve">
-    <value>Хотя бы одна из сумм — зачисление или списание — должна быть больше нуля.</value>
+    <value>Хотя бы одна из сумм (зачисление или списание) должна быть больше нуля.</value>
   </data>
 <data name="TransactionIdInvalid" xml:space="preserve">
     <value>Укажите действительную транзакцию.</value>
@@ -372,6 +372,9 @@
   </data>
   <data name="DomainPageRequired" xml:space="preserve">
     <value>Номер страницы должен быть не меньше 1.</value>
+  </data>
+  <data name="DomainListSearchTooLong" xml:space="preserve">
+    <value>Текст поиска доменов не может быть длиннее {0} символов.</value>
   </data>
   <data name="DomainPageSizeRange" xml:space="preserve">
     <value>Размер страницы должен быть от 1 до 100.</value>
@@ -1304,7 +1307,7 @@
     <value>Идентификатор может содержать только строчные латинские буквы, цифры и одиночные дефисы.</value>
   </data>
   <data name="ProjectImageUrlsRequired" xml:space="preserve">
-    <value>Передайте список изображений, пустой, если изображений нет.</value>
+    <value>Передайте список изображений. Если изображений нет, список должен быть пустым.</value>
   </data>
   <data name="ProjectImagesTooMany" xml:space="preserve">
     <value>У проекта может быть не более {0} изображений.</value>
@@ -1367,7 +1370,7 @@
     <value>Введите корректное имя служебного пользователя.</value>
   </data>
   <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
-    <value>Отпечаток ключа хоста должен иметь вид SHA256:… (43 символа).</value>
+    <value>Отпечаток ключа хоста должен состоять из SHA256: и 43 символов.</value>
   </data>
   <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
     <value>Закрытый ключ слишком длинный.</value>

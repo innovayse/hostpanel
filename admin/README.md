@@ -8,17 +8,17 @@ and the workspace `rules/frontend.md`.
 
 ```
 src/
-  views/            <Page>View.vue — routed screens (read a store, call its actions)
+  views/            <Page>View.vue: routed screens (read a store, call its actions)
   layouts/          routed shells
   components/ui/    the kit every screen is composed from (Ui*)
   components/<area>/ screen-specific parts composed from the kit
-  stores/           <area>.ts — Pinia; the only callers of composables/apis
+  stores/           <area>.ts: Pinia; the only callers of composables/apis
   composables/      useApi.ts (the only transport), apis/use<Area>Api.ts, use*.ts
   types/            one file per concept
   lib/              pure helpers (errorHandler, runAction, format, money, tones, ...)
   utils/ui/         TypeScript the kit shares
   middleware/       the router guard
-  locales/          <lang>/<area>.json — one file per area, all three languages together
+  locales/          <lang>/<area>.json: one file per area, all three languages together
 tests/              vitest, mirrors src/
 e2e/                Playwright flows (API stubbed with page.route), fixtures/ and support/
 scripts/            lint-i18n.ts, audit.mjs

@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 /**
- * UiPageHeader - the top of a page: optional breadcrumbs, the h1 title with an optional icon and
+ * UiPageHeader. The top of a page: optional breadcrumbs, the h1 title with an optional icon and
  * description, and an actions slot (buttons) aligned to the right.
  */
 import type { Component } from 'vue'

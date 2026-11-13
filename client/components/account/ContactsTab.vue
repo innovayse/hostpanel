@@ -66,7 +66,7 @@
 
 <script setup lang="ts">
 /**
- * ContactsTab - the "Contacts" tab: the account's sub-contacts with add, edit and delete.
+ * ContactsTab. The "Contacts" tab: the account's sub-contacts with add, edit and delete.
  *
  * The list lives in the account store. Add and edit share one dialog; delete asks first.
  *

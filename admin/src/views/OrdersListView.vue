@@ -2,13 +2,14 @@
 /**
  * Orders list view: paged table of all customer orders with a status filter.
  *
- * Shows order number, client, status (with the fraud score of an order held for review), IP address, payment method,
+ * The status filter and the page live in the address (`useFilterQuery`): the filter button opens the status field, an
+ * applied status shows as a removable chip, and a reload or a shared link restores the same list. Shows order number, client, status (with the fraud score of an order held for review), IP address, payment method,
  * total, item count and date, with row actions to accept or cancel a pending order and to open its detail. Reads `stores/orders`;
  * a refused load shows `store.error` with a retry, and the outcome of an accept or cancel (success, or
  * the API's sentence) shows above the table. Cancelling is confirmed first. A button
- * beside the filter opens the queue of orders pending fraud review.
+ * in the header opens the queue of orders pending fraud review.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -16,11 +17,14 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -40,7 +44,9 @@ import type { OrderListItem } from '@/types/order'
 import { orderStatusTone, statusLabel } from '@/lib/tones'
 import { useOrdersStore } from '@/stores/orders'
 import { clientPath, orderPath } from '@/lib/routes'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
+import type { UiFilterChip } from '@/utils/ui/filter'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
@@ -49,6 +55,21 @@ import { UiTableDensity } from '@/utils/ui/injection'
 const { t } = useI18n()
 
 const store = useOrdersStore()
+
+/** The status filter and the page, kept in the address. */
+const query = useFilterQuery(['status'] as const)
+
+/** The status in the address as an order status, null when none is set or the value is not one. */
+const statusOfAddress = computed<OrderStatus | null>(
+  () => Object.values(OrderStatus).find((value) => value === query.applied.value.status) ?? null,
+)
+
+/** The applied status as a removable chip, none while the list is not filtered. */
+const chips = computed<UiFilterChip<'status'>[]>(() =>
+  statusOfAddress.value === null
+    ? []
+    : [{ key: 'status', label: t('shared.status'), value: statusLabel(ORDER_STATUS_OPTIONS, statusOfAddress.value) }],
+)
 
 /** The outcome line of the last accept or cancel. */
 const feedback = useResultBanner()
@@ -76,7 +97,7 @@ const runCommand = async (command: () => Promise<boolean>, successKey: string): 
   processing.value = false
   if (ok) {
     feedback.show(t(successKey), false)
-    await store.fetchAll()
+    await load()
   } else {
     feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
@@ -84,29 +105,20 @@ const runCommand = async (command: () => Promise<boolean>, successKey: string): 
 }
 
 /**
- * Moves to a page of the list and loads it.
+ * Loads the page and the status the address holds.
  *
- * @param page - Target page, 1-based.
+ * @returns True when loaded; false when refused (see `store.error`).
  */
-const goToPage = (page: number): void => {
-  store.page = page
-  void store.fetchAll()
-}
+const load = (): Promise<boolean> => store.fetchAll(query.page.value, statusOfAddress.value)
 
 /**
- * Applies the status filter and reloads from the first page.
+ * Shows the queue of orders held for fraud review: puts that status in the address.
  *
- * @param status - Chosen status, empty for all.
+ * @returns Resolves when the address has changed.
  */
-const onStatusChange = (status: string): void => {
-  store.statusFilter = Object.values(OrderStatus).find((value) => value === status) ?? null
-  store.page = 1
-  void store.fetchAll()
-}
-
-/** Shows the queue of orders held for fraud review. */
-const showReviewQueue = (): void => {
-  onStatusChange(OrderStatus.UnderReview)
+const showReviewQueue = async (): Promise<void> => {
+  query.draft.value.status = OrderStatus.UnderReview
+  await query.apply()
 }
 
 /**
@@ -150,7 +162,7 @@ const dismissCancel = (): void => {
  * @param order - The order of the row.
  * @returns The action list passed to UiRowActions.
  */
-const orderActions = (order: OrderListItem): UiRowAction[] => {
+const orderActions = (order: OrderListItem): UiMenuAction[] => {
   const pending = order.status === OrderStatus.Pending
   /**
    * Accepts this pending order.
@@ -175,7 +187,12 @@ const orderActions = (order: OrderListItem): UiRowAction[] => {
   ]
 }
 
-onMounted(() => store.fetchAll())
+// The address is the one source of the list: a filter, a page or the back button reloads it.
+watch([statusOfAddress, query.page], () => {
+  void load()
+})
+
+onMounted(() => load())
 </script>
 
 <template>
@@ -194,16 +211,30 @@ onMounted(() => store.fetchAll())
         >
           {{ t('orders.ordersList.reviewQueue') }}
         </UiButton>
-        <UiSelect
-          class="w-44"
-          :model-value="store.statusFilter ?? ''"
-          :options="ORDER_STATUS_OPTIONS"
-          :placeholder="t('orders.ordersList.filterByStatus')"
-          data-testid="orders-filter-status"
-          @update:model-value="onStatusChange"
-        />
       </template>
     </UiPageHeader>
+
+    <UiListToolbar
+      :active-count="query.activeCount.value"
+      :chips="chips"
+      @apply="query.apply"
+      @reset="query.reset"
+      @cancel="query.cancel"
+      @remove="query.remove"
+      @clear="query.clearAll"
+    >
+      <UiField :label="t('shared.status')">
+        <template #default="{ id }">
+          <UiSelect
+            :id="id"
+            v-model="query.draft.value.status"
+            :options="ORDER_STATUS_OPTIONS"
+            :placeholder="t('orders.ordersList.filterByStatus')"
+            data-testid="orders-filter-status"
+          />
+        </template>
+      </UiField>
+    </UiListToolbar>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="orders-action-feedback" />
 
@@ -212,11 +243,15 @@ onMounted(() => store.fetchAll())
       :message="store.error"
       :loading="store.loading"
       testid="orders-error"
-      @retry="store.fetchAll()"
+      @retry="load"
     />
 
     <UiCard v-else-if="store.orders.length > 0 || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && store.orders.length === 0" :colspan="9" data-testid="orders-table">
+      <UiTable
+        :density="UiTableDensity.Comfortable"
+        :loading="store.loading && store.orders.length === 0"
+        data-testid="orders-table"
+      >
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('orders.ordersList.order') }}</UiTableHeader>
@@ -282,24 +317,34 @@ onMounted(() => store.fetchAll())
         </UiTableBody>
       </UiTable>
 
-      <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiText tone="muted" size="xs">
-          {{ t('orders.ordersList.totalcountOrderValue', { totalCount: store.totalCount }) }}
-        </UiText>
-        <UiPagination
-          :page="store.page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          testid="orders-pagination"
-          @update:page="goToPage"
-        />
-      </UiStack>
+      <template #footer>
+        <UiStack direction="row" justify="between" align="center" wrap>
+          <UiText tone="muted" size="xs">
+            {{ t('orders.ordersList.totalcountOrderValue', { totalCount: store.totalCount }) }}
+          </UiText>
+          <UiPagination
+            :page="query.page.value"
+            :total="store.totalCount"
+            :page-size="store.pageSize"
+            testid="orders-pagination"
+            @update:page="query.setPage"
+          />
+        </UiStack>
+      </template>
     </UiCard>
 
     <UiCard v-else>
-      <UiEmptyState :title="t('orders.ordersList.noOrdersFound')" data-testid="orders-empty">
+      <UiEmptyState
+        :title="statusOfAddress === null ? t('orders.ordersList.noOrdersFound') : t('orders.ordersList.noOrdersMatchYourFilters')"
+        data-testid="orders-empty"
+      >
         <template #icon>
           <UiIcon :markup="Icon.Clipboard" size="lg" />
+        </template>
+        <template v-if="statusOfAddress !== null" #actions>
+          <UiButton :variant="UiButtonVariant.Link" data-testid="orders-clear-filters" @click="query.clearAll">
+            {{ t('orders.ordersList.clearFilters') }}
+          </UiButton>
         </template>
       </UiEmptyState>
     </UiCard>

@@ -22,7 +22,7 @@ import type {
   InvoicePaymentPayload,
   InvoiceRefundPayload,
 } from '@/types/invoice'
-import { LEDGER_PAGE_SIZE } from '@/lib/limits'
+import { LEDGER_PAGE_SIZE, LOOKUP_PAGE_SIZE } from '@/lib/limits'
 
 /** Loads, creates and changes invoices for the admin billing screens. */
 export const useBillingStore = defineStore('billing', () => {
@@ -51,9 +51,6 @@ export const useBillingStore = defineStore('billing', () => {
 
   /** Total number of client-scoped invoices. */
   const clientInvoicesTotal = ref(0)
-
-  /** Selected invoice ids for bulk actions. */
-  const selectedIds = ref<number[]>([])
 
   /** Fulfilment records of the open invoice, oldest first. */
   const fulfilment = ref<FulfilmentRecord[]>([])
@@ -156,6 +153,20 @@ export const useBillingStore = defineStore('billing', () => {
       clientInvoices.value = result.value.items
       clientInvoicesTotal.value = result.value.totalCount
     }
+  }
+
+  /**
+   * Loads the latest invoices of a client for a picker. It touches neither the lists the screens
+   * show nor the store error: a failed lookup is not surfaced, the picker is just empty.
+   *
+   * @param clientId - The client id.
+   * @returns Up to one lookup page of the client's invoices; empty when the call failed.
+   */
+  const fetchClientInvoiceOptions = async (clientId: number | string): Promise<Invoice[]> => {
+    /** Throwaway error ref: a failed picker lookup is deliberately silent. */
+    const quiet = ref<string | null>(null)
+    const result = await runAction(quiet, () => api.listByClient(clientId, 1, LOOKUP_PAGE_SIZE))
+    return result.ok ? result.value.items : []
   }
 
   /**
@@ -300,18 +311,14 @@ export const useBillingStore = defineStore('billing', () => {
   }
 
   /**
-   * Applies one action to several invoices and clears the selection when it succeeded.
+   * Applies one action to several invoices.
    *
    * @param ids - Invoice ids.
    * @param action - Bulk action name (e.g. `MarkPaid`, `MarkUnpaid`, `MarkCancelled`, `Duplicate`, `Delete`).
    * @returns True when applied; false when refused (see `error`).
    */
   const bulkAction = async (ids: number[], action: string): Promise<boolean> => {
-    const result = await run(() => api.bulk(ids, action))
-    if (result.ok) {
-      selectedIds.value = []
-    }
-    return result.ok
+    return (await run(() => api.bulk(ids, action))).ok
   }
 
   /**
@@ -391,7 +398,6 @@ export const useBillingStore = defineStore('billing', () => {
     currentInvoice,
     clientInvoices,
     clientInvoicesTotal,
-    selectedIds,
     fulfilment,
     fulfilmentLoading,
     fulfilmentError,
@@ -400,6 +406,7 @@ export const useBillingStore = defineStore('billing', () => {
     fetchById,
     downloadPdf,
     fetchClientInvoices,
+    fetchClientInvoiceOptions,
     createInvoice,
     updateItems,
     updateOptions,

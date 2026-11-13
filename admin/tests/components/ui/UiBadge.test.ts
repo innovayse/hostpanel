@@ -10,13 +10,14 @@ describe('UiBadge', () => {
     const wrapper = mount(UiBadge, { slots: { default: 'Active' } })
 
     expect(wrapper.text()).toBe('Active')
-    expect(wrapper.classes()).toContain('rounded-full')
+    expect(wrapper.classes()).toContain('rounded-pill')
   })
 
   it('takes its colours from the tone', () => {
     const wrapper = mount(UiBadge, { props: { tone: 'success' } })
 
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['text-status-green', 'border-status-green/20']))
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['bg-tint-green', 'text-status-green']))
+    expect(wrapper.classes()).not.toContain('border')
   })
 
   it('draws a status dot on request', () => {
@@ -38,5 +39,9 @@ describe('UiBadge', () => {
 
   it('shrinks in the small size', () => {
     expect(mount(UiBadge, { props: { small: true } }).classes()).toContain('text-[0.65rem]')
+  })
+
+  it('sets the full size as the concept pill: 12px, semibold, 4px by 10px', () => {
+    expect(mount(UiBadge).classes()).toEqual(expect.arrayContaining(['text-xs', 'font-semibold', 'px-2.5', 'py-1']))
   })
 })

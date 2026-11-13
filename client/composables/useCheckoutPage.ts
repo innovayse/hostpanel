@@ -24,6 +24,7 @@ import { useClientStore } from '~/stores/client'
 import { useCurrencyStore } from '~/stores/currency'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import { redirectToGateway } from '~/utils/externalRedirect'
+import { detailTitle } from '~/utils/seoTitle'
 
 /**
  * Wires a checkout page. Call it once at the top of the page's `<script setup>` and `await` it:
@@ -78,13 +79,12 @@ export const useCheckoutPage = async () => {
   /** Site name the operator set; the browser tab title ends with it. */
   const { name: siteName } = useSiteIdentity()
 
-  useHead({ title: computed(() => `${t('checkout.title')} — ${siteName.value}`) })
+  useHead({ title: computed(() => detailTitle(t('checkout.title'), siteName.value)) })
 
   /** Checkout state the summary and the submit button read. */
   const {
     staleItems,
     totalLabel,
-    submittingLabel,
     submittingHint,
     paymentMethods,
     selectedMethod,
@@ -170,7 +170,6 @@ export const useCheckoutPage = async () => {
     bundleName,
     bundleOffer,
     bundleDiscount,
-    submittingLabel,
     submittingHint,
     paymentMethods,
     selectedMethod,

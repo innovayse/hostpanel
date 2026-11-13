@@ -4,6 +4,7 @@
  * shown next to the save button.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
 import { invoiceFixture } from '../../helpers/billingFixtures'
@@ -165,5 +166,24 @@ describe('InvoiceItemsSection', () => {
     const table = wrapper.get('[data-testid="billing-invoice-items-editor"]').text()
     expect(table).toContain('2000.00 AMD')
     expect(table).not.toContain('$')
+  })
+
+  it('draws the real columns with placeholder rows and total bars while the invoice loads', async () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: null, loading: true, readonly: true } })
+    // The table headers register their columns while mounting; the placeholder cells follow on the next tick.
+    await nextTick()
+
+    const table = wrapper.get('[data-testid="billing-invoice-items-table"]')
+    expect(table.findAll('th').map((th) => th.text())).toEqual(['Description', 'Amount'])
+    expect(table.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="billing-invoice-total-total"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-total-total-skeleton"]').exists()).toBe(true)
+  })
+
+  it('disables the editor controls while the invoice loads', () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: null, loading: true } })
+
+    expect(wrapper.get('[data-testid="billing-invoice-items-add"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="billing-invoice-items-save"]').attributes('disabled')).toBeDefined()
   })
 })

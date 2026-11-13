@@ -64,7 +64,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ContactEmailInvalid" xml:space="preserve">
-    <value>Նշեք վավեր էլ․ փոստի հասցե։</value>
+    <value>Նշեք վավեր էլ. փոստի հասցե։</value>
     <comment>SendContactMessageHandler.</comment>
   </data>
   <data name="ContactFieldRequired" xml:space="preserve">
@@ -80,7 +80,7 @@
     <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
   </data>
   <data name="ContactFieldEmail" xml:space="preserve">
-    <value>Էլ․ փոստ</value>
+    <value>Էլ. փոստ</value>
     <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
   </data>
   <data name="ContactFieldMessage" xml:space="preserve">
@@ -275,7 +275,7 @@
     <value>Կրեդիտի գումարը պետք է լինի զրոյից մեծ։</value>
   </data>
 <data name="InvoiceRefundAmountInvalid" xml:space="preserve">
-    <value>Վերադարձի գումարը չի կարող լինել բացասական. զրոն նշանակում է վերադարձնել ամբողջ սկզբնական գործարքը։</value>
+    <value>Վերադարձի գումարը չի կարող լինել բացասական։ Զրոն նշանակում է վերադարձնել ամբողջ սկզբնական գործարքը։</value>
   </data>
 <data name="InvoiceRefundTypeInvalid" xml:space="preserve">
     <value>Վերադարձի տեսակը պետք է լինի Gateway, Manual կամ CreditBalance։</value>
@@ -372,6 +372,9 @@
   </data>
   <data name="DomainPageRequired" xml:space="preserve">
     <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
+  </data>
+  <data name="DomainListSearchTooLong" xml:space="preserve">
+    <value>Տիրույթների որոնման տեքստը չի կարող լինել {0} նիշից երկար։</value>
   </data>
   <data name="DomainPageSizeRange" xml:space="preserve">
     <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
@@ -869,7 +872,7 @@
     <value>Դոմենով փաթեթին պետք է 1-ից {0} տարի գրանցում, իսկ առանց դոմենի փաթեթը պետք է թողնի տարիները դատարկ։</value>
   </data>
   <data name="ProductBundleDiscountInvalid" xml:space="preserve">
-    <value>Զեղչը չի համապատասխանում իր տեսակին․ տոկոսը 0-ից {0} է, ֆիքսված գումարը բացասական չէ և պահանջում է արժույթի կոդ, իսկ առանց զեղչի ոչ գումար է պետք, ոչ արժույթ։</value>
+    <value>Զեղչը չի համապատասխանում իր տեսակին։ Տոկոսը 0-ից {0} է, ֆիքսված գումարը բացասական չէ և պահանջում է արժույթի կոդ, իսկ առանց զեղչի ոչ գումար է պետք, ոչ արժույթ։</value>
   </data>
   <data name="ProductBundleItemsRequired" xml:space="preserve">
     <value>Փաթեթին ավելացրեք առնվազն մեկ արտադրանք։</value>
@@ -1244,7 +1247,7 @@
     <value>Նույնացուցիչը կարող է պարունակել միայն փոքրատառ լատինատառեր, թվեր և միայնակ գծիկներ։</value>
   </data>
   <data name="ProjectImageUrlsRequired" xml:space="preserve">
-    <value>Փոխանցեք պատկերների ցանկը, դատարկ՝ եթե պատկերներ չկան։</value>
+    <value>Փոխանցեք պատկերների ցանկը։ Եթե պատկերներ չկան, ցանկը պետք է դատարկ լինի։</value>
   </data>
   <data name="ProjectImagesTooMany" xml:space="preserve">
     <value>Նախագիծը կարող է ունենալ առավելագույնը {0} պատկեր։</value>
@@ -1367,7 +1370,7 @@
     <value>Մուտքագրեք ծառայողական օգտատիրոջ վավեր անուն։</value>
   </data>
   <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
-    <value>Հոսթի բանալու fingerprint-ը պետք է լինի SHA256:… (43 նիշ) տեսքի։</value>
+    <value>Հոսթի բանալու fingerprint-ը պետք է լինի SHA256: և 43 նիշ։</value>
   </data>
   <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
     <value>Գաղտնի բանալին չափազանց երկար է։</value>
@@ -1436,7 +1439,7 @@
     <value>Այս դաշտը ինտեգրացիայի կողմից հայտարարված չէ։</value>
   </data>
   <data name="IntegrationFieldExpectSecret" xml:space="preserve">
-    <value>ոչ դատարկ արժեք․ պահված գաղտնիքը պահպանելու համար դաշտը մի ուղարկեք</value>
+    <value>ոչ դատարկ արժեք, իսկ պահված գաղտնիքը պահպանելու համար դաշտը մի ուղարկեք</value>
   </data>
   <data name="IntegrationFieldExpectUrl" xml:space="preserve">
     <value>բացարձակ http կամ https հասցե</value>
@@ -1643,10 +1646,10 @@
     <value>Ընտրեք հայտնի զտիչ յուրաքանչյուր սեգմենտի համար։</value>
   </data>
   <data name="CampaignSegmentValueInvalid" xml:space="preserve">
-    <value>Արժեքը չի համապատասխանում զտիչին. արտադրանքի համար պետք է արտադրանքի id, երկրի համար՝ երկտառ կոդ, ժամկետի ավարտի համար՝ օրերի քանակ 1-ից 365, հաճախորդների խմբի համար՝ խմբի id, մուտքի զտիչի համար՝ օրերի քանակ 1-ից 3650, իսկ բոլոր ակտիվ հաճախորդների զտիչը արժեք չի ընդունում։</value>
+    <value>Արժեքը չի համապատասխանում զտիչին։ Արտադրանքի համար պետք է արտադրանքի id, երկրի համար՝ երկտառ կոդ, ժամկետի ավարտի համար՝ օրերի քանակ 1-ից 365, հաճախորդների խմբի համար՝ խմբի id, մուտքի զտիչի համար՝ օրերի քանակ 1-ից 3650, իսկ բոլոր ակտիվ հաճախորդների զտիչը արժեք չի ընդունում։</value>
   </data>
   <data name="CampaignSegmentSignInUnavailable" xml:space="preserve">
-    <value>Վերջին մուտքով զտումն այստեղ հասանելի չէ. այս տեղադրումը մուտք է գործում միասնական մուտքի մատակարարի միջոցով, որը արտադրանքին չի հայտնում, թե հաճախորդը երբ է վերջին անգամ մուտք գործել։</value>
+    <value>Վերջին մուտքով զտումն այստեղ հասանելի չէ։ Այս տեղադրումը մուտք է գործում միասնական մուտքի մատակարարի միջոցով, որը արտադրանքին չի հայտնում, թե հաճախորդը երբ է վերջին անգամ մուտք գործել։</value>
   </data>
   <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
     <value>Ապաբաժանորդագրվելու հղումը տոկեն չի պարունակում։</value>

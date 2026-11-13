@@ -3,36 +3,48 @@
  * Admin sidebar with navigation links, grouped under the section labels of `lib/navigation.ts`,
  * which alone decides the order (the phone drawer draws this same component).
  *
- * Supports expandable submenus for items with children.
+ * A full-height column against the left edge: the product mark and name on top, every entry its own icon and a label
+ * (with a count where the dashboard statistics know one), the current page a filled pill, an entry with
+ * children opening a sub-menu in place, and the signed-in account at the bottom.
  * Responsive behaviour:
- * - lg+: full sidebar (220px), always visible
+ * - lg+: a 248px column that the operator can fold to a 72px icon rail (remembered by the sidebar store).
+ *   In the rail an entry is its icon alone (the label is its tooltip and accessible name) and a click on an
+ *   entry with a sub-menu opens the panel again, so a sub-menu is never out of reach.
  * - Emits `navigate` on link click so the mobile drawer can close.
- * - In the drawer (`embedded`) it also carries the theme select, which the top bar has no room for on a phone.
+ * - In the drawer (`embedded`) it is always drawn in full, keeps clear of the home indicator and also carries
+ *   the theme select, which the top bar has no room for on a phone.
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useRoute } from 'vue-router'
+import { useNavSections } from '@/composables/useNavSections'
+import { useBrandingStore } from '@/stores/branding'
+import { useDashboardStore } from '@/stores/dashboard'
 import { useNavigationStore } from '@/stores/navigation'
 import { usePluginUiStore } from '@/stores/pluginUi'
+import { useSidebarStore } from '@/stores/sidebar'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiImage from '@/components/ui/UiImage.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
+import AccountCard from '@/components/layout/AccountCard.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
 import ReleaseUpdateNotice from '@/components/layout/ReleaseUpdateNotice.vue'
-import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
+import LocaleMenu from '@/components/layout/LocaleMenu.vue'
+import ThemeMenu from '@/components/layout/ThemeMenu.vue'
 import VersionLabel from '@/components/layout/VersionLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
+import { Icon } from '@/lib/icons'
 import { AppRoute } from '@/lib/routes'
-import { NAV_SECTIONS, withAddons } from '@/lib/navigation'
-import type { NavItem, NavSection } from '@/lib/navigation'
+import type { NavItem } from '@/lib/navigation'
+import { navItemTextClasses, navSubItemTextClasses } from '@/utils/ui/nav'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props of the sidebar. */
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   /** Shown inside the menu drawer: the full width of the panel, no frame and no logo (the drawer has a title). */
   embedded?: boolean
 }>(), {
@@ -48,12 +60,6 @@ const emit = defineEmits<{
 /** Translation function. */
 const { t, locale } = useI18n()
 
-/** Auth store: the sign-out action. */
-const authStore = useAuthStore()
-
-/** Router, for the redirect after sign-out. */
-const router = useRouter()
-
 /** Current route, to mark the active item. */
 const route = useRoute()
 
@@ -62,6 +68,15 @@ const navigation = useNavigationStore()
 
 /** Plugin ui store: the menu items plugins declare, drawn as the Add-ons section. */
 const pluginUi = usePluginUiStore()
+
+/** Sidebar store: whether the desktop panel is folded to the icon rail. */
+const sidebar = useSidebarStore()
+
+/** Branding store: whether the operator uploaded a logo for the brand slot. */
+const branding = useBrandingStore()
+
+/** Dashboard store: the statistics behind the count badges. */
+const dashboard = useDashboardStore()
 
 /**
  * The path the menu marks as active: the target of a navigation still downloading its screen, so
@@ -72,26 +87,81 @@ const activePath = computed<string>(() => navigation.pending?.path ?? route.path
 /** Set of expanded parent item routes (keyed by `to`, stable across locales). */
 const expanded = ref<Set<string>>(new Set())
 
-/** Chevron drawn after the label of an item that has a sub-menu. */
-const CHEVRON_MARKUP = '<polyline points="9 18 15 12 9 6"/>'
+/** Size and type shared by every top-level entry: 42px tall, 12px corners, 14px type (the kit's navigation size). */
+const ITEM_BASE_CLASSES = `flex h-[2.625rem] items-center rounded-control ${navItemTextClasses} transition-all duration-150`
 
-/** Sign-out glyph. */
-const SIGN_OUT_MARKUP = '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>'
+/**
+ * Shape of a sub-menu link: a fixed 2rem row (the guide's maths relies on it), 13px type (the kit's sub-menu size).
+ * `before` is its elbow: a small rounded corner at the row's vertical centre joining the list's rail to the link, 16px
+ * left of the row so neither the hover fill nor the active pill ever covers it.
+ */
+const CHILD_BASE_CLASSES = `relative flex h-8 items-center gap-2 rounded-[7px] px-3 ${navSubItemTextClasses} no-underline transition-all duration-150 before:absolute before:-left-4 before:top-[calc(50%-0.5rem)] before:h-2 before:w-2.5 before:rounded-bl-lg before:border-b-[1.5px] before:border-l-[1.5px] before:transition-colors before:duration-300 before:content-['']`
 
-/** Book / documentation glyph. */
-const BOOK_MARKUP = '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>'
+/**
+ * Shape of a sub-menu list: one continuous muted rail (`before`) from the parent row down to the centre of the last row
+ * (the 1.25rem under it are the list's bottom padding and half a row), and over it the lit overlay (`after`) from the top
+ * to the centre of the active row, 1.25rem plus 2.25rem for every row above it, filled with the start to end gradient.
+ */
+const CHILD_LIST_CLASSES = "relative py-1 pl-9 before:absolute before:bottom-5 before:left-5 before:top-0 before:w-[1.5px] before:bg-border-strong before:content-[''] after:absolute after:left-5 after:top-0 after:h-[calc(1.25rem+var(--n)*2.25rem)] after:w-[1.5px] after:bg-linear-to-b after:from-(--nav-guide-start) after:to-(--nav-guide-end) after:content-['']"
+
+/** Elbow colour of a row that is not on the lit path (below the active one, or no active one): the muted hairline. */
+const CHILD_GUIDE_IDLE_CLASSES = 'before:border-border-strong'
+
+/** Elbow colour of a row on the lit path (up to and including the active one): the overlay's colour at that row. */
+const CHILD_GUIDE_LIT_CLASSES = 'nav-guide-lit before:border-(--nav-guide-from)'
+
+/** Place of a link on the guide (`--i`), as literal classes since a class built at run time emits no CSS; as long as the longest sub-menu. */
+const CHILD_STOP_CLASSES = ['[--i:0]', '[--i:1]', '[--i:2]', '[--i:3]', '[--i:4]', '[--i:5]', '[--i:6]', '[--i:7]', '[--i:8]', '[--i:9]', '[--i:10]', '[--i:11]'] as const
+
+/** Place of the active link on the guide (`--n`), the same literals for the same reason. */
+const ACTIVE_STOP_CLASSES = ['[--n:0]', '[--n:1]', '[--n:2]', '[--n:3]', '[--n:4]', '[--n:5]', '[--n:6]', '[--n:7]', '[--n:8]', '[--n:9]', '[--n:10]', '[--n:11]'] as const
+
+/** Look of an entry that is not the current page; the transparent border keeps both looks the same size. */
+const ITEM_IDLE_CLASSES = 'border border-transparent text-text-secondary hover:bg-surface-hover hover:text-text-primary'
+
+/** Look of the current page: the filled accent pill with its hairline. */
+const ITEM_ACTIVE_CLASSES = 'border border-(color:--nav-active-border) bg-(--nav-active-bg) text-text-primary'
+
+/** Look of a sub-menu link that is not the current page. */
+const CHILD_IDLE_CLASSES = 'text-text-muted hover:bg-surface-hover hover:text-text-secondary'
+
+/** Look of the sub-menu link of the current page. */
+const CHILD_ACTIVE_CLASSES = 'bg-surface-hover text-text-accent'
+
+/** Icon colour of an entry: muted. */
+const ICON_IDLE_CLASSES = 'text-text-muted'
+
+/** Icon colour of the current page: the accent. */
+const ICON_ACTIVE_CLASSES = 'text-text-accent'
 
 /** Documentation URL from runtime config; empty when the docs site is not configured. */
 const { docsUrl } = getRuntimeConfig()
 
-/**
- * The sidebar sections, in display order, with the Add-ons section while a plugin declares a menu item;
- * a section with no item left draws no label.
- */
-const sections = computed<NavSection[]>(() => withAddons(NAV_SECTIONS, pluginUi.menu).filter((section) => section.items.length > 0))
+/** True when the panel is drawn as the icon rail: folded, and not inside the phone drawer (which is always full). */
+const rail = computed<boolean>(() => !props.embedded && sidebar.collapsed)
 
-/** First letter of the account label, for the footer tile. */
-const adminInitial = computed<string>(() => t('common.admin').charAt(0).toUpperCase())
+/** Glyph of the fold button: a left chevron while the panel is open, a right one while it is a rail. */
+const foldMarkup = computed<string>(() => (rail.value ? Icon.Chevron : Icon.Back))
+
+/** Accessible name of the fold button. */
+const foldLabel = computed<string>(() => (rail.value ? t('layout.expandSidebar') : t('layout.collapseSidebar')))
+
+/** The sidebar sections, in display order, with the Add-ons section while a plugin declares a menu item. */
+const sections = useNavSections()
+
+/** The count badge of each entry that has one, by route: the registered clients and the open tickets. */
+const counts = computed<Record<string, number | undefined>>(() => ({
+  [AppRoute.Clients]: dashboard.stats?.totalClients,
+  [AppRoute.Support]: dashboard.stats?.openTickets,
+}))
+
+/**
+ * The count to show beside an entry.
+ *
+ * @param item - The entry.
+ * @returns The count, or undefined when the entry has none or the statistics are not loaded yet.
+ */
+const countOf = (item: NavItem): number | undefined => counts.value[item.to]
 
 /**
  * The label of a top-level entry: the panel's own through its i18n key, a plugin's as the API sent it.
@@ -102,30 +172,12 @@ const adminInitial = computed<string>(() => t('common.admin').charAt(0).toUpperC
 const labelOf = (item: NavItem): string => (item.labelKey === undefined ? item.label : t(item.labelKey))
 
 /**
- * Turns SVG path data into the shape markup `UiIcon` draws.
- *
- * @param path - The `d` attribute of a path.
- * @returns Inner SVG markup holding that single path.
- */
-const iconMarkup = (path: string): string => `<path d="${path}"/>`
-
-/**
  * Builds the `data-testid` of a nav entry from its route.
  *
  * @param to - The route path.
  * @returns A stable id such as `nav-clients-users`.
  */
 const testidOf = (to: string): string => `nav-${to.replace(/^\//, '').replaceAll('/', '-')}`
-
-/**
- * Logs out the current user and redirects to login.
- *
- * @returns Promise that resolves after logout.
- */
-const handleLogout = async (): Promise<void> => {
-  await authStore.logout()
-  await router.push(AppRoute.Login)
-}
 
 /**
  * Checks if a nav item or any of its children is currently active.
@@ -151,18 +203,54 @@ const isActive = (item: NavItem): boolean => {
  * @returns True if the current route matches exactly.
  */
 const isChildActive = (to: string): boolean => {
-  if (to === AppRoute.Clients || to === AppRoute.Settings) {
+  if (to === AppRoute.Clients) {
     return activePath.value === to
   }
   return activePath.value.startsWith(to)
 }
 
 /**
- * Toggles the expanded state of a parent nav item.
+ * Finds the sub-menu link of the current page.
+ *
+ * @param item - The entry whose sub-menu is searched.
+ * @returns The index of the active child, or -1 when none is active.
+ */
+const activeChildIndex = (item: NavItem): number => (item.children ?? []).findIndex((child) => isChildActive(child.to))
+
+/**
+ * Picks the elbow classes of a sub-menu link from its place relative to the active one: the elbows on the path from the
+ * parent to the active link are lit in the gradient's colour, the rest stay a muted hairline (no pixel measuring).
+ *
+ * @param index - The index of the link in its sub-menu.
+ * @param activeIndex - The index of the active link, or -1.
+ * @returns The guide classes of the link.
+ */
+const childGuideClasses = (index: number, activeIndex: number): string => {
+  if (activeIndex === -1 || index > activeIndex) {
+    return CHILD_GUIDE_IDLE_CLASSES
+  }
+  return `${CHILD_GUIDE_LIT_CLASSES} ${CHILD_STOP_CLASSES[index]}`
+}
+
+/**
+ * Picks the classes of a sub-menu list: the rail and, when a link is active, the lit overlay down to it (`--n`);
+ * with no active link the overlay is not drawn.
+ *
+ * @param activeIndex - The index of the active link, or -1.
+ * @returns The list classes.
+ */
+const childListClasses = (activeIndex: number): string =>
+  activeIndex === -1 ? `${CHILD_LIST_CLASSES} after:hidden` : `${CHILD_LIST_CLASSES} ${ACTIVE_STOP_CLASSES[activeIndex]}`
+
+/**
+ * Toggles the expanded state of a parent nav item; in the rail it first opens the panel, since a sub-menu has no room there.
  *
  * @param to - The route path of the item to toggle.
  */
 const toggleExpand = (to: string): void => {
+  if (rail.value) {
+    sidebar.setCollapsed(false)
+  }
   const next = new Set(expanded.value)
   if (next.has(to)) {
     next.delete(to)
@@ -186,8 +274,27 @@ const isExpanded = (item: NavItem): boolean => {
   return item.children !== undefined && isActive(item)
 }
 
+/** The scrolling navigation column, searched for the current entry. */
+const navElement = ref<HTMLElement | null>(null)
+
+/**
+ * Scrolls the current page's link (a sub-menu link when it has one) into view once the menu has redrawn, so a column taller than the screen never hides the page the operator is on.
+ *
+ * @returns Promise that resolves after the menu has redrawn.
+ */
+const revealActive = async (): Promise<void> => {
+  await nextTick()
+  navElement.value?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView?.({ block: 'nearest' })
+}
+
 onMounted(() => {
   void pluginUi.loadUi()
+  void revealActive()
+})
+
+// A route change opens a sub-menu or moves the mark, and the entry may sit below the fold.
+watch(activePath, () => {
+  void revealActive()
 })
 
 // The plugins' labels come in the operator's language, so a language switch reads the index again.
@@ -199,66 +306,102 @@ watch(locale, () => {
 <template>
   <aside
     class="flex h-full min-h-0 flex-col"
-    :class="embedded ? 'w-full bg-surface-card' : 'w-[220px] shrink-0 border-r border-border bg-surface-panel'"
+    :class="embedded
+      ? 'w-full pb-[env(safe-area-inset-bottom)]'
+      : ['shrink-0 overflow-hidden border-r border-border-shell bg-surface-sidebar transition-[width] duration-(--duration-slow) motion-reduce:transition-none', rail ? 'w-18' : 'w-62']"
     data-testid="app-sidebar"
   >
-    <!-- Logo: the drawer already has its own title, so the embedded menu leaves it out. -->
-    <UiStack v-if="!embedded" direction="row" align="center" gap="none" class="border-b border-border px-5 py-[18px]">
-      <!-- The wordmark for the active theme; the operator's upload when there is one. -->
-      <BrandLogo img-class="h-7 w-auto" />
+    <!-- Header: the brand (the operator's logo when one is uploaded, else the product mark and name) with the fold button beside it, or under the mark in the rail. The drawer has its own title and no fold button, so the embedded menu leaves the header out. -->
+    <UiStack
+      v-if="!embedded"
+      :direction="rail ? 'column' : 'row'"
+      align="center"
+      :justify="rail ? 'center' : 'between'"
+      gap="none"
+      class="h-(--shell-header-h) shrink-0 gap-0.5 border-b border-border-shell"
+      :class="rail ? 'px-3' : 'gap-2 px-6'"
+    >
+      <UiStack direction="row" align="center" gap="none" class="min-w-0 gap-2.5">
+        <BrandLogo v-if="branding.hasLogo && !rail" img-class="h-8 w-auto max-w-full" />
+        <template v-else>
+          <UiImage src="/favicon.svg" class="size-[34px] shrink-0" data-testid="sidebar-brand-mark" />
+          <UiText
+            v-if="!rail"
+            :tone="UiTextTone.Plain"
+            class="truncate font-display text-lg font-bold"
+            data-testid="sidebar-brand-name"
+          >
+            {{ t('shared.brandName') }}
+          </UiText>
+        </template>
+      </UiStack>
+      <UiIconButton :label="foldLabel" size="sm" data-testid="sidebar-collapse-toggle" @click="sidebar.toggle()">
+        <UiIcon :markup="foldMarkup" size="sm" />
+      </UiIconButton>
     </UiStack>
 
     <!-- Nav links -->
-    <nav class="scroll-subtle flex-1 overflow-y-auto px-2.5 pb-2 pt-3" :aria-label="t('layout.navigation')">
-      <UiStack gap="md">
-        <!-- One group per section of the navigation config; its label sits over the group. -->
-        <UiStack v-for="section in sections" :key="section.id" gap="xs" :data-testid="`nav-section-${section.id}`">
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="px-3 pb-0.5 font-semibold uppercase tracking-wider" :data-testid="`nav-section-${section.id}-label`">
+    <nav ref="navElement" class="min-h-0 flex-1 scroll-pt-3 overflow-y-auto overflow-x-hidden px-3 pb-2 pt-3" :aria-label="t('layout.navigation')">
+      <UiStack gap="sm">
+        <!-- One group per section of the navigation config; its label sits over the group, a hairline stands in for it in the rail. -->
+        <UiStack v-for="section in sections" :key="section.id" gap="none" class="gap-0.5" :data-testid="`nav-section-${section.id}`">
+          <UiText
+            v-if="!rail && section.labelKey !== undefined"
+            :tone="UiTextTone.Muted"
+            :size="UiTextSize.Xs"
+            class="px-3 pb-0.5 pt-1 font-display font-semibold uppercase tracking-wider"
+            :data-testid="`nav-section-${section.id}-label`"
+          >
             {{ t(section.labelKey) }}
           </UiText>
+          <UiStack v-else-if="rail && section.labelKey !== undefined" gap="none" class="mx-2 border-t border-border" aria-hidden="true" />
           <template v-for="item in section.items" :key="item.to">
             <!-- Item WITH children: toggle button, then the sub-menu (one block, so the list's gap does not add a gap for a closed sub-menu) -->
             <div v-if="item.children">
               <UiButton
                 type="button"
                 variant="plain"
-                class="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2 text-left text-[0.84rem] font-medium transition-all duration-150"
-                :class="isActive(item)
-                  ? 'bg-primary-500/10 text-text-primary'
-                  : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'"
+                class="w-full text-left"
+                :class="[ITEM_BASE_CLASSES, rail ? 'justify-center px-0' : 'gap-3 px-3', isActive(item) ? ITEM_ACTIVE_CLASSES : ITEM_IDLE_CLASSES]"
                 :aria-expanded="isExpanded(item)"
+                :aria-label="rail ? labelOf(item) : undefined"
+                :title="rail ? labelOf(item) : undefined"
                 :data-testid="testidOf(item.to)"
                 @click="toggleExpand(item.to)"
               >
-                <UiIcon :markup="iconMarkup(item.icon)" size="sm" :class="isActive(item) ? 'text-primary-400' : 'opacity-60'" />
-                <span class="flex-1">{{ labelOf(item) }}</span>
-                <UiIcon :markup="CHEVRON_MARKUP" size="sm" class="text-text-muted transition-transform duration-300" :class="isExpanded(item) ? 'rotate-90' : ''" />
+                <UiIcon :markup="item.icon" size="sm" :class="isActive(item) ? ICON_ACTIVE_CLASSES : ICON_IDLE_CLASSES" />
+                <template v-if="!rail">
+                  <span class="flex-1">{{ labelOf(item) }}</span>
+                  <UiText v-if="countOf(item) !== undefined" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" :data-testid="`${testidOf(item.to)}-count`">{{ countOf(item) }}</UiText>
+                  <UiIcon :markup="Icon.Chevron" size="sm" class="text-text-muted transition-transform duration-300" :class="isExpanded(item) ? 'rotate-90' : ''" />
+                </template>
               </UiButton>
 
               <!--
-                The sub-menu is drawn as a tree: each link has a short branch (`after`) to a trunk (`before`) that
-                runs up the left to the parent's icon, and the trunk of the last link stops at its branch.
+                The sub-menu is drawn as a tree: each link has a small rounded elbow (`before`) off one rail (the list's
+                `before`) that runs down from the parent's icon to the last link's elbow; an overlay (the list's `after`) lights the
+                rail in a gradient down to the active link.
                 The sub-menu opens and closes over 300 ms: the row grows from zero height (the grid rows go from 0fr to
                 1fr, which needs no measured height) while its links fade. A closed sub-menu is `inert`, so its links
                 are out of the tab order and unreadable to a screen reader, as `display: none` would make them.
+                The rail has no sub-menu: opening one unfolds the panel first.
               -->
               <div
+                v-if="!rail"
                 class="grid transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none"
                 :class="isExpanded(item) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
                 :inert="!isExpanded(item)"
                 :data-testid="`${testidOf(item.to)}-submenu`"
               >
                 <div class="min-h-0 overflow-hidden">
-                  <UiStack gap="xs" class="py-1 pl-9">
+                  <UiStack gap="none" class="gap-1" :class="childListClasses(activeChildIndex(item))">
                     <UiLink
-                      v-for="child in item.children"
+                      v-for="(child, index) in item.children"
                       :key="child.to"
                       :to="child.to"
                       variant="plain"
-                      class="relative flex items-center gap-2 rounded-[7px] px-3 py-[5px] text-[0.78rem] font-medium no-underline transition-all duration-150 before:absolute before:-left-4 before:-top-1 before:w-px before:bg-border-strong before:content-[''] before:h-[calc(100%+0.25rem)] first:before:-top-1.5 first:before:h-[calc(100%+0.5rem)] last:before:h-[calc(50%+0.25rem)] first:last:before:h-[calc(50%+0.5rem)] after:absolute after:-left-4 after:top-1/2 after:h-px after:w-3 after:transition-colors after:duration-300 after:content-['']"
-                      :class="isChildActive(child.to)
-                        ? 'bg-primary-500/10 text-primary-400 after:bg-primary-400'
-                        : 'text-text-muted after:bg-border-strong hover:bg-surface-hover hover:text-text-secondary hover:after:bg-text-muted'"
+                      :class="[CHILD_BASE_CLASSES, childGuideClasses(index, activeChildIndex(item)), isChildActive(child.to) ? CHILD_ACTIVE_CLASSES : CHILD_IDLE_CLASSES]"
+                      :aria-current="isChildActive(child.to) ? 'page' : undefined"
                       :data-testid="testidOf(child.to)"
                       @click="emit('navigate')"
                     >
@@ -274,15 +417,17 @@ watch(locale, () => {
               v-else
               :to="item.to"
               variant="plain"
-              class="flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[0.84rem] font-medium no-underline transition-all duration-150"
-              :class="isActive(item)
-                ? 'bg-primary-500/10 text-text-primary'
-                : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'"
+              class="no-underline"
+              :class="[ITEM_BASE_CLASSES, rail ? 'justify-center px-0' : 'gap-3 px-3', isActive(item) ? ITEM_ACTIVE_CLASSES : ITEM_IDLE_CLASSES]"
+              :aria-current="isActive(item) ? 'page' : undefined"
+              :aria-label="rail ? labelOf(item) : undefined"
+              :title="rail ? labelOf(item) : undefined"
               :data-testid="testidOf(item.to)"
               @click="emit('navigate')"
             >
-              <UiIcon :markup="iconMarkup(item.icon)" size="sm" :class="isActive(item) ? 'text-primary-400' : 'opacity-60'" />
-              <span>{{ labelOf(item) }}</span>
+              <UiIcon :markup="item.icon" size="sm" :class="isActive(item) ? ICON_ACTIVE_CLASSES : ICON_IDLE_CLASSES" />
+              <span v-if="!rail" class="flex-1">{{ labelOf(item) }}</span>
+              <UiText v-if="!rail && countOf(item) !== undefined" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" :data-testid="`${testidOf(item.to)}-count`">{{ countOf(item) }}</UiText>
             </UiLink>
           </template>
         </UiStack>
@@ -292,38 +437,33 @@ watch(locale, () => {
         v-if="docsUrl"
         :href="docsUrl"
         external
-        class="mt-2 flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[0.84rem] font-medium no-underline text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all duration-150"
+        class="mt-2 no-underline"
+        :class="[ITEM_BASE_CLASSES, rail ? 'justify-center px-0' : 'gap-3 px-3', ITEM_IDLE_CLASSES]"
+        :aria-label="rail ? t('nav.documentation') : undefined"
+        :title="rail ? t('nav.documentation') : undefined"
         data-testid="nav-documentation"
       >
-        <UiIcon :markup="BOOK_MARKUP" size="sm" class="opacity-60" />
-        <span>{{ t('nav.documentation') }}</span>
+        <UiIcon :markup="Icon.Book" size="sm" :class="ICON_IDLE_CLASSES" />
+        <span v-if="!rail">{{ t('nav.documentation') }}</span>
       </UiLink>
     </nav>
 
-    <!-- The top bar hides its theme picker on a phone, so the drawer is where a phone changes the theme. -->
-    <UiStack v-if="embedded" gap="none" class="border-t border-border px-3 py-3">
-      <ThemeSwitch testid="sidebar-theme" />
+    <!-- The top bar hides its theme and language pickers on a phone, so the drawer is where a phone changes them. -->
+    <UiStack v-if="embedded" direction="row" align="center" justify="end" gap="xs" class="border-t border-border-shell px-4 py-3">
+      <ThemeMenu testid="sidebar-theme" />
+      <LocaleMenu testid="sidebar-locale" />
     </UiStack>
 
     <!-- Release update notice: shown only when an upgrade is available -->
-    <ReleaseUpdateNotice />
+    <ReleaseUpdateNotice v-if="!rail" />
 
-    <!-- Footer -->
-    <UiStack gap="xs" class="border-t border-border px-3 py-3">
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack direction="row" align="center" gap="sm">
-          <UiText tone="plain" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] gradient-brand font-display text-[0.7rem] font-bold text-white">
-            {{ adminInitial }}
-          </UiText>
-          <UiText tone="secondary" size="md" class="font-medium">{{ t('common.admin') }}</UiText>
-        </UiStack>
+    <!-- The signed-in account, with its menu. -->
+    <UiStack gap="none" class="px-4 pt-2" :class="rail ? 'pb-4' : 'pb-2'">
+      <AccountCard :rail="rail" />
+    </UiStack>
 
-        <UiIconButton :label="t('common.signOut')" size="sm" data-testid="sidebar-sign-out" @click="handleLogout">
-          <UiIcon :markup="SIGN_OUT_MARKUP" size="sm" />
-        </UiIconButton>
-      </UiStack>
-
-      <!-- Quiet version line; nothing is drawn until the version is known. -->
+    <!-- Quiet version line; nothing is drawn until the version is known. -->
+    <UiStack v-if="!rail" gap="none" class="px-4 pb-4 pt-1">
       <VersionLabel testid="sidebar-version" />
     </UiStack>
   </aside>

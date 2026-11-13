@@ -51,7 +51,7 @@
       />
       <UiButton type="submit" variant="primary" size="lg" full-width :loading="loading" data-testid="reset-submit">
         <KeyRound v-if="!loading" :size="18" :stroke-width="2" class="mr-2" />
-        {{ loading ? $t('client.resetPassword.submitting') : $t('client.resetPassword.submit') }}
+        {{ $t('client.resetPassword.submit') }}
       </UiButton>
       <UiStack align="center">
         <UiBackLink :to="CLIENT_LOGIN_PATH" testid="reset-back" compact>

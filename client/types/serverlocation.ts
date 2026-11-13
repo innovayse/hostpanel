@@ -1,5 +1,5 @@
 /**
- * Server location type - one data-centre location served by `GET /api/public/locations`.
+ * Server location type: one data-centre location served by `GET /api/public/locations`.
  *
  * @module types/serverlocation
  */

@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 /**
- * UiToggle - an on/off switch.
+ * UiToggle: an on/off switch.
  *
  * It never flips itself: a click emits the value the reader asked for and the parent decides
  * whether to accept it, so a refused request leaves the switch where it was. While `loading` it

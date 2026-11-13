@@ -1,12 +1,9 @@
 {
-  "loading": "Загрузка...",
   "save": "Сохранить",
-  "saving": "Сохранение…",
   "signOut": "Выйти",
   "admin": "Админ",
   "notifications": "Уведомления",
   "notificationsWithCount": "Уведомления, новых: {count}",
-  "toggleSidebar": "Показать/скрыть меню",
   "viewAllNotifications": "Смотреть все уведомления",
   "newCount": "{count} новый | {count} новых | {count} новых",
   "noNotifications": "Нет уведомлений",

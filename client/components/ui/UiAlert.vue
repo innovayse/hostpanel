@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 /**
- * UiAlert - an inline banner for a warning, error, info or success message.
+ * UiAlert: an inline banner for a warning, error, info or success message.
  *
  * Slots: default (message body) and `action` (a trailing button or link).
  *

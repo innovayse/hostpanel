@@ -163,11 +163,12 @@ const download = async (): Promise<void> => {
     <template #footer>
       <UiButton
         :variant="UiButtonVariant.Primary"
-        :disabled="downloading || !anySelected"
+        :loading="downloading"
+        :disabled="!anySelected"
         data-testid="clients-export-download"
         @click="download"
       >
-        {{ downloading ? t('clients.clientExport.generating') : t('shared.download') }}
+        {{ t('shared.download') }}
       </UiButton>
     </template>
   </UiDialog>

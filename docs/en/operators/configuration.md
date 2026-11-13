@@ -242,7 +242,7 @@ The following settings are set directly on the API service in a compose override
 | `SignInLockout__MaxFailedAttempts` | `5` | Wrong passwords before lockout |
 | `SignInLockout__LockoutMinutes` | `15` | Minutes an account stays locked (locked sign-in → 423) |
 
-MaxFailedAttempts accepts 1–100, LockoutMinutes accepts 1–1440. Values outside these ranges refuse startup.
+MaxFailedAttempts accepts 1-100, LockoutMinutes accepts 1-1440. Values outside these ranges refuse startup.
 
 Plugin routes are limited per plugin and per caller, so one plugin or one account cannot use up the API. A plugin route declares its tier in the plugin manifest (`rateLimit`: `default`, `strict` or `heavy`); a route that declares none uses the default tier. A refused request answers 429 with `Retry-After` and the `X-RateLimit-Policy`, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers. Every plugin tier must be positive and no larger than `RateLimit__Global__PermitLimit`, the tiers must be ordered heavy <= strict <= default, and `RateLimit__PluginStreamPermitLimit` must be positive, or startup is refused.
 
@@ -286,7 +286,7 @@ Campaign mails carry a personal token in the address of the open pixel, the trac
   { name: 'API_PORT', type: 'string', default: '5148', description: 'Port the API listens on inside its container. Templated into the edge config, change here only. Tiers: all.' },
   { name: 'CLIENT_PORT', type: 'string', default: '3000', description: 'Port the client portal listens on inside its container. Templated into the edge config, change here only. Tiers: all.' },
   { name: 'API_GC_SERVER', type: 'string', default: '0', description: '.NET GC mode: 0 workstation, 1 server. Tiers: prod, hub.' },
-  { name: 'API_GC_CONSERVE_MEMORY', type: 'string', default: '5', description: 'Memory conservation level, 0–9. Tiers: prod, hub.' },
+  { name: 'API_GC_CONSERVE_MEMORY', type: 'string', default: '5', description: 'Memory conservation level, 0-9. Tiers: prod, hub.' },
   { name: 'API_GC_HEAP_HARD_LIMIT_PERCENT', type: 'string', default: '75', description: 'Heap cap as a percentage of container memory. Tiers: prod, hub.' },
 ]" />
 
@@ -300,7 +300,7 @@ Order numbering, invoice and retry settings are not in <code>.env</code>. Set th
 |---|---|---|
 | `Orders__NumberPrefix` | `ORD-` | Order number prefix |
 | `Orders__NumberDigits` | `4` | Zero-padded digits (e.g., `0042`) |
-| `Orders__InvoicePaymentTermDays` | `7` | Invoice payment term in days (0–365) |
+| `Orders__InvoicePaymentTermDays` | `7` | Invoice payment term in days (0-365) |
 | `Orders__RetryLeaseMinutes` | `10` | Minutes a claim on an order line (the accept's, or a retry's) is respected before a retry may take the line over (1 to 1440). The lease counts from the moment the line's own action starts, and the admin order page offers a retry only where this lease allows it. Set it longer than the slowest registrar or provisioning call. |
 | `InvoicePdf__MaxLines` | `500` | Maximum line items per PDF |
 | `InvoicePdf__MaxConcurrentRenders` | `4` | Concurrent PDF renders |
@@ -363,7 +363,7 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | `Plugins__MaxUncompressedBytes` | `209715200` | Maximum total uncompressed size of a plugin archive in bytes (200 MiB). |
 | `Plugins__MigrationTimeoutSeconds` | `120` | Longest one plugin migration hook may run after an upgrade, in seconds (1 to 3600). Past it the host stops waiting and keeps the plugin switched off until a later attempt succeeds. |
 | `Plugins__MaxViewBytes` | `262144` | Maximum size in bytes of one plugin view document (a page or slot `view` file, 256 KiB); a larger file refuses the plugin at load and at install. 1 to 4194304 (4 MiB). |
-| `Plugins__TrustedPackageSha256__0`, `__1`, ... | n/a | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
+| `Plugins__TrustedPackageSha256__0`, `__1` and so on | n/a | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
 | `PluginApi__MaxBodyBytes` | `1048576` | Largest request body the host reads for a plugin route, in bytes (1 to 67108864). |
 | `PluginApi__CallTimeoutSeconds` | `30` | Seconds the host waits for a plugin route to answer (1 to the ceiling below). Past it the plugin is cancelled through its token and the caller gets `PLUGIN_TIMEOUT` (504). On a streamed reply it covers the wait for the reply and for the first event and the silence between events, never the length of a stream that keeps sending. |
 | `PluginApi__MaxCallTimeoutSeconds` | `600` | The ceiling for a per route limit (1 to 3600). Every route gets `CallTimeoutSeconds` today; a route will be able to ask for a longer limit, up to this, once the plugin SDK has a field for it. Must be at least `CallTimeoutSeconds`. |
@@ -371,7 +371,7 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | `PluginApi__MaxAbandonedCallsPerPlugin` | `8` | Most abandoned calls of one plugin that may still be running (1 to 1000). At the limit, new calls to that plugin are refused at once with `PLUGIN_TIMEOUT` until one of them ends. |
 | `PluginApi__StreamHeartbeatSeconds` | `15` | Seconds a streamed plugin reply may stay silent before the host writes a comment line to keep the connection alive (1 to 300). |
 | `PluginApi__StreamEventMaxBytes` | `65536` | Largest data of one event of a streamed plugin reply, in bytes (1 to 1048576). A plugin that sends a larger event ends the stream with an `error` event. |
-| `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, ... | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
+| `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey` and so on | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
 | `PluginSigning__OperatorKeys__0__KeyId` | n/a | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. With the compose files, set `PLUGIN_OPERATOR_KEY_ID`. Leave it and the public key empty to add none; setting only one of the two stops the API at start. |
 | `PluginSigning__OperatorKeys__0__PublicKey` | n/a | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. With the compose files, set `PLUGIN_OPERATOR_PUBLIC_KEY`. |
 
@@ -461,7 +461,7 @@ The API validates secrets and key settings before it accepts any request. If a c
 | Only one of an optional pair is set | TELEGRAM_BOT_TOKEN set but TELEGRAM_CHAT_ID empty, or vice versa. | Set both or clear both. |
 | CLIENT_HOSTPANEL_SECRET missing | AUTH_MODE=sso but CLIENT_HOSTPANEL_SECRET is empty. | Set the secret or switch to AUTH_MODE=local. |
 | HOSTPANEL_BACKCHANNEL_LOGOUT_KEY too short | Value is shorter than 16 characters on a deployed host. | Generate with openssl rand -hex 24. |
-| Order setting invalid | Orders__NumberPrefix and Orders__NumberDigits cannot produce a valid order number, Orders__InvoicePaymentTermDays is out of range (0–365), or Orders__RetryLeaseMinutes is out of range (1 to 1440). | Correct the values in the compose override. |
+| Order setting invalid | Orders__NumberPrefix and Orders__NumberDigits cannot produce a valid order number, Orders__InvoicePaymentTermDays is out of range (0-365), or Orders__RetryLeaseMinutes is out of range (1 to 1440). | Correct the values in the compose override. |
 | CORS_* origin invalid | An allowed origin is not a valid absolute URL (e.g. missing scheme). | Fix the origin in .env. |
 
 ## Error codes

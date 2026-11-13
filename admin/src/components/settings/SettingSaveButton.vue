@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * The "Save" button beside a single settings control.
+ * The "Save" button beside a single settings control on a page that has no save bar of its own (the plugin settings cards).
  *
- * Every card on the System Settings page saves one row at a time and rendered the same button with
+ * Each plugin settings card saves one row at a time and renders the same button with
  * the same two states; this is that button, once. It is disabled until there is an unsaved edit.
  */
 import { useI18n } from 'vue-i18n'
@@ -28,9 +28,10 @@ const emit = defineEmits<{
   <UiButton
     type="button"
     variant="primary"
-    :disabled="!dirty || saving"
+    :loading="saving"
+    :disabled="!dirty"
     @click="emit('click')"
   >
-    {{ saving ? t('common.saving') : t('common.save') }}
+    {{ t('common.save') }}
   </UiButton>
 </template>

@@ -29,6 +29,7 @@ import {
   BUNDLE_MAX_PERCENTAGE,
 } from '@/types/productbundle'
 import type { ProductBundle, ProductBundleItem, ProductBundlePayload } from '@/types/productbundle'
+import { nextRowKey } from '@/lib/rowKey'
 import { BundleDiscountType, ProductType } from '@/types/productenums'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDirection } from '@/utils/ui/layout'
@@ -72,18 +73,12 @@ interface ComponentRow {
 /** Years of registration a bundle with a domain starts with. */
 const DEFAULT_DOMAIN_YEARS = BUNDLE_DOMAIN_YEARS_MIN
 
-/** Source of the next row key. */
-let nextRowKey = 0
-
 /**
  * Builds an empty component row with a fresh key.
  *
  * @returns The new row.
  */
-const newRow = (): ComponentRow => {
-  nextRowKey += 1
-  return { key: nextRowKey, productId: null }
-}
+const newRow = (): ComponentRow => ({ key: nextRowKey(), productId: null })
 
 /** Form field: bundle name. */
 const name = ref('')

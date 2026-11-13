@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 /**
- * UiMagnetic - makes its slot content drift toward the mouse while the cursor is near.
+ * UiMagnetic: makes its slot content drift toward the mouse while the cursor is near.
  *
  * The moving offset and the settle duration are CSS custom properties (`--mag-x`, `--mag-y`,
  * `--mag-duration`) written on the inner element from script; the transform itself is a Tailwind

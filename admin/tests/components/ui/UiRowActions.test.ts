@@ -1,5 +1,5 @@
 /**
- * Mount tests for UiRowActions: trigger opens the menu, items are rendered, an action fires and
+ * Mount tests for UiRowActions (the teleport is inlined unless a test says otherwise): trigger opens the menu, items are rendered, an action fires and
  * closes the menu, danger items are styled red, Escape closes without firing, and an outside click
  * closes the menu. A per-row testid names the trigger, and an action with a route renders as a real link.
  */
@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { Icon } from '@/lib/icons'
 import type { Router } from 'vue-router'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import { createTestI18n } from '../../helpers/i18n'
@@ -25,7 +26,7 @@ afterEach(() => {
 const mountIt = () =>
   mount(UiRowActions, {
     props: { actions },
-    global: { plugins: [createTestI18n()] },
+    global: { plugins: [createTestI18n()], stubs: { teleport: true } },
     attachTo: document.body,
   })
 
@@ -65,14 +66,14 @@ describe('UiRowActions', () => {
     const wrapper = mountIt()
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     const deleteBtn = wrapper.get('[data-testid="action-delete"]')
-    expect(deleteBtn.classes().some((c) => c.includes('danger'))).toBe(true)
+    expect(deleteBtn.classes()).toContain('text-status-red')
     wrapper.unmount()
   })
 
   it('closes the menu on Escape', async () => {
     const wrapper = mountIt()
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
-    await document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    wrapper.get('[data-testid="row-actions-menu"]').element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
     wrapper.unmount()
@@ -97,15 +98,17 @@ describe('UiRowActions', () => {
     wrapper.unmount()
   })
 
-  it('closes the menu when something scrolls, because a fixed menu would be left behind', async () => {
+  it('places the menu again when something scrolls, because a fixed menu would be left behind', async () => {
     const wrapper = mountIt()
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     await nextTick()
+    const menu = wrapper.get<HTMLElement>('[data-testid="row-actions-menu"]').element
+    menu.style.removeProperty('--fp-right')
 
     window.dispatchEvent(new Event('scroll'))
-    await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+    expect(menu.style.getPropertyValue('--fp-right')).not.toBe('')
+    expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -143,8 +146,8 @@ describe('UiRowActions', () => {
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
 
     const menu = wrapper.get('[data-testid="row-actions-menu"]')
-    expect((menu.element as HTMLElement).style.getPropertyValue('--ra-right')).not.toBe('')
-    expect(menu.classes()).toEqual(expect.arrayContaining(['right-[var(--ra-right)]', 'top-[var(--ra-top,auto)]', 'bottom-[var(--ra-bottom,auto)]']))
+    expect((menu.element as HTMLElement).style.getPropertyValue('--fp-right')).not.toBe('')
+    expect(menu.classes()).toEqual(expect.arrayContaining(['right-[var(--fp-right,auto)]', 'top-[var(--fp-top,auto)]', 'bottom-[var(--fp-bottom,auto)]']))
     wrapper.unmount()
   })
 
@@ -183,15 +186,52 @@ describe('UiRowActions', () => {
       expect(remove.mock.calls.filter(([type]) => type === 'scroll' || type === 'resize').map(([type]) => type)).toEqual(['scroll', 'resize'])
     })
 
-    it('closes the menu on resize', async () => {
+    it('places the menu again on resize and keeps it open', async () => {
       const wrapper = mountIt()
       await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
       await nextTick()
+      const menu = wrapper.get<HTMLElement>('[data-testid="row-actions-menu"]').element
+      menu.style.removeProperty('--fp-right')
 
       window.dispatchEvent(new Event('resize'))
+
+      expect(menu.style.getPropertyValue('--fp-right')).not.toBe('')
+      expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(true)
+      wrapper.unmount()
+    })
+  })
+
+  describe('menu drawn in the page body', () => {
+    it('teleports the menu to the body and keeps it open while the pointer goes down inside it', async () => {
+      const wrapper = mount(UiRowActions, {
+        props: { actions },
+        global: { plugins: [createTestI18n()] },
+        attachTo: document.body,
+      })
+      await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
       await nextTick()
 
-      expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+      const menu = document.body.querySelector('[data-testid="row-actions-menu"]')
+      expect(menu).not.toBeNull()
+      expect(wrapper.element.contains(menu)).toBe(false)
+
+      menu?.querySelector('[data-testid="action-edit"]')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+      await nextTick()
+      expect(document.body.querySelector('[data-testid="row-actions-menu"]')).not.toBeNull()
+
+      wrapper.unmount()
+    })
+
+    it('shows the icon of a menu action beside its label', async () => {
+      const wrapper = mount(UiRowActions, {
+        props: { actions: [{ label: 'Edit', testid: 'action-edit', icon: Icon.Edit, onSelect: vi.fn() }, ...actions.slice(1)] },
+        global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+        attachTo: document.body,
+      })
+      await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+
+      expect(wrapper.get('[data-testid="action-edit"]').find('svg').exists()).toBe(true)
+      expect(wrapper.get('[data-testid="action-delete"]').find('svg').exists()).toBe(false)
       wrapper.unmount()
     })
   })
@@ -220,9 +260,9 @@ describe('UiRowActions', () => {
       await nextTick()
       const style = (wrapper.get('[data-testid="row-actions-menu"]').element as HTMLElement).style
       return {
-        top: style.getPropertyValue('--ra-top'),
-        right: style.getPropertyValue('--ra-right'),
-        bottom: style.getPropertyValue('--ra-bottom'),
+        top: style.getPropertyValue('--fp-top'),
+        right: style.getPropertyValue('--fp-right'),
+        bottom: style.getPropertyValue('--fp-bottom'),
         wrapper,
       }
     }
@@ -266,7 +306,7 @@ describe('UiRowActions', () => {
       const onSelect = vi.fn()
       const wrapper = mount(UiRowActions, {
         props: { actions: [{ label: 'Open', testid: 'action-open', onSelect }] },
-        global: { plugins: [createTestI18n()] },
+        global: { plugins: [createTestI18n()], stubs: { teleport: true } },
       })
 
       expect(wrapper.find('[data-testid="row-actions-trigger"]').exists()).toBe(false)
@@ -277,11 +317,27 @@ describe('UiRowActions', () => {
       wrapper.unmount()
     })
 
+    it('draws a single action with an icon as an icon button named by its label', async () => {
+      const onSelect = vi.fn()
+      const wrapper = mount(UiRowActions, {
+        props: { actions: [{ label: 'Open', testid: 'action-open', icon: Icon.Eye, onSelect }] },
+        global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+      })
+
+      const button = wrapper.get('[data-testid="action-open"]')
+      expect(button.find('svg').exists()).toBe(true)
+      expect(button.attributes('title')).toBe('Open')
+      expect(button.get('.sr-only').text()).toBe('Open')
+      await button.trigger('click')
+      expect(onSelect).toHaveBeenCalledOnce()
+      wrapper.unmount()
+    })
+
     it('does not fire a disabled single action', async () => {
       const onSelect = vi.fn()
       const wrapper = mount(UiRowActions, {
         props: { actions: [{ label: 'Open', testid: 'action-open', onSelect, disabled: true }] },
-        global: { plugins: [createTestI18n()] },
+        global: { plugins: [createTestI18n()], stubs: { teleport: true } },
       })
 
       await wrapper.get('[data-testid="action-open"]').trigger('click')
@@ -308,7 +364,7 @@ describe('UiRowActions', () => {
             { label: 'View', testid: 'then-view', onSelect: vi.fn() },
           ],
         },
-        global: { plugins: [createTestI18n()] },
+        global: { plugins: [createTestI18n()], stubs: { teleport: true } },
         attachTo: document.body,
       })
 
@@ -319,7 +375,7 @@ describe('UiRowActions', () => {
     })
 
     it('renders nothing without actions', () => {
-      const wrapper = mount(UiRowActions, { props: { actions: [] }, global: { plugins: [createTestI18n()] } })
+      const wrapper = mount(UiRowActions, { props: { actions: [] }, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
       expect(wrapper.find('[data-testid="row-actions"]').exists()).toBe(false)
       wrapper.unmount()
@@ -336,7 +392,7 @@ describe('UiRowActions', () => {
     it('names the trigger with the testid the row passes', async () => {
       const wrapper = mount(UiRowActions, {
         props: { actions, testid: 'invoice-actions-7' },
-        global: { plugins: [createTestI18n()] },
+        global: { plugins: [createTestI18n()], stubs: { teleport: true } },
         attachTo: document.body,
       })
 
@@ -376,7 +432,7 @@ describe('UiRowActions', () => {
       const router = await makeRouter()
       const wrapper = mount(UiRowActions, {
         props: { actions: linkAndDelete() },
-        global: { plugins: [createTestI18n(), router] },
+        global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
         attachTo: document.body,
       })
 
@@ -393,7 +449,7 @@ describe('UiRowActions', () => {
       const router = await makeRouter()
       const wrapper = mount(UiRowActions, {
         props: { actions: linkAndDelete() },
-        global: { plugins: [createTestI18n(), router] },
+        global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
         attachTo: document.body,
       })
 
@@ -414,13 +470,13 @@ describe('UiRowActions', () => {
             { label: 'View', testid: 'action-view', to: '/items/4' },
           ],
         },
-        global: { plugins: [createTestI18n(), router] },
+        global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
         attachTo: document.body,
       })
 
       await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
       await flushPromises()
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
+      document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
       expect(document.activeElement).toBe(wrapper.get('[data-testid="action-view"]').element)
       wrapper.unmount()
     })
@@ -429,7 +485,7 @@ describe('UiRowActions', () => {
       const router = await makeRouter()
       const wrapper = mount(UiRowActions, {
         props: { actions: [{ label: 'Open', testid: 'action-open', to: '/items/2' }] },
-        global: { plugins: [createTestI18n(), router] },
+        global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
       })
 
       const link = wrapper.get('[data-testid="action-open"]')
@@ -442,7 +498,7 @@ describe('UiRowActions', () => {
       const router = await makeRouter()
       const wrapper = mount(UiRowActions, {
         props: { actions: [{ label: 'Open', testid: 'action-open', to: '/items/2', disabled: true }] },
-        global: { plugins: [createTestI18n(), router] },
+        global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
       })
 
       const button = wrapper.get('[data-testid="action-open"]')

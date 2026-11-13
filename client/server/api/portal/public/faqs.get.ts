@@ -2,7 +2,7 @@
  * GET /api/portal/public/faqs
  *
  * The active questions, in display order. The language reaches the backend as `X-Language`
- * (stamped by `internalApiCall`). The topic is passed through as the API serializes it - the
+ * (stamped by `internalApiCall`). The topic is passed through as the API serializes it, the
  * enum name, which is the value of the client's `FaqCategory`.
  *
  * @module server/api/portal/public/faqs.get

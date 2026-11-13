@@ -18,9 +18,9 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -46,6 +46,7 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t, locale } = useI18n()
 
@@ -144,7 +145,7 @@ const load = async (): Promise<void> => {
  * @returns Resolves when the articles have settled.
  */
 const loadArticles = async (): Promise<void> => {
-  articlesLoadError.value = (await store.fetchArticles()) ? null : store.error
+  articlesLoadError.value = (await store.fetchArticles()) ? null : store.articlesError
 }
 
 /** Category options for select dropdowns. */
@@ -239,7 +240,7 @@ const handleDeleteCategory = async (): Promise<void> => {
  * @param category - The category of the row.
  * @returns The action list passed to UiRowActions.
  */
-const categoryActions = (category: KbCategory): UiRowAction[] => {
+const categoryActions = (category: KbCategory): UiMenuAction[] => {
   /**
    * Opens this category's in-place edit form.
    *
@@ -269,13 +270,8 @@ const dismissDeleteCategory = (): void => {
   }
 }
 
-/** The label of the save button: saving while a request runs, otherwise create or save changes. */
-const articleSaveLabel = computed<string>(() => {
-  if (articleSaving.value) {
-    return t('shared.saving')
-  }
-  return editingArticleId.value === null ? t('support.knowledgebase.saveArticle') : t('shared.saveChanges')
-})
+/** The label of the save button: create or save changes. */
+const articleSaveLabel = computed<string>(() => (editingArticleId.value === null ? t('support.knowledgebase.saveArticle') : t('shared.saveChanges')))
 
 /**
  * Collects the translations worth sending: the trimmed texts of the languages that have any.
@@ -353,7 +349,7 @@ const titleOf = (article: KbArticle): string => {
  * @param article - The article of the row.
  * @returns The action list passed to UiRowActions.
  */
-const articleActions = (article: KbArticle): UiRowAction[] => {
+const articleActions = (article: KbArticle): UiMenuAction[] => {
   /**
    * Loads this article into the form.
    *
@@ -432,104 +428,100 @@ onMounted(() => {
         <UiText tone="secondary" size="md" class="font-medium">{{ t('support.knowledgebase.knowledgebaseHome') }}</UiText>
       </UiStack>
 
-      <UiSkeleton v-if="store.loading" :lines="3" data-testid="knowledgebase-loading" />
+      <UiHeading :level="2" variant="card">{{ t('support.knowledgebase.browseByCategory') }}</UiHeading>
 
-      <template v-else>
-        <UiHeading :level="2" variant="card">{{ t('support.knowledgebase.browseByCategory') }}</UiHeading>
+      <UiCard v-if="store.loading || store.categories.length > 0" data-testid="knowledgebase-categories">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading">
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
+              <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
+              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+            </UiTableRow>
+          </UiTableHead>
+          <UiTableBody divided>
+            <UiTableRow
+              v-for="category in store.categories"
+              :key="category.id"
+              hoverable
+              :data-testid="`knowledgebase-category-${category.id}`"
+            >
+              <!-- The category under edit spans the whole row with its in-place form -->
+              <UiTableCell v-if="editingCategoryId === category.id" :colspan="CATEGORY_COLUMN_COUNT">
+                <UiStack gap="sm">
+                  <UiInput
+                    v-model="editingCategory.name"
+                    :placeholder="t('shared.categoryName2')"
+                    data-testid="knowledgebase-edit-name"
+                  />
+                  <UiInput
+                    v-model="editingCategory.description"
+                    :placeholder="t('shared.description')"
+                    data-testid="knowledgebase-edit-description"
+                  />
+                  <SupportCheckboxField
+                    v-model="editingCategory.isHidden"
+                    :label="t('shared.hidden')"
+                    testid="knowledgebase-edit-hidden"
+                  />
+                  <UiStack direction="row" gap="sm">
+                    <UiButton
+                      :variant="UiButtonVariant.Primary"
+                      :size="UiSize.Sm"
+                      data-testid="knowledgebase-edit-save"
+                      @click="saveEditCategory"
+                    >
+                      {{ t('shared.save') }}
+                    </UiButton>
+                    <UiButton
+                      :variant="UiButtonVariant.Secondary"
+                      :size="UiSize.Sm"
+                      data-testid="knowledgebase-edit-cancel"
+                      @click="editingCategoryId = null"
+                    >
+                      {{ t('shared.cancel') }}
+                    </UiButton>
+                  </UiStack>
+                </UiStack>
+              </UiTableCell>
 
-        <UiCard v-if="store.categories.length > 0" data-testid="knowledgebase-categories">
-          <UiTable :density="UiTableDensity.Comfortable">
-            <UiTableHead>
-              <UiTableRow>
-                <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-              </UiTableRow>
-            </UiTableHead>
-            <UiTableBody divided>
-              <UiTableRow
-                v-for="category in store.categories"
-                :key="category.id"
-                hoverable
-                :data-testid="`knowledgebase-category-${category.id}`"
-              >
-                <!-- The category under edit spans the whole row with its in-place form -->
-                <UiTableCell v-if="editingCategoryId === category.id" :colspan="CATEGORY_COLUMN_COUNT">
-                  <UiStack gap="sm">
-                    <UiInput
-                      v-model="editingCategory.name"
-                      :placeholder="t('shared.categoryName2')"
-                      data-testid="knowledgebase-edit-name"
-                    />
-                    <UiInput
-                      v-model="editingCategory.description"
-                      :placeholder="t('shared.description')"
-                      data-testid="knowledgebase-edit-description"
-                    />
-                    <SupportCheckboxField
-                      v-model="editingCategory.isHidden"
-                      :label="t('shared.hidden')"
-                      testid="knowledgebase-edit-hidden"
-                    />
-                    <UiStack direction="row" gap="sm">
-                      <UiButton
-                        :variant="UiButtonVariant.Primary"
-                        :size="UiSize.Sm"
-                        data-testid="knowledgebase-edit-save"
-                        @click="saveEditCategory"
-                      >
-                        {{ t('shared.save') }}
-                      </UiButton>
-                      <UiButton
-                        :variant="UiButtonVariant.Secondary"
-                        :size="UiSize.Sm"
-                        data-testid="knowledgebase-edit-cancel"
-                        @click="editingCategoryId = null"
-                      >
-                        {{ t('shared.cancel') }}
-                      </UiButton>
-                    </UiStack>
+              <template v-else>
+                <UiTableCell>
+                  <UiStack direction="row" gap="sm" align="center">
+                    <UiIcon :markup="Icon.Folder" />
+                    <UiText tone="primary" size="md">{{ category.name }}</UiText>
+                    <UiText tone="muted" size="sm">({{ category.articleCount }})</UiText>
                   </UiStack>
                 </UiTableCell>
+                <UiTableCell muted>{{ category.description || EMPTY_VALUE }}</UiTableCell>
+                <UiTableCell>
+                  <UiBadge v-if="category.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
+                </UiTableCell>
+                <UiTableCell actions>
+                  <UiRowActions :actions="categoryActions(category)" :testid="`knowledgebase-category-${category.id}-actions`" />
+                </UiTableCell>
+              </template>
+            </UiTableRow>
+          </UiTableBody>
+        </UiTable>
+      </UiCard>
 
-                <template v-else>
-                  <UiTableCell>
-                    <UiStack direction="row" gap="sm" align="center">
-                      <UiIcon :markup="Icon.Folder" />
-                      <UiText tone="primary" size="md">{{ category.name }}</UiText>
-                      <UiText tone="muted" size="sm">({{ category.articleCount }})</UiText>
-                    </UiStack>
-                  </UiTableCell>
-                  <UiTableCell muted>{{ category.description || '—' }}</UiTableCell>
-                  <UiTableCell>
-                    <UiBadge v-if="category.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
-                  </UiTableCell>
-                  <UiTableCell actions>
-                    <UiRowActions :actions="categoryActions(category)" :testid="`knowledgebase-category-${category.id}-actions`" />
-                  </UiTableCell>
-                </template>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
-        </UiCard>
+      <UiCard v-else>
+        <UiEmptyState
+          :title="t('support.knowledgebase.noCategoriesFound')"
+          :description="t('support.knowledgebase.createYourFirstCategoryAbove')"
+          data-testid="knowledgebase-categories-empty"
+        />
+      </UiCard>
 
-        <UiCard v-else>
-          <UiEmptyState
-            :title="t('support.knowledgebase.noCategoriesFound')"
-            :description="t('support.knowledgebase.createYourFirstCategoryAbove')"
-            data-testid="knowledgebase-categories-empty"
-          />
-        </UiCard>
-
-        <UiHeading :level="2" variant="card">{{ t('support.knowledgebase.browseByTag') }}</UiHeading>
-        <UiCard>
-          <UiEmptyState
-            :title="t('support.knowledgebase.noTagsFound')"
-            :description="t('support.knowledgebase.tagsWillAppearHereWhen')"
-          />
-        </UiCard>
-      </template>
+      <UiHeading :level="2" variant="card">{{ t('support.knowledgebase.browseByTag') }}</UiHeading>
+      <UiCard>
+        <UiEmptyState
+          :title="t('support.knowledgebase.noTagsFound')"
+          :description="t('support.knowledgebase.tagsWillAppearHereWhen')"
+        />
+      </UiCard>
     </template>
 
     <template v-if="activeTab === KnowledgebaseTab.Article">
@@ -599,10 +591,8 @@ onMounted(() => {
         @retry="loadArticles"
       />
 
-      <UiSkeleton v-else-if="store.articlesLoading" :lines="3" data-testid="knowledgebase-articles-loading" />
-
-      <UiCard v-else-if="store.articles.length > 0" data-testid="knowledgebase-articles">
-        <UiTable :density="UiTableDensity.Comfortable">
+      <UiCard v-else-if="store.articlesLoading || store.articles.length > 0" data-testid="knowledgebase-articles">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="store.articlesLoading">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
@@ -653,7 +643,6 @@ onMounted(() => {
       :title="t('support.knowledgebase.deleteCategory')"
       :message="t('support.knowledgebase.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deletingCategory"
       tone="danger"
       @confirm="handleDeleteCategory"

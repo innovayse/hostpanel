@@ -78,7 +78,7 @@ already been added. Key: /app/src/Hostpanel.Sdk/obj/project.nuget.cache
 ```
 
 The API then 502s for the few minutes it takes to rebuild. Polling is not
-optional here — inotify events do not cross a Windows or macOS bind mount, so
+optional here: inotify events do not cross a Windows or macOS bind mount, so
 without it the container never sees an edit at all.
 
 ---
@@ -116,19 +116,19 @@ Open a GitHub issue tagged `enhancement`. Describe:
 
 ### Backend (C#)
 
-- Follow `rules/clean-architecture.md` — strict layer boundaries
-- Follow `rules/csharp-style.md` — C# 12+, primary constructors, records
-- All members (including private) must have XML doc comments — see `rules/xml-docs.md`
-- Run `dotnet format` before committing — see `rules/dotnet-format.md`
+- Follow `rules/clean-architecture.md`: strict layer boundaries
+- Follow `rules/csharp-style.md`: C# 12+, primary constructors, records
+- All members (including private) must have XML doc comments, see `rules/xml-docs.md`
+- Run `dotnet format` before committing: see `rules/dotnet-format.md`
 - Controllers are thin: dispatch to Wolverine bus only, no business logic
 
 ### Frontend (Vue / TypeScript)
 
-- Vue 3 Composition API with `<script setup lang="ts">` only — no Options API
-- All exported functions, composables, stores, and types must have JSDoc — see `rules/jsdoc.md`
+- Vue 3 Composition API with `<script setup lang="ts">` only: no Options API
+- All exported functions, composables, stores, and types must have JSDoc, see `rules/jsdoc.md`
 - No `any` types
-- All API calls go through composables — never `$fetch` directly in components
-- Tailwind CSS only — no inline styles
+- All API calls go through composables: never `$fetch` directly in components
+- Tailwind CSS only: no inline styles
 
 ---
 

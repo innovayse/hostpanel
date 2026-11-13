@@ -23,9 +23,8 @@ describe('domainsStore loads', () => {
   it('fetchAll sends the trimmed search and fills the list', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 31 }))
     const store = useDomainsStore()
-    store.search = '  exa  '
 
-    expect(await store.fetchAll()).toBe(true)
+    expect(await store.fetchAll(1, '  exa  ')).toBe(true)
     expect(callOf(mock).url).toBe('/api/domains?page=1&pageSize=20&search=exa')
     expect(store.domains).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(31)
@@ -35,23 +34,13 @@ describe('domainsStore loads', () => {
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useDomainsStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1, '')).toBe(false)
     expect(store.error).toBe('Not allowed.')
 
     stubOffline()
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1, '')).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
     expect(store.loading).toBe(false)
-  })
-
-  it('fetchByClient fills clientDomains, not the shared list', async () => {
-    const mock = stubFetch(json({ items: [{ id: 2 }], totalCount: 1 }))
-    const store = useDomainsStore()
-
-    expect(await store.fetchByClient(7)).toBe(true)
-    expect(callOf(mock).url).toBe('/api/domains?clientId=7&page=1&pageSize=20')
-    expect(store.clientDomains).toEqual([{ id: 2 }])
-    expect(store.domains).toEqual([])
   })
 
   it('fetchById stores the detail and reports a refusal', async () => {

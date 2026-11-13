@@ -7,14 +7,15 @@
  * The sections of the form go in the default slot. Loading, saving and the dirty flag come from
  * `useStorefrontForm`; the shell only draws them and reports Save and Cancel.
  */
+import { provide, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
@@ -34,8 +35,6 @@ const props = withDefaults(defineProps<{
   breadcrumb: TrailStep[]
   /** Prefix of the test ids: `<prefix>-form-view`, `<prefix>-form-load-error`, `<prefix>-form-error`. */
   testid: string
-  /** Caption of the loading state (already translated). */
-  loadingLabel: string
   /** Label of the save button (already translated). */
   saveLabel: string
   /** True while the stored entry is loading. */
@@ -61,6 +60,9 @@ const emit = defineEmits<{
   retry: []
 }>()
 
+/** While the stored entry loads every field of the form draws a skeleton instead of its control. */
+provide(UI_FIELD_LOADING, toRef(props, 'loading'))
+
 /** Parks a route change while the reader is asked about unsaved edits. */
 const leaveGuard = useUnsavedChangesGuard(() => props.dirty && !props.saving)
 </script>
@@ -69,16 +71,14 @@ const leaveGuard = useUnsavedChangesGuard(() => props.dirty && !props.saving)
   <UiStack gap="none" class="pb-24" :data-testid="`${testid}-form-view`">
     <SettingsBreadcrumb :items="breadcrumb" />
 
-    <SettingsLoading v-if="loading" :message="loadingLabel" />
-
-    <UiErrorState v-else-if="loadError" :message="loadError" :testid="`${testid}-form-load-error`" @retry="emit('retry')" />
+    <UiErrorState v-if="loadError && !loading" :message="loadError" :testid="`${testid}-form-load-error`" @retry="emit('retry')" />
 
     <template v-else>
       <slot />
 
       <UiStatusMessage :message="error" :tone="UiTone.Danger" class="mb-5" :data-testid="`${testid}-form-error`" />
 
-      <SettingsFormFooter :save-label="saveLabel" :saving="saving" @cancel="emit('cancel')" @save="emit('save')" />
+      <SettingsFormFooter :save-label="saveLabel" :saving="saving" :dirty="!loading" @cancel="emit('cancel')" @save="emit('save')" />
     </template>
 
     <!-- Unsaved-changes question, asked while the route change waits -->

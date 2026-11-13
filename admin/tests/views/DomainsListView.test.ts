@@ -1,7 +1,7 @@
 /**
  * Mount tests for DomainsListView: rows render with status, price and links to the owning
- * client's detail page, the search is sent to the API after a pause, and a refused load or an
- * empty result shows the right state.
+ * client's detail page, the search and the page are kept in the address and sent to the API, and a
+ * refused load or an empty result shows the right state.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -28,15 +28,23 @@ const domain = {
 }
 
 /**
- * Mounts the list and waits for its first load.
+ * Mounts the list at an address and waits for its first load.
+ *
+ * @param url - The address to open, with its query.
+ * @returns The wrapper and the router.
+ */
+const mountListAt = async (url: string) => {
+  const screen = await mountRouted(DomainsListView, '/domains', url)
+  await flushPromises()
+  return screen
+}
+
+/**
+ * Mounts the list at its plain address and waits for its first load.
  *
  * @returns The wrapper.
  */
-const mountList = async () => {
-  const { wrapper } = await mountRouted(DomainsListView, '/domains', '/domains')
-  await flushPromises()
-  return wrapper
-}
+const mountList = async () => (await mountListAt('/domains')).wrapper
 
 describe('DomainsListView', () => {
   afterEach(() => {
@@ -57,26 +65,46 @@ describe('DomainsListView', () => {
     expect(wrapper.get('[data-testid="domains-client-4"]').attributes('href')).toBe('/clients/9')
   })
 
-  it('sends the typed search to the API after the pause', async () => {
+  it('puts the typed search in the address and sends it after the pause', async () => {
     const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
-    const wrapper = await mountList()
+    const { wrapper, router } = await mountListAt('/domains')
 
     await wrapper.get('[data-testid="domains-search"]').setValue('exam')
     await new Promise((resolve) => setTimeout(resolve, 450))
     await flushPromises()
 
+    expect(router.currentRoute.value.query).toEqual({ search: 'exam' })
     const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls.some((url) => url.includes('search=exam'))).toBe(true)
   })
 
-  it('shows the empty state, and the search hint once something was typed', async () => {
+  it('restores the search and the page from the address and sends them', async () => {
+    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
+    const { wrapper } = await mountListAt('/domains?search=exam&page=2')
+
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls[0]).toBe('/api/domains?page=2&pageSize=20&search=exam')
+    expect((wrapper.get('[data-testid="domains-search"]').element as HTMLInputElement).value).toBe('exam')
+  })
+
+  it('keeps the chosen page in the address', async () => {
+    stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
+    const { wrapper, router } = await mountListAt('/domains')
+
+    await wrapper.get('[data-testid="domains-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+  })
+
+  it('shows the empty state, and the search hint when the list is searched', async () => {
     stubRoutes({ 'GET /api/domains': () => json({ items: [], totalCount: 0 }) })
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="domains-empty"]').text()).toContain('No domains found')
 
-    await wrapper.get('[data-testid="domains-search"]').setValue('zzz')
-    expect(wrapper.get('[data-testid="domains-empty"]').text()).toContain('No domains match your search')
+    const searched = (await mountListAt('/domains?search=zzz')).wrapper
+    expect(searched.get('[data-testid="domains-empty"]').text()).toContain('No domains match your search')
   })
 
   it('shows the API sentence when the load is refused', async () => {

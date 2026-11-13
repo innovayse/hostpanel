@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 /**
- * ProfileEmailPrefs - the six email categories as checkboxes, read-only or editable.
+ * ProfileEmailPrefs: the six email categories as checkboxes, read-only or editable.
  *
  * The view of the profile shows them disabled; the edit form shows them live. Both share this
  * list so the labels cannot drift apart.

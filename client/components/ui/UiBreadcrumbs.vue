@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 /**
- * UiBreadcrumbs - the trail above a page: Home, then the given items; the last one is the
+ * UiBreadcrumbs. The trail above a page: Home, then the given items; the last one is the
  * current page and is not a link.
  */
 import { ChevronRight } from 'lucide-vue-next'

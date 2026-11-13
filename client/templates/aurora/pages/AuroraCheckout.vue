@@ -281,12 +281,12 @@
                   full-width
                   data-testid="checkout-place-order"
                   :loading="submitting"
-                  :disabled="submitting || cart.isEmpty || !selectedMethod || !mayPlaceOrders"
+                  :disabled="cart.isEmpty || !selectedMethod || !mayPlaceOrders"
                   class="h-14 rounded-xl font-bold"
                   @click="submitOrder"
                 >
                   <Lock v-if="!submitting" :size="20" class="mr-2" />
-                  {{ submitting ? submittingLabel : $t('checkout.placeOrder') }}
+                  {{ $t('checkout.placeOrder') }}
                 </UiButton>
                 <CheckoutSubmitHint :message="submittingHint" />
 
@@ -354,7 +354,6 @@ const {
   bundleName,
   bundleOffer,
   bundleDiscount,
-  submittingLabel,
   submittingHint,
   paymentMethods,
   selectedMethod,

@@ -44,6 +44,24 @@ describe('AuthShell', () => {
     expect(wrapper.get('[data-testid="brand-logo-dark"]').attributes('alt')).toBe('Hostpanel')
   })
 
+  it('pins the theme and language icon menus to the top right corner, clear of the safe area', () => {
+    const wrapper = mountShell({ title: 'Admin Panel' })
+    const theme = wrapper.get('[data-testid="auth-theme"]')
+    const corner = theme.element.closest('.fixed')
+
+    expect(corner?.classList.contains('right-0')).toBe(true)
+    expect(corner?.classList.contains('top-0')).toBe(true)
+    expect(corner?.className).toContain('safe-area-inset-top')
+    expect(corner?.contains(wrapper.get('[data-testid="auth-locale"]').element)).toBe(true)
+    expect(wrapper.get('[data-testid="auth-title"]').element.closest('.fixed')).toBeNull()
+  })
+
+  it('draws the card with the panel radius', () => {
+    const wrapper = mountShell({ title: 'Admin Panel' })
+
+    expect(wrapper.get('[data-testid="auth-title"]').element.closest('.rounded-panel')).not.toBeNull()
+  })
+
   it('omits the subtitle when none is given', () => {
     const wrapper = mountShell({ title: 'Only title' })
 

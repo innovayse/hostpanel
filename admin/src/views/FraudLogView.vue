@@ -116,7 +116,6 @@ onMounted(() => load(1))
       <UiTable
         :loading="store.loading && store.entries.length === 0"
         :empty="!store.loading && store.entries.length === 0"
-        :colspan="9"
         data-testid="fraud-log-table"
       >
         <UiTableHead>

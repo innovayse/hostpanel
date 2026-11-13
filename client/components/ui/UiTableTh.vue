@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * TableTh (`UiTableTh`) - a header cell: small uppercase muted text, left-aligned by default.
+ * TableTh (`UiTableTh`). A header cell: small uppercase muted text, left-aligned by default.
  */
 import { computed } from 'vue'
 import { UiAlign } from '~/utils/ui/enums'

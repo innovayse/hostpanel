@@ -40,7 +40,7 @@ describe('ClientStatementView lines', () => {
     await wrapper.get('[data-testid="report-generate"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Invoice Payment - #42')
+    expect(wrapper.text()).toContain('Invoice Payment #42')
     expect(wrapper.text()).toContain('Card payment')
     expect(wrapper.text()).toContain('Invoice #43, paid before import')
     expect(wrapper.get('[data-testid="report-ending-balance"]').text()).toContain('€0.00')

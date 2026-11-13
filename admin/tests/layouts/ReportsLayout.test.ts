@@ -31,5 +31,10 @@ describe('ReportsLayout', () => {
     expect(wrapper.find('[data-testid="reports-layout"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="reports-nav-clients"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="report-body"]').text()).toBe('the report')
+    // The narrow-screen strip lists the same reports and opens the chosen one.
+    expect(wrapper.find('[data-testid="reports-tab-clients"]').attributes('aria-selected')).toBe('true')
+    await wrapper.get('[data-testid="reports-tab-new-customers"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/reports/new-customers')
   })
 })

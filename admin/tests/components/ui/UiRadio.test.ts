@@ -37,10 +37,10 @@ describe('UiRadio', () => {
   it('passes classes, name and data-testid through to the input', () => {
     const wrapper = mount(UiRadio, {
       props: { value: 'a' },
-      attrs: { class: 'accent-status-green', name: 'group', 'data-testid': 'probe' },
+      attrs: { class: 'mt-1', name: 'group', 'data-testid': 'probe' },
     })
 
-    expect(wrapper.classes()).toContain('accent-status-green')
+    expect(wrapper.classes()).toContain('mt-1')
     expect(wrapper.attributes('name')).toBe('group')
     expect(wrapper.attributes('data-testid')).toBe('probe')
   })
@@ -49,5 +49,13 @@ describe('UiRadio', () => {
     const wrapper = mount(UiRadio, { props: { value: 'a', disabled: true } })
 
     expect(wrapper.attributes('disabled')).toBeDefined()
+  })
+
+  it('is drawn as a field disc that fills with the brand gradient when selected', () => {
+    const classes = mount(UiRadio, { props: { value: 'a' } }).classes()
+
+    expect(classes).toContain('appearance-none')
+    expect(classes).toContain('bg-surface-field')
+    expect(classes).toContain('radio-dot')
   })
 })

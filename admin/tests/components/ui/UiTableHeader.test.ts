@@ -6,6 +6,13 @@ import { mount } from '@vue/test-utils'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 
 describe('UiTableHeader', () => {
+  it('hides the column below its breakpoint and shows it as a table cell from there', () => {
+    const wrapper = mount(UiTableHeader, { props: { hideBelow: 'sm' } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['hidden', 'sm:table-cell']))
+    expect(mount(UiTableHeader).classes()).not.toContain('hidden')
+  })
+
   it('renders the native th with its slot', () => {
     const wrapper = mount(UiTableHeader, { slots: { default: 'Name' } })
 
@@ -20,13 +27,20 @@ describe('UiTableHeader', () => {
     expect(wrapper.attributes('data-testid')).toBe('probe')
   })
 
+  it('paints the subtle header hairline itself and stays transparent over the card', () => {
+    const classes = mount(UiTableHeader).classes()
+
+    expect(classes).toContain('shadow-[inset_0_-1px_0_var(--border-subtle)]')
+    expect(classes.some(name => name.startsWith('bg-'))).toBe(false)
+  })
+
   it('aligns on request', () => {
     expect(mount(UiTableHeader, { props: { align: 'center' } }).classes()).toContain('text-center')
   })
 
   it('matches the numeric and actions cells below it', () => {
     expect(mount(UiTableHeader, { props: { numeric: true } }).classes()).toEqual(expect.arrayContaining(['text-end', 'tabular-nums']))
-    expect(mount(UiTableHeader, { props: { actions: true } }).classes()).toEqual(expect.arrayContaining(['w-28', 'text-end']))
+    expect(mount(UiTableHeader, { props: { actions: true } }).classes()).toEqual(expect.arrayContaining(['w-16', 'sm:w-28', 'text-end']))
   })
 
   it('has no sort button or aria-sort unless sortable', () => {

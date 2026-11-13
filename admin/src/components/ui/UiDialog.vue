@@ -5,7 +5,7 @@
  * `variant="plain"` is a titled panel around the default slot (with an optional `footer` slot).
  * `variant="confirm"` is the confirmation prompt: a `message`, a Cancel button and a confirm
  * button coloured by `tone`; it replaces the former confirmation modal. The panel is teleported to
- * `<body>`, closes on Escape or a backdrop click, keeps Tab inside and returns focus to the opener.
+ * `<body>`, is an opaque elevated surface (nothing shows through it), closes on Escape or a backdrop click, keeps Tab inside and returns focus to the opener.
  * Callers mount it with `v-if`, or drive it with `open`.
  *
  * It fades and scales in and out (`UiTransition`, nothing moves under reduced motion). Focus goes to the panel
@@ -47,9 +47,7 @@ const props = withDefaults(defineProps<{
   message?: string
   /** Label of the confirm button; defaults to a translated "Confirm". */
   confirmLabel?: string
-  /** Label of the confirm button while `loading`; defaults to a translated "Processing". */
-  loadingLabel?: string
-  /** Whether the confirmed action is running (disables the confirm button). */
+  /** Whether the confirmed action is running (the confirm button shows a spinner and is disabled). */
   loading?: boolean
   /** Colour of the confirm button. */
   tone?: UiTone
@@ -63,7 +61,6 @@ const props = withDefaults(defineProps<{
   title: undefined,
   message: undefined,
   confirmLabel: undefined,
-  loadingLabel: undefined,
   loading: false,
   tone: 'primary',
   size: UiDialogSize.Sm,
@@ -97,13 +94,8 @@ const sizeClasses: Record<UiDialogSize, string> = {
 /** Classes of the confirm button's colour. */
 const confirmClasses = computed<string>(() => toneSolidClasses[props.tone])
 
-/** Visible label of the confirm button. */
-const confirmText = computed<string>(() => {
-  if (props.loading) {
-    return props.loadingLabel ?? t('ui.dialog.processing')
-  }
-  return props.confirmLabel ?? t('ui.dialog.confirm')
-})
+/** Visible label of the confirm button; it stays the same while the action runs. */
+const confirmText = computed<string>(() => props.confirmLabel ?? t('ui.dialog.confirm'))
 
 /** Whether the leave animation is running; no request may be made from a dialog that is going away. */
 const leaving = ref(false)
@@ -193,7 +185,7 @@ const onBackdrop = (): void => {
         v-if="open"
         ref="backdrop"
         data-testid="dialog-backdrop"
-        class="group/overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        class="group/overlay fixed inset-0 z-50 flex items-center justify-center bg-(--overlay-backdrop) backdrop-blur-sm p-4"
         @click.self="onBackdrop"
       >
         <div
@@ -204,7 +196,7 @@ const onBackdrop = (): void => {
           aria-modal="true"
           :aria-labelledby="title ? titleId : undefined"
           tabindex="-1"
-          class="bg-surface-card border border-border-strong rounded-xl shadow-2xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col outline-none"
+          class="glass-strong rounded-panel shadow-overlay w-full max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col outline-none"
           :class="[sizeClasses[size], modalPanelClasses.dialog]"
           @keydown="onKeydown"
         >
@@ -236,7 +228,7 @@ const onBackdrop = (): void => {
             </UiButton>
             <UiButton
               variant="plain"
-              :disabled="loading"
+              :loading="loading"
               data-testid="dialog-confirm"
               class="px-4 py-2 text-[0.82rem] font-medium rounded-lg transition cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
               :class="confirmClasses"
@@ -245,7 +237,7 @@ const onBackdrop = (): void => {
               {{ confirmText }}
             </UiButton>
           </div>
-          <div v-else-if="$slots.footer" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0">
+          <div v-else-if="$slots.footer" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0 max-sm:flex-col-reverse max-sm:items-stretch" data-testid="ui-dialog-footer">
             <slot name="footer" />
           </div>
         </div>

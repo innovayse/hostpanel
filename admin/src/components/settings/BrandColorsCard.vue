@@ -14,7 +14,6 @@ import { useI18n } from 'vue-i18n'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
-import SettingSaveButton from '@/components/settings/SettingSaveButton.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiColorField from '@/components/ui/UiColorField.vue'
@@ -22,6 +21,7 @@ import UiColorSwatch from '@/components/ui/UiColorSwatch.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import {
+  SHADE_STEPS,
   WCAG_AA,
   bestTextOn,
   buildScale,
@@ -29,8 +29,9 @@ import {
   hexToRgb,
   rgbToHex,
 } from '@/lib/brandPalette'
+import type { ShadeStep } from '@/lib/brandPalette'
 import { SettingEnv, SettingKey } from '@/types/setting'
-import type { Setting, SettingSave } from '@/types/setting'
+import type { Setting } from '@/types/setting'
 
 const { t } = useI18n()
 
@@ -38,8 +39,6 @@ const { t } = useI18n()
 const props = defineProps<{
   /** All system settings, as loaded from the backend. */
   settings: Setting[]
-  /** Persists one row and answers how it went; each control shows its own outcome. */
-  save: SettingSave
 }>()
 
 /** The settings list as a ref, which is what the draft composable watches. */
@@ -105,22 +104,11 @@ const effective = (field: ColourField): string => {
   return hexToRgb(typed) ? typed.toLowerCase() : DEFAULTS[field.key]
 }
 
-/**
- * Whether the row's text is something the API will accept: empty (unset) or `#rrggbb`.
- *
- * @param field - The row.
- * @returns True when the draft can be saved.
- */
-const isValid = (field: ColourField): boolean => {
-  const typed = field.draft.value.value
-  return typed === '' || hexToRgb(typed) !== null
-}
-
-/** The preview swatches per row: the eleven shades, lightest first. */
-const shades = computed<Record<string, string[]>>(() => Object.fromEntries(FIELDS.map((field) => [
-  field.key,
-  Object.values(buildScale(effective(field))).map(rgbToHex),
-])))
+/** The preview swatches per row: the eleven shades, lightest first, each named by its scale step. */
+const shades = computed<Record<string, { step: ShadeStep; hex: string }[]>>(() => Object.fromEntries(FIELDS.map((field) => {
+  const scale = buildScale(effective(field))
+  return [field.key, SHADE_STEPS.map((step) => ({ step, hex: rgbToHex(scale[step]) }))]
+})))
 
 /**
  * One shade of a row's ramp, falling back to the row's own colour if the ramp is shorter.
@@ -129,7 +117,7 @@ const shades = computed<Record<string, string[]>>(() => Object.fromEntries(FIELD
  * @param index - Position in the ramp, lightest first.
  * @returns A `#rrggbb` colour.
  */
-const shadeAt = (field: ColourField, index: number): string => shades.value[field.key]?.[index] ?? effective(field)
+const shadeAt = (field: ColourField, index: number): string => shades.value[field.key]?.[index]?.hex ?? effective(field)
 
 /**
  * The contrast line for a row: the ratio of white on the colour, whether it passes AA for normal
@@ -163,18 +151,18 @@ const contrastKey = (field: ColourField): string => {
 }
 
 /**
- * Empties the colour and saves it, which restores the template's own.
+ * Empties the colour; once the page's save bar saves it, the template's own colour applies again.
  *
  * @param field - The row.
  */
 const reset = (field: ColourField): void => {
   field.draft.value.value = ''
-  void field.draft.submit(props.save)
 }
 </script>
 
 <template>
   <SettingsSection
+    :columns="2"
     :title="t('settings.brandColors.title')"
     :description="t('settings.brandColors.description')"
   >
@@ -193,13 +181,6 @@ const reset = (field: ColourField): void => {
             :aria-label="t(field.labelKey)"
             :data-testid="`brand-colors-hex-${field.testid}`"
             @update:model-value="field.draft.value.value = $event"
-            @keyup.enter="field.draft.submit(save)"
-          />
-          <SettingSaveButton
-            :dirty="field.draft.dirty.value && isValid(field)"
-            :saving="field.draft.saving.value"
-            :data-testid="`brand-colors-save-${field.testid}`"
-            @click="field.draft.submit(save)"
           />
           <SettingOutcome :outcome="field.draft.outcome.value" />
           <UiButton
@@ -221,15 +202,15 @@ const reset = (field: ColourField): void => {
         <!-- The ramp the storefront will derive, lightest to darkest, the picked colour in the middle. -->
         <UiStack direction="row" gap="none" class="overflow-hidden rounded-lg border border-border">
           <UiColorSwatch
-            v-for="(hex, index) in shades[field.key] ?? []"
-            :key="hex + index"
-            :color="hex"
-            :title="hex"
+            v-for="shade in shades[field.key] ?? []"
+            :key="shade.step"
+            :color="shade.hex"
+            :title="shade.hex"
             class="flex-1"
           />
         </UiStack>
 
-        <!-- What a filled button looks like on a light and a dark surface, with the text the storefront picks. -->
+        <!-- What a filled button looks like on a light and a dark surface, with the text the storefront picks. The two grounds are the storefront's fixed white and near-black, not panel tokens, so they stay the same in both panel themes. -->
         <UiStack direction="row" align="center" wrap>
           <UiStack direction="row" align="center" gap="sm" class="rounded-lg bg-white p-2">
             <UiColorSwatch

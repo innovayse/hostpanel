@@ -2,7 +2,8 @@
 /**
  * Main Servers management page.
  *
- * Lists all provisioning servers grouped by module, then shows server groups.
+ * Lists the provisioning servers as cards grouped by module, with a search box, module and status
+ * filters (kept in the address, shown as chips) and a pager, then shows server groups.
  * Provides Add/Edit/Delete actions for both servers and groups. Every refusal sentence belongs to
  * the servers store and is shown as the API returned it: a refused load with a retry, a refused save
  * inside its dialog, a delete (confirmed first in a danger prompt) or a saved dialog in the outcome
@@ -12,20 +13,27 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServersStore } from '@/stores/servers'
-import { FILL_TYPE_LABELS, MODULE_LABELS } from '@/types/server'
-import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerModule, ServerPayload } from '@/types/server'
+import { FILL_TYPE_LABELS, MODULE_LABELS, ServerModule, ServerState } from '@/types/server'
+import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerPayload } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
 import GroupFormModal from '@/components/servers/GroupFormModal.vue'
 import ServerFormModal from '@/components/servers/ServerFormModal.vue'
 import ServerSshSettingsModal from '@/components/servers/ServerSshSettingsModal.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiField from '@/components/ui/UiField.vue'
+import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiPagination from '@/components/ui/UiPagination.vue'
+import UiProgress from '@/components/ui/UiProgress.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -33,13 +41,21 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTableDensity } from '@/utils/ui/injection'
+import type { UiSelectOption } from '@/utils/ui/select'
+import type { UiFilterChip } from '@/utils/ui/filter'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
+import { pageSlice } from '@/lib/paging'
+import { filterServers, serverLoadPercent, serverState } from '@/lib/servers'
+import { useFilterQuery } from '@/composables/useFilterQuery'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
+import { EMPTY_VALUE } from '@/lib/format'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -47,7 +63,27 @@ const { t, locale } = useI18n()
 /** Servers store: the lists, the refusal sentences and the actions. */
 const store = useServersStore()
 
-/** Result of one connection test, as shown in the status column. */
+/** Locale key of the caption of each server state. */
+const STATE_KEYS: Record<ServerState, string> = {
+  [ServerState.Online]: 'servers.servers.online',
+  [ServerState.Offline]: 'servers.servers.offline',
+  [ServerState.Untested]: 'servers.servers.notTested',
+}
+
+/** Badge tone of each server state. */
+const STATE_TONES: Record<ServerState, UiTone> = {
+  [ServerState.Online]: UiTone.Success,
+  [ServerState.Offline]: UiTone.Danger,
+  [ServerState.Untested]: UiTone.Neutral,
+}
+
+/** Load percentage from which a server's bar turns to the warning colour. */
+const LOAD_WARN_AT = 80
+
+/** Placeholder cards drawn in the servers grid while the list loads. */
+const LOADING_CARD_COUNT = 3
+
+/** Result of one connection test, as shown on the server's card. */
 interface TestOutcome {
   /** Whether the server answered. */
   ok: boolean
@@ -124,18 +160,42 @@ const deleteGroupTarget = ref<ServerGroupDto | null>(null)
 /** True while the staged group is being deleted. */
 const deletingGroup = ref(false)
 
-/** Servers grouped by module, in first-seen order, for display. */
-const serversByModule = computed<{ module: ServerModule; servers: ServerDto[] }[]>(() => {
-  const groups: { module: ServerModule; servers: ServerDto[] }[] = []
-  for (const server of store.servers) {
-    const existing = groups.find(g => g.module === server.module)
-    if (existing) {
-      existing.servers.push(server)
-    } else {
-      groups.push({ module: server.module, servers: [server] })
-    }
+/** The filters, the search text and the page of the list, kept in the address. */
+const query = useFilterQuery(['module', 'state'] as const)
+
+/** The module choices of the filter, "any" first. */
+const moduleOptions = computed<UiSelectOption<string>[]>(() => [
+  { value: '', label: t('servers.servers.anyModule') },
+  ...Object.values(ServerModule).map(module => ({ value: module, label: MODULE_LABELS[module] })),
+])
+
+/** The state choices of the filter, "any" first. */
+const stateOptions = computed<UiSelectOption<string>[]>(() => [
+  { value: '', label: t('servers.servers.anyState') },
+  ...Object.values(ServerState).map(state => ({ value: state, label: t(STATE_KEYS[state]) })),
+])
+
+/** The servers that match the applied filters and the search text. */
+const matchingServers = computed<ServerDto[]>(() =>
+  filterServers(store.servers, { ...query.applied.value, search: query.appliedSearch.value }),
+)
+
+/** The servers of the current page. */
+const pagedServers = computed<ServerDto[]>(() =>
+  pageSlice(matchingServers.value, query.page.value, DEFAULT_PAGE_SIZE),
+)
+
+/** The active filters as removable chips. */
+const filterChips = computed<UiFilterChip<'module' | 'state'>[]>(() => {
+  const chips: UiFilterChip<'module' | 'state'>[] = []
+  const { module, state } = query.applied.value
+  if (module !== '') {
+    chips.push({ key: 'module', label: t('servers.servers.filterModule'), value: MODULE_LABELS[module as ServerModule] ?? module })
   }
-  return groups
+  if (state !== '') {
+    chips.push({ key: 'state', label: t('servers.servers.filterState'), value: t(STATE_KEYS[state as ServerState]) })
+  }
+  return chips
 })
 
 /**
@@ -174,13 +234,8 @@ const handleTestConnection = async (id: number): Promise<void> => {
  * @returns The badge tone and the locale key of its caption.
  */
 const stateOf = (server: ServerDto): { tone: UiTone; key: string } => {
-  if (server.isOnline === true) {
-    return { tone: 'success', key: 'servers.servers.online' }
-  }
-  if (server.isOnline === false) {
-    return { tone: 'danger', key: 'servers.servers.offline' }
-  }
-  return { tone: 'neutral', key: 'servers.servers.notTested' }
+  const state = serverState(server)
+  return { tone: STATE_TONES[state], key: STATE_KEYS[state] }
 }
 
 /**
@@ -191,7 +246,7 @@ const stateOf = (server: ServerDto): { tone: UiTone; key: string } => {
  */
 const accountsLabel = (server: ServerDto): string => {
   if (server.accountsCount === null) {
-    return '—'
+    return EMPTY_VALUE
   }
   return server.limits.maxAccounts === null ? `${server.accountsCount}` : `${server.accountsCount} / ${server.limits.maxAccounts}`
 }
@@ -315,7 +370,7 @@ const dismissDeleteGroup = (): void => {
  * @param server - The server whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const serverActions = (server: ServerDto): UiRowAction[] => {
+const serverActions = (server: ServerDto): UiMenuAction[] => {
   /**
    * Forwards to {@link handleTestConnection} for this server row.
    * @returns Nothing.
@@ -350,7 +405,7 @@ const serverActions = (server: ServerDto): UiRowAction[] => {
  * @param group - The group whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const serverGroupActions = (group: ServerGroupDto): UiRowAction[] => {
+const serverGroupActions = (group: ServerGroupDto): UiMenuAction[] => {
   /**
    * Opens the edit dialog for this group row.
    * @returns Nothing.
@@ -397,59 +452,114 @@ onMounted(loadAll)
       @retry="loadAll"
     />
 
-    <!-- Loading -->
-    <UiSkeleton v-else-if="store.loading && store.servers.length === 0" :lines="4" data-testid="servers-loading" />
+    <template v-else-if="store.loading || store.servers.length > 0">
+      <!-- Search, filters and the chips of the applied ones -->
+      <UiListToolbar
+        v-model:search="query.search.value"
+        search-testid="servers-search"
+        :search-placeholder="t('servers.servers.searchPlaceholder')"
+        :active-count="query.activeCount.value"
+        :chips="filterChips"
+        :loading="store.loading"
+        @apply="query.apply"
+        @reset="query.reset"
+        @cancel="query.cancel"
+        @remove="query.remove"
+        @clear="query.clearAll"
+      >
+        <UiGrid :columns="1" gap="md">
+          <UiField :label="t('servers.servers.filterModule')">
+            <template #default="{ id }">
+              <UiSelect
+                :id="id"
+                v-model="query.draft.value.module"
+                :options="moduleOptions"
+                :placeholder="t('servers.servers.anyModule')"
+                data-testid="servers-filter-module"
+              />
+            </template>
+          </UiField>
+          <UiField :label="t('servers.servers.filterState')">
+            <template #default="{ id }">
+              <UiSelect
+                :id="id"
+                v-model="query.draft.value.state"
+                :options="stateOptions"
+                :placeholder="t('servers.servers.anyState')"
+                data-testid="servers-filter-state"
+              />
+            </template>
+          </UiField>
+        </UiGrid>
+      </UiListToolbar>
 
-    <!-- Servers, one table per module -->
-    <UiStack v-else-if="store.servers.length > 0" gap="md" data-testid="servers-list">
-      <UiStack v-for="entry in serversByModule" :key="entry.module" gap="xs">
-        <UiText tone="muted" size="sm" class="font-semibold">{{ MODULE_LABELS[entry.module] }}</UiText>
-        <UiTable :density="UiTableDensity.Comfortable" :data-testid="`servers-table-${entry.module}`">
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('servers.servers.serverName') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('shared.accounts') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
-          <UiTableBody divided>
-            <UiTableRow v-for="server in entry.servers" :key="server.id" hoverable :data-testid="`server-row-${server.id}`">
-              <UiTableCell>
-                <UiStack direction="row" align="center" gap="sm">
-                  <UiText tone="primary" size="lg" class="font-medium">{{ server.name }}</UiText>
-                  <UiBadge v-if="server.limits.isDefault" tone="warning" small>{{ t('servers.servers.default') }}</UiBadge>
+      <!-- Servers load in place: placeholder cards in the grid the cards will fill -->
+      <UiGrid v-if="store.loading" min-item-width="md" gap="md" data-testid="servers-loading">
+        <UiCard v-for="placeholder in LOADING_CARD_COUNT" :key="placeholder" padding="md" loading :skeleton-lines="3" />
+      </UiGrid>
+
+      <!-- Servers, every module in one grid -->
+      <UiStack v-else-if="matchingServers.length > 0" gap="md" data-testid="servers-list">
+        <!-- One grid for every module, so a module with a single server never leaves half the row empty -->
+        <UiGrid min-item-width="md" gap="md">
+          <UiCard v-for="server in pagedServers" :key="server.id" padding="md" :data-testid="`server-row-${server.id}`">
+            <UiStack gap="md">
+              <UiStack direction="row" justify="between" align="start" gap="sm">
+                <UiStack gap="xs" class="min-w-0">
+                  <UiText tone="muted" size="xs" class="font-semibold" :data-testid="`servers-module-${server.module}`">{{ MODULE_LABELS[server.module] }}</UiText>
+                  <UiStack direction="row" align="center" gap="sm" wrap>
+                    <UiText tone="primary" size="lg" class="min-w-0 break-words font-medium">{{ server.name }}</UiText>
+                    <UiBadge v-if="server.limits.isDefault" tone="warning" small>{{ t('servers.servers.default') }}</UiBadge>
+                    <UiBadge v-if="server.limits.isDisabled" tone="neutral" small>{{ t('servers.servers.disabled') }}</UiBadge>
+                  </UiStack>
+                  <UiText tone="muted" size="sm" class="font-mono">{{ server.endpoint.ipAddress ?? EMPTY_VALUE }}</UiText>
                 </UiStack>
-              </UiTableCell>
-              <UiTableCell muted class="font-mono">{{ server.endpoint.ipAddress ?? '—' }}</UiTableCell>
-              <UiTableCell numeric muted>{{ accountsLabel(server) }}</UiTableCell>
-              <UiTableCell>
-                <UiText v-if="testingIds.includes(server.id)" tone="muted" size="sm">{{ t('shared.testing') }}</UiText>
-                <UiBadge
-                  v-else-if="testResults[server.id]"
-                  :tone="testResults[server.id]?.ok ? 'success' : 'danger'"
-                  :data-testid="`server-test-result-${server.id}`"
-                >
-                  {{ testResults[server.id]?.message }}
-                </UiBadge>
-                <UiStack v-else gap="xs">
-                  <UiBadge :tone="stateOf(server).tone" dot :data-testid="`server-state-${server.id}`">
-                    {{ t(stateOf(server).key) }}
-                  </UiBadge>
-                  <UiText v-if="server.lastTestedAt" tone="muted" size="xs">
-                    {{ new Date(server.lastTestedAt).toLocaleString(locale) }}
-                  </UiText>
-                </UiStack>
-              </UiTableCell>
-              <UiTableCell actions>
                 <UiRowActions :actions="serverActions(server)" :testid="`server-actions-${server.id}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
+              </UiStack>
+
+              <UiProgress
+                v-if="serverLoadPercent(server) !== null"
+                :value="serverLoadPercent(server) ?? 0"
+                :label="t('servers.servers.accountsLoad')"
+                :value-text="accountsLabel(server)"
+                :warn-at="LOAD_WARN_AT"
+              />
+              <UiStack v-else direction="row" justify="between" gap="sm">
+                <UiText tone="secondary" size="sm">{{ t('shared.accounts') }}</UiText>
+                <UiText tone="muted" size="sm">{{ accountsLabel(server) }}</UiText>
+              </UiStack>
+
+              <UiLoader v-if="testingIds.includes(server.id)" :data-testid="`server-testing-${server.id}`" />
+              <UiBadge
+                v-else-if="testResults[server.id]"
+                :tone="testResults[server.id]?.ok ? 'success' : 'danger'"
+                :data-testid="`server-test-result-${server.id}`"
+              >
+                {{ testResults[server.id]?.message }}
+              </UiBadge>
+              <UiStack v-else gap="xs">
+                <UiBadge :tone="stateOf(server).tone" dot :data-testid="`server-state-${server.id}`">
+                  {{ t(stateOf(server).key) }}
+                </UiBadge>
+                <UiText v-if="server.lastTestedAt" tone="muted" size="xs">
+                  {{ new Date(server.lastTestedAt).toLocaleString(locale) }}
+                </UiText>
+              </UiStack>
+            </UiStack>
+          </UiCard>
+        </UiGrid>
+        <UiPagination
+          :page="query.page.value"
+          :total="matchingServers.length"
+          :page-size="DEFAULT_PAGE_SIZE"
+          testid="servers-pagination"
+          @update:page="query.setPage"
+        />
       </UiStack>
-    </UiStack>
+
+      <!-- Nothing matches the filters -->
+      <UiEmptyState v-else :title="t('servers.servers.noMatches')" data-testid="servers-no-matches" />
+    </template>
 
     <!-- Empty state -->
     <UiEmptyState v-else :title="t('servers.servers.noServersYet')" data-testid="servers-empty">
@@ -465,28 +575,30 @@ onMounted(loadAll)
       <UiHeading :level="2" variant="section">{{ t('servers.servers.groups') }}</UiHeading>
       <UiText tone="secondary" size="sm">{{ t('servers.servers.serverGroupsAllowYouTo') }}</UiText>
 
-      <UiTable v-if="store.groups.length > 0" :density="UiTableDensity.Comfortable" data-testid="server-groups-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('servers.servers.groupName') }}</UiTableHeader>
-            <UiTableHeader>{{ t('servers.servers.fillType') }}</UiTableHeader>
-            <UiTableHeader>{{ t('servers.servers.servers') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
-        <UiTableBody divided>
-          <UiTableRow v-for="group in store.groups" :key="group.id" hoverable :data-testid="`server-group-row-${group.id}`">
-            <UiTableCell>{{ group.name }}</UiTableCell>
-            <UiTableCell muted>{{ FILL_TYPE_LABELS[group.fillType] }}</UiTableCell>
-            <UiTableCell muted>
-              {{ group.servers.length > 0 ? group.servers.map(s => s.name).join(', ') : '—' }}
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="serverGroupActions(group)" :testid="`server-group-actions-${group.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
+      <UiCard v-if="store.loading || store.groups.length > 0">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" data-testid="server-groups-table">
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableHeader>{{ t('servers.servers.groupName') }}</UiTableHeader>
+              <UiTableHeader>{{ t('servers.servers.fillType') }}</UiTableHeader>
+              <UiTableHeader>{{ t('servers.servers.servers') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+            </UiTableRow>
+          </UiTableHead>
+          <UiTableBody divided>
+            <UiTableRow v-for="group in store.groups" :key="group.id" hoverable :data-testid="`server-group-row-${group.id}`">
+              <UiTableCell>{{ group.name }}</UiTableCell>
+              <UiTableCell muted>{{ FILL_TYPE_LABELS[group.fillType] }}</UiTableCell>
+              <UiTableCell muted>
+                {{ group.servers.length > 0 ? group.servers.map(s => s.name).join(', ') : EMPTY_VALUE }}
+              </UiTableCell>
+              <UiTableCell actions>
+                <UiRowActions :actions="serverGroupActions(group)" :testid="`server-group-actions-${group.id}`" />
+              </UiTableCell>
+            </UiTableRow>
+          </UiTableBody>
+        </UiTable>
+      </UiCard>
 
       <!-- Groups empty -->
       <UiStack v-else direction="row" align="center" gap="xs" data-testid="server-groups-empty">
@@ -533,7 +645,6 @@ onMounted(loadAll)
       :title="t('servers.servers.deleteServer')"
       :message="t('servers.servers.deleteServerMessage', { name: deleteServerTarget.name })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deletingServer"
       :tone="UiTone.Danger"
       @confirm="confirmDeleteServer"
@@ -546,7 +657,6 @@ onMounted(loadAll)
       :title="t('servers.servers.deleteGroup')"
       :message="t('servers.servers.deleteGroupMessage', { name: deleteGroupTarget.name })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deletingGroup"
       :tone="UiTone.Danger"
       @confirm="confirmDeleteGroup"

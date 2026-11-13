@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Collapsible icon sidebar for a section's sub-navigation.
+ * Collapsible icon sidebar for a section's sub-navigation, drawn on the frosted `glass` surface.
  *
  * Shows icons only and expands on hover/focus to reveal the captions. Icons are drawn from stored
  * SVG markup by `UiIcon` (no `v-html`). The active entry is marked by `activeKey`, so the sidebar
@@ -9,6 +9,7 @@
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import { navItemTextClasses } from '@/utils/ui/nav'
 import type { UiSidebarItem } from '@/utils/ui/sidebar'
 
 /** Props for UiSidebar. */
@@ -33,32 +34,28 @@ const expanded = ref(false)
 
 <template>
   <div
-    class="flex flex-col bg-surface-card border-r border-border transition-all duration-200 ease-in-out overflow-y-auto overflow-x-hidden shrink-0"
-    :class="expanded ? 'w-[230px]' : 'w-[48px]'"
+    class="glass flex flex-col transition-all duration-200 ease-in-out overflow-y-auto overflow-x-hidden shrink-0"
+    :class="expanded ? 'w-[230px]' : 'w-[56px]'"
     @mouseenter="expanded = true"
     @mouseleave="expanded = false"
     @focusin="expanded = true"
     @focusout="expanded = false"
   >
-    <nav :aria-label="ariaLabel" class="flex flex-col gap-0.5 pt-2 pb-4">
+    <nav :aria-label="ariaLabel" class="flex flex-col gap-1.5 px-1 pt-2 pb-4">
       <RouterLink
         v-for="item in items"
         :key="item.key"
         :to="item.to"
         :aria-current="item.key === activeKey ? 'page' : undefined"
         :data-testid="`${testid}-${item.key}`"
-        class="relative flex items-center gap-2.5 px-3 py-2.5 transition-all duration-150 no-underline outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/60"
-        :class="item.key === activeKey
-          ? 'text-primary-500 light:text-primary-600 bg-primary-500/15'
-          : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'"
+        class="relative flex items-center gap-2.5 rounded-control border px-3 py-2.5 transition-all duration-150 no-underline outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/60"
+        :class="[navItemTextClasses, item.key === activeKey
+          ? 'border-(--nav-active-border) bg-(--nav-active-bg) text-text-primary'
+          : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-hover']"
       >
-        <span
-          v-if="item.key === activeKey"
-          class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full gradient-brand"
-        />
         <UiIcon :markup="item.icon" size="lg" />
         <span
-          class="text-[0.78rem] font-medium whitespace-nowrap transition-opacity duration-200 flex-1"
+          class="whitespace-nowrap transition-opacity duration-200 flex-1"
           :class="expanded ? 'opacity-100' : 'opacity-0'"
         >
           {{ item.label }}

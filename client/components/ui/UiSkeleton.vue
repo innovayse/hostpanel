@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 /**
- * UiSkeleton - a pulsing placeholder shown while content loads.
+ * UiSkeleton: a pulsing placeholder shown while content loads.
  *
  * `line` is a text line (several with `lines`, the last one shorter), `block` fills the width and
  * a height you give by class (for example `h-32`), `circle` is a round avatar-sized shape. Size a

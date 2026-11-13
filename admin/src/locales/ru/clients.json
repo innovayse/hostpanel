@@ -1,6 +1,6 @@
 {
   "addBillableItem": {
-    "describeTheCharge": "Опишите начисление..."
+    "describeTheCharge": "Опишите начисление"
   },
   "addTimeBilling": {
     "addTimeBillingEntries": "Добавить записи учёта времени",
@@ -12,9 +12,11 @@
   },
   "addTransaction": {
     "addNewTransaction": "Добавить новую транзакцию",
-    "transactionDescription": "Описание транзакции...",
-    "externalReference": "Внешняя ссылка...",
-    "invoiceIdOptional": "ID счёта (необязательно)",
+    "transactionDescription": "Описание транзакции",
+    "externalReference": "Внешняя ссылка",
+    "invoiceIdOptional": "Счёт (необязательно)",
+    "noInvoice": "Без счёта",
+    "selectInvoice": "Выберите счёт",
     "selectGateway": "Выберите шлюз",
     "addToClientSCredit": "Добавить к кредитному балансу клиента",
     "failedToSaveTransaction": "Не удалось сохранить транзакцию."
@@ -28,7 +30,6 @@
     "exportData": "Экспорт данных",
     "chooseWhichDataPointsTo": "Выберите данные, которые нужно включить в экспорт.",
     "generatingAnExportForA": "Экспорт данных клиента с большой историей может занять некоторое время.",
-    "generating": "Формирование…",
     "profileData": "Данные профиля",
     "payMethods": "Способы оплаты",
     "users": "Связанные пользователи",
@@ -101,7 +102,7 @@
   "userForm": {
     "manageUserEmail": "Управление пользователем: {email}",
     "permissions": "Права доступа",
-    "thisUserIsTheAccount": "Этот пользователь — владелец аккаунта и поэтому имеет все права.",
+    "thisUserIsTheAccount": "Этот пользователь владеет аккаунтом, поэтому у него все права.",
     "transferOwnershipToThisUser": "Передать владение этому пользователю",
     "owner": "Владелец",
     "noAccountsLinked": "Связанных аккаунтов нет",
@@ -140,9 +141,8 @@
     "billableItems": "Оплачиваемые позиции",
     "addTimeBillingEntries": "Добавить записи учёта времени",
     "addBillableItem": "+ Добавить оплачиваемую позицию",
-    "loadingBillableItems": "Загрузка оплачиваемых позиций...",
     "uninvoicedItemsLength": "Невыставленные позиции ({length})",
-    "uninvoicedItemsAmountLength": "Невыставленные позиции — {amount} ({length})",
+    "uninvoicedItemsAmountLength": "Невыставленные позиции: {amount} ({length})",
     "invoiceSelectedItems": "Выставить счёт по выбранным позициям",
     "noUninvoicedBillableItems": "Нет невыставленных оплачиваемых позиций.",
     "invoicedItems": "Выставленные позиции",
@@ -169,8 +169,7 @@
     "contactDeletedSuccessfully": "Контакт успешно удалён."
   },
   "clientDomainDetail": {
-    "loadingDomain": "Загрузка домена...",
-    "domainName": "Домен — {name}",
+    "domainName": "Домен {name}",
     "domainInfo": "Сведения о домене",
     "order": "Заказ №:",
     "orderType": "Тип заказа:",
@@ -215,12 +214,10 @@
     "contactSaved": "Контактные данные сохранены."
   },
   "clientDomainsList": {
-    "loadingDomains": "Загрузка доменов...",
     "noDomainsFoundForThis": "Для этого клиента домены не найдены"
   },
   "clientEmails": {
     "emails": "Письма",
-    "loadingEmails": "Загрузка писем...",
     "totalcountEmailValue": "Писем: {totalCount}",
     "status": "Статус",
     "delivered": "Доставлено",
@@ -245,37 +242,29 @@
     "allStatuses": "Все статусы",
     "from": "От",
     "filter": "Фильтр",
-    "loadingInvoices": "Загрузка счетов...",
-    "sizeSelected": "Выбрано: {size}:",
-    "bulkActions": "Массовые действия...",
     "clientinvoicestotalInvoiceValue": "Счетов: {clientInvoicesTotal}",
     "deleteInvoice": "Удалить счёт",
-    "confirmBulkAction": "Подтвердите массовое действие",
-    "confirmBulkApply": "Применить «{action}» к {count} выбранному счёту? | Применить «{action}» к {count} выбранным счетам? | Применить «{action}» к {count} выбранным счетам?",
     "confirmDeleteInvoice": "Вы уверены, что хотите удалить счёт #{id}?",
     "bulkActionDone": "Выполнено для выбранных счетов.",
     "invoiceDeleted": "Счёт удалён."
   },
   "clientNav": {
-    "rail": "Разделы клиента",
     "strip": "Вкладки разделов клиента"
   },
   "clientLayout": {
-    "loadingClient": "Загрузка клиента…",
     "exportData": "Экспорт данных"
   },
   "clientLog": {
     "activityLog": "Журнал активности",
     "filterLog": "Фильтр журнала",
     "selectDate": "Выберите дату",
-    "loadingActivityLog": "Загрузка журнала активности...",
     "logEntry": "Запись журнала",
     "user": "Пользователь",
     "totalcountEntrValue": "Записей: {totalCount}"
   },
   "clientOpenTicket": {
     "ticketSubject": "Тема тикета",
-    "describeTheIssue": "Опишите проблему...",
+    "describeTheIssue": "Опишите проблему",
     "openTicket": "Открыть тикет"
   },
   "clientProfile": {
@@ -307,7 +296,6 @@
   },
   "clientQuotes": {
     "createNewQuote": "+ Создать новое предложение",
-    "loadingQuotes": "Загрузка предложений...",
     "createDate": "Дата создания",
     "noQuotesFound": "Предложения не найдены.",
     "clientquotestotalQuoteValue": "Предложений: {clientQuotesTotal}",
@@ -316,8 +304,7 @@
     "quoteDeleted": "Предложение удалено."
   },
   "clientServiceDetail": {
-    "loadingService": "Загрузка услуги...",
-    "serviceIdProductname": "Услуга №{id} — {productName}",
+    "serviceIdProductname": "Услуга №{id}: {productName}",
     "loginToControlPanel": "Войти в панель управления",
     "serviceInfo": "Сведения об услуге",
     "order": "Заказ №",
@@ -373,19 +360,16 @@
     "terminated": "Услуга прекращена."
   },
   "clientServicesList": {
-    "loadingServices": "Загрузка услуг...",
     "nextDue": "Следующая оплата",
     "totalcountServiceValue": "Услуг: {totalCount}",
     "noServicesFoundForThis": "Для этого клиента услуги не найдены"
   },
   "clientsList": {
     "manageYourClientAccounts": "Управление аккаунтами клиентов",
+    "searchPlaceholder": "Поиск по имени, компании или ID",
     "addClient": "Добавить клиента",
-    "clientCompanyName": "Клиент / название компании",
-    "searchByName": "Поиск по имени…",
-    "searchByEmail": "Поиск по почте…",
-    "searchByPhone": "Поиск по телефону…",
-    "loadingClients": "Загрузка клиентов…",
+    "searchByEmail": "Поиск по почте",
+    "searchByPhone": "Поиск по телефону",
     "2fa": "2FA",
     "joined": "Дата регистрации",
     "userDeleted": "Пользователь удалён",
@@ -393,7 +377,6 @@
     "on": "Вкл.",
     "twoFactorAuthenticationDisabled": "Двухфакторная аутентификация отключена",
     "off": "Выкл.",
-    "totalcountClientValue": "Клиентов: {totalCount}",
     "noClientsMatchYourFilters": "Нет клиентов, соответствующих фильтрам",
     "noClientsFound": "Клиенты не найдены",
     "clearFilters": "Сбросить фильтры",
@@ -402,7 +385,6 @@
   },
   "clientSummary": {
     "summary": "Сводка",
-    "loadingSummary": "Загрузка сводки...",
     "clientInformation": "Информация о клиенте",
     "stateRegion": "Область/регион",
     "otherInformation": "Дополнительная информация",
@@ -438,7 +420,7 @@
     "viewAllTickets": "Все тикеты",
     "recentEmails": "Последние письма",
     "noEmailsSent": "Письма не отправлялись",
-    "addNotesAboutThisClient": "Добавьте заметки об этом клиенте...",
+    "addNotesAboutThisClient": "Добавьте заметки об этом клиенте",
     "productsServices2": "Продукты/услуги",
     "nextDue": "Следующая оплата",
     "noServicesFound": "Услуги не найдены",
@@ -449,11 +431,10 @@
     "notesSaved": "Заметки сохранены."
   },
   "clientTicketDetail": {
-    "loadingTicket": "Загрузка тикета...",
     "reopen": "Открыть снова",
     "ticketSettings": "Настройки тикета",
     "noRepliesYet": "Ответов пока нет",
-    "typeYourReply": "Введите ваш ответ...",
+    "typeYourReply": "Введите ваш ответ",
     "reply": "Ответить",
     "conversation": "Переписка",
     "staff": "Сотрудник",
@@ -467,7 +448,6 @@
   "clientTickets": {
     "tickets": "Тикеты",
     "openNewTicket": "Открыть новый тикет +",
-    "loadingTickets": "Загрузка тикетов...",
     "openedThisMonth": "Открыто в этом месяце",
     "openedLastMonth": "Открыто в прошлом месяце",
     "openedThisYear": "Открыто в этом году",
@@ -479,7 +459,6 @@
   },
   "clientTransactions": {
     "addNewTransaction": "+ Добавить новую транзакцию",
-    "loadingTransactions": "Загрузка транзакций...",
     "totalIn": "Всего поступлений",
     "totalFees": "Всего комиссий",
     "totalOut": "Всего расходов",
@@ -490,14 +469,12 @@
     "transactionDeleted": "Транзакция удалена."
   },
   "clientUsers": {
-    "loadingUsers": "Загрузка пользователей...",
     "usersLength": "Пользователи ({length})",
     "addUser": "+ Добавить пользователя",
     "addUserToAccount": "Добавить пользователя в аккаунт",
     "searchExisting": "Найти существующего",
     "inviteByEmail": "Пригласить по почте",
     "permissions": "Права доступа",
-    "adding": "Добавление...",
     "addUser2": "Добавить пользователя",
     "sendInvite": "Отправить приглашение",
     "role": "Роль",
@@ -537,7 +514,7 @@
     "manageUsers": "Управление пользователями",
     "viewAndManageUserAccounts": "Просмотр учётных записей пользователей и управление ими",
     "addClient": "Добавить клиента",
-    "searchByNameOrEmail": "Поиск по имени или почте…",
+    "searchByNameOrEmail": "Поиск по имени или почте",
     "lastLogin": "Последний вход",
     "manageUser": "Управление пользователем",
     "sendPasswordResetEmail": "Отправить письмо для сброса пароля",

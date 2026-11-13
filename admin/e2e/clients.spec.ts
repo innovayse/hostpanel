@@ -27,7 +27,7 @@ test('the clients list opens a client and its profile shows the stored record', 
   await page.waitForURL('**/clients/7/summary')
   await expect(page.getByTestId('client-header-name')).toHaveText(`${adaDetail.firstName} ${adaDetail.lastName}`)
 
-  await page.getByTestId('client-nav-profile').click()
+  await page.getByTestId('client-tab-profile').click()
   await page.waitForURL('**/clients/7/profile')
   await expect(fieldOf(page, 'client-profile-first-name')).toHaveValue(adaDetail.firstName)
 

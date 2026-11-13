@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 /**
- * UiSplit - a two-part layout (content and a side panel) that stacks on small screens.
+ * UiSplit: a two-part layout (content and a side panel) that stacks on small screens.
  *
  * Slots `start` and `end` are the two halves; `ratio` decides which one is twice as wide, and
  * `reverse` swaps their order from `lg` up (the DOM order stays start, end for reading order).

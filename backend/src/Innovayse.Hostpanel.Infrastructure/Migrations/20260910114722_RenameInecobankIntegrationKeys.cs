@@ -8,7 +8,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
     /// Moves the Inecobank integration's saved settings from the old plugin id to the new one.
     /// </summary>
     /// <remarks>
-    /// Data only — the schema does not change. The plugin was renamed from
+    /// Data only: the schema does not change. The plugin was renamed from
     /// <c>innovayse-inecobank</c> to <c>inecobank</c>, and its configuration lives in the
     /// Settings table under keys built from that id (<c>integration:&lt;id&gt;:&lt;field&gt;</c>).
     /// Renaming the plugin without moving the rows would leave a deployment that had already been
@@ -40,7 +40,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
         /// <remarks>
         /// The delete runs first so the update cannot collide with the unique index on Key. Rows
         /// under the destination prefix can only exist if someone configured the plugin again
-        /// after the rename, and in that case theirs is the current configuration — the stale
+        /// after the rename, and in that case theirs is the current configuration, the stale
         /// copy is what goes.
         /// </remarks>
         /// <param name="migrationBuilder">The migration builder.</param>

@@ -13,15 +13,15 @@ import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RouteLocationRaw } from 'vue-router'
 import draggable from 'vuedraggable'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
-import type { UiRowAction } from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -29,7 +29,6 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { StorefrontListOutcome } from '@/types/storefront'
 import type { StorefrontEntity, StorefrontListTestIds, StorefrontOrderItem } from '@/types/storefront'
@@ -52,8 +51,6 @@ const props = withDefaults(defineProps<{
   addTo: RouteLocationRaw
   /** Route of the edit page of one entry, opened by the row's edit action. */
   editTo: (item: T) => RouteLocationRaw
-  /** Caption of the loading state (already translated). */
-  loadingLabel: string
   /** Text shown when the list is empty (already translated). */
   emptyLabel: string
   /** Title of the delete question (already translated). */
@@ -167,7 +164,7 @@ const move = (index: number, step: number): void => {
  * @param index - Position of the entry in the list.
  * @returns The menu items; moving is disabled at the ends of the list.
  */
-const rowActions = (item: T, index: number): UiRowAction[] => {
+const rowActions = (item: T, index: number): UiMenuAction[] => {
   /**
    * Moves the entry one place up.
    * @returns Nothing.
@@ -203,21 +200,21 @@ const onDragEnd = (): void => {
 
     <UiPageHeader :title="title" :subtitle="subtitle">
       <template #actions>
-        <UiText v-if="savingOrder" tone="muted" size="sm" role="status" :data-testid="testids.savingOrder">
-          {{ t('storefront.list.savingOrder') }}
-        </UiText>
+        <UiLoader v-if="savingOrder" :data-testid="testids.savingOrder" />
         <UiLink :to="addTo" :variant="UiButtonVariant.Primary" :data-testid="testids.add">
           {{ addLabel }}
         </UiLink>
       </template>
     </UiPageHeader>
 
-    <SettingsLoading v-if="loading" :message="loadingLabel" />
-
-    <UiErrorState v-else-if="error" :message="error" :testid="testids.error" @retry="emit('retry')" />
+    <UiErrorState v-if="error" :message="error" :testid="testids.error" @retry="emit('retry')" />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="local.length === 0" :colspan="columns.length + 2">
+      <UiTable
+        :density="UiTableDensity.Comfortable"
+        :loading="loading"
+        :empty="!loading && local.length === 0"
+      >
         <template #empty>
           {{ emptyLabel }}
         </template>
@@ -229,6 +226,7 @@ const onDragEnd = (): void => {
           </UiTableRow>
         </UiTableHead>
         <draggable
+          v-if="!loading"
           v-model="local"
           tag="tbody"
           item-key="id"
@@ -264,7 +262,6 @@ const onDragEnd = (): void => {
       :title="deleteTitle"
       :message="deleteMessage"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="emit('confirmDelete')"

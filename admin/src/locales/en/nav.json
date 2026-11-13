@@ -75,9 +75,11 @@
   "servicesTitle": "Services",
   "documentation": "Documentation",
   "sections": {
-    "daily": "Daily work",
+    "sales": "Sales",
+    "support": "Support",
+    "catalog": "Catalog",
+    "infrastructure": "Infrastructure",
     "insights": "Insights",
-    "setup": "Setup",
     "addons": "Add-ons",
     "system": "System"
   }

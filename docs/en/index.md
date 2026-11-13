@@ -75,10 +75,10 @@ features:
 
 ## Popular guides
 
-- [Quick start](/get-started/quick-start) — up and running in under 10 minutes
-- [Installation](/operators/install) — full production setup with Docker
-- [Storefront & branding](/operators/storefront) — customise the client portal look
-- [Payment gateways](/payments/gateways) — connect card and bank payment gateways
-- [SSH key agent](/servers/ssh-key-agent) — manage server access securely
+- [Quick start](/get-started/quick-start): up and running in under 10 minutes
+- [Installation](/operators/install): full production setup with Docker
+- [Storefront & branding](/operators/storefront): customise the client portal look
+- [Payment gateways](/payments/gateways): connect card and bank payment gateways
+- [SSH key agent](/servers/ssh-key-agent): manage server access securely
 
 [View all guides →](/get-started/)

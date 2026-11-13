@@ -20,7 +20,7 @@ body {
   color: var(--tx);
 }
 
-/* Custom Scrollbar - Modern & Subtle */
+/* Custom scrollbar, modern and subtle */
 ::-webkit-scrollbar {
   width: 8px;
 }

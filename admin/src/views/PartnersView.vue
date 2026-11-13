@@ -9,19 +9,17 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
-import { Icon } from '@/lib/icons'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { usePartnersStore } from '@/stores/partners'
 import type { Partner } from '@/types/partner'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -79,7 +77,6 @@ const editRoute = (item: Partner): string => editPath(AppRoute.StorefrontPartner
     :title="t('storefront.partners.title')"
     :subtitle="t('storefront.partners.subtitle')"
     :add-label="t('storefront.partners.add')"
-    :loading-label="t('storefront.partners.loading')"
     :empty-label="t('storefront.partners.empty')"
     :delete-title="t('storefront.partners.deleteTitle')"
     :edit-label="t('storefront.partners.edit')"
@@ -107,21 +104,18 @@ const editRoute = (item: Partner): string => editPath(AppRoute.StorefrontPartner
     <template #row="{ item }">
       <UiTableCell>
         <UiImage
-          v-if="item.logoUrl"
-          :src="storefrontAssetUrl(item.logoUrl)"
+          :src="item.logoUrl ? storefrontAssetUrl(item.logoUrl) : undefined"
           :alt="nameOf(item)"
           fit="contain"
           rounded="md"
           class="h-10 w-16 border border-border"
+          fallback
         />
-        <UiStack v-else align="center" justify="center" gap="none" class="h-10 w-16 rounded-lg border border-border bg-surface-field text-text-muted">
-          <UiIcon :markup="Icon.Image" size="sm" />
-        </UiStack>
       </UiTableCell>
       <UiTableCell>
         <UiText tone="primary" size="lg" class="font-medium">{{ nameOf(item) }}</UiText>
       </UiTableCell>
-      <UiTableCell muted>{{ item.url || '—' }}</UiTableCell>
+      <UiTableCell muted>{{ item.url || EMPTY_VALUE }}</UiTableCell>
       <UiTableCell>
         <UiBadge :tone="item.isActive ? 'success' : 'neutral'" small>
           {{ item.isActive ? t('shared.active') : t('shared.inactive') }}

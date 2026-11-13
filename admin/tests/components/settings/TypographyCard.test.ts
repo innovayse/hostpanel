@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import TypographyCard from '@/components/settings/TypographyCard.vue'
 import type { Setting, SettingSave } from '@/types/setting'
-import { mountScreen } from '../../helpers/mount'
+import { mountSettingsCard } from '../../helpers/settingsPage'
 import { pickOption, selectText } from '../../helpers/select'
 
 /** The save callback the card is given; it answers that the value was stored. */
@@ -23,23 +23,23 @@ const rows: Setting[] = [
 
 describe('TypographyCard', () => {
   it('shows the template default for an empty value and the face name otherwise', async () => {
-    const { wrapper } = await mountScreen(TypographyCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(TypographyCard, rows)
 
     expect(selectText(wrapper, 'typography-heading')).toBe('Template default')
     expect(selectText(wrapper, 'typography-body')).toBe('Inter')
   })
 
   it('saves the picked face for the heading only', async () => {
-    const { wrapper } = await mountScreen(TypographyCard, { save, settings: rows })
+    const { wrapper, registry } = await mountSettingsCard(TypographyCard, rows)
 
     await pickOption(wrapper, 'typography-heading', 'Noto Serif Armenian')
-    await wrapper.get('[data-testid="typography-save-heading"]').trigger('click')
+    await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[1, 'noto-serif-armenian']])
   })
 
   it('previews the sample lines in the picked face with a utility class, not an inline style', async () => {
-    const { wrapper } = await mountScreen(TypographyCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(TypographyCard, rows)
     expect(wrapper.get('[data-testid="typography-preview"]').html()).toContain('font-brand-inter')
 
     await pickOption(wrapper, 'typography-body', "System (device's own)")
@@ -50,7 +50,7 @@ describe('TypographyCard', () => {
   })
 
   it('shows the three language samples', async () => {
-    const { wrapper } = await mountScreen(TypographyCard, { save, settings: rows })
+    const { wrapper } = await mountSettingsCard(TypographyCard, rows)
     const preview = wrapper.get('[data-testid="typography-preview"]').text()
 
     expect(preview).toContain('Your whole digital infrastructure')
@@ -59,7 +59,7 @@ describe('TypographyCard', () => {
   })
 
   it('warns about an unseeded row', async () => {
-    const { wrapper } = await mountScreen(TypographyCard, { save, settings: [rows[1] as Setting] })
+    const { wrapper } = await mountSettingsCard(TypographyCard, [rows[1] as Setting])
 
     expect(wrapper.get('[data-testid="setting-not-seeded"]').text()).toContain('portal.brand.font_heading')
     expect(wrapper.find('[data-testid="typography-heading"]').exists()).toBe(false)

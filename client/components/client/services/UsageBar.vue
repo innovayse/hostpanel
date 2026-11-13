@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 /**
- * UsageBar - one quota of a hosting service (disk or bandwidth): its name, "used / allowance" in
+ * UsageBar. One quota of a hosting service (disk or bandwidth): its name, "used / allowance" in
  * megabytes and a progress bar. The bar is read out with the same "used / allowance" text.
  */
 import { computed } from 'vue'

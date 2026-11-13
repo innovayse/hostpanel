@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 /**
- * UiNavItem - one entry of a UiNavGroup.
+ * UiNavItem: one entry of a UiNavGroup.
  *
  * Renders a NuxtLink (`to`), an anchor that opens in a new tab (`href`) or a button (neither).
  * `active` marks the current panel; `tone="warning"` highlights an entry that asks for action.

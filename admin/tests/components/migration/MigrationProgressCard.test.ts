@@ -20,7 +20,7 @@ import { MigrationJobFailure, MigrationStatus } from '@/types/migration'
  * @param job - The job to show.
  * @returns The wrapper.
  */
-const mountCard = (job: MigrationJob) => {
+const mountCard = (job: MigrationJob | null) => {
   const pinia = createPinia()
   setActivePinia(pinia)
   return mount(MigrationProgressCard, { props: { job }, global: { plugins: [createTestI18n(), pinia] } })
@@ -29,6 +29,16 @@ const mountCard = (job: MigrationJob) => {
 describe('MigrationProgressCard', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('keeps the card layout with loading tiles and no actions while the job is read', () => {
+    const wrapper = mountCard(null)
+
+    expect(wrapper.get('[data-testid="migration-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(4)
+    expect(wrapper.text()).toContain('Skipped')
+    expect(wrapper.find('[data-testid="migration-check"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="migration-job-status"]').exists()).toBe(false)
   })
 
   it('shows the label, state, percent and the selected groups only', () => {

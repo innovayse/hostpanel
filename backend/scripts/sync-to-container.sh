@@ -2,7 +2,7 @@
 # Sync backend/src and backend/tests into a scratch container's /work.
 #
 # Why a script: `tar -cf - | docker exec tar -xf -` adds and overwrites but never DELETES, so a file
-# removed on the laptop lives on inside the container. That has cost this migration several hours —
+# removed on the laptop lives on inside the container. That has cost this migration several hours,
 # a deleted controller left behind makes every request match two endpoints (AmbiguousMatchException),
 # and a deleted test file keeps failing to compile against code that no longer exists. Wiping /work
 # wholesale is not the answer either: it takes obj/project.assets.json with it and forces a full

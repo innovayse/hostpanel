@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * UiGrid - a responsive grid with preset column counts.
+ * UiGrid: a responsive grid with preset column counts.
  *
  * The presets carry their own breakpoints (`3` is one column on phones, two from `sm`, three
  * from `lg`), so a screen never repeats `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`.

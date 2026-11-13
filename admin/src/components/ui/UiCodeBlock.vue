@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * A block of text meant to be copied exactly — a shell command, a public key — in a monospace
+ * A block of text meant to be copied exactly, a shell command, a public key, in a monospace
  * box with a copy button. The text wraps rather than scrolls, so nothing is hidden off screen.
  * `data-testid` falls through to the box; the button carries `<testid>-copy` when one is given.
  */
@@ -73,7 +73,7 @@ onUnmounted(cancelReset)
   <div class="flex items-start gap-2">
     <code
       v-bind="$attrs"
-      class="block min-w-0 flex-1 whitespace-pre-wrap break-all rounded-md border border-border bg-surface-field px-3 py-2 font-mono text-xs text-text-primary"
+      class="block min-w-0 flex-1 whitespace-pre-wrap break-all rounded-control border border-border bg-surface-field px-3.5 py-2.5 font-mono text-xs text-text-primary"
     >{{ props.code }}</code>
     <UiButton
       type="button"

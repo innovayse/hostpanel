@@ -1,8 +1,8 @@
 {
   "reportCurrencyOptions": {
-    "usdUsDollar": "USD — доллар США",
-    "eurEuro": "EUR — евро",
-    "rubRussianRuble": "RUB — российский рубль",
-    "amdArmenianDram": "AMD — армянский драм"
+    "usdUsDollar": "USD, доллар США",
+    "eurEuro": "EUR, евро",
+    "rubRussianRuble": "RUB, российский рубль",
+    "amdArmenianDram": "AMD, армянский драм"
   }
 }

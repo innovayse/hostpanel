@@ -23,6 +23,17 @@ const mountHeader = (details: Parameters<typeof makeDetails>[0] = {}, busy = fal
   })
 
 describe('PluginDetailsHeader', () => {
+  it('draws the card with bars instead of the details while they load', () => {
+    const wrapper = mount(PluginDetailsHeader, {
+      props: { details: null, busy: false },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    expect(wrapper.find('[data-testid="plugin-details-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-name"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-update"]').exists()).toBe(false)
+  })
+
   it('shows the name, publisher, description, verified and price badges', () => {
     const wrapper = mountHeader()
 

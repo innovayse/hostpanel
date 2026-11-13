@@ -1,16 +1,42 @@
 {
-  "title": "Панель управления",
-  "subtitle": "С возвращением — вот что сейчас происходит",
-  "recentActivity": "Последние события",
-  "quickLinks": "Быстрые ссылки",
-  "live": "В реальном времени",
-  "loadingMetrics": "Загрузка показателей…",
+  "subtitle": "Что требует внимания сегодня.",
+  "greeting": {
+    "morning": "Доброе утро",
+    "afternoon": "Добрый день",
+    "evening": "Добрый вечер"
+  },
+  "period": {
+    "label": "Период",
+    "days30": "30 дней",
+    "days90": "90 дней"
+  },
   "stats": {
-    "totalRevenue": "Общий доход",
     "monthlyRevenue": "Доход за месяц",
     "activeServices": "Активные услуги",
     "overdueInvoices": "Просроченные счета",
-    "openTickets": "Открытые тикеты",
-    "totalClients": "Всего клиентов"
+    "openTickets": "Открытые тикеты"
+  },
+  "recentInvoices": "Последние счета",
+  "viewAll": "Показать все",
+  "noInvoices": "Счетов пока нет.",
+  "attention": {
+    "title": "Требует внимания",
+    "kind": {
+      "overdueInvoice": "Просроченные счета",
+      "pendingOrder": "Заказы в ожидании",
+      "expiringDomain": "Домены, истекающие за 30 дней",
+      "urgentTicket": "Срочные тикеты"
+    }
+  },
+  "revenue": {
+    "title": "Доход и цель",
+    "note": "Пунктир: среднее за месяц",
+    "income": "Доход",
+    "average": "Среднее за месяц"
+  },
+  "serverLoad": {
+    "title": "Загрузка серверов",
+    "emptyTitle": "Нет данных о загрузке",
+    "emptyDescription": "Здесь показана загрузка серверов, у которых задан лимит и проверено соединение."
   }
 }

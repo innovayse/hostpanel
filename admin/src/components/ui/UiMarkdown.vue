@@ -98,20 +98,20 @@ const caretOnItem = (block: MarkdownBlock, item: MarkdownListItem): boolean =>
       <ul v-else-if="block.kind === MarkdownBlockKind.List" class="list-disc space-y-1 pl-5">
         <li v-for="item in block.items" :key="item.id" class="break-words"><UiMarkdownInline :nodes="item.inlines" :links="links" :caret="caretOnItem(block, item)" /></li>
       </ul>
-      <blockquote v-else-if="block.kind === MarkdownBlockKind.Quote" class="border-l-2 border-border pl-3 italic">
+      <blockquote v-else-if="block.kind === MarkdownBlockKind.Quote" class="border-l-2 border-border-strong pl-3 italic">
         <UiMarkdownInline :nodes="block.inlines" :links="links" :caret="caretOnBlock(block)" />
       </blockquote>
       <div v-else-if="block.kind === MarkdownBlockKind.Code" class="relative">
         <pre
-          class="overflow-x-auto whitespace-pre rounded-md border border-border bg-surface-field px-3 py-2 font-mono text-xs text-text-primary"
-          :class="copyLabel ? 'pr-10' : ''"
+          class="overflow-x-auto whitespace-pre rounded-control border border-border bg-surface-field px-3.5 py-2.5 font-mono text-xs text-text-primary"
+          :class="copyLabel ? 'pr-11' : ''"
         ><code>{{ block.code }}</code></pre>
         <UiCopyButton
           v-if="copyLabel"
           :value="block.code"
           :label="copyLabel"
           :copied-label="copiedName ?? copyLabel"
-          class="absolute right-1 top-1"
+          class="absolute right-1.5 top-1.5"
           testid="markdown-copy"
         />
       </div>

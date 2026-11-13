@@ -10,8 +10,13 @@
   },
   "login": {
     "hint": "This is a public demo. Use the account below to look around.",
-    "useAccount": "Use demo account",
+    "use": "Use",
     "email": "Email: {email}",
-    "password": "Password: {password}"
+    "password": "Password: {password}",
+    "roles": {
+      "admin": "Admin",
+      "client": "Client"
+    },
+    "openClientPortal": "Open client portal"
   }
 }

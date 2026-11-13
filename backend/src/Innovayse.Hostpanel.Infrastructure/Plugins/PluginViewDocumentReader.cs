@@ -39,7 +39,7 @@ internal static partial class PluginViewDocumentReader
 
     /// <summary>
     /// The deepest nesting of objects and arrays a view document may have, the root counted as one level. A view
-    /// needs a handful of levels (root, blocks, block, tabs, tab, blocks, ...); the bound keeps the parser and the
+    /// needs a handful of levels (root, blocks, block, tabs, tab, blocks and so on); the bound keeps the parser and the
     /// recursive walk of a hostile document short.
     /// </summary>
     private const int MaxJsonDepth = 32;

@@ -48,7 +48,7 @@ export function useInvoices() {
   /**
    * Loads all invoices for the authenticated client.
    *
-   * @throws Will set {@link error} instead of throwing — safe to call without try/catch.
+   * @throws Will set {@link error} instead of throwing, safe to call without try/catch.
    */
   async function fetchAll(): Promise<void> {
     loading.value = true
@@ -94,7 +94,7 @@ export interface InvoiceDto {
 /**
  * Manages the authenticated client's billing state.
  *
- * Invoices are lazy-loaded — call {@link fetchInvoices} before reading {@link invoices}.
+ * Invoices are lazy-loaded: call {@link fetchInvoices} before reading {@link invoices}.
  */
 export const useInvoiceStore = defineStore('invoices', () => {
   /** All invoices for the current client. */

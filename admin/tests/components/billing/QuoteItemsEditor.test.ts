@@ -3,8 +3,9 @@
  * editing, adding and removing lines.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { nextRowKey } from '@/lib/rowKey'
 import QuoteItemsEditor from '@/components/billing/QuoteItemsEditor.vue'
-import type { QuoteItemUpdate } from '@/types/quote'
+import type { QuoteLineDraft } from '@/types/quote'
 import { mountWithApp } from '../../helpers/mount'
 
 /**
@@ -13,7 +14,8 @@ import { mountWithApp } from '../../helpers/mount'
  * @param overrides - Fields to replace.
  * @returns The line.
  */
-const line = (overrides: Partial<QuoteItemUpdate> = {}): QuoteItemUpdate => ({
+const line = (overrides: Partial<QuoteLineDraft> = {}): QuoteLineDraft => ({
+  key: nextRowKey(),
   quantity: 2,
   description: 'Hosting',
   unitPrice: 10,
@@ -23,6 +25,13 @@ const line = (overrides: Partial<QuoteItemUpdate> = {}): QuoteItemUpdate => ({
 })
 
 describe('QuoteItemsEditor', () => {
+  it('draws placeholder rows and no totals while loading', () => {
+    const wrapper = mountWithApp(QuoteItemsEditor, { props: { modelValue: [], loading: true } })
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-quote-total"]').exists()).toBe(false)
+  })
+
   it('totals each line after its discount', () => {
     const wrapper = mountWithApp(QuoteItemsEditor, { props: { modelValue: [line(), line({ discountPercent: 0 })] } })
 
@@ -45,9 +54,9 @@ describe('QuoteItemsEditor', () => {
 
     await wrapper.get('[data-testid="billing-quote-item-add"]').trigger('click')
 
-    const [next] = onUpdate.mock.calls[0] as [QuoteItemUpdate[]]
+    const [next] = onUpdate.mock.calls[0] as [QuoteLineDraft[]]
     expect(next).toHaveLength(2)
-    expect(next[1]).toEqual({ quantity: 1, description: '', unitPrice: 0, discountPercent: 0, taxed: false })
+    expect(next[1]).toEqual({ key: expect.any(Number), quantity: 1, description: '', unitPrice: 0, discountPercent: 0, taxed: false })
   })
 
   it('offers removal only while more than one line exists', async () => {

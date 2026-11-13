@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Hostpanel -- one-command installer from the Docker Hub images.
+# Hostpanel: one-command installer from the Docker Hub images.
 #
 #   curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh | bash
 #
@@ -44,7 +44,7 @@ HEALTH_ATTEMPTS=60
 HEALTH_INTERVAL=5
 
 # The installer's own choices, named once. Everything else a new .env holds is the value in .env.example
-# (DOCKERHUB_NAMESPACE, the edge ports for TLS mode, the image versions ...), read from the downloaded
+# (DOCKERHUB_NAMESPACE, the edge ports for TLS mode, the image versions and so on), read from the downloaded
 # template rather than repeated here.
 INSTALL_DIR_DEFAULT="/opt/hostpanel"
 # --no-tls: the ports caddy takes so it never collides with the TLS proxy that owns 80 and 443.

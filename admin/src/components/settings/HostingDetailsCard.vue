@@ -4,9 +4,8 @@
  * support sections of the storefront show.
  *
  * Text fields (response time, sites hosted, support response, installer app count, money back
- * days and the response time of each support channel) are saved one by one; an empty value hides
- * that figure. The SSL, DDoS and no hidden fees switches are settings rows too and save on their
- * own. Whether a whole section shows is decided in the home sections card.
+ * days and the response time of each support channel) are drafts of the page's save bar; an empty value hides
+ * that figure. The SSL, DDoS and no hidden fees switches are settings rows too. Whether a whole section shows is decided in the home sections card.
  */
 import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -14,13 +13,12 @@ import { useSettingDraft } from '@/composables/useSettingDraft'
 import type { SettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
-import SettingSaveButton from '@/components/settings/SettingSaveButton.vue'
 import SettingToggleField from '@/components/settings/SettingToggleField.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { SettingEnv, SettingKey } from '@/types/setting'
-import type { Setting, SettingSave } from '@/types/setting'
+import type { Setting } from '@/types/setting'
 import { SHORT_TEXT_MAX_LENGTH } from '@/lib/limits'
 
 const { t } = useI18n()
@@ -32,8 +30,6 @@ const MONEY_BACK_DAYS_MAX_LENGTH = 3
 const props = defineProps<{
   /** All system settings, as loaded from the backend. */
   settings: Setting[]
-  /** Persists one row and answers how it went; each control shows its own outcome. */
-  save: SettingSave
 }>()
 
 /** The settings list as a ref, which is what the draft composable watches. */
@@ -164,6 +160,7 @@ const TOGGLES: HostingToggle[] = [
 
 <template>
   <SettingsSection
+    :columns="2"
     :title="t('settings.hostingDetails.title')"
     :description="t('settings.hostingDetails.description')"
   >
@@ -177,13 +174,6 @@ const TOGGLES: HostingToggle[] = [
           :maxlength="field.maxLength"
           :data-testid="`hosting-${field.testid}`"
           class="min-w-72 flex-1"
-          @keyup.enter="field.draft.submit(save)"
-        />
-        <SettingSaveButton
-          :dirty="field.draft.dirty.value"
-          :saving="field.draft.saving.value"
-          :data-testid="`hosting-save-${field.testid}`"
-          @click="field.draft.submit(save)"
         />
         <SettingOutcome :outcome="field.draft.outcome.value" />
       </UiStack>
@@ -198,7 +188,6 @@ const TOGGLES: HostingToggle[] = [
       :hint="t(toggle.hintKey)"
       :default-on="false"
       :testid="`hosting-${toggle.testid}`"
-      :save="save"
     />
   </SettingsSection>
 </template>

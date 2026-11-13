@@ -5,7 +5,8 @@
  * with its configured lease), and a button that closes a line as refunded by hand on each line the
  * API says may be closed (`canClose`: failed, stuck in refunding past the retry lease, or partly refunded).
  *
- * Reads `stores/orders`; a refused load shows `store.error` with a retry. The outcome of an accept
+ * The page opens on a glass header card (number, status badge, date, the admin actions) over three tabs: overview
+ * (order info, invoice and the fraud panel), items and notes. Reads `stores/orders`; a refused load shows `store.error` with a retry. The outcome of an accept
  * or cancel (success, or the API's sentence) shows above the order; a delete returns to the list.
  * Cancelling, deleting and closing a refund are confirmed first in a danger prompt; a rejection asks for the reason the
  * client is mailed.
@@ -25,8 +26,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -35,11 +35,13 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiTextTag } from '@/utils/ui/text'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { Icon } from '@/lib/icons'
 import { BILLING_CYCLE_OPTIONS, INVOICE_STATUS_OPTIONS, ORDER_LINE_FULFILMENT_OPTIONS, ORDER_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { invoiceStatusTone, orderItemStatusTone, orderLineFulfilmentTone, orderStatusTone, statusLabel } from '@/lib/tones'
 import { orderLineErrorKey } from '@/lib/orderLines'
@@ -50,6 +52,7 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
+import type { UiTabItem } from '@/utils/ui/tabs'
 
 /** The irreversible order changes the danger confirmation guards. */
 enum OrderDangerAction {
@@ -61,11 +64,47 @@ enum OrderDangerAction {
   CloseRefund = 'closeRefund',
 }
 
+/** The tabs of the page. */
+enum OrderTab {
+  /** Order info, invoice and the fraud panel. */
+  Overview = 'overview',
+  /** The order lines with their fulfilment. */
+  Items = 'items',
+  /** The admin notes. */
+  Notes = 'notes',
+}
+
 const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
 const store = useOrdersStore()
+
+/** The tab on show. */
+const tab = ref<OrderTab>(OrderTab.Overview)
+
+/** The tab strip. */
+const tabItems = computed<UiTabItem[]>(() => [
+  { value: OrderTab.Overview, label: t('orders.orderDetail.overview'), testid: 'order-tab-overview' },
+  { value: OrderTab.Items, label: t('orders.ordersList.items'), testid: 'order-tab-items' },
+  { value: OrderTab.Notes, label: t('shared.adminNotes'), testid: 'order-tab-notes' },
+])
+
+/** Captions of the order-info facts, drawn as placeholders while the order loads. */
+const infoFactLabels = computed<string[]>(() => [
+  t('shared.client'),
+  t('shared.paymentMethod'),
+  t('shared.ipAddress'),
+  t('orders.orderDetail.created'),
+  t('orders.orderDetail.linesSubtotal'),
+])
+
+/** Captions of the invoice facts, drawn as placeholders while the order loads. */
+const invoiceFactLabels = computed<string[]>(() => [
+  t('shared.invoiceId'),
+  t('shared.status'),
+  t('orders.orderDetail.invoiceTotal'),
+])
 
 /** The irreversible change waiting for confirmation, null when the prompt is closed. */
 const dangerConfirm = ref<OrderDangerAction | null>(null)
@@ -264,10 +303,42 @@ onMounted(async () => {
     </UiLink>
 
     <UiStack v-if="store.loading && !store.currentOrder" aria-busy="true" data-testid="order-loading">
-      <UiText tone="secondary" size="md">
-        {{ t('orders.orderDetail.loadingOrder') }}
-      </UiText>
-      <UiSkeleton :lines="3" />
+      <UiCard padding="md" data-testid="order-header-loading">
+        <UiStack direction="row" justify="between" align="center" gap="md" wrap aria-hidden="true">
+          <UiStack gap="xs">
+            <UiSkeletonBar class="h-9 w-48 rounded-md" />
+            <UiStack direction="row" gap="sm" align="center">
+              <UiSkeletonBar class="h-5 w-20 rounded-full" />
+              <UiSkeletonBar class="h-3.5 w-32 rounded-md" />
+            </UiStack>
+          </UiStack>
+          <UiStack direction="row" gap="sm" align="center">
+            <UiSkeletonBar class="h-8 w-24 rounded-md" />
+            <UiSkeletonBar class="h-8 w-24 rounded-md" />
+          </UiStack>
+        </UiStack>
+      </UiCard>
+
+      <UiTabs v-model="tab" :items="tabItems" />
+
+      <UiGrid :columns="2">
+        <UiCard padding="md">
+          <UiStack>
+            <UiHeading :level="2" variant="section">
+              {{ t('orders.orderDetail.orderInfo') }}
+            </UiHeading>
+            <OrderFact v-for="label in infoFactLabels" :key="label" :label="label" loading />
+          </UiStack>
+        </UiCard>
+        <UiCard padding="md">
+          <UiStack>
+            <UiHeading :level="2" variant="section">
+              {{ t('orders.orderDetail.invoice') }}
+            </UiHeading>
+            <OrderFact v-for="label in invoiceFactLabels" :key="label" :label="label" loading />
+          </UiStack>
+        </UiCard>
+      </UiGrid>
     </UiStack>
 
     <UiErrorState
@@ -281,129 +352,140 @@ onMounted(async () => {
     <template v-else-if="store.currentOrder">
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="order-action-feedback" />
 
-      <UiPageHeader :title="store.currentOrder.orderNumber" data-testid="order-header">
-        <UiStack direction="row" gap="sm" align="center" wrap>
-          <UiBadge :tone="orderStatusTone(store.currentOrder.status)" data-testid="order-status">
-            {{ statusLabel(ORDER_STATUS_OPTIONS, store.currentOrder.status) }}
-          </UiBadge>
-          <UiText tone="muted" size="sm">
-            {{ formatDateTime(store.currentOrder.createdAt) }}
-          </UiText>
-        </UiStack>
-        <template #actions>
-          <UiButton
-            v-if="store.currentOrder.status === OrderStatus.Pending"
-            variant="secondary"
-            size="sm"
-            data-testid="order-accept"
-            @click="handleAccept"
-          >
-            <UiIcon :markup="Icon.Check" size="sm" />
-            {{ t('orders.orderDetail.accept') }}
-          </UiButton>
-          <UiButton
-            v-if="store.currentOrder.status === OrderStatus.Pending"
-            variant="danger"
-            size="sm"
-            data-testid="order-cancel"
-            @click="dangerConfirm = OrderDangerAction.Cancel"
-          >
-            <UiIcon :markup="Icon.Close" size="sm" />
-            {{ t('shared.cancel') }}
-          </UiButton>
-          <UiButton
-            v-if="store.currentOrder.status === OrderStatus.Pending || store.currentOrder.status === OrderStatus.Cancelled"
-            variant="ghost"
-            size="sm"
-            data-testid="order-delete"
-            @click="dangerConfirm = OrderDangerAction.Delete"
-          >
-            <UiIcon :markup="Icon.Trash" size="sm" />
-            {{ t('shared.delete') }}
-          </UiButton>
-        </template>
-      </UiPageHeader>
-
-      <UiGrid :columns="2">
-        <UiCard padding="md" data-testid="order-info">
-          <UiStack>
-            <UiHeading :level="2" variant="section">
-              {{ t('orders.orderDetail.orderInfo') }}
+      <UiCard padding="md" data-testid="order-header">
+        <UiStack direction="row" justify="between" align="center" gap="md" wrap>
+          <UiStack gap="xs" class="min-w-0">
+            <UiHeading :level="1" variant="page">
+              {{ store.currentOrder.orderNumber }}
             </UiHeading>
-            <OrderFact :label="t('shared.client')">
-              <UiLink variant="link" :to="clientPath(store.currentOrder.clientId)" data-testid="order-client">
-                {{ store.currentOrder.clientName }}
-              </UiLink>
-            </OrderFact>
-            <OrderFact :label="t('shared.paymentMethod')">
-              {{ store.currentOrder.paymentMethod }}
-            </OrderFact>
-            <OrderFact :label="t('shared.ipAddress')">
-              {{ store.currentOrder.ipAddress ?? '—' }}
-            </OrderFact>
-            <OrderFact :label="t('orders.orderDetail.created')">
-              {{ formatDateTime(store.currentOrder.createdAt) }}
-            </OrderFact>
-            <OrderFact v-if="store.currentOrder.bundleName" :label="t('orders.orderDetail.bundle')">
-              <span data-testid="order-bundle">{{ store.currentOrder.bundleName }}</span>
-            </OrderFact>
-            <OrderFact :label="t('orders.orderDetail.linesSubtotal')">
-              <span data-testid="order-lines-subtotal">
-                {{ formatPlainAmount(store.currentOrder.total, store.currentOrder.currency) }}
-              </span>
-            </OrderFact>
+            <UiStack direction="row" gap="sm" align="center" wrap>
+              <UiBadge :tone="orderStatusTone(store.currentOrder.status)" data-testid="order-status">
+                {{ statusLabel(ORDER_STATUS_OPTIONS, store.currentOrder.status) }}
+              </UiBadge>
+              <UiText tone="muted" size="sm">
+                {{ formatDateTime(store.currentOrder.createdAt) }}
+              </UiText>
+            </UiStack>
           </UiStack>
-        </UiCard>
+          <UiStack direction="row" gap="sm" align="center" wrap>
+            <UiButton
+              v-if="store.currentOrder.status === OrderStatus.Pending"
+              variant="secondary"
+              size="sm"
+              data-testid="order-accept"
+              @click="handleAccept"
+            >
+              <UiIcon :markup="Icon.Check" size="sm" />
+              {{ t('orders.orderDetail.accept') }}
+            </UiButton>
+            <UiButton
+              v-if="store.currentOrder.status === OrderStatus.Pending"
+              variant="danger"
+              size="sm"
+              data-testid="order-cancel"
+              @click="dangerConfirm = OrderDangerAction.Cancel"
+            >
+              <UiIcon :markup="Icon.Close" size="sm" />
+              {{ t('shared.cancel') }}
+            </UiButton>
+            <UiButton
+              v-if="store.currentOrder.status === OrderStatus.Pending || store.currentOrder.status === OrderStatus.Cancelled"
+              variant="ghost"
+              size="sm"
+              data-testid="order-delete"
+              @click="dangerConfirm = OrderDangerAction.Delete"
+            >
+              <UiIcon :markup="Icon.Trash" size="sm" />
+              {{ t('shared.delete') }}
+            </UiButton>
+          </UiStack>
+        </UiStack>
+      </UiCard>
 
-        <UiCard padding="md" data-testid="order-invoice">
-          <UiStack>
-            <UiHeading :level="2" variant="section">
-              {{ t('orders.orderDetail.invoice') }}
-            </UiHeading>
-            <template v-if="store.currentOrder.invoiceId">
-              <OrderFact :label="t('shared.invoiceId')">
-                <UiLink variant="link" :to="invoicePath(store.currentOrder.invoiceId)" data-testid="order-invoice-link">
-                  #{{ store.currentOrder.invoiceId }}
+      <UiTabs v-model="tab" :items="tabItems" :aria-label="store.currentOrder.orderNumber" />
+
+      <UiStack v-if="tab === OrderTab.Overview">
+        <UiGrid :columns="2">
+          <UiCard padding="md" data-testid="order-info">
+            <UiStack>
+              <UiHeading :level="2" variant="section">
+                {{ t('orders.orderDetail.orderInfo') }}
+              </UiHeading>
+              <OrderFact :label="t('shared.client')">
+                <UiLink variant="link" :to="clientPath(store.currentOrder.clientId)" data-testid="order-client">
+                  {{ store.currentOrder.clientName }}
                 </UiLink>
               </OrderFact>
-              <OrderFact :label="t('shared.status')">
-                <UiBadge
-                  v-if="store.currentOrder.invoiceStatus"
-                  :tone="invoiceStatusTone(store.currentOrder.invoiceStatus)"
-                  small
-                >
-                  {{ statusLabel(INVOICE_STATUS_OPTIONS, store.currentOrder.invoiceStatus) }}
-                </UiBadge>
-                <template v-else>
-                  &mdash;
-                </template>
+              <OrderFact :label="t('shared.paymentMethod')">
+                {{ store.currentOrder.paymentMethod }}
               </OrderFact>
-              <OrderFact :label="t('orders.orderDetail.invoiceTotal')">
-                <span data-testid="order-invoice-total">
-                  {{
-                    store.currentOrder.invoiceTotal === null
-                      ? '—'
-                      : formatPlainAmount(store.currentOrder.invoiceTotal, store.currentOrder.currency)
-                  }}
-                </span>
+              <OrderFact :label="t('shared.ipAddress')">
+                {{ store.currentOrder.ipAddress ?? EMPTY_VALUE }}
               </OrderFact>
-            </template>
-            <UiText v-else tone="muted" size="md">
-              {{ t('orders.orderDetail.noInvoiceLinkedToThis') }}
-            </UiText>
-          </UiStack>
-        </UiCard>
-      </UiGrid>
+              <OrderFact :label="t('orders.orderDetail.created')">
+                {{ formatDateTime(store.currentOrder.createdAt) }}
+              </OrderFact>
+              <OrderFact v-if="store.currentOrder.bundleName" :label="t('orders.orderDetail.bundle')">
+                <UiText :as="UiTextTag.Span" data-testid="order-bundle">{{ store.currentOrder.bundleName }}</UiText>
+              </OrderFact>
+              <OrderFact :label="t('orders.orderDetail.linesSubtotal')">
+                <UiText :as="UiTextTag.Span" data-testid="order-lines-subtotal">
+                  {{ formatPlainAmount(store.currentOrder.total, store.currentOrder.currency) }}
+                </UiText>
+              </OrderFact>
+            </UiStack>
+          </UiCard>
 
-      <OrderFraudPanel
-        v-if="store.currentOrder.fraudScore !== null"
-        :order="store.currentOrder"
-        :busy="processing"
-        @approve="handleApproveReview"
-        @reject="rejecting = true"
-      />
+          <UiCard padding="md" data-testid="order-invoice">
+            <UiStack>
+              <UiHeading :level="2" variant="section">
+                {{ t('orders.orderDetail.invoice') }}
+              </UiHeading>
+              <template v-if="store.currentOrder.invoiceId">
+                <OrderFact :label="t('shared.invoiceId')">
+                  <UiLink variant="link" :to="invoicePath(store.currentOrder.invoiceId)" data-testid="order-invoice-link">
+                    #{{ store.currentOrder.invoiceId }}
+                  </UiLink>
+                </OrderFact>
+                <OrderFact :label="t('shared.status')">
+                  <UiBadge
+                    v-if="store.currentOrder.invoiceStatus"
+                    :tone="invoiceStatusTone(store.currentOrder.invoiceStatus)"
+                    small
+                  >
+                    {{ statusLabel(INVOICE_STATUS_OPTIONS, store.currentOrder.invoiceStatus) }}
+                  </UiBadge>
+                  <template v-else>
+                    {{ EMPTY_VALUE }}
+                  </template>
+                </OrderFact>
+                <OrderFact :label="t('orders.orderDetail.invoiceTotal')">
+                  <UiText :as="UiTextTag.Span" data-testid="order-invoice-total">
+                    {{
+                      store.currentOrder.invoiceTotal === null
+                        ? EMPTY_VALUE
+                        : formatPlainAmount(store.currentOrder.invoiceTotal, store.currentOrder.currency)
+                    }}
+                  </UiText>
+                </OrderFact>
+              </template>
+              <UiText v-else tone="muted" size="md">
+                {{ t('orders.orderDetail.noInvoiceLinkedToThis') }}
+              </UiText>
+            </UiStack>
+          </UiCard>
+        </UiGrid>
 
-      <UiCard data-testid="order-items">
+        <OrderFraudPanel
+          v-if="store.currentOrder.fraudScore !== null"
+          :order="store.currentOrder"
+          :busy="processing"
+          @approve="handleApproveReview"
+          @reject="rejecting = true"
+        />
+      </UiStack>
+
+      <UiCard v-else-if="tab === OrderTab.Items" data-testid="order-items">
         <UiTable :density="UiTableDensity.Comfortable">
           <UiTableHead>
             <UiTableRow>
@@ -426,7 +508,7 @@ onMounted(async () => {
             >
               <UiTableCell>{{ item.productName }}</UiTableCell>
               <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
-              <UiTableCell>{{ item.domain ?? item.hostname ?? '—' }}</UiTableCell>
+              <UiTableCell>{{ item.domain ?? item.hostname ?? EMPTY_VALUE }}</UiTableCell>
               <UiTableCell numeric>{{ formatPlainAmount(item.firstPaymentAmount, store.currentOrder.currency) }}</UiTableCell>
               <UiTableCell numeric>{{ formatPlainAmount(item.recurringAmount, store.currentOrder.currency) }}</UiTableCell>
               <UiTableCell>
@@ -511,7 +593,7 @@ onMounted(async () => {
         </UiTable>
       </UiCard>
 
-      <UiCard padding="md" data-testid="order-notes">
+      <UiCard v-else padding="md" data-testid="order-notes">
         <UiStack gap="sm">
           <UiHeading :level="2" variant="section">
             {{ t('shared.adminNotes') }}

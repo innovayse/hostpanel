@@ -24,7 +24,7 @@ import type { ReportQueryConfig, ReportQueryRange, ReportRangeValue } from '@/ty
  * @param view.ranges - Date ranges the screen offers.
  * @returns A reactive object with the rows, the filter state and the actions the screen binds.
  */
-export const useQueryReport = <T extends object>(
+export const useQueryReport = <T extends { id: number }>(
   config: ReportQueryConfig,
   view: { columns: Readonly<Ref<readonly ReportColumn[]>>; ranges: Readonly<Ref<readonly ReportQueryRange[]>> },
 ) => {

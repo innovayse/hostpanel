@@ -50,7 +50,7 @@
       />
       <UiButton type="submit" variant="primary" size="lg" full-width :loading="loading" data-testid="register-submit">
         <UserPlus v-if="!loading" :size="18" :stroke-width="2" class="mr-2" />
-        {{ loading ? $t('client.register.submitting') : $t('client.register.submit') }}
+        {{ $t('client.register.submit') }}
       </UiButton>
     </UiForm>
 

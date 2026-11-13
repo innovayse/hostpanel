@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 /**
- * PluginChatCardAction - one action of a chat's result card: a call drawn as an action block, a "try again" that asks
+ * PluginChatCardAction. One action of a chat's result card: a call drawn as an action block, a "try again" that asks
  * the chat to send its last message again, or a checked link. An action with a `visibleWhen` condition shows only while
  * the condition holds (`usePluginCondition`): it is hidden while the condition is read, when the read fails and when it
  * does not hold, and it is read again whenever one of the blocks the chat reads again is refreshed, so a card that

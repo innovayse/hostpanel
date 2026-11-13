@@ -5,12 +5,13 @@
  *
  * The form has three of these (registration, transfer, renewal); each is a titled section. The
  * maps are keyed by period and are seeded with every listed period by the form, so a period always
- * has a value; the `?? 0` below is unreachable while that holds and only gives the spinner a
- * definite number.
+ * has a value; the `?? 0` below is unreachable while that holds and only gives the stepper a
+ * definite number. While `loading` the title stays and the table draws one placeholder row per period under its
+ * real header.
  */
 import { useI18n } from 'vue-i18n'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
-import UiSpinner from '@/components/ui/UiSpinner.vue'
+import UiStepper from '@/components/ui/UiStepper.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -24,7 +25,7 @@ import { UiTableDensity } from '@/utils/ui/injection'
 const { t } = useI18n()
 
 /** Props for TldPricingTable. */
-defineProps<{
+withDefaults(defineProps<{
   /** Section title (already translated), e.g. "Registration pricing". */
   title: string
   /** Prefix of the `data-testid`s (`<prefix>-cost-<period>`, `<prefix>-sell-<period>`). */
@@ -37,7 +38,11 @@ defineProps<{
   cost: Record<string, number>
   /** Sell prices keyed by period. */
   sell: Record<string, number>
-}>()
+  /** Draws placeholder rows in place of the steppers while the config loads. */
+  loading?: boolean
+}>(), {
+  loading: false,
+})
 
 const emit = defineEmits<{
   /** Emitted with the period and the new cost price. */
@@ -48,8 +53,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <SettingsSection :title="title">
-    <UiTable :density="UiTableDensity.Compact" :data-testid="testid">
+  <SettingsSection :title="title" :loading="loading">
+    <UiTable :density="UiTableDensity.Compact" :loading="loading" :skeleton-rows="TLD_PERIODS.length" :data-testid="testid">
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader align="left">{{ t('settings.tldConfigForm.period') }}</UiTableHeader>
@@ -64,7 +69,7 @@ const emit = defineEmits<{
             {{ period }} {{ Number(period) === 1 ? t('shared.year') : t('settings.tldConfigForm.years') }}
           </UiTableCell>
           <UiTableCell class="pr-2">
-            <UiSpinner
+            <UiStepper
               :model-value="cost[period] ?? 0"
               :step="0.01"
               :min="0"
@@ -74,7 +79,7 @@ const emit = defineEmits<{
             />
           </UiTableCell>
           <UiTableCell class="pr-2">
-            <UiSpinner
+            <UiStepper
               :model-value="sell[period] ?? 0"
               :step="0.01"
               :min="0"

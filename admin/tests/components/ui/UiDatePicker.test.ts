@@ -19,7 +19,7 @@ import { createTestI18n } from '../../helpers/i18n'
 const mountPicker = (
   modelValue: string | null,
   extra: { direction?: UiDatePickerDirection; placeholder?: string; disabled?: boolean } = {},
-) => mount(UiDatePicker, { props: { modelValue, ...extra }, global: { plugins: [createTestI18n()] } })
+) => mount(UiDatePicker, { props: { modelValue, ...extra }, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
 /**
  * Captions of every button in the wrapper.
@@ -152,5 +152,30 @@ describe('UiDatePicker', () => {
       expect(wrapper.find(`[data-testid="${id}"]`).exists()).toBe(true)
     }
     expect(wrapper.find('[data-testid="date-picker-day-0"]').exists()).toBe(true)
+  })
+
+  it('draws the popup in the page body, fixed under the field', async () => {
+    const wrapper = mount(UiDatePicker, { props: { modelValue: null }, attachTo: document.body, global: { plugins: [createTestI18n()] } })
+
+    await wrapper.get('input').trigger('click')
+
+    const popup = document.body.querySelector('[data-testid="date-picker-prev"]')?.closest('.fixed')
+    expect(popup).not.toBeNull()
+    expect(wrapper.element.contains(popup ?? null)).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('closes on a pointer-down outside the field and the popup, not inside the popup', async () => {
+    const wrapper = mount(UiDatePicker, { props: { modelValue: null }, attachTo: document.body, global: { plugins: [createTestI18n()] } })
+    await wrapper.get('input').trigger('click')
+
+    document.body.querySelector('[data-testid="date-picker-prev"]')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    await nextTick()
+    expect(document.body.querySelector('[data-testid="date-picker-prev"]')).not.toBeNull()
+
+    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    await nextTick()
+    expect(document.body.querySelector('[data-testid="date-picker-prev"]')).toBeNull()
+    wrapper.unmount()
   })
 })

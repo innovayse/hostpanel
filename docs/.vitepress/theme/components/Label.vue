@@ -48,26 +48,26 @@ const labels = computed<Record<LabelType, string>>(() => ui.value.components.lab
   white-space: nowrap;
 }
 
-/* admin — purple */
+/* admin: purple */
 .label--admin {
   background-color: rgba(139, 92, 246, 0.15);
   color: #7c3aed;
 }
 
-/* new — green */
+/* new: green */
 .label--new {
   background-color: var(--vp-c-tip-soft, rgba(16, 185, 129, 0.12));
   color: var(--vp-c-tip-2, #059669);
 }
 
-/* local — gray */
+/* local: gray */
 .label--local {
   background-color: var(--vp-c-bg-soft);
   color: var(--vp-c-text-2);
   border: 1px solid var(--vp-c-divider);
 }
 
-/* sso — blue (brand) */
+/* sso: blue (brand) */
 .label--sso {
   background-color: var(--vp-c-brand-soft);
   color: var(--vp-c-brand-1);

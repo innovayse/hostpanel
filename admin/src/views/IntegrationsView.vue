@@ -18,7 +18,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 
 /** Translation function. */
@@ -71,7 +71,9 @@ onMounted(store.fetchAll)
     </UiPageHeader>
 
     <!-- Loading -->
-    <UiSkeleton v-if="store.loading && filtered.length === 0" :lines="3" data-testid="integrations-loading" />
+    <UiGrid v-if="store.loading && filtered.length === 0" :columns="3" gap="md" data-testid="integrations-loading">
+      <UiCard v-for="index in 6" :key="index" padding="md" loading :skeleton-lines="3" />
+    </UiGrid>
 
     <!-- Error -->
     <UiErrorState

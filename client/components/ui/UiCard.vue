@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 /**
- * UiCard - the portal's surface: a rounded, framed panel on the theme surface colour.
+ * UiCard. The portal's surface: a rounded, framed panel on the theme surface colour.
  *
  * Slots: `header` (above the title), default (body), `footer` (below a hairline).
  */

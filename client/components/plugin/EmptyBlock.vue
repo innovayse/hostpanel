@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 /**
- * PluginEmptyBlock - a plugin's empty state: a title and an optional sentence, both shown as text.
+ * PluginEmptyBlock. A plugin's empty state: a title and an optional sentence, both shown as text.
  */
 import type { PluginEmptyBlock } from '~/types/pluginblock'
 

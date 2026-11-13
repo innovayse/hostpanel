@@ -75,9 +75,11 @@
   "servicesTitle": "Ծառայություններ",
   "documentation": "Փաստաթղթեր",
   "sections": {
-    "daily": "Ամենօրյա աշխատանք",
+    "sales": "Վաճառք",
+    "support": "Աջակցություն",
+    "catalog": "Կատալոգ",
+    "infrastructure": "Ենթակառուցվածք",
     "insights": "Վերլուծություն",
-    "setup": "Կարգավորում",
     "addons": "Հավելումներ",
     "system": "Համակարգ"
   }

@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 /**
- * ServiceNotices - the banners above the service detail: a pending cancellation (with its type
+ * ServiceNotices. The banners above the service detail: a pending cancellation (with its type
  * when the API named a known one) and a "setup required" call to action for a pending service.
  *
  * The banners are grouped in one section labelled by a visually hidden heading, so a screen reader

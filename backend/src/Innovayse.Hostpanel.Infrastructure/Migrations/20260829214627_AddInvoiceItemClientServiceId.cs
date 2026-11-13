@@ -24,7 +24,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
         /// <c>AddInvoiceGatewaySession</c> introduced that mapping without regenerating the model
         /// snapshot, so EF has believed the column was missing ever since and re-proposes it on
         /// every scaffold. <c>ALTER TABLE invoices ADD COLUMN xmin</c> is rejected outright by
-        /// PostgreSQL -- "column name xmin conflicts with a system column name" -- and migrations
+        /// PostgreSQL ("column name xmin conflicts with a system column name"), and migrations
         /// are applied at startup in every environment except Testing, so shipping it would have
         /// stopped the API from booting against a live database.
         /// </para>
@@ -50,7 +50,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
         /// <inheritdoc />
         /// <remarks>
         /// Drops the index and the column and nothing else. The matching <c>xmin</c> drop the
-        /// scaffolder produced is gone for the reason given on <c>Up</c> -- it would have tried
+        /// scaffolder produced is gone for the reason given on <c>Up</c>, it would have tried
         /// to remove a PostgreSQL system column.
         /// </remarks>
         protected override void Down(MigrationBuilder migrationBuilder)

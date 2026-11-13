@@ -80,4 +80,13 @@ describe('UiTabs', () => {
     expect(wrapper.get('[data-testid="tab-a"]').classes()).toContain('text-primary-500')
     expect(wrapper.get('[data-testid="tab-c"]').classes()).toContain('text-text-secondary')
   })
+
+  it('draws the slot in a panel set 22px under the tab line, and no panel without a slot', () => {
+    const withSlot = mount(UiTabs, { props: { items, modelValue: 'a' }, slots: { default: '<p data-testid="body" />' } })
+    const without = mount(UiTabs, { props: { items, modelValue: 'a' } })
+
+    expect(withSlot.get('[data-testid="ui-tabs-panel"]').classes()).toContain('mt-5.5')
+    expect(withSlot.find('[data-testid="ui-tabs-panel"] [data-testid="body"]').exists()).toBe(true)
+    expect(without.find('[data-testid="ui-tabs-panel"]').exists()).toBe(false)
+  })
 })

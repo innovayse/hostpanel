@@ -7,7 +7,7 @@
 #   --dry-run  print what would change and exit.
 #
 # Idempotent. Order matters: the management key goes first, so HostPanel loses access before
-# anything else changes. Customers' authorized_keys are NOT touched — keys HostPanel installed
+# anything else changes. Customers' authorized_keys are NOT touched, keys HostPanel installed
 # keep working until revoked; list them with:
 #   grep -l 'hostpanel:' /home/*/.ssh/authorized_keys
 set -euo pipefail

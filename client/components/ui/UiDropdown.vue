@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 /**
- * UiDropdown - a bordered single-choice dropdown (the "heavy" sibling of UiSelect).
+ * UiDropdown: a bordered single-choice dropdown (the "heavy" sibling of UiSelect).
  *
  * Same value contract as UiSelect; differs in look (thick border, gradient selected row) and in
  * keeping its menu mounted (`v-show`) so a long list does not re-render on every open.

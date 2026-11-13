@@ -10,15 +10,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import draggable from 'vuedraggable'
-import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -38,6 +39,7 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -199,7 +201,7 @@ const formatDay = (iso: string): string => new Date(iso).toLocaleDateString()
  */
 const formatDateRange = (from: string | null, until: string | null): string => {
   if (from && until) {
-    return `${formatDay(from)} — ${formatDay(until)}`
+    return t('settings.slides.range', { from: formatDay(from), until: formatDay(until) })
   }
   if (from) {
     return t('settings.slides.from', { date: formatDay(from) })
@@ -216,7 +218,7 @@ const formatDateRange = (from: string | null, until: string | null): string => {
  * @param slide - The slide whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const slideActions = (slide: Slide): UiRowAction[] => {
+const slideActions = (slide: Slide): UiMenuAction[] => {
   /**
    * Forwards delete for this slide.
    * @returns Nothing.
@@ -235,21 +237,17 @@ const slideActions = (slide: Slide): UiRowAction[] => {
 
     <UiPageHeader :title="t('settings.slides.slides')" :subtitle="t('settings.slides.manageHomepageHeroSlidesDrag')">
       <template #actions>
-        <UiText v-if="savingOrder" tone="muted" size="sm" role="status" data-testid="slides-saving-order">
-          {{ t('settings.slides.savingOrder') }}
-        </UiText>
+        <UiLoader v-if="savingOrder" data-testid="slides-saving-order" />
         <UiLink :to="createRoute" :variant="UiButtonVariant.Primary" data-testid="slides-add">
           {{ t('settings.slides.addSlide') }}
         </UiLink>
       </template>
     </UiPageHeader>
 
-    <SettingsLoading v-if="store.loading" :message="t('settings.slides.loadingSlides')" />
-
-    <UiErrorState v-else-if="store.error" :message="store.error" testid="slides-error" @retry="loadSlides" />
+    <UiErrorState v-if="store.error" :message="store.error" testid="slides-error" @retry="loadSlides" />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="localSlides.length === 0" :colspan="7">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="localSlides.length === 0" :loading="store.loading">
         <template #empty>
           {{ t('settings.slides.noSlidesFoundAddYour') }}
         </template>
@@ -265,6 +263,7 @@ const slideActions = (slide: Slide): UiRowAction[] => {
           </UiTableRow>
         </UiTableHead>
         <draggable
+          v-if="!store.loading"
           v-model="localSlides"
           tag="tbody"
           item-key="id"
@@ -286,21 +285,18 @@ const slideActions = (slide: Slide): UiRowAction[] => {
               <!-- Thumbnail -->
               <UiTableCell>
                 <UiImage
-                  v-if="slide.imageUrl"
-                  :src="storefrontAssetUrl(slide.imageUrl)"
+                  :src="slide.imageUrl ? storefrontAssetUrl(slide.imageUrl) : undefined"
                   :alt="slide.translations[0]?.title ?? t('settings.slides.slide')"
                   fit="cover"
                   rounded="md"
                   class="h-10 w-10 border border-border"
+                  fallback
                 />
-                <UiStack v-else align="center" justify="center" gap="none" class="h-10 w-10 rounded-lg border border-border bg-surface-field text-text-muted">
-                  <UiIcon :markup="Icon.Image" size="sm" />
-                </UiStack>
               </UiTableCell>
 
               <!-- Title -->
               <UiTableCell>
-                <UiText tone="primary" size="lg" class="font-medium">{{ slide.translations[0]?.title ?? '—' }}</UiText>
+                <UiText tone="primary" size="lg" class="font-medium">{{ slide.translations[0]?.title ?? EMPTY_VALUE }}</UiText>
                 <UiText v-if="slide.translations[0]?.tagline" tone="muted" size="xs">
                   {{ slide.translations[0].tagline }}
                 </UiText>
@@ -342,7 +338,6 @@ const slideActions = (slide: Slide): UiRowAction[] => {
       :title="t('settings.slides.deleteSlide2')"
       :message="t('settings.slides.deleteMessage', { title: slideTitle(deleteTarget) })"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="confirmDelete"

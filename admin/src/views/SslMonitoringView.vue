@@ -19,6 +19,7 @@ import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportSsl } from '@/types/reportssl'
 import { UiTone } from '@/utils/ui/tone'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -71,7 +72,7 @@ const revalidate = async (): Promise<void> => {
           {{ includeInactive ? t('reports.sslMonitoring.hideInactiveDomains') : t('reports.sslMonitoring.showInactiveDomains') }}
         </UiButton>
         <UiButton variant="secondary" :loading="store.updating" data-testid="report-revalidate" @click="revalidate">
-          {{ store.updating ? t('reports.sslMonitoring.reValidating') : t('reports.sslMonitoring.reValidateSslStatus') }}
+          {{ t('reports.sslMonitoring.reValidateSslStatus') }}
         </UiButton>
       </UiStack>
     </template>
@@ -92,8 +93,8 @@ const revalidate = async (): Promise<void> => {
                 {{ row.hasSsl ? t('reports.sslMonitoring.valid') : t('reports.sslMonitoring.noSsl') }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell>{{ row.issuer ?? '—' }}</UiTableCell>
-            <UiTableCell>{{ row.expiresAt ?? '—' }}</UiTableCell>
+            <UiTableCell>{{ row.issuer ?? EMPTY_VALUE }}</UiTableCell>
+            <UiTableCell>{{ row.expiresAt ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>{{ row.lastUpdate }}</UiTableCell>
           </UiTableRow>
         </template>

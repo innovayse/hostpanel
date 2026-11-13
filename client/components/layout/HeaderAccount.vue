@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 /**
- * LayoutHeaderAccount - the signed-in half of the classic header: an avatar button that opens
+ * LayoutHeaderAccount. The signed-in half of the classic header: an avatar button that opens
  * the client-area links and a sign-out row.
  *
  * Reads the session from the auth store and loads the profile after mount, since the signed-in

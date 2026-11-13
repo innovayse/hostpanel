@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 /**
- * DomainRenewPanel - orders the renewal of a domain: period, order summary and payment method;
+ * DomainRenewPanel. Orders the renewal of a domain: period, order summary and payment method;
  * once the order is placed it shows a link to the invoice. The saved payment methods are read on
  * first need; the order, its in-flight flag and the API's refusal belong to the domains store.
  */

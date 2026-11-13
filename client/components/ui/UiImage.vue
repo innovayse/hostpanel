@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 /**
- * UiImage - the portal's image: optimised through NuxtImg, always with an `alt`.
+ * UiImage. The portal's image: optimised through NuxtImg, always with an `alt`.
  *
  * `alt` is required; pass an empty string only for a purely decorative image. Fit and corner
  * rounding are enums so a screen never hand-writes object-fit or radius classes.

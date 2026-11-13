@@ -31,10 +31,10 @@ describe('PluginKeptData', () => {
     expect(wrapper.emitted('purge')).toEqual([['acme']])
   })
 
-  it('disables the buttons and says purging while one purge runs', () => {
+  it('disables the buttons while one purge runs, keeping the label', () => {
     const wrapper = mountList({ purgingId: 'example-pay' })
 
-    expect(wrapper.get('[data-testid="plugin-purge-example-pay"]').text()).toContain('Purging')
+    expect(wrapper.get('[data-testid="plugin-purge-example-pay"]').text()).toContain('Purge data')
     expect(wrapper.get('[data-testid="plugin-purge-acme"]').attributes('disabled')).toBeDefined()
   })
 })

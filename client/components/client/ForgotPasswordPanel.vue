@@ -26,7 +26,7 @@
       />
       <UiButton type="submit" variant="primary" size="lg" full-width :loading="loading" data-testid="forgot-submit">
         <Send v-if="!loading" :size="18" :stroke-width="2" class="mr-2" />
-        {{ loading ? $t('client.forgot.submitting') : $t('client.forgot.submit') }}
+        {{ $t('client.forgot.submit') }}
       </UiButton>
       <div class="text-center">
         <UiBackLink :to="CLIENT_LOGIN_PATH" testid="forgot-back" compact>

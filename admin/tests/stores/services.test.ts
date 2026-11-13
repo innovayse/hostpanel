@@ -23,9 +23,8 @@ describe('servicesStore', () => {
   it('fetchAll requests the current page and fills the list', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 9 }))
     const store = useServicesStore()
-    store.page = 3
 
-    expect(await store.fetchAll()).toBe(true)
+    expect(await store.fetchAll(3)).toBe(true)
     expect(callOf(mock).url).toBe('/api/services?page=3&pageSize=20')
     expect(store.services).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(9)
@@ -35,11 +34,11 @@ describe('servicesStore', () => {
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useServicesStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe('Not allowed.')
 
     stubOffline()
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
   })
 

@@ -105,7 +105,6 @@ onMounted(() => load(1))
       <UiTable
         :loading="store.loading && store.notes.length === 0"
         :empty="!store.loading && loadError === null && store.notes.length === 0"
-        :colspan="7"
         data-testid="billing-credit-notes-table"
       >
         <UiTableHead>

@@ -6,13 +6,17 @@
  * date moves the calendar so the reader sees where it will land. `direction` picks the quick
  * choices: `past` (yesterday, 7 days ago and so on) or `future` (tomorrow, in 7 days and so on), which
  * replaces the former separate future picker. Colours are theme tokens, so the popup follows the
- * light/dark switch. `data-testid` and classes land on the root element.
+ * light/dark switch. The popup is drawn in the page body (a teleport) and placed under the field with fixed
+ * positioning, so no card around the field can paint over it. `data-testid` and classes land on the root element.
  */
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { useDropdown } from '@/composables/useDropdown'
+import { useFloatingPlace } from '@/composables/useFloatingPlace'
+import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { splitIsoDate } from '@/lib/format'
 import { translate } from '@/lib/translate'
 import {
@@ -31,6 +35,7 @@ import {
   datePresetIdleClasses,
   formatDisplayDate,
   formatIsoDate,
+  getDayKeysForMonth,
   getDaysForMonth,
   matchQuickDate,
   parsePartialDate,
@@ -63,23 +68,22 @@ const emit = defineEmits<{
   'update:modelValue': [value: string | null]
 }>()
 
-/** Approximate popup height, used to decide whether it fits below the field. */
+/** Approximate popup height: the popup opens above the field when less than this is free below it. */
 const POPUP_HEIGHT = 450
 
-/** Whether the popup is open. */
-const isOpen = ref(false)
+/** Gap between the field and the popup, in pixels. */
+const POPUP_GAP_PX = 8
 
-/** Whether the popup opens above the field because there is no room below. */
-const openAbove = ref(false)
+/** Open flag and outside-pointer handling shared with the other floating lists; `panel` is the teleported popup. */
+const { open: isOpen, root: popupRef, trigger: inputRef, panel, show, hide } = useDropdown()
+
+useFloatingPlace(inputRef, panel, isOpen, { align: FloatingAlign.Start, minRoom: POPUP_HEIGHT, gap: POPUP_GAP_PX })
+
+/** Classes of the popup: fixed at its place, over the cards of the page, in the kit's popup look. */
+const popupClasses = `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden ${datePopupClasses}`
 
 /** First day of the month the grid shows. */
 const currentMonth = ref(new Date())
-
-/** Root element, used for outside-click detection. */
-const popupRef = ref<HTMLElement | null>(null)
-
-/** The text field, measured to place the popup. */
-const inputRef = ref<HTMLInputElement | null>(null)
 
 /** Text in the field. */
 const inputText = ref('')
@@ -116,6 +120,9 @@ const selectedQuick = computed<QuickDate | null>(() => matchQuickDate(props.mode
 
 /** Cells of the visible month. */
 const monthDays = computed<(number | null)[]>(() => getDaysForMonth(currentMonth.value))
+
+/** ISO day of each visible cell, the cell's list key. */
+const monthDayKeys = computed<string[]>(() => getDayKeysForMonth(currentMonth.value))
 
 /** Month select value, kept in step with the grid. */
 const currentMonthValue = computed<string>({
@@ -165,36 +172,10 @@ const clearPreview = (): void => {
   previewYear.value = null
 }
 
-/** Decides whether the popup opens above or below the field. */
-const checkPopupPosition = (): void => {
-  if (!inputRef.value) {
-    return
-  }
-  const rect = inputRef.value.getBoundingClientRect()
-  const spaceBelow = window.innerHeight - rect.bottom
-  openAbove.value = spaceBelow < POPUP_HEIGHT && rect.top > POPUP_HEIGHT
-}
-
 /** Opens the popup unless the picker is disabled. */
 const openPopup = (): void => {
   if (!props.disabled) {
-    isOpen.value = true
-  }
-}
-
-/** Closes the popup. */
-const closePopup = (): void => {
-  isOpen.value = false
-}
-
-/**
- * Closes the popup on a click outside the picker.
- *
- * @param e - The document click.
- */
-const handleClickOutside = (e: MouseEvent): void => {
-  if (popupRef.value && !popupRef.value.contains(e.target as Node)) {
-    isOpen.value = false
+    show()
   }
 }
 
@@ -292,7 +273,7 @@ const commitDate = (date: Date): void => {
   inputText.value = formatDisplayDate(iso)
   clearPreview()
   currentMonth.value = new Date(date.getFullYear(), date.getMonth(), 1)
-  isOpen.value = false
+  hide()
 }
 
 /**
@@ -314,7 +295,7 @@ const selectDay = (day: number | null): void => {
  */
 const selectQuick = (choice: QuickDate): void => {
   if (choice === QuickDate.Custom) {
-    isOpen.value = true
+    show()
     return
   }
   commitDate(quickDateFor(choice, props.direction))
@@ -323,7 +304,7 @@ const selectQuick = (choice: QuickDate): void => {
 /** Clears the date and closes the popup. */
 const clearDate = (): void => {
   emit('update:modelValue', null)
-  isOpen.value = false
+  hide()
 }
 
 /** Shows the previous month. */
@@ -336,25 +317,10 @@ const nextMonth = (): void => {
   currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1)
 }
 
-watch(isOpen, async (opened) => {
-  if (opened) {
-    // Wait for the render so the popup can be measured against the viewport.
-    await nextTick()
-    checkPopupPosition()
-  }
-})
-
 // An outside change of the model (form reset, loaded record) shows in the field.
 watch(() => props.modelValue, syncInputText)
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  initFromModel()
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+onMounted(initFromModel)
 </script>
 
 <template>
@@ -367,70 +333,72 @@ onUnmounted(() => {
       :placeholder="fieldPlaceholder"
       :disabled="disabled"
       :class="dateFieldClasses"
-      class="disabled:opacity-50 disabled:cursor-not-allowed"
       @click="openPopup"
       @focus="openPopup"
       @input="handleInput"
     >
 
-    <UiTransition :kind="UiTransitionKind.Dropdown">
-      <div
-        v-if="isOpen"
-        :class="[datePopupClasses, openAbove ? 'bottom-full mb-2' : 'top-full mt-2']"
-        class="absolute left-0 z-50 overflow-hidden"
-      >
-        <div class="flex">
-          <div :class="quickPanelWidthClass" class="bg-surface-hover border-r border-border p-3 flex flex-col gap-1">
-            <button
-              v-for="choice in quickDateOrder"
-              :key="choice"
-              type="button"
-              :data-testid="`date-picker-quick-${choice}`"
-              :class="quickClasses(choice)"
-              @click="selectQuick(choice)"
-            >
-              {{ t(quickDateLabelKeys[direction][choice]) }}
-            </button>
-          </div>
-
-          <div class="p-4 w-80">
-            <div class="flex items-center justify-between mb-4">
-              <button type="button" data-testid="date-picker-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
-              <div class="flex items-center gap-2">
-                <div class="w-[140px]">
-                  <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
-                </div>
-                <div class="w-[100px]">
-                  <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
-                </div>
-              </div>
-              <button type="button" data-testid="date-picker-next" :class="dateArrowClasses" @click="nextMonth">›</button>
-            </div>
-
-            <div class="grid grid-cols-7 gap-1 mb-2">
-              <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
-            </div>
-            <div class="grid grid-cols-7 gap-1">
+    <!-- Popup: in the page body, so no card around the field can paint over it -->
+    <Teleport to="body">
+      <UiTransition :kind="UiTransitionKind.Dropdown">
+        <div
+          v-if="isOpen"
+          ref="panel"
+          :class="popupClasses"
+        >
+          <div class="flex">
+            <div :class="quickPanelWidthClass" class="bg-surface-hover border-r border-border p-3 flex flex-col gap-1">
               <button
-                v-for="(day, i) in monthDays"
-                :key="i"
+                v-for="choice in quickDateOrder"
+                :key="choice"
                 type="button"
-                :data-testid="`date-picker-day-${i}`"
-                :disabled="day === null"
-                :class="dayClasses(day)"
-                @click="selectDay(day)"
+                :data-testid="`date-picker-quick-${choice}`"
+                :class="quickClasses(choice)"
+                @click="selectQuick(choice)"
               >
-                {{ day }}
+                {{ t(quickDateLabelKeys[direction][choice]) }}
               </button>
             </div>
 
-            <div class="flex items-center justify-between border-t border-border mt-4 pt-4">
-              <button type="button" data-testid="date-picker-clear" :class="dateActionClasses" @click="clearDate">{{ t('shared.clear') }}</button>
-              <button type="button" data-testid="date-picker-close" :class="dateActionClasses" @click="closePopup">{{ t('shared.close') }}</button>
+            <div class="p-4 w-80">
+              <div class="flex items-center justify-between mb-4">
+                <button type="button" data-testid="date-picker-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
+                <div class="flex items-center gap-2">
+                  <div class="w-[140px]">
+                    <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
+                  </div>
+                  <div class="w-[100px]">
+                    <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
+                  </div>
+                </div>
+                <button type="button" data-testid="date-picker-next" :class="dateArrowClasses" @click="nextMonth">›</button>
+              </div>
+
+              <div class="grid grid-cols-7 gap-1 mb-2">
+                <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
+              </div>
+              <div class="grid grid-cols-7 gap-1">
+                <button
+                  v-for="(day, i) in monthDays"
+                  :key="monthDayKeys[i]"
+                  type="button"
+                  :data-testid="`date-picker-day-${i}`"
+                  :disabled="day === null"
+                  :class="dayClasses(day)"
+                  @click="selectDay(day)"
+                >
+                  {{ day }}
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between border-t border-border mt-4 pt-4">
+                <button type="button" data-testid="date-picker-clear" :class="dateActionClasses" @click="clearDate">{{ t('shared.clear') }}</button>
+                <button type="button" data-testid="date-picker-close" :class="dateActionClasses" @click="hide()">{{ t('shared.close') }}</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </UiTransition>
+      </UiTransition>
+    </Teleport>
   </div>
 </template>

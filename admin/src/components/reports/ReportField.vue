@@ -19,10 +19,10 @@ const props = withDefaults(defineProps<{
 
 /** Width classes. */
 const widthClasses: Record<ReportFieldWidth, string> = {
-  sm: 'w-28',
-  md: 'w-44',
-  lg: 'w-64',
-  grow: 'flex-1 min-w-[12rem]',
+  sm: 'w-28 max-sm:w-full',
+  md: 'w-44 max-sm:w-full',
+  lg: 'w-64 max-sm:w-full',
+  grow: 'flex-1 min-w-[12rem] max-sm:w-full',
 }
 
 /** Width class of the field. */

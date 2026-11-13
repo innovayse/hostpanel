@@ -1,7 +1,7 @@
 {
   "domainsList": {
     "manageAllRegisteredDomainNames": "Manage all registered domain names across clients",
-    "searchDomains": "Search domains...",
+    "searchDomains": "Search domains",
     "expiresAt": "Expires At",
     "renewalPrice": "Renewal Price",
     "noDomainsMatchYourSearch": "No domains match your search",

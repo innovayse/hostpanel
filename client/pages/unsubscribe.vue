@@ -5,7 +5,7 @@
         {{ $t('client.unsubscribe.prompt') }}
       </UiText>
       <UiButton :loading="status === UnsubscribeStatus.Pending" full-width data-testid="unsubscribe-confirm-button" @click="confirm">
-        {{ status === UnsubscribeStatus.Pending ? $t('client.unsubscribe.working') : $t('client.unsubscribe.confirm') }}
+        {{ $t('client.unsubscribe.confirm') }}
       </UiButton>
     </div>
 

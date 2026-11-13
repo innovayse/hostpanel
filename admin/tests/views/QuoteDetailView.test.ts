@@ -32,6 +32,17 @@ afterEach(() => {
 })
 
 describe('QuoteDetailView', () => {
+  it('keeps the real sections as placeholders while the quote loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
+
+    expect(wrapper.find('[data-testid="billing-quote-loading"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('General Information')
+    expect(wrapper.find('[data-testid="billing-quote-subject"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+  })
+
   it('fills the form from the quote and saves the edited subject', async () => {
     const mock = stubRoutes({
       'GET /api/quotes/3': () => json(quote),

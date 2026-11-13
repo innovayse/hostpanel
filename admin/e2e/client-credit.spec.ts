@@ -24,7 +24,7 @@ test('the tab shows the balance and the history with the reasons', async ({ page
   await expect(page.getByTestId('client-credit-table')).toContainText('Goodwill after the outage')
   await expect(page.getByTestId('client-credit-table')).toContainText('Credit applied to Invoice #5')
   await expect(page.getByTestId('client-credit-change-12')).toContainText('15.00')
-  await expect(page.getByTestId('client-nav-credit')).toHaveAttribute('href', '/clients/7/credit')
+  await expect(page.getByTestId('client-tab-credit')).toHaveAttribute('aria-selected', 'true')
 })
 
 test('an adjustment needs an amount and a reason, posts both and shows the new balance and line', async ({ page }) => {

@@ -2,9 +2,10 @@
 /**
  * Plugin details page (`/plugins/:id`): the registry's page for one plugin.
  *
- * Shows the head (picture, name, publisher, badges, state on this server, update and uninstall),
- * the outside links, the licence key card of a paid plugin, and every version with its release
- * notes, compatibility with this host, permissions and status. A chosen version is installed after
+ * Shows the head (picture, name, publisher, badges, state on this server, update and uninstall) over four tabs:
+ * Overview (the outside links), Versions (every version with its release notes, compatibility with this host,
+ * permissions and status), Licence (the key card of a paid plugin) and Changes (what a pending update changes;
+ * the last two are offered only when they apply). A chosen version is installed after
  * a confirmation; an older one than the installed version needs its own explicit downgrade
  * confirmation. Uninstalling is confirmed first and raises the restart banner. The page loads the
  * details through the plugins store, shows a skeleton while they load, the API's sentence with a
@@ -27,9 +28,9 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import UiTabs from '@/components/ui/UiTabs.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { Icon } from '@/lib/icons'
@@ -38,6 +39,7 @@ import { PluginErrorCode, VersionRelation } from '@/types/plugin'
 import type { RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
+import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
@@ -122,6 +124,53 @@ const updatePending = computed<boolean>(
 
 /** Whether the paid plugin still needs a key before it can be installed. */
 const licenceNeeded = computed<boolean>(() => details.value !== null && details.value.requiresLicence && !details.value.hasLicenceKey)
+
+/** Closed set of the page's tabs; the strings are the tab values. */
+const DetailsTab = {
+  /** The outside links. */
+  Overview: 'overview',
+  /** Every version. */
+  Versions: 'versions',
+  /** The licence key of a paid plugin. */
+  Licence: 'licence',
+  /** What a pending update changes. */
+  Changes: 'changes',
+} as const
+
+/** One of the {@link DetailsTab} values. */
+type DetailsTab = (typeof DetailsTab)[keyof typeof DetailsTab]
+
+/** The tab the operator picked; {@link activeTab} falls back when it no longer applies. */
+const pickedTab = ref<DetailsTab>(DetailsTab.Overview)
+
+/** The tab strip: Licence only for a plugin that needs a key, Changes only while an update is pending. */
+const tabs = computed<UiTabItem[]>(() => [
+  { value: DetailsTab.Overview, label: t('pluginDetails.tabs.overview'), testid: 'plugin-details-tab-overview' },
+  { value: DetailsTab.Versions, label: t('pluginDetails.tabs.versions'), testid: 'plugin-details-tab-versions' },
+  ...(details.value?.requiresLicence === true
+    ? [{ value: DetailsTab.Licence, label: t('pluginDetails.tabs.licence'), testid: 'plugin-details-tab-licence' }]
+    : []),
+  ...(updatePending.value
+    ? [{ value: DetailsTab.Changes, label: t('pluginDetails.tabs.changes'), testid: 'plugin-details-tab-changes' }]
+    : []),
+])
+
+/** The tab on show: the picked one while it is offered, the overview otherwise (an update was just installed, say). */
+const activeTab = computed<DetailsTab>(
+  () => Object.values(DetailsTab).find(known => known === pickedTab.value && tabs.value.some(tab => tab.value === known)) ?? DetailsTab.Overview,
+)
+
+/**
+ * Switches tab from the strip's event; a value that is no tab is ignored.
+ *
+ * @param value - The value the strip reported.
+ */
+const selectTab = (value: string): void => {
+  const next = Object.values(DetailsTab).find(known => known === value)
+  if (next !== undefined) {
+    pickedTab.value = next
+  }
+}
 
 /**
  * Loads the details of the plugin the address names.
@@ -270,7 +319,11 @@ onMounted(load)
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plugin-details-feedback" />
 
-    <UiSkeleton v-if="showLoading" :lines="4" data-testid="plugin-details-loading" />
+    <template v-if="showLoading">
+      <PluginDetailsHeader :details="null" :busy="false" />
+      <UiTabs :model-value="DetailsTab.Overview" :items="tabs" :aria-label="t('pluginDetails.tabs.label')" />
+      <PluginDetailsLinks :details="null" />
+    </template>
 
     <template v-else-if="loadError !== null">
       <UiErrorState
@@ -299,15 +352,24 @@ onMounted(load)
 
     <template v-else-if="details !== null">
       <PluginDetailsHeader :details="details" :busy="busy" @update="askUpdate" @uninstall="askUninstall" />
-      <PluginDetailsLinks :details="details" />
-      <UiCard v-if="updatePending" padding="md" data-testid="plugin-details-changes">
-        <PluginUpdateChanges
-          :versions="details.versions"
-          :installed-version="details.installedVersion"
-          :target-version="details.latestVersion"
-        />
-      </UiCard>
-      <template v-if="details.requiresLicence">
+      <UiTabs
+        :model-value="activeTab"
+        :items="tabs"
+        :aria-label="t('pluginDetails.tabs.label')"
+        data-testid="plugin-details-tabs"
+        @update:model-value="selectTab"
+      />
+      <PluginDetailsLinks v-if="activeTab === DetailsTab.Overview" :details="details" />
+      <PluginVersionList
+        v-else-if="activeTab === DetailsTab.Versions"
+        :versions="details.versions"
+        :installed-version="details.installedVersion"
+        :staged-version="details.stagedVersion"
+        :latest-version="details.latestVersion"
+        :busy="busy"
+        @install="askInstall"
+      />
+      <template v-else-if="activeTab === DetailsTab.Licence">
         <UiAlert v-if="licenceNeeded" :variant="UiTone.Warning" data-testid="plugin-details-licence-needed">
           {{ t('pluginDetails.licence.needed') }}
         </UiAlert>
@@ -319,14 +381,13 @@ onMounted(load)
           @remove="handleRemoveKey"
         />
       </template>
-      <PluginVersionList
-        :versions="details.versions"
-        :installed-version="details.installedVersion"
-        :staged-version="details.stagedVersion"
-        :latest-version="details.latestVersion"
-        :busy="busy"
-        @install="askInstall"
-      />
+      <UiCard v-else-if="activeTab === DetailsTab.Changes" padding="md" data-testid="plugin-details-changes">
+        <PluginUpdateChanges
+          :versions="details.versions"
+          :installed-version="details.installedVersion"
+          :target-version="details.latestVersion"
+        />
+      </UiCard>
     </template>
 
     <UiDialog

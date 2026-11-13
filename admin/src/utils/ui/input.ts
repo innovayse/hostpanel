@@ -41,9 +41,32 @@ export type UiInputType = (typeof UiInputType)[keyof typeof UiInputType]
  */
 export const fieldWidthClasses = '[:where(&)]:w-full'
 
-/** Border, background, text and focus classes of a text-like field. */
-export const fieldBaseClasses =
-  'bg-surface-field border border-border rounded-[10px] text-text-primary placeholder:text-text-muted outline-none transition-colors duration-200 focus-visible:border-primary-500/60 focus-visible:ring-2 focus-visible:ring-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed read-only:cursor-default'
+/**
+ * Keyboard focus ring of every kit control that is not a text field (buttons, switches, boxes, drop
+ * zones). The ring takes the accent text token, which is a light blue on the dark ground and a deep
+ * blue on the light one, so it keeps at least 3:1 against the surface in both themes.
+ */
+export const focusRingClasses = 'outline-none focus-visible:ring-2 focus-visible:ring-text-accent'
+
+/**
+ * Border, background, text and focus classes of a text-like field, without a corner radius (the
+ * concept's field: a 5% white fill, a 9% hairline, the muted placeholder). A joined field, such as the
+ * phone number's country picker, sets its own corners. A disabled field turns to a muted, filled box
+ * with a not-allowed cursor, so it reads as unavailable by more than its opacity.
+ */
+export const fieldSurfaceClasses =
+  'bg-surface-field border border-border-control light:not-disabled:hover:border-border-control-hover text-text-primary placeholder:text-text-muted outline-none transition-colors duration-200 focus-visible:border-text-accent focus-visible:ring-2 focus-visible:ring-text-accent/40 disabled:bg-surface-hover disabled:text-text-muted disabled:cursor-not-allowed read-only:cursor-default'
+
+/** A standalone text-like field: the surface plus the control radius (12px). */
+export const fieldBaseClasses = `${fieldSurfaceClasses} rounded-control`
 
 /** Extra classes of a field flagged invalid (the server refused its value). */
 export const fieldInvalidClasses = 'border-status-red/60 focus-visible:border-status-red focus-visible:ring-status-red/30'
+
+/** Browser autofill hint per input type; a screen overrides it with its own `autocomplete`. */
+export const inputAutocomplete: Partial<Record<UiInputType, string>> = {
+  email: 'email',
+  password: 'current-password',
+  tel: 'tel',
+  url: 'url',
+}

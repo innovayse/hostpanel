@@ -1,7 +1,7 @@
 /**
  * Mount tests for ServicesListView: rows render with price, cycle, status label and a client
- * link, paging asks the API for the next page, and a refused load or an empty result shows the
- * right state.
+ * link, paging asks the API for the next page and keeps it in the address, and a refused load or an
+ * empty result shows the right state.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -26,15 +26,23 @@ const service = {
 }
 
 /**
- * Mounts the list and waits for its first load.
+ * Mounts the list at an address and waits for its first load.
+ *
+ * @param url - The address to open, with its query.
+ * @returns The wrapper and the router.
+ */
+const mountListAt = async (url: string) => {
+  const screen = await mountRouted(ServicesListView, '/services', url)
+  await flushPromises()
+  return screen
+}
+
+/**
+ * Mounts the list at its plain address and waits for its first load.
  *
  * @returns The wrapper.
  */
-const mountList = async () => {
-  const { wrapper } = await mountRouted(ServicesListView, '/services', '/services')
-  await flushPromises()
-  return wrapper
-}
+const mountList = async () => (await mountListAt('/services')).wrapper
 
 describe('ServicesListView', () => {
   afterEach(() => {
@@ -62,6 +70,24 @@ describe('ServicesListView', () => {
 
     const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls.some((url) => url.includes('page=2'))).toBe(true)
+  })
+
+  it('keeps the chosen page in the address', async () => {
+    stubRoutes({ 'GET /api/services': () => json({ items: [service], totalCount: 45 }) })
+    const { wrapper, router } = await mountListAt('/services')
+
+    await wrapper.get('[data-testid="services-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+  })
+
+  it('opens the page the address names', async () => {
+    const mock = stubRoutes({ 'GET /api/services': () => json({ items: [service], totalCount: 45 }) })
+    await mountListAt('/services?page=3')
+
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls[0]).toBe('/api/services?page=3&pageSize=20')
   })
 
   it('shows the empty state when there are no services', async () => {

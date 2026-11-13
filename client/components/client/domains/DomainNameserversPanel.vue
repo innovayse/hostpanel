@@ -39,7 +39,7 @@
       <template #actions>
         <UiButton type="submit" size="sm" :loading="nsSaving" full-width data-testid="domain-ns-save">
           <Save v-if="!nsSaving" :size="14" :stroke-width="2" class="mr-1.5" />
-          {{ nsSaving ? $t('client.domains.saving') : $t('client.domains.saveNameservers') }}
+          {{ $t('client.domains.saveNameservers') }}
         </UiButton>
       </template>
     </UiForm>
@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 /**
- * DomainNameserversPanel - the nameservers a domain points at: use the registrar's defaults or
+ * DomainNameserversPanel. The nameservers a domain points at: use the registrar's defaults or
  * enter up to five custom ones. The current servers come from the domain the page already
  * loaded into the domains store (its `management.nameservers`); saving goes through the store,
  * and its refusal sentence is shown above the form.

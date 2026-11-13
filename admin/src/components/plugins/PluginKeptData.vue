@@ -8,7 +8,8 @@
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -42,7 +43,7 @@ const emit = defineEmits<{
  * @param id - Id of the removed plugin.
  * @returns The action list passed to UiRowActions.
  */
-const keptActions = (id: string): UiRowAction[] => {
+const keptActions = (id: string): UiMenuAction[] => {
   /**
    * Asks the screen to purge this plugin's data (it confirms first).
    *
@@ -52,7 +53,7 @@ const keptActions = (id: string): UiRowAction[] => {
     emit('purge', id)
   }
   return [{
-    label: props.purgingId === id ? t('plugins.keptData.purging') : t('plugins.keptData.purge'),
+    label: t('plugins.keptData.purge'),
     testid: `plugin-purge-${id}`,
     danger: true,
     disabled: props.purgingId !== null,

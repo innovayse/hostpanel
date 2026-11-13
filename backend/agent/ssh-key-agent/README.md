@@ -10,7 +10,7 @@ generates. Nothing in it is specific to one hosting company, network or server.
 | Profile | Status | Account checks on top of the generic ones |
 |---|---|---|
 | `cwp` (CentOS Web Panel) | Supported; adapter, unit tests and isolated lab tests | Account must exist in CWP (`root_cwp.user`, via `providers/cwp/account-check`); suspended (`usermod -L`) accounts cannot receive keys. |
-| `generic-linux` | Agent profile; lab-tested. **Not selectable in HostPanel yet** — HostPanel has no server module for a plain Linux host. | passwd identity checks and the suspension lock only. |
+| `generic-linux` | Agent profile; lab-tested. **Not selectable in HostPanel yet**: HostPanel has no server module for a plain Linux host. | passwd identity checks and the suspension lock only. |
 | Other hosting panels | **Not supported.** Extension point only. | A provider is a profile in `profiles/<name>.conf` plus, if it needs one, a root-owned helper in `providers/<name>/` that answers `account_check_command`; HostPanel maps the server module to the profile in `SshKeyProviderFactory.AgentProfileFor`. None exists for them yet. |
 
 HostPanel only offers SSH key management on servers whose module maps to a profile (today: the
@@ -20,7 +20,7 @@ hosting" to customers.
 ## Setting up a server (HostPanel admin → Servers → *SSH*)
 
 1. **Connection.** Enter where customers connect (SSH hostname and port) and where HostPanel
-   reaches the agent (agent host, port, management user — `hpsshkeys` by default). Save.
+   reaches the agent (agent host, port, management user: `hpsshkeys` by default). Save.
 2. **Install.** *Generate identity*: HostPanel creates an ED25519 key pair for this server only,
    stores the private key encrypted, and shows a one-command installer. Run it as root on the
    server. It downloads the agent bundle from your HostPanel, **stops unless the SHA256 matches the
@@ -96,20 +96,20 @@ additive; older HostPanels ignore them and older agents simply omit them.
 
 ## Safety properties
 
-* **Account boundary** — strict name pattern; must exist in passwd; `uid >= min_uid`; not on
+* **Account boundary**: strict name pattern; must exist in passwd; `uid >= min_uid`; not on
   `deny_accounts`; home exactly `<home_root>/<dir>`. The path comes from passwd, never from the
   request. Provider checks (panel account, suspension, group, opt-in list) run before anything is
-  written; suspension and eligibility only gate *receiving* keys — `list` and `revoke` keep
+  written; suspension and eligibility only gate *receiving* keys: `list` and `revoke` keep
   working, so access can always be removed.
-* **Least privilege for file work** — the root parent validates, takes a per-account `flock`, then
+* **Least privilege for file work**: the root parent validates, takes a per-account `flock`, then
   forks a child that drops to the account's uid/gid before touching any file.
-* **Symlink / traversal** — `.ssh` and `authorized_keys` are opened with `O_NOFOLLOW` relative to
+* **Symlink / traversal**: `.ssh` and `authorized_keys` are opened with `O_NOFOLLOW` relative to
   directory descriptors; a foreign-owned or non-directory `.ssh` is `unsafe_path`.
-* **Atomic writes** — `O_EXCL` temp file, `fsync`, `rename`, `fsync` of the directory.
-* **Only its own keys** — managed lines are `ssh-ed25519 <blob> hostpanel:<key_id>`; keys added by
+* **Atomic writes**: `O_EXCL` temp file, `fsync`, `rename`, `fsync` of the directory.
+* **Only its own keys**: managed lines are `ssh-ed25519 <blob> hostpanel:<key_id>`; keys added by
   other means are counted but never listed, changed or removed.
-* **Timeouts** — 10 s for stdin, 60 s per request, so a silent client cannot pin a root process.
-* **Audit** — every `add`/`revoke` is appended to the root-only audit log, with fingerprint, never
+* **Timeouts**: 10 s for stdin, 60 s per request, so a silent client cannot pin a root process.
+* **Audit**: every `add`/`revoke` is appended to the root-only audit log, with fingerprint, never
   key material.
 
 ## Per-server policy (`/etc/hostpanel-ssh-key-agent/agent.conf`)
@@ -119,7 +119,7 @@ additive; older HostPanels ignore them and older agents simply omit them.
 | `provider`, `binding` | Reported by ping. Set by the installer. |
 | `account_check_command` | Absolute path of a root-owned helper run as `helper <account>` (no shell, empty environment, 10 s timeout). Exit 0 = panel account, 1 = not one, anything else = fault. |
 | `check_shadow_lock` | A locked password (`usermod -L`) makes the account `account_suspended`. `!!`/`*` alone is not a lock. |
-| `ssh_group` | Only members may receive keys — set it when only one group may log in over SSH (e.g. a jailed-shell group). |
+| `ssh_group` | Only members may receive keys, set it when only one group may log in over SSH (e.g. a jailed-shell group). |
 | `eligible_list` | Root-owned, not group/world-writable file, one account per line: an SSH opt-in list. |
 
 ## Jailed SSH enrolment (`jail_enrol`, agent 1.2.0+)
@@ -191,18 +191,18 @@ service whose product metadata holds `{"innovayseSites": {"prepare": true}}`.
 | Install / reinstall | the command HostPanel shows (or `./install.sh --provider P --binding ID "<key>"`) |
 | Preview | add `--dry-run` |
 | Upgrade | run the current installer command again; prints `Agent <old> -> <new>`, keeps `agent.conf`, updates the binding |
-| Diagnose | `./install.sh --check` — user, lock, agent owner/mode, sudoers, forced-command key, config, self-test, host key |
-| Remove / roll back | `./uninstall.sh [--dry-run] [--purge]` — management key first, then sudoers, user and agent; config kept unless `--purge`; audit log always kept |
+| Diagnose | `./install.sh --check`: user, lock, agent owner/mode, sudoers, forced-command key, config, self-test, host key |
+| Remove / roll back | `./uninstall.sh [--dry-run] [--purge]`: management key first, then sudoers, user and agent; config kept unless `--purge`; audit log always kept |
 
 Neither script touches sshd, the firewall, any VPN, Jailkit or customers' keys. **Before
 uninstalling, revoke the server's managed keys from HostPanel**
 (`POST /api/admin/servers/{id}/ssh-keys/revoke-all`); keys left behind keep working until removed
-by hand — list them with `grep -l 'hostpanel:' /home/*/.ssh/authorized_keys`.
+by hand: list them with `grep -l 'hostpanel:' /home/*/.ssh/authorized_keys`.
 
 ## What happens to keys over a service's life
 
 Every key is pinned to the server and account it was issued on. Removals always go there, by the
-key's own tag, so they can never touch a key HostPanel did not write — not even on a server whose
+key's own tag, so they can never touch a key HostPanel did not write, not even on a server whose
 account has since been reused.
 
 | Event | Keys on the server | In HostPanel |

@@ -52,7 +52,7 @@ const iconPath = computed<string>(() => (tone.value === UiTone.Warning ? WARNING
 
 <template>
   <div
-    class="border rounded-2xl px-5 py-3 flex items-center gap-3"
+    class="border rounded-card px-5 py-3 flex items-center gap-3"
     :class="toneClasses"
     :role="role"
   >
@@ -63,7 +63,7 @@ const iconPath = computed<string>(() => (tone.value === UiTone.Warning ? WARNING
     </svg>
     <!-- The message takes the rest of the row, so content laid out inside it (a row with an
          action pushed to the far edge) spans the whole alert instead of its own width. -->
-    <div class="flex-1 min-w-0 text-[0.82rem] text-text-primary" data-testid="ui-alert-body">
+    <div class="flex-1 min-w-0 text-sm text-text-primary" data-testid="ui-alert-body">
       <slot />
     </div>
   </div>

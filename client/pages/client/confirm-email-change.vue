@@ -1,14 +1,6 @@
 <template>
   <ClientAuthShell :show-logo="false">
-    <UiText
-      v-if="status === EmailConfirmationStatus.Pending"
-      tone="muted"
-      size="sm"
-      class="text-center"
-      data-testid="confirm-email-change-pending"
-    >
-      {{ $t('client.emailChange.confirming') }}
-    </UiText>
+    <UiSkeleton v-if="status === EmailConfirmationStatus.Pending" :lines="2" data-testid="confirm-email-change-pending" />
 
     <ClientOutcomePanel
       v-else-if="status === EmailConfirmationStatus.Confirmed"

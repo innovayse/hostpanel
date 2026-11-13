@@ -37,11 +37,11 @@ const emit = defineEmits<{
         type="button"
         variant="secondary"
         size="sm"
-        :disabled="restarting"
+        :loading="restarting"
         data-testid="plugins-restart"
         @click="emit('restart')"
       >
-        {{ restarting ? t('plugins.restartBanner.restarting') : t('plugins.restartBanner.restartServer') }}
+        {{ t('plugins.restartBanner.restartServer') }}
       </UiButton>
     </UiStack>
   </UiAlert>

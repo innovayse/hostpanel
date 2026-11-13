@@ -8,7 +8,7 @@ description: How to go back to a previous Hostpanel version after an upgrade.
 How to go back to a previous Hostpanel release when an upgrade causes a problem.
 
 <Callout type="warning">
-If the new version added a database migration, restore the dump you took before the upgrade first — migrations do not run backwards. Running the old images against a migrated database can cause data corruption.
+If the new version added a database migration, restore the dump you took before the upgrade first, migrations do not run backwards. Running the old images against a migrated database can cause data corruption.
 </Callout>
 
 ## Before you roll back
@@ -169,7 +169,7 @@ curl -fsSL \
 
 This restores the compose file and Caddyfile to the old version, sets `IMAGE_TAG`,
 pulls the old images and starts the stack. Replace `1.3.2` with the version you are
-rolling back to — the value you noted in upgrade step 1.
+rolling back to: the value you noted in upgrade step 1.
 
 **4.** Check that `GET /health` returns `200` and that you can sign in.
 

@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 /**
- * UiAccentTile - a square icon tile tinted with the colour of the nearest `UiAccent`.
+ * UiAccentTile: a square icon tile tinted with the colour of the nearest `UiAccent`.
  *
  * The tile is the product mark of the catalogue: a faint accent fill, a medium accent border, a
  * soft glow and the icon in the accent colour. The icon is a Nuxt Icon name (`mdi:cloud-check`).

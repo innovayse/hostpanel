@@ -4,11 +4,12 @@
  * means edit and loads the issue first. A refused load offers a retry instead of an empty form; a
  * refused save shows the API's sentence next to the save button, a saved issue returns to the list.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -19,7 +20,6 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -106,6 +106,9 @@ const saving = ref(false)
 /** Whether the existing issue is being loaded. */
 const loading = ref(false)
 
+// While the issue loads every field of the form draws a placeholder in place of its control.
+provide(UI_FIELD_LOADING, loading)
+
 /** Whether the last load of the issue was refused. */
 const loadFailed = ref(false)
 
@@ -191,16 +194,14 @@ onMounted(() => {
       :subtitle="isEditMode ? t('support.networkIssueForm.updateTheNetworkIssueDetails') : t('support.networkIssueForm.reportANewNetworkIssue')"
     />
 
-    <UiSkeleton v-if="loading" :lines="4" data-testid="network-issue-form-loading" />
-
     <UiErrorState
-      v-else-if="loadFailed"
+      v-if="loadFailed"
       :message="store.error ?? t('errors.noAnswer')"
       testid="network-issue-form-error"
       @retry="fetchIssue"
     />
 
-    <UiCard v-else padding="md">
+    <UiCard v-else padding="md" :aria-busy="loading ? 'true' : undefined">
       <UiStack>
         <UiField :label="t('shared.title')" :error="store.fieldErrors.title">
           <UiInput
@@ -281,7 +282,7 @@ onMounted(() => {
             data-testid="network-issue-form-save"
             @click="handleSave"
           >
-            {{ saving ? t('shared.saving') : isEditMode ? t('support.networkIssueForm.updateIssue') : t('support.networkIssueForm.createIssue') }}
+            {{ isEditMode ? t('support.networkIssueForm.updateIssue') : t('support.networkIssueForm.createIssue') }}
           </UiButton>
           <UiLink
             :to="AppRoute.SupportNetworkIssues"

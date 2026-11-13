@@ -29,6 +29,6 @@ describe('UiHeading', () => {
     const wrapper = mount(UiHeading, { props: { level: 3, variant: 'page' } })
 
     expect(wrapper.element.tagName).toBe('H3')
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['font-display', 'font-bold']))
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['font-display', 'font-semibold']))
   })
 })

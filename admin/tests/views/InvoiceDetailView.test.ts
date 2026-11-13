@@ -22,6 +22,16 @@ afterEach(() => {
 })
 
 describe('InvoiceDetailView', () => {
+  it('draws the tab strip, the fact tiles and the document card as placeholders while the invoice loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
+
+    expect(wrapper.get('[data-testid="billing-invoice-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="billing-invoice-items-table"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-tab-payment"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(4)
+  })
+
   it('loads the invoice and shows its number and the summary tab', async () => {
     stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
     const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')

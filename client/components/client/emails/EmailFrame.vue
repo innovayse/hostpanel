@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 /**
- * EmailFrame - shows an email's HTML body in a sandboxed frame.
+ * EmailFrame: shows an email's HTML body in a sandboxed frame.
  *
  * The body is untrusted markup, so it never enters the page's own DOM: it is the `srcdoc` of an
  * iframe whose sandbox grants only same-origin (so the height can be measured) and no scripts.

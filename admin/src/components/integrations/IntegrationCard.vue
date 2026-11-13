@@ -47,7 +47,7 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
             :size="UiSize.Lg"
             data-testid="integration-plugin-avatar"
           />
-          <UiStack v-else align="center" justify="center" class="h-12 w-12 rounded-xl p-2.5" :class="meta?.color ?? 'bg-text-muted'">
+          <UiStack v-else align="center" justify="center" class="h-12 w-12 rounded-control p-2.5" :class="meta?.color ?? 'bg-text-muted'">
             <UiImage
               v-if="meta?.logo"
               :src="meta.logo"

@@ -1,7 +1,7 @@
-# hostpanel client — end-to-end suite
+# hostpanel client: end-to-end suite
 
 Playwright drives a real browser against the real Nuxt server. Only the C# API is replaced, by
-`support/stub-backend.mjs` — a real HTTP server, because the storefront is server-rendered and the
+`support/stub-backend.mjs`: a real HTTP server, because the storefront is server-rendered and the
 calls Nitro makes while rendering are invisible to `page.route`.
 
 ## Flows (one spec each, `data-testid` selectors only)
@@ -52,7 +52,7 @@ anything up, which keeps the specs off the network.
 ```bash
 yarn build        # the suite serves the production build (.output) by default
 yarn e2e          # starts the stub backend and the client itself, then runs the specs
-E2E_DEV=1 yarn e2e   # serve `nuxt dev` instead — no build needed, slower first render
+E2E_DEV=1 yarn e2e   # serve `nuxt dev` instead, no build needed, slower first render
 ```
 
 Ports: `E2E_PORT` (client, 3100) and `E2E_STUB_PORT` (stub backend, 5999). The client runs in

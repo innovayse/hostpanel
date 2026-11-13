@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 /**
- * PluginBadgeBlock - a short status word, written in the view or read from a GET route, in one of the host's
+ * PluginBadgeBlock: a short status word, written in the view or read from a GET route, in one of the host's
  * tones. An object read from the route is not a word and draws nothing rather than its JSON.
  */
 import { usePluginSource } from '~/composables/usePluginView'

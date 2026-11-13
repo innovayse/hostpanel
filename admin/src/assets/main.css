@@ -1,7 +1,8 @@
 @import "tailwindcss";
-/* The faces the Typography settings card previews, self-hosted (utils/brandFonts.ts). An
-   @font-face only downloads when a rule uses it, so these cost nothing elsewhere. */
+/* The faces the panel and the Typography settings card use, self-hosted (utils/brandFonts.ts). An
+   @font-face only downloads when a rule uses it, so a face nothing references costs nothing. */
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
 @import "@fontsource/noto-sans-armenian";
 @import "@fontsource/noto-serif-armenian";
 
@@ -9,105 +10,305 @@
    Matches the same `<html class="light">` the palette below keys on. */
 @custom-variant light (&:where(.light, .light *));
 
-/* Runtime theme palette. Dark is the default; `<html class="light">` swaps every surface, border
-   and text token at once, so a Ui* component never carries a per-theme class. */
+/* Runtime theme palette ("Midnight Glass"). Dark is the default; `<html class="light">` swaps every
+   surface, border, text and effect token at once, so a Ui* component never carries a per-theme class.
+   `tests/lib/themeTokens.test.ts` reads this file and fails when a text pair drops below WCAG AA. */
 :root {
   color-scheme: dark;
-  --surface-base:     #0a0a0f;
-  --surface-panel:    #0f0f17;
-  --surface-card:     #12121a;
-  --surface-elevated: #16161f;
-  --surface-field:    rgb(255 255 255 / 0.04);
-  --surface-hover:    rgb(255 255 255 / 0.06);
-  --border:           #1e1e2e;
-  --border-subtle:    #161622;
-  --border-strong:    rgb(255 255 255 / 0.14);
-  --text-primary:     #f0f4ff;
-  --text-secondary:   #8b90a8;
-  --text-muted:       #7a8099;
-  --chart-grid:       rgb(255 255 255 / 0.05);
-  --chart-tick:       #64748b;
-  --chart-1: #0ea5e9;
-  --chart-2: #a855f7;
-  --chart-3: #34d399;
-  --chart-4: #fbbf24;
-  --chart-5: #f87171;
-  --chart-6: #38bdf8;
+
+  /* Height of the shell's header row, one value for the sidebar's brand row, the top bar and the
+     drawer's title row, so their hairlines sit on one line (the concept's 72px; a phone's bar is 56px). */
+  --shell-header-h: 56px;
+
+  /* Ground and surfaces. Cards are frosted glass over the ground; panels and elevated surfaces
+     (menus, dialogs) are opaque so nothing shows through a popup. */
+  --surface-base:     #070b18;
+  --surface-panel:    #0b1022;
+  --surface-card:     rgb(255 255 255 / 0.05);
+  --surface-elevated: #11182e;
+  --surface-field:    rgb(255 255 255 / 0.05);
+  --surface-hover:    rgb(255 255 255 / 0.08);
+  --surface-active:   rgb(255 255 255 / 0.12);
+  --surface-card-solid: #0f1527;
+  --surface-glass-strong: rgb(17 24 46 / 0.82);
+  --border:           rgb(255 255 255 / 0.09);
+  --border-subtle:    rgb(255 255 255 / 0.06);
+  --border-strong:    rgb(255 255 255 / 0.16);
+  --border-control:   rgb(255 255 255 / 0.09);
+  --border-control-hover: rgb(255 255 255 / 0.16);
+  --scrollbar-thumb:  rgb(255 255 255 / 0.22);
+  --scrollbar-thumb-hover: rgb(255 255 255 / 0.38);
+
+  /* The shell: the sidebar fill, the blurred top bar, their hairline, and the quiet row fill inside a card (the
+     "needs a person" rows and the admin card). */
+  --surface-sidebar:  rgb(255 255 255 / 0.03);
+  --surface-topbar:   rgb(7 11 24 / 0.6);
+  --surface-row:      rgb(255 255 255 / 0.04);
+  --border-shell:     rgb(255 255 255 / 0.07);
+
+  /* The account avatar: initials on a deep blue disc. */
+  --avatar-bg:        #1b2a52;
+  --avatar-fg:        #cfe0ff;
+
+  /* Text. */
+  --text-primary:     #e7ecf7;
+  --text-secondary:   #c3cbe0;
+  --text-muted:       #9aa6c4;
+  --text-accent:      #7ca0ff;
+
+  /* Status tints: each status colour (the dark values are declared in the theme block below, the light
+     ones under `:root.light`) at 14 percent, the fill a status pill sits on. */
+  --tint-red:    rgb(252 165 165 / 0.14);
+  --tint-green:  rgb(110 231 183 / 0.14);
+  --tint-yellow: rgb(252 211 77 / 0.14);
+  --tint-blue:   rgb(124 160 255 / 0.14);
+
+  /* Ground glow: blue from the top right, violet from the bottom left. */
+  --ground-glow:
+    radial-gradient(900px 500px at 85% -10%, rgb(76 129 255 / 0.35), transparent 60%),
+    radial-gradient(700px 500px at 10% 110%, rgb(139 92 246 / 0.25), transparent 60%);
+  --glass-blur: 12px;
+
+  /* Accent: the primary gradient fills the main button and the active navigation pill, with a glow. Both
+     ends are deep enough for the white label to keep 4.5:1 (AA); the hover and pressed gradients go deeper
+     still, so the label stays readable in every state. */
+  --gradient-primary: linear-gradient(135deg, #3b6ee8, #7f51f1);
+  --gradient-primary-hover: linear-gradient(135deg, #3562d6, #7344e6);
+  --gradient-primary-active: linear-gradient(135deg, #2f56c0, #6a3bd8);
+  --glow-primary: 0 8px 24px rgb(76 129 255 / 0.35);
+  --glow-primary-hover: 0 12px 30px rgb(76 129 255 / 0.55);
+
+  /* The off track of a switch: 3:1 or more against the card and the ground (WCAG non-text contrast). */
+  --control-track: #6b7894;
+
+  /* Form controls: the label colour on the primary gradient (white, as in the concept). */
+  --text-on-primary: #ffffff;
+  --glow-brand: 0 0 24px rgb(76 129 255 / 0.55);
+  --nav-active-bg:     rgb(76 129 255 / 0.16);
+  --nav-active-border: rgb(124 160 255 / 0.35);
+  /* The lit path of a sub-menu guide runs from the first colour (at the parent) to the second (at the active link). */
+  --nav-guide-start: #4c81ff;
+  --nav-guide-end: #8b5cf6;
+
+  /* Capacity bar fills: the brand gradient, and the amber to red one once a bar is nearly full. */
+  --gradient-bar:      linear-gradient(90deg, #4c81ff, #8b5cf6);
+  --gradient-bar-warn: linear-gradient(90deg, #f59e0b, #f87171);
+
+  /* Charts: a bar at or above the target is a gradient from the light to the base blue, a bar below it a
+     faded blue; the target is a dashed line. */
+  --chart-grid:       rgb(255 255 255 / 0.06);
+  --chart-tick:       #9aa6c4;
+  --chart-bar-top:    #7ca0ff;
+  --chart-bar-bottom: #4c81ff;
+  --chart-bar-dim:    rgb(124 160 255 / 0.28);
+  --chart-target:     rgb(154 166 196 / 0.6);
+  --chart-bar-glow:   rgb(76 129 255 / 0.45);
+  --chart-1: #4c81ff;
+  --chart-2: #8b5cf6;
+  --chart-3: #6ee7b7;
+  --chart-4: #fcd34d;
+  --chart-5: #fca5a5;
+  --chart-6: #7ca0ff;
+
+  /* Overlays: the veil behind a dialog or drawer and the shadow under every floating panel (menu, tooltip,
+     dialog, drawer). The panels themselves are `glass-strong`. */
+  --overlay-backdrop: rgb(3 6 16 / 0.6);
+  --elevation-card:      none;
+  --elevation-overlay:   0 24px 64px -16px rgb(0 0 0 / 0.6);
+  --elevation-popover:   0 12px 32px -8px rgb(0 0 0 / 0.5);
+
+  /* What the `glass` and `glass-strong` utilities paint; the fallbacks below swap them for solids. */
+  --glass-bg:        var(--surface-card);
+  --glass-strong-bg: var(--surface-glass-strong);
+  --glass-filter:    blur(var(--glass-blur)) saturate(140%);
 }
 
+/* "Daylight Glass": the light counterpart of the dark palette. A soft cool off-white ground with two faint
+   glows, white cards held up by a 1px slate border and a layered shadow (not by transparency, which looks
+   dirty on a light ground), a white sidebar and top bar with hairlines, slate text and the same blue and
+   violet accents. Every text pair stays AA (`tests/assets/mainCss.test.ts`). */
 :root.light {
   color-scheme: light;
-  --surface-base:     #f4f6fb;
-  --surface-panel:    #eef1f8;
+  --surface-base:     #f5f7fc;
+  --surface-panel:    #eef2fb;
   --surface-card:     #ffffff;
   --surface-elevated: #ffffff;
-  --surface-field:    rgb(15 23 42 / 0.04);
-  --surface-hover:    rgb(15 23 42 / 0.06);
-  --border:           #dfe3ee;
-  --border-subtle:    #eceff6;
-  --border-strong:    rgb(15 23 42 / 0.2);
+  --surface-field:    #ffffff;
+  --surface-hover:    rgb(47 95 224 / 0.07);
+  --surface-active:   rgb(47 95 224 / 0.12);
+  --surface-card-solid: #ffffff;
+  --surface-glass-strong: rgb(255 255 255 / 0.92);
+  --border:           #e4e8f2;
+  --border-subtle:    #eef1f6;
+  --border-strong:    #d9dfeb;
+  /* The edge of an interactive control (field, select, checkbox, radio, secondary button): 3:1 or more
+     against white and the ground (WCAG non-text contrast), unlike the decorative card hairlines. */
+  --border-control:   #7f8aa1;
+  --border-control-hover: #626d85;
+  --scrollbar-thumb:  #c5cddc;
+  --scrollbar-thumb-hover: #a3afc6;
+
+  --surface-sidebar:  #ffffff;
+  --surface-topbar:   rgb(255 255 255 / 0.8);
+  --surface-row:      #f7f9fd;
+  --border-shell:     #e4e8f2;
+
+  --avatar-bg:        #dbe6ff;
+  --avatar-fg:        #2554c9;
+
   --text-primary:     #0f172a;
-  --text-secondary:   #475069;
-  --text-muted:       #6b7389;
-  --chart-grid:       rgb(15 23 42 / 0.08);
-  --chart-tick:       #64748b;
-  /* Status text on a light surface: the dark-theme tints are below AA on white. */
-  --color-status-red:    #dc2626;
-  --color-status-green:  #047857;
-  --color-status-yellow: #b45309;
-  --chart-1: #0284c7;
-  --chart-2: #9333ea;
-  --chart-3: #059669;
-  --chart-4: #d97706;
+  --text-secondary:   #475569;
+  --text-muted:       #5b647c;
+  --text-accent:      #2f5fe0;
+
+  /* Status text on a light surface: the dark-theme tints are below AA on white, and the usual mid
+     tones (green 700, amber 700, red 600) fall just under 4.5:1 once the 14 percent tint sits behind
+     them, so the text is one step darker than that. The tint keeps the mid tone's hue. */
+  --color-status-red:    #b91c1c;
+  --color-status-green:  #065f46;
+  --color-status-yellow: #92400e;
+  --color-status-blue:   #2554c9;
+  --tint-red:    rgb(220 38 38 / 0.14);
+  --tint-green:  rgb(4 120 87 / 0.14);
+  --tint-yellow: rgb(180 83 9 / 0.14);
+  --tint-blue:   rgb(47 95 224 / 0.14);
+
+  --ground-glow:
+    radial-gradient(900px 500px at 85% -10%, rgb(76 129 255 / 0.12), transparent 60%),
+    radial-gradient(700px 500px at 10% 110%, rgb(139 92 246 / 0.08), transparent 60%);
+
+  /* Form controls: the gradient deepens on the light ground so the white label keeps 4.5:1 (AA) on both ends. */
+  --gradient-primary: linear-gradient(135deg, #3d64c1, #6d3fd6);
+  --gradient-primary-hover: linear-gradient(135deg, #3455ad, #5d32bd);
+  --gradient-primary-active: linear-gradient(135deg, #2c4b91, #4f27a6);
+  --glow-primary: 0 8px 22px -8px rgb(76 129 255 / 0.5);
+  --glow-primary-hover: 0 12px 26px -8px rgb(76 129 255 / 0.7);
+  --control-track: #7a8499;
+  --glow-brand: 0 0 22px rgb(76 129 255 / 0.4);
+  --nav-active-bg:     #eef3ff;
+  --nav-active-border: #c9d7ff;
+  --nav-guide-start: #2f5fe0;
+  --nav-guide-end: #6d3fd6;
+  --nav-dot:           rgb(15 23 42 / 0.2);
+
+  --gradient-bar:      linear-gradient(90deg, #2f5fe0, #6d3fd6);
+  --gradient-bar-warn: linear-gradient(90deg, #b45309, #dc2626);
+
+  --overlay-backdrop: rgb(15 23 42 / 0.35);
+  --elevation-card:      0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px rgb(15 23 42 / 0.06);
+  --elevation-overlay:   0 24px 64px -16px rgb(15 23 42 / 0.3);
+  --elevation-popover:   0 12px 32px -8px rgb(15 23 42 / 0.2);
+
+  --chart-grid:       rgb(15 23 42 / 0.07);
+  --chart-tick:       #5b647c;
+  --chart-bar-top:    #5b86f0;
+  --chart-bar-bottom: #2f5fe0;
+  --chart-bar-dim:    #c9d6f8;
+  --chart-target:     rgb(71 85 105 / 0.8);
+  --chart-1: #2f5fe0;
+  --chart-2: #6d3fd6;
+  --chart-3: #047857;
+  --chart-4: #b45309;
   --chart-5: #dc2626;
-  --chart-6: #0369a1;
+  --chart-6: #1d4ed8;
+}
+
+/* No backdrop blur in the browser, or the visitor asked for less transparency: frosted surfaces
+   become the solid colour, so text never sits on a see-through card it cannot be read against. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg:        var(--surface-card-solid);
+    --glass-strong-bg: var(--surface-elevated);
+    --glass-filter:    none;
+  }
+}
+
+/* From the desktop shell up (the sidebar column appears) the header row is the concept's 72px. */
+@media (min-width: 64rem) {
+  :root {
+    --shell-header-h: 72px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg:        var(--surface-card-solid);
+    --glass-strong-bg: var(--surface-elevated);
+    --glass-filter:    none;
+  }
 }
 
 @theme inline {
   --color-surface-base:     var(--surface-base);
-  --color-surface-panel:    var(--surface-panel);
   --color-surface-card:     var(--surface-card);
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-field:    var(--surface-field);
   --color-surface-hover:    var(--surface-hover);
+  --color-surface-active:   var(--surface-active);
+  --color-surface-sidebar:  var(--surface-sidebar);
+  --color-surface-topbar:   var(--surface-topbar);
+  --color-surface-row:      var(--surface-row);
+  --color-border-shell:     var(--border-shell);
+  --color-avatar-bg:        var(--avatar-bg);
+  --color-avatar-fg:        var(--avatar-fg);
   --color-border:           var(--border);
   --color-border-subtle:    var(--border-subtle);
   --color-border-strong:    var(--border-strong);
+  --color-border-control:   var(--border-control);
+  --color-border-control-hover: var(--border-control-hover);
   --color-text-primary:     var(--text-primary);
   --color-text-secondary:   var(--text-secondary);
   --color-text-muted:       var(--text-muted);
+  --color-text-accent:      var(--text-accent);
+  --color-text-on-primary:  var(--text-on-primary);
+  --color-tint-red:    var(--tint-red);
+  --color-tint-green:  var(--tint-green);
+  --color-tint-yellow: var(--tint-yellow);
+  --color-tint-blue:   var(--tint-blue);
+  --shadow-glow-primary: var(--glow-primary);
+  --shadow-glow-primary-hover: var(--glow-primary-hover);
+  --color-control-track: var(--control-track);
+  --shadow-glow-brand: var(--glow-brand);
+  --shadow-popover: var(--elevation-popover);
+  --shadow-overlay: var(--elevation-overlay);
+  --shadow-card: var(--elevation-card);
 }
 
-@theme {
-  /* Brand colors */
-  --color-primary-50:  #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
+/* `static` keeps every token in the stylesheet, used or not: the gradient reads the
+   ramp through `var()`, and a variable no utility names would otherwise be left out. */
+@theme static {
+  /* Brand colours: the ramps are lib/brandPalette.ts `buildScale` of #4c81ff and #8b5cf6, so the
+     picked colour sits at 500 (tests/lib/themeTokens.test.ts fails when they drift). */
+  --color-primary-300: #a8c4ff;
+  --color-primary-400: #7ca6ff;
+  --color-primary-500: #4c81ff;
+  --color-primary-600: #3d64c1;
+  --color-primary-700: #2c4b91;
 
-  --color-secondary-400: #c084fc;
-  --color-secondary-500: #a855f7;
-  --color-secondary-600: #9333ea;
+  --color-secondary-500: #8b5cf6;
 
-  /* Status */
-  --color-status-red:    #f87171;
-  --color-status-green:  #34d399;
-  --color-status-yellow: #fbbf24;
+  /* Status text on the dark ground; `:root.light` swaps them for the darker light-theme set. */
+  --color-status-red:    #fca5a5;
+  --color-status-green:  #6ee7b7;
+  --color-status-yellow: #fcd34d;
+  --color-status-blue:   #7ca0ff;
+
+  /* Radii: controls, cards, large panels and pills. */
+  --radius-control: 12px;
+  --radius-card:    20px;
+  --radius-panel:   22px;
+  --radius-pill:    999px;
 
   /* Motion: how long the kit's open and close animations take. Dropdowns are quick, panels and dialogs a little slower. */
   --duration-fast: 100ms;
   --duration-base: 200ms;
   --duration-slow: 300ms;
 
-  /* Fonts: one bundled sans for the whole panel (body, headings, titles and numbers), with the
-     Armenian face as the fallback for Armenian text. `--font-display` stays as an alias so the
-     `font-display` utility keeps working, but it is the same family. Nothing loads from a URL. */
+  /* Fonts: Inter for the body and the controls, Space Grotesk for headings and large figures, each
+     with the Armenian face as the fallback for Armenian text (neither Latin face has those glyphs).
+     Nothing loads from a URL. */
   --font-sans:    'Inter Variable', Inter, 'Noto Sans Armenian', system-ui, sans-serif;
-  --font-display: var(--font-sans);
+  --font-display: 'Space Grotesk Variable', 'Space Grotesk', 'Noto Sans Armenian', system-ui, sans-serif;
 
   /* Brand typefaces an operator can pick; each one backs a `font-brand-*` utility used to preview it. */
   --font-brand-inter: 'Inter Variable', Inter, 'Noto Sans Armenian', system-ui, sans-serif;
@@ -121,18 +322,31 @@
 
   h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 
-  /* Tables carry counts and money: tabular figures keep the digits of every row lined up. */
-  table { font-variant-numeric: tabular-nums; }
+  body { @apply ground; color: var(--text-primary); }
 
-  body { background-color: var(--color-surface-base); color: var(--color-text-primary); }
-
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: linear-gradient(to bottom, var(--color-primary-500), var(--color-secondary-500));
-    border-radius: 10px;
+  /* The one scrollbar of the whole admin, on every scrollable element (page, sidebar list, tables, dialogs, drawers,
+     menus, code blocks, command palette): thin, a transparent track, a rounded muted thumb and no arrow buttons.
+     Chromium ignores the WebKit pseudo-elements once the standard properties are set and then draws its own
+     arrow buttons, so the standard properties apply only where the pseudo-elements are not supported (Firefox);
+     Chromium and Safari get the pseudo-elements, which hide the buttons and give the thumb its hover state. */
+  @supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
   }
-  ::selection { background: rgba(14,165,233,0.25); color: var(--text-primary); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+  /* The number field has its own stepper (UiNumberInput, UiStepper): the browser's spin arrows go, in every engine. */
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+  ::selection { background: rgb(76 129 255 / 0.3); color: var(--text-primary); }
 
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
@@ -146,25 +360,58 @@
   }
 }
 
-/* A quiet vertical scrollbar for a list that scrolls inside a panel (the navigation): thin, and invisible until
-   the pointer is over the list or it is being scrolled, then a soft neutral thumb that fades in. The standard
-   properties are used on purpose: they take precedence over the loud gradient thumb of the global rule above. */
-@utility scroll-subtle {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  transition: scrollbar-color 300ms ease;
-  &:hover,
-  &:focus-within {
-    scrollbar-color: var(--border-strong) transparent;
-  }
+/* The page ground: the base colour with the two soft glows, fixed so they stay put while the content scrolls. */
+/* The lit part of a sub-menu guide. Rows are 2rem tall with a 0.25rem gap and the list has 0.25rem of padding on top, so
+   the centre of row `--i` stands (1.25 + 2.25 * i)rem down the list, and the lit overlay runs from the top of the list to
+   the centre of the active row `--n`. `--nav-guide-from` is the overlay's gradient colour at the centre of row `--i`
+   (a position along the path), so the elbow of that row carries the colour the overlay has beside it. */
+@utility nav-guide-lit {
+  --nav-guide-from: color-mix(in oklab, var(--nav-guide-start), var(--nav-guide-end) calc((1.25 + 2.25 * var(--i)) / (1.25 + 2.25 * var(--n)) * 100%));
+}
+
+@utility ground {
+  background-color: var(--surface-base);
+  background-image: var(--ground-glow);
+  background-attachment: fixed;
+}
+
+/* A frosted card surface: translucent fill, hairline border, backdrop blur, and the card shadow (none in the dark theme). Radius is the caller's. */
+@utility glass {
+  background-color: var(--glass-bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--elevation-card);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+/* A denser frosted surface for things that float over content: sticky bars, popovers, sheets. */
+@utility glass-strong {
+  background-color: var(--glass-strong-bg);
+  border: 1px solid var(--border-strong);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
 }
 
 @utility gradient-brand {
-  background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+  background: var(--gradient-primary);
+}
+
+/* The selected state of a radio (`UiRadio`): the brand gradient disc with a white dot, built from tokens. A selected
+   disabled radio keeps the dot but loses the gradient, in the muted text colour. */
+@utility radio-dot {
+  &:checked {
+    border-color: transparent;
+    background-image:
+      radial-gradient(circle, var(--text-on-primary) 0 30%, transparent 34%),
+      var(--gradient-primary);
+  }
+  &:checked:disabled {
+    background-image: radial-gradient(circle, var(--text-muted) 0 30%, transparent 34%);
+  }
 }
 
 @utility gradient-brand-text {
-  background: linear-gradient(135deg, #0ea5e9, #a855f7);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

@@ -56,15 +56,28 @@ describe('QuotesListView', () => {
     expect(wrapper.get('[data-testid="billing-quotes-table"]').text()).toContain('250.00 EUR')
   })
 
-  it('narrows the page by subject while typing and restores it on clear', async () => {
+  it('narrows the page by the search text while typing and restores it when cleared', async () => {
     stubRoutes({ 'GET /api/billing/quotes': quotesPage, 'GET /api/clients': () => json({ items: [], totalCount: 0 }) })
     const wrapper = await mountList()
 
-    await wrapper.get('[data-testid="billing-quotes-filter-toggle"]').trigger('click')
-    await wrapper.get('[data-testid="billing-quotes-filter-subject"]').setValue('renewal')
+    await wrapper.get('[data-testid="billing-quotes-search"]').setValue('renewal')
     expect(wrapper.findAll('[data-testid="billing-quotes-table"] tbody tr')).toHaveLength(1)
 
-    await wrapper.get('[data-testid="billing-quotes-clear"]').trigger('click')
+    await wrapper.get('[data-testid="billing-quotes-search"]').setValue('')
+    expect(wrapper.findAll('[data-testid="billing-quotes-table"] tbody tr')).toHaveLength(2)
+  })
+
+  it('narrows the page by the stage in the address and shows it as a removable chip', async () => {
+    stubRoutes({ 'GET /api/billing/quotes': quotesPage, 'GET /api/clients': () => json({ items: [], totalCount: 0 }) })
+    const { wrapper, router } = await mountRouted(QuotesListView, '/billing/quotes', '/billing/quotes?stage=Draft')
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-testid="billing-quotes-table"] tbody tr')).toHaveLength(1)
+    expect(wrapper.get('[data-testid="filter-chip-stage"]').text()).toContain('Draft')
+
+    await wrapper.get('[data-testid="filter-chip-remove-stage"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query.stage).toBeUndefined()
     expect(wrapper.findAll('[data-testid="billing-quotes-table"] tbody tr')).toHaveLength(2)
   })
 

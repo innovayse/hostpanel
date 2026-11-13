@@ -1,5 +1,5 @@
 /**
- * FAQ type - one question served by `GET /api/public/faqs`.
+ * FAQ type: one question served by `GET /api/public/faqs`.
  *
  * @module types/faq
  */

@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 /**
- * PhoneInput (`UiPhoneInput`) - an international phone field: a country picker (flag and calling
+ * PhoneInput (`UiPhoneInput`). An international phone field: a country picker (flag and calling
  * code, searchable list) beside the field for the national number.
  *
  * The stored value keeps its format: the number in international format (`+37410123456`) when it

@@ -1,5 +1,5 @@
 /**
- * Smoke tests for SupportTicketsView: the list, the status filter, the bulk bar and the empty and
+ * Smoke tests for SupportTicketsView: the list, the status filter dialog and chip, the bulk bar and the empty and
  * error states, through the real store and transport with `fetch` stubbed.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -42,26 +42,51 @@ describe('SupportTicketsView', () => {
     expect(wrapper.get('[data-testid="support-tickets-count"]').text()).toContain('1')
   })
 
-  it('reloads from the first page with the chosen status', async () => {
+  it('shows the priority of each ticket beside its status', async () => {
+    stubPathRoutes([{ path: '/tickets?', body: { items: [ticket], totalCount: 1 } }])
+
+    const wrapper = await mountView(SupportTicketsView)
+
+    expect(wrapper.get('[data-testid="support-tickets-row-5"]').text()).toContain('High')
+  })
+
+  it('reloads from the first page with the status chosen in the filter dialog', async () => {
     const mock = stubPathRoutes([{ path: '/tickets?', body: { items: [ticket], totalCount: 1 } }])
     const wrapper = await mountView(SupportTicketsView)
 
-    await wrapper.get('[data-testid="support-tickets-filter-closed"]').trigger('click')
+    await wrapper.get('[data-testid="support-tickets-filter"]').trigger('click')
+    await wrapper.get('[data-testid="support-tickets-filter-status"] [data-testid="ui-select-trigger"]').trigger('click')
+    const closed = wrapper.findAll('[data-testid="ui-select-option"]').find((option) => option.text() === 'Closed')
+    await closed?.trigger('mousedown')
+    await wrapper.get('[data-testid="filter-apply"]').trigger('click')
     await flushPromises()
 
     expect(callOf(mock, 1).url).toBe('/api/tickets?page=1&pageSize=20&status=Closed')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Closed')
   })
 
-  it('offers an Awaiting Reply filter and no filter for a status that no longer exists', async () => {
+  it('opens on the status the address holds, offers Awaiting Reply and ignores a status that no longer exists', async () => {
     const mock = stubPathRoutes([{ path: '/tickets?', body: { items: [ticket], totalCount: 1 } }])
-    const wrapper = await mountView(SupportTicketsView)
 
-    expect(wrapper.find('[data-testid="support-tickets-filter-answered"]').exists()).toBe(false)
+    await mountView(SupportTicketsView, { path: '/?status=AwaitingReply' })
+    expect(callOf(mock, 0).url).toBe('/api/tickets?page=1&pageSize=20&status=AwaitingReply')
 
-    await wrapper.get('[data-testid="support-tickets-filter-awaiting-reply"]').trigger('click')
+    const second = stubPathRoutes([{ path: '/tickets?', body: { items: [ticket], totalCount: 1 } }])
+    const wrapper = await mountView(SupportTicketsView, { path: '/?status=Answered' })
+
+    expect(callOf(second, 0).url).toBe('/api/tickets?page=1&pageSize=20')
+    expect(wrapper.find('[data-testid="filter-chips"]').exists()).toBe(false)
+  })
+
+  it('clears the status from the chip and loads every active ticket again', async () => {
+    const mock = stubPathRoutes([{ path: '/tickets?', body: { items: [ticket], totalCount: 1 } }])
+    const wrapper = await mountView(SupportTicketsView, { path: '/?status=Closed' })
+
+    await wrapper.get('[data-testid="filter-chip-remove-status"]').trigger('click')
     await flushPromises()
 
-    expect(callOf(mock, 1).url).toBe('/api/tickets?page=1&pageSize=20&status=AwaitingReply')
+    expect(callOf(mock, 1).url).toBe('/api/tickets?page=1&pageSize=20')
+    expect(wrapper.find('[data-testid="filter-chips"]').exists()).toBe(false)
   })
 
   it('shows the bulk bar for a selection and sends the chosen action', async () => {

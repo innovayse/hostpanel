@@ -4,11 +4,13 @@
  * is replaced by a stub that renders the item slot for each element.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import type { PropType } from 'vue'
 import SlidesView from '@/views/SlidesView.vue'
 import type { Slide } from '@/types/slide'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
+import type { MountedScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 
 vi.mock('vuedraggable', async () => {
@@ -57,6 +59,21 @@ const slide = (id: number, title: string, extra: Partial<Slide> = {}): Slide => 
 /** Two slides, the second hidden from guests only and inactive. */
 const slides: Slide[] = [slide(1, 'Welcome'), slide(2, 'Members', { isActive: false, targetAudience: 'Authenticated' })]
 
+/**
+ * Mounts the view and waits until the first slide row is drawn. The mount helper only flushes a fixed
+ * number of promise rounds, which is not enough for the list response to be read under load, and a click
+ * on a row that is not drawn yet finds nothing.
+ *
+ * @returns The mounted wrapper and its router, with the slide rows on screen.
+ */
+const mountLoaded = async (): Promise<MountedScreen> => {
+  const screen = await mountScreen(SlidesView)
+  await vi.waitFor(() => {
+    expect(screen.wrapper.find('[data-testid="slide-row-1"]').exists()).toBe(true)
+  })
+  return screen
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -84,7 +101,7 @@ describe('SlidesView', () => {
 
   it('navigates to the create and edit pages', async () => {
     stubRouteTable({ 'GET /admin/slides': () => json(slides) })
-    const { wrapper, router } = await mountScreen(SlidesView)
+    const { wrapper, router } = await mountLoaded()
 
     await wrapper.get('[data-testid="slides-add"]').trigger('click')
     await vi.waitFor(() => {
@@ -103,7 +120,7 @@ describe('SlidesView', () => {
       'GET /admin/slides': () => json(slides),
       'DELETE /admin/slides/1': () => new Response(null, { status: 204 }),
     })
-    const { wrapper } = await mountScreen(SlidesView)
+    const { wrapper } = await mountLoaded()
 
     await wrapper.get('[data-testid="slide-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="slide-delete-1"]').trigger('click')
@@ -122,11 +139,12 @@ describe('SlidesView', () => {
 
   it('does not delete when the confirmation is dismissed', async () => {
     const mock = stubRouteTable({ 'GET /admin/slides': () => json(slides) })
-    const { wrapper } = await mountScreen(SlidesView)
+    const { wrapper } = await mountLoaded()
 
     await wrapper.get('[data-testid="slide-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="slide-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
+    await flushPromises()
 
     expect(requestsOf(mock)).not.toContain('DELETE /admin/slides/1')
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
@@ -159,7 +177,7 @@ describe('SlidesView', () => {
       'GET /admin/slides': () => json(slides),
       'DELETE /admin/slides/1': () => problem('The slide is pinned.', 409),
     })
-    const { wrapper } = await mountScreen(SlidesView)
+    const { wrapper } = await mountLoaded()
 
     await wrapper.get('[data-testid="slide-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="slide-delete-1"]').trigger('click')

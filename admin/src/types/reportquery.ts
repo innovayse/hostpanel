@@ -37,7 +37,7 @@ export interface ReportQueryConfig {
 /** What the query report page reads from the state a screen builds with `useQueryReport`. */
 export interface ReportQueryView {
   /** Rows of the current page. */
-  rows: object[]
+  rows: { id: number }[]
   /** Number of rows over all pages. */
   totalCount: number
   /** Current page, starting at 1. */

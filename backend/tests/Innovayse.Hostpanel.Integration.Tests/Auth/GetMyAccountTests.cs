@@ -10,7 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>A signed-in caller reads their own email, roles and verification state.</summary>
+    /// <summary>A signed-in caller reads their own email, name, roles and verification state.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyAccountReturnsTheCallersAccount()
@@ -24,6 +24,8 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("email").GetString().Should().NotBeNullOrEmpty();
+        body.GetProperty("firstName").GetString().Should().Be("Seeded");
+        body.GetProperty("lastName").GetString().Should().Be("Admin");
         body.GetProperty("roles").ValueKind.Should().Be(JsonValueKind.Array);
         body.TryGetProperty("emailVerified", out _).Should().BeTrue();
     }

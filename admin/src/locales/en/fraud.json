@@ -39,7 +39,6 @@
   "settings": {
     "title": "Fraud settings",
     "subtitle": "Choose when an order waits for review and when an action is refused at once.",
-    "loading": "Loading fraud settings",
     "enabled": "Fraud detection",
     "enabledHint": "When off, registrations and orders are not scored and nothing is held for review.",
     "saved": "Fraud settings saved.",

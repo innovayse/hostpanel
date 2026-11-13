@@ -54,12 +54,12 @@ keywords: "шаблоны писем, плейсхолдеры, транзакц
 Плейсхолдеры используют язык шаблонов Liquid. Переменная записывается как <code v-pre>{{ name }}</code> или <code v-pre>{{ object.field }}</code>, имена пишутся строчными буквами с подчёркиваниями. Каждому шаблону доступны переменные бренда и сайта:
 
 ```liquid
-{{ brand.primary }}       — primary brand colour
-{{ brand.primary_dark }}  — dark variant of the primary colour
-{{ brand.on_primary }}    — text colour on the primary background
-{{ brand.accent }}        — accent colour
-{{ brand.logo_url }}      — URL of the brand logo
-{{ site.name }}           — the name of the site
+{{ brand.primary }}: primary brand colour
+{{ brand.primary_dark }}: dark variant of the primary colour
+{{ brand.on_primary }}: text colour on the primary background
+{{ brand.accent }}: accent colour
+{{ brand.logo_url }}: URL of the brand logo
+{{ site.name }}: the name of the site
 ```
 
 Пример с условием и циклом:

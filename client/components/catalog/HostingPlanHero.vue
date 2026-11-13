@@ -81,7 +81,7 @@ interface Props {
   summary: string
   /** The plan's price for the selected cycle, formatted. */
   price: string
-  /** The unit the price is per, already translated ("/mo", "/qtr", "/yr"...), for the cycle the price is of. */
+  /** The unit the price is per, already translated ("/mo", "/qtr", "/yr" and so on), for the cycle the price is of. */
   period: string
   /** Whether the plan is already in the cart. */
   inCart: boolean

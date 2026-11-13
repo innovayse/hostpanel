@@ -1,5 +1,5 @@
 /**
- * Mount tests for ViewLoading: a busy status region with skeletons and the loading word.
+ * Mount tests for ViewLoading: a busy status region with skeletons and a screen-reader-only loading label.
  */
 import { describe, expect, it } from 'vitest'
 import ViewLoading from '@/components/layout/ViewLoading.vue'
@@ -12,10 +12,17 @@ describe('ViewLoading', () => {
 
     expect(region.attributes('role')).toBe('status')
     expect(region.attributes('aria-busy')).toBe('true')
-    expect(region.findAll('.animate-pulse').length).toBeGreaterThan(0)
+    expect(region.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(0)
   })
 
-  it('says it is loading', () => {
+  it('sketches a title, a row of cards and a table card', () => {
+    const region = mountWithApp(ViewLoading).get('[data-testid="view-loading"]')
+
+    expect(region.findAll('[data-testid="ui-skeleton-card"]')).toHaveLength(3)
+    expect(region.findAll('[data-testid="ui-skeleton-table-row"]')).toHaveLength(5)
+  })
+
+  it('names itself to screen readers as loading', () => {
     const wrapper = mountWithApp(ViewLoading)
 
     expect(wrapper.text()).toContain('Loading')

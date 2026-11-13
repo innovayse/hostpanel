@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
+import { readRecent, rememberRecent } from '@/lib/commandPalette'
 import { AuthMode } from '@/types/auth'
 import { callOf, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
@@ -156,13 +157,24 @@ describe('auth store session probe', () => {
   })
 
   it('loads the user when the session exists', async () => {
-    stubFetch(json({ email: 'a@b.c', roles: ['Admin'], emailVerified: true }))
+    stubFetch(json({ email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'], emailVerified: true }))
     const store = useAuthStore()
 
     await store.fetchMe()
 
-    expect(store.user).toEqual({ email: 'a@b.c', roles: ['Admin'] })
+    expect(store.user).toEqual({ email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'] })
     expect(store.emailVerified).toBe(true)
+  })
+
+  it('names the account by its name, by its email when it holds none, and by nothing when signed out', () => {
+    const store = useAuthStore()
+    expect(store.displayName).toBeNull()
+
+    store.user = { email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: [] }
+    expect(store.displayName).toBe('Ada Lovelace')
+
+    store.user = { email: 'a@b.c', firstName: '', lastName: '', roles: [] }
+    expect(store.displayName).toBe('a@b.c')
   })
 })
 
@@ -189,7 +201,7 @@ describe('authStore.checkSession', () => {
   })
 
   it('asks once and remembers a signed-in answer', async () => {
-    const fetchMock = stubFetch(json({ email: 'a@b.c', roles: ['Admin'], emailVerified: true }))
+    const fetchMock = stubFetch(json({ email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'], emailVerified: true }))
     const store = useAuthStore()
 
     await store.checkSession()
@@ -213,7 +225,7 @@ describe('authStore.checkSession', () => {
   it('marks the session as known once a sign-in has loaded the user', async () => {
     stubRoutes({
       'POST /api/auth/login': () => json({ accessToken: 'token' }),
-      'GET /api/auth/me': () => json({ email: 'a@b.c', roles: ['Admin'], emailVerified: true }),
+      'GET /api/auth/me': () => json({ email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'], emailVerified: true }),
     })
     const store = useAuthStore()
 
@@ -236,7 +248,7 @@ describe('authStore.checkSession', () => {
     stubFetch(new Response(null, { status: 204 }))
     const store = useAuthStore()
     store.mode = AuthMode.Local
-    store.user = { email: 'a@b.c', roles: ['Admin'] }
+    store.user = { email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'] }
 
     await store.logout()
 
@@ -257,6 +269,19 @@ describe('authStore.checkSession', () => {
     expect(window.sessionStorage.getItem('unrelated')).toBe('kept')
     window.sessionStorage.clear()
   })
+
+  it("forgets the signed-out account's recent palette pages", async () => {
+    stubFetch(new Response(null, { status: 204 }))
+    const store = useAuthStore()
+    store.mode = AuthMode.Local
+    store.user = { email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'] }
+    rememberRecent('a@b.c', [], '/clients')
+
+    await store.logout()
+
+    expect(readRecent('a@b.c')).toEqual([])
+    window.localStorage.clear()
+  })
 })
 
 describe('auth store accountKey', () => {
@@ -269,10 +294,10 @@ describe('auth store accountKey', () => {
 
     expect(store.accountKey).toBeNull()
 
-    store.user = { email: 'staff@example.com', roles: ['Reseller'] }
+    store.user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller'] }
     const first = store.accountKey
 
-    store.user = { email: 'staff@example.com', roles: ['Reseller', 'Admin'] }
+    store.user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller', 'Admin'] }
 
     expect(first).not.toBeNull()
     expect(store.accountKey).not.toBe(first)
@@ -280,10 +305,10 @@ describe('auth store accountKey', () => {
 
   it('does not change when the same roles arrive in another order', () => {
     const store = useAuthStore()
-    store.user = { email: 'staff@example.com', roles: ['Reseller', 'Admin'] }
+    store.user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller', 'Admin'] }
     const first = store.accountKey
 
-    store.user = { email: 'staff@example.com', roles: ['Admin', 'Reseller'] }
+    store.user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin', 'Reseller'] }
 
     expect(store.accountKey).toBe(first)
     expect(store.user.roles).toEqual(['Admin', 'Reseller'])

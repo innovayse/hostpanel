@@ -26,6 +26,15 @@ describe('MigrationView', () => {
     vi.unstubAllGlobals()
   })
 
+  it('draws the progress card as placeholders in the history layout while the jobs load', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountMigration()
+
+    expect(wrapper.get('[data-testid="migration-history"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="migration-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="migration-none-selected"]').exists()).toBe(false)
+  })
+
   it('lists the jobs in the history and asks to pick one', async () => {
     stubRoutes({ 'GET /api/admin/migrations': () => json([migrationJob()]) })
     const wrapper = await mountMigration()

@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 /**
- * CurrencySwitcher (`UiCurrencySwitcher`) - the site-wide billing-currency picker.
+ * CurrencySwitcher (`UiCurrencySwitcher`): the site-wide billing-currency picker.
  *
  * Reads the enabled billing currencies from the currency store (`public/billing-currencies`) and
  * writes the choice back through it, so the selection persists in the store's own localStorage key

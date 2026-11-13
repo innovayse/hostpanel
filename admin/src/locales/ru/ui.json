@@ -1,8 +1,9 @@
 {
+  "loading": "Загрузка",
   "uiAdvancedFilters": {
     "filterValue": "Фильтр: {value}",
-    "selectField": "Выберите поле...",
-    "enterValue": "Введите значение...",
+    "selectField": "Выберите поле",
+    "enterValue": "Введите значение",
     "addFilter": "Добавить фильтр",
     "exactMatch": "Точное совпадение",
     "containing": "Содержит"
@@ -11,7 +12,7 @@
     "noClientsFound": "Клиенты не найдены"
   },
   "uiCountrySelect": {
-    "selectCountry": "Выберите страну..."
+    "selectCountry": "Выберите страну"
   },
   "uiDatePicker": {
     "ddMmYyyy": "ДД/ММ/ГГГГ",
@@ -43,35 +44,60 @@
     "fields": "Поля",
     "clearAll": "Снять все"
   },
+  "uiFilterTrigger": {
+    "filters": "Фильтры",
+    "title": "Фильтры",
+    "apply": "Применить",
+    "reset": "Сбросить",
+    "cancel": "Отмена"
+  },
+  "uiFilterChips": {
+    "label": "Активные фильтры",
+    "remove": "Убрать фильтр {label}: {value}",
+    "clearAll": "Очистить все"
+  },
   "uiSelect": {
     "noResults": "Нет результатов"
   },
+  "uiLimitField": {
+    "unlimited": "Без ограничений"
+  },
   "phoneInput": {
-    "countryCode": "Код страны",
-    "searchCountry": "Поиск страны или кода"
+    "countryCode": "Код страны"
   },
   "selectCountry": "Выберите страну",
   "dialog": {
     "close": "Закрыть",
-    "confirm": "Подтвердить",
-    "processing": "Обработка..."
+    "confirm": "Подтвердить"
   },
   "pagination": {
     "navigation": "Постраничная навигация",
     "previous": "Назад",
     "next": "Далее",
-    "page": "Страница"
+    "page": "Страница",
+    "range": "{from} - {to} из {total}",
+    "pageOf": "Страница {page} из {count}",
+    "rowsPerPage": "Строк на странице"
   },
   "table": {
     "empty": "Нет данных"
   },
+  "bulkBar": {
+    "label": "Массовые действия",
+    "clear": "Снять выделение",
+    "selected": "Выбрана {count} строка | Выбрано {count} строки | Выбрано {count} строк"
+  },
   "chart": {
-    "empty": "Нет данных для графика"
+    "empty": "Нет данных для графика",
+    "target": "Цель"
   },
   "uploadZone": {
     "dropOr": "Перетащите файл или",
-    "browse": "выберите",
-    "uploading": "Загрузка..."
+    "browse": "выберите"
+  },
+  "input": {
+    "showPassword": "Показать пароль",
+    "hidePassword": "Скрыть пароль"
   },
   "errorState": {
     "retry": "Повторить"

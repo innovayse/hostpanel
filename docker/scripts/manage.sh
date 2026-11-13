@@ -317,7 +317,7 @@ native_start_api() {
         --urls "http://${LOCAL_HOST}:${api_port}" \
         > "$LOGS_DIR/api.log" 2>&1 &
     save_pid "api" $!
-    success "api started (pid $!) — logs: .logs/api.log"
+    success "api started (pid $!), logs: .logs/api.log"
 }
 
 native_start_client() {
@@ -331,7 +331,7 @@ native_start_client() {
     cd "$CLIENT"
     NITRO_PORT="$client_port" npm run dev > "$LOGS_DIR/client.log" 2>&1 &
     save_pid "client" $!
-    success "client started (pid $!) — logs: .logs/client.log"
+    success "client started (pid $!), logs: .logs/client.log"
 }
 
 native_start_admin() {
@@ -343,7 +343,7 @@ native_start_admin() {
     cd "$ADMIN"
     npm run dev > "$LOGS_DIR/admin.log" 2>&1 &
     save_pid "admin" $!
-    success "admin started (pid $!) — logs: .logs/admin.log"
+    success "admin started (pid $!), logs: .logs/admin.log"
 }
 
 native_dispatch_start() {

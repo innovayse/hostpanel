@@ -5,10 +5,12 @@
  * unsaved edit when there is one, the stored value otherwise, and clear the edit only when the
  * stored value catches up, never on the save request. The row also carries its own save state
  * (in flight, and how the last save went), so a card shows the outcome next to the control that
- * was saved.
+ * was saved. On a page that provides a settings draft registry the draft also registers there, so
+ * the page's save bar can count, save and discard the edits of every control together.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue'
+import { injectSettingsDraftRegistry } from '@/composables/useSettingsDraftRegistry'
 import type { Setting, SettingSave, SettingSaveResult } from '@/types/setting'
 
 /** What {@link useSettingDraft} hands back for one settings row. */
@@ -25,6 +27,8 @@ export interface SettingDraft {
   outcome: Ref<SettingSaveResult | null>
   /** Hands the edit to the caller's save and records the outcome; a no-op when the row is missing, nothing changed or a save is in flight. */
   submit: (save: SettingSave) => Promise<void>
+  /** Drops the edit, so the control shows the stored value again. */
+  discard: () => void
 }
 
 /**
@@ -97,5 +101,16 @@ export const useSettingDraft = (settings: Ref<Setting[]>, key: string, fallback 
     saving.value = false
   }
 
-  return { setting, value, dirty, saving, outcome, submit }
+  /** Drops the edit, so the control shows the stored value again. */
+  const discard = (): void => {
+    draft.value = null
+    outcome.value = null
+  }
+
+  const registry = injectSettingsDraftRegistry()
+  if (registry) {
+    onScopeDispose(registry.register({ dirty, saving, submit, discard }))
+  }
+
+  return { setting, value, dirty, saving, outcome, submit, discard }
 }

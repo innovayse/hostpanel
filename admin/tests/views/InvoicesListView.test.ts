@@ -9,7 +9,7 @@ import InvoicesListView from '@/views/InvoicesListView.vue'
 import { invoiceRowFixture } from '../helpers/billingFixtures'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
-import { stubRoutes } from '../helpers/routes'
+import { requestsOf, stubRoutes } from '../helpers/routes'
 
 /**
  * Mounts the list and waits for its first load.
@@ -79,12 +79,83 @@ describe('InvoicesListView', () => {
 
   it('drops the ticked invoices when the list is loaded again', async () => {
     stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
-    const wrapper = await mountList()
+    const { wrapper, router } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices')
+    await flushPromises()
     await wrapper.get('[data-testid="billing-invoice-select-1"]').trigger('click')
-    await wrapper.get('[data-testid="billing-invoices-filter-toggle"]').trigger('click')
-    await wrapper.get('[data-testid="billing-invoices-search"]').trigger('click')
+    expect(wrapper.find('[data-testid="billing-invoices-bulk"]').exists()).toBe(true)
+
+    await router.push({ query: { status: 'Paid' } })
     await flushPromises()
     expect(wrapper.find('[data-testid="billing-invoices-bulk"]').exists()).toBe(false)
+  })
+
+  it('loads the list with the filters and the page held in the address and shows the filters as chips', async () => {
+    const mock = stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 2, pageSize: 25, totalCount: 40, totalPages: 2 }) })
+    const { wrapper } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices?status=Paid&from=2026-10-01&page=2')
+    await flushPromises()
+
+    const request = requestsOf(mock).find(url => url.includes('/billing?')) ?? ''
+    expect(request).toContain('status=Paid')
+    expect(request).toContain('from=2026-10-01')
+    expect(request).toContain('page=2')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Paid')
+    expect(wrapper.get('[data-testid="filter-chip-from"]').text()).toContain('01/10/2026')
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
+  })
+
+  it('clears a filter from its chip and loads the list again without it', async () => {
+    const mock = stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    const { wrapper, router } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices?status=Paid')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="filter-chip-remove-status"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query.status).toBeUndefined()
+    expect(requestsOf(mock).filter(url => url.includes('/billing?')).at(-1)).not.toContain('status=')
+  })
+
+  it('narrows the page by the search text without asking the server again', async () => {
+    const mock = stubRoutes({
+      'GET /api/billing?': () =>
+        json({
+          items: [invoiceRowFixture(), invoiceRowFixture({ id: 2, clientName: 'Grace Hopper' })],
+          pageNumber: 1,
+          pageSize: 25,
+          totalCount: 2,
+          totalPages: 1,
+        }),
+    })
+    const wrapper = await mountList()
+
+    await wrapper.get('[data-testid="billing-invoices-search"]').setValue('grace')
+
+    expect(wrapper.findAll('[data-testid="billing-invoices-table"] tbody tr')).toHaveLength(1)
+    expect(requestsOf(mock).filter(url => url.includes('/billing?'))).toHaveLength(1)
+  })
+
+  it('sums the page into paid, due and overdue tiles', async () => {
+    stubRoutes({
+      'GET /api/billing?': () =>
+        json({
+          items: [
+            invoiceRowFixture({ id: 1, status: 'Paid', total: 40 }),
+            invoiceRowFixture({ id: 2, status: 'Paid', total: 10 }),
+            invoiceRowFixture({ id: 3, status: 'Unpaid', total: 25 }),
+            invoiceRowFixture({ id: 4, status: 'Overdue', total: 7 }),
+          ],
+          pageNumber: 1,
+          pageSize: 25,
+          totalCount: 4,
+          totalPages: 1,
+        }),
+    })
+    const wrapper = await mountList()
+
+    expect(wrapper.get('[data-testid="billing-invoices-summary-paid"]').text()).toContain('50.00 USD')
+    expect(wrapper.get('[data-testid="billing-invoices-summary-paid"]').text()).toContain('2 invoices on this page')
+    expect(wrapper.get('[data-testid="billing-invoices-summary-due"]').text()).toContain('25.00 USD')
+    expect(wrapper.get('[data-testid="billing-invoices-summary-overdue"]').text()).toContain('7.00 USD')
   })
 
   it('deletes an invoice only after the confirmation', async () => {

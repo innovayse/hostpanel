@@ -24,7 +24,7 @@ describe('DomainResults', () => {
     expect(wrapper.find('[data-testid="domain-results-no-zones"]').text()).toBe('aurora.domainSearch.noZones')
   })
 
-  it('shows the searching line while a lookup runs and the empty line after an empty one', () => {
+  it('shows the loading skeleton while a lookup runs and the empty line after an empty one', () => {
     stubAuroraGlobals()
 
     expect(mountWithKit(DomainResults, { props: { pending: true } }).find('[data-testid="domain-results-pending"]').exists()).toBe(true)

@@ -1,8 +1,9 @@
 {
+  "loading": "Loading",
   "uiAdvancedFilters": {
     "filterValue": "Filter {value}",
-    "selectField": "Select field...",
-    "enterValue": "Enter value...",
+    "selectField": "Select field",
+    "enterValue": "Enter value",
     "addFilter": "Add Filter",
     "exactMatch": "Exact Match",
     "containing": "Containing"
@@ -11,7 +12,7 @@
     "noClientsFound": "No clients found"
   },
   "uiCountrySelect": {
-    "selectCountry": "Select country..."
+    "selectCountry": "Select country"
   },
   "uiDatePicker": {
     "ddMmYyyy": "DD/MM/YYYY",
@@ -43,35 +44,60 @@
     "fields": "Fields",
     "clearAll": "Clear All"
   },
+  "uiFilterTrigger": {
+    "filters": "Filters",
+    "title": "Filters",
+    "apply": "Apply",
+    "reset": "Reset",
+    "cancel": "Cancel"
+  },
+  "uiFilterChips": {
+    "label": "Active filters",
+    "remove": "Remove filter {label}: {value}",
+    "clearAll": "Clear all"
+  },
   "uiSelect": {
     "noResults": "No results"
   },
+  "uiLimitField": {
+    "unlimited": "Unlimited"
+  },
   "phoneInput": {
-    "countryCode": "Country calling code",
-    "searchCountry": "Search country or code"
+    "countryCode": "Country calling code"
   },
   "selectCountry": "Select country",
   "dialog": {
     "close": "Close",
-    "confirm": "Confirm",
-    "processing": "Processing..."
+    "confirm": "Confirm"
   },
   "pagination": {
     "navigation": "Pagination",
     "previous": "Previous",
     "next": "Next",
-    "page": "Page"
+    "page": "Page",
+    "range": "{from} to {to} of {total}",
+    "pageOf": "Page {page} of {count}",
+    "rowsPerPage": "Rows per page"
   },
   "table": {
     "empty": "No data"
   },
+  "bulkBar": {
+    "label": "Bulk actions",
+    "clear": "Clear selection",
+    "selected": "{count} selected"
+  },
   "chart": {
-    "empty": "No data to chart"
+    "empty": "No data to chart",
+    "target": "Target"
   },
   "uploadZone": {
     "dropOr": "Drop a file or",
-    "browse": "browse",
-    "uploading": "Uploading..."
+    "browse": "browse"
+  },
+  "input": {
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "errorState": {
     "retry": "Retry"

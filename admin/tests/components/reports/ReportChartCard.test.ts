@@ -3,8 +3,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import ReportChartCard from '@/components/reports/ReportChartCard.vue'
 import UiChart from '@/components/ui/UiChart.vue'
+import { REPORT_LOADING } from '@/lib/reportLoading'
 import { UiChartType } from '@/utils/ui/chart'
 import { createTestI18n } from '../../helpers/i18n'
 
@@ -23,6 +25,17 @@ const mountCard = (props: Record<string, unknown>) =>
 describe('ReportChartCard', () => {
   it('shows the title when given', () => {
     expect(mountCard({ title: 'Income' }).text()).toContain('Income')
+  })
+
+  it('keeps the title and draws a skeleton instead of the chart while the report loads', () => {
+    const wrapper = mount(ReportChartCard, {
+      props: { type: UiChartType.Bar, labels: ['Jan'], series: [{ label: 'Income', data: [3] }], title: 'Income' },
+      global: { plugins: [createTestI18n()], stubs: { UiChart: true }, provide: { [REPORT_LOADING as symbol]: ref(true) } },
+    })
+
+    expect(wrapper.text()).toContain('Income')
+    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(true)
+    expect(wrapper.findComponent(UiChart).exists()).toBe(false)
   })
 
   it('has no heading without a title', () => {

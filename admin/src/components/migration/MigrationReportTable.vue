@@ -8,7 +8,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMigrationStore } from '@/stores/migration'
-import { formatClock } from '@/lib/format'
+import { formatClock, EMPTY_VALUE } from '@/lib/format'
 import { migrationActionLabelKey, migrationSkipReasonLabelKey } from '@/lib/migrationStatus'
 import { migrationActionTone } from '@/lib/tones'
 import { MigrationEntityType, MigrationLogAction } from '@/types/migration'
@@ -97,7 +97,7 @@ const entityTypeOptions = computed(() => [
  * @returns The text shown in the reason column.
  */
 const reasonText = (entry: MigrationLogEntry): string =>
-  entry.skipReason ? t(migrationSkipReasonLabelKey[entry.skipReason]) : (entry.reason ?? '—')
+  entry.skipReason ? t(migrationSkipReasonLabelKey[entry.skipReason]) : (entry.reason ?? EMPTY_VALUE)
 
 /**
  * Fetches the current page of the log; a refusal keeps its sentence for the error state.
@@ -175,7 +175,6 @@ watch(page, () => {
         :density="UiTableDensity.Compact"
         :loading="loading && items.length === 0"
         :empty="!loading && items.length === 0"
-        :colspan="5"
         data-testid="migration-report-table"
       >
         <UiTableHead>

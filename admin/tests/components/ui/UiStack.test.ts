@@ -49,6 +49,13 @@ describe('UiStack', () => {
     expect(mount(UiStack, { props: { visibleFrom: 'md' } }).classes()).toEqual(expect.arrayContaining(['hidden', 'md:flex']))
   })
 
+  it('shows itself only from lg up when visibleFrom is lg', () => {
+    const classes = mount(UiStack, { props: { visibleFrom: 'lg' } }).classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['hidden', 'lg:flex']))
+    expect(classes).not.toContain('flex')
+  })
+
   it('shows itself only below sm when hiddenFrom is sm', () => {
     expect(mount(UiStack, { props: { hiddenFrom: 'sm' } }).classes()).toEqual(expect.arrayContaining(['flex', 'sm:hidden']))
   })

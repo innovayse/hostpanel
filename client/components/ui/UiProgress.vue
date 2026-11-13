@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 /**
- * UiProgress - a thin horizontal bar showing how much of a whole is used or done.
+ * UiProgress: a thin horizontal bar showing how much of a whole is used or done.
  *
  * The filled part is an SVG rectangle whose `width` attribute is the percentage. An attribute is
  * part of the server-rendered markup, so the bar is drawn at its real width before any script runs

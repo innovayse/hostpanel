@@ -307,7 +307,7 @@
 
 <script setup lang="ts">
 /**
- * ClassicDomains - the classic template's domains page: the availability search with its result,
+ * ClassicDomains. The classic template's domains page: the availability search with its result,
  * the TLD price table (desktop table, mobile cards) with a category filter, and the two promo
  * boxes.
  *

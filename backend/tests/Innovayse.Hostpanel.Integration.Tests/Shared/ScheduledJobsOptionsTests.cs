@@ -74,7 +74,7 @@ public sealed class ScheduledJobsOptionsTests
         Validate(options).Should().ContainSingle();
     }
 
-    /// <summary>A <c>CheckReleaseUpdatesHour</c> outside 0–23 is refused.</summary>
+    /// <summary>A <c>CheckReleaseUpdatesHour</c> outside 0-23 is refused.</summary>
     /// <param name="hour">An out-of-range hour value.</param>
     [Theory]
     [InlineData(-1)]
@@ -87,7 +87,7 @@ public sealed class ScheduledJobsOptionsTests
         Validate(options).Should().ContainSingle();
     }
 
-    /// <summary>Every hour on the clock face (0–23) is a valid setting.</summary>
+    /// <summary>Every hour on the clock face (0-23) is a valid setting.</summary>
     /// <param name="hour">A valid hour value.</param>
     [Theory]
     [InlineData(0)]

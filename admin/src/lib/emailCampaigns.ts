@@ -134,3 +134,12 @@ export const segmentsFromDrafts = (drafts: readonly EmailCampaignSegmentDraft[])
     filterType: draft.filterType,
     filterValue: filterTakesValue(draft.filterType) ? draft.filterValue.trim() : null,
   }))
+
+/**
+ * Stable list key of a stored segment, which has no id: the rule and its value. Two segments with
+ * the same rule and value select the same clients, so a campaign never holds both.
+ *
+ * @param segment - The stored segment.
+ * @returns The key.
+ */
+export const segmentKey = (segment: EmailCampaignSegment): string => `${segment.filterType}|${segment.filterValue ?? ''}`

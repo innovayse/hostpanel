@@ -12,11 +12,12 @@ import type { Contact } from '@/types/contact'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
+import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -25,9 +26,9 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -199,7 +200,7 @@ onBeforeUnmount(() => {
  * @param contact - The contact whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
-const contactActions = (contact: Contact): UiRowAction[] => {
+const contactActions = (contact: Contact): UiMenuAction[] => {
   /**
    * Opens the edit dialog for this contact.
    * @returns Nothing.
@@ -226,18 +227,19 @@ const contactActions = (contact: Contact): UiRowAction[] => {
       {{ contactError }}
     </UiAlert>
 
-    <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-      <UiHeading :level="2" variant="section">
-        {{ t('clients.clientContacts.contactsLength', { length: contacts.length }) }}
-      </UiHeading>
-      <UiButton
-        :variant="UiButtonVariant.Primary"
-        data-testid="client-contacts-add"
-        @click="openCreateModal"
-      >
-        {{ t('clients.clientContacts.addContact') }}
-      </UiButton>
-    </UiStack>
+    <UiSectionHeader :level="2" variant="section">
+      {{ t('clients.clientContacts.contactsLength', { length: contacts.length }) }}
+
+      <template #actions>
+        <UiButton
+          :variant="UiButtonVariant.Primary"
+          data-testid="client-contacts-add"
+          @click="openCreateModal"
+        >
+          {{ t('clients.clientContacts.addContact') }}
+        </UiButton>
+      </template>
+    </UiSectionHeader>
 
     <UiCard v-if="contacts.length > 0" class="overflow-x-auto">
       <UiTable :density="UiTableDensity.Comfortable" data-testid="client-contacts-table">
@@ -254,7 +256,7 @@ const contactActions = (contact: Contact): UiRowAction[] => {
           <UiTableRow v-for="contact in contacts" :key="contact.id" hoverable>
             <UiTableCell>{{ contact.firstName }} {{ contact.lastName }}</UiTableCell>
             <UiTableCell muted>{{ contact.email }}</UiTableCell>
-            <UiTableCell muted>{{ contact.phone || '—' }}</UiTableCell>
+            <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
             </UiTableCell>
@@ -303,7 +305,6 @@ const contactActions = (contact: Contact): UiRowAction[] => {
       :title="t('clients.clientContacts.deleteContact')"
       :message="t('clients.clientContacts.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
-      :loading-label="t('shared.deleting')"
       :loading="deletingContact"
       tone="danger"
       @confirm="confirmDeleteContact"

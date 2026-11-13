@@ -12,7 +12,6 @@ import { useI18n } from 'vue-i18n'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
-import SettingSaveButton from '@/components/settings/SettingSaveButton.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
@@ -22,7 +21,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { ChatProvider } from '@/types/chatprovider'
 import { SettingEnv, SettingKey } from '@/types/setting'
-import type { Setting, SettingSave } from '@/types/setting'
+import type { Setting } from '@/types/setting'
 import { ANALYTICS_ID_MAX_LENGTH, CHAT_SETTING_MAX_LENGTH } from '@/lib/limits'
 
 const { t } = useI18n()
@@ -31,8 +30,6 @@ const { t } = useI18n()
 const props = defineProps<{
   /** All system settings, as loaded from the backend. */
   settings: Setting[]
-  /** Persists one row and answers how it went; each control shows its own outcome. */
-  save: SettingSave
 }>()
 
 /** The settings list as a ref, which is what the draft composable watches. */
@@ -51,7 +48,7 @@ const providerOptions = computed(() => [
   { value: ChatProvider.Innochat as string, label: t('settings.trackingChat.provider.innochat') },
 ])
 
-/** The text fields, each saved on its own. */
+/** The text fields, each a draft of the page's save bar. */
 const TEXT_FIELDS = [
   { key: SettingKey.ChatBaseUrl, testid: 'base-url', labelKey: 'settings.trackingChat.chat.baseUrl', hintKey: 'settings.trackingChat.chat.baseUrlHint', draft: useSettingDraft(settings, SettingKey.ChatBaseUrl) },
   { key: SettingKey.ChatWebsiteToken, testid: 'token', labelKey: 'settings.trackingChat.chat.token', hintKey: 'settings.trackingChat.chat.tokenHint', draft: useSettingDraft(settings, SettingKey.ChatWebsiteToken) },
@@ -62,6 +59,7 @@ const TEXT_FIELDS = [
 
 <template>
   <SettingsSection
+    :columns="2"
     :title="t('settings.trackingChat.title')"
     :description="t('settings.trackingChat.description')"
   >
@@ -76,13 +74,6 @@ const TEXT_FIELDS = [
           :maxlength="ANALYTICS_ID_MAX_LENGTH"
           data-testid="tracking-gtm"
           class="min-w-64 flex-1"
-          @keyup.enter="gtm.submit(save)"
-        />
-        <SettingSaveButton
-          :dirty="gtm.dirty.value"
-          :saving="gtm.saving.value"
-          data-testid="tracking-gtm-save"
-          @click="gtm.submit(save)"
         />
         <SettingOutcome :outcome="gtm.outcome.value" />
       </UiStack>
@@ -92,7 +83,7 @@ const TEXT_FIELDS = [
     </UiStack>
 
     <!-- Live chat -->
-    <UiStack gap="sm" class="border-t border-border pt-4">
+    <UiStack gap="sm" class="border-t border-border pt-4 md:col-span-2">
       <UiHeading :level="3" variant="card">
         {{ t('settings.trackingChat.chat.title') }}
       </UiHeading>
@@ -108,12 +99,6 @@ const TEXT_FIELDS = [
           data-testid="tracking-chat-provider"
           class="min-w-56"
         />
-        <SettingSaveButton
-          :dirty="provider.dirty.value"
-          :saving="provider.saving.value"
-          data-testid="tracking-chat-provider-save"
-          @click="provider.submit(save)"
-        />
         <SettingOutcome :outcome="provider.outcome.value" />
       </UiStack>
 
@@ -128,13 +113,6 @@ const TEXT_FIELDS = [
               :maxlength="CHAT_SETTING_MAX_LENGTH"
               :data-testid="`tracking-chat-${field.testid}`"
               class="min-w-0 flex-1"
-              @keyup.enter="field.draft.submit(save)"
-            />
-            <SettingSaveButton
-              :dirty="field.draft.dirty.value"
-              :saving="field.draft.saving.value"
-              :data-testid="`tracking-chat-${field.testid}-save`"
-              @click="field.draft.submit(save)"
             />
             <SettingOutcome :outcome="field.draft.outcome.value" />
           </UiStack>

@@ -55,7 +55,7 @@ const stars = computed<{ index: number; on: boolean }[]>(() =>
         :key="star.index"
         :markup="Icon.Star"
         size="sm"
-        :class="star.on ? 'fill-current text-warning-500' : 'text-text-muted'"
+        :class="star.on ? 'fill-current text-status-yellow' : 'text-text-muted'"
         :data-on="star.on"
         data-testid="rating-star"
       />

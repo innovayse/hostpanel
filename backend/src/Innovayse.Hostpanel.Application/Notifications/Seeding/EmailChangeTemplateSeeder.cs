@@ -28,7 +28,7 @@ public static class EmailChangeTemplateSeeder
             Slug,
             "Sent to the new address when a client asks to change the address they sign in with.",
             [
-                new SeededEmailVersion("Confirm your new email — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Confirm your new email | {{ site.name }}", new SeededEmailCopy(
                     "en",
                     "Confirm Your New Email",
                     ["Click the button below to start signing in with this address. Until you do, your account keeps its current address."],
@@ -36,7 +36,7 @@ public static class EmailChangeTemplateSeeder
                     "Confirm Email",
                     "If you did not ask for this change, you can safely ignore this email.",
                     EchoButtonUrl: true)),
-                new SeededEmailVersion("Подтвердите новый email — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Подтвердите новый email | {{ site.name }}", new SeededEmailCopy(
                     "ru",
                     "Подтвердите новый email",
                     ["Нажмите кнопку ниже, чтобы входить с этим адресом. Пока вы этого не сделаете, у аккаунта останется текущий адрес."],
@@ -44,7 +44,7 @@ public static class EmailChangeTemplateSeeder
                     "Подтвердить email",
                     "Если вы не запрашивали это изменение, просто проигнорируйте это письмо.",
                     EchoButtonUrl: true)),
-                new SeededEmailVersion("Հաստատեք նոր էլ. հասցեն — {{ site.name }}", new SeededEmailCopy(
+                new SeededEmailVersion("Հաստատեք նոր էլ. հասցեն | {{ site.name }}", new SeededEmailCopy(
                     "hy",
                     "Հաստատեք նոր էլ. հասցեն",
                     ["Սեղմեք ստորև կոճակը՝ այս հասցեով մուտք գործելու համար։ Մինչ այդ ձեր հաշիվը պահպանում է ներկայիս հասցեն։"],

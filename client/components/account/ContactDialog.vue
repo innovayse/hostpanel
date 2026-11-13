@@ -75,7 +75,7 @@
       </UiButton>
       <UiButton type="submit" form="account-contact-form" :loading="contactSaving" data-testid="account-contact-save">
         <Check v-if="!contactSaving" :size="14" :stroke-width="2.5" class="mr-1.5" />
-        {{ contactSaving ? $t('client.profile.saving') : $t('client.contacts.save') }}
+        {{ $t('client.contacts.save') }}
       </UiButton>
     </template>
   </UiDialog>
@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 /**
- * ContactDialog - adds a sub-contact or edits an existing one.
+ * ContactDialog: adds a sub-contact or edits an existing one.
  *
  * Every opening reseeds the draft from `contact` (null means "new"). Saving goes through the
  * account store; on success the dialog closes and the tab is told to read the list again.

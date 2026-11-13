@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 /**
- * HistoryTable - the client's credit history: every movement of the balance with its type, the invoice it concerned, the signed
+ * HistoryTable. The client's credit history: every movement of the balance with its type, the invoice it concerned, the signed
  * change and the balance it left, newest first as the backend sent it.
  *
  * Nothing is computed here: the backend records the change and the balance after it, so the table only formats them.

@@ -379,7 +379,7 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
         {
             var body = await response.Content.ReadAsStringAsync();
             throw new InvalidOperationException(
-                $"Login failed for {email}: {response.StatusCode} — {body}");
+                $"Login failed for {email}: {response.StatusCode} {body}");
         }
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();

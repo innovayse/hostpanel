@@ -17,6 +17,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
+import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
@@ -145,7 +146,7 @@ const transactionOptions = computed(() => {
     { value: '', label: t('billing.invoiceRefundTab.selectATransaction') },
     ...payments.value.map((transaction) => ({
       value: String(transaction.id),
-      label: `#${transaction.id} — ${formatPlainAmount(transaction.amount, props.invoice.currency)} (${transaction.gateway})`,
+      label: `#${transaction.id} ${formatPlainAmount(transaction.amount, props.invoice.currency)} (${transaction.gateway})`,
     })),
   ]
 })
@@ -312,7 +313,7 @@ const refund = async (): Promise<void> => {
             </UiLabel>
           </UiStack>
 
-          <UiStack direction="row" justify="center">
+          <UiFormActions>
             <UiButton
               type="submit"
               variant="primary"
@@ -322,7 +323,7 @@ const refund = async (): Promise<void> => {
             >
               {{ t('billing.invoiceRefundTab.refund') }}
             </UiButton>
-          </UiStack>
+          </UiFormActions>
         </UiForm>
       </UiCard>
 

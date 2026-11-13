@@ -1,16 +1,33 @@
 /**
- * Date, time and text formatting helpers shared by the admin screens: localized dates, the
+ * Date, time and text formatting helpers shared by the admin screens: localized dates, sizes, the
  * compact support date-time, time of day, elapsed and relative time, and day-string helpers.
  */
+
+/** What every screen shows where a value or a date is missing or unreadable: one em dash, defined once. */
+export const EMPTY_VALUE = '—'
+
+/**
+ * The letters of an avatar for a name: the first letters of its first two words, or the first two
+ * letters of a single word.
+ *
+ * @param name - A person's name, or any label such as an email address.
+ * @returns Up to two upper-case letters; empty for a blank name.
+ */
+export const initialsOf = (name: string): string => {
+  const trimmed = name.trim()
+  const [first = '', second = ''] = trimmed.split(/\s+/)
+  const letters = second === '' ? trimmed.slice(0, 2) : `${first.charAt(0)}${second.charAt(0)}`
+  return letters.toUpperCase()
+}
 
 /**
  * Formats an ISO date string as a localized date.
  *
  * @param iso - ISO 8601 date string, null, or undefined.
- * @param fallback - Text to return if the date is invalid. Defaults to '\u2014'.
+ * @param fallback - Text to return if the date is invalid. Defaults to {@link EMPTY_VALUE}.
  * @returns Formatted date string or the fallback.
  */
-export const formatDate = (iso: string | null | undefined, fallback = '\u2014'): string => {
+export const formatDate = (iso: string | null | undefined, fallback = EMPTY_VALUE): string => {
   if (!iso) {
     return fallback
   }
@@ -72,10 +89,10 @@ export const toIsoDay = (date: Date): string => date.toISOString().split('T')[0]
  * Formats an ISO timestamp as a localized date with the time of day.
  *
  * @param iso - ISO 8601 timestamp, null, or undefined.
- * @param fallback - Text to return if the timestamp is invalid. Defaults to an em dash.
+ * @param fallback - Text to return if the timestamp is invalid. Defaults to {@link EMPTY_VALUE}.
  * @returns For example "14/10/2026, 09:30", or the fallback.
  */
-export const formatDateTime = (iso: string | null | undefined, fallback = '—'): string => {
+export const formatDateTime = (iso: string | null | undefined, fallback = EMPTY_VALUE): string => {
   if (!iso) {
     return fallback
   }
@@ -85,23 +102,6 @@ export const formatDateTime = (iso: string | null | undefined, fallback = '—')
   }
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
-
-/**
- * Upper-cases the first letter of a raw value such as a billing cycle.
- *
- * @param value - Raw value (for example "monthly").
- * @param fallback - Text to return for an empty value. Defaults to an em dash.
- * @returns For example "Monthly", or the fallback.
- */
-export const capitalize = (value: string | null | undefined, fallback = '—'): string => {
-  if (!value) {
-    return fallback
-  }
-  return value.charAt(0).toUpperCase() + value.slice(1)
-}
-
-/** What is shown for a missing or unreadable date in the support formatters. */
-const NO_DATE = '—'
 
 /** Seconds in a day. */
 const DAY_SECONDS = 86400
@@ -135,11 +135,11 @@ const pad = (value: number): string => String(value).padStart(2, '0')
  */
 export const formatDateTimeCompact = (iso: string | null | undefined): string => {
   if (!iso) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
@@ -182,11 +182,11 @@ export const formatTime = (moment: number | undefined, locale: string): string =
  */
 export const formatElapsed = (iso: string | null | undefined, now: number = Date.now()): string => {
   if (!iso) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   const then = new Date(iso).getTime()
   if (Number.isNaN(then)) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   let remaining = Math.max(0, Math.floor((now - then) / 1000))
   const days = Math.floor(remaining / DAY_SECONDS)
@@ -243,3 +243,27 @@ export const formatRelativeFromNow = (iso: string, locale: string, now: number =
  */
 export const formatShare = (share: number, locale: string): string =>
   new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(share)
+
+/** Megabytes in a gigabyte and gigabytes in a terabyte, for {@link formatSizeMb}. */
+const SIZE_STEP = 1024
+
+/** Unit names from megabytes upward, for {@link formatSizeMb}. */
+const SIZE_UNITS = ['MB', 'GB', 'TB'] as const
+
+/**
+ * Writes a size given in megabytes in the largest unit that keeps it at or above 1, with at most
+ * one decimal ("512" becomes "512 MB", "1536" becomes "1.5 GB", "2048" becomes "2 GB").
+ *
+ * @param megabytes - The size in megabytes; the API's disk and bandwidth limits use this unit.
+ * @param locale - Locale code the number is written in.
+ * @returns The size with its unit.
+ */
+export const formatSizeMb = (megabytes: number, locale: string): string => {
+  let value = megabytes
+  let unit = 0
+  while (value >= SIZE_STEP && unit < SIZE_UNITS.length - 1) {
+    value /= SIZE_STEP
+    unit++
+  }
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)} ${SIZE_UNITS[unit]}`
+}

@@ -6,9 +6,9 @@
 - `var` for local variables when type is obvious from the right-hand side
 - `record` for DTOs, commands, queries, value objects
 - `sealed` on classes that are not designed for inheritance
-- No `null` — prefer `required`, nullable reference types, and guard clauses
-- No `async void` — always `async Task`
-- No `.Result` or `.Wait()` — always `await`
+- No `null`: prefer `required`, nullable reference types, and guard clauses
+- No `async void`: always `async Task`
+- No `.Result` or `.Wait()`: always `await`
 
 ## required Properties
 
@@ -28,8 +28,8 @@ public sealed class ClientContactDto
 // WRONG
 public sealed class ClientContactDto
 {
-    public required string firstName { get; init; }  // camelCase — forbidden
-    public string email;                             // field instead of property — forbidden
+    public required string firstName { get; init; }  // camelCase, forbidden
+    public string email;                             // field instead of property, forbidden
 }
 ```
 
@@ -118,7 +118,7 @@ public async Task<InvoiceDto> GetInvoiceAsync(int id, CancellationToken ct) { ..
 ## Logging
 
 - Inject `ILogger<T>` through the explicit constructor into a documented `private readonly` field
-- Structured logging — no string interpolation in log messages
+- Structured logging: no string interpolation in log messages
 
 ```csharp
 // CORRECT
@@ -134,7 +134,7 @@ _logger.LogInformation($"Invoice {invoice.Id} created");
 - File name matches type name exactly
 - Namespace matches folder structure exactly
 - Extension classes: `<WhatItExtends>Extensions.cs`, in an `Extensions/` folder under the layer or
-  feature that owns it — never appended to the DTO or controller it serves. Placement, layer
+  feature that owns it, never appended to the DTO or controller it serves. Placement, layer
   ownership and the DI carve-out: [clean-architecture.md](clean-architecture.md)
 
 ```csharp
@@ -184,7 +184,7 @@ if (items.Count > 100) ...
 ## Dependency Injection
 
 - Always inject interfaces, never concrete types (except in Infrastructure registrations)
-- No `ServiceLocator` pattern — no `IServiceProvider` injection except in factories
+- No `ServiceLocator` pattern: no `IServiceProvider` injection except in factories
 - Register services in the layer's `DependencyInjection.cs` extension method:
 
 ```csharp

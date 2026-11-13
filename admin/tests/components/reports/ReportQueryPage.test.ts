@@ -17,6 +17,9 @@ const columns: ReportColumn[] = [
   { key: 'clientName', label: 'Client' },
 ]
 
+/** The one row of the default report: an id plus the column the table draws. */
+const defaultRows = [{ id: 1, clientName: 'Acme' }]
+
 /**
  * Builds a report state with spies for every action.
  *
@@ -24,7 +27,7 @@ const columns: ReportColumn[] = [
  * @returns The state.
  */
 const makeReport = (overrides: Partial<ReportQueryView> = {}): ReportQueryView => ({
-  rows: [{ id: 1, clientName: 'Acme' }],
+  rows: defaultRows,
   totalCount: 1,
   page: 1,
   pageSize: 50,

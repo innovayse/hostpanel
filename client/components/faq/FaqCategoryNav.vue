@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 /**
- * FaqCategoryNav - the row of links to the FAQ topic pages.
+ * FaqCategoryNav: the row of links to the FAQ topic pages.
  *
  * Real links rather than client-side tabs, so every topic page is reachable (and crawlable) from
  * the FAQ landing page. On a topic page the current topic is highlighted and an "All" link leads

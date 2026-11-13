@@ -51,9 +51,9 @@ const showCount = computed<boolean>(() => props.maxLength !== undefined && lengt
 
 /** Class list of the frame. */
 const frameClasses = computed<string[]>(() => [
-  'flex w-full items-end gap-2 rounded-[10px] border border-border bg-surface-field px-3 py-1.5 transition-colors duration-200',
-  'focus-within:border-primary-500/60 focus-within:ring-2 focus-within:ring-primary-500/30',
-  props.disabled ? 'cursor-not-allowed opacity-60' : '',
+  'flex w-full items-end gap-2 rounded-control border border-border px-3.5 py-1.5 transition-colors duration-200',
+  'focus-within:border-text-accent focus-within:ring-2 focus-within:ring-text-accent/40',
+  props.disabled ? 'cursor-not-allowed bg-surface-hover' : 'bg-surface-field',
 ])
 
 /**
@@ -154,11 +154,11 @@ defineExpose({ focus })
       :maxlength="maxLength"
       :data-testid="testid"
       rows="1"
-      class="max-h-36 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-1.5 text-[0.82rem] leading-6 text-text-primary outline-none placeholder:text-text-muted"
+      class="max-h-36 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-1.5 text-sm leading-6 text-text-primary outline-none placeholder:text-text-muted disabled:cursor-not-allowed disabled:text-text-muted"
       @input="onInput"
       @keydown.enter.exact="onEnter"
     />
-    <span v-if="showCount" class="shrink-0 pb-2 text-[0.72rem] text-text-muted" data-testid="ui-chat-input-count">{{ length }}/{{ maxLength }}</span>
+    <span v-if="showCount" class="shrink-0 pb-2 text-xs text-text-muted" data-testid="ui-chat-input-count">{{ length }}/{{ maxLength }}</span>
     <div class="shrink-0 pb-0.5">
       <slot name="action" />
     </div>

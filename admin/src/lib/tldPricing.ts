@@ -4,15 +4,10 @@
  */
 import { formatSymbolPrice } from '@/lib/money'
 import type { UiTextTone } from '@/utils/ui/text'
-
-/** What is shown where a figure is missing. */
-const NO_VALUE = '—'
+import { EMPTY_VALUE } from '@/lib/format'
 
 /** The registration periods, in years, that a price is entered for. */
 export const TLD_PERIODS = ['1', '2', '3', '5', '10'] as const
-
-/** One registration period. */
-export type TldPeriod = (typeof TLD_PERIODS)[number]
 
 /**
  * A price map with a zero for every period.
@@ -72,7 +67,7 @@ const comparable = (cost: number | undefined, sell: number | undefined): cost is
  */
 export const calcMargin = (cost: number | undefined, sell: number | undefined): string => {
   if (!comparable(cost, sell) || sell === undefined) {
-    return NO_VALUE
+    return EMPTY_VALUE
   }
   const margin = ((sell - cost) / cost * 100).toFixed(1)
   return `${parseFloat(margin) >= 0 ? '+' : ''}${margin}%`
@@ -100,7 +95,7 @@ export const marginTone = (cost: number | undefined, sell: number | undefined): 
  */
 export const formatMarginPercent = (margin: number | null): string => {
   if (margin === null || margin === undefined) {
-    return NO_VALUE
+    return EMPTY_VALUE
   }
   return `${margin >= 0 ? '+' : ''}${margin.toFixed(1)}%`
 }
@@ -127,7 +122,7 @@ export const marginPercentTone = (margin: number | null): UiTextTone => {
  */
 export const formatTldPrice = (price: number | null, currency: string): string => {
   if (price === null || price === undefined) {
-    return NO_VALUE
+    return EMPTY_VALUE
   }
   return formatSymbolPrice(price, currency)
 }

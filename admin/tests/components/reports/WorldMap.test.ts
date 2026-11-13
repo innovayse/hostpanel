@@ -36,7 +36,7 @@ describe('WorldMap', () => {
     expect(wrapper.get('[data-testid="report-map-caption"]').text()).toBe('Hover a dot to see the city.')
 
     await wrapper.get('[data-testid="report-map-city-Yerevan"]').trigger('mouseenter')
-    expect(wrapper.get('[data-testid="report-map-caption"]').text()).toBe('Yerevan, Armenia — 4 clients')
+    expect(wrapper.get('[data-testid="report-map-caption"]').text()).toBe('Yerevan, Armenia: 4 clients')
 
     await wrapper.get('[data-testid="report-map-city-Yerevan"]').trigger('mouseleave')
     expect(wrapper.get('[data-testid="report-map-caption"]').text()).toBe('Hover a dot to see the city.')

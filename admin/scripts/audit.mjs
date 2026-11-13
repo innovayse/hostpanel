@@ -8,7 +8,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { countAny, countInputsWithoutPlaceholder, countVHtml, template } from './auditCounts.mjs'
+import { countAny, countInputsWithoutPlaceholder, countStoresCallingUseApi, countVHtml, template } from './auditCounts.mjs'
 
 /** Admin root: the folder above `scripts/`. */
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -79,7 +79,7 @@ const undocumentedArrows = files.reduce((sum, f) => {
 }, 0)
 
 /** Stores that import the transport directly. */
-const storesCallingUseApi = files.filter((f) => f.rel.includes('stores/') && /\buseApi\b/.test(f.text)).length
+const storesCallingUseApi = countStoresCallingUseApi(files.filter((f) => f.rel.includes('stores/')).map((f) => f.text))
 
 /** The report, label to number. */
 const report = {

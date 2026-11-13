@@ -53,8 +53,10 @@ expect "a tag that is not reachable is ignored" "0.10.0+$sha" "$(cd "$repo" && s
 only_pre="$WORK/prerelease"
 new_repo "$only_pre"
 git -C "$only_pre" tag v1.0.0-rc.1
-(cd "$only_pre" && sh "$SCRIPT" >/dev/null 2>&1)
-expect "only a pre-release tag fails" "1" "$?"
+err="$(cd "$only_pre" && sh "$SCRIPT" 2>&1 >/dev/null)"
+expect "only a pre-release tag fails with the no tag message" "1" "$(cd "$only_pre" && sh "$SCRIPT" >/dev/null 2>&1; echo $?)"
+case "$err" in *"no release tag"*) found=yes ;; *) found=no ;; esac
+expect "the pre-release failure says no release tag" "yes" "$found"
 
 none="$WORK/untagged"
 new_repo "$none"
@@ -62,6 +64,13 @@ out="$(cd "$none" && sh "$SCRIPT" 2>/dev/null)"
 status=$?
 expect "no tag fails" "1" "$status"
 expect "no tag prints no version" "" "$out"
+
+# Not a git repository: git's own failure must not be reported as a missing tag.
+plain="$WORK/plain"
+mkdir "$plain"
+err="$(cd "$plain" && GIT_CEILING_DIRECTORIES="$WORK" sh "$SCRIPT" 2>&1 >/dev/null)"
+case "$err" in *"no release tag"*) found=yes ;; *) found=no ;; esac
+expect "a git failure is not reported as a missing tag" "no" "$found"
 
 if [ "$FAILURES" -ne 0 ]; then
   printf '%s check(s) failed\n' "$FAILURES"

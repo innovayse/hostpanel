@@ -193,11 +193,17 @@ variables:
     - apk add --no-cache git
     - git config --global --add safe.directory "$CI_PROJECT_DIR"
   script:
-    # The one place the image version is derived (scripts/image-version.sh). It fails the job when no release
-    # tag is reachable, so an image never ships with the Dockerfile placeholder 0.0.0-dev. Only the API image
-    # has a VERSION build argument; the client and admin Dockerfiles would ignore it with a warning.
-    - HOST_VERSION="$(sh scripts/image-version.sh)"
-    - if [ "$SERVICE" = "api" ]; then set -- --build-arg "VERSION=$HOST_VERSION"; else set --; fi
+    # The one place the image version is derived (scripts/image-version.sh). Only the API image has a VERSION
+    # build argument (the client and admin Dockerfiles would ignore it with a warning), so only its job derives
+    # it. The script fails the job when no release tag is reachable, so an image never ships with the Dockerfile
+    # placeholder 0.0.0-dev.
+    - |
+      if [ "$SERVICE" = "api" ]; then
+        HOST_VERSION="$(sh scripts/image-version.sh)"
+        set -- --build-arg "VERSION=$HOST_VERSION"
+      else
+        set --
+      fi
     # The API image restores the private authentication package during its build. The credential
     # reaches it as the BuildKit secret "nuget_credentials" (read from the job environment, never a
     # build arg), so it is not stored in the image layers or its history. The client and admin

@@ -64,7 +64,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     private static async Task<int> SeedPendingInvoiceAsync(
         AppDbContext db, string module, InvoiceStatus status, DateTimeOffset gatewayStartedAt)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Gateway", "Payer", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Gateway", "Payer", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
 
@@ -190,7 +190,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "No", "Session", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "No", "Session", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
         var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);

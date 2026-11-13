@@ -66,7 +66,7 @@ public sealed class ClientClosedInvoicesHandlerTests(IntegrationTestFactory fact
         var ordinary = await SeedInvoiceAsync(context, closing.ClientId, renewal: false);
         var othersRenewal = await SeedInvoiceAsync(context, other.ClientId, renewal: true);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, TestMoments.Seeded));
 
         (await StatusOfAsync(context, unpaidRenewal)).Should().Be(InvoiceStatus.Cancelled);
         (await StatusOfAsync(context, overdueRenewal)).Should().Be(InvoiceStatus.Overdue);
@@ -82,7 +82,7 @@ public sealed class ClientClosedInvoicesHandlerTests(IntegrationTestFactory fact
         using var scope = factory.Services.CreateScope();
         var closing = await ClientsTestSeeds.SeedClientAsync(factory);
 
-        var act = () => scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, DateTimeOffset.UtcNow));
+        var act = () => scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(closing.ClientId, closing.UserId, TestMoments.Seeded));
 
         await act.Should().NotThrowAsync();
     }

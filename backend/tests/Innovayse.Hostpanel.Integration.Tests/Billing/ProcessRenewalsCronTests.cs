@@ -55,14 +55,14 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     private static async Task<SeededRenewalService> SeedServiceAsync(
         IHostpanelDbContext context, ServiceStatus status, DateTimeOffset? nextRenewalAt)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
 
         var group = ProductGroup.Create($"renewals-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -99,13 +99,13 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     private static async Task<ClaimedDomainLine> SeedClaimedDomainLineAsync(
         IHostpanelDbContext context, DateTimeOffset claimedAt)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
         // Not auto-renewing, so the cron's raising half leaves this client alone.
         var expiry = DateTimeOffset.UtcNow.AddDays(5);
-        var domain = RegisteredDomain.Register(client.Id, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, expiry, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        var domain = RegisteredDomain.Register(client.Id, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiry, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -235,7 +235,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     {
         using var scope = Host(new FakeEmailSender()).Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var failing = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var failing = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(failing);
         var tld = $"f{Guid.NewGuid():N}"[..12];
         var config = TldConfig.Create(tld, RegistrarModule.NameAm, "USD", "USD", true, 0, []);
@@ -476,7 +476,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         using (var seed = host.Services.CreateScope())
         {
             var context = seed.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             context.Clients.Add(client);
             await context.SaveChangesAsync(CancellationToken.None);
             var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);

@@ -27,7 +27,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     /// <returns>The new client's primary key.</returns>
     private static async Task<int> SeedClientAsync(IHostpanelDbContext context, string userId, string? currency)
     {
-        var client = Client.Create(userId, "Jane", "Doe", $"{userId}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create(userId, "Jane", "Doe", $"{userId}@example.test", TestMoments.Seeded);
         if (currency is not null)
         {
             client.SetCurrency(currency);

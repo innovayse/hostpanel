@@ -217,7 +217,7 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
     {
         using var scope = scenario.Host.Services.CreateScope();
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new PaymentReceivedEvent(invoiceId, clientId, 10m, "settled-elsewhere") { OccurredAt = DateTimeOffset.UtcNow });
+            new PaymentReceivedEvent(invoiceId, clientId, 10m, "settled-elsewhere") { OccurredAt = TestMoments.Seeded });
     }
 
     /// <summary>

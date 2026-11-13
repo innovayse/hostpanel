@@ -25,7 +25,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
         IHostpanelDbContext context, BillableItemType type, DateTimeOffset? nextDueDate)
     {
         var client = Client.Create(
-            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 

@@ -75,7 +75,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     private static Task<HttpResponseMessage> PayAsync(HttpClient admin, int invoiceId, decimal amount) =>
         admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"manual-{Guid.NewGuid():N}",
             amount,

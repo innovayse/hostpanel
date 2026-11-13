@@ -85,7 +85,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var created = await admin.PostAsJsonAsync("/api/transactions", new
         {
             clientId,
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Payment",
             transactionId = $"txn-{Guid.NewGuid():N}",
             invoiceId,

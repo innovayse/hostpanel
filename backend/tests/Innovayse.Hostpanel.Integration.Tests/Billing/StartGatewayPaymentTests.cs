@@ -320,7 +320,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
         (await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = "Manual",
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = 10m,

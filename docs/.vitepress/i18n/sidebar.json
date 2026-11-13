@@ -35,7 +35,8 @@
         "/staff/support-tickets",
         "/staff/announcements",
         "/staff/network-issues",
-        "/staff/email-templates"
+        "/staff/email-templates",
+        "/staff/system-settings"
       ]
     },
     {

@@ -1,10 +1,10 @@
 /**
- * System settings flow: editing a raw setting reveals its Save button and PUTs the new value, and
+ * System settings flow: editing a raw setting on the Advanced tab enables the tab's Save bar and PUTs the new value, and
  * a refusal shows the API's validation sentence while the draft stays on screen.
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
-import { fieldOf } from './support/locators'
+import { fieldOf, settingsPanel } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 import type { Setting } from '../src/types/setting'
 
@@ -33,13 +33,13 @@ test('editing a setting saves the new value', async ({ page }) => {
     ],
   })
 
-  await page.goto('/settings/general')
-  await expect(page.getByTestId(`setting-save-${timezone.id}`)).toHaveCount(0)
+  await page.goto('/settings/general?tab=advanced')
+  await expect(settingsPanel(page, 'advanced').getByTestId('settings-form-save')).toBeDisabled()
 
   await fieldOf(page, `setting-value-${timezone.id}`).fill('Asia/Yerevan')
-  await page.getByTestId(`setting-save-${timezone.id}`).click()
+  await settingsPanel(page, 'advanced').getByTestId('settings-form-save').click()
 
-  await expect(page.getByTestId(`setting-save-${timezone.id}`)).toHaveCount(0)
+  await expect(settingsPanel(page, 'advanced').getByTestId('settings-form-save')).toBeDisabled()
   await expect(fieldOf(page, `setting-value-${timezone.id}`)).toHaveValue('Asia/Yerevan')
   expect(api.callsTo(HttpMethod.Put, `/api/admin/settings/${timezone.id}`)[0]?.body).toEqual({ value: 'Asia/Yerevan' })
 })
@@ -59,9 +59,9 @@ test('a refused save shows the API sentence and keeps the draft', async ({ page 
     ],
   })
 
-  await page.goto('/settings/general')
+  await page.goto('/settings/general?tab=advanced')
   await fieldOf(page, `setting-value-${timezone.id}`).fill('Asia/Nowhere')
-  await page.getByTestId(`setting-save-${timezone.id}`).click()
+  await settingsPanel(page, 'advanced').getByTestId('settings-form-save').click()
 
   await expect(page.getByTestId(`setting-outcome-${timezone.id}`)).toContainText(sentence)
   await expect(fieldOf(page, `setting-value-${timezone.id}`)).toHaveValue('Asia/Nowhere')

@@ -65,6 +65,18 @@ describe('UiTabs', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([['c'], ['c']])
   })
 
+  it('moves focus to the tab the arrow key selects and keeps only the selected tab in the tab order', async () => {
+    const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' }, attachTo: document.body })
+
+    await wrapper.get('[data-testid="tab-a"]').trigger('keydown', { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="tab-c"]').element)
+
+    await wrapper.setProps({ modelValue: 'c' })
+    expect(wrapper.get('[data-testid="tab-c"]').attributes('tabindex')).toBe('0')
+    expect(wrapper.get('[data-testid="tab-a"]').attributes('tabindex')).toBe('-1')
+    wrapper.unmount()
+  })
+
   it('gives the scoped slot the active value', () => {
     const wrapper = mount(UiTabs, {
       props: { items, modelValue: 'c' },

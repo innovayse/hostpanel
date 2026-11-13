@@ -8,8 +8,10 @@
  * column on phones and the given count from `md`; a control that needs the whole row takes
  * `md:col-span-2`. `loading` keeps the real title and description and draws every `UiField` inside as a placeholder
  * of its control (through `UI_FIELD_LOADING`), so a form that is still reading its entry has the shape it will have.
+ *
+ * The root is a `<section>` named by its title (`aria-labelledby`), so each group is a landmark a screen reader can jump to.
  */
-import { computed, inject, provide, ref } from 'vue'
+import { computed, inject, provide, ref, useId } from 'vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
@@ -33,6 +35,9 @@ const props = withDefaults(defineProps<{
   loading: false,
 })
 
+/** Id of the title, which names the section. */
+const titleId = useId()
+
 /** The loading flag of a form around this section, if any. */
 const formLoading = inject(UI_FIELD_LOADING, ref(false))
 
@@ -41,15 +46,17 @@ provide(UI_FIELD_LOADING, computed<boolean>(() => props.loading || formLoading.v
 </script>
 
 <template>
-  <UiCard padding="md" class="mb-5" :aria-busy="loading ? 'true' : undefined">
-    <UiHeading :level="2" variant="section">
-      {{ title }}
-    </UiHeading>
-    <UiText v-if="description" tone="secondary" size="lg" class="mt-1">
-      {{ description }}
-    </UiText>
-    <UiGrid :columns="columns" class="mt-4">
-      <slot />
-    </UiGrid>
-  </UiCard>
+  <section class="mb-5" :aria-labelledby="titleId" :aria-busy="loading ? 'true' : undefined">
+    <UiCard padding="md">
+      <UiHeading :id="titleId" :level="2" variant="section">
+        {{ title }}
+      </UiHeading>
+      <UiText v-if="description" tone="secondary" size="lg" class="mt-1">
+        {{ description }}
+      </UiText>
+      <UiGrid :columns="columns" class="mt-4">
+        <slot />
+      </UiGrid>
+    </UiCard>
+  </section>
 </template>

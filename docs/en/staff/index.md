@@ -20,3 +20,4 @@ This section covers the day-to-day admin tasks in the Hostpanel control panel.
 - [Announcements, knowledge base and downloads](./announcements), announcements, KB articles and download files
 - [Network issues](./network-issues): incident reports and planned maintenance
 - [Email templates](./email-templates): customise transactional email content
+- [System settings](./system-settings): tabs, save bar and advanced keys

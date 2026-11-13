@@ -12,7 +12,8 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { LocationQueryRaw, LocationQueryValue } from 'vue-router'
+import type { LocationQueryRaw } from 'vue-router'
+import { readQueryString } from '@/lib/query'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 
 /** Query key the search text is stored under unless the screen names another. */
@@ -72,15 +73,6 @@ export interface FilterQuery<K extends string> {
 }
 
 /**
- * Reads a query value as one string.
- *
- * @param value - What the router holds for a key: nothing, one value, or a repeated key.
- * @returns The first value, or an empty string when the key is missing.
- */
-const readString = (value: LocationQueryValue | LocationQueryValue[] | undefined): string =>
-  (Array.isArray(value) ? value[0] : value) ?? ''
-
-/**
  * Keeps the filter fields, the search text and the page of a list in the address.
  *
  * Must run in a component's setup, because it reads the router.
@@ -117,21 +109,21 @@ export const useFilterQuery = <K extends string>(
 
   /** The filters in the address right now. */
   const applied = whileOnOwnRoute<FilterValues<K>>(
-    () => Object.fromEntries(keys.map(key => [key, readString(route.query[key])])) as FilterValues<K>,
+    () => Object.fromEntries(keys.map(key => [key, readQueryString(route.query[key])])) as FilterValues<K>,
   )
 
   /** The filters being edited, starting from what the address holds. */
   const draft = ref<FilterValues<K>>({ ...applied.value }) as Ref<FilterValues<K>>
 
   /** The text of the search box. */
-  const search = ref(readString(route.query[searchKey]))
+  const search = ref(readQueryString(route.query[searchKey]))
 
   /** The search text in the address right now. */
-  const appliedSearch = whileOnOwnRoute<string>(() => readString(route.query[searchKey]))
+  const appliedSearch = whileOnOwnRoute<string>(() => readQueryString(route.query[searchKey]))
 
   /** The current page: a whole number from 1, else the first page. */
   const page = whileOnOwnRoute<number>(() => {
-    const parsed = Number.parseInt(readString(route.query[pageKey]), 10)
+    const parsed = Number.parseInt(readQueryString(route.query[pageKey]), 10)
     return Number.isInteger(parsed) && parsed >= 1 ? parsed : 1
   })
 
@@ -153,7 +145,7 @@ export const useFilterQuery = <K extends string>(
     const next: LocationQueryRaw = { ...route.query }
     let changed = false
     for (const [key, value] of Object.entries(patch)) {
-      if (readString(route.query[key]) !== value) {
+      if (readQueryString(route.query[key]) !== value) {
         changed = true
       }
       if (value === '') {

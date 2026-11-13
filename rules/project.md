@@ -809,8 +809,12 @@ docker/                              compose set (shared·dev·prod·platform), 
     (`GET /api/admin/plugins/registry?q=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
     (`GET .../registry/updates`) and `InstallRegistryPluginCommand` (`POST .../registry/{id}/install`, body `{version}`,
     demo restricted). One type each for a plugin (`RegistryPluginDto`) and a page (`RegistryPluginPageDto`): the client fills
-    the registry's members, the handler sets `installed`, `installedVersion` and `updateAvailable` (`PluginUpdateRule`, a
-    newer semantic version than the installed one and than any staged upload).
+    the registry's members, `PluginUpdateOffer` (shared by the browser and the update check) sets `installed`,
+    `installedVersion` and `updateAvailable`. The offer is `PluginUpdateRule.NewestOffer`: the newest published version
+    that is newer than the installed one and than any staged upload and whose host range admits the running host
+    (`PluginHostCompatibility`). `latestVersion` of a row with an update is that version, which is the one an update
+    installs, so it can be older than the registry's newest; a newer version the host cannot run is not offered, and
+    neither is any update when the versions cannot be read. The details page uses the same rule.
   - **What is sent to the registry.** Only `GET {BaseUrl}plugins?q&category&page&pageSize`, `POST {BaseUrl}plugins/latest` with
     the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}/versions/{version}` and the
     package address that reply names. No cookie, no token, no host name, no setting, no client or user data; an `Accept`

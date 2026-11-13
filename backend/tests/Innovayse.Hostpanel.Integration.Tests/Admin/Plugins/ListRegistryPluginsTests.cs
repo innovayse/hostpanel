@@ -156,4 +156,44 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
         using var anonymous = factory.CreateClient();
         (await anonymous.GetAsync("/api/admin/plugins/registry")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    /// <summary>
+    /// An installed plugin whose newest version needs a newer host is not marked as having an update, and one with an older
+    /// newer version that runs here is offered that version, which is the one an update installs.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnUpdateThatDoesNotRunOnThisHost_IsNotOfferedAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var tooNew = $"test-toonew-{Guid.NewGuid():N}";
+        var fitting = $"test-fits-{Guid.NewGuid():N}";
+        registry.Publish(tooNew, "2.0.0", [1], minHostVersion: "5.0.0");
+        registry.Publish(fitting, "1.5.0", [1]);
+        registry.Publish(fitting, "2.0.0", [1], minHostVersion: "5.0.0");
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry, hostVersion: "1.4.0");
+
+        try
+        {
+            foreach (var id in new[] { tooNew, fitting })
+            {
+                (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id))).StatusCode.Should().Be(HttpStatusCode.OK);
+            }
+
+            var page = await client.GetFromJsonAsync<JsonElement>("/api/admin/plugins/registry?pageSize=100");
+
+            var items = page.GetProperty("items").EnumerateArray().ToDictionary(i => i.GetProperty("id").GetString()!);
+            items[tooNew].GetProperty("updateAvailable").GetBoolean().Should().BeFalse();
+            items[tooNew].GetProperty("latestVersion").GetString().Should().Be("2.0.0");
+            items[fitting].GetProperty("updateAvailable").GetBoolean().Should().BeTrue();
+            items[fitting].GetProperty("latestVersion").GetString().Should().Be("1.5.0");
+        }
+        finally
+        {
+            foreach (var id in new[] { tooNew, fitting })
+            {
+                await client.DeleteAsync($"/api/admin/plugins/{id}");
+            }
+        }
+    }
 }

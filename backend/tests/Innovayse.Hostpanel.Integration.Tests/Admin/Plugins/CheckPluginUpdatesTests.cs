@@ -244,4 +244,41 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
             }
         }
     }
+
+    /// <summary>
+    /// The registry's newest version needs a newer host: the update list offers the newest older version that runs on this
+    /// host, and offers nothing when no newer version runs on it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task OnlyAnUpdateThatRunsOnThisHost_IsOfferedAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var fitting = $"test-fit-{Guid.NewGuid():N}";
+        var tooNew = $"test-new-{Guid.NewGuid():N}";
+        registry.Publish(fitting, "1.5.0", [1]);
+        registry.Publish(fitting, "2.0.0", [1], minHostVersion: "5.0.0");
+        registry.Publish(tooNew, "2.0.0", [1], minHostVersion: "5.0.0");
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry, hostVersion: "1.4.0");
+
+        try
+        {
+            foreach (var id in new[] { fitting, tooNew })
+            {
+                (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id))).StatusCode.Should().Be(HttpStatusCode.OK);
+            }
+
+            var updates = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins/registry/updates");
+
+            updates!.Select(u => u.GetProperty("id").GetString()).Should().Contain(fitting).And.NotContain(tooNew);
+            updates!.Single(u => u.GetProperty("id").GetString() == fitting).GetProperty("latestVersion").GetString().Should().Be("1.5.0");
+        }
+        finally
+        {
+            foreach (var id in new[] { fitting, tooNew })
+            {
+                await client.DeleteAsync($"/api/admin/plugins/{id}");
+            }
+        }
+    }
 }

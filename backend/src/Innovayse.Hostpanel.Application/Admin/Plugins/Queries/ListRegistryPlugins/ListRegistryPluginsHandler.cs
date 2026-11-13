@@ -17,13 +17,18 @@ public sealed class ListRegistryPluginsHandler
     /// <summary>Reads the plugins installed on disk.</summary>
     private readonly IPluginPackageStore _store;
 
+    /// <summary>Sets the installed state and the update offer on a row.</summary>
+    private readonly PluginUpdateOffer _offer;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
-    public ListRegistryPluginsHandler(IPluginRegistryClient registry, IPluginPackageStore store)
+    /// <param name="offer">Sets the installed state and the update offer on a row.</param>
+    public ListRegistryPluginsHandler(IPluginRegistryClient registry, IPluginPackageStore store, PluginUpdateOffer offer)
     {
         _registry = registry;
         _store = store;
+        _offer = offer;
     }
 
     /// <summary>Returns one page of registry plugins with their installed state.</summary>
@@ -49,16 +54,11 @@ public sealed class ListRegistryPluginsHandler
         var installed = (await _store.ListAsync(ct))
             .GroupBy(p => p.Manifest.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-        var rows = listing.Value!.Items.Select(entry =>
+        var rows = new List<RegistryPluginDto>();
+        foreach (var entry in listing.Value!.Items)
         {
-            if (!installed.TryGetValue(entry.Id, out var package))
-            {
-                return entry;
-            }
-
-            var update = PluginUpdateRule.IsUpdate(package.Manifest.Version, package.StagedVersion, entry.LatestVersion);
-            return entry with { Installed = true, InstalledVersion = package.Manifest.Version, UpdateAvailable = update };
-        }).ToList();
+            rows.Add(installed.TryGetValue(entry.Id, out var package) ? await _offer.MarkAsync(entry, package, ct) : entry);
+        }
 
         return Result<RegistryPluginPageDto>.Success(new RegistryPluginPageDto(rows, listing.Value.Total, page, pageSize));
     }

@@ -105,11 +105,19 @@ public sealed class GetRegistryPluginHandler
 
         var installed = (await _store.ListAsync(ct))
             .FirstOrDefault(p => string.Equals(p.Manifest.Id, query.PluginId, StringComparison.OrdinalIgnoreCase));
-        var update = installed is not null
-            && latest is not null
-            && PluginUpdateRule.IsUpdate(installed.Manifest.Version, installed.StagedVersion, latest);
-
         var host = _hostVersion.Version;
+
+        // The update to offer is the newest version that runs on this host, which is not always the registry's newest;
+        // the page then updates to it and names it as the latest.
+        var offer = installed is null
+            ? null
+            : PluginUpdateRule.NewestOffer(listed.Value!, host, installed.Manifest.Version, installed.StagedVersion);
+        var update = offer is not null;
+        if (offer is not null)
+        {
+            latest = offer.Version;
+        }
+
         var versions = listed.Value!
             .OrderByDescending(v => v.PublishedAt)
             .Select(v => new RegistryPluginVersionDto(

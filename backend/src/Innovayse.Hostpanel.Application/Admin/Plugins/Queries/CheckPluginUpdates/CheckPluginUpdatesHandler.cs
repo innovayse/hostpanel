@@ -24,18 +24,23 @@ public sealed class CheckPluginUpdatesHandler
     /// <summary>Decrypts the stored licence keys.</summary>
     private readonly ISecretSettingCipher _cipher;
 
+    /// <summary>Sets the installed state and the update offer on a row.</summary>
+    private readonly PluginUpdateOffer _offer;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
     /// <param name="db">Reads the stored licence keys.</param>
     /// <param name="cipher">Decrypts the stored licence keys.</param>
+    /// <param name="offer">Sets the installed state and the update offer on a row.</param>
     public CheckPluginUpdatesHandler(
-        IPluginRegistryClient registry, IPluginPackageStore store, IHostpanelDbContext db, ISecretSettingCipher cipher)
+        IPluginRegistryClient registry, IPluginPackageStore store, IHostpanelDbContext db, ISecretSettingCipher cipher, PluginUpdateOffer offer)
     {
         _registry = registry;
         _store = store;
         _db = db;
         _cipher = cipher;
+        _offer = offer;
     }
 
     /// <summary>Returns the installed plugins that have a newer version in the registry.</summary>
@@ -89,9 +94,10 @@ public sealed class CheckPluginUpdatesHandler
                 continue;
             }
 
-            if (PluginUpdateRule.IsUpdate(package.Manifest.Version, package.StagedVersion, entry.LatestVersion))
+            var row = await _offer.MarkAsync(entry, package, ct);
+            if (row.UpdateAvailable)
             {
-                updates.Add(entry with { Installed = true, InstalledVersion = package.Manifest.Version, UpdateAvailable = true });
+                updates.Add(row);
             }
         }
 

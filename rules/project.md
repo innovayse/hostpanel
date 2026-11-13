@@ -1954,6 +1954,11 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   build and the tests, so the whole suite is proven green with no plugin loaded in the jobs that already
   run it, not in a duplicate set. A test that needs a plugin stages it itself and removes it.
 
+- `scripts/image-version.sh` — prints the version an image is built with: the newest release tag
+  (`vMAJOR.MINOR.PATCH`, pre-releases ignored) reachable from `HEAD`, without the `v`, plus `+<8 character commit id>`,
+  for example `0.5.0+1a2b3c4d`. It fails when no release tag is reachable. `scripts/test-image-version.sh` tests it in
+  throwaway repositories (GitLab `image-version:test`, GitHub `image-version`).
+
 All are `*.sh`, which `.gitattributes` (`*.sh text eol=lf`) pins to LF: the ssh pipe above fails with
 "Illegal option" on a CRLF copy.
 
@@ -1962,7 +1967,7 @@ A Held stored charge claim (the gateway took money the invoice could not record)
 ## CI is on GitLab. Pull requests are on GitHub. Both halves are load-bearing.
 
 `origin` is GitHub; merges happen there. `.github/workflows/mirror-to-gitlab.yml` pushes
-**only `main` and `develop`** to the CI mirror, whose `.gitlab-ci.yml`
+**only `main` and `develop`** (and the `v*` release tags with them) to the CI mirror, whose `.gitlab-ci.yml`
 starts the pipeline. The consequences are not obvious and cost time every few months:
 
 - **A feature branch never gets a pipeline.** Nothing is mirrored, so nothing builds or tests
@@ -1985,12 +1990,26 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
 - `.gitlab-ci.yml` inlines its templates. This repo cannot see the shared templates they
   came from, so the hidden jobs are copied in. Changing one here does not change those.
 
-**`deploy:prod` builds the images on the production host** — it consumes no registry images
-and declares `needs: []`, because the build jobs want a `builder` runner this project's prod
-host does not have. It dumps the database with `pg_dump -Fc` into `backups/` **before**
+**`deploy:prod` pulls the images the same pipeline built** (`backend:build:api:prod`, `client:build:prod` and
+`admin:build:prod`, tagged with the commit id) and starts them with `--no-build`. It dumps the database with `pg_dump -Fc` into `backups/` **before**
 anything is rebuilt and fails the deploy if the dump fails: the API applies pending EF
 migrations on startup, so `up -d` is the moment the schema changes, and a deploy that cannot be
 undone should not start. The last ten dumps are kept.
+
+**The host version is the release tag, never the Dockerfile placeholder.** The API image takes its version from the
+`VERSION` build argument (`HostVersion` in `backend/src/Directory.Build.props`), and the host reports it as its own
+version (`InstalledVersionProvider`), which every plugin range (`minHostVersion`, `maxHostVersion`) is checked against.
+The Dockerfile default `0.0.0-dev` parses as a real version below every minimum, so an image built without the
+argument refuses every plugin that declares a range. The GitLab `.build-image` template therefore derives the version
+once with `scripts/image-version.sh` (full clone, `GIT_DEPTH: "0"`) and passes it as `--build-arg VERSION` to the API
+image; the job fails when no release tag is reachable. The GitHub image publisher passes the tag it is run for.
+The mirror workflow pushes the `v*` tags with the branch, because GitLab can only see a tag that was mirrored; a
+tag push alone starts nothing, it travels with the next push to `main` or `develop`, and a release tag is never
+moved. **Releasing:** tag the release commit `vMAJOR.MINOR.PATCH` and push the tag (`git tag v0.6.0 <develop tip>`
+then `git push origin v0.6.0`) before the `develop` to `main` pull request is merged, and merge that pull request
+with a merge commit (never squash or rebase, which would leave the tag unreachable from `main`), so the
+production build already carries the new version. A tag made on `main` after the merge only reaches the next main
+build. Without a new tag the version stays at the last release plus the commit id.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on
 these hosts belong to the host's shared reverse proxy; naming it would fail the whole deploy.

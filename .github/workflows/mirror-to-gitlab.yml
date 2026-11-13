@@ -41,6 +41,8 @@ jobs:
       - name: Push to GitLab
         run: |
           set -eu
+          # The release tags travel with the branch: the image build derives the Hostpanel version from the
+          # newest release tag reachable from the commit (scripts/image-version.sh) and fails without one.
           # Push to the branch the event came from, not a hardcoded main, or a
           # develop push would land on GitLab's main and deploy staging code to
           # the production branch.
@@ -52,7 +54,7 @@ jobs:
           trap 'rm -f "$askpass"' EXIT
           printf '%s\n' '#!/bin/sh' 'case "$1" in' '  Username*) echo project-access-token ;;' '  *) echo "$GITLAB_MIRROR_TOKEN" ;;' 'esac' > "$askpass"
           chmod 700 "$askpass"
-          GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 git push "https://${GITLAB_MIRROR_URL}" "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 git push "https://${GITLAB_MIRROR_URL}" "HEAD:refs/heads/${GITHUB_REF_NAME}" "refs/tags/v*:refs/tags/v*"
         env:
           GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
           GITLAB_MIRROR_URL: ${{ vars.GITLAB_MIRROR_URL }}

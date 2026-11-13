@@ -124,6 +124,15 @@ jobs:
           HOSTPANEL_TEST_POSTGRES: "1"
         run: bash scripts/test-install-backup.sh
 
+  image-version:
+    name: Image version script
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Run the image version tests
+        run: sh scripts/test-image-version.sh
+
   # The Integration suite starts a full API host for every test class (about 690 of them), each on
   # a database of its own on one shared PostgreSQL container. The test project's
   # integration.runsettings (picked up by dotnet test) bounds its native memory, and the suite is

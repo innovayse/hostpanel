@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- SSH key agent 1.3.0: an opt-in `prepare-site` operation (`site_prepare_command` in `agent.conf`, empty by default) runs a provider helper as root that prepares one account's own domain for Innovayse Sites deploys. The CWP helper (`providers/cwp/prepare-site`) sets up a php-fpm 8.3 pool with the OPcache and realpath settings a symlink-switch deploy needs behind Apache, the vhost handler and CWP's own record of it, a database, the deploy settings file, `public_html -> current/public` and PHP in the jail. It is idempotent, backs up what it edits, refuses a domain that is not the account's (`site_not_owned`) and reloads Apache and php-fpm only gracefully and after their config tests.
+- A hosting product whose metadata holds `{"innovayseSites": {"prepare": true}}` has every newly provisioned account prepared that way through the server's agent, in the background after provisioning. Failures are logged and leave the service active.
+
 ## [0.5.0] - 2026-11-13
 
 Highlights since 0.4.0:

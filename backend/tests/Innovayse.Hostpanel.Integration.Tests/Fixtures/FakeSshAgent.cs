@@ -85,6 +85,25 @@ public sealed class FakeSshAgent : ISshKeyProvider
         return Task.CompletedTask;
     }
 
+    /// <summary>Domains prepared per account, in call order.</summary>
+    public ConcurrentQueue<(string Account, string Domain)> PreparedSites { get; } = new();
+
+    /// <summary>When set, <see cref="PrepareSiteAsync"/> throws this failure instead of preparing.</summary>
+    public SshProviderFailure? PrepareSiteFailure { get; set; }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> PrepareSiteAsync(SshAccount account, string domain, CancellationToken ct)
+    {
+        Record("prepare-site", account);
+        if (PrepareSiteFailure is { } failure)
+        {
+            throw new SshProviderException(failure, "fake prepare-site failure");
+        }
+
+        PreparedSites.Enqueue((account.Username, domain));
+        return Task.FromResult<IReadOnlyList<string>>(["pool written", "done"]);
+    }
+
     /// <summary>Records a call, refusing another server's account as the real provider does.</summary>
     /// <param name="op">Operation.</param>
     /// <param name="account">The account, if any.</param>

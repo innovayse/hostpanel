@@ -20,6 +20,7 @@ Contract version 1 (see README.md beside this file for the full specification):
     {"v": 1, "op": "list",   "account": "<user>"}
     {"v": 1, "op": "add",    "account": "<user>", "key_id": "<uuid>", "public_key": "ssh-ed25519 AAAA..."}
     {"v": 1, "op": "revoke", "account": "<user>", "key_id": "<uuid>"}
+    {"v": 1, "op": "prepare-site", "account": "<user>", "domain": "<the account's domain>"}   (1.3.0+, opt-in)
 
 Every response is {"v": 1, "ok": true, ...} or {"v": 1, "ok": false, "error": "<code>"}.
 
@@ -60,7 +61,7 @@ import sys
 import time
 
 CONTRACT_VERSION = 1
-AGENT_VERSION = "1.2.3"
+AGENT_VERSION = "1.3.0"
 CONFIG_PATH = "/etc/hostpanel-ssh-key-agent/agent.conf"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_AUTHORIZED_KEYS_BYTES = 256 * 1024
@@ -93,6 +94,9 @@ DEFAULTS = {
     # Jailed SSH enrolment, off unless the server opts in. With it on, the first key HostPanel
     # adds to an account jails it (jailkit tree under jail_root, the home bind-mounted inside,
     # jail_group membership, jail_shell), and removing the last managed key takes that away.
+    # Innovayse Sites (1.3.0+): a provider helper that prepares an account's domain for Laravel deploys
+    # (php-fpm pool, vhost handler, database, shared/.env, docroot link, jail PHP). Empty = op refused.
+    "site_prepare_command": "",
     "jail_enrol": "false",
     "jail_root": "/home/jail",
     "jail_group": "sftp-ssh",
@@ -157,6 +161,7 @@ def load_config(path=CONFIG_PATH):
         "jail_shell": section["jail_shell"].strip(),
         "jail_extras": [x.strip() for x in section["jail_extras"].split(",") if x.strip()],
         "systemd_unit_dir": section["systemd_unit_dir"].strip(),
+        "site_prepare_command": section["site_prepare_command"].strip(),
     }
 
 
@@ -613,7 +618,12 @@ REQUIRED_FIELDS = {
     "list": {"account"},
     "add": {"account", "key_id", "public_key"},
     "revoke": {"account", "key_id"},
+    "prepare-site": {"account", "domain"},
 }
+
+DOMAIN_RE = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
+SITE_PREPARE_TIMEOUT_SECONDS = 600
+SITE_PREPARE_STEP_RE = re.compile(r"^\[provision [a-z0-9]+\] (.{1,200})$")
 
 
 def validate_request(raw):
@@ -634,7 +644,38 @@ def validate_request(raw):
         raise AgentError("invalid_request")
     if "key_id" in request and (not isinstance(request["key_id"], str) or not KEY_ID_RE.match(request["key_id"])):
         raise AgentError("invalid_request")
+    if "domain" in request and (not isinstance(request["domain"], str) or not DOMAIN_RE.match(request["domain"])):
+        raise AgentError("invalid_request")
     return request
+
+
+def prepare_site(account, domain, config, run=subprocess.run):
+    """
+    Root side: runs the provider's site-prepare helper for <account> <domain> and returns its step lines.
+
+    The helper owns the server-specific work and is idempotent; it must refuse (exit 3) a domain that
+    is not the account's own. Exit 3 -> site_not_owned, any other failure or a timeout -> site_prepare_failed.
+    """
+    command = config.get("site_prepare_command", "")
+    if not command:
+        raise AgentError("not_supported")
+    try:
+        done = run([command, account["name"], domain], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                   stderr=subprocess.DEVNULL, env=dict(JAIL_ENV), timeout=SITE_PREPARE_TIMEOUT_SECONDS,
+                   check=False, text=True)
+    except (OSError, subprocess.SubprocessError):
+        raise AgentError("site_prepare_failed")
+    if done.returncode == 3:
+        raise AgentError("site_not_owned")
+    if done.returncode != 0:
+        raise AgentError("site_prepare_failed")
+    steps = []
+    for line in (done.stdout or "").splitlines():
+        match = SITE_PREPARE_STEP_RE.match(line.strip())
+        if match:
+            steps.append(match.group(1))
+    audit_event(config, account["name"], "site_prepare")
+    return {"prepared": True, "steps": steps[:50]}
 
 
 def run_as_account(request, account, config):
@@ -728,6 +769,17 @@ def handle(raw, config):
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
             jail = bool(config.get("jail_enrol"))
+            if request["op"] == "prepare-site":
+                if not config.get("site_prepare_command"):
+                    raise AgentError("not_supported")
+                if jail and account["shell_enabled"]:
+                    # The helper puts PHP into the jail; make sure the jail exists first.
+                    enrol_jail(account, config)
+                result = prepare_site(account, request["domain"], config)
+                audit(config, request, "ok")
+                response = {"v": CONTRACT_VERSION, "ok": True}
+                response.update(result)
+                return response
             if jail and request["op"] == "add" and account["shell_enabled"]:
                 # Before the key is written: a key that lands but cannot log in is worse than none.
                 enrol_jail(account, config)

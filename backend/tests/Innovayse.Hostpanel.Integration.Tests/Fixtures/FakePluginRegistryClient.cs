@@ -51,6 +51,9 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     /// <summary>A failure code the version list answers with, while the rest of the registry keeps answering; <see langword="null"/> for none.</summary>
     public string? VersionsFailureCode { get; set; }
 
+    /// <summary>How many times a plugin's page was asked for.</summary>
+    public int GetPluginCount { get; private set; }
+
     /// <summary>How many times the version list was asked for.</summary>
     public int ListVersionsCount { get; private set; }
 
@@ -153,6 +156,7 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     public Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct)
     {
         LastLicenceKey = licenceKey;
+        GetPluginCount++;
         PluginPageKeys[pluginId] = licenceKey;
         return Task.FromResult(FailureCode is not null
             ? Result<RegistryPluginDetails?>.FailureCode(FailureCode)

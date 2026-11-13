@@ -237,7 +237,8 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
 
             registry.PluginPageKeys[first].Should().Be("KEY-FIRST");
             registry.PluginPageKeys[second].Should().Be("KEY-SECOND");
-            registry.PluginPageKeys.ContainsKey(third).Should().BeFalse("a plugin without a key is not asked again");
+            registry.PluginPageKeys[third].Should().BeNull("a plugin without a key is asked about without one");
+            registry.GetPluginCount.Should().Be(3, "each plugin's page is read once, with or without a key");
         }
         finally
         {
@@ -347,8 +348,9 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
 
             updates!.Single(u => u.GetProperty("id").GetString() == pluginId).GetProperty("latestVersion").GetString().Should().Be("2.0.0");
             registry.Instances.Single().Verified.Should().BeTrue();
-            registry.Calls.Where(c => c.IsSigned).Select(c => c.Target.Split('?')[0]).Should().Contain($"/v1/plugins/{pluginId}/versions");
-            registry.Calls.Select(c => c.Target).Should().ContainInOrder("/v1/instances", $"/v1/plugins/{pluginId}/versions");
+            var paths = registry.Calls.Select(c => c.Target.Split('?')[0]).ToList();
+            paths.Should().ContainInOrder("/v1/instances", $"/v1/plugins/{pluginId}/versions");
+            registry.Calls.Single(c => c.Target.Split('?')[0] == $"/v1/plugins/{pluginId}/versions").IsSigned.Should().BeTrue();
         }
         finally
         {

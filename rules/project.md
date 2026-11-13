@@ -814,16 +814,22 @@ docker/                              compose set (shared·dev·prod·platform), 
     that is newer than the installed one and than any staged upload and whose host range admits the running host
     (`PluginHostCompatibility`). `latestVersion` of a row with an update is that version, which is the one an update
     installs, so it can be older than the registry's newest; a newer version the host cannot run is not offered, and
-    neither is any update when the versions cannot be read. The versions are the list this host is shown: the plugin's page
-and version list read with the stored licence key, and for a host only plugin the signed list after the installation is
-verified (`RegistryInstanceEnrollment.EnsureVerifiedAsync`), exactly as the details page does. The scoped service reads each
-licence key once, verifies once, and stops asking the registry after its first outage in a request. The details page uses
-the same rule.
+    neither is any update when the versions cannot be read.
+    The versions are the list this host is shown, read by `RegistryPluginReader` (shared with the details page): the plugin's
+    page and version list with the stored licence key, and for a host only plugin the signed list after the installation is
+    verified (`RegistryInstanceEnrollment.EnsureVerifiedAsync`). The scoped reader reads each licence key and page once,
+    verifies once, and answers every call after the first outage of the registry (switched off, unreachable, too slow or an
+    answer that cannot be read) with that outage. The details page uses the same rule. Reading a host only plugin can register
+    and verify this installation, so the browser and the update check can have that one write effect.
   - **What is sent to the registry.** Only `GET {BaseUrl}plugins?q&category&page&pageSize`, `POST {BaseUrl}plugins/latest` with
-    the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}/versions/{version}` and the
-    package address that reply names. No cookie, no token, no host name, no setting, no client or user data; an `Accept`
-    header per request. The update check sends plugin ids, so an operator who does not want
-    that leaves the registry off.
+    the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}` and
+    `GET {BaseUrl}plugins/{id}/versions` for an installed plugin that has a newer version (the browser, the update check and
+    the details page), `GET {BaseUrl}plugins/{id}/versions/{version}` and the package address that reply names. A plugin
+    with a stored licence key sends it as `X-Licence-Key` on its page and version list. For a host only plugin the
+    version list is signed with this installation's registry identity (and carries no licence key), after the installation
+    registered and verified itself with `POST {BaseUrl}instances` and `.../verify`. No cookie, no token, no host name, no
+    setting, no client or user data; an `Accept` header per request. The update check sends plugin ids, so an operator who
+    does not want that leaves the registry off.
   - **Network rules.** Every request, redirect hop and package address must have the registry's scheme, host and port; a
     redirect is followed by hand (GET only, three hops) and only inside that origin, otherwise `PLUGIN_REGISTRY_PACKAGE_REFUSED`.
     `PluginRegistryConnector` (the handler's connect callback) resolves the name itself and refuses loopback, link-local

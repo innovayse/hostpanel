@@ -6,9 +6,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.CheckPluginUpdat
 
 /// <summary>
 /// Handles <see cref="CheckPluginUpdatesQuery"/>: asks the registry for the newest version of every uploaded plugin
-/// and keeps the ones that are newer than what is installed. Plugins shipped with the build are not asked about,
-/// because an upload cannot replace them. A plugin with a licence key stored is asked about again with that key, because
-/// the registry may show a paid or private plugin only to its licensee.
+/// and keeps the ones with an update to offer. Plugins shipped with the build are not asked about, because an upload
+/// cannot replace them. A plugin with a licence key stored is asked about again with that key, because the registry may
+/// show a paid or private plugin only to its licensee. An update is offered only when it runs on this host, chosen from the
+/// version list this host is shown (<see cref="PluginUpdateOffer"/>), so a plugin whose versions cannot be read is not offered one.
 /// </summary>
 public sealed class CheckPluginUpdatesHandler
 {
@@ -18,17 +19,23 @@ public sealed class CheckPluginUpdatesHandler
     /// <summary>Reads the plugins installed on disk.</summary>
     private readonly IPluginPackageStore _store;
 
-    /// <summary>Reads the stored licence keys and sets the installed state and the update offer on a row.</summary>
+    /// <summary>Reads the stored licence keys and the plugins' pages as this host is shown them.</summary>
+    private readonly RegistryPluginReader _reader;
+
+    /// <summary>Sets the installed state and the update offer on a row.</summary>
     private readonly PluginUpdateOffer _offer;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
-    /// <param name="offer">Reads the stored licence keys and sets the installed state and the update offer on a row.</param>
-    public CheckPluginUpdatesHandler(IPluginRegistryClient registry, IPluginPackageStore store, PluginUpdateOffer offer)
+    /// <param name="reader">Reads the stored licence keys and the plugins' pages as this host is shown them.</param>
+    /// <param name="offer">Sets the installed state and the update offer on a row.</param>
+    public CheckPluginUpdatesHandler(
+        IPluginRegistryClient registry, IPluginPackageStore store, RegistryPluginReader reader, PluginUpdateOffer offer)
     {
         _registry = registry;
         _store = store;
+        _reader = reader;
         _offer = offer;
     }
 
@@ -56,18 +63,19 @@ public sealed class CheckPluginUpdatesHandler
             return Result<IReadOnlyList<RegistryPluginDto>>.FailureCode(latest.ErrorCode!);
         }
 
-        // A plugin with a stored key is read again with it; the licensee's view wins over the anonymous one, and a refusal
-        // of one plugin's key does not fail the whole check (that plugin keeps the answer it had, or none).
+        // A plugin with a stored key is read again with it; the licensee's view wins over the anonymous one. A refusal of
+        // one plugin's key does not fail the whole check: that plugin keeps the row it had, and is offered an update only
+        // when its versions can be read (see PluginUpdateOffer).
         var entries = latest.Value!.ToDictionary(e => e.Id, StringComparer.Ordinal);
         foreach (var id in uploaded.Keys)
         {
-            var licence = await _offer.LicenceAsync(id, ct);
+            var licence = await _reader.LicenceAsync(id, ct);
             if (licence is null)
             {
                 continue;
             }
 
-            var detail = await _registry.GetPluginAsync(id, licence, ct);
+            var detail = await _reader.PageAsync(id, ct);
             if (!detail.IsFailure && detail.Value is not null && string.Equals(detail.Value.Summary.Id, id, StringComparison.Ordinal) && !string.IsNullOrEmpty(detail.Value.Summary.LatestVersion))
             {
                 entries[detail.Value.Summary.Id] = detail.Value.Summary;

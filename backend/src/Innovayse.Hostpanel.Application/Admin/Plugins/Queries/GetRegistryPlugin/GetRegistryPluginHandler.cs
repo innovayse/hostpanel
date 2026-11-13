@@ -1,56 +1,35 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
-using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetRegistryPlugin;
 
 /// <summary>
-/// Handles <see cref="GetRegistryPluginQuery"/>: asks the registry for the plugin's page and its versions, sending the
-/// licence key stored for the plugin, and sets the answer beside what is installed here and the running host version.
+/// Handles <see cref="GetRegistryPluginQuery"/>: reads the plugin's page and its versions as this host is shown them
+/// (<see cref="RegistryPluginReader"/>, with the licence key stored for the plugin), and sets the answer beside what is
+/// installed here and the running host version.
 /// </summary>
 public sealed class GetRegistryPluginHandler
 {
-    /// <summary>The plugin registry.</summary>
-    private readonly IPluginRegistryClient _registry;
+    /// <summary>Reads what this host is shown of a registry plugin.</summary>
+    private readonly RegistryPluginReader _reader;
 
     /// <summary>Reads the plugins installed on disk.</summary>
     private readonly IPluginPackageStore _store;
 
-    /// <summary>Reads the stored licence key.</summary>
-    private readonly IHostpanelDbContext _db;
-
-    /// <summary>Decrypts the stored licence key.</summary>
-    private readonly ISecretSettingCipher _cipher;
-
     /// <summary>The version of the running Hostpanel build.</summary>
     private readonly IInstalledVersionProvider _hostVersion;
 
-    /// <summary>Makes sure this installation is verified by the registry before the versions of a restricted plugin are asked for.</summary>
-    private readonly RegistryInstanceEnrollment _enrollment;
-
     /// <summary>Initializes the handler.</summary>
-    /// <param name="registry">The plugin registry.</param>
+    /// <param name="reader">Reads what this host is shown of a registry plugin.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
-    /// <param name="db">Reads the stored licence key.</param>
-    /// <param name="cipher">Decrypts the stored licence key.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build.</param>
-    /// <param name="enrollment">Makes sure this installation is verified by the registry before the versions of a restricted plugin are asked for.</param>
-    public GetRegistryPluginHandler(
-        IPluginRegistryClient registry,
-        IPluginPackageStore store,
-        IHostpanelDbContext db,
-        ISecretSettingCipher cipher,
-        IInstalledVersionProvider hostVersion,
-        RegistryInstanceEnrollment enrollment)
+    public GetRegistryPluginHandler(RegistryPluginReader reader, IPluginPackageStore store, IInstalledVersionProvider hostVersion)
     {
-        _registry = registry;
+        _reader = reader;
         _store = store;
-        _db = db;
-        _cipher = cipher;
         _hostVersion = hostVersion;
-        _enrollment = enrollment;
     }
 
     /// <summary>Returns the details of one registry plugin.</summary>
@@ -65,36 +44,13 @@ public sealed class GetRegistryPluginHandler
     /// </returns>
     public async Task<Result<RegistryPluginDetailsDto>> HandleAsync(GetRegistryPluginQuery query, CancellationToken ct)
     {
-        var licence = await _db.GetRegistryLicenceAsync(_cipher, query.PluginId, ct);
-
-        var page = await _registry.GetPluginAsync(query.PluginId, licence, ct);
-        if (page.IsFailure)
+        var read = await _reader.ReadAsync(query.PluginId, ct);
+        if (read.IsFailure)
         {
-            return Result<RegistryPluginDetailsDto>.FailureCode(page.ErrorCode!);
+            return Result<RegistryPluginDetailsDto>.FailureCode(read.ErrorCode!);
         }
 
-        var details = page.Value;
-        if (details is null || !string.Equals(details.Summary.Id, query.PluginId, StringComparison.Ordinal))
-        {
-            return Result<RegistryPluginDetailsDto>.FailureCode(HostpanelErrorCodes.PLUGIN_REGISTRY_PLUGIN_NOT_FOUND);
-        }
-
-        // A restricted plugin lists its versions only to a verified installation, with no licence key.
-        var distribution = details.Summary.Distribution;
-        if (distribution == PluginRegistryDistribution.HostOnly)
-        {
-            var enrolled = await _enrollment.EnsureVerifiedAsync(force: false, ct);
-            if (enrolled.IsFailure)
-            {
-                return Result<RegistryPluginDetailsDto>.FailureCode(enrolled.ErrorCode!);
-            }
-        }
-
-        var listed = await _registry.ListVersionsAsync(query.PluginId, licence, ct, distribution);
-        if (listed.IsFailure)
-        {
-            return Result<RegistryPluginDetailsDto>.FailureCode(listed.ErrorCode!);
-        }
+        var (details, licence, listed) = read.Value!;
 
         var summary = details.Summary;
         var latest = string.IsNullOrEmpty(summary.LatestVersion) ? details.Latest?.Version : summary.LatestVersion;
@@ -111,14 +67,14 @@ public sealed class GetRegistryPluginHandler
         // the page then updates to it and names it as the latest.
         var offer = installed is null
             ? null
-            : PluginUpdateRule.NewestOffer(listed.Value!, host, installed.Manifest.Version, installed.StagedVersion);
+            : PluginUpdateRule.NewestOffer(listed, host, installed.Manifest.Version, installed.StagedVersion);
         var update = offer is not null;
         if (offer is not null)
         {
             latest = offer.Version;
         }
 
-        var versions = listed.Value!
+        var versions = listed
             .OrderByDescending(v => v.PublishedAt)
             .Select(v => new RegistryPluginVersionDto(
                 v.Version,

@@ -103,7 +103,7 @@ public static class ProductsTestSeeds
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Priced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Priced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         foreach (var (cycle, amount) in prices)
         {
             product.SetPrice("USD", cycle, amount);

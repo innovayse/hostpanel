@@ -70,7 +70,7 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
 
         var group = ProductGroup.Create($"orders-{Guid.NewGuid():N}", null);
@@ -78,11 +78,11 @@ public static class OrdersTestSeeds
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         db.Products.Add(product);
         await db.SaveChangesAsync();
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         order.AddItem(product.Id, "Starter Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
 
         if (status == OrderStatus.Cancelled)
@@ -131,24 +131,24 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         var group = ProductGroup.Create($"orders-taken-domain-{Guid.NewGuid():N}", null);
         db.ProductGroups.Add(group);
         var domainName = $"taken-{Guid.NewGuid():N}"[..18] + ".example";
-        var holder = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var holder = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(holder);
         await db.SaveChangesAsync();
         db.Domains.Add(RegisteredDomain.Register(
-            holder.Id, domainName, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
+            holder.Id, domainName, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         db.Products.Add(product);
         await db.SaveChangesAsync();
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         order.AddItem(
             product.Id, domainName, BillingCycle.Annual, 10m, 10m, domain: domainName, hostname: null,
             domainAction: DomainAction.Register, years: 1);
@@ -170,8 +170,8 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
-        var holder = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
+        var holder = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.AddRange(client, holder);
         var group = ProductGroup.Create($"orders-two-taken-{Guid.NewGuid():N}", null);
         db.ProductGroups.Add(group);
@@ -182,15 +182,15 @@ public static class OrdersTestSeeds
         foreach (var name in new[] { first, second })
         {
             db.Domains.Add(RegisteredDomain.Register(
-                holder.Id, name, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
+                holder.Id, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
         }
 
         var product = Product.Create(
-            group.Id, "Domain", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Domain", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         db.Products.Add(product);
         await db.SaveChangesAsync();
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         foreach (var name in new[] { first, second })
         {
             order.AddItem(
@@ -212,18 +212,18 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         var group = ProductGroup.Create($"orders-digital-{Guid.NewGuid():N}", null);
         db.ProductGroups.Add(group);
         await db.SaveChangesAsync();
 
-        var digital = Product.Create(group.Id, "Credits", null, null, null, null, ProductType.Digital, 0m, 0m, DateTimeOffset.UtcNow);
-        var hosting = Product.Create(group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var digital = Product.Create(group.Id, "Credits", null, null, null, null, ProductType.Digital, 0m, 0m, TestMoments.Seeded);
+        var hosting = Product.Create(group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         db.Products.AddRange(digital, hosting);
         await db.SaveChangesAsync();
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         order.AddItem(digital.Id, "Credits", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
         order.AddItem(hosting.Id, "Starter Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
         db.Orders.Add(order);
@@ -245,7 +245,7 @@ public static class OrdersTestSeeds
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Starter Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         product.SetPrice("USD", BillingCycle.Monthly, 19.99m);
         db.Products.Add(product);
         await db.SaveChangesAsync();
@@ -263,11 +263,11 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync();
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank-gateway", ipAddress: null, currency: currency, now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank-gateway", ipAddress: null, currency: currency, now: TestMoments.Seeded);
         order.AddItem(await DomainsTestSeeds.SeedHostingProductAsync(db), "Starter Hosting", BillingCycle.Monthly, 25m, 25m, domain: null, hostname: null);
         db.Orders.Add(order);
 
@@ -290,11 +290,11 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync();
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank-gateway", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank-gateway", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         order.AddItem(await DomainsTestSeeds.SeedHostingProductAsync(db), "Starter Hosting", BillingCycle.Monthly, 25m, 25m, domain: null, hostname: null);
         db.Orders.Add(order);
         await db.SaveChangesAsync();

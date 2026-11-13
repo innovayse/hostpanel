@@ -64,7 +64,7 @@ public static class ReportsTestSeeds
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var client = Client.Create(Guid.NewGuid().ToString(), marker, "Reporting", $"{marker}@reports.test", DateTimeOffset.UtcNow);
+        var client = Client.Create(Guid.NewGuid().ToString(), marker, "Reporting", $"{marker}@reports.test", TestMoments.Seeded);
         if (city is not null || country is not null)
         {
             client.UpdateAddress(client.Street, client.Address2, city ?? client.City, client.State, client.PostCode, country ?? client.Country);

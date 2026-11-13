@@ -107,7 +107,7 @@ public static class MigrationTestSeeds
         var created = await userManager.CreateAsync(user, "Pass@123!");
         Assert.True(created.Succeeded);
 
-        context.Clients.Add(Client.Create(user.Id, "Jane", "Doe", email, DateTimeOffset.UtcNow));
+        context.Clients.Add(Client.Create(user.Id, "Jane", "Doe", email, TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
         return email;
     }

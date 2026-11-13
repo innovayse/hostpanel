@@ -31,13 +31,13 @@ public sealed class RenewalPaymentReceivedHandlerTests(IntegrationTestFactory fa
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             context.Clients.Add(client);
             var group = ProductGroup.Create($"renewal-fast-path-{Guid.NewGuid():N}", null);
             context.ProductGroups.Add(group);
             await context.SaveChangesAsync(CancellationToken.None);
 
-            var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
             context.Products.Add(product);
             await context.SaveChangesAsync(CancellationToken.None);
 
@@ -67,7 +67,7 @@ public sealed class RenewalPaymentReceivedHandlerTests(IntegrationTestFactory fa
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount = total,

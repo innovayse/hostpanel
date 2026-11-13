@@ -24,7 +24,7 @@ public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PutAsJsonAsync($"/api/transactions/{transactionId}", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Edited",
             transactionId = "ext-ref",
             invoiceId = (int?)null,
@@ -50,7 +50,7 @@ public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PutAsJsonAsync($"/api/transactions/{BillingTestSeeds.NoSuchId}", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Edited",
             transactionId = "ext-ref",
             invoiceId = (int?)null,
@@ -71,7 +71,7 @@ public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : ICl
     {
         var response = await factory.CreateClient().PutAsJsonAsync("/api/transactions/1", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Edited",
             transactionId = "ext-ref",
             invoiceId = (int?)null,
@@ -95,7 +95,7 @@ public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : ICl
 
         var response = await admin.PutAsJsonAsync($"/api/transactions/{transactionId}", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Edited",
             transactionId = "ext-ref",
             invoiceId = BillingTestSeeds.NoSuchId,

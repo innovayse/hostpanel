@@ -47,13 +47,13 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     /// <returns>The client id and product id.</returns>
     private static async Task<ClientProductIds> SeedClientAsync(IHostpanelDbContext context)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         var group = ProductGroup.Create($"overdue-cron-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
         return new(client.Id, product.Id);

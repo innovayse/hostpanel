@@ -47,14 +47,14 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// <returns>The seeded service.</returns>
     private static async Task<ClientService> SeedActiveServiceAsync(IHostpanelDbContext context, DateTimeOffset? nextRenewalAt)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
 
         var group = ProductGroup.Create($"apply-renewals-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 

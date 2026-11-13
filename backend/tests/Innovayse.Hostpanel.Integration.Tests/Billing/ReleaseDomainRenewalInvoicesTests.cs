@@ -191,9 +191,9 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         var other = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         context.Domains.AddRange(domain, other);
         await context.SaveChangesAsync(CancellationToken.None);
         return new SeededDomains(clientId, domain.Id, other.Id);

@@ -60,7 +60,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
         var created = await admin.PostAsJsonAsync("/api/transactions", new
         {
             clientId,
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Cash out",
             transactionId = $"txn-{Guid.NewGuid():N}",
             invoiceId = (int?)null,

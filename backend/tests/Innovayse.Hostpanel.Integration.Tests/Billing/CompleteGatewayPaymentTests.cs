@@ -1305,7 +1305,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         var client = Client.Create(
-            $"user-{Guid.NewGuid():N}", "Gateway", "Race", $"gw-race-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"user-{Guid.NewGuid():N}", "Gateway", "Race", $"gw-race-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 

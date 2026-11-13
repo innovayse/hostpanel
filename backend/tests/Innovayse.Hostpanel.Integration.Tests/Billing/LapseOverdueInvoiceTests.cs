@@ -233,7 +233,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var client = Client.Create(
-            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
 

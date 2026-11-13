@@ -47,7 +47,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = reference,
             amount = 10m,
@@ -82,7 +82,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, ownerClientId, 10m);
         (await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"part-{Guid.NewGuid():N}",
             amount = 4m,

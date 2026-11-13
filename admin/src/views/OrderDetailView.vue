@@ -37,10 +37,11 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiTextTag } from '@/utils/ui/text'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { Icon } from '@/lib/icons'
 import { BILLING_CYCLE_OPTIONS, INVOICE_STATUS_OPTIONS, ORDER_LINE_FULFILMENT_OPTIONS, ORDER_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { invoiceStatusTone, orderItemStatusTone, orderLineFulfilmentTone, orderStatusTone, statusLabel } from '@/lib/tones'
 import { orderLineErrorKey } from '@/lib/orderLines'
@@ -419,18 +420,18 @@ onMounted(async () => {
                 {{ store.currentOrder.paymentMethod }}
               </OrderFact>
               <OrderFact :label="t('shared.ipAddress')">
-                {{ store.currentOrder.ipAddress ?? '—' }}
+                {{ store.currentOrder.ipAddress ?? EMPTY_VALUE }}
               </OrderFact>
               <OrderFact :label="t('orders.orderDetail.created')">
                 {{ formatDateTime(store.currentOrder.createdAt) }}
               </OrderFact>
               <OrderFact v-if="store.currentOrder.bundleName" :label="t('orders.orderDetail.bundle')">
-                <span data-testid="order-bundle">{{ store.currentOrder.bundleName }}</span>
+                <UiText :as="UiTextTag.Span" data-testid="order-bundle">{{ store.currentOrder.bundleName }}</UiText>
               </OrderFact>
               <OrderFact :label="t('orders.orderDetail.linesSubtotal')">
-                <span data-testid="order-lines-subtotal">
+                <UiText :as="UiTextTag.Span" data-testid="order-lines-subtotal">
                   {{ formatPlainAmount(store.currentOrder.total, store.currentOrder.currency) }}
-                </span>
+                </UiText>
               </OrderFact>
             </UiStack>
           </UiCard>
@@ -455,17 +456,17 @@ onMounted(async () => {
                     {{ statusLabel(INVOICE_STATUS_OPTIONS, store.currentOrder.invoiceStatus) }}
                   </UiBadge>
                   <template v-else>
-                    &mdash;
+                    {{ EMPTY_VALUE }}
                   </template>
                 </OrderFact>
                 <OrderFact :label="t('orders.orderDetail.invoiceTotal')">
-                  <span data-testid="order-invoice-total">
+                  <UiText :as="UiTextTag.Span" data-testid="order-invoice-total">
                     {{
                       store.currentOrder.invoiceTotal === null
-                        ? '—'
+                        ? EMPTY_VALUE
                         : formatPlainAmount(store.currentOrder.invoiceTotal, store.currentOrder.currency)
                     }}
-                  </span>
+                  </UiText>
                 </OrderFact>
               </template>
               <UiText v-else tone="muted" size="md">
@@ -507,7 +508,7 @@ onMounted(async () => {
             >
               <UiTableCell>{{ item.productName }}</UiTableCell>
               <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
-              <UiTableCell>{{ item.domain ?? item.hostname ?? '—' }}</UiTableCell>
+              <UiTableCell>{{ item.domain ?? item.hostname ?? EMPTY_VALUE }}</UiTableCell>
               <UiTableCell numeric>{{ formatPlainAmount(item.firstPaymentAmount, store.currentOrder.currency) }}</UiTableCell>
               <UiTableCell numeric>{{ formatPlainAmount(item.recurringAmount, store.currentOrder.currency) }}</UiTableCell>
               <UiTableCell>

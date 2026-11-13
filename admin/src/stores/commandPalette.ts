@@ -12,8 +12,9 @@ import { useAuthStore } from '@/stores/auth'
 /**
  * Pinia store holding the palette's open state and the signed-in viewer's recent pages.
  *
- * Recent pages are kept per viewer (their email) in `localStorage` and read again each time the
- * palette opens, so a different account on the same browser never sees another's history.
+ * Recent pages are kept per viewer in `localStorage`, under a key made from a hash of the account's
+ * email (never the address itself), and read again each time the palette opens, so a different
+ * account on the same browser never sees another's history. Signing out clears them.
  */
 export const useCommandPaletteStore = defineStore('commandPalette', () => {
   /** Auth store, for the viewer the recent pages belong to. */

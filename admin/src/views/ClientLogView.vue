@@ -8,7 +8,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientLogStore } from '@/stores/clientLog'
-import { formatDateTimeCompact } from '@/lib/format'
+import { formatDateTimeCompact, EMPTY_VALUE } from '@/lib/format'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCollapse from '@/components/ui/UiCollapse.vue'
@@ -235,11 +235,11 @@ onMounted(load)
             <UiTableCell>{{ log.description }}</UiTableCell>
             <UiTableCell>
               <UiStack gap="none">
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ log.adminName ?? '—' }}</UiText>
+                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ log.adminName ?? EMPTY_VALUE }}</UiText>
                 <UiText v-if="log.adminEmail" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ log.adminEmail }}</UiText>
               </UiStack>
             </UiTableCell>
-            <UiTableCell muted>{{ log.ipAddress ?? '—' }}</UiTableCell>
+            <UiTableCell muted>{{ log.ipAddress ?? EMPTY_VALUE }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
         <template #empty>

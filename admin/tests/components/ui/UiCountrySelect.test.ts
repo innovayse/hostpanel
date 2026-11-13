@@ -13,7 +13,7 @@ import { createTestI18n } from '../../helpers/i18n'
  * @returns The wrapper.
  */
 const mountCountry = (props: { modelValue: string; placeholder?: string }) =>
-  mount(UiCountrySelect, { props, global: { plugins: [createTestI18n()] } })
+  mount(UiCountrySelect, { props, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
 describe('UiCountrySelect', () => {
   it('shows the default placeholder while nothing is chosen', () => {

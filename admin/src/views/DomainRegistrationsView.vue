@@ -26,7 +26,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { DOMAIN_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { formatPrice } from '@/lib/money'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
@@ -119,7 +119,7 @@ onMounted(() => load())
               </UiLink>
             </UiTableCell>
             <UiTableCell>{{ yearsLabel(domain.regPeriodYears) }}</UiTableCell>
-            <UiTableCell>{{ domain.registrar ?? '—' }}</UiTableCell>
+            <UiTableCell>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.nextDueDate) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>

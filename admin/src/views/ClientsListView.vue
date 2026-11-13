@@ -15,7 +15,7 @@ import { useFilterQuery } from '@/composables/useFilterQuery'
 import type { ClientFilters } from '@/types/client'
 import { ClientStatus } from '@/types/client'
 import { clientStatusTone } from '@/lib/tones'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { PAGE_SIZE_OPTIONS } from '@/lib/limits'
 import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
@@ -48,7 +48,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { actionsColumnClasses } from '@/utils/ui/table'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import type { UiFilterChip } from '@/utils/ui/filter'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, clientPath } from '@/lib/routes'
@@ -305,7 +305,7 @@ onMounted(() => {
             <UiTableHeader hide-below="xl">{{ t('clients.clientsList.2fa') }}</UiTableHeader>
             <UiTableHeader hide-below="lg">{{ t('clients.clientsList.joined') }}</UiTableHeader>
             <UiTableHeader :class="actionsColumnClasses">
-              <span class="sr-only">{{ t('shared.actions') }}</span>
+              <UiText :as="UiTextTag.Span" class="sr-only">{{ t('shared.actions') }}</UiText>
             </UiTableHeader>
           </UiTableRow>
         </UiTableHead>
@@ -331,7 +331,7 @@ onMounted(() => {
               </UiStack>
             </UiTableCell>
             <UiTableCell muted hide-below="lg">{{ client.email }}</UiTableCell>
-            <UiTableCell muted hide-below="xl">{{ client.companyName || '—' }}</UiTableCell>
+            <UiTableCell muted hide-below="xl">{{ client.companyName || EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>
               <UiBadge v-if="client.isUserDeleted" :tone="UiTone.Danger" small>
                 {{ t('clients.clientsList.userDeleted') }}
@@ -344,7 +344,7 @@ onMounted(() => {
                 :name="client.clientGroupName"
                 :color="client.clientGroupColor"
               />
-              <template v-else>—</template>
+              <template v-else>{{ EMPTY_VALUE }}</template>
             </UiTableCell>
             <UiTableCell hide-below="xl">
               <UiTooltip

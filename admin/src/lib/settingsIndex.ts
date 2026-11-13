@@ -45,7 +45,7 @@ export enum SettingsItem {
 }
 
 /** One link of the index. */
-export interface SettingsIndexEntry {
+interface SettingsIndexEntry {
   /** The section the card leads to. */
   item: SettingsItem
   /** Where it leads. */
@@ -55,7 +55,7 @@ export interface SettingsIndexEntry {
 }
 
 /** One titled group of links. */
-export interface SettingsIndexGroup {
+interface SettingsIndexGroup {
   /** The group, which names its heading. */
   group: SettingsGroup
   /** The links in display order. */

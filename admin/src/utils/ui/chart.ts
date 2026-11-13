@@ -74,9 +74,14 @@ export interface UiChartTheme {
   barGlow: string
 }
 
-/** Palette used when the stylesheet is not loaded (unit tests, first paint). */
+/**
+ * Palette used when the stylesheet is not loaded (unit tests, first paint). It repeats the dark
+ * tokens of `assets/main.css` on purpose: a chart draws on a canvas, which cannot resolve a CSS
+ * variable, and it can be created before the stylesheet has applied. `tests/assets/mainCss.test.ts`
+ * fails when any value here drifts from the stylesheet.
+ */
 const FALLBACK_THEME: UiChartTheme = {
-  grid: 'rgba(255,255,255,0.06)',
+  grid: 'rgb(255 255 255 / 0.06)',
   tick: '#9aa6c4',
   palette: ['#4c81ff', '#8b5cf6', '#6ee7b7', '#fcd34d', '#fca5a5', '#7ca0ff'],
   barTop: '#7ca0ff',
@@ -142,7 +147,7 @@ export const paletteColor = (theme: UiChartTheme, index: number): string => {
 
 
 /** The two ends of a bar gradient. */
-export interface UiBarEnds {
+interface UiBarEnds {
   /** Colour at the far end of the bar. */
   top: string
   /** Colour at the base of the bar. */
@@ -150,7 +155,7 @@ export interface UiBarEnds {
 }
 
 /** A target that splits the bars: those below it are drawn faded. */
-export interface UiBarTarget {
+interface UiBarTarget {
   /** The target value. */
   value: number
   /** Fill of a bar below the target. */
@@ -223,7 +228,7 @@ export const chartSkeletonBars: readonly string[] = [
 const BAR_GLOW_BLUR = 18
 
 /** Options of the `barGlow` plugin. */
-export interface UiBarGlowOptions {
+interface UiBarGlowOptions {
   /** Glow colour. */
   color: string
   /** Bars whose value is at or above this get the glow. */

@@ -9,7 +9,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDomainsStore } from '@/stores/domains'
 import { domainStatusTone } from '@/lib/tones'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import type { DomainRegistration } from '@/types/domain'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -132,7 +132,7 @@ onMounted(() => fetchDomains())
           >
             <UiTableCell muted>{{ domain.id }}</UiTableCell>
             <UiTableCell>{{ domain.name }}</UiTableCell>
-            <UiTableCell muted>{{ domain.registrar ?? '—' }}</UiTableCell>
+            <UiTableCell muted>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="domainStatusTone(domain.status)" small>{{ domain.status }}</UiBadge>
             </UiTableCell>

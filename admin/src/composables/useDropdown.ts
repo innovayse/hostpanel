@@ -1,7 +1,9 @@
 /**
  * The open/close shell every floating list of the kit shares: the open flag, closing when the
  * pointer goes down outside the component, and closing on Escape with the focus handed back to the
- * trigger. `UiSelect` and `UiFieldSelector` both sit on it, so the behaviour is written once.
+ * trigger. `UiSelect`, `UiMenu`, `UiFieldSelector` and the date pickers all sit on it, so the behaviour is written
+ * once. The panel is drawn in the page body (a teleport, see `useFloatingPlace`), so it is not inside the root in
+ * the DOM: a pointer-down on it belongs to the component all the same, which is what `panel` and `isInside` tell.
  */
 import { onMounted, onUnmounted, ref } from 'vue'
 import type { Ref } from 'vue'
@@ -13,8 +15,16 @@ export interface Dropdown {
   open: Ref<boolean>
   /** Root element of the component: a pointer-down outside it closes the panel. Bind with `ref="root"`. */
   root: Ref<HTMLElement | null>
+  /** The floating panel itself, teleported out of the root. Bind with `ref="panel"` on the panel element. */
+  panel: Ref<HTMLElement | null>
   /** The control that opens the panel; it gets the focus back when Escape closes it. Bind with `ref="trigger"`. */
   trigger: Ref<HTMLElement | null>
+  /**
+   * Whether a node belongs to the component: inside the root (the trigger) or inside the teleported panel.
+   *
+   * @param node - The node to test; anything that is not a node (a window, null) is outside.
+   */
+  isInside: (node: EventTarget | null) => boolean
   /** Opens the panel. */
   show: () => void
   /** Closes the panel, optionally handing the focus back to the trigger. */
@@ -42,8 +52,21 @@ export const useDropdown = (): Dropdown => {
   /** Root element, used for outside-click detection. */
   const root = ref<HTMLElement | null>(null)
 
+  /** The floating panel, teleported out of the root. */
+  const panel = ref<HTMLElement | null>(null)
+
   /** The control that opens the panel. */
   const trigger = ref<HTMLElement | null>(null)
+
+  /**
+   * Whether a node belongs to the component: inside the root or inside the teleported panel.
+   *
+   * @param node - The node to test.
+   * @returns True when the node is in the trigger area or the panel.
+   */
+  const isInside = (node: EventTarget | null): boolean => {
+    return node instanceof Node && ((root.value?.contains(node) ?? false) || (panel.value?.contains(node) ?? false))
+  }
 
   /** Opens the panel. */
   const show = (): void => {
@@ -68,12 +91,12 @@ export const useDropdown = (): Dropdown => {
   }
 
   /**
-   * Closes the panel when the pointer goes down outside the component.
+   * Closes the panel when the pointer goes down outside the component (its root and its panel).
    *
    * @param event - The mouse event.
    */
   const onOutsideDown = (event: MouseEvent): void => {
-    if (root.value && event.target instanceof Node && !root.value.contains(event.target)) {
+    if (event.target instanceof Node && !isInside(event.target)) {
       open.value = false
     }
   }
@@ -94,5 +117,5 @@ export const useDropdown = (): Dropdown => {
   onMounted(() => document.addEventListener('mousedown', onOutsideDown))
   onUnmounted(() => document.removeEventListener('mousedown', onOutsideDown))
 
-  return { open, root, trigger, show, hide, toggle, onEscape }
+  return { open, root, trigger, panel, isInside, show, hide, toggle, onEscape }
 }

@@ -21,7 +21,7 @@ import UiTableFoot from '@/components/ui/UiTableFoot.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatCurrencyCode, formatReportAmount } from '@/lib/money'
 import { NOT_LOADING, REPORT_LOADING } from '@/lib/reportLoading'
 import { valueAtPath } from '@/lib/valueAtPath'
@@ -31,9 +31,6 @@ import type { ReportColumn } from '@/types/reportcolumn'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
-
-/** Text shown for a value the row does not have. */
-const NO_VALUE = '—'
 
 /** Props for ReportTable. */
 const props = withDefaults(defineProps<{
@@ -111,7 +108,7 @@ const valueOf = (row: T, key: string): unknown => valueAtPath(row, key)
  */
 const formatValue = (value: unknown, format: ReportCellFormat | undefined): string => {
   if (value === null || value === undefined || value === '') {
-    return NO_VALUE
+    return EMPTY_VALUE
   }
   switch (format) {
     case ReportCellFormat.Money:
@@ -119,7 +116,7 @@ const formatValue = (value: unknown, format: ReportCellFormat | undefined): stri
     case ReportCellFormat.Percent:
       return `${value}%`
     case ReportCellFormat.Date:
-      return formatDate(String(value), NO_VALUE)
+      return formatDate(String(value), EMPTY_VALUE)
     case ReportCellFormat.Id:
       return `#${value}`
     case ReportCellFormat.Years:

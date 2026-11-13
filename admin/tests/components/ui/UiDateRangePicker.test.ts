@@ -115,8 +115,8 @@ describe('UiDateRangePicker', () => {
     await wrapper.get('input').trigger('click')
 
     const popup = wrapper.find('div.fixed')
-    expect(popup.classes()).toContain('top-[var(--dp-top)]')
-    expect(popup.classes()).toContain('left-[var(--dp-left)]')
+    expect(popup.classes()).toContain('top-[var(--fp-top,auto)]')
+    expect(popup.classes()).toContain('left-[var(--fp-left,auto)]')
   })
 
   it('exposes a testid on the field and every popup control', async () => {

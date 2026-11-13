@@ -36,6 +36,7 @@ import { UiTone } from '@/utils/ui/tone'
 import type { DnsRecordItem } from '@/types/domain'
 import { DnsRecordType } from '@/types/domain'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -371,7 +372,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
               </UiTableCell>
               <UiTableCell>
                 <UiNumberInput v-if="draftNeedsPriority" v-model="draftPriority" placeholder="10" data-testid="clients-dns-draft-priority" />
-                <UiText v-else :tone="UiTextTone.Muted">&mdash;</UiText>
+                <UiText v-else :tone="UiTextTone.Muted">{{ EMPTY_VALUE }}</UiText>
               </UiTableCell>
               <UiTableCell actions>
                 <UiStack direction="row" gap="xs" :justify="UiJustify.End" :align="UiAlignItems.Center">
@@ -400,7 +401,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
               <UiTableCell>{{ row.record.host }}</UiTableCell>
               <UiTableCell>{{ row.record.value }}</UiTableCell>
               <UiTableCell muted>{{ row.record.ttl }}</UiTableCell>
-              <UiTableCell muted>{{ row.record.priority ?? '—' }}</UiTableCell>
+              <UiTableCell muted>{{ row.record.priority ?? EMPTY_VALUE }}</UiTableCell>
               <UiTableCell actions>
                 <UiRowActions :actions="dnsRecordActions(row.record)" :testid="`clients-dns-actions-${row.key}`" />
               </UiTableCell>

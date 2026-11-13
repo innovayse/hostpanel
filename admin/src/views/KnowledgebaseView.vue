@@ -46,6 +46,7 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t, locale } = useI18n()
 
@@ -493,7 +494,7 @@ onMounted(() => {
                     <UiText tone="muted" size="sm">({{ category.articleCount }})</UiText>
                   </UiStack>
                 </UiTableCell>
-                <UiTableCell muted>{{ category.description || '—' }}</UiTableCell>
+                <UiTableCell muted>{{ category.description || EMPTY_VALUE }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge v-if="category.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
                 </UiTableCell>

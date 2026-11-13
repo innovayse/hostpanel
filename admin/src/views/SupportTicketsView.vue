@@ -40,7 +40,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { formatElapsed } from '@/lib/format'
+import { formatElapsed, EMPTY_VALUE } from '@/lib/format'
 import { useSupportStore } from '@/stores/support'
 import { TicketBulkAction, TicketFlagFilter, TicketStatus } from '@/types/ticket'
 import type { TicketListFilter } from '@/types/ticket'
@@ -331,7 +331,7 @@ watch([activeFilter, appliedSearch, page], load, { immediate: true })
                 {{ t('shared.tktIdSubject', { id: ticket.id, subject: ticket.subject }) }}
               </UiLink>
             </UiTableCell>
-            <UiTableCell muted>{{ ticket.departmentName ?? '—' }}</UiTableCell>
+            <UiTableCell muted>{{ ticket.departmentName ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell muted>{{ ticket.clientName }}</UiTableCell>
             <UiTableCell><SupportTicketPriorityBadge :priority="ticket.priority" /></UiTableCell>
             <UiTableCell><SupportTicketStatusBadge :status="ticket.status" /></UiTableCell>

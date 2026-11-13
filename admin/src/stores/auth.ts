@@ -7,8 +7,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthApi } from '@/composables/apis/useAuthApi'
 import { clearPluginChatDrafts } from '@/composables/usePluginChatDraft'
+import { clearRecent } from '@/lib/commandPalette'
 import { AuthMode } from '@/types/auth'
-import type { SignInResult } from '@/types/auth'
+import type { MeResponse, SignInResult } from '@/types/auth'
 import { errorSentence } from '@/lib/errorHandler'
 import { runAction } from '@/lib/runAction'
 import { translate } from '@/lib/translate'
@@ -46,7 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
   const api = useAuthApi()
 
   /** Currently authenticated admin user, null when unauthenticated. */
-  const user = ref<{ email: string; firstName: string; lastName: string; roles: string[] } | null>(null)
+  const user = ref<Pick<MeResponse, 'email' | 'firstName' | 'lastName' | 'roles'> | null>(null)
 
   /**
    * How the signed-in account is named on screen: first and last name, or the email address when the
@@ -372,6 +373,8 @@ export const useAuthStore = defineStore('auth', () => {
    * @returns Promise resolving once the session has been ended.
    */
   const logout = async (): Promise<void> => {
+    // The palette's recent pages are keyed by the account, so they go before the account is forgotten.
+    clearRecent(user.value?.email ?? '')
     user.value = null
     emailVerified.value = null
     pendingToken.value = null

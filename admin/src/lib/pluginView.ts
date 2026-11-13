@@ -8,7 +8,7 @@
  * page as text. The bounds below are the host's, never the plugin's.
  */
 
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
 import { pluginPagePath } from '@/lib/routes'
 import { HttpMethod } from '@/types/http'
 import type { PluginMenuLink, PluginUiMenuItemDto, PluginUiPageDto } from '@/types/pluginui'
@@ -576,7 +576,7 @@ const isMoney = (value: unknown): value is PluginMoney =>
  */
 export const formatPluginValue = (value: unknown, format: PluginValueFormat | undefined, locale: string): string => {
   if (value === undefined || value === null || value === '') {
-    return '—'
+    return EMPTY_VALUE
   }
   if (format === PluginValueFormat.DateTime && typeof value === 'string') {
     return formatDateTime(value)

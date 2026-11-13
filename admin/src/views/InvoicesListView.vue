@@ -41,7 +41,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { bucketAmountText, searchInvoices, summarizeInvoices } from '@/lib/invoices'
 import { invoiceStatusTone } from '@/lib/tones'
 import { formatPlainAmount } from '@/lib/money'
@@ -350,7 +350,7 @@ watch(loadKey, load, { immediate: true })
             <UiTableCell muted hide-below="md">{{ formatDate(invoice.createdAt) }}</UiTableCell>
             <UiTableCell muted hide-below="xl">{{ formatDate(invoice.dueDate) }}</UiTableCell>
             <UiTableCell numeric hide-below="sm">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
-            <UiTableCell muted hide-below="xl">{{ invoice.paymentMethod || '—' }}</UiTableCell>
+            <UiTableCell muted hide-below="xl">{{ invoice.paymentMethod || EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
             </UiTableCell>

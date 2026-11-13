@@ -3,6 +3,7 @@
  * selecting an action.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import UiMenu from '@/components/ui/UiMenu.vue'
 import { createTestI18n } from '../../helpers/i18n'
@@ -68,6 +69,56 @@ describe('UiMenu', () => {
   it('renders nothing without actions', () => {
     const wrapper = mountIt({ actions: [] })
     expect(wrapper.find('[data-testid="ui-menu-trigger"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('draws the panel fixed, placed through the shared floating variables', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="ui-menu-trigger"]').trigger('click')
+    await nextTick()
+
+    const panel = wrapper.get<HTMLElement>('[data-testid="ui-menu-panel"]')
+    expect(panel.classes()).toEqual(expect.arrayContaining(['fixed', 'right-[var(--fp-right,auto)]', 'top-[var(--fp-top,auto)]']))
+    expect(panel.element.style.getPropertyValue('--fp-right')).not.toBe('')
+    wrapper.unmount()
+  })
+
+  it('closes on Escape inside the menu and hands the focus back to the trigger', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="ui-menu-trigger"]').trigger('click')
+
+    await wrapper.get('[data-testid="ui-menu-panel"]').trigger('keydown', { key: 'Escape' })
+
+    expect(wrapper.find('[data-testid="ui-menu-panel"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="ui-menu-trigger"]').element)
+    wrapper.unmount()
+  })
+
+  it('moves the focus between items with the arrow keys and wraps', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="ui-menu-trigger"]').trigger('click')
+    await nextTick()
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="action-edit"]').element)
+
+    await wrapper.get('[data-testid="ui-menu-panel"]').trigger('keydown', { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="action-delete"]').element)
+
+    await wrapper.get('[data-testid="ui-menu-panel"]').trigger('keydown', { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="action-edit"]').element)
+    wrapper.unmount()
+  })
+
+  it('closes on a pointer-down outside the trigger and the menu, not inside the menu', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="ui-menu-trigger"]').trigger('click')
+
+    wrapper.get('[data-testid="ui-menu-panel"]').element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    await nextTick()
+    expect(wrapper.find('[data-testid="ui-menu-panel"]').exists()).toBe(true)
+
+    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    await nextTick()
+    expect(wrapper.find('[data-testid="ui-menu-panel"]').exists()).toBe(false)
     wrapper.unmount()
   })
 })

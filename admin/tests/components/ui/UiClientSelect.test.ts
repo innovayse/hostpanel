@@ -28,7 +28,7 @@ const mountSelect = (modelValue: string | number | null, extra: Record<string, u
   const wrapper = mount(UiClientSelect, {
     props: { modelValue, clients, ...extra },
     attachTo: document.body,
-    global: { plugins: [createTestI18n()] },
+    global: { plugins: [createTestI18n()], stubs: { teleport: true } },
   })
   mounted.push(wrapper)
   return wrapper

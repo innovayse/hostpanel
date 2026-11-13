@@ -26,8 +26,6 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
         body.GetProperty("email").GetString().Should().NotBeNullOrEmpty();
         body.GetProperty("firstName").GetString().Should().Be("Seeded");
         body.GetProperty("lastName").GetString().Should().Be("Admin");
-        body.GetProperty("firstName").GetString().Should().Be("Seeded");
-        body.GetProperty("lastName").GetString().Should().Be("Admin");
         body.GetProperty("roles").ValueKind.Should().Be(JsonValueKind.Array);
         body.TryGetProperty("emailVerified", out _).Should().BeTrue();
     }

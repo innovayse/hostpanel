@@ -35,6 +35,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -342,7 +343,7 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       </UiTableHead>
       <UiTableBody divided>
         <UiTableRow v-for="user in store.users" :key="user.id" hoverable :data-testid="`users-row-${user.id}`">
-          <UiTableCell muted>{{ user.clientId ?? '—' }}</UiTableCell>
+          <UiTableCell muted>{{ user.clientId ?? EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>{{ user.firstName }}</UiTableCell>
           <UiTableCell>{{ user.lastName }}</UiTableCell>
           <UiTableCell muted>{{ user.email }}</UiTableCell>

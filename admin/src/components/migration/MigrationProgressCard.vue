@@ -29,6 +29,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { EMPTY_VALUE } from '@/lib/format'
 
 /** How many checklist rows the loading card draws. */
 const PLACEHOLDER_ROWS = 3
@@ -232,7 +233,7 @@ onUnmounted(() => {
             <template v-if="job.progress[key].total > 0">
               {{ job.progress[key].imported + job.progress[key].skipped }}/{{ job.progress[key].total }}
             </template>
-            <template v-else>—</template>
+            <template v-else>{{ EMPTY_VALUE }}</template>
           </UiText>
         </UiStack>
       </UiStack>

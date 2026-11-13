@@ -10,7 +10,7 @@ import { useClientSummaryStore } from '@/stores/clientSummary'
 import { useClientsStore } from '@/stores/clients'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { BILLING_CYCLE_OPTIONS, QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
 import ClientExternalAccountCard from '@/components/clients/ClientExternalAccountCard.vue'
@@ -51,9 +51,6 @@ import { ClientSection, clientItemPath, clientSectionPath, clientTicketNewPath, 
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
-
-/** Empty-value dash. */
-const DASH = '—'
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -128,11 +125,11 @@ interface FlagRow {
  */
 const computeDuration = (iso: string | null | undefined): string => {
   if (!iso) {
-    return DASH
+    return EMPTY_VALUE
   }
   const start = new Date(iso)
   if (isNaN(start.getTime())) {
-    return DASH
+    return EMPTY_VALUE
   }
   const now = new Date()
   let years = now.getFullYear() - start.getFullYear()
@@ -155,17 +152,17 @@ const computeDuration = (iso: string | null | undefined): string => {
 const clientInfoRows = computed<InfoRow[]>(() => {
   const c = client.value
   return [
-    { label: t('shared.firstName'), value: c ? c.firstName || DASH : null },
-    { label: t('shared.lastName'), value: c ? c.lastName || DASH : null },
-    { label: t('shared.companyName'), value: c ? c.companyName || DASH : null },
-    { label: t('shared.emailAddress'), value: c ? c.email || DASH : null },
-    { label: t('shared.phoneNumber'), value: c ? c.phone || DASH : null },
-    { label: t('shared.address1'), value: c ? c.address.street || DASH : null },
-    { label: t('shared.address2'), value: c ? c.address.address2 || DASH : null },
-    { label: t('shared.city'), value: c ? c.address.city || DASH : null },
-    { label: t('clients.clientSummary.stateRegion'), value: c ? c.address.state || DASH : null },
-    { label: t('shared.postcode'), value: c ? c.address.postCode || DASH : null },
-    { label: t('shared.country'), value: c ? c.address.country || DASH : null },
+    { label: t('shared.firstName'), value: c ? c.firstName || EMPTY_VALUE : null },
+    { label: t('shared.lastName'), value: c ? c.lastName || EMPTY_VALUE : null },
+    { label: t('shared.companyName'), value: c ? c.companyName || EMPTY_VALUE : null },
+    { label: t('shared.emailAddress'), value: c ? c.email || EMPTY_VALUE : null },
+    { label: t('shared.phoneNumber'), value: c ? c.phone || EMPTY_VALUE : null },
+    { label: t('shared.address1'), value: c ? c.address.street || EMPTY_VALUE : null },
+    { label: t('shared.address2'), value: c ? c.address.address2 || EMPTY_VALUE : null },
+    { label: t('shared.city'), value: c ? c.address.city || EMPTY_VALUE : null },
+    { label: t('clients.clientSummary.stateRegion'), value: c ? c.address.state || EMPTY_VALUE : null },
+    { label: t('shared.postcode'), value: c ? c.address.postCode || EMPTY_VALUE : null },
+    { label: t('shared.country'), value: c ? c.address.country || EMPTY_VALUE : null },
   ]
 })
 
@@ -797,7 +794,7 @@ onMounted(() => {
               >
                 <UiTableCell muted>{{ service.id }}</UiTableCell>
                 <UiTableCell>{{ service.productName }}</UiTableCell>
-                <UiTableCell muted>{{ service.domain ?? DASH }}</UiTableCell>
+                <UiTableCell muted>{{ service.domain ?? EMPTY_VALUE }}</UiTableCell>
                 <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
                 <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
@@ -854,7 +851,7 @@ onMounted(() => {
               >
                 <UiTableCell muted>{{ domain.id }}</UiTableCell>
                 <UiTableCell>{{ domain.name }}</UiTableCell>
-                <UiTableCell muted>{{ domain.registrar ?? DASH }}</UiTableCell>
+                <UiTableCell muted>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge :tone="domainStatusTone(domain.status)" small>{{ domain.status }}</UiBadge>
                 </UiTableCell>

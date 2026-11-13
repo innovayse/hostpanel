@@ -6,7 +6,7 @@ import { ServerState } from '@/types/server'
 import type { ServerDto } from '@/types/server'
 
 /** The server list narrowed by these; an empty string means the criterion is not set. */
-export interface ServerCriteria {
+interface ServerCriteria {
   /** Control panel module the server must run, or an empty string for any. */
   module: string
   /** Last known state the server must be in, or an empty string for any. */

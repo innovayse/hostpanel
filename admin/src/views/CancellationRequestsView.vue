@@ -30,7 +30,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import type { CancellationRequestItem } from '@/types/service'
 import UiText from '@/components/ui/UiText.vue'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { cancellationStatusLabel, cancellationStatusTone, cancellationTypeLabel, cancellationTypeTone } from '@/lib/tones'
 import { useCancellationRequestsStore } from '@/stores/cancellationRequests'
@@ -206,7 +206,7 @@ onMounted(() => load())
             </UiTableCell>
             <UiTableCell>
               <UiText tone="secondary" :title="item.reason ?? ''">
-                {{ item.reason ? shorten(item.reason) : '—' }}
+                {{ item.reason ? shorten(item.reason) : EMPTY_VALUE }}
               </UiText>
             </UiTableCell>
             <UiTableCell>

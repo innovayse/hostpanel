@@ -48,13 +48,16 @@ export const useRowSelection = <Id extends RowId = number>(rowIds: () => readonl
   /** The row toggled last, where a Shift range starts; null before the first toggle. */
   let anchor: Id | null = null
 
+  /** The ticked ids as a set, so membership is a lookup and not a scan of the list. */
+  const selected = computed<ReadonlySet<Id>>(() => new Set(ids.value))
+
   /** How many rows are ticked. */
   const count = computed<number>(() => ids.value.length)
 
   /** True when every shown row is ticked (and there is at least one). */
   const allSelected = computed<boolean>(() => {
     const rows = rowIds()
-    return rows.length > 0 && rows.every((id) => ids.value.includes(id))
+    return rows.length > 0 && rows.every((id) => selected.value.has(id))
   })
 
   /** True when some, but not all, shown rows are ticked. */
@@ -66,7 +69,7 @@ export const useRowSelection = <Id extends RowId = number>(rowIds: () => readonl
    * @param id - The row id.
    * @returns True when the row is in the selection.
    */
-  const isSelected = (id: Id): boolean => ids.value.includes(id)
+  const isSelected = (id: Id): boolean => selected.value.has(id)
 
   /**
    * Ticks every row between the anchor and a row, both included.
@@ -79,7 +82,7 @@ export const useRowSelection = <Id extends RowId = number>(rowIds: () => readonl
     const start = rows.indexOf(from)
     const end = rows.indexOf(id)
     const span = rows.slice(Math.min(start, end), Math.max(start, end) + 1)
-    ids.value = [...ids.value, ...span.filter((rowId) => !ids.value.includes(rowId))]
+    ids.value = [...ids.value, ...span.filter((rowId) => !selected.value.has(rowId))]
   }
 
   /**
@@ -120,7 +123,8 @@ export const useRowSelection = <Id extends RowId = number>(rowIds: () => readonl
 
   // A row that is no longer shown (another page, a filter, a deleted record) cannot stay ticked.
   watch(rowIds, (rows) => {
-    ids.value = ids.value.filter((id) => rows.includes(id))
+    const shown = new Set(rows)
+    ids.value = ids.value.filter((id) => shown.has(id))
   })
 
   return { ids, count, allSelected, partiallySelected, isSelected, toggle, toggleAll, selectAll, clear }

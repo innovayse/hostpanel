@@ -16,7 +16,7 @@ import { DOMAIN_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS } from '@/lib/constants'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
 import { Icon } from '@/lib/icons'
 import { DomainStatus } from '@/types/domain'
-import { formatDate, toDateInputValue } from '@/lib/format'
+import { formatDate, toDateInputValue, EMPTY_VALUE } from '@/lib/format'
 import DnsRecordsTable from '@/components/clients/DnsRecordsTable.vue'
 import DomainContactModal from '@/components/clients/DomainContactModal.vue'
 import DomainRemindersTable from '@/components/clients/DomainRemindersTable.vue'
@@ -529,7 +529,7 @@ onBeforeUnmount(() => {
               <UiSkeletonBar v-if="!domain" class="h-4 w-full max-w-md rounded-md" aria-hidden="true" />
               <UiStack v-else direction="row" gap="lg" wrap>
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-                  {{ t('clients.clientDomainDetail.order') }} {{ domain.origin.orderId ?? '—' }}
+                  {{ t('clients.clientDomainDetail.order') }} {{ domain.origin.orderId ?? EMPTY_VALUE }}
                 </UiText>
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
                   {{ t('clients.clientDomainDetail.orderType') }} {{ domain.origin.orderType }}
@@ -538,7 +538,7 @@ onBeforeUnmount(() => {
                   {{ t('clients.clientDomainDetail.domain') }} {{ domain.name }}
                 </UiText>
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-                  {{ t('clients.clientDomainDetail.registrar') }} {{ domain.registrar.module ?? '—' }}
+                  {{ t('clients.clientDomainDetail.registrar') }} {{ domain.registrar.module ?? EMPTY_VALUE }}
                 </UiText>
               </UiStack>
               <UiGrid :columns="2" gap="sm">

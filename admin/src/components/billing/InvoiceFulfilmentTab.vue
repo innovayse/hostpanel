@@ -27,7 +27,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
 import { fulfilmentStatusTone } from '@/lib/tones'
 import { useBillingStore } from '@/stores/billing'
 import { FulfilmentKind, FulfilmentStatus } from '@/types/invoice'
@@ -258,7 +258,7 @@ watch(
               <UiTableCell numeric muted>{{ record.attempts }}</UiTableCell>
               <UiTableCell muted>
                 <UiText v-if="record.lastError" :tone="UiTextTone.Danger">{{ record.lastError }}</UiText>
-                <template v-else>—</template>
+                <template v-else>{{ EMPTY_VALUE }}</template>
               </UiTableCell>
               <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>
               <UiTableCell actions>

@@ -23,6 +23,7 @@ import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
+import { initialsOf } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -89,9 +90,9 @@ watch(term, (value) => {
  * Builds the two-letter initials of a user.
  *
  * @param user - The user.
- * @returns First letters of the first and last name.
+ * @returns The upper-case first letters of the first and last name.
  */
-const initials = (user: UserSearchHit): string => `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+const initials = (user: UserSearchHit): string => initialsOf(`${user.firstName} ${user.lastName}`)
 
 /**
  * Chooses a hit and resets the search.

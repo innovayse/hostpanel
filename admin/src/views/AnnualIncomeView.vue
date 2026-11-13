@@ -21,6 +21,7 @@ import type { ReportMonthIncome } from '@/types/reportmonthincome'
 import { UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 import { UiAlign } from '@/utils/ui/table'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -53,7 +54,7 @@ const stats = computed<ReportStat[]>(() => {
   return [
     { key: 'total', label: t('reports.annualIncome.totalIncome'), value: formatMoney(total) },
     { key: 'average', label: t('reports.annualIncome.averageMonth'), value: formatMoney(rows.value.length === 0 ? 0 : total / rows.value.length) },
-    { key: 'best', label: t('reports.annualIncome.bestMonth'), value: best?.month ?? '—', hint: best ? formatMoney(best.amount) : undefined },
+    { key: 'best', label: t('reports.annualIncome.bestMonth'), value: best?.month ?? EMPTY_VALUE, hint: best ? formatMoney(best.amount) : undefined },
   ]
 })
 

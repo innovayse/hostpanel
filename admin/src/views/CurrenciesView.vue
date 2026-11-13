@@ -35,6 +35,7 @@ import { formatAffixed } from '@/lib/money'
 import { useCurrenciesStore } from '@/stores/currencies'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -295,7 +296,7 @@ onMounted(() => store.fetchAll())
             <UiTableCell muted>{{ formatSample(c) }}</UiTableCell>
             <UiTableCell numeric muted>{{ c.decimals }}</UiTableCell>
             <UiTableCell numeric muted>
-              {{ c.isBase ? '—' : c.rateToBase.toFixed(8) }}
+              {{ c.isBase ? EMPTY_VALUE : c.rateToBase.toFixed(8) }}
             </UiTableCell>
             <UiTableCell>
               <UiBadge v-if="c.isBase" tone="primary" small>

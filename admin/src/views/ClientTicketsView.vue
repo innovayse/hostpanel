@@ -7,7 +7,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientTicketsStore } from '@/stores/clientTickets'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { ticketStatusLabel, ticketStatusTone } from '@/lib/tones'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
           <UiTableBody divided>
             <UiTableRow v-for="ticket in store.tickets" :key="ticket.id" hoverable>
               <UiTableCell muted>{{ formatDate(ticket.createdAt) }}</UiTableCell>
-              <UiTableCell muted>{{ ticket.departmentName ?? '—' }}</UiTableCell>
+              <UiTableCell muted>{{ ticket.departmentName ?? EMPTY_VALUE }}</UiTableCell>
               <UiTableCell>
                 <UiLink
                   :to="clientItemPath(clientId, ClientSection.Tickets, ticket.id)"

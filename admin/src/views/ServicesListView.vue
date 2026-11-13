@@ -26,7 +26,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { useServicesStore } from '@/stores/services'
@@ -98,7 +98,7 @@ onMounted(() => load())
           >
             <UiTableCell muted>{{ service.id }}</UiTableCell>
             <UiTableCell>{{ service.productName }}</UiTableCell>
-            <UiTableCell>{{ service.domain ?? '—' }}</UiTableCell>
+            <UiTableCell>{{ service.domain ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>
               <UiLink variant="link" :to="clientPath(service.clientId)" :data-testid="`services-client-${service.id}`">
                 {{ service.clientName }}

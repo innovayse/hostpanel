@@ -36,7 +36,7 @@ type FilterHistory = (typeof FilterHistory)[keyof typeof FilterHistory]
 export type FilterValues<K extends string> = Record<K, string>
 
 /** What a screen may rename about where its state is kept in the address. */
-export interface FilterQueryOptions {
+interface FilterQueryOptions {
   /** Query key of the search text; `search` by default. */
   searchKey?: string
   /** Query key of the page number; `page` by default. */
@@ -93,9 +93,13 @@ export const useFilterQuery = <K extends string>(
   keys: readonly K[],
   options: FilterQueryOptions = {},
 ): FilterQuery<K> => {
+  /** The current route, whose query holds the list's state. */
   const route = useRoute()
+  /** The router the state is written back through. */
   const router = useRouter()
+  /** Query key the search text lives under: the screen's own, or the default. */
   const searchKey = options.searchKey ?? DEFAULT_SEARCH_KEY
+  /** Query key the page number lives under: the screen's own, or the default. */
   const pageKey = options.pageKey ?? DEFAULT_PAGE_KEY
 
   /** The path of the route the list was created for; its query is the only one this composable reads. */

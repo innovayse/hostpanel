@@ -3,7 +3,7 @@
  * fall back on empty or implausible input, `toDateInputValue` cuts the day.
  */
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, formatSizeMb, formatTime, toDateInputValue } from '@/lib/format'
+import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -138,6 +138,32 @@ describe('formatShare', () => {
   it('keeps at most one decimal', () => {
     expect(formatShare(0.1234, 'en')).toBe('12.3%')
     expect(formatShare(0.12349, 'en')).toBe('12.3%')
+  })
+})
+
+describe('initialsOf', () => {
+  it('takes the first letter of each of the first two words, in upper case', () => {
+    expect(initialsOf('ada lovelace')).toBe('AL')
+    expect(initialsOf('Ada Byron King')).toBe('AB')
+  })
+
+  it('takes two letters of a single word, such as an email address', () => {
+    expect(initialsOf('admin@example.test')).toBe('AD')
+  })
+
+  it('ignores surrounding space and is empty for a blank name', () => {
+    expect(initialsOf('  Ada   Lovelace ')).toBe('AL')
+    expect(initialsOf('   ')).toBe('')
+  })
+})
+
+describe('EMPTY_VALUE', () => {
+  it('is the em dash every formatter falls back to', () => {
+    expect(EMPTY_VALUE).toBe('—')
+    expect(formatDate(null)).toBe(EMPTY_VALUE)
+    expect(formatDateTime(undefined)).toBe(EMPTY_VALUE)
+    expect(formatDateTimeCompact('')).toBe(EMPTY_VALUE)
+    expect(formatElapsed('not a date')).toBe(EMPTY_VALUE)
   })
 })
 

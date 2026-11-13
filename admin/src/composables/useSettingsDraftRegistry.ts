@@ -11,7 +11,7 @@ import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import type { SettingSave } from '@/types/setting'
 
 /** What a draft hands the registry so the page can act on it. */
-export interface RegisteredDraft {
+interface RegisteredDraft {
   /** Whether the draft has an edit worth saving. */
   dirty: ComputedRef<boolean>
   /** True while the draft's own save is in flight. */

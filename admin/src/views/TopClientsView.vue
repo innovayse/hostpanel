@@ -21,6 +21,7 @@ import type { ReportTopClient } from '@/types/reporttopclient'
 import { UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 import { UiAlign } from '@/utils/ui/table'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -45,7 +46,7 @@ const formatMoney = (amount: number): string => formatCurrencyCode(amount, curre
 
 /** Headline figures: the leader's income, the total of the ranked clients and how many were ranked. */
 const stats = computed<ReportStat[]>(() => [
-  { key: 'leader', label: t('reports.topClients.leader'), value: rows.value[0]?.clientName ?? '—', hint: rows.value[0] ? formatMoney(rows.value[0].balance) : undefined },
+  { key: 'leader', label: t('reports.topClients.leader'), value: rows.value[0]?.clientName ?? EMPTY_VALUE, hint: rows.value[0] ? formatMoney(rows.value[0].balance) : undefined },
   { key: 'total', label: t('reports.topClients.totalIncome'), value: formatMoney(rows.value.reduce((sum, row) => sum + row.balance, 0)) },
   { key: 'clients', label: t('reports.topClients.rankedClients'), value: rows.value.length },
 ])

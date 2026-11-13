@@ -73,7 +73,7 @@ describe('UiRowActions', () => {
   it('closes the menu on Escape', async () => {
     const wrapper = mountIt()
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
-    await document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    wrapper.get('[data-testid="row-actions-menu"]').element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
     wrapper.unmount()
@@ -98,15 +98,17 @@ describe('UiRowActions', () => {
     wrapper.unmount()
   })
 
-  it('closes the menu when something scrolls, because a fixed menu would be left behind', async () => {
+  it('places the menu again when something scrolls, because a fixed menu would be left behind', async () => {
     const wrapper = mountIt()
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
     await nextTick()
+    const menu = wrapper.get<HTMLElement>('[data-testid="row-actions-menu"]').element
+    menu.style.removeProperty('--fp-right')
 
     window.dispatchEvent(new Event('scroll'))
-    await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+    expect(menu.style.getPropertyValue('--fp-right')).not.toBe('')
+    expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -144,8 +146,8 @@ describe('UiRowActions', () => {
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
 
     const menu = wrapper.get('[data-testid="row-actions-menu"]')
-    expect((menu.element as HTMLElement).style.getPropertyValue('--ra-right')).not.toBe('')
-    expect(menu.classes()).toEqual(expect.arrayContaining(['right-[var(--ra-right)]', 'top-[var(--ra-top,auto)]', 'bottom-[var(--ra-bottom,auto)]']))
+    expect((menu.element as HTMLElement).style.getPropertyValue('--fp-right')).not.toBe('')
+    expect(menu.classes()).toEqual(expect.arrayContaining(['right-[var(--fp-right,auto)]', 'top-[var(--fp-top,auto)]', 'bottom-[var(--fp-bottom,auto)]']))
     wrapper.unmount()
   })
 
@@ -184,15 +186,17 @@ describe('UiRowActions', () => {
       expect(remove.mock.calls.filter(([type]) => type === 'scroll' || type === 'resize').map(([type]) => type)).toEqual(['scroll', 'resize'])
     })
 
-    it('closes the menu on resize', async () => {
+    it('places the menu again on resize and keeps it open', async () => {
       const wrapper = mountIt()
       await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
       await nextTick()
+      const menu = wrapper.get<HTMLElement>('[data-testid="row-actions-menu"]').element
+      menu.style.removeProperty('--fp-right')
 
       window.dispatchEvent(new Event('resize'))
-      await nextTick()
 
-      expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+      expect(menu.style.getPropertyValue('--fp-right')).not.toBe('')
+      expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(true)
       wrapper.unmount()
     })
   })
@@ -256,9 +260,9 @@ describe('UiRowActions', () => {
       await nextTick()
       const style = (wrapper.get('[data-testid="row-actions-menu"]').element as HTMLElement).style
       return {
-        top: style.getPropertyValue('--ra-top'),
-        right: style.getPropertyValue('--ra-right'),
-        bottom: style.getPropertyValue('--ra-bottom'),
+        top: style.getPropertyValue('--fp-top'),
+        right: style.getPropertyValue('--fp-right'),
+        bottom: style.getPropertyValue('--fp-bottom'),
         wrapper,
       }
     }
@@ -472,7 +476,7 @@ describe('UiRowActions', () => {
 
       await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
       await flushPromises()
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
+      document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
       expect(document.activeElement).toBe(wrapper.get('[data-testid="action-view"]').element)
       wrapper.unmount()
     })

@@ -14,7 +14,7 @@ import { useClientUsersStore } from '@/stores/clientUsers'
 import { ClientPermission, PERMISSION_LABELS } from '@/types/clientuser'
 import type { ClientUserItem, UserSearchHit } from '@/types/clientuser'
 import type { UserDetail } from '@/types/useraccount'
-import { formatDate as sharedFormatDate } from '@/lib/format'
+import { formatDate as sharedFormatDate, initialsOf } from '@/lib/format'
 import ClientUserPicker from '@/components/clients/ClientUserPicker.vue'
 import UserFormModal from '@/components/clients/UserFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -188,7 +188,7 @@ const formatDate = (iso: string | null): string => sharedFormatDate(iso, t('clie
  * @param last - Last name.
  * @returns Two-letter initials string.
  */
-const getInitials = (first: string, last: string): string => `${first.charAt(0)}${last.charAt(0)}`.toUpperCase()
+const getInitials = (first: string, last: string): string => initialsOf(`${first} ${last}`)
 
 /**
  * Checks whether a permission flag is set in the new-user permissions value.

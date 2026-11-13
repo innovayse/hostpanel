@@ -3,14 +3,31 @@
  * compact support date-time, time of day, elapsed and relative time, and day-string helpers.
  */
 
+/** What every screen shows where a value or a date is missing or unreadable: one em dash, defined once. */
+export const EMPTY_VALUE = '—'
+
+/**
+ * The letters of an avatar for a name: the first letters of its first two words, or the first two
+ * letters of a single word.
+ *
+ * @param name - A person's name, or any label such as an email address.
+ * @returns Up to two upper-case letters; empty for a blank name.
+ */
+export const initialsOf = (name: string): string => {
+  const trimmed = name.trim()
+  const [first = '', second = ''] = trimmed.split(/\s+/)
+  const letters = second === '' ? trimmed.slice(0, 2) : `${first.charAt(0)}${second.charAt(0)}`
+  return letters.toUpperCase()
+}
+
 /**
  * Formats an ISO date string as a localized date.
  *
  * @param iso - ISO 8601 date string, null, or undefined.
- * @param fallback - Text to return if the date is invalid. Defaults to '\u2014'.
+ * @param fallback - Text to return if the date is invalid. Defaults to {@link EMPTY_VALUE}.
  * @returns Formatted date string or the fallback.
  */
-export const formatDate = (iso: string | null | undefined, fallback = '\u2014'): string => {
+export const formatDate = (iso: string | null | undefined, fallback = EMPTY_VALUE): string => {
   if (!iso) {
     return fallback
   }
@@ -72,10 +89,10 @@ export const toIsoDay = (date: Date): string => date.toISOString().split('T')[0]
  * Formats an ISO timestamp as a localized date with the time of day.
  *
  * @param iso - ISO 8601 timestamp, null, or undefined.
- * @param fallback - Text to return if the timestamp is invalid. Defaults to an em dash.
+ * @param fallback - Text to return if the timestamp is invalid. Defaults to {@link EMPTY_VALUE}.
  * @returns For example "14/10/2026, 09:30", or the fallback.
  */
-export const formatDateTime = (iso: string | null | undefined, fallback = '—'): string => {
+export const formatDateTime = (iso: string | null | undefined, fallback = EMPTY_VALUE): string => {
   if (!iso) {
     return fallback
   }
@@ -85,9 +102,6 @@ export const formatDateTime = (iso: string | null | undefined, fallback = '—')
   }
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
-
-/** What is shown for a missing or unreadable date in the support formatters. */
-const NO_DATE = '—'
 
 /** Seconds in a day. */
 const DAY_SECONDS = 86400
@@ -121,11 +135,11 @@ const pad = (value: number): string => String(value).padStart(2, '0')
  */
 export const formatDateTimeCompact = (iso: string | null | undefined): string => {
   if (!iso) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
@@ -168,11 +182,11 @@ export const formatTime = (moment: number | undefined, locale: string): string =
  */
 export const formatElapsed = (iso: string | null | undefined, now: number = Date.now()): string => {
   if (!iso) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   const then = new Date(iso).getTime()
   if (Number.isNaN(then)) {
-    return NO_DATE
+    return EMPTY_VALUE
   }
   let remaining = Math.max(0, Math.floor((now - then) / 1000))
   const days = Math.floor(remaining / DAY_SECONDS)

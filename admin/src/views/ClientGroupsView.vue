@@ -31,6 +31,7 @@ import type { ClientGroup, ClientGroupPayload } from '@/types/clientgroup'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -216,7 +217,7 @@ onMounted(async () => {
         <UiTableBody divided>
           <UiTableRow v-for="group in store.groups" :key="group.id" data-testid="client-group-row">
             <UiTableCell><ClientGroupBadge :name="group.name" :color="group.color" /></UiTableCell>
-            <UiTableCell muted>{{ group.description || '—' }}</UiTableCell>
+            <UiTableCell muted>{{ group.description || EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>{{ group.discountPercent }}%</UiTableCell>
             <UiTableCell muted>{{ group.clientCount }}</UiTableCell>
             <UiTableCell>

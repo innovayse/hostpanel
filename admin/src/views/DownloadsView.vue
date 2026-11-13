@@ -48,6 +48,7 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -625,7 +626,7 @@ onMounted(() => {
                   </UiButton>
                 </UiStack>
               </UiTableCell>
-              <UiTableCell muted>{{ category.description || '—' }}</UiTableCell>
+              <UiTableCell muted>{{ category.description || EMPTY_VALUE }}</UiTableCell>
               <UiTableCell>
                 <UiBadge v-if="category.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
               </UiTableCell>
@@ -670,7 +671,7 @@ onMounted(() => {
                   </UiButton>
                 </UiStack>
               </UiTableCell>
-              <UiTableCell muted>{{ download.description || '—' }}</UiTableCell>
+              <UiTableCell muted>{{ download.description || EMPTY_VALUE }}</UiTableCell>
               <UiTableCell numeric muted>{{ download.downloadCount }}</UiTableCell>
               <UiTableCell>
                 <UiStack direction="row" gap="xs" wrap>

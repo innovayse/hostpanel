@@ -104,7 +104,7 @@
     <PackageVersion Include="WolverineFx.Postgresql" Version="6.61.0" />
     <!--
       The Roslyn compiler Wolverine 6 split out of core. TypeLoadMode.Dynamic (Development and the
-      Testing environment of the integration suite) compiles handler chains at runtime and refuse to start
+      Testing environment of the integration suite) compiles handler chains at runtime and refuses to start
       without it; Production runs the pre-generated Static code and never calls it. The API project leaves
       the reference out of the production image's publish with OmitRuntimeCompilation (backend/Dockerfile).
     -->

@@ -29,6 +29,7 @@ import type { UserDetail } from '@/types/useraccount'
 import { ClientPermission, PERMISSION_LABELS } from '@/types/clientuser'
 import { LANGUAGE_OPTIONS } from '@/lib/constants'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -251,8 +252,8 @@ const confirmDelete = (): void => {
             <UiTableRow v-for="acc in user.accounts" :key="acc.clientId">
               <UiTableCell muted>{{ acc.clientId }}</UiTableCell>
               <UiTableCell>{{ acc.firstName }} {{ acc.lastName }}</UiTableCell>
-              <UiTableCell muted>{{ acc.companyName || '—' }}</UiTableCell>
-              <UiTableCell :muted="!acc.isOwner">{{ acc.isOwner ? '✓' : '—' }}</UiTableCell>
+              <UiTableCell muted>{{ acc.companyName || EMPTY_VALUE }}</UiTableCell>
+              <UiTableCell :muted="!acc.isOwner">{{ acc.isOwner ? '✓' : EMPTY_VALUE }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>

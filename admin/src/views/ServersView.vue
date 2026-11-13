@@ -55,6 +55,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
+import { EMPTY_VALUE } from '@/lib/format'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -245,7 +246,7 @@ const stateOf = (server: ServerDto): { tone: UiTone; key: string } => {
  */
 const accountsLabel = (server: ServerDto): string => {
   if (server.accountsCount === null) {
-    return '—'
+    return EMPTY_VALUE
   }
   return server.limits.maxAccounts === null ? `${server.accountsCount}` : `${server.accountsCount} / ${server.limits.maxAccounts}`
 }
@@ -511,7 +512,7 @@ onMounted(loadAll)
                     <UiBadge v-if="server.limits.isDefault" tone="warning" small>{{ t('servers.servers.default') }}</UiBadge>
                     <UiBadge v-if="server.limits.isDisabled" tone="neutral" small>{{ t('servers.servers.disabled') }}</UiBadge>
                   </UiStack>
-                  <UiText tone="muted" size="sm" class="font-mono">{{ server.endpoint.ipAddress ?? '—' }}</UiText>
+                  <UiText tone="muted" size="sm" class="font-mono">{{ server.endpoint.ipAddress ?? EMPTY_VALUE }}</UiText>
                 </UiStack>
                 <UiRowActions :actions="serverActions(server)" :testid="`server-actions-${server.id}`" />
               </UiStack>
@@ -589,7 +590,7 @@ onMounted(loadAll)
               <UiTableCell>{{ group.name }}</UiTableCell>
               <UiTableCell muted>{{ FILL_TYPE_LABELS[group.fillType] }}</UiTableCell>
               <UiTableCell muted>
-                {{ group.servers.length > 0 ? group.servers.map(s => s.name).join(', ') : '—' }}
+                {{ group.servers.length > 0 ? group.servers.map(s => s.name).join(', ') : EMPTY_VALUE }}
               </UiTableCell>
               <UiTableCell actions>
                 <UiRowActions :actions="serverGroupActions(group)" :testid="`server-group-actions-${group.id}`" />

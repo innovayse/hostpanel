@@ -20,6 +20,7 @@ import { useTestimonialsStore } from '@/stores/testimonials'
 import type { Testimonial } from '@/types/testimonial'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -66,7 +67,7 @@ const authorLine = (item: Testimonial): string =>
  * @param item - The testimonial shown in the row.
  * @returns The quote, or a dash when no translation is stored.
  */
-const quoteOf = (item: Testimonial): string => displayTranslation(item.translations)?.quote ?? '—'
+const quoteOf = (item: Testimonial): string => displayTranslation(item.translations)?.quote ?? EMPTY_VALUE
 
 /** Route of the create page, opened by the Add link. */
 const createRoute = createPath(AppRoute.StorefrontTestimonials)

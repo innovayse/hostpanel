@@ -7,6 +7,7 @@ import {
   buildPaletteEntries,
   filterPaletteEntries,
   MAX_RECENT,
+  clearRecent,
   PaletteGroup,
   readRecent,
   rememberRecent,
@@ -120,10 +121,39 @@ describe('recent entries', () => {
     expect(localStorage.length).toBe(0)
   })
 
-  it('reads corrupt or non-list storage as empty', () => {
-    localStorage.setItem('hostpanel.admin.commandPalette.recent.a@x.test', '{oops')
+  it("never writes the viewer's email into the storage key", () => {
+    rememberRecent('a@x.test', [], '/a')
+
+    const keys = Object.keys(localStorage)
+    expect(keys).toHaveLength(1)
+    expect(keys[0]).not.toContain('a@x.test')
+    expect(keys[0]).not.toContain('@')
+  })
+
+  it("forgets one viewer's history and leaves another's", () => {
+    rememberRecent('a@x.test', [], '/a')
+    rememberRecent('b@x.test', [], '/b')
+
+    clearRecent('a@x.test')
+
     expect(readRecent('a@x.test')).toEqual([])
-    localStorage.setItem('hostpanel.admin.commandPalette.recent.a@x.test', '{"a":1}')
+    expect(readRecent('b@x.test')).toEqual(['/b'])
+  })
+
+  it('clears nothing for nobody', () => {
+    rememberRecent('a@x.test', [], '/a')
+
+    clearRecent('')
+
+    expect(readRecent('a@x.test')).toEqual(['/a'])
+  })
+
+  it('reads corrupt or non-list storage as empty', () => {
+    rememberRecent('a@x.test', [], '/a')
+    const key = Object.keys(localStorage)[0] ?? ''
+    localStorage.setItem(key, '{oops')
+    expect(readRecent('a@x.test')).toEqual([])
+    localStorage.setItem(key, '{"a":1}')
     expect(readRecent('a@x.test')).toEqual([])
   })
 
@@ -137,5 +167,13 @@ describe('recent entries', () => {
 
     expect(readRecent('a@x.test')).toEqual([])
     expect(rememberRecent('a@x.test', [], '/a')).toEqual(['/a'])
+  })
+
+  it('survives a storage that cannot be cleared', () => {
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+
+    expect(() => clearRecent('a@x.test')).not.toThrow()
   })
 })

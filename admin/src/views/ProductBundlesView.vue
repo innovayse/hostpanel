@@ -36,6 +36,7 @@ import { BundleDiscountType } from '@/types/productenums'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -90,7 +91,7 @@ const loadAll = async (): Promise<void> => {
 const domainLabel = (bundle: ProductBundle): string =>
   bundle.includesDomain && bundle.domainYears !== null
     ? t('settings.productBundles.years', { count: bundle.domainYears }, bundle.domainYears)
-    : '—'
+    : EMPTY_VALUE
 
 /**
  * Words the discount of a bundle.
@@ -108,7 +109,7 @@ const discountLabel = (bundle: ProductBundle): string => {
         currency: bundle.discountCurrency ?? '',
       })
     default:
-      return '—'
+      return EMPTY_VALUE
   }
 }
 

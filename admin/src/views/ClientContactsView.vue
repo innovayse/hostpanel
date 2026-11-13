@@ -28,6 +28,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -255,7 +256,7 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
           <UiTableRow v-for="contact in contacts" :key="contact.id" hoverable>
             <UiTableCell>{{ contact.firstName }} {{ contact.lastName }}</UiTableCell>
             <UiTableCell muted>{{ contact.email }}</UiTableCell>
-            <UiTableCell muted>{{ contact.phone || '—' }}</UiTableCell>
+            <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
             </UiTableCell>

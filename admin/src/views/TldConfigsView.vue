@@ -38,7 +38,7 @@ import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { formatRelativeFromNow } from '@/lib/format'
+import { formatRelativeFromNow, EMPTY_VALUE } from '@/lib/format'
 import { formatMarginPercent, formatTldPrice, marginPercentTone } from '@/lib/tldPricing'
 import { useTldConfigsStore } from '@/stores/tldConfigs'
 import { pageFirstRow, pageLastRow, pageSlice } from '@/lib/paging'
@@ -394,7 +394,7 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
                 <UiBadge v-for="category in item.categories" :key="category" small>
                   {{ category }}
                 </UiBadge>
-                <UiText v-if="item.categories.length === 0" tone="muted" size="md">—</UiText>
+                <UiText v-if="item.categories.length === 0" tone="muted" size="md">{{ EMPTY_VALUE }}</UiText>
               </UiStack>
             </UiTableCell>
             <UiTableCell muted>{{ lastSyncedText(item.lastSyncedAt) }}</UiTableCell>

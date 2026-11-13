@@ -1,7 +1,8 @@
 /**
  * The command palette's pure logic: the entries it offers (built from the sidebar's own navigation
  * definition plus a short list of create actions), the search over them, the split of a label around
- * the matched text, and the per-viewer list of recently opened entries kept in `localStorage`.
+ * the matched text, and the per-viewer list of recently opened entries kept in `localStorage` under a key that does not carry the
+ * viewer's email.
  *
  * Nothing here touches Vue or the router, so it is unit-tested on plain values.
  */
@@ -34,7 +35,7 @@ export interface PaletteEntry {
 }
 
 /** A piece of a label, either matched by the search or not. */
-export interface LabelPart {
+interface LabelPart {
   /** The text of the piece. */
   text: string
   /** Whether the search matched this piece. */
@@ -63,8 +64,34 @@ const PALETTE_ACTIONS: readonly PaletteAction[] = [
 /** Most recently opened entries the palette remembers per viewer. */
 export const MAX_RECENT = 5
 
-/** Prefix of the `localStorage` key holding a viewer's recent paths; the viewer's email follows. */
+/** Prefix of the `localStorage` key holding a viewer's recent paths; a hash of the viewer follows. */
 const RECENT_KEY_PREFIX = 'hostpanel.admin.commandPalette.recent.'
+
+/** Radix of the written hash: base 36 keeps the key short. */
+const HASH_RADIX = 36
+
+/**
+ * The `localStorage` key a viewer's recent paths live under. The key holds a hash of the viewer
+ * rather than the email itself, so the address is never written into browser storage as a key; the
+ * hash is a cyrb53 digest (synchronous, unlike `crypto.subtle`), which separates accounts on one
+ * browser and is not meant as a secret.
+ *
+ * @param viewer - The signed-in viewer's email.
+ * @returns The storage key for that viewer.
+ */
+const recentKey = (viewer: string): string => {
+  let first = 0xdeadbeef
+  let second = 0x41c6ce57
+  for (let index = 0; index < viewer.length; index += 1) {
+    const code = viewer.charCodeAt(index)
+    first = Math.imul(first ^ code, 2654435761)
+    second = Math.imul(second ^ code, 1597334677)
+  }
+  first = Math.imul(first ^ (first >>> 16), 2246822507) ^ Math.imul(second ^ (second >>> 13), 3266489909)
+  second = Math.imul(second ^ (second >>> 16), 2246822507) ^ Math.imul(first ^ (first >>> 13), 3266489909)
+  const digest = 4294967296 * (2097151 & second) + (first >>> 0)
+  return RECENT_KEY_PREFIX + digest.toString(HASH_RADIX)
+}
 
 /**
  * Builds every entry the palette can open: the create actions, then each top-level page of the
@@ -156,7 +183,7 @@ export const splitLabel = (label: string, query: string): LabelPart[] => {
  * Reads the paths a viewer opened lately, newest first. Storage that is unavailable or holds
  * something unexpected reads as an empty list.
  *
- * @param viewer - The signed-in viewer's email; blank means nobody is remembered.
+ * @param viewer - The signed-in viewer's email, hashed into the key; blank means nobody is remembered.
  * @returns The recent paths, at most {@link MAX_RECENT}.
  */
 export const readRecent = (viewer: string): string[] => {
@@ -164,7 +191,7 @@ export const readRecent = (viewer: string): string[] => {
     return []
   }
   try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(RECENT_KEY_PREFIX + viewer) ?? '[]')
+    const parsed: unknown = JSON.parse(localStorage.getItem(recentKey(viewer)) ?? '[]')
     if (!Array.isArray(parsed)) {
       return []
     }
@@ -189,9 +216,26 @@ export const rememberRecent = (viewer: string, current: readonly string[], path:
     return next
   }
   try {
-    localStorage.setItem(RECENT_KEY_PREFIX + viewer, JSON.stringify(next))
+    localStorage.setItem(recentKey(viewer), JSON.stringify(next))
   } catch {
     // A full or blocked store only loses the memory of this visit.
   }
   return next
+}
+
+/**
+ * Forgets the paths a viewer opened lately; called on sign-out so the history does not outlive the
+ * session on a shared browser. A blank viewer, or a blocked store, has nothing to forget.
+ *
+ * @param viewer - The email of the viewer who is signing out; blank clears nothing.
+ */
+export const clearRecent = (viewer: string): void => {
+  if (viewer === '') {
+    return
+  }
+  try {
+    localStorage.removeItem(recentKey(viewer))
+  } catch {
+    // A blocked store holds nothing this code could have written.
+  }
 }

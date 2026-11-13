@@ -46,6 +46,7 @@ import { AppRoute } from '@/lib/routes'
 import { useSettingsStore } from '@/stores/settings'
 import type { Setting, SettingSaveResult } from '@/types/setting'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -261,7 +262,7 @@ const saveRow = async (setting: Setting): Promise<void> => {
                 </UiStack>
                 <SettingOutcome :outcome="rowOutcomes[setting.id] ?? null" :data-testid="`setting-outcome-${setting.id}`" />
               </UiTableCell>
-              <UiTableCell muted>{{ setting.description ?? '—' }}</UiTableCell>
+              <UiTableCell muted>{{ setting.description ?? EMPTY_VALUE }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>

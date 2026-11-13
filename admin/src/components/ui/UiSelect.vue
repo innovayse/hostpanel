@@ -13,6 +13,8 @@
  * the owner for matches through `search` (the empty term on open, then the typed term once typing
  * pauses) and shows `loading` while they are on the way. A picked option is remembered, so the
  * trigger keeps its label when the owner replaces the options with the next search.
+ * The list is drawn in the page body (a teleport) and placed under the trigger with fixed positioning, because the
+ * frosted cards of a page create stacking contexts and would paint a list rendered in place under the next card.
  * `data-testid` and classes land on the root element.
  */
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, useId } from 'vue'
@@ -20,6 +22,8 @@ import { useI18n } from 'vue-i18n'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { useDropdown } from '@/composables/useDropdown'
+import { useFloatingPlace } from '@/composables/useFloatingPlace'
+import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { fieldInvalidClasses, fieldSurfaceClasses } from '@/utils/ui/input'
 import { Key } from '@/utils/ui/keys'
@@ -93,7 +97,16 @@ const emit = defineEmits<{
 }>()
 
 /** Open flag, outside-pointer and Escape handling shared with the other floating lists. */
-const { open, root, trigger, show, hide, onEscape } = useDropdown()
+const { open, root, trigger, panel, show, hide, onEscape } = useDropdown()
+
+/** Free room below the trigger, in pixels, under which the list (a filter field and about eight rows) opens above it. */
+const LIST_MIN_ROOM_PX = 300
+
+/** Gap between the trigger and the list, in pixels. */
+const LIST_GAP_PX = 6
+
+// The list is drawn in the page body, so no frosted card after the trigger can paint over it.
+useFloatingPlace(trigger, panel, open, { align: FloatingAlign.Start, minRoom: LIST_MIN_ROOM_PX, gap: LIST_GAP_PX })
 
 /** Id of the listbox, from which every option id derives. */
 const listId = `${useId()}-list`
@@ -145,14 +158,14 @@ const triggerSizeClasses = computed<string>(() => {
 /**
  * The list's frame: the default, or a softer inset one when compact.
  *
- * @returns The panel's position, border, surface and width classes.
+ * @returns The panel's fixed place, border, surface and width classes (the width of the trigger unless `wide`).
  */
 const panelClasses = computed<string>(() => {
   // A wide list is at least 18rem, but never wider than the screen less a margin, so on a phone it cannot reach past the page edge and widen the page.
-  const width = props.wide ? 'min-w-[18rem] max-w-[calc(100vw-4rem)]' : 'w-full'
+  const width = props.wide ? 'min-w-[18rem] max-w-[calc(100vw-4rem)]' : 'w-[var(--fp-width)]'
   return props.compact
-    ? `absolute z-50 mt-1 min-w-[5.5rem] origin-top overflow-hidden rounded-xl border border-border bg-surface-card p-1 shadow-lg shadow-black/20 ${width}`
-    : `absolute z-50 mt-1.5 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`
+    ? `${FLOATING_PLACE_CLASSES} z-50 min-w-[5.5rem] origin-top overflow-hidden rounded-xl border border-border bg-surface-card p-1 shadow-lg shadow-black/20 ${width}`
+    : `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`
 })
 
 /**
@@ -423,81 +436,85 @@ onUnmounted(cancelSearchTimer)
       </svg>
     </button>
 
-    <!-- Dropdown panel -->
-    <UiTransition :kind="UiTransitionKind.Dropdown">
-      <div
-        v-if="open"
-        data-testid="ui-select-panel"
-        :class="panelClasses"
-      >
-        <!-- Filter field -->
-        <div v-if="hasSearch" class="p-1.5 border-b border-border">
-          <input
-            ref="searchInput"
-            v-model="search"
-            type="text"
-            role="combobox"
-            aria-autocomplete="list"
-            aria-expanded="true"
-            :aria-controls="listId"
-            :aria-activedescendant="activeId"
-            :aria-label="t('shared.search')"
-            :placeholder="t('shared.search')"
-            data-testid="ui-select-search"
-            class="w-full h-8 px-3 text-[0.8125rem] rounded-[9px]"
-            :class="fieldSurfaceClasses"
-            @keydown="onKeydown"
-          >
-        </div>
-
+    <!-- Dropdown panel: in the page body, so no card around the trigger can paint over it -->
+    <Teleport to="body">
+      <UiTransition :kind="UiTransitionKind.Dropdown">
         <div
-          :id="listId"
-          role="listbox"
-          class="max-h-56 overflow-y-auto"
-          :class="compact ? 'flex flex-col gap-0.5' : 'py-1'"
+          v-if="open"
+          ref="panel"
+          data-testid="ui-select-panel"
+          :class="panelClasses"
+          @mousedown.stop
         >
-          <div
-            v-for="(opt, index) in visibleOptions"
-            :id="optionDomId(listId, index)"
-            :key="String(opt.value)"
-            :ref="(el) => setOptionEl(index, el)"
-            role="option"
-            data-testid="ui-select-option"
-            :aria-selected="opt.value === props.modelValue"
-            class="w-full flex cursor-pointer items-center justify-between transition-colors duration-150"
-            :class="optionClasses(opt.value === props.modelValue, index === activeIndex, Boolean(opt.muted))"
-            @mousedown.prevent.stop="select(opt)"
-            @mousemove="activeIndex = index"
-          >
-            <span class="flex min-w-0 flex-1 flex-col">
-              <span v-if="opt.caption" class="truncate text-[0.68rem] font-semibold opacity-70">{{ opt.caption }}</span>
-              <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
-              <span v-if="opt.description" class="truncate text-[0.75rem] opacity-70">{{ opt.description }}</span>
-            </span>
-            <svg
-              v-if="opt.value === props.modelValue"
-              class="w-3.5 h-3.5 shrink-0 ml-2"
-              :class="compact ? 'text-primary-400 light:text-primary-700' : 'text-surface-base'"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              aria-hidden="true"
+          <!-- Filter field -->
+          <div v-if="hasSearch" class="p-1.5 border-b border-border">
+            <input
+              ref="searchInput"
+              v-model="search"
+              type="text"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="true"
+              :aria-controls="listId"
+              :aria-activedescendant="activeId"
+              :aria-label="t('shared.search')"
+              :placeholder="t('shared.search')"
+              data-testid="ui-select-search"
+              class="w-full h-8 px-3 text-[0.8125rem] rounded-[9px]"
+              :class="fieldSurfaceClasses"
+              @keydown="onKeydown"
             >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
           </div>
-        </div>
 
-        <!-- Loading and empty rows sit beside the listbox, not in it: they are not options -->
-        <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" class="px-3 py-2">
-          <UiSkeleton :lines="3" />
-          <span class="sr-only">{{ t('ui.loading') }}</span>
+          <div
+            :id="listId"
+            role="listbox"
+            class="max-h-56 overflow-y-auto"
+            :class="compact ? 'flex flex-col gap-0.5' : 'py-1'"
+          >
+            <div
+              v-for="(opt, index) in visibleOptions"
+              :id="optionDomId(listId, index)"
+              :key="String(opt.value)"
+              :ref="(el) => setOptionEl(index, el)"
+              role="option"
+              data-testid="ui-select-option"
+              :aria-selected="opt.value === props.modelValue"
+              class="w-full flex cursor-pointer items-center justify-between transition-colors duration-150"
+              :class="optionClasses(opt.value === props.modelValue, index === activeIndex, Boolean(opt.muted))"
+              @mousedown.prevent.stop="select(opt)"
+              @mousemove="activeIndex = index"
+            >
+              <span class="flex min-w-0 flex-1 flex-col">
+                <span v-if="opt.caption" class="truncate text-[0.68rem] font-semibold opacity-70">{{ opt.caption }}</span>
+                <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
+                <span v-if="opt.description" class="truncate text-[0.75rem] opacity-70">{{ opt.description }}</span>
+              </span>
+              <svg
+                v-if="opt.value === props.modelValue"
+                class="w-3.5 h-3.5 shrink-0 ml-2"
+                :class="compact ? 'text-primary-400 light:text-primary-700' : 'text-surface-base'"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Loading and empty rows sit beside the listbox, not in it: they are not options -->
+          <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" class="px-3 py-2">
+            <UiSkeleton :lines="3" />
+            <span class="sr-only">{{ t('ui.loading') }}</span>
+          </div>
+          <p v-else-if="visibleOptions.length === 0" role="status" data-testid="ui-select-empty" class="px-3 py-2 text-[0.82rem] text-text-secondary">
+            {{ emptyText }}
+          </p>
         </div>
-        <p v-else-if="visibleOptions.length === 0" role="status" data-testid="ui-select-empty" class="px-3 py-2 text-[0.82rem] text-text-secondary">
-          {{ emptyText }}
-        </p>
-      </div>
-    </UiTransition>
+      </UiTransition>
+    </Teleport>
   </div>
 </template>

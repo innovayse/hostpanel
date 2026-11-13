@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { useServicesStore } from '@/stores/services'
 import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
-import { formatDate } from '@/lib/format'
+import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import type { ServiceListItem } from '@/types/service'
 import AddExistingServiceModal from '@/components/clients/AddExistingServiceModal.vue'
@@ -162,7 +162,7 @@ onMounted(() => fetchServices())
           >
             <UiTableCell muted>{{ service.id }}</UiTableCell>
             <UiTableCell>{{ service.productName }}</UiTableCell>
-            <UiTableCell muted>{{ service.domain ?? '—' }}</UiTableCell>
+            <UiTableCell muted>{{ service.domain ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
             <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>

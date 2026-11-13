@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
+import { readRecent, rememberRecent } from '@/lib/commandPalette'
 import { AuthMode } from '@/types/auth'
 import { callOf, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
@@ -267,6 +268,19 @@ describe('authStore.checkSession', () => {
     expect(window.sessionStorage.getItem('hostpanel.plugin-chat-draft:acme:/chat:[]')).toBeNull()
     expect(window.sessionStorage.getItem('unrelated')).toBe('kept')
     window.sessionStorage.clear()
+  })
+
+  it("forgets the signed-out account's recent palette pages", async () => {
+    stubFetch(new Response(null, { status: 204 }))
+    const store = useAuthStore()
+    store.mode = AuthMode.Local
+    store.user = { email: 'a@b.c', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'] }
+    rememberRecent('a@b.c', [], '/clients')
+
+    await store.logout()
+
+    expect(readRecent('a@b.c')).toEqual([])
+    window.localStorage.clear()
   })
 })
 

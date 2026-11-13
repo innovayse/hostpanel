@@ -44,6 +44,7 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -396,7 +397,7 @@ onMounted(() => fetchBillableItems())
                 <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell>
                   <template v-if="item.invoiceId">#{{ item.invoiceId }}</template>
-                  <template v-else>&mdash;</template>
+                  <template v-else>{{ EMPTY_VALUE }}</template>
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>

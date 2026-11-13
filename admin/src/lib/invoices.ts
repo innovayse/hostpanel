@@ -9,7 +9,7 @@ import { InvoiceStatus } from '@/types/invoice'
 import type { Invoice } from '@/types/invoice'
 
 /** How many invoices of one kind a page holds and what they add up to, one sum per currency. */
-export interface InvoiceBucket {
+interface InvoiceBucket {
   /** Number of invoices in the bucket. */
   count: number
   /** Sum of the invoice totals, one entry per currency; empty when the bucket is. */
@@ -17,7 +17,7 @@ export interface InvoiceBucket {
 }
 
 /** The rollup of one page of invoices. */
-export interface InvoiceListSummary {
+interface InvoiceListSummary {
   /** Invoices that are paid. */
   paid: InvoiceBucket
   /** Invoices that are issued and still owed but not yet late (unpaid, payment pending). */

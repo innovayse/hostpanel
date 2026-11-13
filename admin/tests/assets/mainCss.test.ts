@@ -198,11 +198,13 @@ describe('copies of a token', () => {
   it('keeps the chart fallback palette and tick colour equal to the dark chart tokens', () => {
     const theme = readChartTheme()
     expect(theme.palette).toEqual([1, 2, 3, 4, 5, 6].map((index) => DARK[`chart-${index}`]))
+    expect(theme.grid).toBe(DARK['chart-grid'])
     expect(theme.tick).toBe(DARK['chart-tick'])
     expect(theme.barTop).toBe(DARK['chart-bar-top'])
     expect(theme.barBottom).toBe(DARK['chart-bar-bottom'])
     expect(theme.barDim).toBe(DARK['chart-bar-dim'])
     expect(theme.target).toBe(DARK['chart-target'])
+    expect(theme.barGlow).toBe(DARK['chart-bar-glow'])
   })
 
   it('keeps the browser chrome colour equal to the ground of each theme', () => {

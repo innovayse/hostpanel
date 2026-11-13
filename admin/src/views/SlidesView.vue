@@ -39,6 +39,7 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -295,7 +296,7 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
 
               <!-- Title -->
               <UiTableCell>
-                <UiText tone="primary" size="lg" class="font-medium">{{ slide.translations[0]?.title ?? '—' }}</UiText>
+                <UiText tone="primary" size="lg" class="font-medium">{{ slide.translations[0]?.title ?? EMPTY_VALUE }}</UiText>
                 <UiText v-if="slide.translations[0]?.tagline" tone="muted" size="xs">
                   {{ slide.translations[0].tagline }}
                 </UiText>

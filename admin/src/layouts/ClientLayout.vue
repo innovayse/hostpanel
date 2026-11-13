@@ -120,7 +120,8 @@ onMounted(() => {
     <template v-else>
       <!--
         The header card. The first row holds back, the avatar, the name block (name over status, group and company)
-        and export; on a phone the name block fills the row and export drops to a row of its own at the end. The key
+        and export; on a phone the name block is one line (name, status, then group and company wrapping after) and
+        export drops to a row of its own at the end. The key
         figures sit under it in a grid that is two columns wide on a phone.
       -->
       <UiCard padding="md" :aria-busy="store.current ? undefined : 'true'" :data-testid="store.current ? 'client-layout-header' : 'client-layout-loading'">
@@ -142,7 +143,8 @@ onMounted(() => {
                 <UiHeading :level="1" variant="section" class="min-w-0 break-words" data-testid="client-header-name">
                   {{ store.current.firstName }} {{ store.current.lastName }}
                 </UiHeading>
-                <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="sm" wrap>
+                <!-- On a phone the name block is one wrapping line, so this row steps aside (`contents`) and the status joins the name's line while the group and company wrap after it -->
+                <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="sm" wrap class="max-md:contents">
                   <UiBadge :tone="clientStatusTone(store.current.status)" small dot>{{ store.current.status }}</UiBadge>
                   <ClientGroupBadge
                     v-if="store.current.clientGroupName && store.current.clientGroupColor"

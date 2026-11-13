@@ -1,8 +1,10 @@
 /**
  * Unit tests for UiSelect: trigger label, ARIA roles, opening, picking, searching, the keyboard
- * contract, the empty and loading rows, remote lookups and the compact look for toolbars.
+ * contract, the empty and loading rows, remote lookups and the compact look for toolbars. The teleport is inlined
+ * unless a test says otherwise.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -52,7 +54,7 @@ interface SelectProps {
  * @returns The wrapper.
  */
 const mountSelect = (props: SelectProps) =>
-  mount(UiSelect, { props: { options, ...props }, attachTo: document.body, global: { plugins: [createTestI18n()] } })
+  mount(UiSelect, { props: { options, ...props }, attachTo: document.body, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
 /**
  * Presses a key on the element a reader's focus would be on.
@@ -435,7 +437,7 @@ describe('UiSelect', () => {
     const wrapper = mount(UiSelect, {
       props: { modelValue: 'a', options, wide: true },
       attrs: { 'data-testid': 'probe' },
-      global: { plugins: [createTestI18n()] },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
     })
 
     await wrapper.get('button').trigger('click')
@@ -473,7 +475,7 @@ describe('UiSelect', () => {
   it('puts the id on the trigger and flags it invalid', () => {
     const wrapper = mount(UiSelect, {
       props: { modelValue: 'a', options, id: 'method', invalid: true },
-      global: { plugins: [createTestI18n()] },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
     })
 
     expect(wrapper.get('button').attributes('id')).toBe('method')
@@ -503,5 +505,56 @@ describe('UiSelect', () => {
 
   it('keeps the full rounded trigger when not attached', () => {
     expect(track({ modelValue: 'a' }).get('button').classes()).toContain('rounded-control')
+  })
+
+  describe('list drawn in the page body', () => {
+    /**
+     * Mounts the select with the real teleport, so the list leaves the component the way it does in the app.
+     *
+     * @returns The wrapper.
+     */
+    const mountTeleported = (): VueWrapper => {
+      const wrapper = mount(UiSelect, { props: { modelValue: 'a', options }, attachTo: document.body, global: { plugins: [createTestI18n()] } })
+      mounted.push(wrapper)
+      return wrapper
+    }
+
+    it('puts the list in the body, fixed at its place, so no card around the trigger can paint over it', async () => {
+      const wrapper = mountTeleported()
+
+      await wrapper.get('button').trigger('click')
+
+      const panel = document.body.querySelector('[data-testid="ui-select-panel"]')
+      expect(panel).not.toBeNull()
+      expect(wrapper.element.contains(panel)).toBe(false)
+      expect(panel?.classList.contains('fixed')).toBe(true)
+      expect(panel?.classList.contains('absolute')).toBe(false)
+      expect(panel?.classList.contains('w-[var(--fp-width)]')).toBe(true)
+    })
+
+    it('stays open while the pointer goes down inside the list and closes when it goes down elsewhere', async () => {
+      const wrapper = mountTeleported()
+      await wrapper.get('button').trigger('click')
+
+      document.body.querySelector('[data-testid="ui-select-panel"]')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+      await nextTick()
+      expect(document.body.querySelector('[data-testid="ui-select-panel"]')).not.toBeNull()
+
+      document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+      await nextTick()
+      expect(document.body.querySelector('[data-testid="ui-select-panel"]')).toBeNull()
+    })
+
+    it('does not let a pointer-down in the list reach an enclosing picker that would close on it', async () => {
+      const wrapper = mountTeleported()
+      await wrapper.get('button').trigger('click')
+      const outer = vi.fn()
+      document.body.addEventListener('mousedown', outer)
+
+      document.body.querySelector('[data-testid="ui-select-panel"]')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+
+      expect(outer).not.toHaveBeenCalled()
+      document.body.removeEventListener('mousedown', outer)
+    })
   })
 })

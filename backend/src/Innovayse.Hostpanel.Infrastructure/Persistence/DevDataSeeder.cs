@@ -124,12 +124,17 @@ public sealed class DevDataSeeder
             var adminResult = await _userManager.CreateAsync(adminUser, _passwords.AdminPassword);
             if (!adminResult.Succeeded)
             {
+                // The account is not created, so there is nothing to grant a role to below; the next start retries.
+                _logger.LogWarning(
+                    "Dev admin user was not created: {Errors}",
+                    string.Join("; ", adminResult.Errors.Select(e => e.Description)));
                 adminUser = null;
             }
         }
 
-        // Granted through the store authorization and the setup check read, outside the creation branch:
-        // the grant is idempotent, so a dev database seeded before this ran heals on the next start.
+        // The role is granted through the subject role store, which authorization and the setup check read.
+        // It sits outside the creation branch because the grant is idempotent, so a dev database seeded
+        // before this ran heals on the next start.
         if (adminUser is not null)
         {
             await _roles.AddAsync(adminUser.Id, Role.Admin, ct);

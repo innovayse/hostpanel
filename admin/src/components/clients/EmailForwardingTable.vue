@@ -33,6 +33,7 @@ import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { EmailForwardingRuleItem } from '@/types/domain'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -328,7 +329,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
                 />
               </UiTableCell>
               <UiTableCell>
-                <UiText :tone="UiTextTone.Muted">&mdash;</UiText>
+                <UiText :tone="UiTextTone.Muted">{{ EMPTY_VALUE }}</UiText>
               </UiTableCell>
               <UiTableCell actions>
                 <UiStack direction="row" gap="xs" :justify="UiJustify.End" :align="UiAlignItems.Center">

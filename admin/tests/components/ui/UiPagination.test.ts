@@ -13,13 +13,13 @@ import { createTestI18n } from '../../helpers/i18n'
  * @returns The wrapper.
  */
 const mountPagination = (props: { page: number; total: number; pageSize: number; pageSizeOptions?: number[]; testid?: string }) =>
-  mount(UiPagination, { props, global: { plugins: [createTestI18n()] } })
+  mount(UiPagination, { props, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
 describe('UiPagination', () => {
   it('keeps its layout while loading, with a bar for the range and every control disabled', () => {
     const wrapper = mount(UiPagination, {
       props: { page: 1, total: 0, pageSize: 10, pageSizeOptions: [10, 20], loading: true },
-      global: { plugins: [createTestI18n()] },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
     })
 
     expect(wrapper.find('nav').exists()).toBe(true)

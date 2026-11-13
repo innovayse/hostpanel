@@ -37,6 +37,7 @@ import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
 
@@ -110,7 +111,7 @@ const otherCurrencyCodes = (product: Product): string[] =>
  * @param groupId - Product group ID.
  * @returns Group name, or a dash placeholder if not found.
  */
-const groupName = (groupId: number): string => store.productGroups.find((g) => g.id === groupId)?.name ?? '—'
+const groupName = (groupId: number): string => store.productGroups.find((g) => g.id === groupId)?.name ?? EMPTY_VALUE
 
 /**
  * Formats a price cell in the base currency. A product that does not sell a cycle in the base
@@ -121,7 +122,7 @@ const groupName = (groupId: number): string => store.productGroups.find((g) => g
  */
 const formatPrice = (amount: number | null): string => {
   if (amount === null) {
-    return '—'
+    return EMPTY_VALUE
   }
   const currency = baseCurrency.value
   if (!currency) {

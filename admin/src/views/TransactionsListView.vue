@@ -44,7 +44,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { TRANSACTION_METHOD_OPTIONS } from '@/lib/constants'
-import { formatDate, toIsoDay } from '@/lib/format'
+import { formatDate, toIsoDay, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { useTransactionsStore } from '@/stores/billingTransactions'
 import type { Transaction } from '@/types/transaction'
@@ -180,7 +180,7 @@ const shownTransactions = computed<Transaction[]>(() => store.transactions.filte
  * @param currency - ISO 4217 code the amount is in.
  * @returns The amount with its currency, or a dash for zero.
  */
-const cell = (value: number, currency: string): string => (value > 0 ? formatPlainAmount(value, currency) : '—')
+const cell = (value: number, currency: string): string => (value > 0 ? formatPlainAmount(value, currency) : EMPTY_VALUE)
 
 /**
  * Loads the page of the ledger named by the address.

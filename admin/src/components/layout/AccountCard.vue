@@ -15,6 +15,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
 import { useAuthStore } from '@/stores/auth'
+import { initialsOf } from '@/lib/format'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
@@ -42,13 +43,8 @@ const accountEmail = computed<string>(() => auth.user?.email ?? '')
 /** The role the account holds first, empty before the profile has loaded. */
 const roleLabel = computed<string>(() => auth.user?.roles[0] ?? '')
 
-/** The avatar's initials: the first letters of the first two words of the name, or two letters of a single word. */
-const initials = computed<string>(() => {
-  const words = accountLabel.value.split(/\s+/).filter((word) => word !== '')
-  const [first = '', second = ''] = words
-  const letters = second === '' ? accountLabel.value.slice(0, 2) : `${first.charAt(0)}${second.charAt(0)}`
-  return letters.toUpperCase()
-})
+/** The avatar's initials, taken from the name shown. */
+const initials = computed<string>(() => initialsOf(accountLabel.value))
 
 /**
  * Ends the session and returns to the sign-in screen.

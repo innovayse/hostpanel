@@ -330,4 +330,45 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    /// <summary>
+    /// The details page offers the newest update that runs on this host and names it as the latest, and offers none when
+    /// the only newer version needs a newer host (that version still says it is not compatible).
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnUpdate_IsOfferedOnlyWhenItRunsOnThisHostAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var fitting = $"test-fit-{Guid.NewGuid():N}";
+        var tooNew = $"test-toonew-{Guid.NewGuid():N}";
+        registry.Publish(fitting, "1.5.0", [1]);
+        registry.Publish(fitting, "2.0.0", [1], minHostVersion: "5.0.0");
+        registry.Publish(tooNew, "2.0.0", [1], minHostVersion: "5.0.0");
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry, hostVersion: "1.4.0");
+
+        try
+        {
+            foreach (var id in new[] { fitting, tooNew })
+            {
+                await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id));
+            }
+
+            var offered = await client.GetFromJsonAsync<JsonElement>(Route(fitting));
+            offered.GetProperty("updateAvailable").GetBoolean().Should().BeTrue();
+            offered.GetProperty("latestVersion").GetString().Should().Be("1.5.0");
+
+            var refused = await client.GetFromJsonAsync<JsonElement>(Route(tooNew));
+            refused.GetProperty("updateAvailable").GetBoolean().Should().BeFalse();
+            refused.GetProperty("latestVersion").GetString().Should().Be("2.0.0");
+            refused.GetProperty("versions")[0].GetProperty("compatible").GetBoolean().Should().BeFalse();
+        }
+        finally
+        {
+            foreach (var id in new[] { fitting, tooNew })
+            {
+                await client.DeleteAsync($"/api/admin/plugins/{id}");
+            }
+        }
+    }
 }

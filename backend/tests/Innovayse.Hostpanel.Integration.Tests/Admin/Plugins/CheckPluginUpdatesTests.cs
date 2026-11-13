@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
@@ -139,7 +141,8 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
 
     /// <summary>
     /// A plugin with a stored licence key is read again with it: the licensee's view of the newest version wins over the
-    /// anonymous one, and the key is sent. A plugin without a key is asked about without one.
+    /// anonymous one, and the key is sent. The version offered is the newest one in the version list this host is shown
+    /// (the fixture lists 3.0.0 only to a licensed caller). A plugin without a key is asked about without one.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -148,7 +151,8 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
         var registry = new FakePluginRegistryClient();
         var pluginId = $"test-lic-{Guid.NewGuid():N}";
         registry.Publish(pluginId, "1.5.0", [1]);
-        registry.Details[pluginId] = new Application.Admin.Plugins.Common.RegistryPluginDetails(
+        registry.LicensedVersions[pluginId] = [new RegistryPluginVersion("3.0.0", "1.0", 1, DateTimeOffset.UtcNow, PluginRegistryVersionStatus.Published, null, null, null, null, null, [], null, [])];
+        registry.Details[pluginId] = new RegistryPluginDetails(
             registry.Details[pluginId].Summary with { LatestVersion = "3.0.0" }, null, null, null, null, null, null, null);
         var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
 
@@ -174,10 +178,10 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
         }
     }
 
-    /// <summary>A plugin the registry does not show to the licensee keeps the answer it had and does not fail the check.</summary>
+    /// <summary>A plugin the registry does not show to the licensee is not offered an update, because its versions cannot be read, and does not fail the check.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task APluginTheRegistryHidesFromTheLicensee_KeepsItsAnswerAsync()
+    public async Task APluginTheRegistryHidesFromTheLicensee_IsNotOfferedAnUpdateAsync()
     {
         var registry = new FakePluginRegistryClient();
         var pluginId = $"test-lic-{Guid.NewGuid():N}";
@@ -194,7 +198,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var rows = await response.Content.ReadFromJsonAsync<List<JsonElement>>();
-            rows!.Single(u => u.GetProperty("id").GetString() == pluginId).GetProperty("latestVersion").GetString().Should().Be("1.5.0");
+            rows!.Select(u => u.GetProperty("id").GetString()).Should().NotContain(pluginId);
         }
         finally
         {
@@ -233,7 +237,8 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
 
             registry.PluginPageKeys[first].Should().Be("KEY-FIRST");
             registry.PluginPageKeys[second].Should().Be("KEY-SECOND");
-            registry.PluginPageKeys.ContainsKey(third).Should().BeFalse("a plugin without a key is not asked again");
+            registry.PluginPageKeys[third].Should().BeNull("a plugin without a key is asked about without one");
+            registry.GetPluginCount.Should().Be(3, "each plugin's page is read once, with or without a key");
         }
         finally
         {
@@ -242,6 +247,114 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
                 await client.DeleteAsync($"/api/admin/plugins/registry/{id}/licence");
                 await client.DeleteAsync($"/api/admin/plugins/{id}");
             }
+        }
+    }
+
+    /// <summary>
+    /// The registry's newest version needs a newer host: the update list offers the newest older version that runs on this
+    /// host, and offers nothing when no newer version runs on it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task OnlyAnUpdateThatRunsOnThisHost_IsOfferedAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var fitting = $"test-fit-{Guid.NewGuid():N}";
+        var tooNew = $"test-new-{Guid.NewGuid():N}";
+        registry.Publish(fitting, "1.5.0", [1]);
+        registry.Publish(fitting, "2.0.0", [1], minHostVersion: "5.0.0");
+        registry.Publish(tooNew, "2.0.0", [1], minHostVersion: "5.0.0");
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry, hostVersion: "1.4.0");
+
+        try
+        {
+            foreach (var id in new[] { fitting, tooNew })
+            {
+                (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id))).StatusCode.Should().Be(HttpStatusCode.OK);
+            }
+
+            var updates = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins/registry/updates");
+
+            updates!.Select(u => u.GetProperty("id").GetString()).Should().Contain(fitting).And.NotContain(tooNew);
+            updates!.Single(u => u.GetProperty("id").GetString() == fitting).GetProperty("latestVersion").GetString().Should().Be("1.5.0");
+        }
+        finally
+        {
+            foreach (var id in new[] { fitting, tooNew })
+            {
+                await client.DeleteAsync($"/api/admin/plugins/{id}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The registry cannot list the versions: no update is offered and the check still answers, and the registry is not asked
+    /// again for the other plugins of the same request.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task WhenTheRegistryCannotListVersions_NoUpdateIsOffered_AndItIsAskedOnceAsync()
+    {
+        var registry = new FakePluginRegistryClient { VersionsFailureCode = HostpanelErrorCodes.PLUGIN_REGISTRY_UNAVAILABLE };
+        var ids = new[] { $"test-down-a{Guid.NewGuid():N}", $"test-down-b{Guid.NewGuid():N}", $"test-down-c{Guid.NewGuid():N}" };
+        foreach (var id in ids)
+        {
+            registry.Publish(id, "2.0.0", [1]);
+        }
+
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        try
+        {
+            foreach (var id in ids)
+            {
+                (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id))).StatusCode.Should().Be(HttpStatusCode.OK);
+            }
+
+            var response = await client.GetAsync("/api/admin/plugins/registry/updates");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadFromJsonAsync<List<JsonElement>>())!.Select(u => u.GetProperty("id").GetString()).Should().NotContain(ids);
+            registry.ListVersionsCount.Should().Be(1);
+        }
+        finally
+        {
+            foreach (var id in ids)
+            {
+                await client.DeleteAsync($"/api/admin/plugins/{id}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A host only plugin is checked like the details page does: the installation is registered and verified first, then
+    /// the signed version list is asked for, and the update it shows is offered.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AHostOnlyPlugin_IsVerifiedBeforeTheSignedVersionListAsync()
+    {
+        var registry = new FakeRegistryServer();
+        using var host = new RegistryTestHost(factory, registry);
+        var client = await host.AdminClientAsync(factory);
+        var pluginId = $"test-reg-{Guid.NewGuid():N}";
+        registry.Offer(pluginId, "2.0.0", PluginSigningTestSeeds.SignedZip(pluginId), hostOnly: true);
+
+        try
+        {
+            (await PluginsTestSeeds.InstallAsync(client, PluginSigningTestSeeds.SignedZip(pluginId))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var updates = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins/registry/updates");
+
+            updates!.Single(u => u.GetProperty("id").GetString() == pluginId).GetProperty("latestVersion").GetString().Should().Be("2.0.0");
+            registry.Instances.Single().Verified.Should().BeTrue();
+            var paths = registry.Calls.Select(c => c.Target.Split('?')[0]).ToList();
+            paths.Should().ContainInOrder("/v1/instances", $"/v1/plugins/{pluginId}/versions");
+            registry.Calls.Single(c => c.Target.Split('?')[0] == $"/v1/plugins/{pluginId}/versions").IsSigned.Should().BeTrue();
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
         }
     }
 }

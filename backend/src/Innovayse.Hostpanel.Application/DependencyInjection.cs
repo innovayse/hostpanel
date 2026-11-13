@@ -103,6 +103,9 @@ public static class DependencyInjection
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();
         services.AddScoped<RegistryInstanceEnrollment>();
+        // The update a registry row offers for an installed plugin: only a version that runs on this host.
+        services.AddScoped<RegistryPluginReader>();
+        services.AddScoped<PluginUpdateOffer>();
 
         return services;
     }

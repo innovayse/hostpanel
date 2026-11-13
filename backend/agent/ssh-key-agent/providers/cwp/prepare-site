@@ -8,6 +8,8 @@
 # Exit: 0 done, 2 bad arguments, 3 the domain is not this account's (or no vhost/jail), 4/5 refused safely, other = failed.
 # Needs: CWP layout (/usr/local/apache, /opt/alt/php-fpm83), jailkit jail at /home/jail/<user>, mysql as root.
 set -euo pipefail
+# The agent runs helpers with PATH only; mysql reads root's client credentials from $HOME/.my.cnf.
+export HOME=/root
 U="${1:?user}"; DOM="${2:?domain}"
 [[ "$U" =~ ^[a-z][a-z0-9]{1,15}$ ]] || { echo "bad user" >&2; exit 2; }
 [[ "$DOM" =~ ^[a-z0-9.-]+$ ]] || { echo "bad domain" >&2; exit 2; }

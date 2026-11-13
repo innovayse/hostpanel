@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- SSH key agent 1.3.1: the CWP `prepare-site` helper sets `HOME=/root`. The agent runs helpers with `PATH` only, so `mysql` could not read root's client credentials and every site preparation through the agent failed with `site_prepare_failed`, while the same helper worked when run by hand.
+
 ### Added
 
 - SSH key agent 1.3.0: an opt-in `prepare-site` operation (`site_prepare_command` in `agent.conf`, empty by default) runs a provider helper as root that prepares one account's own domain for Innovayse Sites deploys. The CWP helper (`providers/cwp/prepare-site`) sets up a php-fpm 8.3 pool with the OPcache and realpath settings a symlink-switch deploy needs behind Apache, the vhost handler and CWP's own record of it, a database, the deploy settings file, `public_html -> current/public` and PHP in the jail. It is idempotent, backs up what it edits, refuses a domain that is not the account's (`site_not_owned`) and reloads Apache and php-fpm only gracefully and after their config tests.

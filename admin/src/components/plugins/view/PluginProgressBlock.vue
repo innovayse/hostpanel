@@ -5,7 +5,6 @@
  */
 import { computed } from 'vue'
 import UiProgress from '@/components/ui/UiProgress.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { usePluginSource } from '@/composables/usePluginView'
 import type { PluginProgressBlock } from '@/types/pluginview'
@@ -36,7 +35,6 @@ const percent = computed<number>(() => {
 </script>
 
 <template>
-  <UiSkeleton v-if="loading" :lines="1" />
-  <UiText v-else-if="error" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-progress-error">{{ error }}</UiText>
-  <UiProgress v-else :value="percent" :label="block.label" data-testid="plugin-progress" />
+  <UiText v-if="error && !loading" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-progress-error">{{ error }}</UiText>
+  <UiProgress v-else :value="percent" :label="block.label" :loading="loading" data-testid="plugin-progress" />
 </template>

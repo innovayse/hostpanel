@@ -30,7 +30,8 @@ describe('SupportOverviewView', () => {
     const { wrapper } = await mountRouted(SupportOverviewView, '/', '/')
 
     expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(5)
-    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="support-overview-average-loading"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="chart-skeleton"]').exists()).toBe(true)
   })
 
@@ -75,5 +76,14 @@ describe('SupportOverviewView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="support-overview-error"]').exists()).toBe(false)
+  })
+
+  it('draws a bar for the average first reply time while the overview loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
+
+    const { wrapper } = await mountRouted(SupportOverviewView, '/', '/')
+
+    expect(wrapper.find('[data-testid="support-overview-average-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="support-overview-average"]').exists()).toBe(false)
   })
 })

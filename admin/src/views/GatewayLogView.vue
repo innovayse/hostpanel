@@ -19,6 +19,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -174,9 +175,9 @@ onMounted(() => load(1))
       @retry="load(page)"
     />
 
-    <UiText tone="muted" size="md" data-testid="billing-gateway-log-count">
+    <UiResultCount :loading="store.loading && store.entries.length === 0" tone="muted" size="md" data-testid="billing-gateway-log-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
+    </UiResultCount>
 
     <UiCard>
       <UiTable

@@ -12,7 +12,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -29,7 +29,6 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding } from '@/utils/ui/card'
 import { UiAlignItems, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
-import { UiSkeletonShape } from '@/utils/ui/skeleton'
 import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** How many placeholder rows the table shows while its source is read. */
@@ -98,6 +97,9 @@ const pageCount = computed<number>(() => Math.max(1, Math.ceil(rows.value.length
 /** The rows of the page shown. */
 const visibleRows = computed<TableRow[]>(() => rows.value.slice((page.value - 1) * perPage.value, page.value * perPage.value))
 
+/** The cards of the cards display: the visible rows, or null placeholders while the rows load. */
+const cardRows = computed<Array<TableRow | null>>(() => (loading.value ? Array.from({ length: SKELETON_ROWS }, () => null) : visibleRows.value))
+
 /** Whether the pager is drawn: while reading, when the view pages the table (so it keeps its place); afterwards, when there is more than one page. */
 const showPager = computed<boolean>(() => !error.value && (loading.value ? Boolean(props.block.pageSize) : pageCount.value > 1))
 
@@ -124,12 +126,17 @@ watch(pageCount, (count) => {
 <template>
   <UiStack :gap="UiGap.Sm" data-testid="plugin-table">
     <UiHeading v-if="block.title" :level="3" :variant="UiHeadingVariant.Card">{{ block.title }}</UiHeading>
-    <UiSkeleton v-if="loading && block.display === PluginTableDisplay.Cards" :shape="UiSkeletonShape.Block" :count="SKELETON_ROWS" data-testid="plugin-table-loading" />
-    <UiText v-else-if="error" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-error">{{ error }}</UiText>
+    <UiText v-if="error && !loading" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-error">{{ error }}</UiText>
     <UiText v-else-if="rows.length === 0 && !loading" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-empty">{{ t('plugins.pluginPage.tableEmpty') }}</UiText>
-    <UiStack v-else-if="block.display === PluginTableDisplay.Cards" :gap="UiGap.Sm" data-testid="plugin-table-cards">
-      <UiCard v-for="row in visibleRows" :key="row.key" :padding="UiCardPadding.Sm" data-testid="plugin-table-card">
-        <UiStack direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap>
+    <!-- The cards; while the rows load the same cards are drawn with bars where the cells go -->
+    <UiStack v-else-if="block.display === PluginTableDisplay.Cards" :gap="UiGap.Sm" :aria-busy="loading ? 'true' : undefined" data-testid="plugin-table-cards">
+      <UiCard v-for="(row, index) in cardRows" :key="row?.key ?? `placeholder-${index}`" :padding="UiCardPadding.Sm" data-testid="plugin-table-card">
+        <UiStack v-if="row === null" direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center" aria-hidden="true">
+          <UiSkeletonBar class="h-4 w-24 rounded-md" />
+          <UiSkeletonBar class="h-3.5 w-16 rounded-md" />
+          <UiSkeletonBar class="h-3.5 w-20 rounded-md" />
+        </UiStack>
+        <UiStack v-else direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap>
           <template v-for="cell in row.cells" :key="cell.key">
             <UiBadge v-if="cell.badge" small>{{ cell.text }}</UiBadge>
             <UiText v-else-if="cell.first" :size="UiTextSize.Sm" class="font-mono font-semibold">{{ cell.text }}</UiText>

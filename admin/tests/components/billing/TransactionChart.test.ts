@@ -33,4 +33,10 @@ describe('TransactionChart', () => {
     const [series] = wrapper.findComponent(UiChart).props('series') as { data: number[] }[]
     expect(series?.data.every((value) => value === 0)).toBe(true)
   })
+
+  it('hands the chart its loading state while the transactions are being read', () => {
+    const wrapper = mountWithApp(TransactionChart, { props: { transactions: [], loading: true }, stubs: { UiChart: true } })
+
+    expect(wrapper.findComponent(UiChart).props('loading')).toBe(true)
+  })
 })

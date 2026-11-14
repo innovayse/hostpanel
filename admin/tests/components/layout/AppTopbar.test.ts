@@ -177,4 +177,16 @@ describe('AppTopbar', () => {
     await wrapper.get('[data-testid="theme-option-dark"]').trigger('click')
     expect(document.documentElement.classList.contains('light')).toBe(false)
   })
+
+  it('draws bars in the rows of the drawer while the feed loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountView(AppTopbar, { path: '/dashboard' })
+
+    await wrapper.get('[data-testid="topbar-notifications"]').trigger('click')
+
+    const drawer = wrapper.get('[data-testid="notifications-drawer"]')
+    expect(drawer.findAll('[data-testid^="notification-"]')).toHaveLength(3)
+    expect(drawer.findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(6)
+    expect(drawer.text()).not.toContain('No notifications')
+  })
 })

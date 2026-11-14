@@ -7,7 +7,7 @@
  * Movements older than the history are not itemised; the balance is right regardless. An adjustment reports its outcome
  * (success, or the API's sentence) above the form and reloads the first page of the history.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, provide, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -23,6 +23,7 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -43,7 +44,7 @@ import { CreditAdjustment } from '@/types/creditmovement'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
-import { UiTableDensity } from '@/utils/ui/injection'
+import { UI_FIELD_LOADING, UiTableDensity } from '@/utils/ui/injection'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -90,6 +91,18 @@ const directionOptions = computed(() => [
 /** True when the form can be sent: an amount above zero and a reason. */
 const canAdjust = computed<boolean>(() => !processing.value && amount.value > 0 && reason.value.trim() !== '')
 
+/** True until the first read of the credit has answered: the screen draws its real layout with placeholders where the values go. */
+const loading = computed<boolean>(() => store.credit === null)
+
+// The adjustment form keeps its rows while the credit loads: each field draws a bar of its control.
+provide(UI_FIELD_LOADING, loading)
+
+/** The history lines of the shown page; empty while loading. */
+const entries = computed(() => store.credit?.entries.items ?? [])
+
+/** Total movements of the history; zero while loading. */
+const entriesTotal = computed<number>(() => store.credit?.entries.totalCount ?? 0)
+
 /**
  * Formats an amount in the currency the balance is held in.
  *
@@ -97,6 +110,9 @@ const canAdjust = computed<boolean>(() => !processing.value && amount.value > 0 
  * @returns The formatted amount.
  */
 const money = (value: number): string => formatPlainAmount(value, store.credit?.currency ?? '')
+
+/** The balance, formatted; empty while loading. */
+const balanceText = computed<string>(() => (store.credit === null ? '' : money(store.credit.balance)))
 
 /**
  * Loads one page of the credit.
@@ -153,32 +169,16 @@ onMounted(() => load(1))
       @retry="load(1)"
     />
 
-    <UiStack v-else-if="store.credit === null" data-testid="client-credit-loading">
-      <UiGrid :columns="2">
-        <UiStatTile :label="t('clients.clientCredit.balance')" value="" loading />
-        <UiStatTile :label="t('clients.clientCredit.currency')" value="" loading />
-      </UiGrid>
-      <UiCard padding="md" loading :skeleton-lines="4">
-        <template #header>
-          <UiHeading :level="3" variant="card">{{ t('clients.clientCredit.adjustTitle') }}</UiHeading>
-        </template>
-      </UiCard>
-      <UiCard padding="md" loading :skeleton-lines="5">
-        <template #header>
-          <UiHeading :level="3" variant="card">{{ t('clients.clientCredit.history') }}</UiHeading>
-        </template>
-      </UiCard>
-    </UiStack>
-
     <template v-else>
       <UiGrid :columns="2">
         <UiStatTile
           :label="t('clients.clientCredit.balance')"
-          :value="money(store.credit.balance)"
+          :value="balanceText"
           :tone="UiTone.Primary"
+          :loading="loading"
           data-testid="client-credit-balance"
         />
-        <UiStatTile :label="t('clients.clientCredit.currency')" :value="store.credit.currency" :tone="UiTone.Neutral" />
+        <UiStatTile :label="t('clients.clientCredit.currency')" :value="store.credit?.currency ?? ''" :tone="UiTone.Neutral" :loading="loading" />
       </UiGrid>
 
       <UiCard padding="md">
@@ -209,7 +209,7 @@ onMounted(() => load(1))
           </UiField>
           <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-credit-feedback" />
           <UiFormActions>
-            <UiButton type="submit" variant="primary" :loading="processing" :disabled="!canAdjust" data-testid="client-credit-submit">
+            <UiButton type="submit" variant="primary" :loading="processing" :disabled="loading || !canAdjust" data-testid="client-credit-submit">
               {{ t('clients.clientCredit.apply') }}
             </UiButton>
           </UiFormActions>
@@ -219,10 +219,10 @@ onMounted(() => load(1))
       <UiCard class="overflow-x-auto">
         <UiHeading :level="3" variant="card">{{ t('clients.clientCredit.history') }}</UiHeading>
         <UiStatusMessage :message="pageError" :tone="UiTone.Danger" data-testid="client-credit-page-error" />
-        <UiText v-if="store.credit.entries.items.length === 0" :tone="UiTextTone.Muted" data-testid="client-credit-empty">
+        <UiText v-if="!loading && entries.length === 0" :tone="UiTextTone.Muted" data-testid="client-credit-empty">
           {{ t('clients.clientCredit.historyEmpty') }}
         </UiText>
-        <UiTable v-else :density="UiTableDensity.Comfortable" data-testid="client-credit-table">
+        <UiTable v-else :density="UiTableDensity.Comfortable" :loading="loading" data-testid="client-credit-table">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
@@ -234,7 +234,7 @@ onMounted(() => load(1))
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
-            <UiTableRow v-for="entry in store.credit.entries.items" :key="entry.id" hoverable :data-testid="`client-credit-entry-${entry.id}`">
+            <UiTableRow v-for="entry in entries" :key="entry.id" hoverable :data-testid="`client-credit-entry-${entry.id}`">
               <UiTableCell muted>{{ formatDate(entry.date) }}</UiTableCell>
               <UiTableCell>{{ t(`clients.clientCredit.movement.${entry.movement}`) }}</UiTableCell>
               <UiTableCell muted>{{ entry.description }}</UiTableCell>
@@ -252,16 +252,18 @@ onMounted(() => load(1))
           </UiTableBody>
         </UiTable>
         <UiStack
-          v-if="store.credit.entries.totalCount > LEDGER_PAGE_SIZE"
+          v-if="loading || entriesTotal > LEDGER_PAGE_SIZE"
           direction="row"
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiText :tone="UiTextTone.Muted">{{ t('clients.clientCredit.entriesCount', { count: store.credit.entries.totalCount }) }}</UiText>
+          <UiSkeletonBar v-if="loading" class="h-3 w-36 rounded" aria-hidden="true" />
+          <UiText v-else :tone="UiTextTone.Muted">{{ t('clients.clientCredit.entriesCount', { count: entriesTotal }) }}</UiText>
           <UiPagination
             :page="page"
-            :total="store.credit.entries.totalCount"
+            :total="entriesTotal"
             :page-size="LEDGER_PAGE_SIZE"
+            :loading="loading"
             testid="client-credit-pagination"
             @update:page="load"
           />

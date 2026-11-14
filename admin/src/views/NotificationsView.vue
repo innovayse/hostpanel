@@ -6,7 +6,7 @@
  * expiries), not just invoices. Reads `stores/activity`; each row links to the record it is about.
  * A refused load shows the API's sentence with a retry.
  */
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -21,6 +21,7 @@ import { activityEventLink } from '@/lib/activityEventLink'
 import { formatRelativeFromNow } from '@/lib/format'
 import { ACTIVITY_EVENT_LOOK } from '@/lib/activityEventLook'
 import { useActivityStore } from '@/stores/activity'
+import type { ActivityEvent } from '@/types/activityevent'
 
 const { t, locale } = useI18n()
 
@@ -32,6 +33,12 @@ const FEED_LIMIT = 50
 
 /** Placeholder rows drawn while the feed loads. */
 const SKELETON_ROWS = 5
+
+/** True until the first read of the feed has answered: the rows are drawn with placeholders. */
+const loading = computed<boolean>(() => activity.loading && activity.events.length === 0)
+
+/** The rows of the list: the events, or null placeholders while the feed loads. */
+const rows = computed<Array<ActivityEvent | null>>(() => (loading.value ? Array.from({ length: SKELETON_ROWS }, () => null) : activity.events))
 
 onMounted(() => activity.fetchActivity(FEED_LIMIT))
 </script>
@@ -52,41 +59,29 @@ onMounted(() => activity.fetchActivity(FEED_LIMIT))
       @retry="activity.fetchActivity(FEED_LIMIT)"
     />
 
-    <!-- The feed rows as placeholders: an icon and two lines, in the real row box -->
-    <UiCard v-else-if="activity.loading && activity.events.length === 0" aria-busy="true" data-testid="notifications-loading">
-      <UiStack
-        v-for="row in SKELETON_ROWS"
-        :key="row"
-        direction="row"
-        align="start"
-        gap="sm"
-        class="px-4 py-3.5 border-b border-border last:border-0"
-        aria-hidden="true"
-      >
-        <UiSkeletonBar class="h-4 w-4 rounded-full" />
-        <UiStack gap="xs" class="flex-1">
-          <UiSkeletonBar class="h-3.5 w-2/3 rounded" />
-          <UiSkeletonBar class="h-3 w-24 rounded" />
-        </UiStack>
-      </UiStack>
-    </UiCard>
-
-    <UiCard v-else-if="activity.events.length === 0">
+    <UiCard v-else-if="!loading && activity.events.length === 0">
       <UiEmptyState :title="t('common.noNotifications')" data-testid="notifications-empty" />
     </UiCard>
 
-    <UiCard v-else data-testid="notifications-list">
+    <!-- The feed; while it loads the same rows are drawn with bars where the event goes -->
+    <UiCard v-else :aria-busy="loading ? 'true' : undefined" data-testid="notifications-list">
       <UiLink
-        v-for="(event, index) in activity.events"
-        :key="`${event.type}-${event.entityId}-${event.occurredAt}`"
-        :to="activityEventLink(event)"
-        class="flex items-start gap-3 px-4 py-3.5 border-b border-border last:border-0 hover:bg-surface-hover transition-colors"
+        v-for="(event, index) in rows"
+        :key="event ? `${event.type}-${event.entityId}-${event.occurredAt}` : `placeholder-${index}`"
+        :to="event ? activityEventLink(event) : undefined"
+        class="flex items-start gap-3 px-4 py-3.5 border-b border-border last:border-0"
+        :class="event ? 'hover:bg-surface-hover transition-colors' : ''"
         :data-testid="`notification-${index}`"
       >
-        <UiIcon :markup="ACTIVITY_EVENT_LOOK[event.type].icon" size="sm" :class="ACTIVITY_EVENT_LOOK[event.type].color" />
-        <UiStack gap="xs">
+        <UiSkeletonBar v-if="event === null" class="h-4 w-4 rounded-full" aria-hidden="true" />
+        <UiIcon v-else :markup="ACTIVITY_EVENT_LOOK[event.type].icon" size="sm" :class="ACTIVITY_EVENT_LOOK[event.type].color" />
+        <UiStack v-if="event" gap="xs">
           <UiText>{{ event.message }}</UiText>
           <UiText tone="muted" size="xs">{{ formatRelativeFromNow(event.occurredAt, locale) }}</UiText>
+        </UiStack>
+        <UiStack v-else gap="xs" class="flex-1" aria-hidden="true">
+          <UiSkeletonBar class="h-3.5 w-2/3 rounded" />
+          <UiSkeletonBar class="h-3 w-24 rounded" />
         </UiStack>
       </UiLink>
     </UiCard>

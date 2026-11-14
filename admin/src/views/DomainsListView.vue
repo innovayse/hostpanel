@@ -20,6 +20,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -28,7 +29,6 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiCardRole } from '@/utils/ui/table'
-import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { DOMAIN_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate } from '@/lib/format'
@@ -160,9 +160,9 @@ onMounted(() => load())
 
       <template #footer>
         <UiStack direction="row" justify="between" align="center" wrap>
-          <UiText tone="muted" size="xs">
+          <UiResultCount :loading="store.loading && !hasRows" tone="muted" size="xs">
             {{ t('shared.totalcountDomainValue', { totalCount: store.totalCount }) }}
-          </UiText>
+          </UiResultCount>
           <UiPagination
             :page="page"
             :total="store.totalCount"

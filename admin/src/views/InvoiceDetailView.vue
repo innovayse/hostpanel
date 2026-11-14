@@ -11,9 +11,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import InvoiceCreditTab from '@/components/billing/InvoiceCreditTab.vue'
 import InvoiceCreditNotesTab from '@/components/billing/InvoiceCreditNotesTab.vue'
-import InvoiceFactTiles from '@/components/billing/InvoiceFactTiles.vue'
 import InvoiceFulfilmentTab from '@/components/billing/InvoiceFulfilmentTab.vue'
-import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
 import InvoiceNotesTab from '@/components/billing/InvoiceNotesTab.vue'
 import InvoiceOptionsTab from '@/components/billing/InvoiceOptionsTab.vue'
 import InvoicePaymentTab from '@/components/billing/InvoicePaymentTab.vue'
@@ -24,12 +22,9 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiCard from '@/components/ui/UiCard.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceOpenAction, InvoiceTab, InvoiceStatus } from '@/types/invoice'
@@ -158,40 +153,23 @@ watch(invoiceId, load)
       @retry="load"
     />
 
-    <UiStack v-if="invoice === null && store.loading" aria-busy="true" data-testid="billing-invoice-loading">
-      <UiTabs v-model="activeTab" :items="tabs" />
-      <InvoiceFactTiles :invoice="null" />
-      <UiCard padding="md">
-        <UiStack gap="lg" aria-hidden="true">
-          <UiStack direction="row" gap="md" justify="between" align="start" wrap>
-            <UiStack gap="xs">
-              <UiText tone="muted" size="sm">{{ t('shared.clientName') }}</UiText>
-              <UiSkeletonBar class="h-7 w-56 rounded-md" />
-            </UiStack>
-            <UiStack gap="xs" align="end">
-              <UiSkeletonBar class="h-5 w-20 rounded-full" />
-              <UiSkeletonBar class="h-3.5 w-40 rounded-md" />
-            </UiStack>
-          </UiStack>
-        </UiStack>
-      </UiCard>
-      <InvoiceItemsSection :invoice="null" loading :readonly="!manageMode" />
-    </UiStack>
-
-    <template v-if="invoice !== null">
+    <template v-if="loadError === null">
       <UiAlert v-if="showDraftNotice" variant="info" data-testid="billing-invoice-draft-banner">
         {{ t('billing.invoiceDetail.thisIsADraftInvoice') }} {{ t('billing.invoiceDetail.theClientIsNotAble') }}
       </UiAlert>
 
-      <UiTabs v-model="activeTab" :items="tabs">
+      <!-- The same tabs while the invoice is read: the summary draws its layout with placeholders, the others wait for the data -->
+      <UiTabs v-model="activeTab" :items="tabs" :aria-busy="invoice === null ? 'true' : undefined">
         <InvoiceSummaryTab v-if="activeTab === InvoiceTab.Summary" :invoice="invoice" :readonly="!manageMode" />
-        <InvoicePaymentTab v-else-if="activeTab === InvoiceTab.Payment" :invoice="invoice" :readonly="!manageMode" />
-        <InvoiceOptionsTab v-else-if="activeTab === InvoiceTab.Options" :invoice="invoice" />
-        <InvoiceCreditTab v-else-if="activeTab === InvoiceTab.Credit" :invoice="invoice" :readonly="!manageMode" />
-        <InvoiceRefundTab v-else-if="activeTab === InvoiceTab.Refund" :invoice="invoice" :readonly="!manageMode" />
-        <InvoiceCreditNotesTab v-else-if="activeTab === InvoiceTab.CreditNotes" :invoice="invoice" :readonly="!manageMode" />
-        <InvoiceFulfilmentTab v-else-if="activeTab === InvoiceTab.Fulfilment" :invoice="invoice" :readonly="!manageMode" />
-        <InvoiceNotesTab v-else-if="activeTab === InvoiceTab.Notes" :invoice="invoice" :readonly="!manageMode" />
+        <template v-else-if="invoice !== null">
+          <InvoicePaymentTab v-if="activeTab === InvoiceTab.Payment" :invoice="invoice" :readonly="!manageMode" />
+          <InvoiceOptionsTab v-else-if="activeTab === InvoiceTab.Options" :invoice="invoice" />
+          <InvoiceCreditTab v-else-if="activeTab === InvoiceTab.Credit" :invoice="invoice" :readonly="!manageMode" />
+          <InvoiceRefundTab v-else-if="activeTab === InvoiceTab.Refund" :invoice="invoice" :readonly="!manageMode" />
+          <InvoiceCreditNotesTab v-else-if="activeTab === InvoiceTab.CreditNotes" :invoice="invoice" :readonly="!manageMode" />
+          <InvoiceFulfilmentTab v-else-if="activeTab === InvoiceTab.Fulfilment" :invoice="invoice" :readonly="!manageMode" />
+          <InvoiceNotesTab v-else-if="activeTab === InvoiceTab.Notes" :invoice="invoice" :readonly="!manageMode" />
+        </template>
       </UiTabs>
     </template>
   </UiStack>

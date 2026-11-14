@@ -159,4 +159,13 @@ describe('ClientBillableItemsView', () => {
 
     expect(wrapper.find('[data-testid="client-billable-error"]').exists()).toBe(false)
   })
+
+  it('keeps both tables with their headers and draws placeholder rows while the first load is pending', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountItems()
+
+    expect(wrapper.get('[data-testid="client-billable-uninvoiced-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="client-billable-invoiced-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="client-billable-pagination-range"]').exists()).toBe(true)
+  })
 })

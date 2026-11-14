@@ -16,6 +16,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -24,7 +25,6 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { formatDateTimeCompact } from '@/lib/format'
 import { useAnnouncementsStore } from '@/stores/announcements'
@@ -146,9 +146,9 @@ const rowActions = (announcement: Announcement): UiMenuAction[] => {
       </template>
     </UiPageHeader>
 
-    <UiText tone="muted" size="sm" data-testid="announcements-count">
+    <UiResultCount :loading="store.loading && store.announcements.length === 0" tone="muted" size="sm" data-testid="announcements-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
+    </UiResultCount>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="announcements-feedback" />
 

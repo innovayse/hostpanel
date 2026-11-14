@@ -18,7 +18,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 
 /** Translation function. */
@@ -42,10 +42,16 @@ const activeCategoryLabel = computed<string>(() =>
   INTEGRATION_CATEGORIES.find(c => c.key === activeCategory.value)?.label ?? activeCategory.value,
 )
 
+/** Placeholder cards drawn in the grid while the list loads; the real count is only known once it has arrived. */
+const LOADING_CARD_COUNT = 6
+
 /** Integrations filtered to the active category. */
 const filtered = computed(() =>
   store.integrations.filter(i => i.category === activeCategory.value),
 )
+
+/** True until the first read of the list has answered: the page draws its real layout with placeholders where the values go. */
+const loading = computed<boolean>(() => store.loading && filtered.value.length === 0)
 
 /** Number of active integrations in this category. */
 const activeCount = computed<number>(() => filtered.value.filter(i => i.isEnabled).length)
@@ -64,33 +70,34 @@ onMounted(store.fetchAll)
 
 <template>
   <UiStack gap="md" class="w-full">
-    <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle">
+    <UiPageHeader :title="activeCategoryLabel" :subtitle="loading ? undefined : subtitle">
+      <UiSkeletonBar v-if="loading" class="mt-1.5 h-3.5 w-72 max-w-full rounded-md" aria-hidden="true" />
       <template v-if="guideUrl" #actions>
         <PageHelpLink :url="guideUrl" />
       </template>
     </UiPageHeader>
 
-    <!-- Loading -->
-    <UiGrid v-if="store.loading && filtered.length === 0" :columns="3" gap="md" data-testid="integrations-loading">
-      <UiCard v-for="index in 6" :key="index" padding="md" loading :skeleton-lines="3" />
-    </UiGrid>
-
     <!-- Error -->
     <UiErrorState
-      v-else-if="store.error"
+      v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="integrations-error"
       @retry="store.fetchAll()"
     />
 
-    <!-- Cards grid -->
-    <UiGrid v-else-if="filtered.length > 0" :columns="3" gap="md" data-testid="integrations-grid">
-      <IntegrationCard
-        v-for="integration in filtered"
-        :key="integration.slug"
-        :integration="integration"
-      />
+    <!-- Cards grid; while the list loads the same grid holds placeholder cards -->
+    <UiGrid v-else-if="loading || filtered.length > 0" :columns="3" gap="md" data-testid="integrations-grid">
+      <template v-if="loading">
+        <IntegrationCard v-for="index in LOADING_CARD_COUNT" :key="index" />
+      </template>
+      <template v-else>
+        <IntegrationCard
+          v-for="integration in filtered"
+          :key="integration.slug"
+          :integration="integration"
+        />
+      </template>
     </UiGrid>
 
     <!-- Empty state -->

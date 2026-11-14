@@ -13,7 +13,6 @@ import { integrationConnectionTone } from '@/lib/tones'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -63,7 +62,9 @@ const formatDuration = (ms: number): string =>
         <UiSkeletonBar v-if="loading" class="h-5 w-28 rounded-full" aria-hidden="true" data-testid="integration-status-loading" />
 
         <UiStack v-else-if="testing" gap="xs" aria-busy="true" data-testid="integration-status-testing">
-          <UiSkeleton :lines="2" />
+          <!-- The result it will become: a state badge and the probe's message line -->
+          <UiSkeletonBar class="h-5 w-28 rounded-full" aria-hidden="true" />
+          <UiSkeletonBar class="h-3.5 w-48 max-w-full rounded-md" aria-hidden="true" />
         </UiStack>
 
         <!-- In-session test result -->

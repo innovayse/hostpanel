@@ -23,6 +23,7 @@ import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -31,7 +32,6 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useRowSelection } from '@/composables/useRowSelection'
@@ -280,9 +280,9 @@ onMounted(() => {
       @retry="load"
     />
 
-    <UiText tone="muted" size="md" data-testid="billing-billable-items-count">
+    <UiResultCount :loading="store.loading && store.items.length === 0" tone="muted" size="md" data-testid="billing-billable-items-count">
       {{ t('billing.billableItems.lengthRecordsFound', { length: filteredItems.length }) }}
-    </UiText>
+    </UiResultCount>
 
     <UiCard>
       <UiTable

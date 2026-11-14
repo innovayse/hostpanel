@@ -144,4 +144,18 @@ describe('InvoiceSummaryTab', () => {
     expect(body).toContain('24000.00 AMD')
     expect(body).not.toContain('$')
   })
+
+  it('draws the same layout with bars and no action buttons while the invoice is being read', () => {
+    const wrapper = mountWithApp(InvoiceSummaryTab, { props: { invoice: null } })
+
+    expect(wrapper.find('[data-testid="billing-invoice-client-loading"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(4)
+    expect(wrapper.find('[data-testid="billing-invoice-status"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-publish"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-cancel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-mark-paid"]').exists()).toBe(false)
+    // The lines table and the two ledgers all keep their headers and draw placeholder rows.
+    expect(wrapper.findAll('[data-testid="ui-table-skeleton"]')).toHaveLength(3)
+    expect(wrapper.find('[data-testid="billing-invoice-payments-table"]').exists()).toBe(true)
+  })
 })

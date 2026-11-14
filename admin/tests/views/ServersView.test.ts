@@ -256,4 +256,14 @@ describe('ServersView', () => {
     expect(wrapper.get('[data-testid="server-ssh-saved"]').text()).toBe('Saved')
     expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('')
   })
+
+  it('keeps the page header, the toolbar and the card grid and draws placeholder cards while the servers load', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountServers()
+
+    expect(wrapper.get('[data-testid="servers-list"]').findAll('[data-testid="server-card-loading"]')).toHaveLength(3)
+    expect(wrapper.find('[data-testid="servers-search"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="server-groups-table"] [data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="servers-empty"]').exists()).toBe(false)
+  })
 })

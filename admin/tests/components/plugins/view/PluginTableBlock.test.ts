@@ -91,4 +91,13 @@ describe('PluginTableBlock', () => {
     expect(wrapper.find('[data-testid="plugin-table-row"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-table-pagination-range"]').exists()).toBe(true)
   })
+
+  it('draws placeholder cards of the real card layout while the rows of a cards display load', async () => {
+    const wrapper = await mountLoadingPluginView([table({ display: PluginTableDisplay.Cards })])
+
+    const cards = wrapper.get('[data-testid="plugin-table-cards"]')
+    expect(cards.attributes('aria-busy')).toBe('true')
+    expect(cards.findAll('[data-testid="plugin-table-card"]')).toHaveLength(4)
+    expect(cards.findAll('[data-testid="ui-skeleton-bar"]').length).toBe(12)
+  })
 })

@@ -33,6 +33,7 @@ import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -310,13 +311,13 @@ watch(filters.page, load, { immediate: true })
         <UiHeading :level="3" variant="card">
           {{ t('billing.transactionsList.netRevenueUsd') }}
         </UiHeading>
-        <TransactionChart :transactions="shownTransactions" />
+        <TransactionChart :transactions="shownTransactions" :loading="store.loading && store.transactions.length === 0" />
       </UiStack>
     </UiCard>
 
-    <UiText tone="muted" size="md" data-testid="billing-transactions-count">
+    <UiResultCount :loading="store.loading && store.transactions.length === 0" tone="muted" size="md" data-testid="billing-transactions-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
+    </UiResultCount>
 
     <UiCard>
       <UiTable

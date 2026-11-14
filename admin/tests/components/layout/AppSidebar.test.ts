@@ -157,6 +157,7 @@ describe('AppSidebar', () => {
 
   it('gives the brand row the shell header height token, expanded and folded, so it lines up with the top bar', async () => {
     const wrapper = await mountSidebar('/dashboard')
+    /** The sidebar header row, read fresh after each fold so the classes reflect the current state. */
     const header = (): HTMLElement | null => wrapper.get('[data-testid="sidebar-collapse-toggle"]').element.closest<HTMLElement>('div[class*="border-b"]')
 
     expect(header()?.className).toContain('h-(--shell-header-h)')
@@ -415,7 +416,7 @@ describe('AppSidebar icon rail', () => {
 
     expect(wrapper.find('[data-testid="nav-section-sales-label"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="sidebar-collapse-toggle"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('pb-[env(safe-area-inset-bottom)]')
+    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-full')
   })
 })
 

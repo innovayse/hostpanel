@@ -3,7 +3,7 @@
  * tokens, and nothing in it moves under reduced motion.
  */
 import { describe, expect, it } from 'vitest'
-import { modalPanelClasses, sheetPanelClasses, transitionSet, UiTransitionKind } from '@/utils/ui/transition'
+import { modalPanelClasses, transitionSet, UiTransitionKind } from '@/utils/ui/transition'
 import type { UiTransitionClasses } from '@/utils/ui/transition'
 
 /**
@@ -92,7 +92,7 @@ describe('transitionSet', () => {
     }
     const pairs: [UiTransitionKind, string[]][] = [
       [UiTransitionKind.Dialog, [modalPanelClasses.dialog]],
-      [UiTransitionKind.Drawer, [modalPanelClasses.drawerLeft, modalPanelClasses.drawerRight]],
+      [UiTransitionKind.Drawer, [modalPanelClasses.drawerLeft, modalPanelClasses.drawerRight, modalPanelClasses.sheet]],
     ]
     for (const [kind, panels] of pairs) {
       const enter = durationOf(transitionSet[kind].enterActiveClass)
@@ -105,31 +105,20 @@ describe('transitionSet', () => {
 
   it('removes the panel transform under reduced motion too', () => {
     for (const panel of Object.values(modalPanelClasses)) {
-      const moving = tokens(panel).filter(token => /^group-\[\.ui-from\]\/overlay:-?(?:translate-x|scale)/.test(token))
+      const moving = tokens(panel).filter(token => /^group-\[\.ui-from\]\/overlay:-?(?:translate-[xy]|scale)/.test(token))
       expect(moving.length).toBe(1)
       expect(tokens(panel).some(token => token.startsWith('motion-reduce:group-[.ui-from]/overlay:'))).toBe(true)
     }
   })
 })
 
-describe('sheetPanelClasses', () => {
-  it('rises from the bottom on a phone and slides from its edge from sm up, on the slow token', () => {
-    for (const [side, edge] of [['left', '-translate-x-full'], ['right', 'translate-x-full']] as const) {
-      const list = tokens(sheetPanelClasses[side])
+describe('modalPanelClasses.sheet', () => {
+  it('rises from the bottom edge on the slow token and stands still under reduced motion', () => {
+    const list = tokens(modalPanelClasses.sheet)
 
-      expect(list).toContain('max-sm:group-[.ui-from]/overlay:translate-y-full')
-      expect(list).toContain(`sm:group-[.ui-from]/overlay:${edge}`)
-      expect(list).toContain('duration-(--duration-slow)')
-    }
-  })
-
-  it('removes both moves and the transition under reduced motion', () => {
-    for (const panel of Object.values(sheetPanelClasses)) {
-      const list = tokens(panel)
-
-      expect(list).toContain('motion-reduce:transition-none')
-      expect(list).toContain('motion-reduce:max-sm:group-[.ui-from]/overlay:translate-y-0')
-      expect(list).toContain('motion-reduce:sm:group-[.ui-from]/overlay:translate-x-0')
-    }
+    expect(list).toContain('group-[.ui-from]/overlay:translate-y-full')
+    expect(list).toContain('duration-(--duration-slow)')
+    expect(list).toContain('motion-reduce:transition-none')
+    expect(list).toContain('motion-reduce:group-[.ui-from]/overlay:translate-y-0')
   })
 })

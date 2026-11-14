@@ -1,13 +1,13 @@
 /**
  * Client pages at phone width: the section navigation is a horizontal tab strip above the content
  * (the same strip at every width), the client header card and the cards use the full width, nothing
- * scrolls sideways, a tab opens its section, the top bar fits, and the theme is changed from the menu drawer.
+ * scrolls sideways, a tab opens its section, the top bar fits, and the theme is changed from the menu sheet, which rises from the bottom edge.
  */
 import { HttpMethod } from '../src/types/http'
 import { AdminTheme } from '../src/types/admintheme'
 import { THEME_STORAGE_KEY } from '../src/lib/themeBoot'
 import { expect, test } from '@playwright/test'
-import type { Locator } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
 import { servicesPage } from './fixtures/orders'
 import { emptyClientSummary } from './fixtures/clientSummary'
@@ -173,6 +173,79 @@ test('a phone changes the theme from the menu drawer, since the top bar has no r
 
   await expect(page.locator('html')).toHaveClass(/(^|\s)light(\s|$)/)
   expect(await page.evaluate(key => window.localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
+})
+
+test.describe('the menu bottom sheet on a phone', () => {
+  /**
+   * Opens the client summary on a phone and the menu from the top bar.
+   *
+   * @param page - The page under test.
+   * @returns Nothing; the menu sheet is open.
+   */
+  const openMenu = async (page: Page): Promise<void> => {
+    await stubApi(page, {
+      signedIn: true,
+      routes: [
+        json(HttpMethod.Get, '/api/clients/7', adaDetail),
+        json(HttpMethod.Get, '/api/clients/7/summary', emptyClientSummary),
+        json(HttpMethod.Get, '/api/services', emptyPage),
+        json(HttpMethod.Get, '/api/domains', emptyPage),
+        json(HttpMethod.Get, '/api/billing/quotes/client/7', emptyPage),
+      ],
+    })
+    await page.goto('/clients/7/summary')
+    await page.getByTestId('topbar-toggle-sidebar').click()
+    await expect(page.getByTestId('drawer-grip')).toBeVisible()
+  }
+
+  test('rises from the bottom edge with a grab handle, a height limit and the theme and language menus', async ({ page }) => {
+    await openMenu(page)
+
+    const sheet = page.getByRole('dialog')
+    await expect.poll(async () => (await boxOf(sheet)).y + (await boxOf(sheet)).height).toBe(800)
+    expect((await boxOf(sheet)).height).toBeLessThanOrEqual(800 * 0.85 + 1)
+    await expect(page.getByTestId('sidebar-theme')).toBeVisible()
+    await expect(page.getByTestId('sidebar-locale')).toBeVisible()
+  })
+
+  test('closes on Escape, on the backdrop and after choosing a page', async ({ page }) => {
+    await openMenu(page)
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).toBeHidden()
+
+    await page.getByTestId('topbar-toggle-sidebar').click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await page.mouse.click(195, 20)
+    await expect(page.getByRole('dialog')).toBeHidden()
+
+    await page.getByTestId('topbar-toggle-sidebar').click()
+    // The Clients entry opens its sub-menu in place; the last of the two is the list link inside it.
+    await page.getByRole('dialog').getByTestId('nav-clients').last().click()
+    await expect(page.getByRole('dialog')).toBeHidden()
+  })
+
+  test('follows a drag down on the handle, springs back when short and closes past the distance', async ({ page }) => {
+    await openMenu(page)
+    const sheet = page.getByRole('dialog')
+    const grip = await boxOf(page.getByTestId('drawer-grip'))
+    const x = grip.x + grip.width / 2
+    const y = grip.y + grip.height / 2
+    const resting = (await boxOf(sheet)).y
+
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    await page.mouse.move(x, y + 40, { steps: 4 })
+    expect((await boxOf(sheet)).y).toBeCloseTo(resting + 40, 0)
+    await page.mouse.up()
+    await expect.poll(async () => (await boxOf(sheet)).y).toBeCloseTo(resting, 0)
+    await expect(sheet).toBeVisible()
+
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    await page.mouse.move(x, y + 300, { steps: 6 })
+    await page.mouse.up()
+    await expect(sheet).toBeHidden()
+  })
 })
 
 test('the contacts table on the profile page is cards that fit their card and do not widen the page', async ({ page }) => {

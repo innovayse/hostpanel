@@ -4,7 +4,7 @@
  *
  * Shows the current page title, the wide search trigger (it announces Ctrl K and opens the command palette), the
  * theme and language switches, the notification feed (in a side drawer, a bottom sheet on a phone) and the primary
- * action. The signed-in account lives in the sidebar. Below lg it carries the menu button, which emits `toggle-sidebar` to open the navigation drawer; from lg up the
+ * action. The signed-in account lives in the sidebar. Below lg it carries the menu button, which emits `toggle-sidebar` to open the navigation sheet; from lg up the
  * sidebar's own header button folds the sidebar, so the bar has no second control for it.
  */
 import { computed, onMounted, ref } from 'vue'
@@ -36,7 +36,7 @@ import { UiBreakpoint } from '@/utils/ui/layout'
 
 /** Emitted by the hamburger button on a phone. */
 const emit = defineEmits<{
-  /** Emitted to toggle the sidebar drawer on mobile/tablet. */
+  /** Emitted to toggle the navigation sheet below lg. */
   'toggle-sidebar': []
 }>()
 

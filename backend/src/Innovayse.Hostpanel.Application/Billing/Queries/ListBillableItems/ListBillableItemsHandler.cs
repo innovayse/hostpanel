@@ -39,7 +39,7 @@ public sealed class ListBillableItemsHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var filtered = _context.BillableItems.AsNoTracking().Matching(query.Search, query.Type);
+        var filtered = _context.BillableItems.AsNoTracking().Matching(query);
         if (query.ClientId is { } clientId)
         {
             filtered = filtered.Where(x => x.ClientId == clientId);

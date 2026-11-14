@@ -74,8 +74,8 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
         var onlyRefunds = await CreditNoteTestSeeds.ListAsync(admin, $"clientId={clientId}&method=GatewayRefund");
         var onlyCredits = await CreditNoteTestSeeds.ListAsync(admin, $"clientId={clientId}&method=AccountCredit");
 
-        InvoiceListTestSeeds.IdsOf(onlyRefunds).Should().Equal(refund);
-        InvoiceListTestSeeds.IdsOf(onlyCredits).Should().Equal(credit);
+        PagedListReads.IdsOf(onlyRefunds).Should().Equal(refund);
+        PagedListReads.IdsOf(onlyCredits).Should().Equal(credit);
     }
 
     /// <summary>The search matches the number, the reason, the refund reference and the id in any letter case.</summary>
@@ -98,10 +98,10 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
         var byReference = await CreditNoteTestSeeds.ListAsync(admin, $"clientId={clientId}&search={plugin.RefundResult!.ToUpperInvariant()}");
         var byId = await CreditNoteTestSeeds.ListAsync(admin, $"clientId={clientId}&search={refund}");
 
-        InvoiceListTestSeeds.IdsOf(byReason).Should().Equal(reasoned);
-        InvoiceListTestSeeds.IdsOf(byNumber).Should().Equal(reasoned);
-        InvoiceListTestSeeds.IdsOf(byReference).Should().Equal(refund);
-        InvoiceListTestSeeds.IdsOf(byId).Should().Contain(refund);
+        PagedListReads.IdsOf(byReason).Should().Equal(reasoned);
+        PagedListReads.IdsOf(byNumber).Should().Equal(reasoned);
+        PagedListReads.IdsOf(byReference).Should().Equal(refund);
+        PagedListReads.IdsOf(byId).Should().Contain(refund);
     }
 
     /// <summary>A literal percent sign or underscore in the search matches itself, not any text.</summary>
@@ -118,7 +118,7 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
 
         var page = await CreditNoteTestSeeds.ListAsync(admin, $"clientId={clientId}&search={Uri.EscapeDataString($"a%b_{token}")}");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().Equal(literal);
+        PagedListReads.IdsOf(page).Should().Equal(literal);
     }
 
     /// <summary>A page holds the newest notes first, the total counts every match and the next page continues where it stopped.</summary>
@@ -133,11 +133,11 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
         var second = await CreditNoteTestSeeds.IssueOkAsync(admin, invoiceId, 2m);
         var third = await CreditNoteTestSeeds.IssueOkAsync(admin, invoiceId, 3m);
 
-        var pageOne = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/credit-notes?page=1&pageSize=2&clientId={clientId}");
-        var pageTwo = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/credit-notes?page=2&pageSize=2&clientId={clientId}");
+        var pageOne = await PagedListReads.PageAsync(admin, $"/api/billing/credit-notes?page=1&pageSize=2&clientId={clientId}");
+        var pageTwo = await PagedListReads.PageAsync(admin, $"/api/billing/credit-notes?page=2&pageSize=2&clientId={clientId}");
 
-        InvoiceListTestSeeds.IdsOf(pageOne).Should().Equal(third, second);
-        InvoiceListTestSeeds.IdsOf(pageTwo).Should().Equal(first);
+        PagedListReads.IdsOf(pageOne).Should().Equal(third, second);
+        PagedListReads.IdsOf(pageTwo).Should().Equal(first);
         pageOne.GetProperty("totalCount").GetInt32().Should().Be(3);
     }
 
@@ -160,7 +160,7 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
         var response = await admin.GetAsync($"/api/billing/credit-notes?{queryString}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain(field);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 
     /// <summary>A status or method that names nothing is refused.</summary>

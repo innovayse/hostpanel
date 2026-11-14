@@ -1174,7 +1174,7 @@
   <data name="ActivityLogFilterTooLong" xml:space="preserve">
     <value>A search filter can be at most 200 characters.</value>
   </data>
-  <data name="ReportDateRangeInvalid" xml:space="preserve">
+  <data name="DateRangeInvalid" xml:space="preserve">
     <value>The end date cannot be before the start date.</value>
   </data>
   <data name="ReportMonthInvalid" xml:space="preserve">
@@ -1422,6 +1422,9 @@
   </data>
   <data name="ListSearchTooLong" xml:space="preserve">
     <value>The search text may be at most {0} characters.</value>
+  </data>
+  <data name="ListClientIdInvalid" xml:space="preserve">
+    <value>Name a valid client.</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">
     <value>The email filter may be at most {0} characters.</value>

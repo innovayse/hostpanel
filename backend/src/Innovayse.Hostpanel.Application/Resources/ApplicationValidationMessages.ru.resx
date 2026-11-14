@@ -1174,7 +1174,7 @@
   <data name="ActivityLogFilterTooLong" xml:space="preserve">
     <value>Фильтр поиска может содержать не более 200 символов.</value>
   </data>
-  <data name="ReportDateRangeInvalid" xml:space="preserve">
+  <data name="DateRangeInvalid" xml:space="preserve">
     <value>Дата окончания не может быть раньше даты начала.</value>
   </data>
   <data name="ReportMonthInvalid" xml:space="preserve">
@@ -1422,6 +1422,9 @@
   </data>
   <data name="ListSearchTooLong" xml:space="preserve">
     <value>Текст поиска не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="ListClientIdInvalid" xml:space="preserve">
+    <value>Укажите существующего клиента.</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">
     <value>Фильтр по email не может быть длиннее {0} символов.</value>

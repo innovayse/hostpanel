@@ -20,6 +20,6 @@ public sealed class ListCreditNotesValidator : ListQueryValidator<ListCreditNote
         RuleFor(x => x.Status).IsInEnum().WithMessage(L["CreditNoteStatusInvalid"]);
         RuleFor(x => x.Method).IsInEnum().WithMessage(L["CreditNoteMethodInvalid"]);
         RuleFor(x => x.InvoiceId).MustBePositiveId(L["InvoiceIdInvalid"]);
-        RuleFor(x => x.ClientId).MustBePositiveId(L["InvoiceClientIdInvalid"]);
+        RuleFor(x => x.ClientId).MustBePositiveId(L["ListClientIdInvalid"]);
     }
 }

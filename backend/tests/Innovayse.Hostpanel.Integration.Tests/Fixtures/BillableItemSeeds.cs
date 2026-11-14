@@ -14,7 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// Seeds billable items through the real invoicing run, for the tests of deleting the invoice an item
 /// was put on.
 /// </summary>
-internal static class BillableItemSeeds
+public static class BillableItemSeeds
 {
     /// <summary>
     /// Seeds a client with one due one-time item, lets the invoicing run put it on an invoice, and

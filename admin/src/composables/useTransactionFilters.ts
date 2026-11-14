@@ -9,8 +9,8 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ListChipSource, ListQuery } from '@/composables/useListQuery'
+import { usePeriodFilter } from '@/composables/usePeriodFilter'
 import { TRANSACTION_DIRECTION_OPTIONS, TRANSACTION_METHOD_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/tones'
 import { TransactionDirection } from '@/types/transaction'
 import type { TransactionListFilters } from '@/types/transaction'
@@ -61,11 +61,8 @@ export const useTransactionFilters = (
     return value === '' ? undefined : value
   })
 
-  /** The first day in the address, undefined when none is set or the value is not a date. */
-  const from = query.dateOf(TransactionFilterKey.From)
-
-  /** The last day in the address, undefined when none is set or the value is not a date. */
-  const to = query.dateOf(TransactionFilterKey.To)
+  /** The period in the address: the first and the last day, undefined when not set or not a day. */
+  const period = usePeriodFilter(query, { from: TransactionFilterKey.From, to: TransactionFilterKey.To })
 
   /** The amount in the address as a number, undefined when none is set or the value is not a positive number. */
   const amount = computed<number | undefined>(() => {
@@ -78,8 +75,8 @@ export const useTransactionFilters = (
     filters: computed(() => ({
       direction: direction.value,
       paymentMethod: paymentMethod.value,
-      from: from.value,
-      to: to.value,
+      from: period.from.value,
+      to: period.to.value,
       amount: amount.value,
     })),
     /**
@@ -98,16 +95,7 @@ export const useTransactionFilters = (
         label: t('shared.paymentMethod'),
         value: paymentMethod.value === undefined ? undefined : statusLabel(TRANSACTION_METHOD_OPTIONS, paymentMethod.value),
       },
-      {
-        key: TransactionFilterKey.From,
-        label: t('billing.invoicesList.dateFrom'),
-        value: from.value === undefined ? undefined : formatDate(from.value),
-      },
-      {
-        key: TransactionFilterKey.To,
-        label: t('billing.invoicesList.dateTo'),
-        value: to.value === undefined ? undefined : formatDate(to.value),
-      },
+      ...period.chipSources(),
       {
         key: TransactionFilterKey.Amount,
         label: t('shared.amount'),

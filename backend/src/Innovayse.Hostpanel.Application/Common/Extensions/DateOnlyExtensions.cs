@@ -1,12 +1,12 @@
-namespace Innovayse.Hostpanel.Application.Reports.Extensions;
+namespace Innovayse.Hostpanel.Application.Common.Extensions;
 
 /// <summary>
-/// Turns the calendar days a report is filtered by into UTC instants. A day range
+/// Turns the calendar days a list or a report is filtered by into UTC instants. A day range
 /// <c>[from, to]</c> is always queried as the half-open window <c>[from 00:00, to + 1 day 00:00)</c>,
 /// so nothing in the last second of a day falls between two windows and two adjacent ranges never
 /// count the same row twice.
 /// </summary>
-public static class ReportDateExtensions
+public static class DateOnlyExtensions
 {
     /// <summary>The first instant of the day, UTC.</summary>
     /// <param name="day">The calendar day.</param>

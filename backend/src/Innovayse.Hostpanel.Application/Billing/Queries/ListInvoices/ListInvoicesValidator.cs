@@ -16,6 +16,6 @@ public sealed class ListInvoicesValidator : InvoiceListQueryValidator<ListInvoic
     public ListInvoicesValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.ClientId).MustBePositiveId(L["InvoiceClientIdInvalid"]);
+        RuleFor(x => x.ClientId).MustBePositiveId(L["ListClientIdInvalid"]);
     }
 }

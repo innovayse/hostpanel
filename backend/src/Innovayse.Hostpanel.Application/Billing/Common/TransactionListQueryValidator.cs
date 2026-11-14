@@ -23,12 +23,13 @@ public abstract class TransactionListQueryValidator<T> : ListQueryValidator<T>
     protected TransactionListQueryValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.ClientId).MustBePositiveId(L["TransactionClientIdInvalid"]);
+        RuleFor(x => x.ClientId).MustBePositiveId(L["ListClientIdInvalid"]);
 
         // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
         RuleFor(x => x.Direction).IsInEnum().WithMessage(L["TransactionDirectionInvalid"]);
         RuleFor(x => x.PaymentMethod).MaximumLength(PaymentMethodMaxLength)
             .WithMessage(L["TransactionPaymentMethodTooLong", PaymentMethodMaxLength]);
+        RuleFor(x => x.To).MustNotBeBefore(x => x.From, L["DateRangeInvalid"]);
         RuleFor(x => x.Amount).GreaterThan(0m).WithMessage(L["TransactionAmountInvalid"]);
     }
 }

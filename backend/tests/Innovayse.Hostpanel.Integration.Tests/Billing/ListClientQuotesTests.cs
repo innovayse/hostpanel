@@ -66,9 +66,9 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
         var own = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Own", DateTimeOffset.UtcNow.AddDays(30));
         await QuoteListTestSeeds.SeedAsync(factory, other, "Other", DateTimeOffset.UtcNow.AddDays(30));
 
-        var page = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes/client/{clientId}?page=1&pageSize=100&clientId={other}");
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing/quotes/client/{clientId}?page=1&pageSize=100&clientId={other}");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().Equal(own);
+        PagedListReads.IdsOf(page).Should().Equal(own);
     }
 
     /// <summary>The search matches the subject case-insensitively, by id, and wildcards typed into it match themselves.</summary>
@@ -86,17 +86,17 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
         await QuoteListTestSeeds.SeedAsync(factory, clientId, "Plan abc", expiry);
         var route = $"/api/billing/quotes/client/{clientId}?page=1&pageSize=100";
 
-        var bySubject = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&search=WEBSITE");
-        var byId = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&search={website}");
-        var byPercent = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&search=50%25");
-        var byUnderscore = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&search=a_c");
-        var bareWildcard = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&search=%25%25");
+        var bySubject = await PagedListReads.PageAsync(admin, $"{route}&search=WEBSITE");
+        var byId = await PagedListReads.PageAsync(admin, $"{route}&search={website}");
+        var byPercent = await PagedListReads.PageAsync(admin, $"{route}&search=50%25");
+        var byUnderscore = await PagedListReads.PageAsync(admin, $"{route}&search=a_c");
+        var bareWildcard = await PagedListReads.PageAsync(admin, $"{route}&search=%25%25");
 
-        InvoiceListTestSeeds.IdsOf(bySubject).Should().Equal(website);
-        InvoiceListTestSeeds.IdsOf(byId).Should().Contain(website);
-        InvoiceListTestSeeds.IdsOf(byPercent).Should().Equal(percent);
-        InvoiceListTestSeeds.IdsOf(byUnderscore).Should().Equal(underscore);
-        InvoiceListTestSeeds.IdsOf(bareWildcard).Should().BeEmpty();
+        PagedListReads.IdsOf(bySubject).Should().Equal(website);
+        PagedListReads.IdsOf(byId).Should().Contain(website);
+        PagedListReads.IdsOf(byPercent).Should().Equal(percent);
+        PagedListReads.IdsOf(byUnderscore).Should().Equal(underscore);
+        PagedListReads.IdsOf(bareWildcard).Should().BeEmpty();
     }
 
     /// <summary>The stage and validity filters each narrow the client's quotes, and narrow together.</summary>
@@ -113,15 +113,15 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
         var deliveredPassed = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Delivered passed", passed, QuoteStage.Delivered);
         var route = $"/api/billing/quotes/client/{clientId}?page=1&pageSize=100";
 
-        var delivered = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&stage=Delivered");
-        var valid = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&validity=Valid");
-        var expired = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&validity=Expired");
-        var deliveredValid = await InvoiceListTestSeeds.PageAsync(admin, $"{route}&stage=Delivered&validity=Valid");
+        var delivered = await PagedListReads.PageAsync(admin, $"{route}&stage=Delivered");
+        var valid = await PagedListReads.PageAsync(admin, $"{route}&validity=Valid");
+        var expired = await PagedListReads.PageAsync(admin, $"{route}&validity=Expired");
+        var deliveredValid = await PagedListReads.PageAsync(admin, $"{route}&stage=Delivered&validity=Valid");
 
-        InvoiceListTestSeeds.IdsOf(delivered).Should().BeEquivalentTo([deliveredAhead, deliveredPassed]);
-        InvoiceListTestSeeds.IdsOf(valid).Should().BeEquivalentTo([draftAhead, deliveredAhead]);
-        InvoiceListTestSeeds.IdsOf(expired).Should().Equal(deliveredPassed);
-        InvoiceListTestSeeds.IdsOf(deliveredValid).Should().Equal(deliveredAhead);
+        PagedListReads.IdsOf(delivered).Should().BeEquivalentTo([deliveredAhead, deliveredPassed]);
+        PagedListReads.IdsOf(valid).Should().BeEquivalentTo([draftAhead, deliveredAhead]);
+        PagedListReads.IdsOf(expired).Should().Equal(deliveredPassed);
+        PagedListReads.IdsOf(deliveredValid).Should().Equal(deliveredAhead);
     }
 
     /// <summary>A filter is applied before paging: the total counts every match and each page holds its slice, newest first.</summary>
@@ -137,14 +137,14 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
         var newest = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Newest", expiry, QuoteStage.Delivered, TestMoments.Seeded.AddDays(2));
         var route = $"/api/billing/quotes/client/{clientId}";
 
-        var first = await InvoiceListTestSeeds.PageAsync(admin, $"{route}?page=1&pageSize=1&stage=Delivered");
-        var second = await InvoiceListTestSeeds.PageAsync(admin, $"{route}?page=2&pageSize=1&stage=Delivered");
-        var beyond = await InvoiceListTestSeeds.PageAsync(admin, $"{route}?page=3&pageSize=1&stage=Delivered");
+        var first = await PagedListReads.PageAsync(admin, $"{route}?page=1&pageSize=1&stage=Delivered");
+        var second = await PagedListReads.PageAsync(admin, $"{route}?page=2&pageSize=1&stage=Delivered");
+        var beyond = await PagedListReads.PageAsync(admin, $"{route}?page=3&pageSize=1&stage=Delivered");
 
-        InvoiceListTestSeeds.IdsOf(first).Should().Equal(newest);
+        PagedListReads.IdsOf(first).Should().Equal(newest);
         first.GetProperty("totalCount").GetInt32().Should().Be(2);
-        InvoiceListTestSeeds.IdsOf(second).Should().Equal(oldest);
-        InvoiceListTestSeeds.IdsOf(beyond).Should().BeEmpty();
+        PagedListReads.IdsOf(second).Should().Equal(oldest);
+        PagedListReads.IdsOf(beyond).Should().BeEmpty();
     }
 
     /// <summary>A page below one, no page, or a page size outside the limit is refused with 400 on the page and page size, not corrected.</summary>
@@ -163,7 +163,7 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
         var response = await admin.GetAsync($"/api/billing/quotes/client/1?{queryString}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain(field);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 
     /// <summary>A search longer than the limit is refused with 400 on the search, not cut.</summary>
@@ -177,7 +177,7 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
             $"/api/billing/quotes/client/1?page=1&pageSize=20&search={new string('a', PagingLimits.MaxSearchLength + 1)}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain("search");
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("search");
     }
 
     /// <summary>A route client id that names nothing is refused with 400 on the client id.</summary>
@@ -190,7 +190,7 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
         var response = await admin.GetAsync("/api/billing/quotes/client/0?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain("clientid");
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("clientid");
     }
 
     /// <summary>

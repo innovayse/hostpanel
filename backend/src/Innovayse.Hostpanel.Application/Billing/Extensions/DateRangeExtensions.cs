@@ -1,30 +1,33 @@
 using System.Linq.Expressions;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 
 namespace Innovayse.Hostpanel.Application.Billing.Extensions;
 
 /// <summary>
-/// The one way a billing list narrows its rows to a date range typed into its filter: the first day is included from its
-/// first instant and the last day is included to its last instant, so a range of one day lists that whole day. Every billing
-/// list that offers a "from" and a "to" uses this, so the invoice, credit note, quote and transaction lists agree on what
-/// "to" means.
+/// The one way a billing list narrows its rows to the calendar days typed into its filter. The days are bare dates, turned
+/// into UTC instants by <see cref="DateOnlyExtensions"/> exactly as the reports do, so the range is the half-open window
+/// <c>[from 00:00, to + 1 day 00:00)</c> whatever zone the host runs in, and a range of one day lists that whole day. The
+/// invoice and transaction lists, the two that offer a "from" and a "to", agree on what "to" means because they both use this.
 /// </summary>
 public static class DateRangeExtensions
 {
-    /// <summary>Keeps the rows whose moment falls inside the period, the day of <paramref name="to"/> included to its end.</summary>
+    /// <summary>Keeps the rows whose moment falls on one of the days from <paramref name="from"/> to <paramref name="to"/>, both included.</summary>
     /// <typeparam name="T">The row type.</typeparam>
     /// <param name="source">The rows to narrow.</param>
     /// <param name="moment">Selects the moment the period is compared with (for example the creation moment).</param>
-    /// <param name="from">The first moment kept, inclusive; <see langword="null"/> for no lower bound.</param>
-    /// <param name="to">Any moment of the last day kept (UTC); the whole day is kept. <see langword="null"/> for no upper bound.</param>
+    /// <param name="from">The first day kept; <see langword="null"/> for no lower bound.</param>
+    /// <param name="to">The last day kept, the whole day included; <see langword="null"/> for no upper bound.</param>
     /// <returns>The narrowed rows; both bounds compare the column itself, with no function over it, so an index can serve the range.</returns>
     public static IQueryable<T> InPeriod<T>(
-        this IQueryable<T> source, Expression<Func<T, DateTimeOffset>> moment, DateTimeOffset? from, DateTimeOffset? to)
+        this IQueryable<T> source, Expression<Func<T, DateTimeOffset>> moment, DateOnly? from, DateOnly? to)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(moment);
 
-        if (from is { } start)
+        if (from is { } firstDay)
         {
+            var start = firstDay.StartOfDayUtc();
+
             // A closure member, not a constant, so the provider sends the bound as a parameter.
             Expression<Func<DateTimeOffset>> lower = () => start;
             source = source.Where(Expression.Lambda<Func<T, bool>>(
@@ -32,10 +35,9 @@ public static class DateRangeExtensions
         }
 
         // The last representable day has no day after it, so it needs no upper bound.
-        if (to is { } end && end.UtcDateTime.Date < DateTime.MaxValue.Date)
+        if (to is { } lastDay && lastDay < DateOnly.MaxValue)
         {
-            // The day after the last day, at its first instant: the half-open end that keeps the last second of the day.
-            var exclusiveEnd = new DateTimeOffset(end.UtcDateTime.Date.AddDays(1), TimeSpan.Zero);
+            var exclusiveEnd = lastDay.EndOfDayExclusiveUtc();
             Expression<Func<DateTimeOffset>> upper = () => exclusiveEnd;
             source = source.Where(Expression.Lambda<Func<T, bool>>(
                 Expression.LessThan(moment.Body, upper.Body), moment.Parameters));

@@ -16,6 +16,6 @@ public sealed class ListClientQuotesValidator : QuoteListQueryValidator<ListClie
     public ListClientQuotesValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.ClientId).MustBePositiveId(L["QuoteClientIdInvalid"]);
+        RuleFor(x => x.ClientId).MustBePositiveId(L["ListClientIdInvalid"]);
     }
 }

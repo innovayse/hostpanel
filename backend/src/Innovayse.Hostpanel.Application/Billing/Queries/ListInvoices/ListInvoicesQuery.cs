@@ -9,13 +9,13 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.ListInvoices;
 /// <param name="Search">Optional text; only invoices whose id or payment method contains it (case-insensitive) are listed. Blank lists all.</param>
 /// <param name="ClientId">Optional client filter; <see langword="null"/> for every client.</param>
 /// <param name="Status">Optional status filter, bound by name from the query string; <see langword="null"/> for every status.</param>
-/// <param name="From">Optional first creation moment (inclusive, UTC); <see langword="null"/> for no lower bound.</param>
-/// <param name="To">Optional last creation day (UTC), the whole day included; <see langword="null"/> for no upper bound.</param>
+/// <param name="From">Optional first creation day (UTC), bound from <c>yyyy-MM-dd</c>; <see langword="null"/> for no lower bound.</param>
+/// <param name="To">Optional last creation day (UTC), bound from <c>yyyy-MM-dd</c>, the whole day included; <see langword="null"/> for no upper bound.</param>
 public sealed record ListInvoicesQuery(
     int Page,
     int PageSize,
     string? Search = null,
     int? ClientId = null,
     InvoiceStatus? Status = null,
-    DateTimeOffset? From = null,
-    DateTimeOffset? To = null) : IListQuery, IInvoiceListFilters;
+    DateOnly? From = null,
+    DateOnly? To = null) : IListQuery, IInvoiceListFilters;

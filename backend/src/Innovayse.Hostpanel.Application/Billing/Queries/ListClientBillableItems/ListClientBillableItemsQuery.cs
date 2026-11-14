@@ -20,4 +20,4 @@ public sealed record ListClientBillableItemsQuery(
     int Page,
     int PageSize,
     string? Search = null,
-    BillableItemType? Type = null) : IListQuery;
+    BillableItemType? Type = null) : IListQuery, IBillableItemListFilters;

@@ -14,8 +14,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.ListTransactions;
 /// <param name="ClientId">The client's primary key, or <see langword="null"/> for all clients; the controller overlays it from the route on a client's list.</param>
 /// <param name="Direction">Optional direction, bound by name from the query string; <see langword="null"/> for money in and out.</param>
 /// <param name="PaymentMethod">Optional payment method, compared as a whole; <see langword="null"/> or blank for every method.</param>
-/// <param name="From">Optional first moment kept, inclusive; <see langword="null"/> for no lower bound.</param>
-/// <param name="To">Optional last day kept, the whole day (UTC); <see langword="null"/> for no upper bound.</param>
+/// <param name="From">Optional first day kept (UTC), bound from <c>yyyy-MM-dd</c>; <see langword="null"/> for no lower bound.</param>
+/// <param name="To">Optional last day kept (UTC), bound from <c>yyyy-MM-dd</c>, the whole day included; <see langword="null"/> for no upper bound.</param>
 /// <param name="Amount">Optional amount; only entries whose amount in or amount out is exactly this are listed. <see langword="null"/> for every amount.</param>
 public sealed record ListTransactionsQuery(
     int Page,
@@ -24,6 +24,6 @@ public sealed record ListTransactionsQuery(
     int? ClientId = null,
     TransactionDirection? Direction = null,
     string? PaymentMethod = null,
-    DateTimeOffset? From = null,
-    DateTimeOffset? To = null,
+    DateOnly? From = null,
+    DateOnly? To = null,
     decimal? Amount = null) : IListQuery, ITransactionListFilters;

@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 
@@ -7,8 +6,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Extensions;
 /// <summary>
 /// The one definition of "due for automatic invoicing" for billable items, shared by the daily run
 /// that lists the clients to invoice and the per-client use case that invoices them, so the two can
-/// never disagree on what is due; and the one definition of how a billable item list is narrowed by
-/// the search text and the type filter, shared by the admin list and the list on a client's profile.
+/// never disagree on what is due.
 /// </summary>
 public static class BillableItemQueryExtensions
 {
@@ -25,19 +23,4 @@ public static class BillableItemQueryExtensions
         type == BillableItemType.OneTime
             ? items.Where(x => !x.IsInvoiced && x.Type == BillableItemType.OneTime && x.NextDueDate <= now)
             : items.Where(x => x.Type == BillableItemType.Recurring && x.NextDueDate != null && x.NextDueDate <= now);
-
-    /// <summary>
-    /// Narrows to the items whose description contains the search text (case-insensitive) or whose id the text is,
-    /// and to one type when a type is given.
-    /// </summary>
-    /// <param name="items">The billable items.</param>
-    /// <param name="search">What the person typed; blank means no search.</param>
-    /// <param name="type">The type to keep; <see langword="null"/> keeps every type.</param>
-    /// <returns>The narrowed items, in the order they came.</returns>
-    public static IQueryable<BillableItem> Matching(
-        this IQueryable<BillableItem> items, string? search, BillableItemType? type)
-    {
-        var narrowed = items.SearchIncludingId(search, x => x.Id, x => x.Description);
-        return type is { } kind ? narrowed.Where(x => x.Type == kind) : narrowed;
-    }
 }

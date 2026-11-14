@@ -223,8 +223,6 @@
     "manageBillingInvoices": "Управление счетами на оплату",
     "due": "К оплате",
     "summaryHint": "{count} счёт на странице | {count} счета на странице | {count} счетов на странице",
-    "dateFrom": "Дата с",
-    "dateTo": "Дата по",
     "dateRefunded": "Дата возврата",
     "totalcountRecordsFoundShowingValue": "Найдено записей: {totalCount}, показаны {value}-{value2}",
     "markPaid": "Отметить оплаченным",

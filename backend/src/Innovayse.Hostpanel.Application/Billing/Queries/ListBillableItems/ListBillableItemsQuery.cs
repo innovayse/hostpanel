@@ -20,4 +20,4 @@ public sealed record ListBillableItemsQuery(
     string? Search = null,
     int? ClientId = null,
     BillableItemType? Type = null,
-    bool? Invoiced = null) : IListQuery;
+    bool? Invoiced = null) : IListQuery, IBillableItemListFilters;

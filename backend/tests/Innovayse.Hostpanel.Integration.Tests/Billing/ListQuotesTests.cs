@@ -74,9 +74,9 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var alpha = await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Alpha-{token}", DateTimeOffset.UtcNow.AddDays(30));
         await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Beta-{token}", DateTimeOffset.UtcNow.AddDays(30));
 
-        var page = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search=ALPHA-{token.ToUpperInvariant()}");
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search=ALPHA-{token.ToUpperInvariant()}");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().Equal(alpha);
+        PagedListReads.IdsOf(page).Should().Equal(alpha);
         page.GetProperty("totalCount").GetInt32().Should().Be(1);
     }
 
@@ -90,9 +90,9 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var hosting = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Hosting upgrade", DateTimeOffset.UtcNow.AddDays(30));
         await QuoteListTestSeeds.SeedAsync(factory, clientId, "Domain transfer", DateTimeOffset.UtcNow.AddDays(30));
 
-        var page = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&search={hosting}");
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&search={hosting}");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().Equal(hosting);
+        PagedListReads.IdsOf(page).Should().Equal(hosting);
     }
 
     /// <summary>A percent sign and an underscore typed into the search match themselves, not any text.</summary>
@@ -109,13 +109,13 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var underscore = await QuoteListTestSeeds.SeedAsync(factory, clientId, $"{token} a_c", expiry);
         await QuoteListTestSeeds.SeedAsync(factory, clientId, $"{token} abc", expiry);
 
-        var percentPage = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search={token}%2050%25");
-        var underscorePage = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search={token}%20a_c");
-        var bareWildcard = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search={token}%25%25");
+        var percentPage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search={token}%2050%25");
+        var underscorePage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search={token}%20a_c");
+        var bareWildcard = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search={token}%25%25");
 
-        InvoiceListTestSeeds.IdsOf(percentPage).Should().Equal(percent);
-        InvoiceListTestSeeds.IdsOf(underscorePage).Should().Equal(underscore);
-        InvoiceListTestSeeds.IdsOf(bareWildcard).Should().BeEmpty();
+        PagedListReads.IdsOf(percentPage).Should().Equal(percent);
+        PagedListReads.IdsOf(underscorePage).Should().Equal(underscore);
+        PagedListReads.IdsOf(bareWildcard).Should().BeEmpty();
     }
 
     /// <summary>The client filter keeps only that client's quotes.</summary>
@@ -129,11 +129,11 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var firstQuote = await QuoteListTestSeeds.SeedAsync(factory, first, "First", DateTimeOffset.UtcNow.AddDays(30));
         var secondQuote = await QuoteListTestSeeds.SeedAsync(factory, second, "Second", DateTimeOffset.UtcNow.AddDays(30));
 
-        var firstPage = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={first}");
-        var secondPage = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={second}");
+        var firstPage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={first}");
+        var secondPage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={second}");
 
-        InvoiceListTestSeeds.IdsOf(firstPage).Should().Equal(firstQuote);
-        InvoiceListTestSeeds.IdsOf(secondPage).Should().Equal(secondQuote);
+        PagedListReads.IdsOf(firstPage).Should().Equal(firstQuote);
+        PagedListReads.IdsOf(secondPage).Should().Equal(secondQuote);
     }
 
     /// <summary>The stage filter keeps only the quotes in that stage.</summary>
@@ -148,11 +148,11 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var delivered = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Delivered", expiry, QuoteStage.Delivered);
         var accepted = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Accepted", expiry, QuoteStage.Accepted);
 
-        var deliveredPage = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&stage=Delivered");
-        var acceptedPage = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&stage=Accepted");
+        var deliveredPage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&stage=Delivered");
+        var acceptedPage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&stage=Accepted");
 
-        InvoiceListTestSeeds.IdsOf(deliveredPage).Should().Equal(delivered);
-        InvoiceListTestSeeds.IdsOf(acceptedPage).Should().Equal(accepted);
+        PagedListReads.IdsOf(deliveredPage).Should().Equal(delivered);
+        PagedListReads.IdsOf(acceptedPage).Should().Equal(accepted);
     }
 
     /// <summary>
@@ -170,11 +170,11 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
             factory, clientId, "Expired stage", DateTimeOffset.UtcNow.AddDays(30), QuoteStage.Expired);
         var passed = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Passed", DateTimeOffset.UtcNow.AddDays(-2), QuoteStage.Delivered);
 
-        var valid = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&validity=Valid");
-        var expired = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&validity=Expired");
+        var valid = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&validity=Valid");
+        var expired = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&validity=Expired");
 
-        InvoiceListTestSeeds.IdsOf(valid).Should().BeEquivalentTo([ahead, expiredStageAhead]);
-        InvoiceListTestSeeds.IdsOf(expired).Should().Equal(passed);
+        PagedListReads.IdsOf(valid).Should().BeEquivalentTo([ahead, expiredStageAhead]);
+        PagedListReads.IdsOf(expired).Should().Equal(passed);
     }
 
     /// <summary>The search and every filter narrow together: a quote must pass each one.</summary>
@@ -193,10 +193,10 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Beta {token}", ahead, QuoteStage.Delivered);
         await QuoteListTestSeeds.SeedAsync(factory, other, $"Alpha {token}", ahead, QuoteStage.Delivered);
 
-        var page = await InvoiceListTestSeeds.PageAsync(
+        var page = await PagedListReads.PageAsync(
             admin, $"/api/billing/quotes?page=1&pageSize=100&search=alpha%20{token}&clientId={clientId}&stage=Delivered&validity=Valid");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().Equal(match);
+        PagedListReads.IdsOf(page).Should().Equal(match);
     }
 
     /// <summary>A filter is applied before paging: the total counts every match, each page holds its slice, newest first and the id breaks a tie.</summary>
@@ -213,15 +213,15 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var tiedSecond = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Tied second", expiry, createdAt: sameMoment);
         var newest = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Newest", expiry, createdAt: TestMoments.Seeded.AddDays(2));
 
-        var first = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=3&clientId={clientId}");
-        var second = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=2&pageSize=3&clientId={clientId}");
-        var beyond = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/quotes?page=3&pageSize=3&clientId={clientId}");
+        var first = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=3&clientId={clientId}");
+        var second = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=2&pageSize=3&clientId={clientId}");
+        var beyond = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=3&pageSize=3&clientId={clientId}");
 
-        InvoiceListTestSeeds.IdsOf(first).Should().Equal(newest, tiedSecond, tiedFirst);
+        PagedListReads.IdsOf(first).Should().Equal(newest, tiedSecond, tiedFirst);
         first.GetProperty("totalCount").GetInt32().Should().Be(4);
-        InvoiceListTestSeeds.IdsOf(second).Should().Equal(oldest);
+        PagedListReads.IdsOf(second).Should().Equal(oldest);
         second.GetProperty("totalCount").GetInt32().Should().Be(4);
-        InvoiceListTestSeeds.IdsOf(beyond).Should().BeEmpty();
+        PagedListReads.IdsOf(beyond).Should().BeEmpty();
     }
 
     /// <summary>A page below one, no page, or a page size outside the limit is refused with 400 on the page and page size, not corrected.</summary>
@@ -240,7 +240,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var response = await admin.GetAsync($"/api/billing/quotes?{queryString}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain(field);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 
     /// <summary>A search longer than the limit is refused with 400 on the search, not cut.</summary>
@@ -253,7 +253,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var response = await admin.GetAsync($"/api/billing/quotes?page=1&pageSize=20&search={new string('a', PagingLimits.MaxSearchLength + 1)}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain("search");
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("search");
     }
 
     /// <summary>A client id that names nothing is refused with 400 on the client id.</summary>
@@ -269,7 +269,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var response = await admin.GetAsync($"/api/billing/quotes?page=1&pageSize=20&clientId={clientId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain("clientid");
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("clientid");
     }
 
     /// <summary>

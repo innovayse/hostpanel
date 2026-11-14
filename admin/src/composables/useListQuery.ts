@@ -13,6 +13,9 @@ import { useFilterQuery } from '@/composables/useFilterQuery'
 import type { FilterQuery } from '@/composables/useFilterQuery'
 import type { UiFilterChip } from '@/utils/ui/filter'
 
+/** The one shape of a day the lists send to the API: `YYYY-MM-DD`, with no time and no zone. */
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
 /** One filter a screen shows as a chip: its key, the caption of its field and the value as the operator reads it. */
 export interface ListChipSource<K extends string> {
   /** Key of the filter; what removing the chip reports. */
@@ -59,7 +62,7 @@ export interface ListQuery<K extends string> extends FilterQuery<K> {
    * Reads an applied filter as a date.
    *
    * @param key - The filter field in the address.
-   * @returns A computed holding the date as written, undefined when the filter is not set or the address holds something that is not a date.
+   * @returns A computed holding the day as written (`YYYY-MM-DD`), undefined when the filter is not set or the address holds anything else, such as a timestamp.
    */
   dateOf: (key: K) => ComputedRef<string | undefined>
   /**
@@ -143,7 +146,7 @@ export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K>
      */
     dateOf: key => computed(() => {
       const value = query.applied.value[key]
-      return value !== '' && !Number.isNaN(Date.parse(value)) ? value : undefined
+      return DAY_PATTERN.test(value) && !Number.isNaN(Date.parse(value)) ? value : undefined
     }),
     /**
      * The chips for the filters that have a value.

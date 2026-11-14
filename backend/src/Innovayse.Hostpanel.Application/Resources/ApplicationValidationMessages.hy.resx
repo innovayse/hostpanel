@@ -1111,7 +1111,7 @@
   <data name="ActivityLogFilterTooLong" xml:space="preserve">
     <value>Որոնման զտիչը կարող է լինել առավելագույնը 200 նիշ։</value>
   </data>
-  <data name="ReportDateRangeInvalid" xml:space="preserve">
+  <data name="DateRangeInvalid" xml:space="preserve">
     <value>Ավարտի ամսաթիվը չի կարող լինել սկզբի ամսաթվից առաջ։</value>
   </data>
   <data name="ReportMonthInvalid" xml:space="preserve">
@@ -1422,6 +1422,9 @@
   </data>
   <data name="ListSearchTooLong" xml:space="preserve">
     <value>Որոնման տեքստը չի կարող լինել {0} նիշից երկար։</value>
+  </data>
+  <data name="ListClientIdInvalid" xml:space="preserve">
+    <value>Նշեք առկա հաճախորդ։</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">
     <value>Էլ. փոստի ֆիլտրը չի կարող լինել {0} նիշից երկար։</value>

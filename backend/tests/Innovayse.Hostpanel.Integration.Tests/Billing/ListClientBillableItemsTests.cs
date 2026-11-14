@@ -283,13 +283,10 @@ public sealed class ListClientBillableItemsTests(IntegrationTestFactory factory)
     /// <returns>The ids of both lists in the order given, the invoiced total count and the sum of the uninvoiced amounts.</returns>
     private static async Task<ClientItemsPage> ReadAsync(HttpClient admin, string url)
     {
-        var response = await admin.GetAsync(url);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var root = body.RootElement;
+        var root = await PagedListReads.PageAsync(admin, url);
         return new ClientItemsPage(
             root.GetProperty("uninvoicedItems").EnumerateArray().Select(i => i.GetProperty("id").GetInt32()).ToList(),
-            PagedListReads.ReadIds(root.GetProperty("invoicedItems")),
+            PagedListReads.IdsOf(root.GetProperty("invoicedItems")),
             root.GetProperty("invoicedItems").GetProperty("totalCount").GetInt32(),
             root.GetProperty("uninvoicedTotal").EnumerateArray().Sum(t => t.GetProperty("amount").GetDecimal()));
     }

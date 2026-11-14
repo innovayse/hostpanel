@@ -223,8 +223,6 @@
     "manageBillingInvoices": "Վճարման հաշիվների կառավարում",
     "due": "Վճարման ենթակա",
     "summaryHint": "{count} հաշիվ այս էջում | {count} հաշիվ այս էջում",
-    "dateFrom": "Ամսաթիվ սկսած",
-    "dateTo": "Ամսաթիվ մինչև",
     "dateRefunded": "Վերադարձի ամսաթիվ",
     "totalcountRecordsFoundShowingValue": "Գտնվել է գրառում՝ {totalCount}, ցուցադրված են {value}-{value2}",
     "markPaid": "Նշել որպես վճարված",

@@ -47,12 +47,12 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         await BillingTestSeeds.EnsureCurrencyAsync(factory, "ZQT", "998", 0.5m);
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        var before = await ReadAsync(admin, "/api/transactions?page=1&pageSize=1");
+        var before = await PagedListReads.PageAsync(admin, "/api/transactions?page=1&pageSize=1");
         var baseCode = before.GetProperty("currency").GetString()!;
 
         await SeedTransactionAsync(clientId, 100m, 10m, "ZQT");
         await SeedTransactionAsync(clientId, 10m, 0m, baseCode);
-        var after = await ReadAsync(admin, "/api/transactions?page=1&pageSize=1");
+        var after = await PagedListReads.PageAsync(admin, "/api/transactions?page=1&pageSize=1");
 
         (after.GetProperty("totalIn").GetDecimal() - before.GetProperty("totalIn").GetDecimal()).Should().Be(60m);
         (after.GetProperty("totalFees").GetDecimal() - before.GetProperty("totalFees").GetDecimal()).Should().Be(5m);
@@ -69,7 +69,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var clientId = await BillingTestSeeds.SeedClientAsync(factory, "ZQT");
         var transactionId = await BillingTestSeeds.CreateTransactionAsync(admin, clientId, 8m);
 
-        var fetched = await ReadAsync(admin, $"/api/transactions/{transactionId}");
+        var fetched = await PagedListReads.PageAsync(admin, $"/api/transactions/{transactionId}");
 
         fetched.GetProperty("currency").GetString().Should().Be("ZQT");
     }
@@ -100,7 +100,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         created.StatusCode.Should().Be(HttpStatusCode.Created);
         var transactionId = await created.Content.ReadFromJsonAsync<int>();
 
-        var fetched = await ReadAsync(admin, $"/api/transactions/{transactionId}");
+        var fetched = await PagedListReads.PageAsync(admin, $"/api/transactions/{transactionId}");
 
         fetched.GetProperty("currency").GetString().Should().Be("ZQT");
     }
@@ -129,8 +129,8 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
             factory, clientId, currency, TestMoments.Seeded, "Plain", paymentMethod: $"gateway-{token}");
         var unrelated = await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, "Unrelated");
 
-        var tokenPage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token.ToUpperInvariant()}");
-        var idPage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&search={unrelated}");
+        var tokenPage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token.ToUpperInvariant()}");
+        var idPage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&search={unrelated}");
 
         IdsOf(tokenPage).Should().BeEquivalentTo([byDescription, byReference, byMethod]);
         IdsOf(idPage).Should().Contain(unrelated);
@@ -148,9 +148,9 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var underscore = await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, $"{token} a_c");
         await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, $"{token} abc");
 
-        var percentPage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}%2050%25");
-        var underscorePage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}%20a_c");
-        var bareWildcard = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}%25%25");
+        var percentPage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}%2050%25");
+        var underscorePage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}%20a_c");
+        var bareWildcard = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}%25%25");
 
         IdsOf(percentPage).Should().Equal(percent);
         IdsOf(underscorePage).Should().Equal(underscore);
@@ -167,8 +167,8 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var firstRow = await TransactionListTestSeeds.SeedAsync(factory, first, currency, TestMoments.Seeded, "First");
         var secondRow = await TransactionListTestSeeds.SeedAsync(factory, second, currency, TestMoments.Seeded, "Second");
 
-        var byFilter = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={first}");
-        var byRoute = await ReadAsync(admin, $"/api/transactions/client/{second}?page=1&pageSize=100&clientId={first}");
+        var byFilter = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={first}");
+        var byRoute = await PagedListReads.PageAsync(admin, $"/api/transactions/client/{second}?page=1&pageSize=100&clientId={first}");
 
         IdsOf(byFilter).Should().Equal(firstRow);
         IdsOf(byRoute).Should().Equal(secondRow);
@@ -184,8 +184,8 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var sent = await TransactionListTestSeeds.SeedAsync(
             factory, clientId, currency, TestMoments.Seeded, "Sent", amountIn: 0m, amountOut: 12m);
 
-        var inPage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&direction=In");
-        var outPage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&direction=Out");
+        var inPage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&direction=In");
+        var outPage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&direction=Out");
 
         IdsOf(inPage).Should().Equal(received);
         IdsOf(outPage).Should().Equal(sent);
@@ -201,8 +201,8 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, "Prepaid", paymentMethod: "card-prepaid");
         var manual = await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, "Manual", paymentMethod: "manual");
 
-        var cardPage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&paymentMethod=card");
-        var manualPage = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&paymentMethod=manual");
+        var cardPage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&paymentMethod=card");
+        var manualPage = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&paymentMethod=manual");
 
         IdsOf(cardPage).Should().Equal(card);
         IdsOf(manualPage).Should().Equal(manual);
@@ -220,10 +220,10 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var last = await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, day.AddDays(1).AddSeconds(-1), "Last second");
         await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, day.AddDays(1), "After");
 
-        var oneDay = await ReadAsync(
-            admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&from=2026-03-10T00:00:00Z&to=2026-03-10T00:00:00Z");
-        var fromOnly = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&from=2026-03-10T00:00:00Z");
-        var toOnly = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&to=2026-03-09T00:00:00Z");
+        var oneDay = await PagedListReads.PageAsync(
+            admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&from=2026-03-10&to=2026-03-10");
+        var fromOnly = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&from=2026-03-10");
+        var toOnly = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&to=2026-03-09");
 
         IdsOf(oneDay).Should().BeEquivalentTo([first, last]);
         IdsOf(fromOnly).Should().HaveCount(3);
@@ -241,7 +241,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
             factory, clientId, currency, TestMoments.Seeded, "Sent", amountIn: 0m, amountOut: 40m);
         await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, "Other", amountIn: 41m);
 
-        var page = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&amount=40");
+        var page = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&clientId={clientId}&amount=40");
 
         IdsOf(page).Should().BeEquivalentTo([received, sent]);
     }
@@ -261,9 +261,9 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, $"Other {token}", paymentMethod: "card", amountIn: 25m);
         await TransactionListTestSeeds.SeedAsync(factory, other, currency, TestMoments.Seeded, $"Invoice {token}", paymentMethod: "card", amountIn: 25m);
 
-        var page = await ReadAsync(
+        var page = await PagedListReads.PageAsync(
             admin,
-            $"/api/transactions?page=1&pageSize=100&search=invoice%20{token}&clientId={clientId}&direction=In&paymentMethod=card&amount=25&from=2026-03-10T00:00:00Z&to=2026-03-10T00:00:00Z");
+            $"/api/transactions?page=1&pageSize=100&search=invoice%20{token}&clientId={clientId}&direction=In&paymentMethod=card&amount=25&from=2026-03-10&to=2026-03-10");
 
         IdsOf(page).Should().Equal(match);
     }
@@ -282,11 +282,11 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         await TransactionListTestSeeds.SeedCreditOnlyAsync(factory, clientId, currency, TestMoments.Seeded, "Goodwill credit");
         var route = $"/api/transactions?page=1&pageSize=100&clientId={clientId}";
 
-        var everything = await ReadAsync(admin, route);
-        var card = await ReadAsync(admin, $"{route}&paymentMethod=card");
-        var received = await ReadAsync(admin, $"{route}&direction=In");
-        var sent = await ReadAsync(admin, $"{route}&direction=Out");
-        var none = await ReadAsync(admin, $"{route}&search=nothing-{Guid.NewGuid():N}");
+        var everything = await PagedListReads.PageAsync(admin, route);
+        var card = await PagedListReads.PageAsync(admin, $"{route}&paymentMethod=card");
+        var received = await PagedListReads.PageAsync(admin, $"{route}&direction=In");
+        var sent = await PagedListReads.PageAsync(admin, $"{route}&direction=Out");
+        var none = await PagedListReads.PageAsync(admin, $"{route}&search=nothing-{Guid.NewGuid():N}");
 
         AssertTotals(everything, totalIn: 105m, totalOut: 40m, totalFees: 10m, balance: 55m, count: 3);
         AssertTotals(card, totalIn: 100m, totalOut: 0m, totalFees: 10m, balance: 90m, count: 1);
@@ -305,8 +305,8 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var cash = await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded, $"Cash {token}");
         var credit = await TransactionListTestSeeds.SeedCreditOnlyAsync(factory, clientId, currency, TestMoments.Seeded, $"Credit {token}");
 
-        var searched = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}");
-        var byId = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=100&search={credit}&clientId={clientId}");
+        var searched = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&search={token}");
+        var byId = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=100&search={credit}&clientId={clientId}");
 
         IdsOf(searched).Should().Equal(cash);
         IdsOf(byId).Should().NotContain(credit);
@@ -324,9 +324,9 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var newest = await TransactionListTestSeeds.SeedAsync(factory, clientId, currency, TestMoments.Seeded.AddDays(2), "Newest");
         var route = $"/api/transactions?pageSize=3&clientId={clientId}";
 
-        var first = await ReadAsync(admin, $"{route}&page=1");
-        var second = await ReadAsync(admin, $"{route}&page=2");
-        var beyond = await ReadAsync(admin, $"{route}&page=3");
+        var first = await PagedListReads.PageAsync(admin, $"{route}&page=1");
+        var second = await PagedListReads.PageAsync(admin, $"{route}&page=2");
+        var beyond = await PagedListReads.PageAsync(admin, $"{route}&page=3");
 
         IdsOf(first).Should().Equal(newest, tiedSecond, tiedFirst);
         first.GetProperty("transactions").GetProperty("totalCount").GetInt32().Should().Be(4);
@@ -350,7 +350,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var response = await admin.GetAsync($"/api/transactions?{queryString}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain(field);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 
     /// <summary>A search longer than the limit is refused with 400 on the search, not cut.</summary>
@@ -363,7 +363,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var response = await admin.GetAsync($"/api/transactions?page=1&pageSize=20&search={new string('a', PagingLimits.MaxSearchLength + 1)}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain("search");
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("search");
     }
 
     /// <summary>A client id, an amount or a payment method the filters cannot honour is refused with 400 on that field.</summary>
@@ -375,6 +375,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     [InlineData("clientId=-4", "clientid")]
     [InlineData("amount=0", "amount")]
     [InlineData("amount=-5", "amount")]
+    [InlineData("from=2026-03-11&to=2026-03-10", "to")]
     public async Task FilterValueOutOfRangeIsRefused(string filter, string field)
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
@@ -382,7 +383,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var response = await admin.GetAsync($"/api/transactions?page=1&pageSize=20&{filter}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain(field);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 
     /// <summary>A payment method longer than a stored one can be is refused with 400 on the payment method.</summary>
@@ -395,7 +396,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         var response = await admin.GetAsync($"/api/transactions?page=1&pageSize=20&paymentMethod={new string('m', 101)}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain("paymentmethod");
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("paymentmethod");
     }
 
     /// <summary>
@@ -423,7 +424,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        var empty = await ReadAsync(admin, $"/api/transactions?page=1&pageSize=1&clientId={clientId}");
+        var empty = await PagedListReads.PageAsync(admin, $"/api/transactions?page=1&pageSize=1&clientId={clientId}");
         return (admin, clientId, empty.GetProperty("currency").GetString()!);
     }
 
@@ -431,7 +432,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     /// <param name="result">The answer body.</param>
     /// <returns>The row ids.</returns>
     private static List<int> IdsOf(JsonElement result) =>
-        InvoiceListTestSeeds.IdsOf(result.GetProperty("transactions"));
+        PagedListReads.IdsOf(result.GetProperty("transactions"));
 
     /// <summary>Asserts the summary totals and the number of rows an answer reports.</summary>
     /// <param name="result">The answer body.</param>
@@ -447,17 +448,6 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         result.GetProperty("totalFees").GetDecimal().Should().Be(totalFees);
         result.GetProperty("balance").GetDecimal().Should().Be(balance);
         result.GetProperty("transactions").GetProperty("totalCount").GetInt32().Should().Be(count);
-    }
-
-    /// <summary>Reads a JSON answer from the admin API.</summary>
-    /// <param name="admin">The authenticated admin client.</param>
-    /// <param name="url">The route to read.</param>
-    /// <returns>The parsed body.</returns>
-    private static async Task<JsonElement> ReadAsync(HttpClient admin, string url)
-    {
-        var response = await admin.GetAsync(url);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        return await response.Content.ReadFromJsonAsync<JsonElement>();
     }
 
     /// <summary>Writes a ledger row straight into the database, in the given currency.</summary>

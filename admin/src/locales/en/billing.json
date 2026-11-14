@@ -223,8 +223,6 @@
     "manageBillingInvoices": "Manage billing invoices",
     "due": "Due",
     "summaryHint": "{count} invoice on this page | {count} invoices on this page",
-    "dateFrom": "Date from",
-    "dateTo": "Date to",
     "dateRefunded": "Date Refunded",
     "totalcountRecordsFoundShowingValue": "{totalCount} Records Found, Showing {value} to {value2}",
     "markPaid": "Mark Paid",

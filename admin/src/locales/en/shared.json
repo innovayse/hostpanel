@@ -79,6 +79,8 @@
   "delete": "Delete",
   "reason": "Reason",
   "dateRange": "Date Range",
+  "dateFrom": "Date from",
+  "dateTo": "Date to",
   "selectDateRange": "Select date range",
   "totalcountRecordsFound": "{totalCount} Records Found",
   "back": "Back",

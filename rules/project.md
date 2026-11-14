@@ -1405,7 +1405,7 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   series cuts its days through `Application/Common/DayWindow` and counts them with `CountPerDayAsync`
   (`Common/Extensions/DayWindowExtensions`; income sums with `IncomeExtensions.SumPerDayAsync`), which group in the database by UTC
   quarter hour (`TimeBucket`) and assign the few buckets to days in code, so the dashboard charts and the daily performance
-  report agree and no timestamp is loaded. Other reports still bucket by UTC (`ReportDateExtensions`). The entities declare
+  report agree and no timestamp is loaded. Other reports still bucket by UTC (`DateOnlyExtensions` in `Common/Extensions`). The entities declare
   their own audit columns rather than deriving from `AuditableEntity`, so
   `Infrastructure/Persistence/AuditableEntityInterceptor.cs` stamps by convention: `CreatedAt` on
   insert unless already set (`Backdate` before the first save wins), `UpdatedAt` on change unless
@@ -1817,7 +1817,8 @@ feature does not exist is not kept. The decisions:
   The billable item list (`ListBillableItemsQuery`, the admin Billable Items screen) is on it with `SearchIncludingId` on the description and id and
   `ClientId`, `Type` and `Invoiced` filters (type and invoiced together cover the screen's six status choices); it does not search the client name,
   which only the Clients module can read, so the screen filters by a client chosen from the client picker. The billable items tab of a client
-  (`ListClientBillableItemsQuery`: `ClientId`, `Page`, `PageSize`, `Search`, `Type`) shares `BillableItemQueryExtensions.Matching` with it, so the search and
+  (`ListClientBillableItemsQuery`: `ClientId`, `Page`, `PageSize`, `Search`, `Type`) shares the `IBillableItemListFilters` (`Type`) with it, validated once by
+  `BillableItemListQueryValidator<T>` and applied once by `BillableItemFilterExtensions.Matching`, so the search and
   the type narrow the uninvoiced list and the invoiced list alike, while `Page` and `PageSize` cut the invoiced list only. The cancellation request list
   (`ListCancellationRequestsQuery`) is on it with `SearchIncludingId` on the reason and id and `Type` and `Status` filters, all applied to the requests
   before they are joined to their service (and counted there), and it does not search the product or the client name, which other modules own.
@@ -1827,9 +1828,13 @@ feature does not exist is not kept. The decisions:
   the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list does not search the client name, which only the Clients
   module can read, so it offers the client as a picker (`ClientId`, `useClientOptions`) and Billing never joins the client tables. The credit
   note list (`ListCreditNotesQuery`) is on it with `SearchIncludingId` over the number, the reason and the refund reference and `InvoiceId`,
-  `ClientId`, `Status` and `Method` filters. A billing date range is applied by `DateRangeExtensions.InPeriod` (`Billing/Extensions`): `From`
-  is inclusive from its first instant and `To` is inclusive to the end of its UTC day (the half-open end is the next midnight), so every billing
-  list that offers a period agrees on what the last day means; the range compares the column itself, so an index can serve it.
+  `ClientId`, `Status` and `Method` filters. The two billing lists that offer a period, the invoice lists and the transaction lists, take `From` and `To` as bare days (`DateOnly`, bound from
+  `yyyy-MM-dd`; a timestamp is a 400) and apply them with `DateRangeExtensions.InPeriod` (`Billing/Extensions`), which turns the days into UTC instants with the
+  one helper every report uses, `DateOnlyExtensions.StartOfDayUtc` and `EndOfDayExclusiveUtc` (`Common/Extensions`): the window is the half-open
+  `[from 00:00, to + 1 day 00:00)` in UTC whatever zone the host runs in, so a range of one day lists that whole day (a test runs it on hosts east and west of UTC).
+  The range compares the column itself, so an index can serve it, and a `To` before its `From` is refused (`DateRangeInvalid`, `MustNotBeBefore`). The credit
+  note and quote lists have no period. The payment gateway log keeps `From` and `To` as instants, because its admin screen sends exact ones (`T00:00:00Z` and
+  `T23:59:59.999Z`), not bare days. Every list validator words a bad client filter with the one key `ListClientIdInvalid` instead of a creation message.
   The quote lists (`ListQuotesQuery`, the admin Quotes screen, and `ListClientQuotesQuery`, the quotes tab of a client) are on it with
   `SearchIncludingId` over the quote id and subject and the shared `IQuoteListFilters` (`Stage`, `Validity`), validated once by
   `QuoteListQueryValidator<T>` and applied once by `QuoteFilterExtensions.Matching(query, now)`; `Validity` (`QuoteValidity`: `Valid` or `Expired`) is

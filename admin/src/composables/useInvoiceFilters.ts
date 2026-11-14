@@ -9,8 +9,8 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ListChipSource, ListQuery } from '@/composables/useListQuery'
+import { usePeriodFilter } from '@/composables/usePeriodFilter'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
-import { formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/tones'
 import { InvoiceStatus } from '@/types/invoice'
 import type { InvoiceListFilters } from '@/types/invoice'
@@ -53,15 +53,12 @@ export const useInvoiceFilters = (
   /** The status in the address as an invoice status, undefined when none is set or the value is not one. */
   const status = query.enumOf(InvoiceFilterKey.Status, InvoiceStatus)
 
-  /** The first creation day in the address, undefined when none is set or the value is not a date. */
-  const from = query.dateOf(InvoiceFilterKey.From)
-
-  /** The last creation day in the address, undefined when none is set or the value is not a date. */
-  const to = query.dateOf(InvoiceFilterKey.To)
+  /** The creation period in the address: the first and the last day, undefined when not set or not a day. */
+  const period = usePeriodFilter(query, { from: InvoiceFilterKey.From, to: InvoiceFilterKey.To })
 
   return {
     /** The invoice filters the address names, ready for the list request. */
-    filters: computed(() => ({ status: status.value, from: from.value, to: to.value })),
+    filters: computed(() => ({ status: status.value, from: period.from.value, to: period.to.value })),
     /**
      * The status and period chips.
      *
@@ -73,16 +70,7 @@ export const useInvoiceFilters = (
         label: t('shared.status'),
         value: status.value === undefined ? undefined : statusLabel(INVOICE_STATUS_OPTIONS, status.value),
       },
-      {
-        key: InvoiceFilterKey.From,
-        label: t('billing.invoicesList.dateFrom'),
-        value: from.value === undefined ? undefined : formatDate(from.value),
-      },
-      {
-        key: InvoiceFilterKey.To,
-        label: t('billing.invoicesList.dateTo'),
-        value: to.value === undefined ? undefined : formatDate(to.value),
-      },
+      ...period.chipSources(),
     ],
   }
 }

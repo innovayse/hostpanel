@@ -63,9 +63,9 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
         var mine = await InvoiceListTestSeeds.SeedAsync(factory, clientId);
         await InvoiceListTestSeeds.SeedAsync(factory, otherClientId);
 
-        var page = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=100");
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=100");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().Equal(mine);
+        PagedListReads.IdsOf(page).Should().Equal(mine);
     }
 
     /// <summary>The search matches the payment method and the id, and a literal percent sign or underscore matches itself.</summary>
@@ -75,16 +75,16 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        var token = InvoiceListTestSeeds.UniqueToken();
+        var token = PagedListReads.UniqueToken();
         var literal = await InvoiceListTestSeeds.SeedAsync(factory, clientId, paymentMethod: $"a%b_{token}");
         var lookalike = await InvoiceListTestSeeds.SeedAsync(factory, clientId, paymentMethod: $"aXbY{token}");
 
-        var byMethod = await InvoiceListTestSeeds.PageAsync(
+        var byMethod = await PagedListReads.PageAsync(
             admin, $"/api/billing/client/{clientId}?page=1&pageSize=100&search={Uri.EscapeDataString($"A%B_{token}")}");
-        var byId = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=100&search={lookalike}");
+        var byId = await PagedListReads.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=100&search={lookalike}");
 
-        InvoiceListTestSeeds.IdsOf(byMethod).Should().Equal(literal);
-        InvoiceListTestSeeds.IdsOf(byId).Should().Contain(lookalike).And.NotContain(literal);
+        PagedListReads.IdsOf(byMethod).Should().Equal(literal);
+        PagedListReads.IdsOf(byId).Should().Contain(lookalike).And.NotContain(literal);
     }
 
     /// <summary>The status filter keeps only that status.</summary>
@@ -97,9 +97,9 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
         await InvoiceListTestSeeds.SeedAsync(factory, clientId);
         var draft = await InvoiceListTestSeeds.SeedAsync(factory, clientId, isDraft: true);
 
-        var page = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=100&status=Draft");
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=100&status=Draft");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().Equal(draft);
+        PagedListReads.IdsOf(page).Should().Equal(draft);
     }
 
     /// <summary>The period keeps the whole last day, up to its last second, and leaves the neighbouring days out.</summary>
@@ -114,10 +114,10 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
         var lastInstant = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2020, 3, 10, 23, 59, 59, TimeSpan.Zero));
         await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2020, 3, 11, 0, 0, 0, TimeSpan.Zero));
 
-        var page = await InvoiceListTestSeeds.PageAsync(
-            admin, $"/api/billing/client/{clientId}?page=1&pageSize=100&from=2020-03-10T00:00:00Z&to=2020-03-10T00:00:00Z");
+        var page = await PagedListReads.PageAsync(
+            admin, $"/api/billing/client/{clientId}?page=1&pageSize=100&from=2020-03-10&to=2020-03-10");
 
-        InvoiceListTestSeeds.IdsOf(page).Should().BeEquivalentTo([firstInstant, lastInstant]);
+        PagedListReads.IdsOf(page).Should().BeEquivalentTo([firstInstant, lastInstant]);
     }
 
     /// <summary>A page holds the newest invoices first and the total counts every match.</summary>
@@ -131,11 +131,11 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
         var middle = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2021, 1, 2, 0, 0, 0, TimeSpan.Zero));
         var newest = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2021, 1, 3, 0, 0, 0, TimeSpan.Zero));
 
-        var first = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=2");
-        var second = await InvoiceListTestSeeds.PageAsync(admin, $"/api/billing/client/{clientId}?page=2&pageSize=2");
+        var first = await PagedListReads.PageAsync(admin, $"/api/billing/client/{clientId}?page=1&pageSize=2");
+        var second = await PagedListReads.PageAsync(admin, $"/api/billing/client/{clientId}?page=2&pageSize=2");
 
-        InvoiceListTestSeeds.IdsOf(first).Should().Equal(newest, middle);
-        InvoiceListTestSeeds.IdsOf(second).Should().Equal(oldest);
+        PagedListReads.IdsOf(first).Should().Equal(newest, middle);
+        PagedListReads.IdsOf(second).Should().Equal(oldest);
         first.GetProperty("totalCount").GetInt32().Should().Be(3);
     }
 
@@ -147,6 +147,7 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
     [InlineData("page=0&pageSize=20", "page")]
     [InlineData("page=1&pageSize=101", "pagesize")]
     [InlineData("page=1&pageSize=20&status=99", "status")]
+    [InlineData("page=1&pageSize=20&from=2020-03-11&to=2020-03-10", "to")]
     public async Task OutOfRangeValueIsRefusedNamingTheFieldAsync(string queryString, string field)
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
@@ -154,6 +155,6 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
         var response = await admin.GetAsync($"/api/billing/client/1?{queryString}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await InvoiceListTestSeeds.RefusedFieldsAsync(response)).Should().Contain(field);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 }

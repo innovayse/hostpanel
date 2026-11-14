@@ -23,6 +23,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
@@ -79,13 +80,13 @@ onMounted(() => load())
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.productService') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.nextDueDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>

@@ -5,11 +5,12 @@
  */
 import { inject } from 'vue'
 import { UI_TABLE_CONTEXT } from '@/utils/ui/injection'
+import { cardTableClasses } from '@/utils/ui/table'
 
 /** The table around this foot, absent when the foot is mounted alone. */
 const table = inject(UI_TABLE_CONTEXT, null)
 </script>
 
 <template>
-  <tfoot v-if="!table?.loading" class="border-t border-border-subtle text-sm font-semibold"><slot /></tfoot>
+  <tfoot v-if="!table?.loading" role="rowgroup" class="border-t border-border-subtle text-sm font-semibold" :class="cardTableClasses"><slot /></tfoot>
 </template>

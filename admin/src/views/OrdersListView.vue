@@ -34,6 +34,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
@@ -254,9 +255,9 @@ onMounted(() => load())
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('orders.ordersList.order') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('orders.ordersList.order') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>

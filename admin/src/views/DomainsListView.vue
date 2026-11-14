@@ -27,6 +27,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { DOMAIN_STATUS_OPTIONS } from '@/lib/constants'
@@ -107,9 +108,9 @@ onMounted(() => load())
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.domainName') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.domainName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('domains.domainsList.expiresAt') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('domains.domainsList.renewalPrice') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>

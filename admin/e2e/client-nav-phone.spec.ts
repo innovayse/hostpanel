@@ -175,7 +175,7 @@ test('a phone changes the theme from the menu drawer, since the top bar has no r
   expect(await page.evaluate(key => window.localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
 })
 
-test('the contacts table on the profile page scrolls inside its card and does not widen the page', async ({ page }) => {
+test('the contacts table on the profile page is cards that fit their card and do not widen the page', async ({ page }) => {
   const contact = {
     firstName: 'Anna', lastName: 'Petrosyan', email: 'anna.petrosyan.billing@example.test', phone: '+37410111222',
     address: { street: null, address2: null, city: null, state: null, postCode: null, country: null },
@@ -198,11 +198,10 @@ test('the contacts table on the profile page scrolls inside its card and does no
     while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
       node = node.parentElement
     }
-    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth, isContentScroller: node.classList.contains('overflow-y-auto') }
+    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth }
   })
-  // The scroller must be the card, not the content column itself (which scrolls sideways, cutting the page, when the card does not).
-  expect(scrolling?.isContentScroller).toBe(false)
-  expect(scrolling?.scrollWidth).toBeGreaterThan(scrolling?.clientWidth ?? Infinity)
+  // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
+  expect(scrolling?.scrollWidth).toBeLessThanOrEqual(scrolling?.clientWidth ?? 0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
@@ -251,7 +250,7 @@ test.describe('on a tablet and wider', () => {
   })
 })
 
-test('the billing card lines its counts and amounts up in columns, and the summary tables scroll inside their cards', async ({ page }) => {
+test('the billing card lines its counts and amounts up in columns, and the summary tables are cards that fit theirs', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [
@@ -284,17 +283,16 @@ test('the billing card lines its counts and amounts up in columns, and the summa
     }
     return main.scrollWidth <= main.clientWidth && document.documentElement.scrollWidth <= window.innerWidth
   })).toBe(true)
-  // The services table is wider than a phone: its card scrolls sideways inside itself, which is what keeps the page still.
+  // The services table is drawn as cards on a phone, so its box has nothing to scroll.
   await expect(page.getByTestId('client-summary-services')).toBeVisible()
   const scrolling = await page.getByTestId('client-summary-services').evaluate((table) => {
     let node: HTMLElement | null = table.parentElement
     while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
       node = node.parentElement
     }
-    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth, isContentScroller: node.classList.contains('overflow-y-auto') }
+    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth }
   })
   expect(scrolling).not.toBeNull()
-  // The scroller must be the card, not the content column itself (which scrolls sideways, cutting the page, when the card does not).
-  expect(scrolling?.isContentScroller).toBe(false)
-  expect(scrolling?.scrollWidth).toBeGreaterThan(scrolling?.clientWidth ?? Infinity)
+  // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
+  expect(scrolling?.scrollWidth).toBeLessThanOrEqual(scrolling?.clientWidth ?? 0)
 })

@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import { UiCardRole } from '@/utils/ui/table'
 
 describe('UiTableHeader', () => {
   it('hides the column below its breakpoint and shows it as a table cell from there', () => {
@@ -41,6 +42,31 @@ describe('UiTableHeader', () => {
   it('matches the numeric and actions cells below it', () => {
     expect(mount(UiTableHeader, { props: { numeric: true } }).classes()).toEqual(expect.arrayContaining(['text-end', 'tabular-nums']))
     expect(mount(UiTableHeader, { props: { actions: true } }).classes()).toEqual(expect.arrayContaining(['w-16', 'sm:w-28', 'text-end']))
+  })
+
+  it('is a column header for assistive technology whatever the layout', () => {
+    expect(mount(UiTableHeader).attributes('role')).toBe('columnheader')
+  })
+
+  it('keeps its caption in a display contents span, so the caption can be read without the sort arrow', () => {
+    const plain = mount(UiTableHeader, { slots: { default: 'Name' } })
+    const sortable = mount(UiTableHeader, { props: { sortable: true }, slots: { default: 'Name' } })
+
+    expect(plain.get('span').classes()).toContain('contents')
+    expect(plain.get('span').text()).toBe('Name')
+    expect(sortable.get('button span.contents').text()).toBe('Name')
+  })
+
+  it('is not drawn on a card, except the select column that holds select-all', () => {
+    expect(mount(UiTableHeader).classes()).toContain('max-sm:hidden')
+    expect(mount(UiTableHeader, { props: { select: true } }).classes()).not.toContain('max-sm:hidden')
+  })
+
+  it('takes a card role without changing its own look', () => {
+    const wrapper = mount(UiTableHeader, { props: { cardRole: UiCardRole.Title }, slots: { default: 'Name' } })
+
+    expect(wrapper.text()).toBe('Name')
+    expect(wrapper.classes()).toContain('max-sm:hidden')
   })
 
   it('has no sort button or aria-sort unless sortable', () => {

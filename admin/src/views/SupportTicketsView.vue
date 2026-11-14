@@ -39,6 +39,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { formatElapsed, EMPTY_VALUE } from '@/lib/format'
 import { useSupportStore } from '@/stores/support'
@@ -293,12 +294,12 @@ watch([activeFilter, appliedSearch, page], load, { immediate: true })
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader />
-            <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge" />
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.subject') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.department') }}</UiTableHeader>
             <UiTableHeader>{{ t('support.supportTickets.requestor') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.lastReply') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>

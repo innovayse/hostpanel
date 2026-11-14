@@ -1,7 +1,7 @@
 /**
- * Tests for FraudBlockListsView: the list on show comes from the API, the tabs switch lists, an
- * add sends the typed value and re-reads the list, a refused add shows under its field or in the
- * banner, and a delete asks for a confirmation first.
+ * Tests for FraudBlockListsView: the list on show comes from the API, the tab, the search and the page live in the
+ * address, the tabs switch lists (starting from the first page with an empty search), an add sends the typed value and
+ * re-reads the list, a refused add shows under its field or in the banner, and a delete asks for a confirmation first.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -248,6 +248,90 @@ describe('FraudBlockListsView', () => {
       'GET /admin/fraud/blocklist?page=1&pageSize=20&type=Ip',
     ])
     expect(wrapper.find('[data-testid="fraud-block-list-row-4"]').exists()).toBe(true)
+  })
+
+  it('opens the list the address names and marks its tab', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([])) })
+    const { wrapper } = await mountScreen(FraudBlockListsView, {}, '/?type=Country')
+
+    expect(requestsOf(mock)).toEqual(['GET /admin/fraud/blocklist?page=1&pageSize=20&type=Country'])
+    expect(wrapper.get('[data-testid="fraud-block-list-tab-Country"]').attributes('aria-selected')).toBe('true')
+  })
+
+  it('shows the IP list when the address names a type that is not one', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([])) })
+    const { wrapper } = await mountScreen(FraudBlockListsView, {}, '/?type=Nonsense')
+
+    expect(requestsOf(mock)).toEqual([LIST_IP])
+    expect(wrapper.get('[data-testid="fraud-block-list-tab-Ip"]').attributes('aria-selected')).toBe('true')
+  })
+
+  it('puts the typed search in the address and sends it with the list on show after the pause', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([entry(4, '203.0.113.7')])) })
+    const { wrapper, router } = await mountScreen(FraudBlockListsView)
+
+    await wrapper.get('[data-testid="fraud-block-list-search"]').setValue('203.0')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ search: '203.0' })
+    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/blocklist?page=1&pageSize=20&type=Ip&search=203.0'])
+  })
+
+  it('restores the search from the address and sends it', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([entry(4, '203.0.113.7')])) })
+    const { wrapper } = await mountScreen(FraudBlockListsView, {}, '/?type=EmailDomain&search=spam')
+
+    expect(requestsOf(mock)).toEqual(['GET /admin/fraud/blocklist?page=1&pageSize=20&type=EmailDomain&search=spam'])
+    expect((wrapper.get('[data-testid="fraud-block-list-search"]').element as HTMLInputElement).value).toBe('spam')
+  })
+
+  it('names the search in the empty state of a searched list', async () => {
+    stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([])) })
+    const { wrapper } = await mountScreen(FraudBlockListsView, {}, '/?search=nothing')
+
+    expect(wrapper.get('[data-testid="fraud-block-list-table"]').text()).toContain('No entries match your search.')
+  })
+
+  it('starts the chosen list from its first page with an empty search, loading it once', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([entry(4, '203.0.113.7')], 45)) })
+    const { wrapper, router } = await mountScreen(FraudBlockListsView, {}, '/?search=spam&page=2')
+    const before = requestsOf(mock).length
+
+    await wrapper.get('[data-testid="fraud-block-list-tab-Country"]').trigger('click')
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ type: 'Country' })
+    expect(requestsOf(mock).slice(before)).toEqual(['GET /admin/fraud/blocklist?page=1&pageSize=20&type=Country'])
+    expect((wrapper.get('[data-testid="fraud-block-list-search"]').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('keeps the list and the search when another page is opened', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([entry(4, '203.0.113.7')], 45)) })
+    const { wrapper, router } = await mountScreen(FraudBlockListsView, {}, '/?type=Cidr&search=203')
+
+    await wrapper.get('[data-testid="fraud-block-list-pagination-page-2"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ type: 'Cidr', search: '203', page: '2' })
+    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/blocklist?page=2&pageSize=20&type=Cidr&search=203'])
+  })
+
+  it('goes back to the first page after an add made from a later page', async () => {
+    const mock = stubRouteTable({
+      'GET /admin/fraud/blocklist': () => json(pageOf([entry(4, '203.0.113.7')], 45)),
+      'POST /admin/fraud/blocklist': () => json(5, 201),
+    })
+    const { wrapper, router } = await mountScreen(FraudBlockListsView, {}, '/?page=2')
+
+    await wrapper.get('[data-testid="fraud-block-list-value"]').setValue('203.0.113.9')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(requestsOf(mock).slice(-1)).toEqual([LIST_IP])
   })
 
   it('loads again from the Retry of a refused load', async () => {

@@ -30,7 +30,7 @@ export const useFraudLogStore = defineStore('fraud-log', () => {
   /**
    * Reads one filtered page of the log.
    *
-   * @param filters - Decision and reason.
+   * @param filters - Search text, kind, decision and reason; a member left out means no narrowing.
    * @param page - Page number (1-based).
    * @param pageSize - Entries per page.
    * @returns Promise that resolves when the page is read; a refusal is left in `error`.

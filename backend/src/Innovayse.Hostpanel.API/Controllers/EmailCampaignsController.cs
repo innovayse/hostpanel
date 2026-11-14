@@ -36,20 +36,21 @@ public sealed class EmailCampaignsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Every email campaign, newest first, with how its delivery stands.</summary>
+    /// <summary>A page of email campaigns, newest first, with how their delivery stands.</summary>
+    /// <param name="query">Pagination, optional subject search and optional status filter.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the campaigns; 400 with <c>VALIDATION_ERROR</c>; 401 without a session; 403 for a caller who is not an administrator;
-    /// 429 when the rate limit is hit.
+    /// 200 with the page; 400 with <c>VALIDATION_ERROR</c> when the page, the page size, the search or the status is refused;
+    /// 401 without a session; 403 for a caller who is not an administrator; 429 when the rate limit is hit.
     /// </returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<EmailCampaignListItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedList<EmailCampaignListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ListAsync(CancellationToken ct)
+    public async Task<IActionResult> ListAsync([FromQuery] ListEmailCampaignsQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<EmailCampaignListItemDto>>>(new ListEmailCampaignsQuery(), ct);
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<EmailCampaignListItemDto>>>(query, ct);
         return HandleResult(outcome);
     }
 

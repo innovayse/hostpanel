@@ -1,8 +1,8 @@
 /**
  * Pinia store for managing TLD pricing configurations.
  *
- * Provides CRUD operations, provider import, and price sync for the admin TLD pricing settings
- * page. The only caller of `useTldConfigsApi`; a refusal is kept as the API's own sentence,
+ * Provides the paged list, CRUD operations, provider import, and price sync for the admin TLD pricing
+ * settings page. The only caller of `useTldConfigsApi`; a refusal is kept as the API's own sentence,
  * never thrown.
  */
 
@@ -10,9 +10,11 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useTldConfigsApi } from '@/composables/apis/useTldConfigsApi'
 import { runAction } from '@/lib/runAction'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import type {
   CreateTldConfigPayload,
   TldConfig,
+  TldConfigListFilters,
   TldConfigListItem,
   TldImportResult,
   UpdateTldConfigPayload,
@@ -22,8 +24,14 @@ import type {
 export const useTldConfigsStore = defineStore('tldConfigs', () => {
   const api = useTldConfigsApi()
 
-  /** All TLD configs. */
+  /** The TLD configs of the loaded page. */
   const configs = ref<TldConfigListItem[]>([])
+
+  /** Items per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
+
+  /** Total number of matching TLD configs across all pages. */
+  const totalCount = ref(0)
 
   /** Whether a fetch is in progress. */
   const loading = ref(false)
@@ -35,17 +43,24 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
   const actionError = ref<string | null>(null)
 
   /**
-   * Fetches all TLD configs from the backend.
+   * Loads one page of TLD configs. The page, the search and the filters come from the list's address, so the
+   * store keeps no copy of them.
    *
-   * @returns Resolves when the request is over; a refusal is left in `error`.
+   * @param page - Page to load, 1-based.
+   * @param filters - The TLD search text and the registrar and enabled filters; empty for none.
+   * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<void> => {
+  const fetchAll = async (page: number, filters: TldConfigListFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, api.listTldConfigs)
+    const result = await runAction(error, () =>
+      api.listTldConfigs({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+    )
     loading.value = false
     if (result.ok) {
-      configs.value = result.value
+      configs.value = result.value.items
+      totalCount.value = result.value.totalCount
     }
+    return result.ok
   }
 
   /**
@@ -60,7 +75,8 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
   }
 
   /**
-   * Runs one mutating request and refreshes the list when it succeeds.
+   * Runs one mutating request. The screen re-reads the list it is showing afterwards, because only it knows
+   * the page and the filters.
    *
    * @param task - The request to run.
    * @returns The request's value, or null when refused (see `actionError`).
@@ -70,12 +86,11 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
     if (!result.ok) {
       return null
     }
-    await fetchAll()
     return { value: result.value }
   }
 
   /**
-   * Creates a new TLD config and refreshes the list.
+   * Creates a new TLD config.
    *
    * @param payload - TLD config data.
    * @returns The new config's ID, or null when refused (see `actionError`).
@@ -86,7 +101,7 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
   }
 
   /**
-   * Updates an existing TLD config and refreshes the list.
+   * Updates an existing TLD config.
    *
    * @param id - TLD config ID.
    * @param payload - Updated TLD config data.
@@ -98,7 +113,7 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
   }
 
   /**
-   * Deletes a TLD config and refreshes the list.
+   * Deletes a TLD config.
    *
    * @param id - TLD config ID to delete.
    * @returns True when deleted; false when refused (see `actionError`).
@@ -109,7 +124,7 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
   }
 
   /**
-   * Imports TLDs from a registrar provider and refreshes the list.
+   * Imports TLDs from a registrar provider.
    *
    * @param module - Registrar module name, as the backend's registrar module enum spells it.
    * @returns Import result with counts, or null when refused (see `actionError`).
@@ -120,7 +135,7 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
   }
 
   /**
-   * Triggers a manual cost price sync from all providers and refreshes the list.
+   * Triggers a manual cost price sync from all providers.
    *
    * @returns True when synced; false when refused (see `actionError`).
    */
@@ -129,5 +144,5 @@ export const useTldConfigsStore = defineStore('tldConfigs', () => {
     return done !== null
   }
 
-  return { configs, loading, error, actionError, fetchAll, fetchById, create, update, remove, importFromProvider, syncPrices }
+  return { configs, pageSize, totalCount, loading, error, actionError, fetchAll, fetchById, create, update, remove, importFromProvider, syncPrices }
 })

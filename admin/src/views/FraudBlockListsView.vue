@@ -1,16 +1,21 @@
 <script setup lang="ts">
 /**
  * Fraud block lists: one tab per list (IP address, IP range, email domain, country), a form that
- * adds an entry with an optional note, and a paged table whose rows can be deleted after a
+ * adds an entry with an optional note, and a searched, paged table whose rows can be deleted after a
  * confirmation.
+ *
+ * The tab, the search text and the page live in the address (`useListQuery`), so a reload or a shared link
+ * restores the same list. Switching tab returns to the first page and empties the search, because a search
+ * belongs to the list it was typed in.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BlockListAddForm from '@/components/fraud/BlockListAddForm.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
@@ -24,6 +29,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
+import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { BLOCK_LIST_TYPE_OPTIONS } from '@/lib/constants'
 import { enumValueOf } from '@/lib/enumValue'
@@ -43,11 +49,22 @@ const store = useFraudBlockListStore()
 /** The result banner for an add or a delete. */
 const banner = useResultBanner()
 
-/** The list on show. */
-const type = ref<BlockListType>(BlockListType.Ip)
+/** The query key the tab is kept under. */
+const FilterKey = {
+  Type: 'type',
+} as const
 
-/** Current page (1-based). */
-const page = ref(1)
+/** The tab, the search text and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, apply, setPage, loadOnChange, enumOf } = useListQuery(Object.values(FilterKey))
+
+/** The type in the address as a block list type, undefined when none is set or the value is not one. */
+const typeOfAddress = enumOf(FilterKey.Type, BlockListType)
+
+/** The list on show: the one in the address, the IP list when it names none. */
+const type = computed<BlockListType>(() => typeOfAddress.value ?? BlockListType.Ip)
+
+/** Whether the list is narrowed by a search. */
+const searching = computed<boolean>(() => appliedSearch.value !== '')
 
 /** The value being typed into the add form. */
 const value = ref('')
@@ -70,14 +87,30 @@ const tabs = computed<UiTabItem[]>(() =>
 )
 
 /**
- * Reads a page of the list on show.
+ * Reads the page of the list the address names, with the search it holds.
  *
- * @param next - Page number (1-based).
  * @returns Promise that resolves when the page is read.
  */
-const load = async (next: number): Promise<void> => {
-  page.value = next
-  await store.fetchPage(type.value, next, DEFAULT_PAGE_SIZE)
+const load = (): Promise<void> => store.fetchPage(type.value, page.value, DEFAULT_PAGE_SIZE, appliedSearch.value || undefined)
+
+// Every change of the tab, the search or the page loads the list the address names.
+loadOnChange(load)
+
+/** True while the first load is in flight and there are no rows yet; the toolbar then keeps its layout. */
+const initialLoading = computed<boolean>(() => store.loading && store.entries.length === 0)
+
+/**
+ * Shows the first page, where a newly added entry (newest first) is.
+ *
+ * @returns Promise that resolves when the first page is read.
+ */
+const showFirstPage = async (): Promise<void> => {
+  if (page.value > 1) {
+    // The address changes, so the list loads itself.
+    await setPage(1)
+  } else {
+    await load()
+  }
 }
 
 /**
@@ -86,28 +119,30 @@ const load = async (next: number): Promise<void> => {
  * @returns Promise that resolves when the page is read.
  */
 const reload = async (): Promise<void> => {
-  await load(page.value)
+  await load()
   if (store.entries.length === 0 && page.value > 1) {
-    await load(page.value - 1)
+    await setPage(page.value - 1)
   }
 }
 
 /**
- * Switches to another list, with an empty form and no refusal left over from the last one.
+ * Switches to another list, with an empty form, an empty search and no refusal left over from the last one.
  *
  * @param next - The value of the tab the operator chose.
- * @returns Promise that resolves when the first page of that list is read.
+ * @returns Promise that resolves when the address names the new list.
  */
 const selectType = async (next: string): Promise<void> => {
   const chosen = enumValueOf(BlockListType, next)
   if (chosen === null) {
     return
   }
-  type.value = chosen
   value.value = ''
   note.value = ''
   store.clearAction()
-  await load(1)
+  // The tab and the emptied search box reach the address in one step, so the new list loads once, from its first page.
+  draft.value.type = chosen
+  search.value = ''
+  await apply()
 }
 
 /**
@@ -124,7 +159,7 @@ const addEntry = async (): Promise<void> => {
     value.value = ''
     note.value = ''
     banner.show(t('fraud.blockList.added'), false)
-    await load(1)
+    await showFirstPage()
   } else if (store.actionError && Object.keys(store.fieldErrors).length === 0) {
     // A refusal that names a field is shown under that field; any other refusal has no place but the banner.
     banner.show(store.actionError, true)
@@ -170,7 +205,6 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
   },
 ]
 
-onMounted(() => load(1))
 </script>
 
 <template>
@@ -198,21 +232,28 @@ onMounted(() => load(1))
       />
     </UiCard>
 
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="fraud-block-list-search"
+      :search-placeholder="t('fraud.blockList.searchPlaceholder')"
+      :loading="initialLoading"
+    />
+
     <UiErrorState
       v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="fraud-block-list-error"
-      @retry="load(page)"
+      @retry="load"
     />
 
-    <UiResultCount :loading="store.loading && store.entries.length === 0" data-testid="fraud-block-list-count">
+    <UiResultCount :loading="initialLoading" data-testid="fraud-block-list-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
     </UiResultCount>
 
     <UiCard class="overflow-hidden">
       <UiTable
-        :loading="store.loading && store.entries.length === 0"
+        :loading="initialLoading"
         :empty="!store.loading && store.entries.length === 0"
         data-testid="fraud-block-list-table"
       >
@@ -235,7 +276,7 @@ onMounted(() => load(1))
           </UiTableRow>
         </UiTableBody>
         <template #empty>
-          {{ t('fraud.blockList.empty') }}
+          {{ searching ? t('fraud.blockList.noMatches') : t('fraud.blockList.empty') }}
         </template>
       </UiTable>
     </UiCard>
@@ -245,7 +286,7 @@ onMounted(() => load(1))
       :total="store.totalCount"
       :page-size="DEFAULT_PAGE_SIZE"
       testid="fraud-block-list-pagination"
-      @update:page="load"
+      @update:page="setPage"
     />
 
     <UiDialog

@@ -518,6 +518,7 @@
     "sendPasswordResetEmail": "Ուղարկել գաղտնաբառի վերականգնման նամակ",
     "totalcountUserValue": "Օգտատերեր՝ {totalCount}",
     "noUsersFound": "Օգտատերեր չեն գտնվել",
+    "noUsersMatchYourSearch": "Որոնմանը համապատասխան օգտատերեր չկան",
     "passwordResetEmailSent": "Գաղտնաբառի վերականգնման նամակը ուղարկվեց։",
     "never": "Երբեք",
     "userSaved": "Օգտատերը պահպանվեց։",

@@ -1717,6 +1717,9 @@
   <data name="FraudDecisionInvalid" xml:space="preserve">
     <value>Недопустимое решение по мошенничеству.</value>
   </data>
+  <data name="FraudReasonInvalid" xml:space="preserve">
+    <value>Недопустимая причина по мошенничеству.</value>
+  </data>
   <data name="OrderReviewReasonRequired" xml:space="preserve">
     <value>Укажите причину, которую увидит клиент.</value>
   </data>
@@ -1725,5 +1728,8 @@
   </data>
   <data name="DashboardPeriodInvalid" xml:space="preserve">
     <value>Выберите период: 30 или 90 дней.</value>
+  </data>
+  <data name="CampaignListStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть одним из: Draft, Scheduled, Sending, Sent.</value>
   </data>
 </root>

@@ -806,7 +806,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **Where it sits.** Port `IPluginRegistryClient` (Application) and one adapter, `Infrastructure/Plugins/Registry/PluginRegistryClient`
     (typed `HttpClient`, `*Wire` records beside it, `internal`). `IPluginPackageInspector` reads what an archive claims
     (plugin id, version, signing key id) and answers `IsOperatorKey`. Use cases (`Admin/Plugins`): `ListRegistryPluginsQuery`
-    (`GET /api/admin/plugins/registry?q=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
+    (`GET /api/admin/plugins/registry?search=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
     (`GET .../registry/updates`) and `InstallRegistryPluginCommand` (`POST .../registry/{id}/install`, body `{version}`,
     demo restricted). One type each for a plugin (`RegistryPluginDto`) and a page (`RegistryPluginPageDto`): the client fills
     the registry's members, `PluginUpdateOffer` (shared by the browser and the update check, reading through `RegistryPluginReader`) sets `installed`,
@@ -1779,6 +1779,33 @@ feature does not exist is not kept. The decisions:
   `FindProductIdsByNameQuery`, so the list reads neither table), and `Status`, `ProductId` and `BillingCycle` filters; the screens share `useServiceFilters` and
   `ServiceFilterFields`. `Page` and `PageSize` are required on `GET /api/services`, so a caller that sent neither (the
   billable item lookup did) now sends `page=1`.
+  The admin user list (`ListUsersQuery`, Clients, Manage Users) is on it with the search alone: the identity provider can narrow only by a search text, so
+  there is no filter to add and none is faked; the provider matches the text itself (name, email), the handler passes page, page size and search through
+  `IdentityAccountListQuery`, and the two user pickers (the add-client and add-user searches) already send `page=1` with their page size, which is now
+  required. The fraud log (`ListFraudLogQuery`) searches the email and IP address with `Search` and takes `Kind`, `Decision` and `Reason` enum filters
+  (`IsInEnum`, `FraudCheckKindInvalid`, `FraudDecisionInvalid`, `FraudReasonInvalid`); it has no date range yet, because a day boundary needs the host time
+  zone (`DayWindow`) and a rule that the end is not before the start, which is its own change. The block lists (`ListBlockListEntriesQuery`) search the value
+  and the note and take the `Type` enum filter; on the screen the type is a tab that lives in the address like a filter, and choosing a tab sets it and
+  empties the search in one navigation (`useFilterQuery.apply` writes the text of the search box with the draft, so a screen can change both at once).
+  The plugin registry list (`ListRegistryPluginsQuery`, the Browse tab of the admin Plugins page) is on it with `Search` forwarded to the registry's own search and a
+  `Category` enum filter; its search is bounded at 100 characters (`PluginRegistrySearchTooLong`), narrower than the shared 200, because that is what the registry accepts, so the
+  validator keeps that one extra rule beside the shared ones. The Installed tab's list (`ListPluginsQuery`) is the documented exception: it is not paged and is
+  filtered in the browser, because it is the inventory of the plugin folder that other code reads whole (the update badges, the registry cards' installed state, the restart banner).
+  The Settings lists are on it too. The TLD list (`ListTldConfigsQuery`, Settings, TLD Pricing) searches the TLD with `Search` and takes the `RegistrarModule` enum
+  filter (the existing `DomainListRegistrarInvalid` sentence is generic and is reused) and an `Enabled` switch, ordered by sort order, TLD and id; its margin is still worked out
+  in the mapper from the one-year prices. The TLD list had no other caller (the portal and the order flow read prices through `GetTldPricingQuery` and `GetTldRenewPriceQuery`), so no unpaged
+  variant exists. The email campaign list (`ListEmailCampaignsQuery`) searches the subject and takes a `CampaignStatus` filter (`CampaignListStatusInvalid`), newest first; the delivery
+  counters are read in one grouped query for the ids of the page only. The tax rule list (`ListTaxRulesQuery`) searches the name, country and region and takes an `Enabled` switch,
+  with the country-wide rule before the regions of its country. A bool filter is a plain `bool?`: an unparsable value is refused by the model binder with the field named. On the
+  frontend the three screens read their filters through `useListQuery`; the enabled switch is the shared `EnabledFilter` (`types/enabledfilter.ts`, `ENABLED_FILTER_OPTIONS`,
+  `enabledOfFilter`), and a store's write no longer re-reads the list itself: the screen reloads the page the address names, and steps back one page when a delete emptied the last.
+- **Lists that are deliberately not paged.** A list is paged, searched and filtered on the server unless it is one of these, each with its reason; a new one is added here, with its
+  reason, or it is paged. The storefront content lists (slides, testimonials, FAQs, locations, partners and projects) are curated sets of a few rows that staff reorder by dragging, and a
+  reorder writes the order of the whole set, so a page of it could not be reordered. Server groups, product groups and client groups are a handful of rows that other forms
+  (server, product, client, campaign audience) use as pickers and that need every group at once. Product bundles are a short curated set shown whole on the storefront. Currencies
+  are the few currencies the panel prices in; every price form, picker and `ListCurrenciesQuery` caller needs the whole set. Email templates are a fixed catalogue with one
+  template per kind of mail, edited in place. Integrations are the catalogue of providers the panel ships or has installed, grouped by category and bounded by that catalogue.
+  The Installed plugins tab is the one documented above.
 
 ### Email campaigns
 

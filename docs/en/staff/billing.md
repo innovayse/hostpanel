@@ -302,7 +302,7 @@ The rate is fixed on the invoice when it is raised. Changing or deleting a rule 
 
 ### Add, edit and delete a rule
 
-Go to **Settings → Tax Rules** to see the rules.
+Go to **Settings → Tax Rules** to see the rules, a country's whole-country rule first and then its regions. Type part of a name, a country code or a region in the search box to find a rule. The **Filters** button narrows the list to the rules that are enabled or switched off; an applied filter shows as a chip you can remove. The list is paged, 20 rules to a page, and the search, the filter and the page stay in the address. Search treats `%` and `_` as ordinary characters.
 
 <Steps>
 <li>

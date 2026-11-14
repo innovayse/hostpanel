@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useEmailCampaignsApi } from '@/composables/apis/useEmailCampaignsApi'
-import { CampaignFilterType } from '@/types/emailcampaign'
+import { CampaignFilterType, CampaignStatus } from '@/types/emailcampaign'
 import { callOf, json, stubFetch } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -20,11 +20,19 @@ const payload = {
 }
 
 describe('useEmailCampaignsApi', () => {
-  it('listCampaigns reads the collection', async () => {
-    const mock = stubFetch(json([{ id: 1 }]))
+  it('listCampaigns sends the page, its size, the subject search and the status', async () => {
+    const page = { items: [{ id: 1 }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }
+    const mock = stubFetch(json(page))
 
-    expect(await useEmailCampaignsApi().listCampaigns()).toEqual([{ id: 1 }])
-    expect(callOf(mock)).toMatchObject({ url: '/api/admin/email-campaigns', method: 'GET' })
+    expect(await useEmailCampaignsApi().listCampaigns({ page: 2, pageSize: 20, search: 'offer', status: CampaignStatus.Draft })).toEqual(page)
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/email-campaigns?page=2&pageSize=20&search=offer&status=Draft', method: 'GET' })
+  })
+
+  it('listCampaigns leaves out a filter that is not set', async () => {
+    const mock = stubFetch(json({ items: [] }))
+
+    await useEmailCampaignsApi().listCampaigns({ page: 1, pageSize: 20 })
+    expect(callOf(mock).url).toBe('/api/admin/email-campaigns?page=1&pageSize=20')
   })
 
   it('getCampaign reads one campaign', async () => {

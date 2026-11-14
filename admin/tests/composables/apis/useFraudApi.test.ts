@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useFraudApi } from '@/composables/apis/useFraudApi'
-import { BlockListType, FraudDecision, FraudReasonCode } from '@/types/fraud'
+import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import type { FraudSettings } from '@/types/fraud'
 import { callOf, json, stubFetch } from '../../helpers/fetch'
 
@@ -36,6 +36,15 @@ describe('useFraudApi', () => {
     expect(query.get('type')).toBe('EmailDomain')
     expect(query.get('page')).toBe('2')
     expect(query.get('pageSize')).toBe('20')
+    expect(query.has('search')).toBe(false)
+  })
+
+  it('listBlockList sends the search text when there is one', async () => {
+    const mock = stubFetch(json({ items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }))
+
+    await useFraudApi().listBlockList(BlockListType.Country, 1, 20, 'ly')
+
+    expect(callOf(mock).url).toBe('/api/admin/fraud/blocklist?page=1&pageSize=20&type=Country&search=ly')
   })
 
   it('addBlockListEntry posts the entry and returns the new id', async () => {
@@ -62,17 +71,23 @@ describe('useFraudApi', () => {
   it('listLog pages the log and leaves empty filters out', async () => {
     const mock = stubFetch(json({ items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }))
 
-    await useFraudApi().listLog({ decision: '', reason: '' }, 1, 20)
+    await useFraudApi().listLog({ search: '' }, 1, 20)
 
     expect(callOf(mock).url).toBe('/api/admin/fraud/log?page=1&pageSize=20')
   })
 
-  it('listLog sends the decision and the reason', async () => {
+  it('listLog sends the search, the kind, the decision and the reason', async () => {
     const mock = stubFetch(json({ items: [], pageNumber: 3, pageSize: 10, totalCount: 0, totalPages: 0 }))
 
-    await useFraudApi().listLog({ decision: FraudDecision.Review, reason: FraudReasonCode.OrderVelocity }, 3, 10)
+    await useFraudApi().listLog(
+      { search: 'buyer', kind: FraudCheckKind.Order, decision: FraudDecision.Review, reason: FraudReasonCode.OrderVelocity },
+      3,
+      10,
+    )
 
     const query = new URL(callOf(mock).url, 'http://localhost').searchParams
+    expect(query.get('search')).toBe('buyer')
+    expect(query.get('kind')).toBe('Order')
     expect(query.get('decision')).toBe('Review')
     expect(query.get('reason')).toBe('OrderVelocity')
     expect(query.get('page')).toBe('3')

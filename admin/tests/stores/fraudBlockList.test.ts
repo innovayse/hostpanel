@@ -45,6 +45,17 @@ describe('fraudBlockListStore', () => {
     expect(callOf(mock).url).toBe('/api/admin/fraud/blocklist?page=1&pageSize=20&type=Ip')
   })
 
+  it('fetchPage sends the search text and leaves an empty one out', async () => {
+    const mock = stubFetch(json({ items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }))
+    const store = useFraudBlockListStore()
+
+    await store.fetchPage(BlockListType.EmailDomain, 2, 20, 'spam')
+    await store.fetchPage(BlockListType.EmailDomain, 1, 20, '')
+
+    expect(callOf(mock, 0).url).toBe('/api/admin/fraud/blocklist?page=2&pageSize=20&type=EmailDomain&search=spam')
+    expect(callOf(mock, 1).url).toBe('/api/admin/fraud/blocklist?page=1&pageSize=20&type=EmailDomain')
+  })
+
   it('fetchPage shows the API sentence on refusal and keeps the earlier page', async () => {
     const store = useFraudBlockListStore()
     stubFetch(json({ items: [entry], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 }))

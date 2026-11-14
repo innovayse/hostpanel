@@ -24,9 +24,6 @@ export const useUsersStore = defineStore('clientAccounts', () => {
   /** Total users matching the current query. */
   const totalCount = ref(0)
 
-  /** Current page number (1-based). */
-  const page = ref(1)
-
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
 
@@ -46,14 +43,16 @@ export const useUsersStore = defineStore('clientAccounts', () => {
   const fieldErrors = ref<Record<string, string>>({})
 
   /**
-   * Fetches a paginated user list.
+   * Fetches one page of the user list. The page and the search text come from the list's address, so the store
+   * keeps no copy of them.
    *
-   * @param search - Optional search term.
+   * @param page - Page to load, 1-based.
+   * @param search - Optional search text; empty or missing for every user.
    * @returns Promise that resolves when data is loaded.
    */
-  const fetchAll = async (search?: string): Promise<void> => {
+  const fetchAll = async (page: number, search?: string): Promise<void> => {
     loading.value = true
-    const result = await runAction(error, () => api.list(page.value, pageSize.value, search))
+    const result = await runAction(error, () => api.list(page, pageSize.value, search))
     loading.value = false
     if (result.ok) {
       users.value = result.value.items
@@ -126,7 +125,6 @@ export const useUsersStore = defineStore('clientAccounts', () => {
   return {
     users,
     totalCount,
-    page,
     pageSize,
     current,
     loading,

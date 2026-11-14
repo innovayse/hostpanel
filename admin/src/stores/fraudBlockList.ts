@@ -40,11 +40,12 @@ export const useFraudBlockListStore = defineStore('fraud-block-list', () => {
    * @param type - Which block list to read.
    * @param page - Page number (1-based).
    * @param pageSize - Entries per page.
+   * @param search - Text the value or the note must contain; empty or missing for none.
    * @returns Promise that resolves when the page is read; a refusal is left in `error`.
    */
-  const fetchPage = async (type: BlockListType, page: number, pageSize: number): Promise<void> => {
+  const fetchPage = async (type: BlockListType, page: number, pageSize: number, search?: string): Promise<void> => {
     loading.value = true
-    const result = await runAction(error, () => api.listBlockList(type, page, pageSize))
+    const result = await runAction(error, () => api.listBlockList(type, page, pageSize, search))
     loading.value = false
     if (result.ok) {
       entries.value = result.value.items

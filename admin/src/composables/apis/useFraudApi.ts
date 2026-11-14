@@ -26,10 +26,11 @@ export const useFraudApi = () => {
    * @param type - Which block list to read.
    * @param page - Page number (1-based).
    * @param pageSize - Entries per page.
+   * @param search - Text the value or the note must contain; empty or missing for none.
    * @returns One page of entries.
    */
-  const listBlockList = (type: BlockListType, page: number, pageSize: number): Promise<PaginatedList<BlockListEntry>> =>
-    request<PaginatedList<BlockListEntry>>(`${ApiPath.AdminFraudBlockList}${buildQuery({ page, pageSize, type })}`)
+  const listBlockList = (type: BlockListType, page: number, pageSize: number, search?: string): Promise<PaginatedList<BlockListEntry>> =>
+    request<PaginatedList<BlockListEntry>>(`${ApiPath.AdminFraudBlockList}${buildQuery({ page, pageSize, type, search })}`)
 
   /**
    * Adds an entry to a block list.
@@ -52,14 +53,14 @@ export const useFraudApi = () => {
   /**
    * Lists one page of the fraud log, newest first.
    *
-   * @param filters - Decision and reason; empty values are not sent.
+   * @param filters - Search text, kind, decision and reason; a member left out or empty is not sent.
    * @param page - Page number (1-based).
    * @param pageSize - Entries per page.
    * @returns One page of log entries.
    */
   const listLog = (filters: FraudLogFilters, page: number, pageSize: number): Promise<PaginatedList<FraudLogEntry>> =>
     request<PaginatedList<FraudLogEntry>>(
-      `${ApiPath.AdminFraudLog}${buildQuery({ page, pageSize, decision: filters.decision, reason: filters.reason })}`,
+      `${ApiPath.AdminFraudLog}${buildQuery({ page, pageSize, search: filters.search, kind: filters.kind, decision: filters.decision, reason: filters.reason })}`,
     )
 
   /**

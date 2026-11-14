@@ -66,10 +66,11 @@ internal static class UsersTestSeeds
 
     /// <summary>Registers a fresh local account and returns its subject and address.</summary>
     /// <param name="client">An unauthenticated client against the local-mode host.</param>
+    /// <param name="label">A short label folded into the unique address, so a test can search for the accounts it made.</param>
     /// <returns>The new account's subject and the address it registered with.</returns>
-    public static async Task<RegisteredAccount> RegisterUserAsync(HttpClient client)
+    public static async Task<RegisteredAccount> RegisterUserAsync(HttpClient client, string label = "admin-users")
     {
-        var email = $"admin-users-{Guid.NewGuid():N}@example.com";
+        var email = $"{label}-{Guid.NewGuid():N}@example.com";
         var response = await client.PostAsJsonAsync("/api/auth/register", new
         {
             email,

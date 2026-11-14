@@ -1,5 +1,5 @@
 /**
- * Tests for the fraud log store: a read fills the page and the total, the filters reach the API as
+ * Tests for the fraud log store: a read fills the page and the total, the search and the filters reach the API as
  * query values (empty ones are left out), and a refusal or a missing answer lands in `error`.
  */
 
@@ -40,7 +40,7 @@ describe('fraudLogStore', () => {
     const mock = stubFetch(json({ items: [entry], pageNumber: 1, pageSize: 20, totalCount: 9, totalPages: 1 }))
     const store = useFraudLogStore()
 
-    await store.fetchPage({ decision: '', reason: '' }, 1, 20)
+    await store.fetchPage({}, 1, 20)
 
     expect(store.entries).toEqual([entry])
     expect(store.totalCount).toBe(9)
@@ -49,24 +49,40 @@ describe('fraudLogStore', () => {
     expect(callOf(mock).url).toBe('/api/admin/fraud/log?page=1&pageSize=20')
   })
 
-  it('fetchPage sends the decision and the reason', async () => {
+  it('fetchPage sends the search, the kind, the decision and the reason', async () => {
     const mock = stubFetch(json({ items: [], pageNumber: 2, pageSize: 10, totalCount: 0, totalPages: 0 }))
     const store = useFraudLogStore()
 
-    await store.fetchPage({ decision: FraudDecision.Rejected, reason: FraudReasonCode.BlockedIp }, 2, 10)
+    await store.fetchPage(
+      { search: '203.0', kind: FraudCheckKind.Registration, decision: FraudDecision.Rejected, reason: FraudReasonCode.BlockedIp },
+      2,
+      10,
+    )
 
     const query = new URL(callOf(mock).url, 'http://localhost').searchParams
+    expect(query.get('search')).toBe('203.0')
+    expect(query.get('kind')).toBe('Registration')
     expect(query.get('decision')).toBe('Rejected')
     expect(query.get('reason')).toBe('BlockedIp')
+    expect(query.get('page')).toBe('2')
+  })
+
+  it('fetchPage leaves an empty search out', async () => {
+    const mock = stubFetch(json({ items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }))
+    const store = useFraudLogStore()
+
+    await store.fetchPage({ search: '' }, 1, 20)
+
+    expect(callOf(mock).url).toBe('/api/admin/fraud/log?page=1&pageSize=20')
   })
 
   it('fetchPage shows the API sentence on refusal and keeps the earlier page', async () => {
     const store = useFraudLogStore()
     stubFetch(json({ items: [entry], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 }))
-    await store.fetchPage({ decision: '', reason: '' }, 1, 20)
+    await store.fetchPage({}, 1, 20)
 
     stubFetch(problem('The log is not available.', 403))
-    await store.fetchPage({ decision: '', reason: '' }, 1, 20)
+    await store.fetchPage({}, 1, 20)
 
     expect(store.error).toBe('The log is not available.')
     expect(store.entries).toEqual([entry])
@@ -77,7 +93,7 @@ describe('fraudLogStore', () => {
     stubOffline()
     const store = useFraudLogStore()
 
-    await store.fetchPage({ decision: '', reason: '' }, 1, 20)
+    await store.fetchPage({}, 1, 20)
 
     expect(store.error).toBe(NO_ANSWER)
   })

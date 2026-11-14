@@ -8,10 +8,12 @@ import {
   BILLABLE_ITEM_TYPE_OPTIONS,
   BILLING_CYCLE_OPTIONS,
   BLOCK_LIST_TYPE_OPTIONS,
+  CAMPAIGN_STATUS_OPTIONS,
   CLIENT_STATUS_OPTIONS,
   CURRENCY_OPTIONS,
   DNS_RECORD_TYPE_OPTIONS,
   DOMAIN_STATUS_OPTIONS,
+  ENABLED_FILTER_OPTIONS,
   FRAUD_CHECK_KIND_OPTIONS,
   FRAUD_DECISION_OPTIONS,
   FRAUD_REASON_OPTIONS,
@@ -31,6 +33,8 @@ import { translate } from '@/lib/translate'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { ClientStatus } from '@/types/client'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
+import { CampaignStatus } from '@/types/emailcampaign'
+import { EnabledFilter } from '@/types/enabledfilter'
 import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { PaymentGateway } from '@/types/gateway'
 import { InvoiceStatus } from '@/types/invoice'
@@ -71,6 +75,8 @@ describe('option lists', () => {
     expect(valuesOf(BILLABLE_ITEM_TYPE_OPTIONS)).toEqual(membersOf(BillableItemType))
     expect(valuesOf(RECURRING_PERIOD_OPTIONS)).toEqual(membersOf(RecurringPeriod))
     expect(valuesOf(GATEWAY_OPTIONS)).toEqual(membersOf(PaymentGateway))
+    expect(valuesOf(CAMPAIGN_STATUS_OPTIONS)).toEqual(membersOf(CampaignStatus))
+    expect(valuesOf(ENABLED_FILTER_OPTIONS)).toEqual(membersOf(EnabledFilter))
   })
 
   it('name every billing cycle with its own label, the newer cycles included', () => {
@@ -121,7 +127,7 @@ describe('option lists', () => {
   })
 
   it('give every option a readable label', () => {
-    const lists = [CLIENT_STATUS_OPTIONS, ORDER_STATUS_OPTIONS, QUOTE_STAGE_OPTIONS, GATEWAY_OPTIONS]
+    const lists = [CLIENT_STATUS_OPTIONS, ORDER_STATUS_OPTIONS, QUOTE_STAGE_OPTIONS, GATEWAY_OPTIONS, CAMPAIGN_STATUS_OPTIONS, ENABLED_FILTER_OPTIONS]
 
     for (const option of lists.flat()) {
       expect(option.label).not.toBe('')

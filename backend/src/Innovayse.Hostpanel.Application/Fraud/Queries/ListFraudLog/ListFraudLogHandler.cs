@@ -1,4 +1,4 @@
-using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Fraud.Common;
 using Innovayse.Hostpanel.Application.Fraud.Extensions;
@@ -9,7 +9,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Fraud.Queries.ListFraudLog;
 
-/// <summary>Returns a page of the fraud log, optionally for one decision and one reason.</summary>
+/// <summary>
+/// Returns a page of the fraud log, narrowed by the search text on the e-mail and IP address and by kind, decision and
+/// reason, all in SQL ahead of paging.
+/// </summary>
 public sealed class ListFraudLogHandler
 {
     /// <summary>The module's data context.</summary>
@@ -23,17 +26,20 @@ public sealed class ListFraudLogHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The page, page size and filters.</param>
+    /// <param name="query">The page, page size, search and filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with a page of log entries. Never refuses.</returns>
     public async Task<Result<PaginatedList<FraudLogEntryDto>>> HandleAsync(ListFraudLogQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
+        var filtered = _context.FraudLogEntries.AsNoTracking().Search(query.Search, l => l.Email, l => l.IpAddress);
 
-        IQueryable<FraudLogEntry> filtered = _context.FraudLogEntries.AsNoTracking();
+        if (query.Kind is { } kind)
+        {
+            filtered = filtered.Where(l => l.Kind == kind);
+        }
+
         if (query.Decision is { } decision)
         {
             filtered = filtered.Where(l => l.Decision == decision);
@@ -48,8 +54,8 @@ public sealed class ListFraudLogHandler
 
         var ordered = filtered.OrderByDescending(l => l.CreatedAt).ThenByDescending(l => l.Id);
         var totalCount = await ordered.CountAsync(ct);
-        var entries = await ordered.Paginate(page, pageSize).ToListAsync(ct);
+        var entries = await ordered.Paginate(query.Page, query.PageSize).ToListAsync(ct);
 
-        return Result.Success(new PaginatedList<FraudLogEntryDto>(entries.Select(e => e.ToDto()).ToList(), totalCount, page, pageSize));
+        return Result.Success(new PaginatedList<FraudLogEntryDto>(entries.Select(e => e.ToDto()).ToList(), totalCount, query.Page, query.PageSize));
     }
 }

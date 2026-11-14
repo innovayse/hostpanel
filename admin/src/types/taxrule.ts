@@ -18,6 +18,22 @@ export interface TaxRuleDto {
   isEnabled: boolean
 }
 
+/** What narrows the tax rule list: the search text and the enabled filter; each member left out means no narrowing. */
+export interface TaxRuleListFilters {
+  /** Search term over the name, country and region; empty for none. */
+  search?: string
+  /** Keep only the rules new invoices use (true) or the ones switched off (false). */
+  enabled?: boolean
+}
+
+/** Filter and paging of the tax rule list. */
+export interface TaxRuleFilter extends TaxRuleListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
+}
+
 /** Body of `POST /api/admin/tax-rules` and `PUT /api/admin/tax-rules/{id}`: every field of a rule except its id. */
 export interface SaveTaxRulePayload {
   /** Display name of the rule. */

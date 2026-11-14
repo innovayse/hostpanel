@@ -9,7 +9,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListRegistryPlug
 ///     Validates <see cref="ListRegistryPluginsQuery"/>. The search text is forwarded to the registry, so its length
 ///     is bounded here and the category must be a defined one; <c>Page</c> and <c>PageSize</c> are clamped by the handler.
 /// </summary>
-public sealed class ListRegistryPluginsValidator : LocalizedValidator<ListRegistryPluginsQuery>
+public sealed class ListRegistryPluginsValidator : ListQueryValidator<ListRegistryPluginsQuery>
 {
     /// <summary>The longest search text forwarded to the registry.</summary>
     private const int MaxSearchLength = 100;
@@ -21,7 +21,7 @@ public sealed class ListRegistryPluginsValidator : LocalizedValidator<ListRegist
     public ListRegistryPluginsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.Q).MaximumLength(MaxSearchLength).WithMessage(L["PluginRegistrySearchTooLong"]);
+        RuleFor(x => x.Search).MaximumLength(MaxSearchLength).WithMessage(L["PluginRegistrySearchTooLong"]);
         RuleFor(x => x.Category).IsInEnum().WithMessage(L["PluginRegistryCategoryInvalid"]);
     }
 }

@@ -14,6 +14,7 @@ import type { Ref } from 'vue'
 import { usePluginsApi } from '@/composables/apis/usePluginsApi'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
 import { errorCode, errorStatus } from '@/lib/errorHandler'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
 import { PluginErrorCode, PluginStatus } from '@/types/plugin'
 import type {
@@ -127,7 +128,7 @@ export const usePluginsStore = defineStore('plugins', () => {
   const registryTotal = ref(0)
 
   /** The registry filter: search text, category and page. */
-  const registryQuery = ref<PluginRegistryQuery>({ q: '', category: '', page: 1 })
+  const registryQuery = ref<PluginRegistryQuery>({ search: '', category: '', page: 1, pageSize: DEFAULT_PAGE_SIZE })
 
   /** True while a registry page is loading. */
   const registryLoading = ref(false)
@@ -447,7 +448,7 @@ export const usePluginsStore = defineStore('plugins', () => {
    * @returns Resolves when the reload is over.
    */
   const setRegistryFilter = async (change: Partial<PluginRegistryQuery>): Promise<void> => {
-    const resetsPage = change.q !== undefined || change.category !== undefined
+    const resetsPage = change.search !== undefined || change.category !== undefined
     registryQuery.value = { ...registryQuery.value, ...(resetsPage ? { page: 1 } : {}), ...change }
     await fetchRegistry()
   }

@@ -360,4 +360,38 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
             metadata,
             gracePeriodDays,
         };
+
+    /// <summary>
+    /// A product created with <c>isHidden</c> is stored <see cref="ProductStatus.Inactive"/> and left off the
+    /// anonymous public catalogue; one created without it stays active and listed.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_Hidden_IsInactiveAndOffThePublicCatalogue()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var hidden = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Hidden", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m, isHidden = true,
+        });
+        var visible = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Visible", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m,
+        });
+        hidden.StatusCode.Should().Be(HttpStatusCode.Created);
+        var hiddenId = await hidden.Content.ReadFromJsonAsync<int>();
+        var visibleId = await visible.Content.ReadFromJsonAsync<int>();
+
+        (await ProductsTestSeeds.GetProductAsync(client, hiddenId)).GetProperty("status").GetString()
+            .Should().Be(nameof(ProductStatus.Inactive));
+        (await ProductsTestSeeds.GetProductAsync(client, visibleId)).GetProperty("status").GetString()
+            .Should().Be(nameof(ProductStatus.Active));
+
+        using var body = JsonDocument.Parse(
+            await factory.CreateClient().GetStringAsync($"/api/public/products?groupId={groupId}"));
+        body.RootElement.EnumerateArray().Select(p => p.GetProperty("id").GetInt32())
+            .Should().Contain(visibleId).And.NotContain(hiddenId);
+    }
 }

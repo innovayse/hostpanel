@@ -361,6 +361,7 @@ const handleSubmit = (): void => {
     sku: sku.value.trim(),
     metadata: metadata.value.trim(),
     gracePeriodDays: Number(gracePeriodDays.value),
+    isHidden: isHidden.value,
   })
 }
 </script>

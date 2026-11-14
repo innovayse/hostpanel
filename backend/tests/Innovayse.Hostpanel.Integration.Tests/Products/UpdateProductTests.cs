@@ -568,4 +568,43 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         metadata,
         gracePeriodDays,
     };
+
+    /// <summary>
+    /// <c>isHidden: true</c> on update makes the product <see cref="ProductStatus.Inactive"/> and drops it from
+    /// the public catalogue, an update that omits the field keeps it hidden, and <c>isHidden: false</c> makes it
+    /// active and listed again; the prices are untouched throughout.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_Hidden_TogglesTheStatusAndThePublicListing()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Toggle", type = ProductType.SharedHosting, monthlyPrice = 3m, annualPrice = 30m,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        async Task<(string? Status, bool Listed, int Prices)> StateAsync()
+        {
+            var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+            using var body = JsonDocument.Parse(
+                await factory.CreateClient().GetStringAsync($"/api/public/products?groupId={groupId}"));
+            var listed = body.RootElement.EnumerateArray().Any(p => p.GetProperty("id").GetInt32() == id);
+            return (dto.GetProperty("status").GetString(), listed, dto.GetProperty("prices").GetArrayLength());
+        }
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Toggle", monthlyPrice = 3m, annualPrice = 30m, isHidden = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be((nameof(ProductStatus.Inactive), false, 1));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Toggle Renamed", monthlyPrice = 3m, annualPrice = 30m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be((nameof(ProductStatus.Inactive), false, 1));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Toggle", monthlyPrice = 3m, annualPrice = 30m, isHidden = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be((nameof(ProductStatus.Active), true, 1));
+    }
 }

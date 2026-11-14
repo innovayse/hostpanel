@@ -64,7 +64,11 @@ export const useTicketFilters = (
   return {
     /** The ticket filters the address names, ready for the list request. */
     filters: computed(() => ({ status: status.value, priority: priority.value, departmentId: departmentId.value })),
-    /** The status, priority and department chips, each with its label and the value the address holds. */
+    /**
+     * The status, priority and department chips.
+     *
+     * @returns Each filter with its key, label and the value the address holds.
+     */
     chipSources: () => [
       {
         key: TicketFilterKey.Status,

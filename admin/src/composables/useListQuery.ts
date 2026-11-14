@@ -82,20 +82,40 @@ export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K>
   return {
     ...query,
     narrowed,
-    /** Loads the list now and again whenever a filter, the search or the page changes. */
+    /**
+     * Loads the list now and again whenever a filter, the search or the page changes.
+     *
+     * @param load - Reads the list the address names.
+     */
     loadOnChange: (load) => {
       // Every change of a filter, the search or the page loads the list the address names.
       watch(listKey, () => load())
       onMounted(() => load())
     },
-    /** The filter under the key as one of the enum's members, undefined when it is none of them. */
+    /**
+     * The filter under the key as one of the enum's members.
+     *
+     * @param key - The filter key in the address.
+     * @param members - The enum the value must belong to.
+     * @returns The member, undefined when the value is none of them.
+     */
     enumOf: (key, members) => computed(() => Object.values(members).find(value => value === query.applied.value[key])),
-    /** The filter under the key as a positive whole id, undefined when it is not one. */
+    /**
+     * The filter under the key as a positive whole id.
+     *
+     * @param key - The filter key in the address.
+     * @returns The id, undefined when the value is not one.
+     */
     idOf: key => computed(() => {
       const id = Number(query.applied.value[key])
       return Number.isInteger(id) && id > 0 ? id : undefined
     }),
-    /** The chips for the filters the description names that have a value. */
+    /**
+     * The chips for the filters that have a value.
+     *
+     * @param describe - Lists each filter with its key, label and display value.
+     * @returns The chips to show.
+     */
     chipsOf: describe => computed(() =>
       describe()
         .filter(source => source.value !== undefined && source.value !== '')

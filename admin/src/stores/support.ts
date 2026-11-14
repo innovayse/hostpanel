@@ -14,14 +14,14 @@ import type {
   CreateTicketPayload,
   Ticket,
   TicketBulkAction,
-  TicketListFilter,
+  TicketListFilters,
   TicketListItem,
   UpdateTicketPayload,
 } from '@/types/ticket'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
 /**
- * Paginated ticket listing with status/search filters, overview stats, create/update/delete,
+ * Paginated ticket listing with search and status, priority, department and flag filters, overview stats, create/update/delete,
  * replies, flagging and bulk actions.
  */
 export const useSupportStore = defineStore('support', () => {
@@ -57,32 +57,21 @@ export const useSupportStore = defineStore('support', () => {
   /** Per-field messages of the last refused create, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
 
-  /** Current page (1-based). */
-  const page = ref(1)
-
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
 
-  /** Active status filter (null = all). */
-  const statusFilter = ref<TicketListFilter | null>(null)
-
-  /** Subject search term. */
-  const search = ref('')
-
   /**
-   * Loads the filtered, paged ticket list.
+   * Loads one page of the filtered ticket list. The page, the search and the filters come from the list's address,
+   * so the store keeps no copy of them.
    *
+   * @param page - Page to load, 1-based.
+   * @param filters - The subject search text and the status, priority, department and flag filters; empty for none.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: TicketListFilters = {}): Promise<boolean> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listTickets({
-        page: page.value,
-        pageSize: pageSize.value,
-        status: statusFilter.value,
-        search: search.value,
-      }),
+      api.listTickets({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
     )
     loading.value = false
     if (result.ok) {
@@ -211,10 +200,7 @@ export const useSupportStore = defineStore('support', () => {
     actionError,
     departmentsError,
     fieldErrors,
-    page,
     pageSize,
-    statusFilter,
-    search,
     fetchAll,
     fetchById,
     fetchOverview,

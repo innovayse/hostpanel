@@ -17,7 +17,6 @@ import type {
   TicketReplyPayload,
   UpdateTicketPayload,
 } from '@/types/ticket'
-import { TicketFlagFilter } from '@/types/ticket'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 
@@ -32,7 +31,7 @@ export const useSupportApi = () => {
   /**
    * Lists tickets, one page.
    *
-   * @param filter - Page, page size, status and subject search.
+   * @param filter - Page, page size, subject search, status, priority, department and flag.
    * @returns The page of ticket rows and the total count.
    */
   const listTickets = (filter: TicketFilter): Promise<PaginatedList<TicketListItem>> =>
@@ -40,10 +39,11 @@ export const useSupportApi = () => {
       `/tickets${buildQuery({
         page: filter.page,
         pageSize: filter.pageSize,
-        // The flagged set is its own `flagged` parameter; only a real status travels as `status`.
-        status: filter.status === TicketFlagFilter.Flagged ? null : filter.status,
-        flagged: filter.status === TicketFlagFilter.Flagged ? true : null,
         search: filter.search,
+        status: filter.status,
+        priority: filter.priority,
+        departmentId: filter.departmentId,
+        flagged: filter.flagged,
       })}`,
     )
 

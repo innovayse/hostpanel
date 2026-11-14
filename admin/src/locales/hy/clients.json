@@ -452,9 +452,10 @@
     "openedLastMonth": "Բացվել է անցյալ ամիս",
     "openedThisYear": "Բացվել է այս տարի",
     "openedLastYear": "Բացվել է անցյալ տարի",
-    "searchSubject": "Որոնում ըստ թեմայի՝",
     "dateOpened": "Բացման ամսաթիվ",
     "noDataAvailableInTable": "Աղյուսակում տվյալներ չկան",
+    "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",
+    "clearFilters": "Մաքրել ֆիլտրերը",
     "totalcountTicketValue": "Տոմսեր՝ {totalCount}"
   },
   "clientTransactions": {

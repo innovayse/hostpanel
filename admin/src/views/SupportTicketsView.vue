@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
  * Support tickets list: a paged table of all tickets with priority and status badges, a search box,
- * a filter dialog (status or flagged) whose active choice shows as a chip, flagging and bulk
- * actions on the selected rows (`useRowSelection`, the floating `UiBulkBar`). The search, the filter and the page live in the address, so a reload or a shared link
- * shows the same list. A refused load offers a retry; a flag or bulk action shows its outcome
+ * a filter dialog (status, priority, department and flag) whose active choices show as removable chips,
+ * flagging and bulk actions on the selected rows (`useRowSelection`, the floating `UiBulkBar`). The search, the
+ * filters and the page live in the address (`useListQuery`), so a reload or a shared link shows the same list, and the
+ * API applies them before it pages. A refused load offers a retry; a flag or bulk action shows its outcome
  * (success, or the API's sentence) above the list; a bulk delete is confirmed first in a
  * danger prompt.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import SupportTicketFilterFields from '@/components/support/SupportTicketFilterFields.vue'
 import SupportTicketPriorityBadge from '@/components/support/SupportTicketPriorityBadge.vue'
 import SupportTicketStatusBadge from '@/components/support/SupportTicketStatusBadge.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -16,11 +18,11 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import { useFilterQuery } from '@/composables/useFilterQuery'
+import { useListQuery } from '@/composables/useListQuery'
+import { TicketFilterKey, useTicketFilters } from '@/composables/useTicketFilters'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useRowSelection } from '@/composables/useRowSelection'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import type { UiFilterChip } from '@/utils/ui/filter'
 import { UiTone } from '@/utils/ui/tone'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -43,8 +45,8 @@ import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { formatElapsed, EMPTY_VALUE } from '@/lib/format'
 import { useSupportStore } from '@/stores/support'
-import { TicketBulkAction, TicketFlagFilter, TicketStatus } from '@/types/ticket'
-import type { TicketListFilter } from '@/types/ticket'
+import { TicketBulkAction, TicketFlagFilter } from '@/types/ticket'
+import type { TicketListFilters } from '@/types/ticket'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -56,27 +58,8 @@ const { t } = useI18n()
 
 const store = useSupportStore()
 
-/** The one filter field of the list, stored in the address under this key. */
-const FILTER_KEYS = ['status'] as const
-
-/** One choice of the status filter. */
-interface FilterOption {
-  /** Value stored in the address; empty shows every active ticket. */
-  value: string
-  /** The filter the API is asked for; null shows every active ticket. */
-  filter: TicketListFilter | null
-  /** Translated label. */
-  label: string
-}
-
-/** Status filter choices in display order. */
-const filterOptions = computed<FilterOption[]>(() => [
-  { value: '', filter: null, label: t('constants.ticketFilterOptions.allActiveTickets') },
-  { value: TicketFlagFilter.Flagged, filter: TicketFlagFilter.Flagged, label: t('constants.ticketFilterOptions.flagged') },
-  { value: TicketStatus.Open, filter: TicketStatus.Open, label: t('support.networkIssues.open') },
-  { value: TicketStatus.AwaitingReply, filter: TicketStatus.AwaitingReply, label: t('constants.ticketFilterOptions.awaitingReply') },
-  { value: TicketStatus.Closed, filter: TicketStatus.Closed, label: t('clients.clientForm.closed') },
-])
+/** The filter fields the dialog edits: the ticket filters every ticket list has, and the flag. */
+const FilterKey = { ...TicketFilterKey, Flagged: 'flagged' } as const
 
 /** Bulk actions offered for the selected tickets. */
 const bulkActions = computed(() => [
@@ -86,29 +69,38 @@ const bulkActions = computed(() => [
   { action: TicketBulkAction.Unflag, label: t('support.supportTickets.unflag'), variant: UiButtonVariant.Secondary },
 ])
 
-/** The address-backed filter, search text and page of the list. */
-const { applied, draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage } =
-  useFilterQuery(FILTER_KEYS)
+/** The address-backed filters, search text and page of the list. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, idOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
 
-/** The status choice the address holds; unknown values count as no filter. */
-const appliedOption = computed<FilterOption | undefined>(() =>
-  filterOptions.value.find((option) => option.value === applied.value.status),
-)
+/** The flag filter in the address, undefined when it is not set or the value is not the flagged choice. */
+const flagOfAddress = enumOf(FilterKey.Flagged, TicketFlagFilter)
 
-/** The filter the list is loaded with. */
-const activeFilter = computed<TicketListFilter | null>(() => appliedOption.value?.filter ?? null)
+/** The applied status, priority and department, and their chips. */
+const ticketFilters = useTicketFilters({ enumOf, idOf }, computed(() => store.departments))
 
-/** Choices of the status select in the filter dialog. */
-const statusSelectOptions = computed(() => filterOptions.value.map(({ value, label }) => ({ value, label })))
+/** Flag filter options; the empty value means any. */
+const flagOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  { value: TicketFlagFilter.Flagged, label: t('constants.ticketFilterOptions.flagged') },
+])
 
-/** The active filter as a chip, none while every active ticket is shown. */
-const chips = computed<UiFilterChip[]>(() => {
-  const option = appliedOption.value
-  if (option === undefined || option.value === '') {
-    return []
-  }
-  return [{ key: 'status', label: t('shared.status'), value: option.label }]
-})
+/** What the address narrows the list by, as the store sends it to the API. */
+const filters = computed<TicketListFilters>(() => ({
+  ...ticketFilters.filters.value,
+  search: appliedSearch.value,
+  flagged: flagOfAddress.value === undefined ? undefined : true,
+}))
+
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(() => [
+  ...ticketFilters.chipSources(),
+  {
+    key: FilterKey.Flagged,
+    label: t('support.supportTickets.flag'),
+    value: flagOfAddress.value === undefined ? undefined : t('constants.ticketFilterOptions.flagged'),
+  },
+])
 
 /** The selected tickets of the page. */
 const selection = useRowSelection(() => store.tickets.map((ticket) => ticket.id))
@@ -140,10 +132,29 @@ const report = (ok: boolean, successKey: string): void => {
 }
 
 /** First record index (1-based) for display. */
-const showingFrom = computed<number>(() => (store.totalCount === 0 ? 0 : (store.page - 1) * store.pageSize + 1))
+const showingFrom = computed<number>(() => (store.totalCount === 0 ? 0 : (page.value - 1) * store.pageSize + 1))
 
 /** Last record index (1-based) for display. */
-const showingTo = computed<number>(() => Math.min(store.page * store.pageSize, store.totalCount))
+const showingTo = computed<number>(() => Math.min(page.value * store.pageSize, store.totalCount))
+
+/** True while the first load is in flight and there are no rows yet; the table then draws its placeholder rows. */
+const initialLoading = computed<boolean>(() => store.loading && store.tickets.length === 0)
+
+/**
+ * Loads the page the address names with the filters and search it holds; the selection, which belonged to the
+ * previous page, is dropped.
+ *
+ * @returns True when loaded; false when refused (see `store.error`).
+ */
+const load = (): Promise<boolean> => {
+  selection.clear()
+  return store.fetchAll(page.value, filters.value)
+}
+
+// Every change of a filter, the search or the page loads the list the address names.
+loadOnChange(load)
+
+onMounted(() => store.fetchDepartments())
 
 /**
  * Flips the flag of one ticket and reloads on success.
@@ -155,7 +166,7 @@ const handleToggleFlag = async (id: number): Promise<void> => {
   const toggled = await store.toggleFlag(id)
   report(toggled, 'shared.changesSavedSuccessfully')
   if (toggled) {
-    await store.fetchAll()
+    await load()
   }
 }
 
@@ -175,8 +186,7 @@ const runBulkAction = async (action: TicketBulkAction): Promise<void> => {
   bulkRunning.value = false
   report(done, action === TicketBulkAction.Delete ? 'shared.recordDeleted' : 'shared.changesSavedSuccessfully')
   if (done) {
-    selection.clear()
-    await store.fetchAll()
+    await load()
   }
 }
 
@@ -210,23 +220,6 @@ const dismissBulkDelete = (): void => {
     confirmingBulkDelete.value = false
   }
 }
-
-/**
- * Loads the list the address asks for: the store is handed the filter, the search text and the page,
- * and the selection (which belonged to the previous page) is dropped.
- *
- * @returns Resolves when the list has settled.
- */
-const load = async (): Promise<void> => {
-  store.statusFilter = activeFilter.value
-  store.search = appliedSearch.value
-  store.page = page.value
-  selection.clear()
-  await store.fetchAll()
-}
-
-// The address is the source of truth: the first load, a filter, the search and a page all arrive here.
-watch([activeFilter, appliedSearch, page], load, { immediate: true })
 </script>
 
 <template>
@@ -253,20 +246,33 @@ watch([activeFilter, appliedSearch, page], load, { immediate: true })
       filter-testid="support-tickets-filter"
       :active-count="activeCount"
       :chips="chips"
+      :loading="initialLoading"
       @apply="apply"
       @reset="reset"
       @cancel="cancel"
-      @remove="remove('status')"
+      @remove="remove"
       @clear="clearAll"
     >
-        <UiField :label="t('shared.status')">
-          <UiSelect
-            v-model="draft.status"
-            :options="statusSelectOptions"
-            :placeholder="t('shared.status')"
-            data-testid="support-tickets-filter-status"
-          />
+      <UiStack>
+        <SupportTicketFilterFields
+          v-model:status="draft.status"
+          v-model:priority="draft.priority"
+          v-model:department-id="draft.departmentId"
+          :departments="store.departments"
+          testid-prefix="support-tickets-filter"
+        />
+        <UiField :label="t('support.supportTickets.flag')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.flagged"
+              :options="flagOptions"
+              :placeholder="t('shared.any')"
+              data-testid="support-tickets-filter-flagged"
+            />
+          </template>
         </UiField>
+      </UiStack>
     </UiListToolbar>
 
     <UiText tone="muted" size="sm" data-testid="support-tickets-count">
@@ -280,13 +286,13 @@ watch([activeFilter, appliedSearch, page], load, { immediate: true })
       :message="store.error"
       :loading="store.loading"
       testid="support-tickets-error"
-      @retry="store.fetchAll()"
+      @retry="load"
     />
 
     <UiCard v-else>
       <UiTable
         :density="UiTableDensity.Comfortable"
-        :loading="store.loading && store.tickets.length === 0"
+        :loading="initialLoading"
         :empty="!store.loading && store.tickets.length === 0"
         :selection="selection"
         select-all-testid="support-tickets-select-all"
@@ -341,15 +347,22 @@ watch([activeFilter, appliedSearch, page], load, { immediate: true })
         </UiTableBody>
         <template #empty>
           <UiEmptyState
-            :title="t('support.supportTickets.noTicketsFound')"
-            :description="t('support.supportTickets.tryAdjustingYourFiltersOr')"
-          />
+            :title="narrowed ? t('support.supportTickets.noTicketsMatchYourFilters') : t('support.supportTickets.noTicketsFound')"
+            :description="narrowed ? t('support.supportTickets.tryAdjustingYourFiltersOr') : undefined"
+            data-testid="support-tickets-empty"
+          >
+            <template v-if="activeCount > 0" #actions>
+              <UiButton :variant="UiButtonVariant.Link" data-testid="support-tickets-clear-empty" @click="clearAll">
+                {{ t('support.supportTickets.clearFilters') }}
+              </UiButton>
+            </template>
+          </UiEmptyState>
         </template>
       </UiTable>
     </UiCard>
 
     <UiPagination
-      :page="store.page"
+      :page="page"
       :total="store.totalCount"
       :page-size="store.pageSize"
       testid="support-tickets-pagination"

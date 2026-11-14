@@ -5,6 +5,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -184,5 +185,85 @@ public static class SupportTestSeeds
         });
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return int.Parse((await response.Content.ReadAsStringAsync()).Trim());
+    }
+
+    /// <summary>
+    /// Seeds a ticket straight through the data context, in the given status, with the given flag and opened at the
+    /// given moment, so a test can set up the exact mix a list filter must tell apart without driving the endpoints.
+    /// </summary>
+    /// <param name="context">The data context to seed through.</param>
+    /// <param name="clientId">The client the ticket belongs to.</param>
+    /// <param name="subject">The subject line.</param>
+    /// <param name="departmentId">The department the ticket is filed under.</param>
+    /// <param name="priority">The priority label.</param>
+    /// <param name="openedAt">The moment the ticket was opened; it decides the list order.</param>
+    /// <param name="status">The status the ticket ends in: open, awaiting a reply or closed.</param>
+    /// <param name="flagged">Whether staff flagged the ticket.</param>
+    /// <returns>The saved ticket's id.</returns>
+    public static async Task<int> SeedTicketAsync(
+        IHostpanelDbContext context,
+        int clientId,
+        string subject,
+        int departmentId,
+        TicketPriority priority,
+        DateTimeOffset openedAt,
+        TicketStatus status = TicketStatus.Open,
+        bool flagged = false)
+    {
+        var ticket = Ticket.Create(clientId, subject, "Seeded for the list tests.", departmentId, priority, openedAt);
+        if (status == TicketStatus.AwaitingReply)
+        {
+            ticket.AddReply("Staff answer.", "Staff", isStaffReply: true, openedAt);
+        }
+
+        if (status == TicketStatus.Closed)
+        {
+            ticket.Close(openedAt);
+        }
+
+        if (flagged)
+        {
+            ticket.ToggleFlag();
+        }
+
+        ticket.Backdate(openedAt, TimeSpan.FromSeconds(1));
+        context.Tickets.Add(ticket);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return ticket.Id;
+    }
+
+    /// <summary>Seeds four tickets of one client that differ in status, priority, department and flag.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="clientId">The client the tickets belong to.</param>
+    /// <returns>The mix, with the subjects alpha, beta, gamma and delta opened a minute apart in that order.</returns>
+    public static async Task<TicketListMix> SeedTicketMixAsync(IntegrationTestFactory factory, int clientId)
+    {
+        var token = Guid.NewGuid().ToString("N")[..10];
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var departmentOne = await SeedDepartmentAsync(context);
+        var departmentTwo = await SeedDepartmentAsync(context);
+        var alpha = await SeedTicketAsync(
+            context, clientId, $"alpha-{token}", departmentOne, TicketPriority.Low, TestMoments.Seeded.AddMinutes(1));
+        var beta = await SeedTicketAsync(
+            context, clientId, $"beta-{token}", departmentOne, TicketPriority.High, TestMoments.Seeded.AddMinutes(2), TicketStatus.Closed);
+        var gamma = await SeedTicketAsync(
+            context, clientId, $"gamma-{token}", departmentTwo, TicketPriority.High, TestMoments.Seeded.AddMinutes(3), flagged: true);
+        var delta = await SeedTicketAsync(
+            context, clientId, $"delta-{token}", departmentTwo, TicketPriority.Medium, TestMoments.Seeded.AddMinutes(4), TicketStatus.AwaitingReply);
+        return new TicketListMix(token, clientId, departmentOne, departmentTwo, alpha, beta, gamma, delta);
+    }
+
+    /// <summary>Reads one page of a ticket list.</summary>
+    /// <param name="admin">A client authenticated as Admin.</param>
+    /// <param name="url">The list address with its query string.</param>
+    /// <returns>The ids of the page in the order the list gave them, and the total count of matches.</returns>
+    public static async Task<(List<int> Ids, int TotalCount)> ListTicketIdsAsync(HttpClient admin, string url)
+    {
+        var response = await admin.GetAsync(url);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var ids = body.RootElement.GetProperty("items").EnumerateArray().Select(t => t.GetProperty("id").GetInt32()).ToList();
+        return (ids, body.RootElement.GetProperty("totalCount").GetInt32());
     }
 }

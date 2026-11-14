@@ -8,7 +8,7 @@
  * name, client, registrar, registration period, status, renewal dates, renewal price and the auto-renew flag. A domain
  * name opens its detail page under the owning client. Reads `stores/domains`; a refused load shows `store.error`.
  */
-import { computed, onMounted, watch } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -44,10 +44,9 @@ import { DomainStatus } from '@/types/domain'
 import type { DomainListFilters, DomainRegistration } from '@/types/domain'
 import { RegistrarModule } from '@/types/registrarmodule'
 import { UiButtonVariant } from '@/utils/ui/button'
-import type { UiFilterChip } from '@/utils/ui/filter'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { useFilterQuery } from '@/composables/useFilterQuery'
+import { useListQuery } from '@/composables/useListQuery'
 import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
 import { UiTextSize } from '@/utils/ui/text'
 
@@ -59,9 +58,6 @@ const FilterKey = {
   RegistrarModule: 'registrarModule',
 } as const
 
-/** One of the {@link FilterKey} values. */
-type FilterKey = (typeof FilterKey)[keyof typeof FilterKey]
-
 /** Domains store, the only caller of the domain endpoints. */
 const store = useDomainsStore()
 
@@ -69,8 +65,8 @@ const store = useDomainsStore()
 const { yearsLabel } = useFallbackLabels()
 
 /** The filters, the search text and the page of the list, kept in the address. */
-const { applied, draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage }
-  = useFilterQuery(Object.values(FilterKey))
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
 
 /** Status filter options; the empty value means any. */
 const statusOptions = computed(() => [{ value: '', label: t('shared.any') }, ...DOMAIN_STATUS_OPTIONS])
@@ -79,14 +75,10 @@ const statusOptions = computed(() => [{ value: '', label: t('shared.any') }, ...
 const registrarOptions = computed(() => [{ value: '', label: t('shared.any') }, ...REGISTRAR_MODULE_OPTIONS])
 
 /** The status in the address as a domain status, undefined when none is set or the value is not one. */
-const statusOfAddress = computed<DomainStatus | undefined>(
-  () => Object.values(DomainStatus).find(value => value === applied.value.status),
-)
+const statusOfAddress = enumOf(FilterKey.Status, DomainStatus)
 
 /** The registrar in the address as a registrar module, undefined when none is set or the value is not one. */
-const registrarOfAddress = computed<RegistrarModule | undefined>(
-  () => Object.values(RegistrarModule).find(value => value === applied.value.registrarModule),
-)
+const registrarOfAddress = enumOf(FilterKey.RegistrarModule, RegistrarModule)
 
 /** What the address narrows the list by, as the store sends it to the API. */
 const filters = computed<DomainListFilters>(() => ({
@@ -96,33 +88,18 @@ const filters = computed<DomainListFilters>(() => ({
 }))
 
 /** One chip per applied filter, with the value as the operator reads it. */
-const chips = computed<UiFilterChip<FilterKey>[]>(() => {
-  const all: UiFilterChip<FilterKey>[] = []
-  if (statusOfAddress.value !== undefined) {
-    all.push({
-      key: FilterKey.Status,
-      label: t('shared.status'),
-      value: statusLabel(DOMAIN_STATUS_OPTIONS, statusOfAddress.value),
-    })
-  }
-  if (registrarOfAddress.value !== undefined) {
-    all.push({
-      key: FilterKey.RegistrarModule,
-      label: t('shared.registrar'),
-      value: statusLabel(REGISTRAR_MODULE_OPTIONS, registrarOfAddress.value),
-    })
-  }
-  return all
-})
-
-/** Whether the current page has any domain to list. */
-const hasRows = computed<boolean>(() => store.domains.length > 0)
-
-/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
-const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
-
-/** Whether the list is narrowed by the search or by a filter. */
-const narrowed = computed<boolean>(() => activeCount.value > 0 || appliedSearch.value !== '')
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Status,
+    label: t('shared.status'),
+    value: statusOfAddress.value === undefined ? undefined : statusLabel(DOMAIN_STATUS_OPTIONS, statusOfAddress.value),
+  },
+  {
+    key: FilterKey.RegistrarModule,
+    label: t('shared.registrar'),
+    value: registrarOfAddress.value === undefined ? undefined : statusLabel(REGISTRAR_MODULE_OPTIONS, registrarOfAddress.value),
+  },
+])
 
 /**
  * Loads the page the address names with the filters and search it holds.
@@ -130,6 +107,15 @@ const narrowed = computed<boolean>(() => activeCount.value > 0 || appliedSearch.
  * @returns True when loaded; false when refused (see `store.error`).
  */
 const load = (): Promise<boolean> => store.fetchAll(page.value, filters.value)
+
+// Every change of a filter, the search or the page loads the list the address names.
+loadOnChange(load)
+
+/** Whether the current page has any domain to list. */
+const hasRows = computed<boolean>(() => store.domains.length > 0)
+
+/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
+const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
 /**
  * The row actions of a domain: its one action opens the domain under its client as a real link.
@@ -144,18 +130,6 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
     to: clientItemPath(domain.clientId, ClientSection.Domains, domain.id),
   },
 ]
-
-/**
- * The part of the address the list is loaded from. The router replaces the query object on every navigation, so
- * watching the values themselves would reload the list when the reader leaves for another screen; the key only
- * changes when a filter, the search or the page does.
- */
-const listKey = computed<string>(() => JSON.stringify([applied.value, appliedSearch.value, page.value]))
-
-// Every change of a filter, the search or the page loads the list the address names.
-watch(listKey, load)
-
-onMounted(() => load())
 </script>
 
 <template>

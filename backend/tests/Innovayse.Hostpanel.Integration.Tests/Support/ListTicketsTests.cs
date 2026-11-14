@@ -1,16 +1,19 @@
 using System.Net;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Support;
 
 /// <summary>
-/// <c>GET /api/tickets</c>: staff can list every support ticket, and a plain client is refused:
-/// the route carries the class-level <c>Admin</c> policy.
+/// <c>GET /api/tickets</c>: staff can list every support ticket and narrow the list by a subject search and by status,
+/// priority, department and flag, all before paging; a plain client is refused: the route carries the class-level
+/// <c>Admin</c> policy.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -22,7 +25,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     {
         var client = await SupportTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.GetAsync("/api/tickets");
+        var response = await client.GetAsync("/api/tickets?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -34,7 +37,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     {
         var (client, _) = await SupportTestSeeds.RegisterClientAsync(factory, "list-tickets-client");
 
-        var response = await client.GetAsync("/api/tickets");
+        var response = await client.GetAsync("/api/tickets?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -44,7 +47,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {
-        var response = await factory.CreateClient().GetAsync("/api/tickets");
+        var response = await factory.CreateClient().GetAsync("/api/tickets?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -77,55 +80,225 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
         row.GetProperty("clientName").GetString().Should().Be("Grace Hopper");
     }
 
-    /// <summary>A status filter that names no ticket status is refused with 400, not silently ignored.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task UnknownStatusFilterIsRejectedAsync()
+    /// <summary>Seeds one owner with the four-ticket mix the filter tests tell apart.</summary>
+    /// <returns>The mix, scoped by its token.</returns>
+    private async Task<TicketListMix> SeedMixAsync()
     {
-        var admin = await SupportTestSeeds.AdminClientAsync(factory);
-
-        var response = await admin.GetAsync("/api/tickets?status=Archived");
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var owner = await ClientsTestSeeds.SeedClientAsync(factory);
+        return await SupportTestSeeds.SeedTicketMixAsync(factory, owner.ClientId);
     }
 
-    /// <summary>The status filter binds by name and keeps only tickets in that status.</summary>
+    /// <summary>The search matches the subject case-insensitively as a substring and leaves other tickets out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchFindsTheSubjectInAnyLetterCaseAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var mix = await SeedMixAsync();
+
+        var (ids, totalCount) = await SupportTestSeeds.ListTicketIdsAsync(
+            admin, $"/api/tickets?page=1&pageSize=100&search=GAMMA-{mix.Token.ToUpperInvariant()}");
+
+        ids.Should().Equal(mix.Gamma);
+        totalCount.Should().Be(1);
+    }
+
+    /// <summary>A percent sign and an underscore typed into the search match themselves, not any text.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchWildcardsAreLiteralAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var owner = await ClientsTestSeeds.SeedClientAsync(factory);
+        var token = Guid.NewGuid().ToString("N")[..10];
+        int percent;
+        int underscore;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
+            percent = await SupportTestSeeds.SeedTicketAsync(
+                context, owner.ClientId, $"{token} 50% off", departmentId, TicketPriority.Low, TestMoments.Seeded);
+            await SupportTestSeeds.SeedTicketAsync(
+                context, owner.ClientId, $"{token} 50x off", departmentId, TicketPriority.Low, TestMoments.Seeded);
+            underscore = await SupportTestSeeds.SeedTicketAsync(
+                context, owner.ClientId, $"{token} a_c", departmentId, TicketPriority.Low, TestMoments.Seeded);
+            await SupportTestSeeds.SeedTicketAsync(
+                context, owner.ClientId, $"{token} abc", departmentId, TicketPriority.Low, TestMoments.Seeded);
+        }
+
+        var (percentIds, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={token}%2050%25");
+        var (underscoreIds, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={token}%20a_c");
+        var (bareWildcard, bareCount) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={token}%25%25");
+
+        percentIds.Should().Equal(percent);
+        underscoreIds.Should().Equal(underscore);
+        bareWildcard.Should().BeEmpty();
+        bareCount.Should().Be(0);
+    }
+
+    /// <summary>The status filter keeps only the tickets in that status, newest first.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StatusFilterKeepsOnlyThatStatusAsync()
     {
         var admin = await SupportTestSeeds.AdminClientAsync(factory);
-        var openId = await SupportTestSeeds.CreateAdminTicketAsync(factory, admin);
-        var closedId = await SupportTestSeeds.CreateAdminTicketAsync(factory, admin);
-        (await admin.PostAsync($"/api/tickets/{closedId}/close", content: null)).StatusCode
-            .Should().Be(HttpStatusCode.NoContent);
+        var mix = await SeedMixAsync();
 
-        var response = await admin.GetAsync($"/api/tickets?status={nameof(TicketStatus.Closed)}&pageSize=100");
+        var (open, openCount) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&status=Open");
+        var (closed, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&status=Closed");
+        var (awaiting, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&status=AwaitingReply");
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var items = body.RootElement.GetProperty("items").EnumerateArray().ToList();
-        items.Should().OnlyContain(t => t.GetProperty("status").GetString() == nameof(TicketStatus.Closed));
-        items.Select(t => t.GetProperty("id").GetInt32()).Should().Contain(closedId).And.NotContain(openId);
+        open.Should().Equal(mix.Gamma, mix.Alpha);
+        openCount.Should().Be(2);
+        closed.Should().Equal(mix.Beta);
+        awaiting.Should().Equal(mix.Delta);
     }
 
-    /// <summary>The flagged filter keeps only tickets staff flagged.</summary>
+    /// <summary>The priority filter keeps only the tickets of that priority.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task PriorityFilterKeepsOnlyThatPriorityAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var mix = await SeedMixAsync();
+
+        var (high, highCount) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&priority=High");
+        var (low, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&priority=Low");
+
+        high.Should().Equal(mix.Gamma, mix.Beta);
+        highCount.Should().Be(2);
+        low.Should().Equal(mix.Alpha);
+    }
+
+    /// <summary>The department filter keeps only the tickets filed under that department.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DepartmentFilterKeepsOnlyThatDepartmentAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var mix = await SeedMixAsync();
+
+        var (one, oneCount) = await SupportTestSeeds.ListTicketIdsAsync(
+            admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&departmentId={mix.DepartmentOne}");
+        var (two, _) = await SupportTestSeeds.ListTicketIdsAsync(
+            admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&departmentId={mix.DepartmentTwo}");
+
+        one.Should().Equal(mix.Beta, mix.Alpha);
+        oneCount.Should().Be(2);
+        two.Should().Equal(mix.Delta, mix.Gamma);
+    }
+
+    /// <summary>The flagged filter keeps only the tickets staff flagged.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FlaggedFilterKeepsOnlyFlaggedTicketsAsync()
     {
         var admin = await SupportTestSeeds.AdminClientAsync(factory);
-        var unflaggedId = await SupportTestSeeds.CreateAdminTicketAsync(factory, admin);
-        var flaggedId = await SupportTestSeeds.CreateAdminTicketAsync(factory, admin);
-        (await admin.PostAsync($"/api/tickets/{flaggedId}/toggle-flag", content: null)).StatusCode
-            .Should().Be(HttpStatusCode.NoContent);
+        var mix = await SeedMixAsync();
 
-        var response = await admin.GetAsync("/api/tickets?flagged=true&pageSize=100");
+        var (flagged, flaggedCount) = await SupportTestSeeds.ListTicketIdsAsync(
+            admin, $"/api/tickets?page=1&pageSize=100&search={mix.Token}&flagged=true");
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var items = body.RootElement.GetProperty("items").EnumerateArray().ToList();
-        items.Should().OnlyContain(t => t.GetProperty("isFlagged").GetBoolean());
-        items.Select(t => t.GetProperty("id").GetInt32()).Should().Contain(flaggedId).And.NotContain(unflaggedId);
+        flagged.Should().Equal(mix.Gamma);
+        flaggedCount.Should().Be(1);
+    }
+
+    /// <summary>The search and every filter narrow together: a ticket must pass each one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CombinedFiltersAllApplyAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var mix = await SeedMixAsync();
+        var scope = $"/api/tickets?page=1&pageSize=100&search={mix.Token}";
+
+        var (openHighTwo, _) = await SupportTestSeeds.ListTicketIdsAsync(
+            admin, $"{scope}&status=Open&priority=High&departmentId={mix.DepartmentTwo}");
+        var (closedHigh, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"{scope}&status=Closed&priority=High");
+        var (closedLow, closedLowCount) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"{scope}&status=Closed&priority=Low");
+        var (flaggedClosed, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"{scope}&flagged=true&status=Closed");
+        var (searchAndStatus, _) = await SupportTestSeeds.ListTicketIdsAsync(
+            admin, $"/api/tickets?page=1&pageSize=100&search=alpha-{mix.Token}&status=Closed");
+
+        openHighTwo.Should().Equal(mix.Gamma);
+        closedHigh.Should().Equal(mix.Beta);
+        closedLow.Should().BeEmpty();
+        closedLowCount.Should().Be(0);
+        flaggedClosed.Should().BeEmpty();
+        searchAndStatus.Should().BeEmpty();
+    }
+
+    /// <summary>A filter is applied before paging: the total counts every match and each page holds its slice, newest first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task FilterIsAppliedBeforePagingAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var mix = await SeedMixAsync();
+
+        var (first, firstCount) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=3&search={mix.Token}&priority=High");
+        var (everything, everythingCount) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=1&pageSize=3&search={mix.Token}");
+        var (second, secondCount) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=2&pageSize=3&search={mix.Token}");
+        var (beyond, _) = await SupportTestSeeds.ListTicketIdsAsync(admin, $"/api/tickets?page=3&pageSize=3&search={mix.Token}");
+
+        first.Should().Equal(mix.Gamma, mix.Beta);
+        firstCount.Should().Be(2);
+        everything.Should().Equal(mix.Delta, mix.Gamma, mix.Beta);
+        everythingCount.Should().Be(4);
+        second.Should().Equal(mix.Alpha);
+        secondCount.Should().Be(4);
+        beyond.Should().BeEmpty();
+    }
+
+    /// <summary>A page below one or a page size outside the limit is refused with 400, not corrected.</summary>
+    /// <param name="queryString">The paging part of the query string.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("page=0&pageSize=20")]
+    [InlineData("pageSize=20")]
+    [InlineData("page=1&pageSize=0")]
+    [InlineData("page=1&pageSize=101")]
+    public async Task PagingOutsideTheLimitsIsRefusedAsync(string queryString)
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/tickets?{queryString}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await SupportTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+    }
+
+    /// <summary>A search longer than the limit is refused with 400, not cut.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchOverTheLimitIsRefusedAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/tickets?page=1&pageSize=20&search={new string('a', PagingLimits.MaxSearchLength + 1)}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await SupportTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+    }
+
+    /// <summary>A status, priority or department that names nothing, by name or by number, is refused with 400.</summary>
+    /// <param name="filter">The filter's key and value.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("status=Archived")]
+    [InlineData("status=99")]
+    [InlineData("priority=Urgent")]
+    [InlineData("priority=99")]
+    [InlineData("departmentId=0")]
+    [InlineData("departmentId=-4")]
+    public async Task UnknownFilterValueIsRefusedAsync(string filter)
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/tickets?page=1&pageSize=20&{filter}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await SupportTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
     }
 }

@@ -1,8 +1,21 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Support.Enums;
+
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListClientTickets;
 
-/// <summary>Query to list a client's tickets with pagination and optional subject search.</summary>
+/// <summary>Query to list a client's tickets with pagination, an optional subject search and optional filters.</summary>
 /// <param name="ClientId">FK to the client.</param>
-/// <param name="Page">One-based page number; 1 when omitted.</param>
-/// <param name="PageSize">Number of items per page; 20 when omitted.</param>
-/// <param name="Search">Optional subject search term.</param>
-public sealed record ListClientTicketsQuery(int ClientId, int Page = 1, int PageSize = 20, string? Search = null);
+/// <param name="Page">1-based page number.</param>
+/// <param name="PageSize">Items per page (1 to 100); a size outside that range is refused, not clamped.</param>
+/// <param name="Search">Optional text; only tickets whose subject contains it (case-insensitive) are listed. Blank lists all.</param>
+/// <param name="Status">Optional status filter, bound by name from the query string; <see langword="null"/> for every status.</param>
+/// <param name="Priority">Optional priority filter, bound by name from the query string; <see langword="null"/> for every priority.</param>
+/// <param name="DepartmentId">Optional department filter; <see langword="null"/> for every department.</param>
+public sealed record ListClientTicketsQuery(
+    int ClientId,
+    int Page,
+    int PageSize,
+    string? Search = null,
+    TicketStatus? Status = null,
+    TicketPriority? Priority = null,
+    int? DepartmentId = null) : IListQuery, ITicketListFilters;

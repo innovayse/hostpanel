@@ -9,7 +9,7 @@ import { buildQuery, useApi } from '@/composables/useApi'
 import type { ClientTicketStats } from '@/types/client'
 import type { Department } from '@/types/department'
 import type { PaginatedList } from '@/types/paginatedlist'
-import type { CreateTicketPayload, Ticket, TicketListItem, UpdateTicketPayload } from '@/types/ticket'
+import type { ClientTicketFilter, CreateTicketPayload, Ticket, TicketListItem, UpdateTicketPayload } from '@/types/ticket'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 
@@ -25,13 +25,20 @@ export const useClientTicketsApi = () => {
    * Lists the tickets of a client.
    *
    * @param clientId - The client id.
-   * @param page - Page number (1-based).
-   * @param pageSize - Items per page.
-   * @param search - Optional subject search text.
+   * @param filter - Page, page size, subject search, status, priority and department.
    * @returns One page of tickets.
    */
-  const list = (clientId: number | string, page: number, pageSize: number, search?: string): Promise<PaginatedList<TicketListItem>> =>
-    request<PaginatedList<TicketListItem>>(`${ApiPath.TicketsClient}/${clientId}${buildQuery({ page, pageSize, search })}`)
+  const list = (clientId: number | string, filter: ClientTicketFilter): Promise<PaginatedList<TicketListItem>> =>
+    request<PaginatedList<TicketListItem>>(
+      `${ApiPath.TicketsClient}/${clientId}${buildQuery({
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        status: filter.status,
+        priority: filter.priority,
+        departmentId: filter.departmentId,
+      })}`,
+    )
 
   /**
    * Loads the ticket statistics of a client.

@@ -1,24 +1,23 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
+using Innovayse.Hostpanel.Application.Support.Common;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListClientTickets;
 
 /// <summary>
-///     Validator for ListClientTicketsQuery. Page and page size are clamped to a sane window by
-///     the handler and search is a free-text filter that simply matches nothing when it names no
-///     ticket, so only the client id gets a rule.
+/// Validates <see cref="ListClientTicketsQuery"/>. The page, page size, search and the status, priority and
+/// department filters are the shared ticket list rules (<see cref="TicketListQueryValidator{T}"/>); this adds the
+/// rule of the client id.
 /// </summary>
-public sealed class ListClientTicketsValidator : LocalizedValidator<ListClientTicketsQuery>
+public sealed class ListClientTicketsValidator : TicketListQueryValidator<ListClientTicketsQuery>
 {
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
     public ListClientTicketsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.ClientId)
-            .GreaterThan(0)
-            .WithMessage(L["TicketClientIdInvalid"]);
+        RuleFor(x => x.ClientId).MustBePositiveId(L["TicketClientIdInvalid"]);
     }
 }

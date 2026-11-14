@@ -7,28 +7,32 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSupportApi } from '@/composables/apis/useSupportApi'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 import { SupportOverviewPeriod } from '@/types/supportoverviewstats'
-import { TicketBulkAction, TicketFlagFilter, TicketPriority, TicketStatus } from '@/types/ticket'
+import { TicketBulkAction, TicketPriority, TicketStatus } from '@/types/ticket'
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
 describe('useSupportApi', () => {
-  it('listTickets sends paging, status and search, dropping empty filters', async () => {
+  it('listTickets sends paging, search, status, priority, department and flag, dropping empty filters', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
 
-    await useSupportApi().listTickets({ page: 2, pageSize: 20, status: TicketStatus.Open, search: 'dns' })
-    expect(callOf(mock)).toMatchObject({ url: '/api/tickets?page=2&pageSize=20&status=Open&search=dns', method: 'GET' })
+    await useSupportApi().listTickets({
+      page: 2,
+      pageSize: 20,
+      search: 'dns',
+      status: TicketStatus.Open,
+      priority: TicketPriority.High,
+      departmentId: 3,
+      flagged: true,
+    })
+    expect(callOf(mock)).toMatchObject({
+      url: '/api/tickets?page=2&pageSize=20&search=dns&status=Open&priority=High&departmentId=3&flagged=true',
+      method: 'GET',
+    })
 
-    await useSupportApi().listTickets({ page: 1, pageSize: 20, status: null, search: '' })
+    await useSupportApi().listTickets({ page: 1, pageSize: 20, search: '' })
     expect(callOf(mock, 1).url).toBe('/api/tickets?page=1&pageSize=20')
-  })
-
-  it('listTickets sends the flagged filter as its own parameter, not as a status', async () => {
-    const mock = stubFetch(json({ items: [], totalCount: 0 }))
-
-    await useSupportApi().listTickets({ page: 1, pageSize: 20, status: TicketFlagFilter.Flagged })
-    expect(callOf(mock).url).toBe('/api/tickets?page=1&pageSize=20&flagged=true')
   })
 
   it('getTicket, getOverview and listDepartments read their paths', async () => {

@@ -194,7 +194,9 @@
     "unflag": "Unflag",
     "requestor": "Requestor",
     "noTicketsFound": "No tickets found",
+    "noTicketsMatchYourFilters": "No tickets match your filters",
     "tryAdjustingYourFiltersOr": "Try adjusting your filters or search query.",
+    "clearFilters": "Clear filters",
     "confirmBulkDeleteTitle": "Delete the selected tickets?",
     "confirmBulkDeleteMessage": "{count} tickets will be deleted permanently. This cannot be undone."
   }

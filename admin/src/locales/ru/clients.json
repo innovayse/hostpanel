@@ -452,9 +452,10 @@
     "openedLastMonth": "Открыто в прошлом месяце",
     "openedThisYear": "Открыто в этом году",
     "openedLastYear": "Открыто в прошлом году",
-    "searchSubject": "Поиск по теме:",
     "dateOpened": "Дата открытия",
     "noDataAvailableInTable": "В таблице нет данных",
+    "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам",
+    "clearFilters": "Сбросить фильтры",
     "totalcountTicketValue": "Тикетов: {totalCount}"
   },
   "clientTransactions": {

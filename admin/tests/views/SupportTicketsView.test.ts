@@ -173,7 +173,10 @@ describe('SupportTicketsView', () => {
     await wrapper.get('[data-testid="support-tickets-filter"]').trigger('click')
     await flushPromises()
     const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === 'support-tickets-filter-department')
-    expect((select?.props() as unknown as { options: unknown[] }).options).toEqual(expect.arrayContaining([{ value: '2', label: 'Billing' }]))
+    if (select === undefined) {
+      throw new Error('The department select is missing')
+    }
+    expect((select.props() as unknown as { options: unknown[] }).options).toEqual(expect.arrayContaining([{ value: '2', label: 'Billing' }]))
 
     await applyFilter(wrapper, 'support-tickets-filter-department', '2')
 

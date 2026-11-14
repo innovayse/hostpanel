@@ -43,8 +43,13 @@ const selectOf = (wrapper: ReturnType<typeof mountFields>, suffix: string) =>
  * @param suffix - `status`, `priority` or `department`.
  * @returns The options the select offers.
  */
-const optionsOf = (wrapper: ReturnType<typeof mountFields>, suffix: string): UiSelectOption<string>[] =>
-  (selectOf(wrapper, suffix)?.props() as unknown as { options: UiSelectOption<string>[] }).options
+const optionsOf = (wrapper: ReturnType<typeof mountFields>, suffix: string): UiSelectOption<string>[] => {
+  const select = selectOf(wrapper, suffix)
+  if (select === undefined) {
+    throw new Error(`No select ends in ${suffix}`)
+  }
+  return (select.props() as unknown as { options: UiSelectOption<string>[] }).options
+}
 
 describe('SupportTicketFilterFields', () => {
   it('shows a status, a priority and a department select under the given test id prefix', () => {

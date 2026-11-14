@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Orders.Commands.BeginOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Commands.ReleaseOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
+using Innovayse.Hostpanel.Application.Orders.Queries.ListOrders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Models;
@@ -68,6 +69,28 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
         items.Should().NotContain(o => o.GetProperty("id").GetInt32() == pendingId);
         items.Should().Contain(o => o.GetProperty("id").GetInt32() == cancelledId);
         items.Should().OnlyContain(o => o.GetProperty("status").GetString() == nameof(OrderStatus.Cancelled));
+    }
+
+    /// <summary>The review queue, the UnderReview filter, lists the held orders and none that is pending.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UnderReviewFilterListsTheReviewQueue()
+    {
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        var token = Guid.NewGuid().ToString("N")[..8];
+        var ids = await OrdersTestSeeds.SeedOrdersAsync(
+            factory,
+            [
+                ($"{token}-HELD", OrderStatus.UnderReview),
+                ($"{token}-OPEN", OrderStatus.Pending),
+                ($"{token}-HELD-TOO", OrderStatus.UnderReview),
+            ]);
+
+        var (held, heldCount) = await OrdersTestSeeds.ListOrderIdsAsync(
+            admin, $"/api/orders?page=1&pageSize=100&search={token}&status={nameof(OrderStatus.UnderReview)}");
+
+        held.Should().Equal(ids[2], ids[0]);
+        heldCount.Should().Be(2);
     }
 
     /// <summary>
@@ -145,11 +168,23 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     public async Task SearchFindsTheOrderById()
     {
         var admin = await OrdersTestSeeds.AdminClientAsync(factory);
-        var mix = await OrdersTestSeeds.SeedOrderMixAsync(factory);
+        var orderId = (await OrdersTestSeeds.SeedOrdersAsync(factory, [(LettersOnlyNumber(), OrderStatus.Pending)])).Single();
 
-        var (ids, _) = await OrdersTestSeeds.ListOrderIdsAsync(admin, $"/api/orders?page=1&pageSize=100&search={mix.Beta}");
+        var list = await admin.GetFromJsonAsync<JsonElement>($"/api/orders?page=1&pageSize=100&search={orderId}");
 
-        ids.Should().Contain(mix.Beta);
+        // Other orders in the shared database may carry the digits in their number, so the id match is told apart
+        // from them by the number: this order's number has no digit, so only its id can have matched it.
+        list.GetProperty("items").EnumerateArray()
+            .Where(o => !o.GetProperty("orderNumber").GetString()!.Any(char.IsDigit))
+            .Select(o => o.GetProperty("id").GetInt32())
+            .Should().Equal(orderId);
+    }
+
+    /// <summary>Builds an order number that holds no digit, so a whole number typed into the search can only match by id.</summary>
+    /// <returns>Sixteen random lower-case letters.</returns>
+    private static string LettersOnlyNumber()
+    {
+        return string.Concat(Guid.NewGuid().ToByteArray().Select(b => (char)('a' + (b % 26))));
     }
 
     /// <summary>A percent sign and an underscore typed into the search match themselves, not any text.</summary>
@@ -287,6 +322,10 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await OrdersTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var statusErrors = body.RootElement.GetProperty("errors").EnumerateObject()
+            .Single(e => string.Equals(e.Name, nameof(ListOrdersQuery.Status), StringComparison.OrdinalIgnoreCase));
+        statusErrors.Value[0].GetString().Should().Contain(nameof(OrderStatus.UnderReview));
     }
 
     /// <summary>Listing orders is not for anonymous callers.</summary>

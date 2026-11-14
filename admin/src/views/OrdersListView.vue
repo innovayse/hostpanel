@@ -3,12 +3,12 @@
  * Orders list view: a search box, a status filter and a paged table of all customer orders.
  *
  * The search text, the status filter and the page live in the address (`useListQuery`): the filter button opens the
- * status field, an applied status shows as a removable chip, and a reload or a shared link restores the same list, which
- * the API narrows before it pages. Shows order number, client, status (with the fraud score of an order held for review), IP address, payment method,
- * total, item count and date, with row actions to accept or cancel a pending order and to open its detail. Reads `stores/orders`;
- * a refused load shows `store.error` with a retry, and the outcome of an accept or cancel (success, or
- * the API's sentence) shows above the table. Cancelling is confirmed first. A button
- * in the header opens the queue of orders pending fraud review.
+ * status field, an applied status shows as a removable chip, and a reload or a shared link restores the same list,
+ * which the API narrows before it pages. Shows order number, client, status (with the fraud score of an order held
+ * for review), IP address, payment method, total, item count and date, with row actions to accept or cancel a
+ * pending order and to open its detail. Reads `stores/orders`; a refused load shows `store.error` with a retry, and
+ * the outcome of an accept or cancel (success, or the API's sentence) shows above the table. Cancelling is
+ * confirmed first. A button in the header opens the queue of orders pending fraud review.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -245,7 +245,7 @@ const orderActions = (order: OrderListItem): UiMenuAction[] => {
             :id="id"
             v-model="draft.status"
             :options="ORDER_STATUS_OPTIONS"
-            :placeholder="t('clients.clientInvoices.allStatuses')"
+            :placeholder="t('shared.any')"
             data-testid="orders-filter-status"
           />
         </template>

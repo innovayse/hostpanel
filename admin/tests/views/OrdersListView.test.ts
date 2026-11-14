@@ -362,6 +362,7 @@ describe('OrdersListView', () => {
     const { wrapper } = await mountListAt('/orders?search=nothing')
 
     expect(wrapper.get('[data-testid="orders-empty"]').text()).toContain('No orders match your filter')
+    // The search box clears itself, so the empty state offers a clear button only for an applied status.
     expect(wrapper.find('[data-testid="orders-clear-filters"]').exists()).toBe(false)
   })
 

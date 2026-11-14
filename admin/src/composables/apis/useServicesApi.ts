@@ -35,12 +35,20 @@ export const useServicesApi = () => {
   /**
    * Lists services, one page.
    *
-   * @param filter - Page, page size and owning client.
+   * @param filter - Page, page size, owning client, search text, status, product and billing cycle.
    * @returns The page and the total count.
    */
   const listServices = (filter: ServiceFilter): Promise<PaginatedList<ServiceListItem>> =>
     request<PaginatedList<ServiceListItem>>(
-      `${ApiPath.Services}${buildQuery({ clientId: filter.clientId, page: filter.page, pageSize: filter.pageSize })}`,
+      `${ApiPath.Services}${buildQuery({
+        clientId: filter.clientId,
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        status: filter.status,
+        productId: filter.productId,
+        billingCycle: filter.billingCycle,
+      })}`,
     )
 
   /**

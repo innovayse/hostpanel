@@ -70,7 +70,7 @@ describe('useBillableItemsApi', () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
 
     await useBillableItemsApi().listServices('7')
-    expect(callOf(mock).url).toBe('/api/services?clientId=7&pageSize=100')
+    expect(callOf(mock).url).toBe('/api/services?clientId=7&page=1&pageSize=100')
   })
 
   it('rejects with an ApiError carrying the refusal body', async () => {

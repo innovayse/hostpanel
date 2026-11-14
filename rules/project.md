@@ -1773,6 +1773,12 @@ feature does not exist is not kept. The decisions:
   `SupportTicketFilterFields`.
   The order list (`ListOrdersQuery`, the admin Orders screen) is on it with `SearchIncludingId` on the order number and id and a
   `Status` enum filter; it does not search the client name, which only the Clients module can read, so Orders never joins it.
+  The service list (`GetServicesQuery`, behind the admin Services screen and the services tab of a client, which adds
+  `ClientId`) is on it with a search over the service's own domain, its linked registered domain, the product name and the service id
+  (the linked domain names and the product names are asked of the Domains and Products modules, `FindServiceIdsByDomainNameQuery` and
+  `FindProductIdsByNameQuery`, so the list reads neither table), and `Status`, `ProductId` and `BillingCycle` filters; the screens share `useServiceFilters` and
+  `ServiceFilterFields`. `Page` and `PageSize` are required on `GET /api/services`, so a caller that sent neither (the
+  billable item lookup did) now sends `page=1`.
 
 ### Email campaigns
 

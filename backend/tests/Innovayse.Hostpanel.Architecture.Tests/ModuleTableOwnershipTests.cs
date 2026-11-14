@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Architecture.Tests.Enums;
+using Innovayse.Hostpanel.Architecture.Tests.Planted;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
@@ -130,6 +131,16 @@ public sealed class ModuleTableOwnershipTests
         var handler = typeof(Innovayse.Hostpanel.Application.Clients.Queries.GetClientSummary.GetClientSummaryHandler);
 
         SetsTouchedBy(handler).Should().Contain("Invoices").And.Contain("Clients");
+    }
+
+    /// <summary>
+    /// The detector sees a set that is only named inside an expression tree, which loads the getter's handle with
+    /// ldtoken instead of calling it, so a search lambda cannot read another module's table unnoticed.
+    /// </summary>
+    [Fact]
+    public void Detector_SeesSetsNamedInsideExpressionTrees()
+    {
+        SetsTouchedBy(typeof(PlantedExpressionReader)).Should().Contain("Domains");
     }
 
     /// <summary>Maps each set on the context to the module owning its entity.</summary>

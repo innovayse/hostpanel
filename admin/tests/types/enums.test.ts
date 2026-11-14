@@ -18,7 +18,6 @@ import { InvoiceOpenAction, InvoiceStatus } from '@/types/invoice'
 import { MigrationEntityType } from '@/types/migration'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { BillingCycle, ServiceStatus } from '@/types/service'
-import { ServerRefresh } from '@/types/server'
 import { PaymentMethod } from '@/types/transaction'
 import { BrandingImageKind } from '@/types/upload'
 
@@ -80,7 +79,6 @@ describe('screen value sets', () => {
     expect(Object.values(LogoutScope)).toEqual(['this', 'all'])
     expect(Object.values(IntegrationFieldType)).toEqual(['Text', 'Password', 'Secret', 'Select', 'TextArea', 'Toggle', 'Url', 'Number'])
     expect(Object.values(BrandingImageKind)).toEqual(['logo', 'logodark', 'logomark', 'favicon'])
-    expect(Object.values(ServerRefresh)).toEqual(['servers', 'both'])
     expect(MigrationEntityType.TicketReplies).toBe('TicketReplies')
     expect(Object.values(MigrationEntityType)).toHaveLength(15)
   })

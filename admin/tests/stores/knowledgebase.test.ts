@@ -31,9 +31,11 @@ describe('knowledgebaseStore', () => {
     expect(await store.fetchCategories()).toBe(true)
     expect(store.categories).toEqual([{ id: 1 }])
 
-    stubFetch(json([{ id: 2 }]))
-    expect(await store.fetchArticles()).toBe(true)
+    const mock = stubFetch(json({ items: [{ id: 2 }], pageNumber: 1, pageSize: 20, totalCount: 7, totalPages: 1 }))
+    expect(await store.fetchArticles(1)).toBe(true)
+    expect(callOf(mock).url).toBe('/api/admin/knowledgebase?page=1&pageSize=20')
     expect(store.articles).toEqual([{ id: 2 }])
+    expect(store.articlesTotalCount).toBe(7)
     expect(store.loading).toBe(false)
     expect(store.articlesLoading).toBe(false)
   })
@@ -41,13 +43,22 @@ describe('knowledgebaseStore', () => {
   it('a refused load reports the API sentence, the no-answer sentence offline', async () => {
     const store = useKnowledgebaseStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchArticles()).toBe(false)
+    expect(await store.fetchArticles(1)).toBe(false)
     expect(store.articlesError).toBe('Not allowed.')
     expect(store.error).toBeNull()
 
     stubOffline()
     expect(await store.fetchCategories()).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
+  })
+
+  it('fetchArticles sends the page, the trimmed search and the category and published filters', async () => {
+    const store = useKnowledgebaseStore()
+    const mock = stubFetch(json({ items: [], pageNumber: 2, pageSize: 20, totalCount: 0, totalPages: 0 }))
+
+    await store.fetchArticles(2, { search: '  invoice  ', categoryId: 3, isPublished: false })
+
+    expect(callOf(mock).url).toBe('/api/admin/knowledgebase?page=2&pageSize=20&search=invoice&categoryId=3&isPublished=false')
   })
 
   it('createCategory returns the id and reloads the categories', async () => {
@@ -83,14 +94,14 @@ describe('knowledgebaseStore', () => {
     expect(refused).toHaveBeenCalledTimes(1)
   })
 
-  it('createArticle sends the category id and translations, returns the id and reloads the articles', async () => {
+  it('createArticle sends the category id and translations and returns the id, leaving the list to the screen', async () => {
     const store = useKnowledgebaseStore()
-    const mock = stubFetch(json(11), json([{ id: 11, slug: 'how-to-pay' }]))
+    const mock = stubFetch(json(11))
 
     expect(await store.createArticle(article)).toBe(11)
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/knowledgebase', method: 'POST', body: article })
-    expect(callOf(mock, 1).url).toBe('/api/admin/knowledgebase')
-    expect(store.articles).toEqual([{ id: 11, slug: 'how-to-pay' }])
+    expect(mock).toHaveBeenCalledTimes(1)
+    expect(store.articles).toEqual([])
   })
 
   it('createArticle returns null with the field messages and does not reload', async () => {
@@ -102,14 +113,14 @@ describe('knowledgebaseStore', () => {
     expect(mock).toHaveBeenCalledTimes(1)
   })
 
-  it('updateArticle puts the category and translations and reloads on success only', async () => {
+  it('updateArticle puts the category and translations, leaving the list to the screen', async () => {
     const store = useKnowledgebaseStore()
     const update = { categoryId: article.categoryId, translations: article.translations }
-    const mock = stubFetch(json({}), json([{ id: 11 }]))
+    const mock = stubFetch(json({}))
 
     expect(await store.updateArticle(11, update)).toBe(true)
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/knowledgebase/11', method: 'PUT', body: update })
-    expect(store.articles).toEqual([{ id: 11 }])
+    expect(mock).toHaveBeenCalledTimes(1)
 
     const refused = stubFetch(problem('No such category.', 404))
     expect(await store.updateArticle(11, update)).toBe(false)
@@ -131,9 +142,9 @@ describe('knowledgebaseStore', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
-    vi.stubGlobal('fetch', vi.fn(() => gate.then(() => json([{ id: 2 }]))))
+    vi.stubGlobal('fetch', vi.fn(() => gate.then(() => json({ items: [{ id: 2 }], totalCount: 1 }))))
 
-    const pending = store.fetchArticles()
+    const pending = store.fetchArticles(1)
 
     expect(store.articlesLoading).toBe(true)
     expect(store.loading).toBe(false)
@@ -145,10 +156,10 @@ describe('knowledgebaseStore', () => {
   it('a refused categories load keeps its sentence while the articles load succeeds beside it', async () => {
     const store = useKnowledgebaseStore()
     vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(
-      url.endsWith('/categories') ? problem('Not allowed.', 403) : json([{ id: 2 }]),
+      url.endsWith('/categories') ? problem('Not allowed.', 403) : json({ items: [{ id: 2 }], totalCount: 1 }),
     )))
 
-    const [categoriesLoaded, articlesLoaded] = await Promise.all([store.fetchCategories(), store.fetchArticles()])
+    const [categoriesLoaded, articlesLoaded] = await Promise.all([store.fetchCategories(), store.fetchArticles(1)])
 
     expect(categoriesLoaded).toBe(false)
     expect(articlesLoaded).toBe(true)

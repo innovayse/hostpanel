@@ -130,13 +130,13 @@
     "gatewayTransactionLog": "Журнал транзакций шлюза",
     "viewPaymentGatewayTransactionLogs": "Просмотр журналов транзакций платёжных шлюзов",
     "debugData": "Отладочные данные",
-    "searchInDebugData": "Поиск по отладочным данным",
     "gateway": "Шлюз",
     "result": "Результат",
     "payment": "Платёж",
     "refund": "Возврат",
     "credit": "Кредит",
-    "pending": "Ожидает"
+    "pending": "Ожидает",
+    "searchPlaceholder": "Поиск по шлюзу или отладочным данным"
   },
   "renewals": {
     "heading": "Предстоящие продления",

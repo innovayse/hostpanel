@@ -133,7 +133,7 @@ describe('IntegrationDetailView', () => {
   })
 
   it('renders the CWP7 page for the cwp7 slug', { timeout: LAZY_PAGE_TIMEOUT + 5000 }, async () => {
-    stubRoutes({ 'GET /api/admin/servers': () => json([]) })
+    stubRoutes({ 'GET /api/admin/servers/options': () => json([]) })
     const wrapper = await mountDetail('cwp7')
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="cwp7-header"]').exists()).toBe(true), { timeout: LAZY_PAGE_TIMEOUT })

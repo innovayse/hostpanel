@@ -236,7 +236,8 @@
       "recipientRejected": "Recipient address rejected",
       "senderRejected": "Sender address rejected",
       "messageRejected": "Message rejected"
-    }
+    },
+    "searchEmails": "Search emails"
   },
   "clientInvoices": {
     "createInvoice": "+ Create Invoice",
@@ -260,11 +261,10 @@
   },
   "clientLog": {
     "activityLog": "Activity Log",
-    "filterLog": "Filter Log",
-    "selectDate": "Select date",
     "logEntry": "Log Entry",
     "user": "User",
-    "totalcountEntrValue": "Entries: {totalCount}"
+    "totalcountEntrValue": "Entries: {totalCount}",
+    "searchLog": "Search the activity log"
   },
   "clientOpenTicket": {
     "ticketSubject": "Ticket subject",

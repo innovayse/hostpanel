@@ -1,21 +1,19 @@
 <script setup lang="ts">
 /**
- * Gateway transaction log: the payment-gateway interactions the API records (settled invoice
- * transactions and open payment sessions), filtered by date range, debug text, gateway and
- * result, and paged by the server.
+ * Gateway transaction log: the payment-gateway interactions the API records (settled invoice transactions and open
+ * payment sessions), narrowed by a search box (gateway name or debug text) and by the filter dialog (the result and the
+ * period, given as days) with its removable chips, and paged by the server. The search text, the filters and the page
+ * live in the address (`useListQuery`), so a reload, a shared link and the back button restore the same log. A refused
+ * load shows the sentence with a Retry.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiFilterCard from '@/components/ui/UiFilterCard.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiInput from '@/components/ui/UiInput.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -28,88 +26,69 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { Icon } from '@/lib/icons'
-import { gatewayLogResultTone } from '@/lib/tones'
+import { useFilterDateRange } from '@/composables/useFilterDateRange'
+import { useListQuery } from '@/composables/useListQuery'
+import { usePeriodFilter } from '@/composables/usePeriodFilter'
+import { GATEWAY_LOG_RESULT_OPTIONS } from '@/lib/constants'
+import { gatewayLogResultTone, statusLabel } from '@/lib/tones'
 import { useGatewayLogStore } from '@/stores/gatewayLog'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import type { GatewayLogFilters } from '@/types/gatewaylog'
-import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
 const { t } = useI18n()
 
+/** The filter fields kept in the address: the result and the first and the last day of the period. */
+const FilterKey = {
+  Result: 'result',
+  From: 'from',
+  To: 'to',
+} as const
+
 const store = useGatewayLogStore()
 
-/** Current page (1-based). */
-const page = ref(1)
+/** The result, the period, the search text and the page of the log, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, loadOnChange, enumOf, dateOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
 
-/** True while the filter card is open. */
-const filtersOpen = ref(false)
+/** The result in the address as a gateway log result, undefined when none is set or the value is not one. */
+const resultOfAddress = enumOf(FilterKey.Result, GatewayLogResult)
 
-/** Date range being edited. */
-const dateRange = ref<[string, string] | null>(null)
+/** The applied period and its chips. */
+const period = usePeriodFilter({ dateOf }, { from: FilterKey.From, to: FilterKey.To })
 
-/** Debug text being edited. */
-const debugData = ref('')
+/** What the address narrows the log by, as the store sends it to the API. */
+const filters = computed<GatewayLogFilters>(() => ({
+  search: appliedSearch.value,
+  result: resultOfAddress.value,
+  from: period.from.value,
+  to: period.to.value,
+}))
 
-/** Gateway text being edited. */
-const gateway = ref('')
-
-/** Result being edited; empty means any. */
-const result = ref<GatewayLogResult | ''>('')
-
-/** Filters the list is currently loaded with. */
-const applied = ref<GatewayLogFilters>({ from: '', to: '', gateway: '', debugData: '', result: '' })
-
-/** Options of the result select. */
-const resultOptions = computed(() => [
-  { value: '', label: t('shared.any') },
-  { value: GatewayLogResult.Payment, label: t('billing.gatewayLog.payment') },
-  { value: GatewayLogResult.Refund, label: t('billing.gatewayLog.refund') },
-  { value: GatewayLogResult.Credit, label: t('billing.gatewayLog.credit') },
-  { value: GatewayLogResult.Pending, label: t('billing.gatewayLog.pending') },
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Result,
+    label: t('billing.gatewayLog.result'),
+    value: resultOfAddress.value === undefined ? undefined : statusLabel(GATEWAY_LOG_RESULT_OPTIONS, resultOfAddress.value),
+  },
+  ...period.chipSources(),
 ])
 
+/** Result choices; the empty value means any. */
+const resultOptions = computed(() => [{ value: '', label: t('shared.any') }, ...GATEWAY_LOG_RESULT_OPTIONS])
+
+/** The period of the filter draft; the picker edits the pair, the address keeps its two ends. */
+const draftRange = useFilterDateRange(draft, FilterKey.From, FilterKey.To)
+
 /**
- * Loads a page of the log with the applied filters.
+ * Loads the page of the log the address names with the search and the filters it holds.
  *
- * @param next - Page number (1-based).
  * @returns Promise that resolves when the page is loaded.
  */
-const load = async (next: number): Promise<void> => {
-  page.value = next
-  await store.fetchPage(applied.value, next, DEFAULT_PAGE_SIZE)
-}
+const load = (): Promise<void> => store.fetchPage(page.value, filters.value)
 
-/**
- * Applies the filter card and returns to the first page.
- *
- * @returns Promise that resolves when the first page is loaded.
- */
-const applyFilters = (): Promise<void> => {
-  applied.value = {
-    from: dateRange.value?.[0] ?? '',
-    to: dateRange.value?.[1] ?? '',
-    gateway: gateway.value,
-    debugData: debugData.value,
-    result: result.value,
-  }
-  return load(1)
-}
-
-/**
- * Clears the filter card and the applied filters.
- *
- * @returns Promise that resolves when the unfiltered first page is loaded.
- */
-const clearFilters = (): Promise<void> => {
-  dateRange.value = null
-  debugData.value = ''
-  gateway.value = ''
-  result.value = ''
-  return applyFilters()
-}
-
-onMounted(() => load(1))
+// Every change of a filter, the search or the page loads the log the address names.
+loadOnChange(load)
 </script>
 
 <template>
@@ -117,62 +96,49 @@ onMounted(() => load(1))
     <UiPageHeader
       :title="t('billing.gatewayLog.gatewayTransactionLog')"
       :subtitle="t('billing.gatewayLog.viewPaymentGatewayTransactionLogs')"
-    >
-      <template #actions>
-        <UiButton variant="secondary" data-testid="billing-gateway-log-filter-toggle" @click="filtersOpen = !filtersOpen">
-          {{ filtersOpen ? t('shared.hideFilters') : t('shared.searchFilter') }}
-        </UiButton>
-      </template>
-    </UiPageHeader>
+    />
 
-    <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="2">
-        <UiField :label="t('shared.dateRange')">
-          <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
-        </UiField>
-        <UiField :label="t('billing.gatewayLog.debugData')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="debugData"
-              type="text"
-              :placeholder="t('billing.gatewayLog.searchInDebugData')"
-              data-testid="billing-gateway-log-debug"
-            />
-          </template>
-        </UiField>
-        <UiField :label="t('billing.gatewayLog.gateway')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="gateway"
-              type="text"
-              :placeholder="t('billing.gatewayLog.gateway')"
-              data-testid="billing-gateway-log-gateway"
-            />
-          </template>
-        </UiField>
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="billing-gateway-log-search"
+      :search-placeholder="t('billing.gatewayLog.searchPlaceholder')"
+      filter-testid="billing-gateway-log-filter"
+      :active-count="activeCount"
+      :chips="chips"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <UiStack>
         <UiField :label="t('billing.gatewayLog.result')">
-          <UiSelect v-model="result" :options="resultOptions" :placeholder="t('billing.gatewayLog.result')" />
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.result"
+              :options="resultOptions"
+              :placeholder="t('shared.any')"
+              data-testid="billing-gateway-log-filter-result"
+            />
+          </template>
         </UiField>
-      </UiGrid>
-      <template #actions>
-        <UiButton variant="primary" data-testid="billing-gateway-log-search" @click="applyFilters">
-          <UiIcon :markup="Icon.Search" size="sm" />
-          {{ t('shared.search2') }}
-        </UiButton>
-        <UiButton variant="ghost" data-testid="billing-gateway-log-clear" @click="clearFilters">
-          {{ t('shared.clear') }}
-        </UiButton>
-      </template>
-    </UiFilterCard>
+        <UiField :label="t('shared.dateRange')">
+          <UiDateRangePicker
+            v-model="draftRange"
+            :placeholder="t('shared.selectDateRange')"
+            data-testid="billing-gateway-log-filter-period"
+          />
+        </UiField>
+      </UiStack>
+    </UiListToolbar>
 
     <UiErrorState
       v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="billing-gateway-log-error"
-      @retry="load(page)"
+      @retry="load"
     />
 
     <UiResultCount :loading="store.loading && store.entries.length === 0" data-testid="billing-gateway-log-count">
@@ -201,7 +167,7 @@ onMounted(() => load(1))
               <UiText tone="secondary" size="sm" class="whitespace-pre-wrap break-words font-mono">{{ entry.debugData }}</UiText>
             </UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="gatewayLogResultTone(entry.result)">{{ t(`billing.gatewayLog.${entry.result.toLowerCase()}`) }}</UiBadge>
+              <UiBadge :tone="gatewayLogResultTone(entry.result)">{{ statusLabel(GATEWAY_LOG_RESULT_OPTIONS, entry.result) }}</UiBadge>
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
@@ -214,9 +180,9 @@ onMounted(() => load(1))
     <UiPagination
       :page="page"
       :total="store.totalCount"
-      :page-size="DEFAULT_PAGE_SIZE"
+      :page-size="store.pageSize"
       testid="billing-gateway-log-pagination"
-      @update:page="load"
+      @update:page="setPage"
     />
   </UiStack>
 </template>

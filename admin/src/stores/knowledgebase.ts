@@ -7,8 +7,16 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useKnowledgebaseApi } from '@/composables/apis/useKnowledgebaseApi'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
-import type { KbArticle, KbArticlePayload, KbArticleUpdatePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
+import type {
+  KbArticle,
+  KbArticleListFilters,
+  KbArticlePayload,
+  KbArticleUpdatePayload,
+  KbCategory,
+  KbCategoryPayload,
+} from '@/types/kbarticle'
 
 /** Loads and changes knowledge base categories and articles. */
 export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
@@ -17,8 +25,14 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   /** List of KB categories. */
   const categories = ref<KbCategory[]>([])
 
-  /** List of KB articles. */
+  /** The articles of the loaded page. */
   const articles = ref<KbArticle[]>([])
+
+  /** Total number of matching articles across all pages. */
+  const articlesTotalCount = ref(0)
+
+  /** Articles per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /** True while the categories load or one of them is being created. */
   const loading = ref(false)
@@ -97,49 +111,47 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   }
 
   /**
-   * Loads every article, unpublished ones included.
+   * Loads one page of the articles, unpublished ones included, narrowed by the server. The page, the search and the
+   * filters come from the list's address, so the store keeps no copy of them.
    *
+   * @param page - Page to load, 1-based.
+   * @param filters - The search text, the category and the published state; a member left out does not narrow.
    * @returns True when loaded; false when refused (see `articlesError`).
    */
-  const fetchArticles = async (): Promise<boolean> => {
+  const fetchArticles = async (page: number, filters: KbArticleListFilters = {}): Promise<boolean> => {
     articlesLoading.value = true
-    const result = await runAction(articlesError, () => api.listArticles())
+    const result = await runAction(articlesError, () =>
+      api.listArticles({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+    )
     articlesLoading.value = false
     if (result.ok) {
-      articles.value = result.value
+      articles.value = result.value.items
+      articlesTotalCount.value = result.value.totalCount
     }
     return result.ok
   }
 
   /**
-   * Creates an article, then reloads the list.
+   * Creates an article. The screen reads the list again, because only it knows the page and the filters.
    *
    * @param payload - Article data.
    * @returns The new article's id, or null when refused (see `error` and `fieldErrors`).
    */
   const createArticle = async (payload: KbArticlePayload): Promise<number | null> => {
     const result = await runAction(error, () => api.createArticle(payload), fieldErrors)
-    if (!result.ok) {
-      return null
-    }
-    await fetchArticles()
-    return result.value
+    return result.ok ? result.value : null
   }
 
   /**
-   * Replaces the category and translations of an article, then reloads the list.
+   * Replaces the category and translations of an article. The screen reads the list again, because only it knows the
+   * page and the filters.
    *
    * @param id - The article identifier.
    * @param payload - Updated category and translations.
    * @returns True when saved; false when refused (see `error` and `fieldErrors`).
    */
-  const updateArticle = async (id: number, payload: KbArticleUpdatePayload): Promise<boolean> => {
-    const result = await runAction(error, () => api.updateArticle(id, payload), fieldErrors)
-    if (result.ok) {
-      await fetchArticles()
-    }
-    return result.ok
-  }
+  const updateArticle = async (id: number, payload: KbArticleUpdatePayload): Promise<boolean> =>
+    (await runAction(error, () => api.updateArticle(id, payload), fieldErrors)).ok
 
   /**
    * Deletes an article.
@@ -153,6 +165,8 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   return {
     categories,
     articles,
+    articlesTotalCount,
+    pageSize,
     loading,
     articlesLoading,
     error,

@@ -66,8 +66,6 @@
     "searchPlaceholder": "Search by name, hostname or IP",
     "filterModule": "Module",
     "filterState": "Status",
-    "anyModule": "Any module",
-    "anyState": "Any status",
     "accountsLoad": "Accounts",
     "disabled": "DISABLED",
     "noMatches": "No servers match the filters",

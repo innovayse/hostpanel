@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Domain.Support;
@@ -249,14 +250,58 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
         category.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    /// <summary>A page size outside the allowed range is refused with 400.</summary>
+    /// <summary>A percent sign and an underscore typed into the search match themselves, not any text.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task PageSizeOutOfRange_IsRefusedAsync()
+    public async Task Search_WildcardsAreLiteralAsync()
     {
-        var response = await factory.CreateClient().GetAsync("/api/knowledgebase/articles?pageSize=0");
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var category = $"Cat-{Guid.NewGuid():N}";
+        var categoryId = await KbTestSeeds.CreateCategoryAsync(admin, category);
+        var token = PagedListReads.UniqueToken();
+        var percent = await KbTestSeeds.CreateArticleAsync(admin, categoryId, $"{token} 50% off", publish: true);
+        await KbTestSeeds.CreateArticleAsync(admin, categoryId, $"{token} 50x off", publish: true);
+        var underscore = await KbTestSeeds.CreateArticleAsync(admin, categoryId, $"{token} a_c", publish: true);
+        await KbTestSeeds.CreateArticleAsync(admin, categoryId, $"{token} abc", publish: true);
+
+        var percentPage = await GetPageAsync($"/api/knowledgebase/articles?category={category}&search={token}%2050%25");
+        var underscorePage = await GetPageAsync($"/api/knowledgebase/articles?category={category}&search={token}%20a_c");
+
+        Ids(percentPage).Should().Equal(percent);
+        Ids(underscorePage).Should().Equal(underscore);
+    }
+
+    /// <summary>
+    /// A page below one, a page size outside the allowed range or a search past the limit is refused with 400 on that field,
+    /// while a request that sends neither a page nor a page size, as the client portal does, is answered with the first page.
+    /// </summary>
+    /// <param name="queryString">The query string.</param>
+    /// <param name="field">The field the refusal must name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("page=0", "page")]
+    [InlineData("pageSize=0", "pagesize")]
+    [InlineData("pageSize=101", "pagesize")]
+    [InlineData("search=TOO_LONG", "search")]
+    public async Task ValueOutOfRange_IsRefusedAsync(string queryString, string field)
+    {
+        var value = queryString.Replace("TOO_LONG", new string('a', PagingLimits.MaxSearchLength + 1), StringComparison.Ordinal);
+
+        var response = await factory.CreateClient().GetAsync($"/api/knowledgebase/articles?{value}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
+    }
+
+    /// <summary>A request that names no page and no page size is answered with the first page of twenty.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task NoPaging_AnswersTheFirstPageOfTwentyAsync()
+    {
+        var page = await GetPageAsync("/api/knowledgebase/articles");
+
+        page.GetProperty("pageNumber").GetInt32().Should().Be(1);
+        page.GetProperty("pageSize").GetInt32().Should().Be(20);
     }
 
     /// <summary>Gets one page of the public list.</summary>

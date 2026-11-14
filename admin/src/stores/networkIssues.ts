@@ -8,11 +8,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useNetworkIssuesApi } from '@/composables/apis/useNetworkIssuesApi'
 import { runAction } from '@/lib/runAction'
-import { NetworkIssueTab } from '@/types/networkissue'
-import type { NetworkIssue, NetworkIssuePayload } from '@/types/networkissue'
+import type { NetworkIssue, NetworkIssueListFilters, NetworkIssuePayload } from '@/types/networkissue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
-/** Paginated, status-filtered listing and CRUD of network issues. */
+/** Paginated, searchable and filterable listing and CRUD of network issues. */
 export const useNetworkIssuesStore = defineStore('networkIssues', () => {
   const api = useNetworkIssuesApi()
 
@@ -37,24 +36,21 @@ export const useNetworkIssuesStore = defineStore('networkIssues', () => {
   /** Per-field messages of the last refused save, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
 
-  /** Active status filter. */
-  const statusFilter = ref<NetworkIssueTab>(NetworkIssueTab.Open)
-
-  /** Current page (1-based). */
-  const page = ref(1)
-
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /**
-   * Loads one page of network issues for the active status filter.
+   * Loads one page of network issues, narrowed by the server. The page, the search and the filters come from the list's
+   * address, so the store keeps no copy of them.
    *
+   * @param page - Page to load, 1-based.
+   * @param filters - The search text and the status, type and priority filters; a member left out does not narrow.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: NetworkIssueListFilters = {}): Promise<boolean> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listNetworkIssues({ page: page.value, pageSize: pageSize.value, status: statusFilter.value }),
+      api.listNetworkIssues({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
     )
     loading.value = false
     if (result.ok) {
@@ -118,7 +114,7 @@ export const useNetworkIssuesStore = defineStore('networkIssues', () => {
     (await runAction(actionError, () => api.deleteNetworkIssue(id))).ok
 
   return {
-    issues, totalCount, current, loading, error, actionError, fieldErrors, statusFilter, page, pageSize,
+    issues, totalCount, current, loading, error, actionError, fieldErrors, pageSize,
     fetchAll, fetchById, create, update, remove,
   }
 })

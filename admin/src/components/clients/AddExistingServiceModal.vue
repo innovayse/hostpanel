@@ -80,7 +80,7 @@ const productOptions = computed(() => settingsStore.products.map(p => ({ value: 
 
 /** Server options for the select. */
 const serverOptions = computed(() =>
-  serversStore.servers.map(s => ({ value: s.id, label: `${s.name} (${s.endpoint.hostname})` })),
+  serversStore.serverOptions.map(s => ({ value: s.id, label: `${s.name} (${s.hostname})` })),
 )
 
 /** True when every required field has a value. */
@@ -116,7 +116,7 @@ const handleSave = async (): Promise<void> => {
 
 onMounted(() => {
   store.actionError = null
-  serversStore.fetchServers()
+  serversStore.fetchServerOptions()
   settingsStore.fetchProducts()
 })
 </script>

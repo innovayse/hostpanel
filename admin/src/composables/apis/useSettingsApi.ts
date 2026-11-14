@@ -8,7 +8,8 @@
 
 import { buildQuery, useApi } from '@/composables/useApi'
 import type { CreateEmailTemplatePayload, EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
-import type { CreateProductPayload, Product, ProductGroup, UpdateProductPayload } from '@/types/product'
+import type { PaginatedList } from '@/types/paginatedlist'
+import type { CreateProductPayload, Product, ProductGroup, ProductListQuery, UpdateProductPayload } from '@/types/product'
 import type { Setting } from '@/types/setting'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
@@ -74,6 +75,24 @@ export const useSettingsApi = () => {
     request<Product[]>(`${ApiPath.Products}${buildQuery({ activeOnly: false, includeUnsellable: true })}`)
 
   /**
+   * Lists one page of the products, inactive and unsellable ones included.
+   *
+   * @param query - Page, page size, search text, group, type and status.
+   * @returns The page and the total count.
+   */
+  const listProductsPage = (query: ProductListQuery): Promise<PaginatedList<Product>> =>
+    request<PaginatedList<Product>>(
+      `${ApiPath.AdminProducts}${buildQuery({
+        page: query.page,
+        pageSize: query.pageSize,
+        search: query.search,
+        groupId: query.groupId,
+        type: query.type,
+        status: query.status,
+      })}`,
+    )
+
+  /**
    * Lists every product group, inactive ones included.
    *
    * @returns Every group.
@@ -107,6 +126,7 @@ export const useSettingsApi = () => {
     createEmailTemplate,
     updateEmailTemplate,
     listProducts,
+    listProductsPage,
     listProductGroups,
     createProduct,
     updateProduct,

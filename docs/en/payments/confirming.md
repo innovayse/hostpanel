@@ -48,7 +48,7 @@ Online payments made through a gateway plugin can be refunded from the invoice d
 
 Go to **Billing → Gateway Transaction Log**. Subtitle: "View payment gateway transaction logs."
 
-**Filters:** Date Range, Debug Data (search in the raw gateway response), Gateway, Result (Payment, Refund, Credit, Pending).
+**Search and filters:** the search box looks in the gateway name and in the debug data (the raw gateway response) at once, in any letter case. The **Filters** button opens Result (Payment, Refund, Credit, Pending) and Date Range. The range is given in whole days: the last day is included from its first second to its last, and a range of one day lists that whole day. Each applied filter shows as a chip that you can remove, and the search, the filters and the page stay in the address, so a link opens the same log.
 
 Each row shows the gateway, result, amount and date. Click a row to see the full debug data, useful for answering "did this payment arrive" when a client says they paid but the invoice is still open.
 

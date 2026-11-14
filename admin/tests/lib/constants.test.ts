@@ -13,15 +13,21 @@ import {
   CURRENCY_OPTIONS,
   DNS_RECORD_TYPE_OPTIONS,
   DOMAIN_STATUS_OPTIONS,
+  EMAIL_LOG_OUTCOME_OPTIONS,
   ENABLED_FILTER_OPTIONS,
   FRAUD_CHECK_KIND_OPTIONS,
   FRAUD_DECISION_OPTIONS,
   FRAUD_REASON_OPTIONS,
+  GATEWAY_LOG_RESULT_OPTIONS,
   GATEWAY_OPTIONS,
   INVOICE_STATUS_OPTIONS,
+  NETWORK_ISSUE_PRIORITY_OPTIONS,
+  NETWORK_ISSUE_STATUS_OPTIONS,
+  NETWORK_ISSUE_TYPE_OPTIONS,
   ORDER_LINE_FULFILMENT_OPTIONS,
   ORDER_STATUS_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
+  PUBLISHED_FILTER_OPTIONS,
   QUOTE_STAGE_OPTIONS,
   QUOTE_VALIDITY_OPTIONS,
   RECURRING_PERIOD_OPTIONS,
@@ -36,11 +42,15 @@ import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { ClientStatus } from '@/types/client'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { CampaignStatus } from '@/types/emailcampaign'
+import { EmailLogOutcome } from '@/types/emaillog'
 import { EnabledFilter } from '@/types/enabledfilter'
 import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { PaymentGateway } from '@/types/gateway'
+import { GatewayLogResult } from '@/types/gatewaylog'
 import { InvoiceStatus } from '@/types/invoice'
+import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
+import { PublishedFilter } from '@/types/publishedfilter'
 import { QuoteStage, QuoteValidity } from '@/types/quote'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { TicketPriority } from '@/types/ticket'
@@ -81,6 +91,12 @@ describe('option lists', () => {
     expect(valuesOf(GATEWAY_OPTIONS)).toEqual(membersOf(PaymentGateway))
     expect(valuesOf(CAMPAIGN_STATUS_OPTIONS)).toEqual(membersOf(CampaignStatus))
     expect(valuesOf(ENABLED_FILTER_OPTIONS)).toEqual(membersOf(EnabledFilter))
+    expect(valuesOf(PUBLISHED_FILTER_OPTIONS)).toEqual(membersOf(PublishedFilter))
+    expect(valuesOf(GATEWAY_LOG_RESULT_OPTIONS)).toEqual(membersOf(GatewayLogResult))
+    expect(valuesOf(EMAIL_LOG_OUTCOME_OPTIONS)).toEqual(membersOf(EmailLogOutcome))
+    expect(valuesOf(NETWORK_ISSUE_STATUS_OPTIONS)).toEqual(membersOf(NetworkIssueStatus))
+    expect(valuesOf(NETWORK_ISSUE_TYPE_OPTIONS)).toEqual(membersOf(NetworkIssueType))
+    expect(valuesOf(NETWORK_ISSUE_PRIORITY_OPTIONS)).toEqual(membersOf(NetworkIssuePriority))
   })
 
   it('name every billing cycle with its own label, the newer cycles included', () => {
@@ -144,6 +160,12 @@ describe('option lists', () => {
       GATEWAY_OPTIONS,
       CAMPAIGN_STATUS_OPTIONS,
       ENABLED_FILTER_OPTIONS,
+      PUBLISHED_FILTER_OPTIONS,
+      GATEWAY_LOG_RESULT_OPTIONS,
+      EMAIL_LOG_OUTCOME_OPTIONS,
+      NETWORK_ISSUE_STATUS_OPTIONS,
+      NETWORK_ISSUE_TYPE_OPTIONS,
+      NETWORK_ISSUE_PRIORITY_OPTIONS,
     ]
 
     for (const option of lists.flat()) {

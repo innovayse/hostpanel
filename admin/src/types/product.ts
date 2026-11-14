@@ -1,7 +1,7 @@
 /**
- * A sellable product, the group it sits in, and the payloads that create or update one.
+ * A sellable product, the group it sits in, what narrows the product list, and the payloads that create or update one.
  */
-
+import type { ProductStatus, ProductType } from '@/types/productenums'
 
 /** Represents a product/plan available for purchase. */
 export interface Product {
@@ -39,6 +39,26 @@ export interface Product {
   metadata: string | null
   /** Days a service stays usable after its due date before it is suspended, 0 to 365. */
   gracePeriodDays: number
+}
+
+/** What narrows the product list: the search text, the group, the type and the status; each member left out means no narrowing. */
+export interface ProductListFilters {
+  /** Text the name, SKU or slug must contain; empty for none. */
+  search?: string
+  /** Keep only the products of this group. */
+  groupId?: number
+  /** Keep only the products of this type. */
+  type?: ProductType
+  /** Keep only the products in this status. */
+  status?: ProductStatus
+}
+
+/** Filter and paging of the product list. */
+export interface ProductListQuery extends ProductListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
 }
 
 /**

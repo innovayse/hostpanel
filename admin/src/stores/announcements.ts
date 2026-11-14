@@ -8,7 +8,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAnnouncementsApi } from '@/composables/apis/useAnnouncementsApi'
 import { runAction } from '@/lib/runAction'
-import type { Announcement, AnnouncementPayload } from '@/types/announcement'
+import type { Announcement, AnnouncementListFilters, AnnouncementPayload } from '@/types/announcement'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
 /** Paginated listing and CRUD of announcements. */
@@ -33,20 +33,22 @@ export const useAnnouncementsStore = defineStore('announcements', () => {
   /** Per-field messages of the last refused save, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
 
-  /** Current page (1-based). */
-  const page = ref(1)
-
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /**
-   * Loads one page of announcements.
+   * Loads one page of announcements, narrowed by the server. The page, the search and the filter come from the list's
+   * address, so the store keeps no copy of them.
    *
+   * @param page - Page to load, 1-based.
+   * @param filters - The search text and the published state; a member left out does not narrow.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: AnnouncementListFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.listAnnouncements(page.value, pageSize.value))
+    const result = await runAction(error, () =>
+      api.listAnnouncements({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+    )
     loading.value = false
     if (result.ok) {
       announcements.value = result.value.items
@@ -109,7 +111,7 @@ export const useAnnouncementsStore = defineStore('announcements', () => {
     (await runAction(error, () => api.deleteAnnouncement(id))).ok
 
   return {
-    announcements, totalCount, current, loading, error, fieldErrors, page, pageSize,
+    announcements, totalCount, current, loading, error, fieldErrors, pageSize,
     fetchAll, fetchById, create, update, remove,
   }
 })

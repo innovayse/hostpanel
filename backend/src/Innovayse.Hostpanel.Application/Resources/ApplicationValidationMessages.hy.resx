@@ -391,14 +391,11 @@
   <data name="EmailLogPageSizeRange" xml:space="preserve">
     <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
   </data>
-  <data name="GatewayLogPageRequired" xml:space="preserve">
-    <value>Էջի համարը պետք է լինի առնվազն 1։</value>
-  </data>
-  <data name="GatewayLogPageSizeRange" xml:space="preserve">
-    <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
-  </data>
   <data name="TicketPeriodInvalid" xml:space="preserve">
     <value>Ժամանակահատվածը վավեր հաշվետու ժամանակահատված չէ։</value>
+  </data>
+  <data name="GatewayLogResultInvalid" xml:space="preserve">
+    <value>Արդյունքը պետք է լինի հետևյալներից մեկը՝ Payment, Refund, Credit, Pending։</value>
   </data>
   <data name="KbArticleIdInvalid" xml:space="preserve">
     <value>Հոդվածի ID-ն պետք է լինի դրական թիվ։</value>
@@ -417,15 +414,6 @@
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Կատեգորիան չպետք է գերազանցի {0} նիշը։</value>
-  </data>
-  <data name="KbArticleSearchTooLong" xml:space="preserve">
-    <value>Որոնման տեքստը չպետք է գերազանցի {0} նիշը։</value>
-  </data>
-  <data name="KbArticlePageRequired" xml:space="preserve">
-    <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
-  </data>
-  <data name="KbArticlePageSizeRange" xml:space="preserve">
-    <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
   </data>
   <data name="KbCategoryIdInvalid" xml:space="preserve">
     <value>Կատեգորիայի ID-ն պետք է լինի դրական թիվ։</value>
@@ -1108,9 +1096,6 @@
   <data name="ActivityLogClientIdInvalid" xml:space="preserve">
     <value>Նշեք հաճախորդի վավեր ID։</value>
   </data>
-  <data name="ActivityLogFilterTooLong" xml:space="preserve">
-    <value>Որոնման զտիչը կարող է լինել առավելագույնը 200 նիշ։</value>
-  </data>
   <data name="DateRangeInvalid" xml:space="preserve">
     <value>Ավարտի ամսաթիվը չի կարող լինել սկզբի ամսաթվից առաջ։</value>
   </data>
@@ -1749,5 +1734,17 @@
   </data>
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Draft, Scheduled, Sending, Sent։</value>
+  </data>
+  <data name="ServerListModuleInvalid" xml:space="preserve">
+    <value>Մոդուլը պետք է լինի հետևյալներից մեկը՝ CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm։</value>
+  </data>
+  <data name="ServerListStateInvalid" xml:space="preserve">
+    <value>Վիճակը պետք է լինի հետևյալներից մեկը՝ Online, Offline, Untested։</value>
+  </data>
+  <data name="ProductListTypeInvalid" xml:space="preserve">
+    <value>Տեսակը պետք է լինի հետևյալներից մեկը՝ SharedHosting, Vps, Dedicated, Domain, Ssl, Other, Email, Addon, Backup, Digital։</value>
+  </data>
+  <data name="ProductListStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Active, Inactive։</value>
   </data>
 </root>

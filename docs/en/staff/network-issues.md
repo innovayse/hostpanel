@@ -12,13 +12,15 @@ Network issues let you tell clients about outages and planned maintenance.
 
 Go to **Support → Network Issues**. Subtitle: "Manage network status and incident reports."
 
-Three tabs:
+The search box looks in the title, the server and the description, in any letter case. The **Filters** button opens three filters, each with an "Any" choice:
 
-| Tab | Shows |
-|-----|-------|
-| Open | Issues with status Reported or Investigating |
-| Scheduled | Issues with status Scheduled |
-| Resolved | Issues with status Resolved |
+| Filter | Choices |
+|--------|---------|
+| Status | Reported, Investigating, Scheduled, Resolved |
+| Type | Server, Other |
+| Priority | Low, Medium, High, Critical |
+
+Each applied filter shows as a chip that you can remove. The search, the filters and the page stay in the address, so a link opens the same list. The list is paged and shows the newest issue first. There are no status tabs: to see the issues still open, filter by status Reported or Investigating one after the other, or search for the issue you need.
 
 An issue that does not exist returns `NETWORKISSUE_NOT_FOUND`.
 

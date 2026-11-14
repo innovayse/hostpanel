@@ -1,7 +1,8 @@
 /**
- * Fixtures for the servers screen: one provisioning server as `GET /api/admin/servers` returns it,
+ * Fixtures for the servers screen: one provisioning server as a page of `GET /api/admin/servers` returns it,
  * with its SSH key management settings and agent installer setup.
  */
+import type { PaginatedList } from '../../src/types/paginatedlist'
 import type { ServerDto, TestConnectionResultDto } from '../../src/types/server'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '../../src/types/serverssh'
 import { SshAgentProfile } from '../../src/types/sshenums'
@@ -35,6 +36,20 @@ export const hostServer: ServerDto = {
   accountsCount: 12,
   credentials: { hasPassword: false, hasApiToken: false, hasAccessHash: true },
 }
+
+/**
+ * Wraps servers in the page shape `GET /api/admin/servers` answers with.
+ *
+ * @param items - The rows of the page.
+ * @returns The page.
+ */
+export const serverPage = (items: ServerDto[]): PaginatedList<ServerDto> => ({
+  items,
+  totalCount: items.length,
+  pageNumber: 1,
+  pageSize: 20,
+  totalPages: 1,
+})
 
 /** `POST /api/admin/servers/1/test-connection` when the panel answers. */
 export const connectionOk: TestConnectionResultDto = {

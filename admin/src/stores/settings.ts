@@ -10,11 +10,12 @@ import { ref } from 'vue'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
 import { useUploadApi } from '@/composables/apis/useUploadApi'
 import { errorCode } from '@/lib/errorHandler'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { dropFieldError, runAction } from '@/lib/runAction'
 import type { ActionResult } from '@/lib/runAction'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import type { MessageLanguage } from '@/locales/messages'
-import type { CreateProductPayload, Product, ProductGroup, UpdateProductPayload } from '@/types/product'
+import type { CreateProductPayload, Product, ProductGroup, ProductListFilters, UpdateProductPayload } from '@/types/product'
 import { ProductErrorCode } from '@/types/productenums'
 import type { Setting } from '@/types/setting'
 import type { BrandingImageKind } from '@/types/upload'
@@ -30,8 +31,17 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Email templates list. */
   const emailTemplates = ref<EmailTemplate[]>([])
 
-  /** Products list. */
+  /** Every product, for the screens that choose one (the picker read, not paged). */
   const products = ref<Product[]>([])
+
+  /** The products of the loaded page of the product list screen. */
+  const productPage = ref<Product[]>([])
+
+  /** Items per page of the product list; the store owns it so a screen never names it. */
+  const productPageSize = ref(DEFAULT_PAGE_SIZE)
+
+  /** Total number of matching products across all pages of the product list. */
+  const productTotalCount = ref(0)
 
   /** Product groups list. */
   const productGroups = ref<ProductGroup[]>([])
@@ -146,7 +156,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Fetches all products from the backend (including inactive).
+   * Fetches every product from the backend (including inactive) into `products`, for the screens that choose one.
    *
    * @returns Resolves when the request is over.
    */
@@ -154,6 +164,27 @@ export const useSettingsStore = defineStore('settings', () => {
     load(api.listProducts, (rows) => {
       products.value = rows
     })
+
+  /**
+   * Loads one page of the product list. The page, the search and the filters come from the list's address, so the
+   * store keeps no copy of them.
+   *
+   * @param page - Page to load, 1-based.
+   * @param filters - The search text, the group, the type and the status; empty for none.
+   * @returns True when loaded; false when refused (see `error`).
+   */
+  const fetchProductsPage = async (page: number, filters: ProductListFilters = {}): Promise<boolean> => {
+    loading.value = true
+    const result = await runAction(error, () =>
+      api.listProductsPage({ ...filters, page, pageSize: productPageSize.value, search: filters.search?.trim() }),
+    )
+    loading.value = false
+    if (result.ok) {
+      productPage.value = result.value.items
+      productTotalCount.value = result.value.totalCount
+    }
+    return result.ok
+  }
 
   /**
    * Fetches all product groups from the backend.
@@ -201,22 +232,18 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Creates a new product and refreshes the list.
+   * Creates a new product.
    *
    * @param payload - Product creation data.
    * @returns The new product ID, or null when refused (see `actionError` and `fieldErrors`).
    */
   const createProduct = async (payload: CreateProductPayload): Promise<number | null> => {
     const result = await saveProduct(() => api.createProduct(payload))
-    if (!result.ok) {
-      return null
-    }
-    await fetchProducts()
-    return result.value
+    return result.ok ? result.value : null
   }
 
   /**
-   * Updates an existing product and refreshes the list.
+   * Updates an existing product.
    *
    * @param id - Product ID.
    * @param payload - Updated product data.
@@ -224,16 +251,13 @@ export const useSettingsStore = defineStore('settings', () => {
    */
   const updateProduct = async (id: number, payload: UpdateProductPayload): Promise<boolean> => {
     const result = await saveProduct(() => api.updateProduct(id, payload))
-    if (result.ok) {
-      await fetchProducts()
-    }
     return result.ok
   }
 
   return {
-    settings, emailTemplates, products, productGroups, fieldErrors, clearFieldError,
+    settings, emailTemplates, products, productPage, productPageSize, productTotalCount, productGroups, fieldErrors, clearFieldError,
     loading, error, actionError, uploadError,
-    fetchSettings, updateSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductGroups,
+    fetchSettings, updateSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductsPage, fetchProductGroups,
     createProduct, updateProduct, uploadBrandingFile,
   }
 })

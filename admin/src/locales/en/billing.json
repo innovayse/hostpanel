@@ -130,13 +130,13 @@
     "gatewayTransactionLog": "Gateway Transaction Log",
     "viewPaymentGatewayTransactionLogs": "View payment gateway transaction logs",
     "debugData": "Debug Data",
-    "searchInDebugData": "Search in debug data",
     "gateway": "Gateway",
     "result": "Result",
     "payment": "Payment",
     "refund": "Refund",
     "credit": "Credit",
-    "pending": "Pending"
+    "pending": "Pending",
+    "searchPlaceholder": "Search gateway or debug data"
   },
   "renewals": {
     "heading": "Upcoming Renewals",

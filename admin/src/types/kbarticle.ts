@@ -69,3 +69,21 @@ export interface KbArticlePayload extends KbArticleUpdatePayload {
   /** Whether the article is visible to clients at once; false saves a draft. */
   isPublished: boolean
 }
+
+/** What narrows the knowledge base article list: the search text and the filters; each member left out means no narrowing. */
+export interface KbArticleListFilters {
+  /** Search term over the title and the body in every language; empty for none. */
+  search?: string
+  /** Keep only the articles of this category. */
+  categoryId?: number
+  /** Keep only the published articles (true) or only the drafts (false). */
+  isPublished?: boolean
+}
+
+/** Filter and paging of the knowledge base article list. */
+export interface KbArticleFilter extends KbArticleListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
+}

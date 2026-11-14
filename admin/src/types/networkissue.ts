@@ -1,6 +1,6 @@
 /**
  * A network issue, its payload and filter, plus the closed value sets the API speaks for it
- * (type, priority, status, list tab).
+ * (type, priority, status).
  */
 
 /** Kind of network issue. */
@@ -33,23 +33,6 @@ export enum NetworkIssueStatus {
   Scheduled = 'Scheduled',
   /** Resolved. */
   Resolved = 'Resolved',
-}
-
-/** The tabs of the network issues list: the status groups the API can filter by. */
-export enum NetworkIssueTab {
-  /** Issues still open (reported or investigating). */
-  Open = 'Open',
-  /** Issues with a scheduled fix. */
-  Scheduled = 'Scheduled',
-  /** Resolved issues. */
-  Resolved = 'Resolved',
-}
-
-/** The statuses each list tab asks the API for. */
-export const NETWORK_ISSUE_TAB_STATUSES: Readonly<Record<NetworkIssueTab, readonly NetworkIssueStatus[]>> = {
-  [NetworkIssueTab.Open]: [NetworkIssueStatus.Reported, NetworkIssueStatus.Investigating],
-  [NetworkIssueTab.Scheduled]: [NetworkIssueStatus.Scheduled],
-  [NetworkIssueTab.Resolved]: [NetworkIssueStatus.Resolved],
 }
 
 /** DTO representing a network issue. */
@@ -96,12 +79,22 @@ export interface NetworkIssuePayload {
   description: string
 }
 
+/** What narrows the network issue list: the search text and the filters; each member left out means no narrowing. */
+export interface NetworkIssueListFilters {
+  /** Search term over the title, the server and the description; empty for none. */
+  search?: string
+  /** Keep only issues in this status. */
+  status?: NetworkIssueStatus
+  /** Keep only issues of this type. */
+  type?: NetworkIssueType
+  /** Keep only issues of this priority. */
+  priority?: NetworkIssuePriority
+}
+
 /** Filter and paging of the network issue list. */
-export interface NetworkIssueFilter {
+export interface NetworkIssueFilter extends NetworkIssueListFilters {
   /** Page, 1-based. */
   page: number
   /** Items per page. */
   pageSize: number
-  /** Tab to keep; null or omitted for all. */
-  status?: NetworkIssueTab | null
 }

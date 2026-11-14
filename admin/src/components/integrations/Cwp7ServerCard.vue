@@ -16,7 +16,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
 import { SERVER_STATE_TONES, serverAccountsLabel, serverState } from '@/lib/servers'
-import type { ServerDto } from '@/types/server'
+import type { ServerOptionDto } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
@@ -25,7 +25,7 @@ const { t } = useI18n()
 /** Props for Cwp7ServerCard. */
 withDefaults(defineProps<{
   /** The server to show; null while the servers are still loading. */
-  server?: ServerDto | null
+  server?: ServerOptionDto | null
 }>(), {
   server: null,
 })
@@ -41,10 +41,10 @@ withDefaults(defineProps<{
           <UiBadge v-else :tone="SERVER_STATE_TONES[serverState(server)]" dot small />
         </UiStack>
         <UiSkeletonBar v-else class="h-5 w-40 rounded-md" aria-hidden="true" />
-        <UiText v-if="server" tone="muted" size="sm">{{ server.endpoint.hostname }}</UiText>
+        <UiText v-if="server" tone="muted" size="sm">{{ server.hostname }}</UiText>
         <UiSkeletonBar v-else class="h-3.5 w-32 rounded-md" aria-hidden="true" />
         <template v-if="server">
-          <UiText v-if="server.endpoint.ipAddress" tone="muted" size="sm">{{ server.endpoint.ipAddress }}</UiText>
+          <UiText v-if="server.ipAddress" tone="muted" size="sm">{{ server.ipAddress }}</UiText>
           <UiText v-if="server.accountsCount !== null" tone="muted" size="sm">
             {{ t('integrations.cwp7Integration.accountsUsage', { usage: serverAccountsLabel(server) }) }}
           </UiText>

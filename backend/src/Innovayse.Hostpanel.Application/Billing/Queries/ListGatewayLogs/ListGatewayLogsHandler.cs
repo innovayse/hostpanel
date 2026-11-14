@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -26,7 +27,7 @@ public sealed class ListGatewayLogsHandler
     }
 
     /// <summary>Handles <see cref="ListGatewayLogsQuery"/>.</summary>
-    /// <param name="query">Paging and filters.</param>
+    /// <param name="query">The search, the period, the outcome and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with one page of log entries, newest first. Never refuses.</returns>
     public async Task<Result<PaginatedList<GatewayLogEntryDto>>> HandleAsync(
@@ -65,29 +66,9 @@ public sealed class ListGatewayLogsHandler
 
         var rows = transactions.Concat(sessions);
 
-        if (query.From.HasValue)
-        {
-            var from = query.From.Value;
-            rows = rows.Where(r => r.Date >= from);
-        }
-
-        if (query.To.HasValue)
-        {
-            var to = query.To.Value;
-            rows = rows.Where(r => r.Date <= to);
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Gateway))
-        {
-            var gateway = query.Gateway.Trim().ToLower();
-            rows = rows.Where(r => r.Gateway.ToLower().Contains(gateway));
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.DebugData))
-        {
-            var text = query.DebugData.Trim().ToLower();
-            rows = rows.Where(r => r.DebugData.ToLower().Contains(text));
-        }
+        rows = rows
+            .Search(query.Search, r => r.Gateway, r => r.DebugData)
+            .InPeriod(r => r.Date, query.From, query.To);
 
         if (query.Result.HasValue)
         {

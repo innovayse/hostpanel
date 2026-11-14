@@ -14,11 +14,15 @@ import { CurrencyCode } from '@/types/currency'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { CampaignStatus } from '@/types/emailcampaign'
+import { EmailLogOutcome } from '@/types/emaillog'
 import { EnabledFilter } from '@/types/enabledfilter'
 import { PaymentGateway } from '@/types/gateway'
+import { GatewayLogResult } from '@/types/gatewaylog'
 import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { InvoiceStatus } from '@/types/invoice'
+import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
+import { PublishedFilter } from '@/types/publishedfilter'
 import { QuoteStage, QuoteValidity } from '@/types/quote'
 import { RegistrarModule } from '@/types/registrarmodule'
 import { BillingCycle, ServiceStatus } from '@/types/service'
@@ -180,6 +184,48 @@ export const QUOTE_VALIDITY_OPTIONS: SelectOption<QuoteValidity>[] = [
 export const TRANSACTION_DIRECTION_OPTIONS: SelectOption<TransactionDirection>[] = [
   { value: TransactionDirection.In, get label() { return translate('billing.transactionsList.paymentsReceived') } },
   { value: TransactionDirection.Out, get label() { return translate('billing.transactionsList.paymentsSent') } },
+]
+
+/** Gateway log outcome options for the log's result filter; a filter puts its own "any" choice in front. */
+export const GATEWAY_LOG_RESULT_OPTIONS: SelectOption<GatewayLogResult>[] = [
+  { value: GatewayLogResult.Payment, get label() { return translate('billing.gatewayLog.payment') } },
+  { value: GatewayLogResult.Refund, get label() { return translate('billing.gatewayLog.refund') } },
+  { value: GatewayLogResult.Credit, get label() { return translate('billing.gatewayLog.credit') } },
+  { value: GatewayLogResult.Pending, get label() { return translate('billing.gatewayLog.pending') } },
+]
+
+/** Email log outcome options for the log's outcome filter; a filter puts its own "any" choice in front. */
+export const EMAIL_LOG_OUTCOME_OPTIONS: SelectOption<EmailLogOutcome>[] = [
+  { value: EmailLogOutcome.Delivered, get label() { return translate('clients.clientEmails.delivered') } },
+  { value: EmailLogOutcome.Failed, get label() { return translate('clients.clientEmails.failure.unknown') } },
+]
+
+/** Published-state options for the knowledge base and announcement filters; a filter puts its own "any" choice in front. */
+export const PUBLISHED_FILTER_OPTIONS: SelectOption<PublishedFilter>[] = [
+  { value: PublishedFilter.Published, get label() { return translate('shared.published') } },
+  { value: PublishedFilter.Draft, get label() { return translate('support.knowledgebase.draft') } },
+]
+
+/** Every network issue type, for the issue form and the list filter; a filter puts its own "any" choice in front. */
+export const NETWORK_ISSUE_TYPE_OPTIONS: SelectOption<NetworkIssueType>[] = [
+  { value: NetworkIssueType.Server, get label() { return translate('clients.clientServiceDetail.server') } },
+  { value: NetworkIssueType.Other, get label() { return translate('support.networkIssueForm.other') } },
+]
+
+/** Every network issue priority, for the issue form and the list filter; a filter puts its own "any" choice in front. */
+export const NETWORK_ISSUE_PRIORITY_OPTIONS: SelectOption<NetworkIssuePriority>[] = [
+  { value: NetworkIssuePriority.Low, get label() { return translate('support.networkIssueForm.low') } },
+  { value: NetworkIssuePriority.Medium, get label() { return translate('support.networkIssueForm.medium') } },
+  { value: NetworkIssuePriority.High, get label() { return translate('support.networkIssueForm.high') } },
+  { value: NetworkIssuePriority.Critical, get label() { return translate('support.networkIssueForm.critical') } },
+]
+
+/** Every network issue status, for the issue form and the list filter; a filter puts its own "any" choice in front. */
+export const NETWORK_ISSUE_STATUS_OPTIONS: SelectOption<NetworkIssueStatus>[] = [
+  { value: NetworkIssueStatus.Reported, get label() { return translate('support.networkIssueForm.reported') } },
+  { value: NetworkIssueStatus.Investigating, get label() { return translate('support.networkIssueForm.investigating') } },
+  { value: NetworkIssueStatus.Scheduled, get label() { return translate('support.networkIssueForm.scheduled') } },
+  { value: NetworkIssueStatus.Resolved, get label() { return translate('support.networkIssueForm.resolved') } },
 ]
 
 /** Payment gateway options. */

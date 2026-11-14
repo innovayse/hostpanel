@@ -32,8 +32,8 @@ public sealed class AnnouncementsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a paginated list of all announcements, drafts included.</summary>
-    /// <param name="query">The paging window.</param>
+    /// <summary>Returns a paginated, searchable list of all announcements, drafts included.</summary>
+    /// <param name="query">The page, page size, search and published state to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not an admin;

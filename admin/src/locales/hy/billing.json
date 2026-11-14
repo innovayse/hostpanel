@@ -130,13 +130,13 @@
     "gatewayTransactionLog": "Դարպասի գործարքների մատյան",
     "viewPaymentGatewayTransactionLogs": "Վճարային դարպասների գործարքների մատյանների դիտում",
     "debugData": "Վրիպազերծման տվյալներ",
-    "searchInDebugData": "Որոնում վրիպազերծման տվյալներում",
     "gateway": "Դարպաս",
     "result": "Արդյունք",
     "payment": "Վճարում",
     "refund": "Վերադարձ",
     "credit": "Կրեդիտ",
-    "pending": "Սպասվում է"
+    "pending": "Սպասվում է",
+    "searchPlaceholder": "Որոնել դարպասով կամ վրիպազերծման տվյալներով"
   },
   "renewals": {
     "heading": "Առաջիկա երկարացումներ",

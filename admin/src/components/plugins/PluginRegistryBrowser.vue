@@ -22,9 +22,8 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { fromRegistry } from '@/lib/pluginCard'
 import { pluginPath } from '@/lib/routes'
@@ -32,6 +31,7 @@ import { PluginPricing } from '@/types/plugin'
 import type { PluginRegistryItemDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
+import { UiTextSize } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -133,10 +133,9 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
     />
 
     <template v-else>
-      <UiSkeletonBar v-if="initialLoading" class="h-3.5 w-24 rounded-md" aria-hidden="true" />
-      <UiText v-else tone="muted" size="sm" data-testid="plugin-registry-total">
+      <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm" data-testid="plugin-registry-total">
         {{ t('plugins.pluginRegistry.total', { total }) }}
-      </UiText>
+      </UiResultCount>
       <UiGrid :columns="3" gap="md" :aria-busy="initialLoading" data-testid="plugin-registry-list">
         <template v-if="initialLoading">
           <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->

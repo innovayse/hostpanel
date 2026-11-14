@@ -40,6 +40,7 @@ import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { useFilterQuery } from '@/composables/useFilterQuery'
 import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
+import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -160,7 +161,7 @@ onMounted(() => load())
 
       <template #footer>
         <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="store.loading && !hasRows" tone="muted" size="xs">
+          <UiResultCount :loading="store.loading && !hasRows" :size="UiTextSize.Xs">
             {{ t('shared.totalcountDomainValue', { totalCount: store.totalCount }) }}
           </UiResultCount>
           <UiPagination

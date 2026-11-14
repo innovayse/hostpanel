@@ -29,7 +29,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE, SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { ClientSection, clientItemPath, clientTicketNewPath } from '@/lib/routes'
@@ -211,7 +211,7 @@ onBeforeUnmount(() => {
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiResultCount :loading="initialLoading" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
             {{ t('clients.clientTickets.totalcountTicketValue', { totalCount: store.totalCount }) }}
           </UiResultCount>
           <UiPagination

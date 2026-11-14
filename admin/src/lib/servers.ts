@@ -83,7 +83,6 @@ export const filterServers = (servers: readonly ServerDto[], criteria: ServerCri
   })
 }
 
-
 /**
  * Formats the account usage of a server.
  *

@@ -181,6 +181,7 @@ describe('TransactionsListView', () => {
     const wrapper = await mountLedger()
 
     expect(wrapper.get('[data-testid="billing-transaction-chart"]').find('[data-testid="chart-skeleton"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="billing-transactions-count"]').text()).toBe('')
+    expect(wrapper.get('[data-testid="ui-result-count-skeleton"]').text()).toBe('')
+    expect(wrapper.find('[data-testid="billing-transactions-count"]').exists()).toBe(false)
   })
 })

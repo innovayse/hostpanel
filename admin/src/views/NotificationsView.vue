@@ -19,9 +19,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { activityEventLink } from '@/lib/activityEventLink'
 import { formatRelativeFromNow } from '@/lib/format'
+import { placeholderRows } from '@/lib/placeholderRows'
 import { ACTIVITY_EVENT_LOOK } from '@/lib/activityEventLook'
 import { useActivityStore } from '@/stores/activity'
-import type { ActivityEvent } from '@/types/activityevent'
 
 const { t, locale } = useI18n()
 
@@ -34,11 +34,8 @@ const FEED_LIMIT = 50
 /** Placeholder rows drawn while the feed loads. */
 const SKELETON_ROWS = 5
 
-/** True until the first read of the feed has answered: the rows are drawn with placeholders. */
-const loading = computed<boolean>(() => activity.loading && activity.events.length === 0)
-
 /** The rows of the list: the events, or null placeholders while the feed loads. */
-const rows = computed<Array<ActivityEvent | null>>(() => (loading.value ? Array.from({ length: SKELETON_ROWS }, () => null) : activity.events))
+const rows = computed(() => placeholderRows(activity.events, activity.initialLoading, SKELETON_ROWS))
 
 onMounted(() => activity.fetchActivity(FEED_LIMIT))
 </script>
@@ -59,12 +56,12 @@ onMounted(() => activity.fetchActivity(FEED_LIMIT))
       @retry="activity.fetchActivity(FEED_LIMIT)"
     />
 
-    <UiCard v-else-if="!loading && activity.events.length === 0">
+    <UiCard v-else-if="!activity.initialLoading && activity.events.length === 0">
       <UiEmptyState :title="t('common.noNotifications')" data-testid="notifications-empty" />
     </UiCard>
 
     <!-- The feed; while it loads the same rows are drawn with bars where the event goes -->
-    <UiCard v-else :aria-busy="loading ? 'true' : undefined" data-testid="notifications-list">
+    <UiCard v-else :aria-busy="activity.initialLoading ? 'true' : undefined" data-testid="notifications-list">
       <UiLink
         v-for="(event, index) in rows"
         :key="event ? `${event.type}-${event.entityId}-${event.occurredAt}` : `placeholder-${index}`"

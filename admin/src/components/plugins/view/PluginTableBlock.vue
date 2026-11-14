@@ -22,6 +22,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { usePluginSource, usePluginView } from '@/composables/usePluginView'
+import { placeholderRows } from '@/lib/placeholderRows'
 import { formatPluginValue, readPluginField } from '@/lib/pluginView'
 import { PluginTableDisplay, PluginValueFormat } from '@/types/pluginview'
 import type { PluginTableBlock } from '@/types/pluginview'
@@ -98,7 +99,7 @@ const pageCount = computed<number>(() => Math.max(1, Math.ceil(rows.value.length
 const visibleRows = computed<TableRow[]>(() => rows.value.slice((page.value - 1) * perPage.value, page.value * perPage.value))
 
 /** The cards of the cards display: the visible rows, or null placeholders while the rows load. */
-const cardRows = computed<Array<TableRow | null>>(() => (loading.value ? Array.from({ length: SKELETON_ROWS }, () => null) : visibleRows.value))
+const cardRows = computed(() => placeholderRows(visibleRows.value, loading.value, SKELETON_ROWS))
 
 /** Whether the pager is drawn: while reading, when the view pages the table (so it keeps its place); afterwards, when there is more than one page. */
 const showPager = computed<boolean>(() => !error.value && (loading.value ? Boolean(props.block.pageSize) : pageCount.value > 1))

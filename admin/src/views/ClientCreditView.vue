@@ -22,8 +22,8 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -257,8 +257,7 @@ onMounted(() => load(1))
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiSkeletonBar v-if="loading" class="h-3 w-36 rounded" aria-hidden="true" />
-          <UiText v-else :tone="UiTextTone.Muted">{{ t('clients.clientCredit.entriesCount', { count: entriesTotal }) }}</UiText>
+          <UiResultCount :loading="loading">{{ t('clients.clientCredit.entriesCount', { count: entriesTotal }) }}</UiResultCount>
           <UiPagination
             :page="page"
             :total="entriesTotal"

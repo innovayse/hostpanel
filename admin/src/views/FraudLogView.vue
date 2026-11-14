@@ -109,7 +109,7 @@ onMounted(() => load(1))
       @retry="load(page)"
     />
 
-    <UiResultCount :loading="store.loading && store.entries.length === 0" tone="muted" size="md" data-testid="fraud-log-count">
+    <UiResultCount :loading="store.loading && store.entries.length === 0" data-testid="fraud-log-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
     </UiResultCount>
 

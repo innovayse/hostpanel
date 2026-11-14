@@ -42,6 +42,7 @@ import { AppRoute, editPath } from '@/lib/routes'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -196,7 +197,7 @@ const rowActions = (issue: NetworkIssue): UiMenuAction[] => {
     <UiHeading :level="2" variant="card" data-testid="network-issues-heading">{{ activeHeading }}</UiHeading>
 
     <UiStack direction="row" justify="between" wrap>
-      <UiResultCount :loading="store.loading && store.issues.length === 0" tone="muted" size="sm" data-testid="network-issues-count">
+      <UiResultCount :loading="store.loading && store.issues.length === 0" :size="UiTextSize.Sm" data-testid="network-issues-count">
         {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
       </UiResultCount>
       <UiText tone="muted" size="sm">

@@ -41,6 +41,7 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { API_BASE } from '@/lib/apiPaths'
 import { COPIED_VISIBLE_MS } from '@/lib/limits'
+import { placeholderRows } from '@/lib/placeholderRows'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -151,7 +152,7 @@ const HISTORY_PLACEHOLDER_ROWS = 3
 const historyLoading = computed<boolean>(() => store.loading && store.jobs.length === 0)
 
 /** The rows of the history: the jobs, or null placeholders while they load. */
-const historyRows = computed<Array<MigrationJob | null>>(() => (historyLoading.value ? Array.from({ length: HISTORY_PLACEHOLDER_ROWS }, () => null) : store.jobs))
+const historyRows = computed(() => placeholderRows(store.jobs, historyLoading.value, HISTORY_PLACEHOLDER_ROWS))
 
 /** Whether the selected job's import report is shown (finished jobs only). */
 const showReport = computed<boolean>(() =>

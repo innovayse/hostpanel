@@ -12,6 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { activityEventLink } from '@/lib/activityEventLink'
 import { formatRelativeFromNow } from '@/lib/format'
+import { placeholderRows } from '@/lib/placeholderRows'
 import { useActivityStore } from '@/stores/activity'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
 import type { ActivityEvent } from '@/types/activityevent'
@@ -58,11 +59,8 @@ const activity = useActivityStore()
 /** Placeholder rows drawn in the notification drawer while the feed loads. */
 const FEED_PLACEHOLDER_ROWS = 3
 
-/** True until the first read of the feed has answered: the drawer draws its rows with placeholders. */
-const feedLoading = computed<boolean>(() => activity.loading && activity.events.length === 0)
-
 /** The rows of the drawer: the events, or null placeholders while the feed loads. */
-const feedRows = computed<Array<ActivityEvent | null>>(() => (feedLoading.value ? Array.from({ length: FEED_PLACEHOLDER_ROWS }, () => null) : activity.events))
+const feedRows = computed(() => placeholderRows(activity.events, activity.initialLoading, FEED_PLACEHOLDER_ROWS))
 
 /** The keys the search trigger announces for the command palette. */
 const SEARCH_SHORTCUT = 'Ctrl K'
@@ -221,9 +219,9 @@ onMounted(() => {
       <UiStack gap="sm" data-testid="notifications-drawer">
         <UiBadge tone="primary" small>{{ t('common.newCount', { count: notificationCount }, notificationCount) }}</UiBadge>
 
-        <UiEmptyState v-if="!feedLoading && activity.events.length === 0" :title="t('common.noNotifications')" />
+        <UiEmptyState v-if="!activity.initialLoading && activity.events.length === 0" :title="t('common.noNotifications')" />
         <!-- The feed; while it loads the same rows are drawn with bars where the event goes -->
-        <UiStack v-else gap="xs" :aria-busy="feedLoading ? 'true' : undefined">
+        <UiStack v-else gap="xs" :aria-busy="activity.initialLoading ? 'true' : undefined">
           <UiButton
             v-for="(event, index) in feedRows"
             :key="event ? `${event.type}-${event.entityId}-${event.occurredAt}` : `placeholder-${index}`"

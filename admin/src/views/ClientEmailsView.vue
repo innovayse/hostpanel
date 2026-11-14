@@ -24,7 +24,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -116,7 +116,7 @@ onMounted(load)
         :justify="UiJustify.Between"
         :align="UiAlignItems.Center"
       >
-        <UiResultCount :loading="store.loading && store.emails.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+        <UiResultCount :loading="store.loading && store.emails.length === 0" :size="UiTextSize.Sm">
           {{ t('clients.clientEmails.totalcountEmailValue', { totalCount: store.totalCount }) }}
         </UiResultCount>
         <UiPagination

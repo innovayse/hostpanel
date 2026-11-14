@@ -121,9 +121,9 @@ const heading = computed<string>(() =>
         <slot />
         <template #fallback>
           <!-- The widget's body is drawn by the plugin, so its shape is not known: two lines stand in until it resolves -->
-          <UiStack gap="sm" aria-busy="true" aria-hidden="true" :data-testid="`plugin-widget-loading-${testId}`">
-            <UiSkeletonBar class="h-3.5 w-full rounded-md" />
-            <UiSkeletonBar class="h-3.5 w-2/3 rounded-md" />
+          <UiStack gap="sm" aria-busy="true" :data-testid="`plugin-widget-loading-${testId}`">
+            <UiSkeletonBar class="h-3.5 w-full rounded-md" aria-hidden="true" />
+            <UiSkeletonBar class="h-3.5 w-2/3 rounded-md" aria-hidden="true" />
           </UiStack>
         </template>
       </Suspense>

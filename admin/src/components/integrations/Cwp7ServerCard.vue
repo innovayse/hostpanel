@@ -6,7 +6,6 @@
  * While `server` is null the card draws the same layout with bars where the values go, so the grid keeps its
  * shape until the servers have arrived; it is then no link, as there is nowhere to go yet.
  */
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -16,6 +15,7 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
+import { SERVER_STATE_TONES, serverAccountsLabel, serverState } from '@/lib/servers'
 import type { ServerDto } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -23,19 +23,11 @@ import { UiTone } from '@/utils/ui/tone'
 const { t } = useI18n()
 
 /** Props for Cwp7ServerCard. */
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   /** The server to show; null while the servers are still loading. */
   server?: ServerDto | null
 }>(), {
   server: null,
-})
-
-/** Tone of the server's last known state: success when online, danger when offline, neutral when never tested. */
-const stateTone = computed<UiTone>(() => {
-  if (props.server?.isOnline === true) {
-    return UiTone.Success
-  }
-  return props.server?.isOnline === false ? UiTone.Danger : UiTone.Neutral
 })
 </script>
 
@@ -46,7 +38,7 @@ const stateTone = computed<UiTone>(() => {
         <UiStack v-if="server" direction="row" align="center" gap="sm">
           <UiHeading :level="3" variant="card" class="min-w-0 flex-1 truncate">{{ server.name }}</UiHeading>
           <UiBadge v-if="server.limits.isDisabled" :tone="UiTone.Danger" small>{{ t('shared.disabled') }}</UiBadge>
-          <UiBadge v-else :tone="stateTone" dot small />
+          <UiBadge v-else :tone="SERVER_STATE_TONES[serverState(server)]" dot small />
         </UiStack>
         <UiSkeletonBar v-else class="h-5 w-40 rounded-md" aria-hidden="true" />
         <UiText v-if="server" tone="muted" size="sm">{{ server.endpoint.hostname }}</UiText>
@@ -54,7 +46,7 @@ const stateTone = computed<UiTone>(() => {
         <template v-if="server">
           <UiText v-if="server.endpoint.ipAddress" tone="muted" size="sm">{{ server.endpoint.ipAddress }}</UiText>
           <UiText v-if="server.accountsCount !== null" tone="muted" size="sm">
-            {{ t('integrations.cwp7Integration.accountscountValueAccounts', { accountsCount: server.accountsCount, value: server.limits.maxAccounts ?? '∞' }) }}
+            {{ t('integrations.cwp7Integration.accountsUsage', { usage: serverAccountsLabel(server) }) }}
           </UiText>
         </template>
         <template v-else>

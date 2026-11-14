@@ -315,7 +315,7 @@ watch(filters.page, load, { immediate: true })
       </UiStack>
     </UiCard>
 
-    <UiResultCount :loading="store.loading && store.transactions.length === 0" tone="muted" size="md" data-testid="billing-transactions-count">
+    <UiResultCount :loading="store.loading && store.transactions.length === 0" data-testid="billing-transactions-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
     </UiResultCount>
 

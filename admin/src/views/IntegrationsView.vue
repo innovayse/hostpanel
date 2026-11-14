@@ -18,7 +18,6 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 
 /** Translation function. */
@@ -70,8 +69,7 @@ onMounted(store.fetchAll)
 
 <template>
   <UiStack gap="md" class="w-full">
-    <UiPageHeader :title="activeCategoryLabel" :subtitle="loading ? undefined : subtitle">
-      <UiSkeletonBar v-if="loading" class="mt-1.5 h-3.5 w-72 max-w-full rounded-md" aria-hidden="true" />
+    <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle" :subtitle-loading="loading">
       <template v-if="guideUrl" #actions>
         <PageHelpLink :url="guideUrl" />
       </template>

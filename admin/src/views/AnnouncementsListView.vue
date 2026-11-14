@@ -33,6 +33,7 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, editPath } from '@/lib/routes'
 import type { Announcement } from '@/types/announcement'
+import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -146,7 +147,7 @@ const rowActions = (announcement: Announcement): UiMenuAction[] => {
       </template>
     </UiPageHeader>
 
-    <UiResultCount :loading="store.loading && store.announcements.length === 0" tone="muted" size="sm" data-testid="announcements-count">
+    <UiResultCount :loading="store.loading && store.announcements.length === 0" :size="UiTextSize.Sm" data-testid="announcements-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
     </UiResultCount>
 

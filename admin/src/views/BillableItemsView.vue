@@ -280,7 +280,7 @@ onMounted(() => {
       @retry="load"
     />
 
-    <UiResultCount :loading="store.loading && store.items.length === 0" tone="muted" size="md" data-testid="billing-billable-items-count">
+    <UiResultCount :loading="store.loading && store.items.length === 0" data-testid="billing-billable-items-count">
       {{ t('billing.billableItems.lengthRecordsFound', { length: filteredItems.length }) }}
     </UiResultCount>
 

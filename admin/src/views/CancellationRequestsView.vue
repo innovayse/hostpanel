@@ -38,6 +38,7 @@ import { useCancellationRequestsStore } from '@/stores/cancellationRequests'
 import { UiTone } from '@/utils/ui/tone'
 import { clientPath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -226,7 +227,7 @@ onMounted(() => load())
       </UiTable>
 
       <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiResultCount :loading="store.loading && !hasRows" tone="muted" size="xs">
+        <UiResultCount :loading="store.loading && !hasRows" :size="UiTextSize.Xs">
           {{ t('clients.cancellationRequests.totalcountRequestValue', { totalCount: store.totalCount }) }}
         </UiResultCount>
         <UiPagination

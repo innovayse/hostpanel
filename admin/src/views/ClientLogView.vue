@@ -253,7 +253,7 @@ onMounted(load)
         :justify="UiJustify.Between"
         :align="UiAlignItems.Center"
       >
-        <UiResultCount :loading="initialLoading" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+        <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
           {{ t('clients.clientLog.totalcountEntrValue', { totalCount: store.totalCount }) }}
         </UiResultCount>
         <UiPagination

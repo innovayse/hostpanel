@@ -21,11 +21,12 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTextSize } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -114,8 +115,7 @@ onMounted(() => {
     <UiStack gap="sm">
       <UiStack direction="row" align="center" justify="between">
         <UiHeading :level="2" variant="section">{{ t('integrations.cwp7Integration.cwp7Servers') }}</UiHeading>
-        <UiSkeletonBar v-if="serversStore.loading" class="h-3.5 w-20 rounded-md" aria-hidden="true" />
-        <UiText v-else tone="muted" size="sm">{{ t('integrations.cwp7Integration.lengthServerValue', { length: cwp7Servers.length }) }}</UiText>
+        <UiResultCount :loading="serversStore.loading" :size="UiTextSize.Sm">{{ t('integrations.cwp7Integration.lengthServerValue', { length: cwp7Servers.length }) }}</UiResultCount>
       </UiStack>
 
       <!-- Empty state -->

@@ -36,6 +36,7 @@ import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
+import { UiTextSize } from '@/utils/ui/text'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -365,7 +366,7 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       align="center"
       justify="between"
     >
-      <UiResultCount :loading="store.loading && store.users.length === 0" tone="muted" size="sm">
+      <UiResultCount :loading="store.loading && store.users.length === 0" :size="UiTextSize.Sm">
         {{ t('clients.manageUsers.totalcountUserValue', { totalCount: store.totalCount }) }}
       </UiResultCount>
       <UiPagination

@@ -4,7 +4,8 @@
  * Under `src/views`, `src/layouts` and `src/components` (the kit in `components/ui` excepted) a file must not:
  * - use a generic skeleton preset: the `UiSkeleton` component or its `UiSkeletonShape` vocabulary (a table or a card
  *   grid sketched out of nothing, a multi line block);
- * - give a `UiCard` generic placeholder lines (`skeleton-lines`) or a bare `loading` that swaps its whole body for them.
+ * - give a `UiCard` generic placeholder lines (`skeleton-lines`) or a bare `loading` that swaps its whole body for them;
+ * - hand-roll a stand-in in a `#fallback` slot: a couple of bars that fit no layout in particular.
  *
  * What a screen draws instead is its own layout in two states: the loading props of the kit (`UiPageHeader`,
  * `UiStatTile`, `UiTable`, `UiPagination`, `UiChart`, `UiProgress`, `UiField` through `UI_FIELD_LOADING`) and single
@@ -31,6 +32,8 @@ enum LoadingRule {
   SkeletonPreset = 'skeleton-preset',
   /** Generic placeholder lines on a card, by count or by a bare `loading` that swaps the body for them. */
   CardLines = 'card-lines',
+  /** A hand-rolled stand-in in a `#fallback` slot, drawn for a body whose shape is not known. */
+  SuspenseFallback = 'suspense-fallback',
 }
 
 /** One file allowed to break one rule, with the reason it may. */
@@ -49,6 +52,11 @@ const ALLOWED: readonly AllowedException[] = [
     file: 'components/layout/ViewLoading.vue',
     rule: LoadingRule.CardLines,
     reason: 'the screen about to open is a chunk still downloading, so only a title and a card can be drawn for it',
+  },
+  {
+    file: 'components/plugins/PluginWidget.vue',
+    rule: LoadingRule.SuspenseFallback,
+    reason: 'the body of a widget is drawn by the plugin itself, so only its title can be real while the body resolves',
   },
   {
     file: 'views/PluginPageView.vue',
@@ -89,8 +97,14 @@ const SKELETON_PRESET = /\bUiSkeleton(?![A-Za-z])|UiSkeletonShape|ui\/skeleton\b
 /** Generic lines on a card: the count prop in either spelling. */
 const CARD_LINES_PROP = /\bskeleton-lines\b|\bskeletonLines\b/
 
-/** A `UiCard` opening tag carrying the `loading` flag, bare or bound. */
-const CARD_LOADING = /<UiCard\b[^>]*?(?:\s|^):?loading(?=[\s=/>])/
+/**
+ * A `UiCard` opening tag carrying the `loading` flag, bare or bound. A quoted attribute value is skipped whole, so a
+ * `>` inside one (`:class="rows > 2 ? ..."`) does not end the tag and a `loading` inside one is not the flag.
+ */
+const CARD_LOADING = /<UiCard\b(?:[^>"']|"[^"]*"|'[^']*')*?\s:?loading(?=[\s=/>])/
+
+/** A named `#fallback` slot, where a stand-in for a body of unknown shape is written by hand. */
+const SUSPENSE_FALLBACK = /<template\s+(?:#|v-slot:)fallback\b/
 
 /**
  * Finds which rules a file breaks.
@@ -105,6 +119,9 @@ const brokenRules = (code: string): LoadingRule[] => {
   }
   if (CARD_LINES_PROP.test(code) || CARD_LOADING.test(code)) {
     broken.add(LoadingRule.CardLines)
+  }
+  if (SUSPENSE_FALLBACK.test(code)) {
+    broken.add(LoadingRule.SuspenseFallback)
   }
   return Object.values(LoadingRule).filter((rule) => broken.has(rule))
 }
@@ -159,6 +176,17 @@ describe('loading shape', () => {
       expect(brokenRules('<UiCard loading :skeleton-lines="4" />')).toEqual([LoadingRule.CardLines])
       expect(brokenRules('<UiCard padding="md" loading />')).toEqual([LoadingRule.CardLines])
       expect(brokenRules('<UiCard padding="md" :loading="store.loading">')).toEqual([LoadingRule.CardLines])
+    })
+
+    it('reads past a `>` inside a quoted attribute value of the card tag', () => {
+      expect(brokenRules('<UiCard :class="rows > 2 ? \'a\' : \'b\'" loading>')).toEqual([LoadingRule.CardLines])
+      expect(brokenRules('<UiCard :class="rows > 2 ? \'a\' : \'b\'" :aria-busy="loading ? \'true\' : undefined">')).toEqual([])
+    })
+
+    it('catches a hand-rolled stand-in in a fallback slot', () => {
+      expect(brokenRules('<Suspense><slot /><template #fallback><UiSkeletonBar /><UiSkeletonBar /></template></Suspense>')).toEqual([LoadingRule.SuspenseFallback])
+      expect(brokenRules('<template v-slot:fallback><UiSkeletonBar /></template>')).toEqual([LoadingRule.SuspenseFallback])
+      expect(brokenRules('<template #actions><UiButton /></template>')).toEqual([])
     })
 
     it('passes single bars, the kit loading props and a card without the flag', () => {

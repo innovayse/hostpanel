@@ -90,5 +90,6 @@ describe('IntegrationsView', () => {
     expect(wrapper.get('[data-testid="integrations-grid"]').findAll('[data-testid="integration-card-loading"]')).toHaveLength(6)
     expect(wrapper.find('[data-testid="integrations-empty"]').exists()).toBe(false)
     expect(wrapper.find('header').text()).toContain('Payment')
+    expect(wrapper.get('header').find('[data-testid="ui-page-header-subtitle-skeleton"]').exists()).toBe(true)
   })
 })

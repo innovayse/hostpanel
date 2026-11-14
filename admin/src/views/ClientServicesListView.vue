@@ -29,7 +29,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize } from '@/utils/ui/text'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
 import { useFilterQuery } from '@/composables/useFilterQuery'
@@ -179,7 +179,7 @@ onMounted(() => fetchServices())
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiResultCount :loading="initialLoading" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
             {{ t('clients.clientServicesList.totalcountServiceValue', { totalCount }) }}
           </UiResultCount>
           <UiPagination

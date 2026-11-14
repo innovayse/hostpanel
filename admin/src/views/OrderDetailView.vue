@@ -457,96 +457,98 @@ onMounted(async () => {
             </UiTableRow>
           </UiTableHead>
           <UiTableBody>
-            <UiTableRow
-              v-for="item in order?.items ?? []"
-              :key="item.id"
-              hoverable
-              bordered
-              :data-testid="`order-item-${item.id}`"
-            >
-              <UiTableCell>{{ item.productName }}</UiTableCell>
-              <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
-              <UiTableCell>{{ item.domain ?? item.hostname ?? EMPTY_VALUE }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(item.firstPaymentAmount, (order?.currency ?? '')) }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(item.recurringAmount, (order?.currency ?? '')) }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge :tone="orderItemStatusTone(item.status)" small>
-                  {{ statusLabel(ORDER_STATUS_OPTIONS, item.status) }}
-                </UiBadge>
-              </UiTableCell>
-              <UiTableCell>
-                <UiStack gap="xs">
-                  <UiStack direction="row" gap="sm" align="center" wrap>
-                    <UiBadge
-                      :tone="orderLineFulfilmentTone(item.fulfilmentState)"
-                      small
-                      :data-testid="`order-item-fulfilment-${item.id}`"
+            <template v-if="order">
+              <UiTableRow
+                v-for="item in order.items"
+                :key="item.id"
+                hoverable
+                bordered
+                :data-testid="`order-item-${item.id}`"
+              >
+                <UiTableCell>{{ item.productName }}</UiTableCell>
+                <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
+                <UiTableCell>{{ item.domain ?? item.hostname ?? EMPTY_VALUE }}</UiTableCell>
+                <UiTableCell numeric>{{ formatPlainAmount(item.firstPaymentAmount, order.currency) }}</UiTableCell>
+                <UiTableCell numeric>{{ formatPlainAmount(item.recurringAmount, order.currency) }}</UiTableCell>
+                <UiTableCell>
+                  <UiBadge :tone="orderItemStatusTone(item.status)" small>
+                    {{ statusLabel(ORDER_STATUS_OPTIONS, item.status) }}
+                  </UiBadge>
+                </UiTableCell>
+                <UiTableCell>
+                  <UiStack gap="xs">
+                    <UiStack direction="row" gap="sm" align="center" wrap>
+                      <UiBadge
+                        :tone="orderLineFulfilmentTone(item.fulfilmentState)"
+                        small
+                        :data-testid="`order-item-fulfilment-${item.id}`"
+                      >
+                        {{ statusLabel(ORDER_LINE_FULFILMENT_OPTIONS, item.fulfilmentState) }}
+                      </UiBadge>
+                      <UiButton
+                        v-if="item.canRetry"
+                        variant="secondary"
+                        size="sm"
+                        :loading="store.retryingItemId === item.id"
+                        :disabled="store.retryingItemId !== null && store.retryingItemId !== item.id"
+                        :data-testid="`order-item-retry-${item.id}`"
+                        @click="handleRetryLine(item.id)"
+                      >
+                        {{ t('orders.orderDetail.retry') }}
+                      </UiButton>
+                    </UiStack>
+                    <UiStack
+                      v-if="item.canClose"
+                      direction="row"
+                      gap="sm"
+                      align="center"
+                      wrap
                     >
-                      {{ statusLabel(ORDER_LINE_FULFILMENT_OPTIONS, item.fulfilmentState) }}
-                    </UiBadge>
-                    <UiButton
-                      v-if="item.canRetry"
-                      variant="secondary"
-                      size="sm"
-                      :loading="store.retryingItemId === item.id"
-                      :disabled="store.retryingItemId !== null && store.retryingItemId !== item.id"
-                      :data-testid="`order-item-retry-${item.id}`"
-                      @click="handleRetryLine(item.id)"
-                    >
-                      {{ t('orders.orderDetail.retry') }}
-                    </UiButton>
-                  </UiStack>
-                  <UiStack
-                    v-if="item.canClose"
-                    direction="row"
-                    gap="sm"
-                    align="center"
-                    wrap
-                  >
+                      <UiText
+                        v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
+                        tone="warning"
+                        size="xs"
+                        :data-testid="`order-item-finish-refund-${item.id}`"
+                      >
+                        {{ t('orders.orderDetail.finishRefund') }}
+                      </UiText>
+                      <UiButton
+                        variant="secondary"
+                        size="sm"
+                        :data-testid="`order-item-close-refund-${item.id}`"
+                        @click="askCloseRefund(item.id)"
+                      >
+                        {{ t('orders.orderDetail.closeRefund') }}
+                      </UiButton>
+                    </UiStack>
                     <UiText
-                      v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
-                      tone="warning"
+                      v-if="item.fulfilmentErrorCode"
+                      tone="muted"
                       size="xs"
-                      :data-testid="`order-item-finish-refund-${item.id}`"
+                      :data-testid="`order-item-error-${item.id}`"
                     >
-                      {{ t('orders.orderDetail.finishRefund') }}
+                      {{ t(orderLineErrorKey(item.fulfilmentErrorCode)) }}
                     </UiText>
-                    <UiButton
-                      variant="secondary"
-                      size="sm"
-                      :data-testid="`order-item-close-refund-${item.id}`"
-                      @click="askCloseRefund(item.id)"
+                    <UiText
+                      v-if="store.lineErrors[item.id]"
+                      tone="danger"
+                      size="xs"
+                      :data-testid="`order-item-retry-error-${item.id}`"
                     >
-                      {{ t('orders.orderDetail.closeRefund') }}
-                    </UiButton>
+                      {{ store.lineErrors[item.id] }}
+                    </UiText>
+                    <UiText
+                      v-if="item.fulfilmentAttempts > 0 && item.lastFulfilmentAttemptAt"
+                      tone="muted"
+                      size="xs"
+                      :data-testid="`order-item-attempts-${item.id}`"
+                    >
+                      {{ t('orders.orderDetail.attempts', { count: item.fulfilmentAttempts, at: formatDateTime(item.lastFulfilmentAttemptAt) }) }}
+                    </UiText>
                   </UiStack>
-                  <UiText
-                    v-if="item.fulfilmentErrorCode"
-                    tone="muted"
-                    size="xs"
-                    :data-testid="`order-item-error-${item.id}`"
-                  >
-                    {{ t(orderLineErrorKey(item.fulfilmentErrorCode)) }}
-                  </UiText>
-                  <UiText
-                    v-if="store.lineErrors[item.id]"
-                    tone="danger"
-                    size="xs"
-                    :data-testid="`order-item-retry-error-${item.id}`"
-                  >
-                    {{ store.lineErrors[item.id] }}
-                  </UiText>
-                  <UiText
-                    v-if="item.fulfilmentAttempts > 0 && item.lastFulfilmentAttemptAt"
-                    tone="muted"
-                    size="xs"
-                    :data-testid="`order-item-attempts-${item.id}`"
-                  >
-                    {{ t('orders.orderDetail.attempts', { count: item.fulfilmentAttempts, at: formatDateTime(item.lastFulfilmentAttemptAt) }) }}
-                  </UiText>
-                </UiStack>
-              </UiTableCell>
-            </UiTableRow>
+                </UiTableCell>
+              </UiTableRow>
+            </template>
           </UiTableBody>
         </UiTable>
       </UiCard>
@@ -559,6 +561,7 @@ onMounted(async () => {
           <UiTextarea
             v-model="notesText"
             :rows="4"
+            :disabled="order === null"
             :placeholder="t('orders.orderDetail.addNotesAboutThisOrder')"
             data-testid="order-notes-input"
           />

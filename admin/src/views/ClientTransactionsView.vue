@@ -282,7 +282,7 @@ onMounted(() => fetchTransactions())
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiResultCount :loading="initialLoading" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
             {{ t('clients.clientTransactions.totalcountTransactionValue', { totalCount: store.totalCount }) }}
           </UiResultCount>
           <UiPagination

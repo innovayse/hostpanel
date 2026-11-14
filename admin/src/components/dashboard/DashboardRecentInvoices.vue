@@ -14,6 +14,7 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatCurrencyCode } from '@/lib/money'
+import { placeholderRows } from '@/lib/placeholderRows'
 import { AppRoute, invoiceViewPath } from '@/lib/routes'
 import { invoiceStatusTone } from '@/lib/tones'
 import type { Invoice } from '@/types/invoice'
@@ -37,7 +38,7 @@ const PLACEHOLDER_ROWS = 5
 const initialLoading = computed<boolean>(() => props.loading && props.invoices.length === 0)
 
 /** The rows of the list: the invoices, or null placeholders while they load. */
-const rows = computed<Array<Invoice | null>>(() => (initialLoading.value ? Array.from({ length: PLACEHOLDER_ROWS }, () => null) : props.invoices))
+const rows = computed(() => placeholderRows(props.invoices, initialLoading.value, PLACEHOLDER_ROWS))
 </script>
 
 <template>

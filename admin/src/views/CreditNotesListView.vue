@@ -97,7 +97,7 @@ onMounted(() => load(1))
       </UiField>
     </UiCard>
 
-    <UiResultCount :loading="store.loading && store.notes.length === 0" v-if="loadError === null" tone="muted" size="md" data-testid="billing-credit-notes-count">
+    <UiResultCount v-if="loadError === null" :loading="store.loading && store.notes.length === 0" data-testid="billing-credit-notes-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
     </UiResultCount>
 

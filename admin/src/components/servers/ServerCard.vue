@@ -22,7 +22,7 @@ import { SERVER_STATE_KEYS, SERVER_STATE_TONES, serverAccountsLabel, serverLoadP
 import { MODULE_LABELS } from '@/types/server'
 import type { ServerDto, ServerTestOutcome } from '@/types/server'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import type { UiTone } from '@/utils/ui/tone'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Load percentage from which a server's bar turns to the warning colour. */
 const LOAD_WARN_AT = 80
@@ -100,19 +100,19 @@ const state = computed<{ tone: UiTone; key: string } | null>(() => {
         <UiText tone="muted" size="sm">{{ serverAccountsLabel(server) }}</UiText>
       </UiStack>
 
-      <UiStack v-if="loading" gap="xs" aria-hidden="true">
+      <UiStack v-if="!server" gap="xs" aria-hidden="true">
         <UiSkeletonBar class="h-5 w-20 rounded-full" />
         <UiSkeletonBar class="h-3 w-32 rounded" />
       </UiStack>
-      <UiLoader v-else-if="server && testing" :data-testid="`server-testing-${server.id}`" />
+      <UiLoader v-else-if="testing" :data-testid="`server-testing-${server.id}`" />
       <UiBadge
-        v-else-if="server && testOutcome"
-        :tone="testOutcome.ok ? 'success' : 'danger'"
+        v-else-if="testOutcome"
+        :tone="testOutcome.ok ? UiTone.Success : UiTone.Danger"
         :data-testid="`server-test-result-${server.id}`"
       >
         {{ testOutcome.message }}
       </UiBadge>
-      <UiStack v-else-if="server && state" gap="xs">
+      <UiStack v-else-if="state" gap="xs">
         <UiBadge :tone="state.tone" dot :data-testid="`server-state-${server.id}`">
           {{ t(state.key) }}
         </UiBadge>

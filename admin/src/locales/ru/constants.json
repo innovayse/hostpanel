@@ -21,9 +21,7 @@
     "underReview": "На проверке"
   },
   "ticketFilterOptions": {
-    "allActiveTickets": "Все активные тикеты",
-    "flagged": "Помеченные",
-    "awaitingReply": "Ожидает ответа"
+    "flagged": "Помеченные"
   },
   "recurringPeriodOptions": {
     "weekly": "Еженедельно",

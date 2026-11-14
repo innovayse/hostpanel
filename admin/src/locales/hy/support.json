@@ -194,7 +194,9 @@
     "unflag": "Հանել դրոշակը",
     "requestor": "Հայտատու",
     "noTicketsFound": "Տոմսեր չեն գտնվել",
+    "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",
     "tryAdjustingYourFiltersOr": "Փորձեք փոխել ֆիլտրերը կամ որոնման հարցումը։",
+    "clearFilters": "Մաքրել ֆիլտրերը",
     "confirmBulkDeleteTitle": "Ջնջե՞լ ընտրված տոմսերը",
     "confirmBulkDeleteMessage": "Ընդմիշտ կջնջվի {count} տոմս։ Այս գործողությունը հնարավոր չէ հետարկել։"
   }

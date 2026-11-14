@@ -21,14 +21,18 @@ describe('supportStore', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fetchAll sends the filters and fills the list', async () => {
+  it('fetchAll sends the page and the filters it is given and fills the list', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 41 }))
     const store = useSupportStore()
-    store.statusFilter = TicketStatus.Open
-    store.search = 'dns'
 
-    expect(await store.fetchAll()).toBe(true)
-    expect(callOf(mock).url).toBe('/api/tickets?page=1&pageSize=20&status=Open&search=dns')
+    expect(await store.fetchAll(2, {
+      search: ' dns ',
+      status: TicketStatus.Open,
+      priority: TicketPriority.High,
+      departmentId: 3,
+      flagged: true,
+    })).toBe(true)
+    expect(callOf(mock).url).toBe('/api/tickets?page=2&pageSize=20&search=dns&status=Open&priority=High&departmentId=3&flagged=true')
     expect(store.tickets).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(41)
     expect(store.loading).toBe(false)
@@ -38,7 +42,7 @@ describe('supportStore', () => {
     stubFetch(problem('Not allowed.', 403))
     const store = useSupportStore()
 
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe('Not allowed.')
     expect(store.loading).toBe(false)
   })
@@ -46,11 +50,11 @@ describe('supportStore', () => {
   it('fetchAll reports the no-answer sentence offline and clears it on the next success', async () => {
     const store = useSupportStore()
     stubOffline()
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
 
     stubFetch(json({ items: [], totalCount: 0 }))
-    expect(await store.fetchAll()).toBe(true)
+    expect(await store.fetchAll(1)).toBe(true)
     expect(store.error).toBeNull()
   })
 

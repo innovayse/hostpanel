@@ -21,9 +21,7 @@
     "underReview": "Pending review"
   },
   "ticketFilterOptions": {
-    "allActiveTickets": "All Active Tickets",
-    "flagged": "Flagged",
-    "awaitingReply": "Awaiting Reply"
+    "flagged": "Flagged"
   },
   "recurringPeriodOptions": {
     "weekly": "Weekly",

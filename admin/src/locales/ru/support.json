@@ -194,7 +194,9 @@
     "unflag": "Снять пометку",
     "requestor": "Инициатор",
     "noTicketsFound": "Тикеты не найдены",
+    "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам",
     "tryAdjustingYourFiltersOr": "Попробуйте изменить фильтры или поисковый запрос.",
+    "clearFilters": "Сбросить фильтры",
     "confirmBulkDeleteTitle": "Удалить выбранные тикеты?",
     "confirmBulkDeleteMessage": "Будет безвозвратно удалено тикетов: {count}. Это действие нельзя отменить."
   }

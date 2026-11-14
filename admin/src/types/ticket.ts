@@ -1,6 +1,6 @@
 /**
  * A support ticket, its list row and one reply in its thread, plus the closed value sets the
- * API speaks for tickets (status, priority, bulk action, list filter).
+ * API speaks for tickets (status, priority, bulk action, flag filter).
  */
 
 /** Lifecycle status of a ticket, as the API names it. */
@@ -35,14 +35,11 @@ export enum TicketBulkAction {
   Unflag = 'unflag',
 }
 
-/** The one list filter that is not a status: the tickets staff flagged. */
+/** The values of the flag filter of the tickets list: the one choice besides "any" is the tickets staff flagged. */
 export enum TicketFlagFilter {
   /** Only flagged tickets. */
   Flagged = 'flagged',
 }
-
-/** What the tickets list can be narrowed to: a status or the flagged set. */
-export type TicketListFilter = TicketStatus | TicketFlagFilter
 
 /** DTO representing a support ticket reply. */
 export interface TicketReply {
@@ -124,16 +121,38 @@ export interface TicketListItem {
   clientId: number
 }
 
-/** Filter and paging of the ticket list. */
-export interface TicketFilter {
+/** What narrows a client's ticket list: the search text and the filters of the filter dialog; each member left out means no narrowing. */
+export interface ClientTicketListFilters {
+  /** Subject search term; empty for none. */
+  search?: string
+  /** Keep only the tickets in this status. */
+  status?: TicketStatus
+  /** Keep only the tickets of this priority. */
+  priority?: TicketPriority
+  /** Keep only the tickets filed under this department. */
+  departmentId?: number
+}
+
+/** What narrows the staff ticket list: everything that narrows a client's list, and the flag. */
+export interface TicketListFilters extends ClientTicketListFilters {
+  /** Keep only the tickets staff flagged. */
+  flagged?: boolean
+}
+
+/** Filter and paging of the staff ticket list. */
+export interface TicketFilter extends TicketListFilters {
   /** Page, 1-based. */
   page: number
   /** Items per page. */
   pageSize: number
-  /** Status or flag filter to keep; null for all active tickets. */
-  status?: TicketListFilter | null
-  /** Subject search term; empty for none. */
-  search?: string
+}
+
+/** Filter and paging of a client's ticket list. */
+export interface ClientTicketFilter extends ClientTicketListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
 }
 
 /** Body of a ticket opened by staff on behalf of a client. */

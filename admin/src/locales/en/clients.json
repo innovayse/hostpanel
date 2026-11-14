@@ -452,9 +452,10 @@
     "openedLastMonth": "Opened Last Month",
     "openedThisYear": "Opened This Year",
     "openedLastYear": "Opened Last Year",
-    "searchSubject": "Search Subject:",
     "dateOpened": "Date Opened",
     "noDataAvailableInTable": "No data available in table",
+    "noTicketsMatchYourFilters": "No tickets match your filters",
+    "clearFilters": "Clear filters",
     "totalcountTicketValue": "Tickets: {totalCount}"
   },
   "clientTransactions": {

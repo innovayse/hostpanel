@@ -1765,6 +1765,12 @@ feature does not exist is not kept. The decisions:
   (`ListDomainsQuery`, the one list behind the admin Domains screen; the old Domain Registrations screen was the same
   data and now redirects to it) is on it with a name search and `Status` and `RegistrarModule` enum filters; a domain with
   no registrar module recorded is left out when a registrar is chosen.
+  The two ticket lists (`ListTicketsQuery`, the staff list, and `ListClientTicketsQuery`, the tickets tab of a client) are on it
+  with a subject search and the shared `ITicketListFilters` (`Status`, `Priority`, `DepartmentId`), validated once by
+  `TicketListQueryValidator<T>` and applied once by `TicketFilterExtensions.Matching`; the staff list adds its `Flagged` switch. On the
+  frontend the pieces every list repeated (loading when the address changes, `narrowed`, reading a filter as an enum member
+  or an id, building chips) are `useListQuery`, and the ticket filters both ticket screens share are `useTicketFilters` and
+  `SupportTicketFilterFields`.
 
 ### Email campaigns
 

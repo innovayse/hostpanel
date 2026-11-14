@@ -21,9 +21,7 @@
     "underReview": "Ստուգման ենթակա"
   },
   "ticketFilterOptions": {
-    "allActiveTickets": "Բոլոր ակտիվ տոմսերը",
-    "flagged": "Դրոշակավորված",
-    "awaitingReply": "Սպասում է պատասխանի"
+    "flagged": "Դրոշակավորված"
   },
   "recurringPeriodOptions": {
     "weekly": "Շաբաթական",

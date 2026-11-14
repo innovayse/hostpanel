@@ -1,8 +1,7 @@
-using System.Globalization;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Common;
+using Innovayse.Hostpanel.Application.Support.Extensions;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,8 +10,8 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListTickets;
 
 /// <summary>
-/// Returns a paged list of support tickets, optionally filtered by status, flag or search term, mapped to
-/// <see cref="TicketListItemDto"/>.
+/// Returns a paged list of support tickets, narrowed by the search text on the subject and by status, priority,
+/// department and flag, all in SQL ahead of paging, mapped to <see cref="TicketListItemDto"/>.
 /// </summary>
 public sealed class ListTicketsHandler
 {
@@ -32,43 +31,28 @@ public sealed class ListTicketsHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The filters and paging window.</param>
+    /// <param name="query">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with the requested page. This use case refuses nothing.</returns>
     public async Task<Result<PaginatedList<TicketListItemDto>>> HandleAsync(
         ListTicketsQuery query, CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(query);
-
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
-
-        var ticketsQuery = _context.Tickets.AsNoTracking();
-
-        if (query.Status is { } status)
-        {
-            ticketsQuery = ticketsQuery.Where(t => t.Status == status);
-        }
+        var ticketsQuery = _context.Tickets.AsNoTracking().Matching(query);
 
         if (query.Flagged)
         {
             ticketsQuery = ticketsQuery.Where(t => t.IsFlagged);
         }
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var pattern = $"%{query.Search.ToLower(CultureInfo.InvariantCulture)}%";
-            ticketsQuery = ticketsQuery.Where(t => EF.Functions.Like(t.Subject.ToLower(), pattern));
-        }
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var orderedTickets = ticketsQuery.OrderByDescending(t => t.CreatedAt).ThenByDescending(t => t.Id);
 
-        ticketsQuery = ticketsQuery.OrderByDescending(t => t.CreatedAt);
-
-        var totalCount = await ticketsQuery.CountAsync(ct);
+        var totalCount = await orderedTickets.CountAsync(ct);
 
         // The list needs each ticket's reply count and last reply moment, not the replies: both are
         // computed in SQL, so a page never loads the conversations of its tickets.
-        var tickets = await ticketsQuery
-            .Paginate(page, pageSize)
+        var tickets = await orderedTickets
+            .Paginate(query.Page, query.PageSize)
             .Select(t => new
             {
                 t.Id,
@@ -106,6 +90,6 @@ public sealed class ListTicketsHandler
                 clients[t.ClientId].FullName))
             .ToList();
 
-        return Result.Success(new PaginatedList<TicketListItemDto>(items, totalCount, page, pageSize));
+        return Result.Success(new PaginatedList<TicketListItemDto>(items, totalCount, query.Page, query.PageSize));
     }
 }

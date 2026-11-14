@@ -14,14 +14,21 @@ afterEach(() => {
 })
 
 describe('useClientTicketsApi', () => {
-  it('list drops an empty search and sends a set one', async () => {
+  it('list drops the filters that are not set and sends the ones that are', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
     const api = useClientTicketsApi()
 
-    await api.list(7, 1, 20)
-    await api.list(7, 2, 20, 'refund')
+    await api.list(7, { page: 1, pageSize: 20 })
+    await api.list(7, {
+      page: 2,
+      pageSize: 20,
+      search: 'refund',
+      status: TicketStatus.Open,
+      priority: TicketPriority.Medium,
+      departmentId: 5,
+    })
     expect(callOf(mock, 0).url).toBe('/api/tickets/client/7?page=1&pageSize=20')
-    expect(callOf(mock, 1).url).toBe('/api/tickets/client/7?page=2&pageSize=20&search=refund')
+    expect(callOf(mock, 1).url).toBe('/api/tickets/client/7?page=2&pageSize=20&search=refund&status=Open&priority=Medium&departmentId=5')
   })
 
   it('stats, get and departments read their endpoints', async () => {

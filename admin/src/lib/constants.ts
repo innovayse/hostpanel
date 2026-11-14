@@ -20,7 +20,7 @@ import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { RegistrarModule } from '@/types/registrarmodule'
 import { BillingCycle, ServiceStatus } from '@/types/service'
-import { TicketPriority } from '@/types/ticket'
+import { TicketPriority, TicketStatus } from '@/types/ticket'
 import { PaymentMethod } from '@/types/transaction'
 
 /**
@@ -216,6 +216,13 @@ export const ORDER_LINE_FULFILMENT_OPTIONS: SelectOption[] = [
   { value: OrderItemFulfilmentState.Refunded, get label() { return translate('constants.orderLineFulfilmentOptions.refunded') } },
   { value: OrderItemFulfilmentState.Refunding, get label() { return translate('constants.orderLineFulfilmentOptions.refunding') } },
   { value: OrderItemFulfilmentState.PartiallyRefunded, get label() { return translate('constants.orderLineFulfilmentOptions.partiallyRefunded') } },
+]
+
+/** Ticket status options for dropdowns: the status a ticket list is filtered by. */
+export const TICKET_STATUS_OPTIONS: SelectOption[] = [
+  { value: TicketStatus.Open, get label() { return translate('ticketStatus.Open') } },
+  { value: TicketStatus.AwaitingReply, get label() { return translate('ticketStatus.AwaitingReply') } },
+  { value: TicketStatus.Closed, get label() { return translate('ticketStatus.Closed') } },
 ]
 
 /** Available ticket priority options for dropdowns. */

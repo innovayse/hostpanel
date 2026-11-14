@@ -121,6 +121,7 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
     />
 
     <UiGrid v-else-if="loading && items.length === 0" :columns="3" gap="md" aria-busy="true" data-testid="plugin-registry-loading">
+      <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
       <PluginCardSkeleton v-for="slot in pageSize" :key="slot" />
     </UiGrid>
 

@@ -51,11 +51,14 @@ describe('PluginInstalledOverview', () => {
     expect(wrapper.get('[data-testid="plugin-details-refusal"]').text()).toContain('tickets')
   })
 
-  it('shows the release notes of the installed version, or says there are none', () => {
-    const noted = mountOverview({ changelog: 'Faster refunds.' })
+  it('draws the release notes as Markdown with links left as text, or says there are none', () => {
+    const noted = mountOverview({ changelog: '- Faster **refunds**, see [notes](https://example.com/notes)' })
     const bare = mountOverview()
+    const notes = noted.get('[data-testid="plugin-details-changelog"]')
 
-    expect(noted.get('[data-testid="plugin-details-changelog"]').text()).toBe('Faster refunds.')
-    expect(bare.find('[data-testid="plugin-details-no-changelog"]').exists()).toBe(true)
+    expect(notes.find('strong').text()).toBe('refunds')
+    expect(notes.find('a').exists()).toBe(false)
+    expect(notes.text()).toContain('notes')
+    expect(bare.get('[data-testid="plugin-details-changelog"]').text()).toBe('No release notes.')
   })
 })

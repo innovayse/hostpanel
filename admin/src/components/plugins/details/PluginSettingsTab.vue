@@ -2,12 +2,13 @@
 /**
  * The Settings tab of the plugin details page: the plugin's own configuration (the integration config form, when the
  * integrations list has an entry with the plugin's id) and the product bindings of the slot widgets it declares.
- * When the plugin has neither, a short note says so. The component loads nothing: the page loads the
+ * While the widgets load, a skeleton card holds their place. When the plugin has neither, a short note says so. The component loads nothing: the page loads the
  * integrations list and the widgets and passes them in, and performs the binding save.
  */
 import { useI18n } from 'vue-i18n'
 import IntegrationConfigPanel from '@/components/integrations/IntegrationConfigPanel.vue'
 import PluginSlotWidgetsCard from '@/components/plugins/PluginSlotWidgetsCard.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -29,6 +30,8 @@ defineProps<{
   products: Product[]
   /** Sentence of the failed load of the widgets, null when none. */
   widgetsError: string | null
+  /** Whether the widgets are loading, so a skeleton holds their place and the empty note waits. */
+  widgetsLoading: boolean
   /** Persists one widget's binding and answers whether it was stored. */
   save: (widget: PluginSlotWidgetBindingDto, productIds: number[]) => Promise<boolean>
   /** Sentence of the last refused binding save, null when none. */
@@ -51,6 +54,13 @@ const emit = defineEmits<{
       testid="plugin-slot-widgets-error"
       @retry="emit('retry')"
     />
+    <UiCard
+      v-else-if="widgetsLoading && widgets.length === 0"
+      padding="md"
+      loading
+      :skeleton-lines="3"
+      data-testid="plugin-slot-widgets-loading"
+    />
     <PluginSlotWidgetsCard
       v-else-if="widgets.length > 0"
       :plugin-id="plugin.id"
@@ -63,7 +73,7 @@ const emit = defineEmits<{
       :error="bindingError"
     />
     <UiEmptyState
-      v-if="!hasConfig && widgets.length === 0 && widgetsError === null"
+      v-if="!hasConfig && widgets.length === 0 && widgetsError === null && !widgetsLoading"
       :title="t('pluginDetails.settings.emptyTitle')"
       :description="t('pluginDetails.settings.emptyDescription')"
       data-testid="plugin-details-settings-empty"

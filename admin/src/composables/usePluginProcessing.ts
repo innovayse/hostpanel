@@ -16,8 +16,11 @@ export interface PluginProcessingRun {
   step: PluginProcessingStep
   /** The store's call; its outcome decides what the dialog ends with. */
   work: () => Promise<PluginActionOutcome>
-  /** True to close the dialog by itself when the work succeeds, for a step whose result is another prompt. */
-  closeOnSuccess?: boolean
+  /**
+   * Asked once the work is over, with its outcome: true closes the dialog by itself because the result continues in
+   * another prompt of the screen (a successful archive read opens its confirmation, a refused downgrade opens its own).
+   */
+  handsOff?: (outcome: PluginActionOutcome) => boolean
 }
 
 /**
@@ -50,7 +53,7 @@ export const usePluginProcessing = () => {
   /**
    * Runs one piece of work behind the dialog and returns its outcome to the caller.
    *
-   * @param options - The plugin, the step, the work and whether a success closes the dialog.
+   * @param options - The plugin, the step, the work and when the outcome is handed to another prompt.
    * @returns The outcome of the work.
    */
   const run = async (options: PluginProcessingRun): Promise<PluginActionOutcome> => {
@@ -67,7 +70,8 @@ export const usePluginProcessing = () => {
       message.value = outcome.error ?? t('errors.noAnswer')
     } else if (outcome.stagedVersion !== null) {
       message.value = t('plugins.plugins.pluginStaged', { version: outcome.stagedVersion })
-    } else if (options.closeOnSuccess) {
+    }
+    if (options.handsOff?.(outcome) === true) {
       open.value = false
     }
     return outcome
@@ -82,3 +86,6 @@ export const usePluginProcessing = () => {
 
   return { open, name, step, running, failed, message, run, close }
 }
+
+/** The state one screen's processing dialog shows and is driven by, as {@link usePluginProcessing} returns it. */
+export type PluginProcessing = ReturnType<typeof usePluginProcessing>

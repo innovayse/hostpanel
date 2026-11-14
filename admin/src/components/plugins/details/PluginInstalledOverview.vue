@@ -9,8 +9,10 @@ import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { categoryLabel } from '@/lib/pluginCard'
 import type { PluginListItemDto } from '@/types/plugin'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -48,7 +50,7 @@ const hostRange = computed<string>(() => {
         {{ t('pluginDetails.installedVersion', { version: plugin.version }) }}
       </UiText>
       <UiText tone="secondary" size="sm" data-testid="plugin-details-overview-category">
-        {{ plugin.category }}
+        {{ categoryLabel(plugin.category) }}
       </UiText>
       <UiText tone="secondary" size="sm" data-testid="plugin-details-overview-hosts">{{ hostRange }}</UiText>
       <UiStack v-if="plugin.capabilities.length > 0" direction="row" align="center" gap="sm" wrap data-testid="plugin-details-capabilities">
@@ -67,10 +69,13 @@ const hostRange = computed<string>(() => {
         <UiText v-if="plugin.refusedDetail" tone="muted" size="xs" class="font-mono break-all">{{ plugin.refusedDetail }}</UiText>
       </UiStack>
       <UiHeading :level="3" variant="section">{{ t('pluginDetails.versions.changelog') }}</UiHeading>
-      <UiText v-if="plugin.changelog" tone="secondary" size="sm" class="whitespace-pre-line" data-testid="plugin-details-changelog">
-        {{ plugin.changelog }}
-      </UiText>
-      <UiText v-else tone="muted" size="sm" data-testid="plugin-details-no-changelog">{{ t('pluginDetails.versions.noChangelog') }}</UiText>
+      <!-- The notes are the plugin author's text: drawn as Markdown, and links stay plain text since the author's addresses are not vetted. -->
+      <UiMarkdown
+        :source="plugin.changelog ?? null"
+        :links="false"
+        :empty="t('pluginDetails.versions.noChangelog')"
+        data-testid="plugin-details-changelog"
+      />
     </UiStack>
   </UiCard>
 </template>

@@ -7,7 +7,7 @@
  * is off or does not know the plugin, only the Verified and price badges, the update action and the Versions, Licence and
  * Changes tabs are left out. Settings holds the plugin's configuration and the product bindings of its slot widgets. A chosen
  * version is installed after a confirmation; an older one than the installed version needs its own explicit downgrade
- * confirmation. Uninstalling is confirmed first (the plugin's data is kept), raises the restart banner and returns to the plugins page. The
+ * confirmation. Uninstalling is confirmed first (the plugin's data is kept), raises the restart banner, shows its outcome in the processing dialog and returns to the plugins page once the operator closes it. The
  * page shows a skeleton while the list loads, the API's sentence with a retry when it fails, and a not-found state for an id that is not installed.
  */
 import { computed, onMounted, ref, watch } from 'vue'
@@ -123,6 +123,9 @@ const hasConfig = computed<boolean>(() => integrations.integrations.some(item =>
 
 /** The plugin's slot widgets with their binding; empty until loaded. */
 const widgets = computed<PluginSlotWidgetBindingDto[]>(() => store.slotWidgets[pluginId.value] ?? [])
+
+/** True while the plugin's slot widgets load, so the Settings tab shows a skeleton instead of an empty note. */
+const widgetsLoading = computed<boolean>(() => store.slotWidgetsLoading[pluginId.value] === true)
 
 /** The sentence of the failed load of the plugin's slot widgets, null when none. */
 const widgetsError = computed<string | null>(() => store.slotWidgetsError[pluginId.value] ?? null)
@@ -316,6 +319,9 @@ const handleInstall = async (): Promise<void> => {
   })
 }
 
+/** True once the plugin is removed: the page goes back to the plugins page when the operator closes the outcome dialog. */
+const leavingAfterClose = ref(false)
+
 /** Opens the removal prompt. */
 const askUninstall = (): void => {
   confirmingUninstall.value = true
@@ -339,9 +345,7 @@ const handleUninstall = async (): Promise<void> => {
      */
     work: () => store.remove(pluginId.value),
   })
-  if (outcome.ok) {
-    await router.push(AppRoute.Plugins)
-  }
+  leavingAfterClose.value = outcome.ok
 }
 
 /**
@@ -389,6 +393,13 @@ watch(pluginId, () => {
   feedback.clear()
   void loadRegistry()
   void loadWidgets()
+})
+
+// The removal's outcome (the restart note) stays on screen until the operator closes it, then the page is left.
+watch(processing.open, (open) => {
+  if (!open && leavingAfterClose.value) {
+    void router.push(AppRoute.Plugins)
+  }
 })
 
 // Loads the details when the screen opens.
@@ -455,6 +466,7 @@ onMounted(load)
         :widgets="widgets"
         :products="store.productOptions"
         :widgets-error="widgetsError"
+        :widgets-loading="widgetsLoading"
         :save="(widget, productIds) => store.saveSlotWidgetProducts(pluginId, widget, productIds)"
         :binding-error="store.bindingError"
         @retry="loadWidgets"
@@ -527,16 +539,7 @@ onMounted(load)
       @close="dismissInstall"
     />
 
-    <PluginProcessingDialog
-      :open="processing.open.value"
-      :name="processing.name.value"
-      :step="processing.step.value"
-      :running="processing.running.value"
-      :failed="processing.failed.value"
-      :message="processing.message.value"
-      :restart-required="store.requiresRestart"
-      @close="processing.close()"
-    />
+    <PluginProcessingDialog :processing="processing" />
 
     <PluginRemoveDialog
       :open="confirmingUninstall"

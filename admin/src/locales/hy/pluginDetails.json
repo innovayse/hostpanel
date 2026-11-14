@@ -9,7 +9,7 @@
     "settings": "Կարգավորումներ"
   },
   "notFoundTitle": "Պլագինը չի գտնվել",
-  "notFoundDescription": "Գրանցամատյանում այս նույնացուցիչով պլագին չկա։",
+  "notFoundDescription": "Այս պլագինը տեղադրված չէ այս սերվերում։",
   "verified": "Հաստատված",
   "pricing": {
     "Free": "Անվճար",

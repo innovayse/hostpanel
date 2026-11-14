@@ -9,7 +9,7 @@
     "settings": "Settings"
   },
   "notFoundTitle": "Plugin not found",
-  "notFoundDescription": "The registry has no plugin with this id.",
+  "notFoundDescription": "This plugin is not installed on this server.",
   "verified": "Verified",
   "pricing": {
     "Free": "Free",

@@ -173,11 +173,6 @@ export const usePluginsStore = defineStore('plugins', () => {
     Object.fromEntries(registryUpdates.value.map(item => [item.id, item.latestVersion])),
   )
 
-  /** The release notes of the newer version the registry offers, by installed plugin id; null when it sent none. */
-  const updateChangelogs = computed<Record<string, string | null>>(() =>
-    Object.fromEntries(registryUpdates.value.map(item => [item.id, item.latestChangelog ?? null])),
-  )
-
   /** The plugins that are on disk (loaded or refused): every row except a removed plugin that only keeps data. */
   const installed = computed<PluginListItemDto[]>(() => plugins.value.filter(p => p.status !== PluginStatus.Removed))
 
@@ -627,7 +622,7 @@ export const usePluginsStore = defineStore('plugins', () => {
   return {
     plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, bindingError,
     registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError,
-    registryInstallError, registryInstallingId, updateVersions, updateChangelogs, licenceError, registryDetails,
+    registryInstallError, registryInstallingId, updateVersions, licenceError, registryDetails,
     registryInstance, registryInstanceBusy, registryInstanceError,
     isBusy, fetchRegistryDetails, saveLicenceKey, removeLicenceKey,
     fetchRegistry, setRegistryFilter, fetchRegistryUpdates, fetchRegistryInstance, retryRegistryInstance, installFromRegistry,

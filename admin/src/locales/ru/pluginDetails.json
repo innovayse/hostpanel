@@ -9,7 +9,7 @@
     "settings": "Настройки"
   },
   "notFoundTitle": "Плагин не найден",
-  "notFoundDescription": "В реестре нет плагина с таким идентификатором.",
+  "notFoundDescription": "Этот плагин не установлен на этом сервере.",
   "verified": "Проверен",
   "pricing": {
     "Free": "Бесплатный",

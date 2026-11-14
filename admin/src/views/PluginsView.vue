@@ -160,7 +160,13 @@ const handleUpload = async (file: File): Promise<void> => {
      * @returns The call's outcome.
      */
     work: async () => archiveOutcome(await store.inspect(file)),
-    closeOnSuccess: true,
+    /**
+     * The archive read continues in the confirmation prompt, so the dialog gives way once it succeeds.
+     *
+     * @param outcome - The read's outcome.
+     * @returns True after a success.
+     */
+    handsOff: outcome => outcome.ok,
   })
 }
 
@@ -176,11 +182,13 @@ const handleConfirmInstall = async (): Promise<void> => {
      * @returns The call's outcome.
      */
     work: async () => archiveOutcome(await store.confirmInstall()),
+    /**
+     * An archive older than the installed version is refused with its own prompt (force the downgrade), which carries the sentence.
+     *
+     * @returns True when the server refused the archive as a downgrade.
+     */
+    handsOff: () => store.downgradeFile !== null,
   })
-  // An archive older than the installed version is refused with its own prompt (force the downgrade), which carries the sentence.
-  if (store.downgradeFile !== null) {
-    processing.close()
-  }
 }
 
 /**
@@ -539,16 +547,7 @@ onMounted(() => Promise.all([
       @close="store.dismissDowngrade()"
     />
 
-    <PluginProcessingDialog
-      :open="processing.open.value"
-      :name="processing.name.value"
-      :step="processing.step.value"
-      :running="processing.running.value"
-      :failed="processing.failed.value"
-      :message="processing.message.value"
-      :restart-required="store.requiresRestart"
-      @close="processing.close()"
-    />
+    <PluginProcessingDialog :processing="processing" />
 
     <PluginInstallDialog
       v-if="store.preview !== null"

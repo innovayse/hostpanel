@@ -431,7 +431,7 @@ describe('PluginDetailsView', () => {
     expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('This version needs a licence key.')
   })
 
-  it('uninstalls behind the shared confirmation, raises the restart banner and returns to the plugins page', async () => {
+  it('uninstalls behind the shared confirmation, raises the restart banner and returns to the plugins page once the outcome dialog is closed', async () => {
     let removed = false
     const mock = stubRoutes({
       'GET /api/admin/plugins': () => json(removed ? [makeInstalled({ status: PluginStatus.Removed })] : [makeInstalled()]),
@@ -451,8 +451,14 @@ describe('PluginDetailsView', () => {
     await flushPromises()
 
     expect(callsWith(mock, 'DELETE')).toHaveLength(1)
-    expect(router.currentRoute.value.path).toBe('/plugins')
+    expect(router.currentRoute.value.path).not.toBe('/plugins')
+    expect(wrapper.find('[data-testid="plugin-processing-restart"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
+
+    await wrapper.get('[data-testid="plugin-processing-close"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/plugins')
   })
 
   it('does not remove anything when the removal confirmation is dismissed', async () => {

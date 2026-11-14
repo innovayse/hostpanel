@@ -1,6 +1,6 @@
 /**
  * Tests for the plugin processing state: it opens while the work runs, ends with the staged note or the API
- * sentence, closes by itself only when asked, and ignores a close while running.
+ * sentence, closes by itself only when the outcome is handed to another prompt, and ignores a close while running.
  */
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
@@ -80,16 +80,30 @@ describe('usePluginProcessing', () => {
     expect(processing.open.value).toBe(true)
   })
 
-  it('closes by itself after a success when asked to', async () => {
+  it('closes by itself when the outcome is handed to another prompt', async () => {
     const processing = mountProcessing()
 
     await processing.run({
       name: 'new.zip',
       step: PluginProcessingStep.Uploading,
       work: async () => ({ ok: true, stagedVersion: null, error: null }),
-      closeOnSuccess: true,
+      handsOff: outcome => outcome.ok,
     })
 
     expect(processing.open.value).toBe(false)
+  })
+
+  it('stays open when the outcome is not handed on, a refusal included', async () => {
+    const processing = mountProcessing()
+
+    await processing.run({
+      name: 'new.zip',
+      step: PluginProcessingStep.Installing,
+      work: async () => ({ ok: false, stagedVersion: null, error: 'Refused.' }),
+      handsOff: outcome => outcome.ok,
+    })
+
+    expect(processing.open.value).toBe(true)
+    expect(processing.message.value).toBe('Refused.')
   })
 })

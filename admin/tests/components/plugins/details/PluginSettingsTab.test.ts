@@ -33,6 +33,7 @@ const mountTab = async (props: Record<string, unknown> = {}) => {
     widgets: [],
     products,
     widgetsError: null,
+    widgetsLoading: false,
     save: vi.fn(),
     bindingError: null,
     ...props,
@@ -63,6 +64,13 @@ describe('PluginSettingsTab', () => {
     const wrapper = await mountTab()
 
     expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(true)
+  })
+
+  it('holds the place of the widgets with a skeleton while they load, without the empty note', async () => {
+    const wrapper = await mountTab({ widgetsLoading: true })
+
+    expect(wrapper.find('[data-testid="plugin-slot-widgets-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(false)
   })
 
   it('shows the load error with a retry instead of the widgets', async () => {

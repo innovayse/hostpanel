@@ -3,8 +3,9 @@
  * The modal that stands over a plugin job: while it runs, a loader with the plugin's name and the step in
  * plain words (installing, updating, removing, uploading), and nothing can dismiss it (no close button, no
  * Escape, no backdrop click). When the job ends it shows the outcome, the API's sentence for a refusal or a
- * done line with the restart note when the server must restart, and a Close button. It owns no state: the
- * screen drives it from {@link usePluginProcessing}.
+ * done line with the restart note when the server must restart, and a Close button. It owns no state of its own:
+ * the screen hands it the state it drives from {@link usePluginProcessing}, and the restart note is read from the
+ * plugins store, so every screen wires the dialog the same way: one prop.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -14,59 +15,56 @@ import UiLoader from '@/components/ui/UiLoader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
+import type { PluginProcessing } from '@/composables/usePluginProcessing'
+import { usePluginsStore } from '@/stores/plugins'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
-import type { PluginProcessingStep } from '@/types/plugin'
 
 /** Translation function. */
 const { t } = useI18n()
 
 /** Props for PluginProcessingDialog. */
 const props = defineProps<{
-  /** Whether the dialog is shown. */
-  open: boolean
-  /** Name of the plugin or archive being worked on. */
-  name: string
-  /** What is being done to it. */
-  step: PluginProcessingStep
-  /** True while the job runs. */
-  running: boolean
-  /** Whether the job was refused. */
-  failed: boolean
-  /** The sentence the job ended with (the refusal, or a staged-version note), null for a plain success. */
-  message: string | null
-  /** Whether the server must restart for the change to take effect. */
-  restartRequired: boolean
+  /** The screen's processing state: whether it is shown, the plugin, the step, how the job ended, and the close action. */
+  processing: PluginProcessing
 }>()
 
-/** Events emitted by PluginProcessingDialog. */
-const emit = defineEmits<{
-  /** Emitted when the admin closes the finished dialog. */
-  close: []
-}>()
+/** Plugins store: whether the server must restart for the change to take effect. */
+const store = usePluginsStore()
 
 /** The sentence under the loader or the outcome: what the job does while it runs, "done" after a success. */
-const stepText = computed<string>(() => t(`plugins.processing.${props.step}`, { name: props.name }))
+const stepText = computed<string>(() => t(`plugins.processing.${props.processing.step.value}`, { name: props.processing.name.value }))
+
+/** The sentence the job ended with: the refusal as it is, the note or "done" after a success. */
+const outcomeMessage = computed<string | null>(() =>
+  props.processing.failed.value ? props.processing.message.value : (props.processing.message.value ?? t('plugins.processing.done')),
+)
 </script>
 
 <template>
-  <UiDialog :open="open" :title="name" :dismissible="!running" data-testid="plugin-processing-dialog" @close="emit('close')">
-    <UiStack v-if="running" align="center" gap="sm" data-testid="plugin-processing-running">
+  <UiDialog
+    :open="processing.open.value"
+    :title="processing.name.value"
+    :dismissible="!processing.running.value"
+    data-testid="plugin-processing-dialog"
+    @close="processing.close()"
+  >
+    <UiStack v-if="processing.running.value" align="center" gap="sm" data-testid="plugin-processing-running">
       <UiLoader :size="UiSize.Lg" :label="stepText" show-label />
     </UiStack>
     <UiStack v-else gap="sm" data-testid="plugin-processing-outcome">
       <UiStatusMessage
-        :message="failed ? message : (message ?? t('plugins.processing.done'))"
-        :tone="failed ? UiTone.Danger : UiTone.Success"
+        :message="outcomeMessage"
+        :tone="processing.failed.value ? UiTone.Danger : UiTone.Success"
         data-testid="plugin-processing-message"
       />
-      <UiText v-if="!failed && restartRequired" tone="muted" size="sm" data-testid="plugin-processing-restart">
+      <UiText v-if="!processing.failed.value && store.requiresRestart" tone="muted" size="sm" data-testid="plugin-processing-restart">
         {{ t('plugins.processing.restartNeeded') }}
       </UiText>
     </UiStack>
-    <template v-if="!running" #footer>
-      <UiButton type="button" :variant="UiButtonVariant.Primary" data-testid="plugin-processing-close" @click="emit('close')">
+    <template v-if="!processing.running.value" #footer>
+      <UiButton type="button" :variant="UiButtonVariant.Primary" data-testid="plugin-processing-close" @click="processing.close()">
         {{ t('plugins.processing.close') }}
       </UiButton>
     </template>

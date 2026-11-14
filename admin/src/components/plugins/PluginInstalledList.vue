@@ -27,7 +27,7 @@ import { useFilterQuery } from '@/composables/useFilterQuery'
 import { enumValueOf } from '@/lib/enumValue'
 import { Icon } from '@/lib/icons'
 import { filterInstalledPlugins, InstalledPluginState } from '@/lib/installedPlugins'
-import { fromInstalled } from '@/lib/pluginCard'
+import { categoryLabel, fromInstalled } from '@/lib/pluginCard'
 import { pluginPath } from '@/lib/routes'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
@@ -90,7 +90,7 @@ const stateOptions = computed<{ value: string; label: string }[]>(() => [
 /** Options of the category filter: any category, then each category the installed plugins have. */
 const categoryOptions = computed<{ value: string; label: string }[]>(() => [
   { value: '', label: t('plugins.pluginRegistry.allCategories') },
-  ...[...new Set(props.plugins.map(plugin => plugin.category))].sort().map(category => ({ value: category, label: category })),
+  ...[...new Set(props.plugins.map(plugin => plugin.category))].sort().map(category => ({ value: category, label: categoryLabel(category) })),
 ])
 
 /** One chip per applied filter, with the value as the operator reads it. */
@@ -99,7 +99,7 @@ const chips = computed<UiFilterChip[]>(() => {
   const state = stateOptions.value.find(option => option.value === values.status)
   const all: UiFilterChip[] = [
     { key: InstalledFilterKey.State, label: t('shared.status'), value: state?.label ?? values.status },
-    { key: InstalledFilterKey.Category, label: t('plugins.pluginRegistry.categoryPlaceholder'), value: values.kind },
+    { key: InstalledFilterKey.Category, label: t('plugins.pluginRegistry.categoryPlaceholder'), value: categoryLabel(values.kind) },
   ]
   return all.filter(chip => chip.value !== '')
 })
@@ -150,6 +150,7 @@ const openPlugin = (id: string): void => {
   <UiErrorState v-if="error" :message="error" :loading="loading" testid="plugins-error" @retry="emit('retry')" />
 
   <UiGrid v-else-if="loading && plugins.length === 0" :columns="3" gap="md" aria-busy="true" data-testid="plugins-loading">
+    <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
     <PluginCardSkeleton v-for="placeholder in PLUGIN_CARD_PLACEHOLDERS" :key="placeholder" />
   </UiGrid>
 

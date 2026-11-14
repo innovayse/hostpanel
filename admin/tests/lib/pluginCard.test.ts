@@ -2,7 +2,7 @@
  * Unit tests for the plugin card mappers: an installed plugin and a registry listing become the same card model.
  */
 import { describe, expect, it } from 'vitest'
-import { fromInstalled, fromRegistry } from '@/lib/pluginCard'
+import { categoryLabel, fromInstalled, fromRegistry } from '@/lib/pluginCard'
 import { PluginCardBadge, PluginCategory, PluginManifestRule, PluginPricing, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
 
@@ -44,6 +44,18 @@ const listed: PluginRegistryItemDto = {
   tags: ['cards'],
   downloads: 50,
 }
+
+describe('categoryLabel', () => {
+  it('translates a registry category and leaves a manifest label as written', () => {
+    expect(categoryLabel(PluginCategory.Provisioning)).toBe('Provisioning')
+    expect(categoryLabel('Hosting / Provisioning')).toBe('Hosting / Provisioning')
+  })
+
+  it('is what both mappers show, so an installed and a registry card read the same', () => {
+    expect(fromInstalled({ ...installed, category: PluginCategory.Payment }, null).category)
+      .toBe(fromRegistry(listed, null).category)
+  })
+})
 
 describe('fromInstalled', () => {
   it('maps a running plugin to an Active card', () => {

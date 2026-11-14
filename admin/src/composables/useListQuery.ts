@@ -82,16 +82,20 @@ export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K>
   return {
     ...query,
     narrowed,
+    /** Loads the list now and again whenever a filter, the search or the page changes. */
     loadOnChange: (load) => {
       // Every change of a filter, the search or the page loads the list the address names.
       watch(listKey, () => load())
       onMounted(() => load())
     },
+    /** The filter under the key as one of the enum's members, undefined when it is none of them. */
     enumOf: (key, members) => computed(() => Object.values(members).find(value => value === query.applied.value[key])),
+    /** The filter under the key as a positive whole id, undefined when it is not one. */
     idOf: key => computed(() => {
       const id = Number(query.applied.value[key])
       return Number.isInteger(id) && id > 0 ? id : undefined
     }),
+    /** The chips for the filters the description names that have a value. */
     chipsOf: describe => computed(() =>
       describe()
         .filter(source => source.value !== undefined && source.value !== '')

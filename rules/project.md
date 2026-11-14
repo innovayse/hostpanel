@@ -1761,7 +1761,10 @@ feature does not exist is not kept. The decisions:
   column selectors, so a text filter such as the client list's `Phone` uses `Search(query.Phone, c => c.Phone)` too, never a
   hand-written `LIKE`) and
   slices with `Paginate`. The admin list screens bind search, filters and page to the address through
-  `useFilterQuery` and lay them out with `UiListToolbar`; the client list is the reference.
+  `useFilterQuery` and lay them out with `UiListToolbar`; the client list is the reference. The domain list
+  (`ListDomainsQuery`, the one list behind the admin Domains screen; the old Domain Registrations screen was the same
+  data and now redirects to it) is on it with a name search and `Status` and `RegistrarModule` enum filters; a domain with
+  no registrar module recorded is left out when a registrar is chosen.
 
 ### Email campaigns
 

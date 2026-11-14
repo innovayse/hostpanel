@@ -4,8 +4,9 @@
     "searchDomains": "Դոմեյնների որոնում",
     "expiresAt": "Ավարտվում է",
     "renewalPrice": "Երկարաձգման գին",
-    "noDomainsMatchYourSearch": "Որոնմանը համապատասխան դոմեյններ չկան",
-    "noDomainsFound": "Դոմեյններ չեն գտնվել",
-    "tryAdjustingYourSearchTerm": "Փորձեք փոխել որոնման հարցումը"
+    "regPeriod": "Գրանցման ժամկետ",
+    "noDomainsMatchYourFilters": "Ֆիլտրերին համապատասխան դոմեյններ չկան",
+    "clearFilters": "Մաքրել ֆիլտրերը",
+    "noDomainsFound": "Դոմեյններ չեն գտնվել"
   }
 }

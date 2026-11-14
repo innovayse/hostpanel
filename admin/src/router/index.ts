@@ -94,7 +94,8 @@ const router = createRouter({
         { path: 'clients/groups', component: lazy('views/ClientGroupsView.vue') },
         { path: 'clients/shared-hostings', component: lazy('views/ServicesListView.vue') },
         { path: 'clients/addons', component: lazy('views/ServiceAddonsView.vue') },
-        { path: 'clients/domain-registrations', component: lazy('views/DomainRegistrationsView.vue') },
+        // The registrations table was the domain list under another address; a bookmark to it opens the domain list.
+        { path: 'clients/domain-registrations', redirect: AppRoute.Domains },
         { path: 'clients/cancellations', component: lazy('views/CancellationRequestsView.vue') },
         { path: 'clients/plan-changes', component: lazy('views/ServiceChangeRequestsView.vue') },
         { path: 'clients/affiliates', component: lazy('views/ManageAffiliatesView.vue') },

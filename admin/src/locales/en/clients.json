@@ -498,12 +498,6 @@
     "invitationSentTo": "Invitation sent to {email}",
     "never": "Never"
   },
-  "domainRegistrations": {
-    "domainRegistrations": "Domain Registrations",
-    "viewAndManageClientDomain": "View and manage client domain registrations",
-    "regPeriod": "Reg Period",
-    "noDomainRegistrationsFound": "No domain registrations found"
-  },
   "manageAffiliates": {
     "manageAffiliates": "Manage Affiliates",
     "viewAndManageTheAffiliate": "View and manage the affiliate program",

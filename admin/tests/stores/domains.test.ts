@@ -9,6 +9,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { translate } from '@/lib/translate'
 import { useDomainsStore } from '@/stores/domains'
 import { DomainStatus } from '@/types/domain'
+import { RegistrarModule } from '@/types/registrarmodule'
 import { json, problem, stubFetch, stubOffline, callOf, invalid } from '../helpers/fetch'
 
 describe('domainsStore loads', () => {
@@ -24,21 +25,37 @@ describe('domainsStore loads', () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 31 }))
     const store = useDomainsStore()
 
-    expect(await store.fetchAll(1, '  exa  ')).toBe(true)
+    expect(await store.fetchAll(1, { search: '  exa  ' })).toBe(true)
     expect(callOf(mock).url).toBe('/api/domains?page=1&pageSize=20&search=exa')
     expect(store.domains).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(31)
     expect(store.loading).toBe(false)
   })
 
+  it('fetchAll sends the status and the registrar filters with the page', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const store = useDomainsStore()
+
+    await store.fetchAll(3, { status: DomainStatus.Active, registrarModule: RegistrarModule.NameAm })
+    expect(callOf(mock).url).toBe('/api/domains?page=3&pageSize=20&status=Active&registrarModule=NameAm')
+  })
+
+  it('fetchAll without filters asks for the plain page', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const store = useDomainsStore()
+
+    await store.fetchAll(1)
+    expect(callOf(mock).url).toBe('/api/domains?page=1&pageSize=20')
+  })
+
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useDomainsStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchAll(1, '')).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe('Not allowed.')
 
     stubOffline()
-    expect(await store.fetchAll(1, '')).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
     expect(store.loading).toBe(false)
   })

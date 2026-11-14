@@ -13,6 +13,7 @@ import type {
   DnsRecordPayload,
   DomainContactPayload,
   DomainDetail,
+  DomainListFilters,
   DomainRegistration,
   ForwardingRulePayload,
   UpdateDomainPayload,
@@ -49,17 +50,17 @@ export const useDomainsStore = defineStore('domains', () => {
   const fieldErrors = ref<Record<string, string>>({})
 
   /**
-   * Loads one page of domain registrations. The page and the search come from the list's address, so the store
-   * keeps no copy of them.
+   * Loads one page of domain registrations. The page, the search and the filters come from the list's address, so
+   * the store keeps no copy of them.
    *
    * @param page - Page to load, 1-based.
-   * @param search - Name search text; empty for none.
+   * @param filters - The name search text and the status and registrar filters; empty for none.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (page: number, search: string): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: DomainListFilters = {}): Promise<boolean> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listDomains({ page, pageSize: pageSize.value, search: search.trim() }),
+      api.listDomains({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
     )
     loading.value = false
     if (result.ok) {

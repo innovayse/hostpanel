@@ -49,8 +49,6 @@ export enum AppRoute {
   ClientsCancellations = '/clients/cancellations',
   /** The `/clients/groups` screen. */
   ClientsGroups = '/clients/groups',
-  /** The `/clients/domain-registrations` screen. */
-  ClientsDomainRegistrations = '/clients/domain-registrations',
   /** The `/clients/plan-changes` screen. */
   ClientsPlanChanges = '/clients/plan-changes',
   /** The `/clients/shared-hostings` screen. */

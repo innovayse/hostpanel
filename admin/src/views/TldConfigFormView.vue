@@ -27,6 +27,7 @@ import { UiTone } from '@/utils/ui/tone'
 import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import { REGISTRAR_MODULE_OPTIONS } from '@/lib/constants'
 import { CURRENCY_CODES, currencyLabel, currencySymbol } from '@/lib/money'
 import { CurrencyCode } from '@/types/currency'
 import { emptyPriceMap, fromApiMap, toNonZeroMap } from '@/lib/tldPricing'
@@ -57,12 +58,6 @@ const breadcrumb = computed(() => [
   { label: t('shared.settings'), to: AppRoute.Settings },
   { label: t('settings.tldConfigForm.tldPricing'), to: AppRoute.SettingsTldPricing },
   { label: pageTitle.value },
-])
-
-/** Registrar options of the provider dropdown. */
-const providerOptions = computed(() => [
-  { value: RegistrarModule.NameAm as string, label: t('settings.tldConfigs.nameAm') },
-  { value: RegistrarModule.Namecheap as string, label: t('settings.tldConfigs.namecheap') },
 ])
 
 /** Currency options of the cost and sell currency dropdowns. */
@@ -290,7 +285,7 @@ const handleCancel = (): void => {
           <UiField :label="t('settings.tldConfigForm.registrarProvider')">
             <UiSelect
               v-model="registrarModule"
-              :options="providerOptions"
+              :options="REGISTRAR_MODULE_OPTIONS"
               :placeholder="t('settings.tldConfigForm.registrarProvider')"
               data-testid="tld-config-form-provider"
             />

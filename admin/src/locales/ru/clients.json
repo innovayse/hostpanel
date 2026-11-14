@@ -498,12 +498,6 @@
     "invitationSentTo": "Приглашение отправлено на {email}",
     "never": "Никогда"
   },
-  "domainRegistrations": {
-    "domainRegistrations": "Регистрации доменов",
-    "viewAndManageClientDomain": "Просмотр регистраций доменов клиентов и управление ими",
-    "regPeriod": "Срок регистрации",
-    "noDomainRegistrationsFound": "Регистрации доменов не найдены"
-  },
   "manageAffiliates": {
     "manageAffiliates": "Управление партнёрами",
     "viewAndManageTheAffiliate": "Просмотр партнёрской программы и управление ею",

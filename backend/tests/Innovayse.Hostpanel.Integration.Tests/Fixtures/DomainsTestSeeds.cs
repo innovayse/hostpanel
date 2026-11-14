@@ -5,6 +5,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
@@ -178,6 +179,27 @@ internal static class DomainsTestSeeds
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
         return client.Id;
+    }
+
+    /// <summary>
+    /// Seeds a domain already in the given status and registrar module, the way an import records it, so a test
+    /// can set up the exact mix a list filter must tell apart without driving the registrar.
+    /// </summary>
+    /// <param name="context">The data context to seed through.</param>
+    /// <param name="clientId">The owning client's id.</param>
+    /// <param name="name">The domain name.</param>
+    /// <param name="status">The lifecycle status the domain is in.</param>
+    /// <param name="registrarModule">The registrar module the domain is managed through; null for a legacy row.</param>
+    /// <returns>The saved domain's id.</returns>
+    public static async Task<int> SeedDomainAsync(
+        IHostpanelDbContext context, int clientId, string name, DomainStatus status, RegistrarModule? registrarModule)
+    {
+        var domain = RegisteredDomain.Import(
+            clientId, name, status, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+            autoRenew: false, TestCurrencies.Base, registrar: null, registrarModule);
+        context.Domains.Add(domain);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return domain.Id;
     }
 
     /// <summary>Seeds an active, registrar-linked domain for a DB-level (non-HTTP) test to act on.</summary>

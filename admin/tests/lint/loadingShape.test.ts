@@ -59,6 +59,11 @@ const ALLOWED: readonly AllowedException[] = [
     reason: 'the body of a widget is drawn by the plugin itself, so only its title can be real while the body resolves',
   },
   {
+    file: 'components/plugins/details/PluginSettingsTab.vue',
+    rule: LoadingRule.CardLines,
+    reason: 'the slot widgets a plugin declares, and so how many cards the tab holds, are only known once they have been read',
+  },
+  {
     file: 'views/PluginPageView.vue',
     rule: LoadingRule.CardLines,
     reason: 'the blocks of a plugin page are defined by the plugin\'s own view document, which has not arrived yet',
@@ -147,7 +152,7 @@ describe('loading shape', () => {
 
     expect(files).toContain('views/ServersView.vue')
     expect(files).toContain('layouts/ClientLayout.vue')
-    expect(files).toContain('components/plugins/PluginRegistryCard.vue')
+    expect(files).toContain('components/plugins/PluginRegistryBrowser.vue')
     expect(files.some((file) => file.startsWith('components/ui/'))).toBe(false)
   })
 

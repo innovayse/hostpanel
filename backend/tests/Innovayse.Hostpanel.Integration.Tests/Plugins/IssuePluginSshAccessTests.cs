@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Settings;
@@ -55,6 +56,61 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         (await fixture.ActivityOfAsync(owner.ClientId)).Should()
             .ContainSingle(line => line.StartsWith($"Issued SSH key \"{Label}\"", StringComparison.Ordinal))
             .Which.Should().EndWith($"to plugin {fixture.SshPluginId} for service #{owner.ServiceId}");
+    }
+
+    /// <summary>
+    /// An agent that added the key but answered too late (outcome unknown): the plugin is refused and never learns the
+    /// key id, so the host takes the key back itself instead of leaving it on the account (#391).
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AddWithUnknownOutcome_IsTakenBackFromTheServerAsync()
+    {
+        var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-takeback-timeout");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+        var agent = fixture.Agents().AgentFor(owner.ServerId);
+        agent.WhileAdding = () => throw new SshProviderException(SshProviderFailure.Timeout, "slow agent");
+
+        var act = () => fixture.AsPluginAsync(
+            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            api => api.IssueSshAccessAsync(owner.ServiceId, Label, CancellationToken.None));
+
+        await act.Should().ThrowAsync<PluginHostAccessException>();
+        agent.KeysOf("web").Should().BeEmpty("the key the agent added is revoked again");
+        using var scope = fixture.Host.Services.CreateScope();
+        var key = await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().SshKeys
+            .SingleAsync(k => k.ClientServiceId == owner.ServiceId);
+        key.SyncState.Should().Be(SshKeySyncState.Revoked);
+    }
+
+    /// <summary>
+    /// The plugin's call cut off while the agent was adding (its route limit): the cancellation reaches the plugin and
+    /// the key the agent added is taken back, so a cut-off call leaves no key behind (#391).
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task CallCancelledWhileAdding_IsTakenBackFromTheServerAsync()
+    {
+        var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-takeback-cancel");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+        var agent = fixture.Agents().AgentFor(owner.ServerId);
+        using var cts = new CancellationTokenSource();
+        agent.WhileAdding = () =>
+        {
+            cts.Cancel();
+            throw new OperationCanceledException(cts.Token);
+        };
+
+        var act = () => fixture.AsPluginAsync(
+            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            api => api.IssueSshAccessAsync(owner.ServiceId, Label, cts.Token));
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        agent.KeysOf("web").Should().BeEmpty("the key the agent added is revoked again");
+        using var scope = fixture.Host.Services.CreateScope();
+        var key = await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().SshKeys
+            .SingleAsync(k => k.ClientServiceId == owner.ServiceId);
+        key.SyncState.Should().Be(SshKeySyncState.Revoked);
     }
 
     /// <summary>The issued key is listed among the service's keys by the client's own route.</summary>
@@ -233,8 +289,10 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         failure.Should().Be(PluginHostAccessFailure.ServerUnavailable);
         using var scope = fixture.Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        // The add's outcome is unknown, so the host tried to take the key back; the server is still down, so the key is
+        // left marked as one whose revoke failed (it may be on the account) for the revoke retries, never as installed.
         (await context.SshKeys.SingleAsync(k => k.ClientServiceId == owner.ServiceId)).SyncState
-            .Should().Be(SshKeySyncState.InstallFailed);
+            .Should().Be(SshKeySyncState.RevokeFailed);
     }
 
     /// <summary>A service already holding as many keys as the host allows is refused before a key is generated or sent.</summary>

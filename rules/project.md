@@ -1757,7 +1757,9 @@ feature does not exist is not kept. The decisions:
   validator derives from `ListQueryValidator<T>`, which states the page, page size and search rules once (400 on a value out
   of range, `PagingLimits` holds the figures, the sentences are `ListPageRequired`, `ListPageSizeRange` and
   `ListSearchTooLong`), and its handler narrows by the search text with `TextSearchExtensions.Search` or
-  `SearchIncludingId` (a case-insensitive contains match, wildcards escaped, applied before ordering and paging) and
+  `SearchIncludingId` (a case-insensitive contains match, wildcards escaped, applied before ordering and paging; both take
+  column selectors, so a text filter such as the client list's `Phone` uses `Search(query.Phone, c => c.Phone)` too, never a
+  hand-written `LIKE`) and
   slices with `Paginate`. The admin list screens bind search, filters and page to the address through
   `useFilterQuery` and lay them out with `UiListToolbar`; the client list is the reference.
 

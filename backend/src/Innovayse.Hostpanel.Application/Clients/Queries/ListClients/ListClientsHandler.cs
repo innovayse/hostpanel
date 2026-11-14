@@ -69,11 +69,7 @@ public sealed class ListClientsHandler
             c => c.FirstName + " " + c.LastName,
             c => c.CompanyName);
 
-        if (!string.IsNullOrWhiteSpace(query.Phone))
-        {
-            var phonePattern = LikePattern.Contains(query.Phone.Trim());
-            clients = clients.Where(c => c.Phone != null && EF.Functions.Like(c.Phone.ToLower(), phonePattern, LikePattern.EscapeCharacter));
-        }
+        clients = clients.Search(query.Phone, c => c.Phone);
 
         if (query.Status is { } status)
         {

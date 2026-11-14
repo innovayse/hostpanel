@@ -58,6 +58,44 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
         return body.RootElement.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetInt32()).ToList();
     }
 
+    /// <summary>Every sentence of a refusal body joined into one string, decoded, so a test can look for the words it expects.</summary>
+    /// <param name="response">The refused response.</param>
+    /// <returns>All the string values of the body, separated by a space.</returns>
+    private static async Task<string> ErrorTextAsync(HttpResponseMessage response)
+    {
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var sentences = new List<string>();
+        CollectStrings(body.RootElement, sentences);
+        return string.Join(' ', sentences);
+    }
+
+    /// <summary>Adds every string value under <paramref name="element"/> to <paramref name="sentences"/>.</summary>
+    /// <param name="element">The JSON node to walk.</param>
+    /// <param name="sentences">Receives the string values.</param>
+    private static void CollectStrings(JsonElement element, List<string> sentences)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                sentences.Add(element.GetString()!);
+                break;
+            case JsonValueKind.Array:
+                foreach (var item in element.EnumerateArray())
+                {
+                    CollectStrings(item, sentences);
+                }
+
+                break;
+            case JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    CollectStrings(property.Value, sentences);
+                }
+
+                break;
+        }
+    }
+
     /// <summary>The search finds a client by the full name read as "First Last", in any letter case.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -114,12 +152,12 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     public async Task SearchAndPhoneFilterNarrowTogether()
     {
         var token = Guid.NewGuid().ToString("N")[..8];
-        var (withPhone, _) = await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Both", lastName: $"Narrow{token}", phone: "+1 555 0101");
-        var (withoutPhone, _) = await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Both", lastName: $"Narrow{token}", phone: "+1 555 0202");
+        var (matchesBoth, _) = await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Both", lastName: $"Narrow{token}", phone: "+1 555 0101");
+        var (matchesPhoneOnly, _) = await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Other", lastName: $"Elsewhere{token}", phone: "+1 555 0102");
 
-        var ids = await ListIdsAsync($"page=1&pageSize=100&search=Narrow{token}&phone={Uri.EscapeDataString("555 0101")}");
+        var ids = await ListIdsAsync($"page=1&pageSize=100&search=Narrow{token}&phone={Uri.EscapeDataString("555 010")}");
 
-        ids.Should().Contain(withPhone).And.NotContain(withoutPhone);
+        ids.Should().Contain(matchesBoth).And.NotContain(matchesPhoneOnly);
     }
 
     /// <summary>The total count and the page window follow the search, so the pager is right for the narrowed list.</summary>
@@ -202,7 +240,37 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
 
         var response = await admin.GetAsync("/api/clients?page=1&pageSize=5000");
 
-        (await response.Content.ReadAsStringAsync()).Should().Contain("between 1 and 100");
+        (await ErrorTextAsync(response)).Should().Contain("between 1 and 100");
+    }
+
+    /// <summary>The refusal of a page size is written in the language the caller asked for.</summary>
+    /// <param name="language">The <c>X-Language</c> value.</param>
+    /// <param name="expected">The page-size sentence in that language.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("ru", "от 1 до 100")]
+    [InlineData("hy", "1-ից 100-ի")]
+    public async Task PageSizeRefusalIsLocalized(string language, string expected)
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        admin.DefaultRequestHeaders.Add("X-Language", language);
+
+        var response = await admin.GetAsync("/api/clients?page=1&pageSize=5000");
+
+        (await ErrorTextAsync(response)).Should().Contain(expected);
+    }
+
+    /// <summary>The refusal of an overlong search names the limit.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchRefusalNamesTheLimit()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/clients?page=1&pageSize=20&search={new string('a', 201)}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorTextAsync(response)).Should().Contain("at most 200 characters");
     }
 
     /// <summary>A page number below 1 is refused with 400.</summary>

@@ -1,6 +1,6 @@
-using System.Globalization;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -59,24 +59,15 @@ public sealed class ListClientsHandler
 
         var clients = _context.Clients.AsNoTracking().AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var term = query.Search.Trim();
-            var pattern = LikePattern.Contains(term);
-
-            // The whole-number term also finds the client by id. The id is parsed here, outside the
-            // query, so the SQL compares a plain parameter.
-            var searchId = int.TryParse(term, NumberStyles.None, CultureInfo.InvariantCulture, out var parsedId) ? parsedId : (int?)null;
-
-            // The full name is matched as "First Last" so a staff member can type a person's name the
-            // way it is read, which neither column alone contains.
-            clients = clients.Where(c =>
-                c.Id == searchId ||
-                EF.Functions.Like(c.FirstName.ToLower(), pattern, LikePattern.EscapeCharacter) ||
-                EF.Functions.Like(c.LastName.ToLower(), pattern, LikePattern.EscapeCharacter) ||
-                EF.Functions.Like((c.FirstName + " " + c.LastName).ToLower(), pattern, LikePattern.EscapeCharacter) ||
-                (c.CompanyName != null && EF.Functions.Like(c.CompanyName.ToLower(), pattern, LikePattern.EscapeCharacter)));
-        }
+        // The full name is matched as "First Last" so a staff member can type a person's name the
+        // way it is read, which neither column alone contains.
+        clients = clients.SearchIncludingId(
+            query.Search,
+            c => c.Id,
+            c => c.FirstName,
+            c => c.LastName,
+            c => c.FirstName + " " + c.LastName,
+            c => c.CompanyName);
 
         if (!string.IsNullOrWhiteSpace(query.Phone))
         {

@@ -83,6 +83,65 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
         ids.Should().Contain(clientId);
     }
 
+    /// <summary>The search finds a client by its company, which is not part of the name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchFindsAClientByCompany()
+    {
+        var token = Guid.NewGuid().ToString("N")[..8];
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Company", lastName: "Search", companyName: $"Acme{token} Hosting");
+
+        var ids = await ListIdsAsync($"page=1&pageSize=100&search={Uri.EscapeDataString($"ACME{token}")}");
+
+        ids.Should().Contain(clientId);
+    }
+
+    /// <summary>A search that names no one narrows the list to nothing instead of ignoring the text.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchWithNoMatchReturnsAnEmptyPage()
+    {
+        await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Seen", lastName: "Somewhere");
+
+        var ids = await ListIdsAsync($"page=1&pageSize=100&search={Uri.EscapeDataString($"nobody-{Guid.NewGuid():N}")}");
+
+        ids.Should().BeEmpty();
+    }
+
+    /// <summary>The search and a filter narrow together: only a client that matches both is listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchAndPhoneFilterNarrowTogether()
+    {
+        var token = Guid.NewGuid().ToString("N")[..8];
+        var (withPhone, _) = await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Both", lastName: $"Narrow{token}", phone: "+1 555 0101");
+        var (withoutPhone, _) = await ClientsTestSeeds.SeedClientAsync(factory, firstName: "Both", lastName: $"Narrow{token}", phone: "+1 555 0202");
+
+        var ids = await ListIdsAsync($"page=1&pageSize=100&search=Narrow{token}&phone={Uri.EscapeDataString("555 0101")}");
+
+        ids.Should().Contain(withPhone).And.NotContain(withoutPhone);
+    }
+
+    /// <summary>The total count and the page window follow the search, so the pager is right for the narrowed list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchPagesOverTheNarrowedList()
+    {
+        var token = Guid.NewGuid().ToString("N")[..8];
+        for (var i = 0; i < 3; i++)
+        {
+            await ClientsTestSeeds.SeedClientAsync(factory, firstName: $"Paged{i}", lastName: $"Window{token}");
+        }
+
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var response = await admin.GetAsync($"/api/clients?page=2&pageSize=2&search=Window{token}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("totalCount").GetInt32().Should().Be(3);
+        body.RootElement.GetProperty("items").GetArrayLength().Should().Be(1);
+    }
+
     /// <summary>A search wildcard typed by a person matches itself and nothing else.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -132,6 +191,18 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
         var response = await admin.GetAsync("/api/clients?page=1&pageSize=5000");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>The refusal of a page size names the limits, so the caller learns them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task PageSizeRefusalNamesTheLimits()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync("/api/clients?page=1&pageSize=5000");
+
+        (await response.Content.ReadAsStringAsync()).Should().Contain("between 1 and 100");
     }
 
     /// <summary>A page number below 1 is refused with 400.</summary>

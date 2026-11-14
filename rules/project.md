@@ -1752,6 +1752,14 @@ feature does not exist is not kept. The decisions:
   validated (400, not clamped), and the order ends in the id so a page never repeats a row. A
   `pg_trgm` GIN index on `lower("FirstName")`, `lower("LastName")`, `lower("FirstName" || ' ' || "LastName")`
   and `lower("CompanyName")` would serve the search once the table is large; it is not created yet.
+- **Every list shares one query shape.** A searchable, paged list query is a record that implements `IListQuery`
+  (`Page`, `PageSize`, `Search`; `Application/Common/Interfaces/`) and adds its own filters as further members. Its
+  validator derives from `ListQueryValidator<T>`, which states the page, page size and search rules once (400 on a value out
+  of range, `PagingLimits` holds the figures, the sentences are `ListPageRequired`, `ListPageSizeRange` and
+  `ListSearchTooLong`), and its handler narrows by the search text with `TextSearchExtensions.Search` or
+  `SearchIncludingId` (a case-insensitive contains match, wildcards escaped, applied before ordering and paging) and
+  slices with `Paginate`. The admin list screens bind search, filters and page to the address through
+  `useFilterQuery` and lay them out with `UiListToolbar`; the client list is the reference.
 
 ### Email campaigns
 

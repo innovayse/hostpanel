@@ -1393,16 +1393,16 @@
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Каждую валюту можно указать только один раз.</value>
   </data>
-  <data name="ClientListPageRequired" xml:space="preserve">
+  <data name="ListPageRequired" xml:space="preserve">
     <value>Номер страницы должен быть не меньше 1.</value>
   </data>
-  <data name="ClientListPageSizeRange" xml:space="preserve">
-    <value>Размер страницы должен быть от 1 до 100.</value>
+  <data name="ListPageSizeRange" xml:space="preserve">
+    <value>Размер страницы должен быть от {0} до {1}.</value>
   </data>
   <data name="ClientListStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из: Active, Inactive, Suspended, Closed.</value>
   </data>
-  <data name="ClientListSearchTooLong" xml:space="preserve">
+  <data name="ListSearchTooLong" xml:space="preserve">
     <value>Текст поиска не может быть длиннее {0} символов.</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">

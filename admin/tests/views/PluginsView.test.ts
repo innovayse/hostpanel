@@ -1,10 +1,11 @@
 /**
  * Mount tests for PluginsView: the installed list, the empty state, the restart banner after an
  * install, a refusal shown as the API's sentence, the retry of a refused load and the danger
- * confirmation before a removal, and the "Allow unsigned plugins" switch: shown from the stored setting, saved through
- * the settings endpoint, a refusal shown as the API's sentence, and a failed settings load with its retry.
- * The Browse tab: hidden when the registry is switched off, shown otherwise, with the registry list, an install
- * from it, the restart banner it raises, and the update badge on an installed plugin.
+ * Settings tab: the "Allow unsigned plugins" switch (shown from the stored setting, saved through the settings
+ * endpoint, a refusal shown as the API's sentence, a failed load with its retry) and the purge of kept data.
+ * The Upload plugin dialog, the tab kept in the address, the Browse tab (hidden when the registry is switched
+ * off, shown otherwise, with the registry list, an install from it, the restart banner it raises) and the update
+ * button of an installed plugin.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -121,17 +122,41 @@ const mountPlugins = async () => {
   return wrapper
 }
 
+/**
+ * Opens a tab from its strip and waits for the address change it makes.
+ *
+ * @param wrapper - The mounted screen.
+ * @param tab - The tab's value, as in its test id.
+ */
+const openTab = async (wrapper: Awaited<ReturnType<typeof mountPlugins>>, tab: 'browse' | 'settings'): Promise<void> => {
+  await wrapper.get(`[data-testid="plugins-tab-${tab}"]`).trigger('click')
+  await flushPromises()
+}
+
+/**
+ * Uploads an archive through the header's dialog.
+ *
+ * @param wrapper - The mounted screen.
+ * @param file - The archive the uploader reports.
+ */
+const upload = async (wrapper: Awaited<ReturnType<typeof mountPlugins>>, file: File): Promise<void> => {
+  await wrapper.get('[data-testid="plugins-upload-open"]').trigger('click')
+  await flushPromises()
+  wrapper.getComponent(PluginUploader).vm.$emit('upload', file)
+  await flushPromises()
+}
+
 describe('PluginsView', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps the installed heading and draws card placeholders while the list loads', async () => {
+  it('draws card placeholders while the list loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountPlugins()
 
-    expect(wrapper.get('[data-testid="plugins-loading"]').text()).toContain('Installed Plugins')
-    expect(wrapper.findAll('[data-testid="plugin-card-loading"]')).toHaveLength(4)
+    expect(wrapper.get('[data-testid="plugins-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="plugin-card-skeleton"]')).toHaveLength(6)
   })
 
   it('lists the installed plugins', async () => {
@@ -173,39 +198,7 @@ describe('PluginsView', () => {
     expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Example Pay')
   })
 
-  it('removes a plugin and reloads the list', async () => {
-    const mock = stubRoutes({
-      'GET /api/admin/plugins': () => json([plugin]),
-      'DELETE /api/admin/plugins/example-pay': () => json({ requiresRestart: true }),
-    })
-    const wrapper = await mountPlugins()
-
-    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
-    await flushPromises()
-    expect(mock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
-    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
-    await flushPromises()
-
-    expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/example-pay' && init?.method === 'DELETE')).toBe(true)
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin removed.')
-  })
-
-  it('shows the API sentence when the removal is refused', async () => {
-    stubRoutes({
-      'GET /api/admin/plugins': () => json([plugin]),
-      'DELETE /api/admin/plugins/example-pay': () => problem('Plugin is in use.', 409),
-    })
-    const wrapper = await mountPlugins()
-
-    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
-    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
-    await flushPromises()
-
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin is in use.')
-    expect(wrapper.get('[data-testid="plugins-list"]').text()).toContain('Example Pay')
-  })
-
-  it('lists a refused plugin with its reason and offers no enable action', async () => {
+  it('lists a refused plugin with its reason and offers no update action', async () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([
         { ...plugin, isLoaded: false, status: 'Refused', refusedRule: 'LabelKeyMissing', refusedDetail: 'menu.title' },
@@ -217,37 +210,21 @@ describe('PluginsView', () => {
     expect(card.text()).toContain('Refused')
     expect(card.text()).toContain('A text key used by the plugin is missing from its English texts.')
     expect(card.text()).not.toContain('Active')
-    expect(wrapper.find('[data-testid="plugin-remove-example-pay"]').exists()).toBe(true)
-  })
-
-  it('says in the removal prompt that the plugin data is kept', async () => {
-    stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
-    const wrapper = await mountPlugins()
-
-    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Its settings and stored data are kept')
+    expect(wrapper.find('[data-testid="plugin-update-button-example-pay"]').exists()).toBe(false)
   })
 
   it('purges the kept data of a removed plugin behind a confirmation', async () => {
-    // The list follows the server: installed, then removed with its data kept, then gone after the purge.
-    let rows: unknown[] = [plugin]
+    // The list follows the server: a removed plugin with its data kept, then gone after the purge.
+    let rows: unknown[] = [{ ...plugin, version: '', isLoaded: false, status: 'Removed' }]
     const mock = stubRoutes({
       'GET /api/admin/plugins': () => json(rows),
       'DELETE /api/admin/plugins/example-pay/data': () => {
         rows = []
         return json({ requiresRestart: false })
       },
-      'DELETE /api/admin/plugins/example-pay': () => {
-        rows = [{ ...plugin, version: '', isLoaded: false, status: 'Removed' }]
-        return json({ requiresRestart: true })
-      },
     })
     const wrapper = await mountPlugins()
-    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
-    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
-    await flushPromises()
+    await openTab(wrapper, 'settings')
 
     await wrapper.get('[data-testid="plugin-purge-example-pay"]').trigger('click')
     await flushPromises()
@@ -262,6 +239,79 @@ describe('PluginsView', () => {
     expect(wrapper.find('[data-testid="plugins-kept-data"]').exists()).toBe(false)
   })
 
+  it('keeps the data when the purge confirmation is dismissed', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins': () => json([{ ...plugin, version: '', isLoaded: false, status: 'Removed' }]),
+    })
+    const wrapper = await mountPlugins()
+    await openTab(wrapper, 'settings')
+
+    await wrapper.get('[data-testid="plugin-purge-example-pay"]').trigger('click')
+    await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+    expect(wrapper.find('[data-testid="plugins-purge-dialog"]').exists()).toBe(false)
+  })
+
+  it('keeps the tab in the address and opens it from there', async () => {
+    stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]), 'GET /api/admin/settings': () => json([signingRow]) })
+    const { wrapper, router } = await mountRouted(PluginsView, '/plugins', '/plugins')
+    await flushPromises()
+
+    await openTab(wrapper, 'settings')
+    expect(router.currentRoute.value.query.tab).toBe('settings')
+    expect(wrapper.find('[data-testid="plugin-signing"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugins-list"]').exists()).toBe(false)
+
+    const reopened = await mountRouted(PluginsView, '/plugins', '/plugins?tab=settings')
+    await flushPromises()
+    expect(reopened.wrapper.find('[data-testid="plugin-signing"]').exists()).toBe(true)
+  })
+
+  it('ends the install with the restart note and a Close button', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => json(preview),
+      'POST /api/admin/plugins/install': () => json({ requiresRestart: true }),
+    })
+    const wrapper = await mountPlugins()
+    await upload(wrapper, new File(['z'], 'new.zip'))
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-processing-restart"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-processing-running"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="plugin-processing-close"]').trigger('click')
+    expect(wrapper.find('[data-testid="plugin-processing-dialog"]').exists()).toBe(false)
+  })
+
+  it('shows the running state without a close button until the install ends', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) => (String(url).endsWith('/inspect') ? Promise.resolve(json(preview)) : new Promise<Response>(() => undefined))))
+    const wrapper = await mountPlugins()
+    await upload(wrapper, new File(['z'], 'new.zip'))
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-processing-running"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="dialog-close"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-processing-close"]').exists()).toBe(false)
+  })
+
+  it('opens the upload dialog from the header and closes it once an archive is chosen', async () => {
+    stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]), 'POST /api/admin/plugins/inspect': () => json(preview) })
+    const wrapper = await mountPlugins()
+    expect(wrapper.find('[data-testid="plugins-upload-dialog"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="plugins-upload-open"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="plugins-upload-dialog"]').exists()).toBe(true)
+
+    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
+    await flushPromises()
+    expect(wrapper.find('[data-testid="plugins-upload-dialog"]').exists()).toBe(false)
+  })
+
   it('says a newer upload is staged and shows the restart banner', async () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
@@ -270,12 +320,11 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
-    await flushPromises()
+    await upload(wrapper, new File(['z'], 'new.zip'))
     await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.3.0 uploaded and staged.')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Version 1.3.0 uploaded and staged.')
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
   })
 
@@ -287,8 +336,7 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
-    await flushPromises()
+    await upload(wrapper, new File(['z'], 'new.zip'))
 
     expect(wrapper.get('[data-testid="plugin-install-capability-storedCredentials"]').text()).toContain('saved cards')
     expect(wrapper.get('[data-testid="plugin-install-changelog"]').text()).toBe('Faster checkout.')
@@ -308,10 +356,9 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'bad.zip'))
-    await flushPromises()
+    await upload(wrapper, new File(['z'], 'bad.zip'))
 
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Not a plugin archive.')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Not a plugin archive.')
     expect(wrapper.find('[data-testid="plugin-install-dialog"]').exists()).toBe(false)
   })
 
@@ -327,12 +374,12 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'old.zip'))
-    await flushPromises()
+    await upload(wrapper, new File(['z'], 'old.zip'))
     await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.0.0 is older than 1.2.0.')
+    expect(wrapper.get('[data-testid="plugins-downgrade-dialog"]').text()).toContain('Version 1.0.0 is older than 1.2.0.')
+    expect(wrapper.find('[data-testid="plugin-processing-dialog"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -341,25 +388,13 @@ describe('PluginsView', () => {
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
   })
 
-  it('keeps the plugin when the removal confirmation is dismissed', async () => {
-    const mock = stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
-    const wrapper = await mountPlugins()
-
-    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
-    await flushPromises()
-    await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
-    await flushPromises()
-
-    expect(mock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
-    expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
-  })
-
   it('shows the signing switch from the stored setting, with its warning', async () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
       'GET /api/admin/settings': () => json([signingRow]),
     })
     const wrapper = await mountPlugins()
+    await openTab(wrapper, 'settings')
 
     expect(wrapper.get('[data-testid="plugin-allow-unsigned"]').attributes('aria-checked')).toBe('false')
     expect(wrapper.find('[data-testid="plugin-signing-warning"]').exists()).toBe(true)
@@ -376,6 +411,7 @@ describe('PluginsView', () => {
       },
     })
     const wrapper = await mountPlugins()
+    await openTab(wrapper, 'settings')
 
     await wrapper.get('[data-testid="plugin-allow-unsigned"]').trigger('click')
     await wrapper.get('[data-testid="plugin-allow-unsigned-save"]').trigger('click')
@@ -394,6 +430,7 @@ describe('PluginsView', () => {
       'PUT /api/admin/settings/9': () => problem('That value is not accepted for this setting.'),
     })
     const wrapper = await mountPlugins()
+    await openTab(wrapper, 'settings')
 
     await wrapper.get('[data-testid="plugin-allow-unsigned"]').trigger('click')
     await wrapper.get('[data-testid="plugin-allow-unsigned-save"]').trigger('click')
@@ -413,6 +450,7 @@ describe('PluginsView', () => {
       },
     })
     const wrapper = await mountPlugins()
+    await openTab(wrapper, 'settings')
 
     expect(wrapper.get('[data-testid="plugin-signing-error"]').text()).toContain('Settings are unavailable.')
     expect(wrapper.find('[data-testid="plugin-allow-unsigned"]').exists()).toBe(false)
@@ -423,43 +461,11 @@ describe('PluginsView', () => {
     expect(wrapper.find('[data-testid="plugin-allow-unsigned"]').exists()).toBe(true)
   })
 
-  it('lists the slot widgets of a loaded plugin and saves a binding', async () => {
-    const widget = { slotId: 'admin.service.panels', widgetId: 'usage', title: 'Usage', manifestProductIds: [], productIds: [3], isBound: true }
-    const mock = stubRoutes({
-      'PUT /api/admin/plugins/example-pay/slot-widgets/admin.service.panels/usage': () => json({ ...widget }),
-      'GET /api/admin/plugins/example-pay/slot-widgets': () => json([widget]),
-      'GET /api/products': () => json([{ id: 3, name: 'Shared' }, { id: 4, name: 'Reseller' }]),
-      'GET /api/admin/plugins': () => json([plugin]),
-      'GET /api/admin/settings': () => json([signingRow]),
-    })
-    const wrapper = await mountPlugins()
-
-    expect(wrapper.get('[data-testid="plugin-widget-chosen"]').text()).toContain('Shared')
-
-    await wrapper.get('[data-testid="plugin-widget-remove-3"]').trigger('click')
-    await wrapper.get('[data-testid="plugin-widget-save"]').trigger('click')
-    await flushPromises()
-
-    const put = mock.mock.calls.find(([, init]) => init?.method === 'PUT')
-    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ productIds: [] })
-  })
-
-  it('shows the API sentence when the slot widgets cannot be loaded', async () => {
-    stubRoutes({
-      'GET /api/admin/plugins/example-pay/slot-widgets': () => problem('Widgets are unavailable.', 503),
-      'GET /api/admin/plugins': () => json([plugin]),
-      'GET /api/admin/settings': () => json([signingRow]),
-    })
-    const wrapper = await mountPlugins()
-
-    expect(wrapper.get('[data-testid="plugin-slot-widgets-error"]').text()).toContain('Widgets are unavailable.')
-  })
-
   it('hides the Browse tab when the registry is switched off', async () => {
     stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
     const wrapper = await mountPlugins()
 
-    expect(wrapper.find('[data-testid="plugins-tabs"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugins-tab-settings"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugins-tab-browse"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugins-list"]').exists()).toBe(true)
   })
@@ -473,9 +479,9 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await openTab(wrapper, 'browse')
 
-    expect(wrapper.get('[data-testid="registry-card-example-pay"]').text()).toContain('Example Pay')
+    expect(wrapper.get('[data-testid="plugin-card-example-pay"]').text()).toContain('Example Pay')
     expect(wrapper.find('[data-testid="plugin-registry-trust"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugins-list"]').exists()).toBe(false)
   })
@@ -491,7 +497,7 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await openTab(wrapper, 'browse')
     await wrapper.get('[data-testid="registry-install-example-pay"]').trigger('click')
     await flushPromises()
     // An update of an installed plugin waits for the confirmation.
@@ -502,7 +508,7 @@ describe('PluginsView', () => {
     const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0', allowDowngrade: false })
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 2.0.0 uploaded and staged')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Version 2.0.0 uploaded and staged')
   })
 
   it('shows the API sentence when the registry install is refused', async () => {
@@ -516,13 +522,13 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await openTab(wrapper, 'browse')
     await wrapper.get('[data-testid="registry-install-example-pay"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('That publisher is not trusted.')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('That publisher is not trusted.')
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
   })
 
@@ -535,21 +541,8 @@ describe('PluginsView', () => {
     })
     const wrapper = await mountPlugins()
 
-    expect(wrapper.get('[data-testid="plugin-update-example-pay"]').text()).toContain('2.0.0')
-  })
-
-  it('shows the release notes of the update in the installed list from the update check', async () => {
-    stubRoutes({
-      'GET /api/admin/plugins/registry/updates': () => json([{ ...listing, latestChangelog: 'New **checkout** flow.' }]),
-      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
-      'GET /api/admin/plugins': () => json([plugin]),
-      'GET /api/admin/settings': () => json([signingRow]),
-    })
-    const wrapper = await mountPlugins()
-
-    await wrapper.get('[data-testid="plugin-update-notes-toggle-example-pay"]').trigger('click')
-
-    expect(wrapper.get('[data-testid="plugin-update-notes-example-pay"]').find('strong').text()).toBe('checkout')
+    expect(wrapper.find('[data-testid="plugin-card-badge-update-example-pay"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="plugin-update-button-example-pay"]').text()).toContain('2.0.0')
   })
 
   it('opens the details page from a registry card and from the installed list', async () => {
@@ -562,13 +555,13 @@ describe('PluginsView', () => {
     const { wrapper, router } = await mountRouted(PluginsView, '/plugins', '/plugins')
     await flushPromises()
 
-    await wrapper.get('[data-testid="plugin-details-example-pay"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-card-link-example-pay"]').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/plugins/example-pay')
 
     await router.push('/plugins')
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
-    await wrapper.get('[data-testid="registry-open-example-pay"]').trigger('click')
+    await openTab(wrapper, 'browse')
+    await wrapper.get('[data-testid="registry-settings-example-pay"]').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/plugins/example-pay')
   })
@@ -640,29 +633,9 @@ describe('PluginsView', () => {
 
     const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0', allowDowngrade: false })
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 2.0.0 uploaded and staged')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Version 2.0.0 uploaded and staged')
   })
 
-  it('uninstalls from a registry card behind the same removal confirmation', async () => {
-    const mock = stubRoutes({
-      'DELETE /api/admin/plugins/example-pay': () => json({ requiresRestart: true }),
-      'GET /api/admin/plugins/registry/updates': () => json([]),
-      'GET /api/admin/plugins/registry': () => json({ items: [{ ...listing, updateAvailable: false }], total: 1, pageSize: 10 }),
-      'GET /api/admin/plugins': () => json([plugin]),
-      'GET /api/admin/settings': () => json([signingRow]),
-    })
-    const wrapper = await mountPlugins()
-
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
-    await wrapper.get('[data-testid="registry-uninstall-example-pay"]').trigger('click')
-    await flushPromises()
-    expect(mock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
-    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
-    await flushPromises()
-
-    expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/example-pay' && init?.method === 'DELETE')).toBe(true)
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin removed.')
-  })
 })
 
 describe('PluginsView registration card', () => {
@@ -691,7 +664,7 @@ describe('PluginsView registration card', () => {
     })
     const wrapper = await mountPlugins()
 
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await openTab(wrapper, 'browse')
 
     expect(wrapper.get('[data-testid="plugin-registry-instance-state"]').text()).toBe('Failed')
     expect(wrapper.get('[data-testid="plugin-registry-instance-problem"]').text()).toContain('cannot use the public address')
@@ -707,7 +680,7 @@ describe('PluginsView registration card', () => {
       'GET /api/admin/settings': () => json([signingRow]),
     })
     const wrapper = await mountPlugins()
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await openTab(wrapper, 'browse')
 
     await wrapper.get('[data-testid="plugin-registry-instance-retry"]').trigger('click')
     await flushPromises()
@@ -732,7 +705,7 @@ describe('PluginsView registration card', () => {
     })
     const { wrapper } = await mountRouted(PluginsView, '/plugins', '/plugins?search=pay&category=Payment&page=2')
     await flushPromises()
-    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await openTab(wrapper, 'browse')
 
     const request = mock.mock.calls.map(([url]) => String(url)).find(url => url.startsWith('/api/admin/plugins/registry?'))
     expect(request).toContain('q=pay')

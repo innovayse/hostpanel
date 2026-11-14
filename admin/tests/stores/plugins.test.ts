@@ -8,7 +8,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePluginsStore } from '@/stores/plugins'
-import type { PluginListItemDto } from '@/types/plugin'
 import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 
@@ -275,43 +274,45 @@ const widget = {
   slotId: 'admin.service.panels', widgetId: 'usage', title: 'Usage', manifestProductIds: [], productIds: [3], isBound: true,
 }
 
-/** An installed plugin that is loaded, so its widgets are listed. */
-const loadedPlugin = {
-  id: 'acme', name: 'Acme', version: '1.0.0', author: 'A', description: '', type: 'hosted', category: '', color: '#000000', iconUrl: null,
-  isLoaded: true, isBuiltIn: false,
-} as PluginListItemDto
-
-describe('pluginsStore.fetchSlotWidgets', () => {
-  it('keeps the widgets of each loaded plugin and the products they can be bound to', async () => {
+describe('pluginsStore.fetchSlotWidgetsFor', () => {
+  it('keeps the widgets of that plugin and the products they can be bound to', async () => {
     const mock = stubFetch(json([widget]), json([{ id: 3, name: 'Shared' }]))
     const store = usePluginsStore()
-    store.plugins = [loadedPlugin, { ...loadedPlugin, id: 'idle', isLoaded: false }]
 
-    await store.fetchSlotWidgets()
+    await store.fetchSlotWidgetsFor('acme')
     expect(store.slotWidgets).toEqual({ acme: [widget] })
     expect(store.productOptions).toEqual([{ id: 3, name: 'Shared' }])
-    expect(store.slotWidgetsError).toBeNull()
+    expect(store.slotWidgetsError['acme']).toBeNull()
+    expect(store.slotWidgetsLoading['acme']).toBe(false)
     expect(String(mock.mock.calls[0]?.[0])).toBe('/api/admin/plugins/acme/slot-widgets')
   })
 
-  it('keeps the API sentence and skips the products when the widgets are refused', async () => {
+  it('keeps the API sentence for that plugin only and skips the products when the widgets are refused', async () => {
     const mock = stubFetch(problem('Widgets unavailable.', 503))
     const store = usePluginsStore()
-    store.plugins = [loadedPlugin]
 
-    await store.fetchSlotWidgets()
-    expect(store.slotWidgetsError).toBe('Widgets unavailable.')
+    await store.fetchSlotWidgetsFor('acme')
+    expect(store.slotWidgetsError['acme']).toBe('Widgets unavailable.')
+    expect(store.slotWidgetsError['other']).toBeUndefined()
     expect(mock).toHaveBeenCalledTimes(1)
   })
 
   it('keeps the API sentence when the products are refused', async () => {
     stubFetch(json([widget]), problem('Products unavailable.', 503))
     const store = usePluginsStore()
-    store.plugins = [loadedPlugin]
 
-    await store.fetchSlotWidgets()
-    expect(store.slotWidgetsError).toBe('Products unavailable.')
+    await store.fetchSlotWidgetsFor('acme')
+    expect(store.slotWidgetsError['acme']).toBe('Products unavailable.')
     expect(store.productOptions).toEqual([])
+  })
+
+  it('keeps the widgets of another plugin when one plugin is loaded', async () => {
+    stubFetch(json([widget]), json([]), json([]), json([]))
+    const store = usePluginsStore()
+
+    await store.fetchSlotWidgetsFor('acme')
+    await store.fetchSlotWidgetsFor('beta')
+    expect(Object.keys(store.slotWidgets)).toEqual(['acme', 'beta'])
   })
 })
 
@@ -319,7 +320,6 @@ describe('pluginsStore.saveSlotWidgetProducts', () => {
   it('puts the ids on the widget route, then reloads the widgets', async () => {
     const mock = stubFetch(json({ ...widget, productIds: [3, 4] }), json([{ ...widget, productIds: [3, 4] }]), json([]))
     const store = usePluginsStore()
-    store.plugins = [loadedPlugin]
 
     const ok = await store.saveSlotWidgetProducts('acme', widget, [3, 4])
     expect(ok).toBe(true)
@@ -351,7 +351,6 @@ describe('pluginsStore.saveSlotWidgetProducts', () => {
   it('keeps isBound from the reloaded widgets', async () => {
     stubFetch(json({ ...widget, productIds: [] }), json([{ ...widget, productIds: [], isBound: true }]), json([]))
     const store = usePluginsStore()
-    store.plugins = [loadedPlugin]
 
     await store.saveSlotWidgetProducts('acme', widget, [])
     expect(store.slotWidgets['acme']?.[0]).toMatchObject({ isBound: true, productIds: [] })

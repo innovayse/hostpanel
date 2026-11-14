@@ -164,6 +164,30 @@ describe('UiDialog', () => {
   })
 })
 
+describe('UiDialog on a phone and while work runs', () => {
+  it('takes the row between the page gutters on a phone and the size from sm up', () => {
+    const classes = mountDialog({ title: 'x', size: 'md' }).get('[role="dialog"]').classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['max-w-[calc(100vw-2rem)]', 'sm:max-w-md']))
+  })
+
+  it('stacks the confirm buttons at full width on a phone', () => {
+    const wrapper = mountDialog({ title: 'x', variant: 'confirm', message: 'Sure?' })
+
+    expect(wrapper.get('[data-testid="dialog-cancel"]').element.parentElement?.className).toContain('max-sm:flex-col-reverse')
+  })
+
+  it('cannot be dismissed while it is not dismissible: no close button, Escape and the backdrop do nothing', async () => {
+    const wrapper = mountDialog({ title: 'Working', dismissible: false })
+
+    expect(wrapper.find('[data-testid="dialog-close"]').exists()).toBe(false)
+    await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await wrapper.get('[data-testid="dialog-backdrop"]').trigger('click')
+
+    expect(wrapper.emitted('close')).toBeUndefined()
+  })
+})
+
 describe('UiDialog surface', () => {
   it('is an elevated glass panel with the panel radius', () => {
     const classes = mountDialog({ title: 'Edit' }).get('[role="dialog"]').classes()

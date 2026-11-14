@@ -1,9 +1,9 @@
 /**
- * Fixtures of the plugin details tests: one registry plugin with three versions (a newer one on
+ * Fixtures of the plugin details tests: the installed row of one plugin and its registry plugin with three versions (a newer one on
  * offer, the installed one, a yanked older one), built fresh per call so a test may change it.
  */
-import { PluginCategory, PluginPricing, PluginVersionStatus } from '@/types/plugin'
-import type { RegistryPluginDetailsDto, RegistryPluginVersionDto } from '@/types/plugin'
+import { PluginCategory, PluginPricing, PluginStatus, PluginVersionStatus } from '@/types/plugin'
+import type { PluginListItemDto, RegistryPluginDetailsDto, RegistryPluginVersionDto } from '@/types/plugin'
 
 /**
  * Builds one version of the fixture plugin.
@@ -63,5 +63,32 @@ export const makeDetails = (overrides: Partial<RegistryPluginDetailsDto> = {}): 
       replacementVersion: '2.0.0',
     }),
   ],
+  ...overrides,
+})
+
+/**
+ * Builds the installed row of the fixture plugin as this server lists it: loaded, not built in, version 2.0.0.
+ *
+ * @param overrides - Fields to change.
+ * @returns The list item.
+ */
+export const makeInstalled = (overrides: Partial<PluginListItemDto> = {}): PluginListItemDto => ({
+  id: 'example-pay',
+  name: 'Example Pay',
+  version: '2.0.0',
+  author: 'Hostpanel',
+  description: 'Card payments',
+  type: 'payment',
+  category: 'Payments',
+  color: '#1a73e8',
+  iconUrl: null,
+  isLoaded: true,
+  isBuiltIn: false,
+  status: PluginStatus.Loaded,
+  refusedRule: null,
+  refusedDetail: null,
+  stagedVersion: null,
+  capabilities: [],
+  changelog: null,
   ...overrides,
 })

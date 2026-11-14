@@ -552,3 +552,75 @@ export interface RegistryDetailsState {
   /** True when the registry answered that it has no such plugin (404 or its not-found code); not a retryable failure. */
   notFound: boolean
 }
+
+/** Closed set of badges a plugin card can wear; the strings are the parts of the test ids. */
+export enum PluginCardBadge {
+  /** The plugin is loaded and running. */
+  Active = 'active',
+  /** The plugin is on disk and waits for a restart to load. */
+  PendingRestart = 'pendingRestart',
+  /** The host skipped the plugin because it broke a manifest rule. */
+  Refused = 'refused',
+  /** A newer upload is staged to apply at the next restart. */
+  Staged = 'staged',
+  /** The registry offers a newer version. */
+  Update = 'update',
+  /** The plugin ships with the server build. */
+  BuiltIn = 'builtIn',
+}
+
+/** The broken manifest rule a refused plugin's card explains in its notice. */
+export interface PluginCardRefusal {
+  /** The manifest rule the plugin broke. */
+  rule: PluginManifestRule
+  /** The server's detail of the rule (the offending value), null when it sent none. */
+  detail: string | null
+}
+
+/** Everything a plugin card shows, whether the plugin is installed or only listed by the registry; the card knows no DTO. */
+export interface PluginCardModel {
+  /** Unique plugin identifier. */
+  id: string
+  /** Display name. */
+  name: string
+  /** Address of the plugin's icon, null when it has none. */
+  iconUrl: string | null
+  /** Hex colour of the fallback logo block, null for the neutral grey. */
+  color: string | null
+  /** Whether the registry has verified the publisher. */
+  verified: boolean
+  /** Publisher name. */
+  publisher: string
+  /** Category label, already in the operator's language. */
+  category: string
+  /** Price label, already in the operator's language; empty when the plugin has no price to show. */
+  pricingLabel: string
+  /** Short description. */
+  description: string
+  /** Tags without the hash; empty when there are none. */
+  tags: string[]
+  /** Downloads of every version added up, null when unknown. */
+  downloads: number | null
+  /** The version to show: the installed one, otherwise the newest the registry offers. */
+  version: string
+  /** Badges the card wears, in display order. */
+  badges: PluginCardBadge[]
+  /** Newer registry version the Update badge names, null when none. */
+  updateVersion: string | null
+  /** Staged version the Staged badge names, null when none. */
+  stagedVersion: string | null
+  /** The broken rule of a refused plugin, null otherwise. */
+  refusal: PluginCardRefusal | null
+}
+
+/** Closed set of the jobs the processing dialog shows; the strings are the parts of the locale keys. */
+export enum PluginProcessingStep {
+  /** A plugin is being installed. */
+  Installing = 'installing',
+  /** A plugin is being updated to a newer version. */
+  Updating = 'updating',
+  /** A plugin is being removed. */
+  Removing = 'removing',
+  /** A plugin archive is being uploaded and read. */
+  Uploading = 'uploading',
+}

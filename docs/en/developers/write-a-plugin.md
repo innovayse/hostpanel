@@ -352,7 +352,7 @@ Each entry in `ui.slots` puts a widget into a slot the host offers. The slot lis
   { name: 'title', type: 'string', default: '', description: 'Title shown with the widget.' },
   { name: 'order', type: 'number', default: '0', description: 'Position among the widgets of the slot, lowest first.' },
   { name: 'permission', type: 'string', default: '', description: 'Client slots only: a client permission name, or Any.' },
-  { name: 'productIds', type: 'number[]', default: '[]', description: 'Products the widget is bound to; it shows only where the slot service belongs to one of them. Empty shows it for every product. An administrator can change the binding on the Plugins page.' },
+  { name: 'productIds', type: 'number[]', default: '[]', description: 'Products the widget is bound to; it shows only where the slot service belongs to one of them. Empty shows it for every product. An administrator can change the binding on the page of the plugin, in its Settings tab.' },
   { name: 'contextKeys', type: 'string[]', default: '[]', description: 'Context the widget needs from the slot. The host verifies the keys for the caller and passes only these to the plugin.' }
 ]" />
 
@@ -684,7 +684,7 @@ Do **not** include the SDK assembly (`Hostpanel.Sdk.dll`) or any assembly the ho
 
 ### Sign the package
 
-Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks, open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping. The tool uses `Hostpanel.Sdk.Packaging` (3.1.0) for the signature format, so the signature it writes is checked by the same code the host installs with, and your pipeline can call `PluginSigner` and `PluginSignatureValidator` from that package to verify a signed folder before release.
+Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks, open **Plugins** in the admin panel, choose the **Settings** tab and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping. The tool uses `Hostpanel.Sdk.Packaging` (3.1.0) for the signature format, so the signature it writes is checked by the same code the host installs with, and your pipeline can call `PluginSigner` and `PluginSignatureValidator` from that package to verify a signed folder before release.
 
 Generate a key pair. The key file is a base64-encoded private key; store it outside any git working tree (the tool refuses to sign if the key file is inside one):
 
@@ -716,7 +716,7 @@ Start a local Hostpanel stack (see [Local development](/developers/local-dev)).
 </li>
 <li>
 
-Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**. In Development and Testing environments unsigned packages load without any switch. On other servers, open **Plugins** in the admin panel and switch on **Allow unsigned plugins** to skip signature verification.
+Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP with the **Upload plugin** button on the Installed tab of the Plugins page. In Development and Testing environments unsigned packages load without any switch. On other servers, open **Plugins** in the admin panel, choose the **Settings** tab and switch on **Allow unsigned plugins** to skip signature verification.
 
 </li>
 <li>

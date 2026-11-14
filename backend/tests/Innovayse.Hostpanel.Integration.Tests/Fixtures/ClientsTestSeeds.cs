@@ -64,6 +64,8 @@ public static class ClientsTestSeeds
     /// <param name="factory">The factory whose database to seed against.</param>
     /// <param name="firstName">The seeded client's first name.</param>
     /// <param name="lastName">The seeded client's last name.</param>
+    /// <param name="companyName">The seeded client's company, or <see langword="null"/> for none.</param>
+    /// <param name="phone">The seeded client's phone number, or <see langword="null"/> for none.</param>
     /// <returns>The new client's primary key and the Identity subject it is linked to.</returns>
     /// <remarks>
     /// The subject it links to resolves to nobody: a handler that asks the identity provider
@@ -71,13 +73,22 @@ public static class ClientsTestSeeds
     /// genuinely resolving subject goes through <see cref="RegisterRealClientAsync"/> instead.
     /// </remarks>
     public static async Task<SeededClient> SeedClientAsync(
-        IntegrationTestFactory factory, string firstName = "Ada", string lastName = "Lovelace")
+        IntegrationTestFactory factory,
+        string firstName = "Ada",
+        string lastName = "Lovelace",
+        string? companyName = null,
+        string? phone = null)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         var userId = $"user-{Guid.NewGuid():N}";
-        var client = Client.Create(userId, firstName, lastName, $"{firstName.ToLowerInvariant()}-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
+        var client = Client.Create(userId, firstName, lastName, $"{firstName.ToLowerInvariant()}-{Guid.NewGuid():N}@example.test", TestMoments.Seeded, companyName);
+        if (phone is not null)
+        {
+            client.Update(firstName, lastName, companyName, phone);
+        }
+
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
         return new SeededClient(client.Id, userId);

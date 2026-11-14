@@ -108,7 +108,7 @@ public static class ValidationRuleExtensions
     {
         ArgumentNullException.ThrowIfNull(rule);
 
-        return rule.GreaterThanOrEqualTo(1).WithMessage(message);
+        return rule.GreaterThanOrEqualTo(PagingLimits.MinPageSize).WithMessage(message);
     }
 
     /// <summary>Requires a page size between 1 and the largest the use case allows.</summary>
@@ -122,7 +122,7 @@ public static class ValidationRuleExtensions
     {
         ArgumentNullException.ThrowIfNull(rule);
 
-        return rule.InclusiveBetween(1, maxPageSize).WithMessage(message);
+        return rule.InclusiveBetween(PagingLimits.MinPageSize, maxPageSize).WithMessage(message);
     }
 
     /// <summary>Requires a discount within the range <see cref="PriceDiscount"/> allows: 0 to 100 percent.</summary>

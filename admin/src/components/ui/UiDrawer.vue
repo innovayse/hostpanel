@@ -4,19 +4,24 @@
  *
  * Teleported to `<body>`; closes on Escape or a backdrop click, keeps Tab inside and returns focus
  * to the opener. The panel is an opaque elevated surface (nothing shows through it). With `sheet` it is a bottom
- * sheet below the `sm` breakpoint (rounded top corners, a grip, room for the home indicator through the safe-area
- * inset) and the usual side panel from there up. The default slot is the body and `footer` an optional pinned action row. It slides in from its
+ * sheet below the `sm` breakpoint (below `lg` with `sheetBelow`; rounded top corners, a grip, room for the home
+ * indicator through the safe-area inset) and the usual side panel from there up. A sheet follows touch gestures
+ * ({@link useSheetDrag}): dragged down by the grip or the header (or by the body of a touch, while it is scrolled to
+ * its top) it closes past a distance or on a flick, a short drag springs back, dragged up from a partial height it
+ * opens to full height. The default slot is the body and `footer` an optional pinned action row. It slides in from its
  * edge (`UiTransition`, nothing moves under reduced motion); focus goes to the first control when the enter has
  * ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
  */
-import { computed, nextTick, ref, useId } from 'vue'
+import { computed, nextTick, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
+import { useMediaQuery } from '@/composables/useMediaQuery'
+import { useSheetDrag } from '@/composables/useSheetDrag'
 import { useModalSurface } from '@/utils/ui/modalSurface'
-import { modalPanelClasses, sheetPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
-import type { UiDrawerSide } from '@/utils/ui/drawer'
+import { modalPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
+import { sheetQueries, UiDrawerSheetBelow, type UiDrawerSide } from '@/utils/ui/drawer'
 
 const { t } = useI18n()
 
@@ -34,11 +39,14 @@ const props = withDefaults(defineProps<{
   narrow?: boolean
   /** Becomes a bottom sheet on a phone (below `sm`); a side panel from there up. Off keeps the side panel everywhere. */
   sheet?: boolean
+  /** The breakpoint under which a `sheet` is a bottom sheet: a phone (`sm`, the default) or anything below `lg` (the menu). Follows a change of the prop. */
+  sheetBelow?: UiDrawerSheetBelow
 }>(), {
   side: 'right',
   flush: false,
   narrow: false,
   sheet: false,
+  sheetBelow: UiDrawerSheetBelow.Sm,
 })
 
 const emit = defineEmits<{
@@ -58,11 +66,14 @@ const sideClasses: Record<UiDrawerSide, string> = {
   right: 'top-0 bottom-0 right-0 border-l border-border-strong',
 }
 
-/** Placement classes per edge of a sheet: along the bottom on a phone, the edge panel from `sm` up. */
-const sheetSideClasses: Record<UiDrawerSide, string> = {
-  left: 'bottom-0 left-0 right-0 max-h-[85dvh] rounded-t-panel border-t border-border-strong max-sm:pb-[env(safe-area-inset-bottom)] sm:top-0 sm:right-auto sm:max-h-none sm:rounded-none sm:border-t-0 sm:border-r',
-  right: 'bottom-0 left-0 right-0 max-h-[85dvh] rounded-t-panel border-t border-border-strong max-sm:pb-[env(safe-area-inset-bottom)] sm:top-0 sm:left-auto sm:max-h-none sm:rounded-none sm:border-t-0 sm:border-l',
-}
+/** Placement of a bottom sheet: along the bottom with rounded top corners and room for the home indicator. */
+const sheetPlacement = 'bottom-0 left-0 right-0 rounded-t-panel border-t border-border-strong pb-[env(safe-area-inset-bottom)]'
+
+/** Height limit of a bottom sheet: partial (content height up to this maximum) or opened to full height. */
+const sheetHeights = {
+  partial: 'max-h-[85dvh]',
+  expanded: 'h-[95dvh] max-h-[95dvh]',
+} as const
 
 /** Panel motion per edge. */
 const slideClasses: Record<UiDrawerSide, string> = {
@@ -70,16 +81,30 @@ const slideClasses: Record<UiDrawerSide, string> = {
   right: modalPanelClasses.drawerRight,
 }
 
+/** The scrolling body, whose scroll position decides whether a drag from it moves the sheet. */
+const body = ref<HTMLElement | null>(null)
+
+/** Whether the screen is narrow enough for a `sheet` to be a bottom sheet right now. */
+const underSheetBreakpoint = useMediaQuery(() => sheetQueries[props.sheetBelow])
+
+/** Whether the drawer is a bottom sheet at this moment: asked for with `sheet` and on a narrow enough screen. */
+const sheetActive = computed<boolean>(() => props.sheet && underSheetBreakpoint.value)
+
 /** Placement of the panel for the chosen edge. */
-const placementClasses = computed<string>(() => (props.sheet ? sheetSideClasses[props.side] : sideClasses[props.side]))
+const placementClasses = computed<string>(() => {
+  if (!sheetActive.value) {
+    return sideClasses[props.side]
+  }
+  return `${sheetPlacement} ${expanded.value ? sheetHeights.expanded : sheetHeights.partial}`
+})
 
 /** Motion of the panel: a sheet rises from the bottom on a phone. */
-const motionClasses = computed<string>(() => (props.sheet ? sheetPanelClasses[props.side] : slideClasses[props.side]))
+const motionClasses = computed<string>(() => (sheetActive.value ? modalPanelClasses.sheet : slideClasses[props.side]))
 
-/** Maximum width; a sheet is full width on a phone, so its limit applies from `sm` up. */
+/** Maximum width; a bottom sheet is full width, so only a side panel is limited. */
 const widthClasses = computed<string>(() => {
-  if (props.sheet) {
-    return props.narrow ? 'sm:max-w-xs' : 'sm:max-w-md'
+  if (sheetActive.value) {
+    return ''
   }
   return props.narrow ? 'max-w-xs' : 'max-w-md'
 })
@@ -96,6 +121,21 @@ const close = (): void => {
     emit('close')
   }
 }
+
+/** Touch gestures of the sheet: the finger moves it, a drag past a distance or a flick closes it, up opens it fully. */
+const { dragging, expanded, onPointerdown, onPointermove, onPointerup, onPointercancel, reset } = useSheetDrag({
+  panel,
+  body,
+  enabled: sheetActive,
+  close,
+})
+
+// Every opening starts at the resting place and the partial height, whatever the last gesture left behind.
+watch(() => props.open, (open) => {
+  if (open) {
+    reset()
+  }
+})
 
 /** Keyboard handler (Escape closes, Tab stays inside), and the focus move for the end of the enter. */
 const { onKeydown, focusIn } = useModalSurface(panel, () => props.open, close)
@@ -165,16 +205,22 @@ const onLeaveCancelled = (): void => {
           ref="panel"
           role="dialog"
           aria-modal="true"
+          data-testid="drawer"
           :aria-labelledby="titleId"
           tabindex="-1"
           class="glass-strong absolute w-full shadow-overlay flex flex-col overflow-hidden outline-none"
-          :class="[widthClasses, placementClasses, motionClasses]"
+          :class="[widthClasses, placementClasses, motionClasses, sheetActive ? 'translate-y-[var(--sheet-drag,0px)] data-dragging:transition-none' : '']"
+          :data-dragging="dragging ? '' : undefined"
           @keydown="onKeydown"
+          @pointerdown="onPointerdown"
+          @pointermove="onPointermove"
+          @pointerup="onPointerup"
+          @pointercancel="onPointercancel"
         >
-          <div v-if="sheet" class="flex shrink-0 justify-center pt-2 sm:hidden" aria-hidden="true" data-testid="drawer-grip">
+          <div v-if="sheetActive" class="flex shrink-0 touch-none justify-center pt-2" aria-hidden="true" data-sheet-handle data-testid="drawer-grip">
             <span class="h-1 w-10 rounded-pill bg-border-strong" />
           </div>
-          <div class="flex h-(--shell-header-h) items-center justify-between gap-3 border-b border-border-subtle px-6 shrink-0">
+          <div class="flex h-(--shell-header-h) items-center justify-between gap-3 border-b border-border-subtle px-6 shrink-0" :class="{ 'touch-none': sheetActive }" data-sheet-handle>
             <UiHeading :id="titleId" :level="2" variant="card">
               {{ title }}
             </UiHeading>
@@ -192,7 +238,7 @@ const onLeaveCancelled = (): void => {
               </svg>
             </UiIconButton>
           </div>
-          <div class="flex-1 min-h-0 overflow-y-auto" :class="flush ? '' : 'p-6'" data-testid="drawer-body">
+          <div ref="body" class="flex-1 min-h-0 overflow-y-auto" :class="[flush ? '' : 'p-6', sheetActive ? 'overscroll-y-contain' : '']" data-testid="drawer-body">
             <slot />
           </div>
           <div v-if="$slots.footer" class="flex justify-end gap-2 px-6 py-4 border-t border-border-subtle shrink-0 max-sm:flex-col-reverse max-sm:items-stretch" data-testid="ui-drawer-footer">

@@ -174,6 +174,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       sku: payload.sku,
       metadata: payload.metadata,
       gracePeriodDays: payload.gracePeriodDays,
+      isHidden: payload.isHidden,
     })
   } else {
     saved = (await store.createProduct(payload)) !== null

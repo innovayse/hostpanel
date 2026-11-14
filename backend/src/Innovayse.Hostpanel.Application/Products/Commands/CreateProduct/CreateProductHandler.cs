@@ -72,6 +72,12 @@ public sealed class CreateProductHandler
             product.SetGracePeriodDays(gracePeriodDays);
         }
 
+        // Hidden is the Inactive status: the public catalogue and order paths only take active products.
+        if (cmd.IsHidden)
+        {
+            product.Deactivate();
+        }
+
         if (cmd.IsFeatured)
         {
             await product.UnfeatureSiblingsAsync(_context, ct);

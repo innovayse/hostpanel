@@ -49,7 +49,10 @@ test('browsing the registry and installing a plugin posts its version and shows 
 
   await page.getByTestId(`registry-install-${registryGateway.id}`).click()
 
-  await expect(page.getByTestId('plugins-feedback')).toContainText('Plugin installed from the registry.')
+  // The install runs behind the processing dialog, which reports the outcome and is closed by the operator.
+  await expect(page.getByTestId('plugin-processing-outcome')).toBeVisible()
+  await expect(page.getByTestId('plugin-processing-restart')).toBeVisible()
+  await page.getByTestId('plugin-processing-close').click()
   await expect(page.getByTestId(`plugin-card-badge-active-${registryGateway.id}`)).toBeVisible()
   await expect(page.getByTestId(`plugin-card-version-${registryGateway.id}`)).toContainText(registryGateway.latestVersion)
   await expect(page.getByTestId(`registry-install-${registryGateway.id}`)).toHaveCount(0)

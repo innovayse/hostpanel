@@ -352,7 +352,7 @@ Each entry in `ui.slots` puts a widget into a slot the host offers. The slot lis
   { name: 'title', type: 'string', default: '', description: 'Title shown with the widget.' },
   { name: 'order', type: 'number', default: '0', description: 'Position among the widgets of the slot, lowest first.' },
   { name: 'permission', type: 'string', default: '', description: 'Client slots only: a client permission name, or Any.' },
-  { name: 'productIds', type: 'number[]', default: '[]', description: 'Products the widget is bound to; it shows only where the slot service belongs to one of them. Empty shows it for every product. An administrator can change the binding on the plugin's own page, in its Settings tab.' },
+  { name: 'productIds', type: 'number[]', default: '[]', description: 'Products the widget is bound to; it shows only where the slot service belongs to one of them. Empty shows it for every product. An administrator can change the binding on the page of the plugin, in its Settings tab.' },
   { name: 'contextKeys', type: 'string[]', default: '[]', description: 'Context the widget needs from the slot. The host verifies the keys for the caller and passes only these to the plugin.' }
 ]" />
 

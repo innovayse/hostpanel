@@ -57,5 +57,8 @@ public sealed class CreateProductValidator : LocalizedValidator<CreateProductCom
             L["ProductMetadataTooLarge", Product.MaxMetadataBytes], L["ProductMetadataInvalid"]);
         RuleFor(x => x.GracePeriodDays).MustBeGracePeriod(
             L["ProductGracePeriodOutOfRange", Product.MinGracePeriodDays, Product.MaxGracePeriodDays]);
+        RuleFor(x => x.Trial).MustBeProductTrial(
+            L["ProductTrialInvalid", ProductTrial.MinDays, ProductTrial.MaxDays, ProductTrial.MaxReminders,
+                ProductTrial.MinGracePeriodDays, ProductTrial.MaxGracePeriodDays]);
     }
 }

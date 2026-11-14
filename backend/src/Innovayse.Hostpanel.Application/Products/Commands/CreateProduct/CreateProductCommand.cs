@@ -43,6 +43,10 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 /// <see cref="Product.MinGracePeriodDays"/> to <see cref="Product.MaxGracePeriodDays"/>; null keeps
 /// <see cref="Product.DefaultGracePeriodDays"/>.
 /// </param>
+/// <param name="Trial">
+/// Optional free-trial settings of the product. Null creates the product with the trial off and the
+/// default settings (<see cref="ProductTrial.Default"/>).
+/// </param>
 public sealed record CreateProductCommand(
     int GroupId,
     string Name,
@@ -59,4 +63,5 @@ public sealed record CreateProductCommand(
     int SortOrder = 0,
     string? Sku = null,
     string? Metadata = null,
-    int? GracePeriodDays = null);
+    int? GracePeriodDays = null,
+    ProductTrialDto? Trial = null);

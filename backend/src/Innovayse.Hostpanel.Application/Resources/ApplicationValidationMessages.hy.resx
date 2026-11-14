@@ -910,6 +910,9 @@
   <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
     <value>Արտոնյալ ժամկետը պետք է լինի {0}-ից {1} օր։</value>
   </data>
+  <data name="ProductTrialInvalid" xml:space="preserve">
+    <value>Փորձաշրջանը պետք է տևի {0}-ից {1} օր, ունենա առավելագույնը {2} տարբեր հիշեցման օր՝ մինչև ավարտը, և {3}-ից {4} օր արտոնյալ ժամկետ։</value>
+  </data>
   <data name="ProductPriceRequired" xml:space="preserve">
     <value>Նոր ապրանքը պահանջում է առնվազն մեկ գին։</value>
   </data>

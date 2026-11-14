@@ -970,6 +970,9 @@
   <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
     <value>Льготный период должен быть от {0} до {1} дней.</value>
   </data>
+  <data name="ProductTrialInvalid" xml:space="preserve">
+    <value>Триал должен длиться от {0} до {1} дней, с не более чем {2} разными днями напоминаний до его окончания и льготным периодом от {3} до {4} дней.</value>
+  </data>
   <data name="ProductPriceRequired" xml:space="preserve">
     <value>Новому продукту требуется хотя бы одна цена.</value>
   </data>

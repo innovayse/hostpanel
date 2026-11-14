@@ -1195,6 +1195,9 @@
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>Արտոնյալ ժամկետը պետք է լինի 0-ից 365 օր։</value>
   </data>
+  <data name="PRODUCT_TRIAL_INVALID" xml:space="preserve">
+    <value>Փորձաշրջանը պետք է տևի 1-ից 365 օր, ունենա առավելագույնը 5 տարբեր հիշեցման օր՝ մինչև ավարտը, և 0-ից 30 օր արտոնյալ ժամկետ։</value>
+  </data>
   <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
     <value>Այս արտաքին հաշիվն արդեն կապված է մեկ այլ հաճախորդի։</value>
   </data>

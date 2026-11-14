@@ -23,6 +23,7 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="Sku">The normalised stock-keeping unit a fulfilment plugin keys on, or null when none is set.</param>
 /// <param name="Metadata">The metadata bag as JSON object text, or null when none is set.</param>
 /// <param name="GracePeriodDays">Days a service stays usable after its due date before it is suspended.</param>
+/// <param name="Trial">The free-trial settings; the trial is off for a product that has none.</param>
 public sealed record ProductDto(
     int Id,
     int GroupId,
@@ -40,4 +41,5 @@ public sealed record ProductDto(
     int SortOrder,
     string? Sku,
     string? Metadata,
-    int GracePeriodDays);
+    int GracePeriodDays,
+    ProductTrialDto Trial);

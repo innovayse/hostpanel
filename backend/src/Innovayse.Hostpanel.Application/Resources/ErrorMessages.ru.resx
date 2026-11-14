@@ -1195,6 +1195,9 @@
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>Льготный период должен быть от 0 до 365 дней.</value>
   </data>
+  <data name="PRODUCT_TRIAL_INVALID" xml:space="preserve">
+    <value>Триал должен длиться от 1 до 365 дней, с не более чем 5 разными днями напоминаний до его окончания и льготным периодом от 0 до 30 дней.</value>
+  </data>
   <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
     <value>Эта внешняя учётная запись уже привязана к другому клиенту.</value>
   </data>

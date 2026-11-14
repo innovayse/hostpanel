@@ -48,6 +48,10 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 /// <see cref="Product.MinGracePeriodDays"/> to <see cref="Product.MaxGracePeriodDays"/>; null keeps
 /// the stored value.
 /// </param>
+/// <param name="Trial">
+/// The free-trial settings of the product. Null keeps the stored settings, so a caller that does not know
+/// the field never changes them.
+/// </param>
 public sealed record UpdateProductCommand(
     int Id,
     string Name,
@@ -63,4 +67,5 @@ public sealed record UpdateProductCommand(
     int? SortOrder = null,
     string? Sku = null,
     string? Metadata = null,
-    int? GracePeriodDays = null);
+    int? GracePeriodDays = null,
+    ProductTrialDto? Trial = null);

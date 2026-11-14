@@ -43,6 +43,7 @@ const stored: Product = {
   sku: 'PRO-1',
   metadata: '{"tier":"pro"}',
   gracePeriodDays: 30,
+  trial: { enabled: true, days: 30, autoConvert: false, reminderDays: [7, 2], gracePeriodDays: 5 },
 }
 
 /** Answers for the two lists the dialog loads on mount. */
@@ -139,6 +140,7 @@ describe('ProductFormModal', () => {
       sku: '',
       metadata: '',
       gracePeriodDays: 7,
+      trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
     }]])
   })
 
@@ -186,6 +188,60 @@ describe('ProductFormModal', () => {
       (wrapper.get(`[data-testid="product-form-price-USD-${cycle}"] input`).element as HTMLInputElement).value
     expect(valueOf('quarterly')).toBe('27')
     expect(valueOf('semiAnnual')).toBe('50')
+  })
+
+  it('opens an existing product with its trial settings', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    expect(wrapper.get('[data-testid="product-form-trial-enabled"]').attributes('aria-checked')).toBe('true')
+    expect((wrapper.get('[data-testid="product-form-trial-days"] input').element as HTMLInputElement).value).toBe('30')
+    expect((wrapper.get('[data-testid="product-form-trial-reminders"]').element as HTMLInputElement).value).toBe('7, 2')
+    expect((wrapper.get('[data-testid="product-form-trial-grace-period"] input').element as HTMLInputElement).value).toBe('5')
+    expect(wrapper.get('[data-testid="product-form-trial-auto-convert"]').attributes('aria-checked')).toBe('false')
+  })
+
+  it('hides the trial fields until the trial is turned on, then emits what the operator set', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    expect(wrapper.find('[data-testid="product-form-trial-days"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
+    await wrapper.get('[data-testid="product-form-trial-enabled"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-trial-days"] input').setValue('21')
+    await wrapper.get('[data-testid="product-form-trial-reminders"]').setValue('5; 2, 1')
+    await wrapper.get('[data-testid="product-form-trial-grace-period"] input').setValue('4')
+    await wrapper.get('[data-testid="product-form-trial-auto-convert"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({
+      trial: { enabled: true, days: 21, autoConvert: false, reminderDays: [5, 2, 1], gracePeriodDays: 4 },
+    })
+  })
+
+  it('sends a reminder day that is not a whole number as 0, so the API refuses it', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-trial-reminders"]').setValue('3, abc')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ trial: { reminderDays: [3, 0] } })
+  })
+
+  it('shows the API message for the trial settings and clears it when a trial field changes', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, {
+      product: stored,
+      groups,
+      saving: false,
+      fieldErrors: { trial: 'The trial must last from 1 to 365 days.' },
+    })
+
+    expect(wrapper.get('[data-testid="product-form-trial-error"]').text()).toContain('The trial must last from 1 to 365 days.')
+    await wrapper.get('[data-testid="product-form-trial-days"] input').setValue('10')
+
+    expect(wrapper.emitted('clearFieldError')).toEqual([['trial']])
   })
 
   it('emits the recommended flag and the sort order the operator set', async () => {

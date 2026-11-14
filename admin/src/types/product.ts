@@ -39,6 +39,22 @@ export interface Product {
   metadata: string | null
   /** Days a service stays usable after its due date before it is suspended, 0 to 365. */
   gracePeriodDays: number
+  /** The free-trial settings; the trial is off for a product that has none. */
+  trial: ProductTrial
+}
+
+/** The free-trial settings of a product. */
+export interface ProductTrial {
+  /** Whether the product is offered as a free trial a client can start without paying. */
+  enabled: boolean
+  /** How long a trial lasts, in days, 1 to 365. */
+  days: number
+  /** Whether a trial turns into a paid service at its end; when false the service is ended instead. */
+  autoConvert: boolean
+  /** The days before the end a reminder is emailed, each before the end of the trial, at most five. */
+  reminderDays: number[]
+  /** Days the invoice of a converted trial may stay unpaid before the service is ended, 0 to 30. */
+  gracePeriodDays: number
 }
 
 /**
@@ -103,6 +119,8 @@ export interface CreateProductPayload {
   metadata?: string
   /** Grace period in days, 0 to 365; omitted keeps the stored value on update. */
   gracePeriodDays?: number
+  /** The free-trial settings; omitted keeps the stored ones on update and creates the product with the trial off. */
+  trial?: ProductTrial
 }
 
 /** Payload for updating an existing product. */
@@ -131,4 +149,6 @@ export interface UpdateProductPayload {
   metadata?: string
   /** Grace period in days, 0 to 365; omitted keeps the stored value on update. */
   gracePeriodDays?: number
+  /** The free-trial settings; omitted keeps the stored ones on update and creates the product with the trial off. */
+  trial?: ProductTrial
 }

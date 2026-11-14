@@ -111,7 +111,7 @@
   --chart-6: #7ca0ff;
 
   /* Overlays: the veil behind a dialog or drawer and the shadow under every floating panel (menu, tooltip,
-     dialog, drawer). The panels themselves are `glass-strong`. */
+     dialog, drawer). Floating panels (menu, select, tooltip, palette) are opaque; glass is for page cards. */
   --overlay-backdrop: rgb(3 6 16 / 0.6);
   --elevation-card:      none;
   --elevation-overlay:   0 24px 64px -16px rgb(0 0 0 / 0.6);

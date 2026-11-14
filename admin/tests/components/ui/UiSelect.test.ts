@@ -9,6 +9,7 @@ import { mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import type { UiSelectOption } from '@/utils/ui/select'
 import { createTestI18n } from '../../helpers/i18n'
 
@@ -431,6 +432,20 @@ describe('UiSelect', () => {
     await wrapper.get('button').trigger('click')
 
     expect(wrapper.find('[role="listbox"]').exists()).toBe(false)
+  })
+
+  it('draws the list on the opaque floating surface, never glass', async () => {
+    const wrapper = mount(UiSelect, {
+      props: { modelValue: 'a', options },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+    })
+
+    await wrapper.get('button').trigger('click')
+
+    const panel = wrapper.get('[data-testid="ui-select-panel"]')
+    expect(panel.classes()).toEqual(expect.arrayContaining(FLOATING_PANEL_CLASSES.split(' ')))
+    expect(panel.classes()).not.toContain('bg-surface-card')
+    expect(panel.classes().some((name) => name.includes('glass'))).toBe(false)
   })
 
   it('widens the list on request and keeps data-testid on the root', async () => {

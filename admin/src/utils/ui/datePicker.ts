@@ -6,6 +6,7 @@
  * cannot drift apart; every colour in the class sets is a theme token, so the popups follow the
  * light/dark switch.
  */
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import { fieldBaseClasses, fieldWidthClasses, focusRingClasses } from '@/utils/ui/input'
 import { fieldSizeClasses } from '@/utils/ui/size'
 
@@ -118,7 +119,7 @@ export const dateLibraryThemeClasses =
 export const dateFieldClasses = `${fieldWidthClasses} ${fieldBaseClasses} ${fieldSizeClasses.md}`
 
 /** Classes of the popup panel (the position is added by the component); opaque, so nothing shows through it. */
-export const datePopupClasses = 'bg-surface-elevated rounded-card shadow-2xl border border-border-strong'
+export const datePopupClasses = `${FLOATING_PANEL_CLASSES} rounded-card`
 
 /** Classes of the previous/next month arrows. */
 export const dateArrowClasses = `rounded-lg px-2 text-text-secondary hover:text-text-primary text-lg transition-colors ${focusRingClasses}`

@@ -46,11 +46,7 @@
   "invoiceStatus": {
     "title": "Invoices by status",
     "note": "Raised in the chosen period",
-    "count": "Invoices",
-    "Paid": "Paid",
-    "Unpaid": "Unpaid",
-    "Overdue": "Overdue",
-    "Cancelled": "Cancelled"
+    "count": "Invoices"
   },
   "tickets": {
     "title": "Open tickets by priority",

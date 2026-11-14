@@ -52,7 +52,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   /** Sentence for the last failed call, null when no error. */
   const error = ref<string | null>(null)
 
-  /** The period the charts and the revenue tile cover. */
+  /** The period the charts and the revenue tile on screen cover; it moves only when a load of another period succeeds. */
   const period = ref<DashboardPeriod>(DashboardPeriod.Days30)
 
   /** The chart series of `period`, null until the first load answers. */
@@ -98,14 +98,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   /**
-   * Loads the chart series of a period and makes it the chosen one. The previous series stay on screen
-   * until the new ones arrive; a slower answer of an earlier period never replaces a newer one.
+   * Loads the chart series of a period. The previous series stay on screen until the new ones arrive, and
+   * `period` changes only with them, so it always names the period the charts on screen cover, even after a
+   * failed load. A slower answer of an earlier period never replaces a newer one.
    *
-   * @param next - The period to load; the chosen one when omitted.
+   * @param next - The period to load; the one the charts cover when omitted.
    * @returns Promise that resolves when the attempt is over (see `chartsError`).
    */
   const fetchCharts = async (next: DashboardPeriod = period.value): Promise<void> => {
-    period.value = next
     latestChartsPeriod = next
     chartsLoading.value = true
     chartsError.value = null
@@ -117,6 +117,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
     if (result.ok) {
       charts.value = result.value
+      period.value = next
     }
     chartsError.value = failure.value
     chartsLoading.value = false

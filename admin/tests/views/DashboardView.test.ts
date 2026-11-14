@@ -16,13 +16,10 @@ vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJs
 
 /** Statistics as the dashboard endpoint returns them. */
 const stats = {
-  totalRevenue: 12500,
-  monthlyRevenue: 900,
   activeServices: 42,
   overdueInvoices: 3,
   openTickets: 7,
   totalClients: 120,
-  currency: 'USD',
 }
 
 /**

@@ -42,8 +42,6 @@ interface StatTileConfig {
   key: DashboardFigure
   /** Locale key of the tile caption. */
   labelKey: string
-  /** Turns the raw number, with the currency the figure is in, into the text shown on the tile. */
-  format: (value: number, currency: string) => string
 }
 
 /** Dashboard store: the headline numbers, the chart series and the panel lists. */
@@ -81,19 +79,11 @@ const period = computed<string>({
 /** The greeting for the part of the day it is now. */
 const greeting = computed<string>(() => t(`dashboard.greeting.${dayPartOf(new Date().getHours())}`))
 
-/**
- * Formats a count as plain text.
- *
- * @param value - The count.
- * @returns The count as a string.
- */
-const formatCount = (value: number): string => value.toString()
-
 /** The tiles that read the statistics, in display order. */
 const statConfig: StatTileConfig[] = [
-  { key: 'activeServices', labelKey: 'dashboard.stats.activeServices', format: formatCount },
-  { key: 'overdueInvoices', labelKey: 'dashboard.stats.overdueInvoices', format: formatCount },
-  { key: 'openTickets', labelKey: 'dashboard.stats.openTickets', format: formatCount },
+  { key: 'activeServices', labelKey: 'dashboard.stats.activeServices' },
+  { key: 'overdueInvoices', labelKey: 'dashboard.stats.overdueInvoices' },
+  { key: 'openTickets', labelKey: 'dashboard.stats.openTickets' },
 ]
 
 /** Change of the period's income against the period before in percent; null while unknown. */
@@ -114,7 +104,7 @@ const incomeValue = computed<string>(() => (store.charts === null ? '' : formatC
  * @param stat - The tile.
  * @returns The formatted figure.
  */
-const valueOf = (stat: StatTileConfig): string => (store.stats === null ? '' : stat.format(store.stats[stat.key], store.stats.currency))
+const valueOf = (stat: StatTileConfig): string => (store.stats === null ? '' : store.stats[stat.key].toString())
 
 onMounted(() => {
   void store.fetchStats()

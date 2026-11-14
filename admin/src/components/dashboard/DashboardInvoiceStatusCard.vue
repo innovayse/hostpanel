@@ -10,7 +10,9 @@ import DashboardChartCard from '@/components/dashboard/DashboardChartCard.vue'
 import UiChart from '@/components/ui/UiChart.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
 import { formatCurrencyWhole } from '@/lib/money'
+import { statusLabel } from '@/lib/tones'
 import type { DashboardInvoiceStatusCount } from '@/types/dashboardcharts'
 import { UiChartHeight, UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
@@ -34,8 +36,8 @@ const waiting = computed<boolean>(() => props.statuses === null)
 /** The rows, one per status. */
 const rows = computed<DashboardInvoiceStatusCount[]>(() => props.statuses ?? [])
 
-/** Status names of the x axis. */
-const labels = computed<string[]>(() => rows.value.map((row) => t(`dashboard.invoiceStatus.${row.status}`)))
+/** Status names of the x axis, the same words the invoice list filter uses. */
+const labels = computed<string[]>(() => rows.value.map((row) => statusLabel(INVOICE_STATUS_OPTIONS, row.status)))
 
 /** The one series of the chart: the count per status. */
 const series = computed<UiChartSeries[]>(() => [{ label: t('dashboard.invoiceStatus.count'), data: rows.value.map((row) => row.count) }])
@@ -59,7 +61,7 @@ const series = computed<UiChartSeries[]>(() => [{ label: t('dashboard.invoiceSta
         justify="between"
         :data-testid="`dashboard-invoice-status-${row.status}`"
       >
-        <UiText :as="UiTextTag.Span" :size="UiTextSize.Sm">{{ t(`dashboard.invoiceStatus.${row.status}`) }}</UiText>
+        <UiText :as="UiTextTag.Span" :size="UiTextSize.Sm">{{ statusLabel(INVOICE_STATUS_OPTIONS, row.status) }}</UiText>
         <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
           {{ row.count }} · {{ formatCurrencyWhole(row.amount, currency) }}
         </UiText>

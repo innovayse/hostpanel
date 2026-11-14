@@ -112,6 +112,29 @@ describe('dashboardStore', () => {
     expect(store.chartsLoading).toBe(false)
   })
 
+  it('fetchCharts keeps the period of the series on screen when another period fails to load', async () => {
+    const store = useDashboardStore()
+    stubFetch(json(dashboardCharts()))
+    await store.fetchCharts(DashboardPeriod.Days30)
+    stubFetch(problem('No access.', 403))
+
+    await store.fetchCharts(DashboardPeriod.Days90)
+
+    expect(store.period).toBe(DashboardPeriod.Days30)
+    expect(store.charts).not.toBeNull()
+  })
+
+  it('fetchCharts retries the period the charts cover when no period is given after a failure', async () => {
+    const store = useDashboardStore()
+    stubFetch(problem('No access.', 403))
+    await store.fetchCharts(DashboardPeriod.Days90)
+    const mock = stubFetch(json(dashboardCharts()))
+
+    await store.fetchCharts()
+
+    expect(String(mock.mock.calls[0]?.[0])).toContain('period=Days30')
+  })
+
   it('fetchOverview fills every section from its list', async () => {
     const page = { items: [{ id: 1, priority: 'High' }, { id: 2, priority: 'Low' }], pageNumber: 1, pageSize: 5, totalCount: 2, totalPages: 1 }
     vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(url.includes('/admin/servers') ? json([{ id: 1 }]) : json(page))))

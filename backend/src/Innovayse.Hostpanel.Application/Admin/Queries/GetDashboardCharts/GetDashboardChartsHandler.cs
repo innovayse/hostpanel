@@ -1,7 +1,8 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
-using Innovayse.Hostpanel.Application.Admin.Extensions;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
+using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -58,51 +59,65 @@ public sealed class GetDashboardChartsHandler
             .AsNoTracking()
             .Where(o => o.Status != OrderStatus.Cancelled && o.Status != OrderStatus.Fraud)
             .Select(o => o.CreatedAt)
-            .CountPerDayAsync(window, ct);
+            .CountPerDayAsync(window.Current, ct);
 
         var newClients = await _context.Clients
             .AsNoTracking()
             .Select(c => c.CreatedAt)
-            .CountPerDayAsync(window, ct);
+            .CountPerDayAsync(window.Current, ct);
 
-        var invoices = await ReadInvoicesByStatusAsync(window, rates, ct);
+        var invoices = await ReadInvoicesByStatusAsync(window.Current, rates, ct);
         var tickets = await ReadOpenTicketsAsync(ct);
 
-        return Result<DashboardChartsDto>.Success(new DashboardChartsDto(rates.Currency, income, newOrders, newClients, invoices, tickets));
+        return Result<DashboardChartsDto>.Success(new DashboardChartsDto(
+            rates.Currency,
+            income,
+            ToDailyCounts(window.Current, newOrders),
+            ToDailyCounts(window.Current, newClients),
+            invoices,
+            tickets));
     }
 
+    /// <summary>Adds income up in the base currency: each currency summed first, then converted once.</summary>
+    /// <param name="entries">The income to add up.</param>
+    /// <param name="rates">The base currency and the rates to it.</param>
+    /// <returns>The sum in the base currency.</returns>
+    private static decimal ToBase(IEnumerable<IncomeDay> entries, BaseCurrencyRates rates) =>
+        entries.GroupBy(e => e.Currency).Sum(currency => rates.ToBase(currency.Sum(e => e.Amount), currency.Key));
+
+    /// <summary>Lays counted days out as one entry per day of the window, a quiet day answering zero.</summary>
+    /// <param name="window">The days to lay out.</param>
+    /// <param name="counts">The count of each day that has any.</param>
+    /// <returns>One count per day of the window, oldest first.</returns>
+    private static IReadOnlyList<DashboardDailyCountDto> ToDailyCounts(DayWindow window, IReadOnlyDictionary<DateOnly, int> counts) =>
+        [.. window.Days.Select(day => new DashboardDailyCountDto(day, counts.GetValueOrDefault(day)))];
+
     /// <summary>Reads income per day, its total and the total of the period before, as every income report reads it.</summary>
-    /// <param name="window">The days to read.</param>
+    /// <param name="window">The periods to read.</param>
     /// <param name="rates">The base currency and the rates to it.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The income series.</returns>
     private async Task<DashboardIncomeDto> ReadIncomeAsync(DashboardWindow window, BaseCurrencyRates rates, CancellationToken ct)
     {
-        // The money is in each invoice's own currency: it is summed per currency first and converted after,
-        // so adding drams to dollars never happens.
-        var entries = await _context.IncomeEntries()
-            .Within(window.PreviousFrom, window.To)
-            .Select(e => new { e.At, e.Currency, e.Amount })
-            .ToListAsync(ct);
+        // The money is in each invoice's own currency, so it is summed per currency first and converted after:
+        // adding drams to dollars never happens. One read serves both periods.
+        var entries = await _context.IncomeEntries().SumPerDayAsync(window.Span, ct);
+        var current = entries.Where(e => e.Day >= window.Current.First).ToList();
+        var previous = entries.Where(e => e.Day < window.Current.First).ToList();
 
-        var perDay = entries
-            .Where(e => e.At >= window.From)
-            .GroupBy(e => window.DayOf(e.At))
-            .ToDictionary(
-                day => day.Key,
-                day => day.GroupBy(e => e.Currency).Sum(c => rates.ToBase(c.Sum(e => e.Amount), c.Key)));
-        IReadOnlyList<DashboardDailyAmountDto> days = [.. window.Days.Select(day => new DashboardDailyAmountDto(day, perDay.GetValueOrDefault(day)))];
+        // A total is the sum per currency converted once, for the period and for the one before alike, so the two
+        // are rounded the same way and the change between them is honest. The chart's days are converted one by one.
+        var total = ToBase(current, rates);
+        var previousTotal = ToBase(previous, rates);
+        var perDay = current.GroupBy(e => e.Day).ToDictionary(day => day.Key, day => ToBase(day, rates));
+        IReadOnlyList<DashboardDailyAmountDto> days =
+            [.. window.Current.Days.Select(day => new DashboardDailyAmountDto(day, perDay.GetValueOrDefault(day)))];
 
-        var total = days.Sum(d => d.Amount);
-        var previousTotal = entries
-            .Where(e => e.At < window.From)
-            .GroupBy(e => e.Currency)
-            .Sum(c => rates.ToBase(c.Sum(e => e.Amount), c.Key));
         decimal? change = previousTotal > 0m
             ? Math.Round((total - previousTotal) / previousTotal * PercentScale, PercentDecimals)
             : null;
 
-        return new DashboardIncomeDto(days, total, previousTotal, change, total / window.Days.Count);
+        return new DashboardIncomeDto(days, total, previousTotal, change, total / window.Current.Days.Count);
     }
 
     /// <summary>Reads the invoices raised in the period, counted and added up per charted status.</summary>
@@ -111,7 +126,7 @@ public sealed class GetDashboardChartsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>One entry per charted status, in display order, zero when none stands in it.</returns>
     private async Task<IReadOnlyList<DashboardInvoiceStatusDto>> ReadInvoicesByStatusAsync(
-        DashboardWindow window, BaseCurrencyRates rates, CancellationToken ct)
+        DayWindow window, BaseCurrencyRates rates, CancellationToken ct)
     {
         var sums = await _context.Invoices
             .AsNoTracking()
@@ -124,7 +139,7 @@ public sealed class GetDashboardChartsHandler
         return [.. ChartedInvoiceStatuses.Select(status =>
         {
             var rows = sums.Where(s => status == InvoiceStatus.Paid ? Invoice.PaidStatuses.Contains(s.Status) : s.Status == status).ToList();
-            return new DashboardInvoiceStatusDto(status, rows.Sum(r => r.Count), rows.Sum(r => rates.ToBase(r.Total, r.Currency)));
+            return new DashboardInvoiceStatusDto(status, rows.Sum(r => r.Count), rows.GroupBy(r => r.Currency).Sum(c => rates.ToBase(c.Sum(r => r.Total), c.Key)));
         })];
     }
 

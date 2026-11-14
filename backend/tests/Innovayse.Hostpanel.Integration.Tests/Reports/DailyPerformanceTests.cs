@@ -2,6 +2,11 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Clients;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -63,6 +68,48 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
         boundary.Select(r => r.GetProperty("paidInvoices").GetInt32()).Should().Equal(1, 1);
         orders.Sum(r => r.GetProperty("completedOrders").GetInt32()).Should().Be(1);
         orders.Single(r => r.GetProperty("date").GetString() == "2036-05-20").GetProperty("completedOrders").GetInt32().Should().Be(1);
+    }
+
+    /// <summary>
+    /// A day is the host time zone's: an invoice raised late in the evening UTC counts on the next local day, the range
+    /// defaults to today of that zone, and a zone whose offset is not a whole hour cuts at its own midnight.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CutsDaysByTheHostTimeZone()
+    {
+        var zone = TimeZoneInfo.CreateCustomTimeZone("Host", new TimeSpan(5, 30, 0), "Host", "Host");
+        using var host = new ClockedHost(factory, new DateTimeOffset(2053, 6, 15, 20, 0, 0, TimeSpan.Zero), zone);
+        await SeedInvoiceAsync(host, new DateTimeOffset(2053, 6, 15, 18, 15, 0, TimeSpan.Zero));
+        await SeedInvoiceAsync(host, new DateTimeOffset(2053, 6, 15, 18, 45, 0, TimeSpan.Zero));
+        var client = await AdminClientAsync(host);
+
+        var rows = (await client.GetFromJsonAsync<List<JsonElement>>("/api/reports/daily-performance?from=2053-06-15&to=2053-06-16"))!;
+        var byDefault = (await client.GetFromJsonAsync<List<JsonElement>>("/api/reports/daily-performance"))!;
+
+        rows.Select(r => r.GetProperty("newInvoices").GetInt32()).Should().Equal(1, 1);
+        byDefault.Should().HaveCount(30);
+        byDefault[^1].GetProperty("date").GetString().Should().Be("2053-06-16");
+    }
+
+    /// <summary>Raises an invoice at a moment.</summary>
+    /// <param name="host">The host to seed against.</param>
+    /// <param name="raisedAt">When the invoice was raised.</param>
+    /// <returns>A task that completes when the invoice is saved.</returns>
+    private static async Task SeedInvoiceAsync(ClockedHost host, DateTimeOffset raisedAt)
+    {
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var baseCurrency = await context.Currencies.SingleAsync(c => c.IsBase, CancellationToken.None);
+        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", raisedAt);
+        context.Clients.Add(client);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var invoice = Invoice.Create(client.Id, raisedAt.AddDays(14), baseCurrency.Code, raisedAt);
+        invoice.Backdate(raisedAt);
+        invoice.AddItem("Hosting", 10m, 1);
+        context.Invoices.Add(invoice);
+        await context.SaveChangesAsync(CancellationToken.None);
     }
 
     /// <summary>The route is not for anonymous callers.</summary>

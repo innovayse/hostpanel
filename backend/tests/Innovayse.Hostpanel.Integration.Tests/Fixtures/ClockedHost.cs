@@ -25,9 +25,10 @@ internal sealed class ClockedHost : IDisposable
     /// <summary>Initializes a new instance of the <see cref="ClockedHost"/> class with the clock at a given moment.</summary>
     /// <param name="factory">The shared API + PostgreSQL host the clocked host is derived from.</param>
     /// <param name="start">The moment the clock stands at until the test moves it.</param>
-    public ClockedHost(IntegrationTestFactory factory, DateTimeOffset start)
+    /// <param name="zone">The time zone the host reports as its own; the real local one when omitted.</param>
+    public ClockedHost(IntegrationTestFactory factory, DateTimeOffset start, TimeZoneInfo? zone = null)
     {
-        Clock = new ManualTimeProvider(start);
+        Clock = new ManualTimeProvider(start, zone);
         _host = factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureTestServices(services =>

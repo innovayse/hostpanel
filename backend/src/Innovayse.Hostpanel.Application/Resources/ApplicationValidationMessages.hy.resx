@@ -1720,4 +1720,7 @@
   <data name="OrderReviewReasonTooLong" xml:space="preserve">
     <value>Պատճառը չպետք է գերազանցի 1000 նիշը։</value>
   </data>
+  <data name="DashboardPeriodInvalid" xml:space="preserve">
+    <value>Ընտրեք ժամանակահատվածը՝ 30 կամ 90 օր։</value>
+  </data>
 </root>

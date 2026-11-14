@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
+using Innovayse.Hostpanel.Application.Admin.Queries.GetDashboardCharts;
 using Innovayse.Hostpanel.Application.Admin.Queries.GetDashboardStats;
 using Innovayse.Hostpanel.Application.Admin.Queries.GetRecentActivity;
 using Innovayse.Hostpanel.Shared.Authorization;
@@ -36,6 +37,21 @@ public sealed class DashboardController : BaseApiController
     public async Task<IActionResult> GetStatsAsync(CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<DashboardStatsDto>>(new GetDashboardStatsQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Returns the series the dashboard charts draw for a period.</summary>
+    /// <param name="query">The period to cover, 30 days when omitted.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with income per day, new orders and clients per day, invoices by status and open tickets by priority; 400 for a period that is not offered; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
+    [HttpGet("charts")]
+    [ProducesResponseType(typeof(DashboardChartsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetChartsAsync([FromQuery] GetDashboardChartsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<DashboardChartsDto>>(query, ct);
         return HandleResult(outcome);
     }
 

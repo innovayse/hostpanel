@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Admin.Queries.GetDashboardCharts;
 using Innovayse.Hostpanel.Application.Admin.Queries.GetDashboardStats;
 using Innovayse.Hostpanel.Application.Admin.Queries.GetRecentActivity;
 using Innovayse.Hostpanel.Application.Admin.Queries.GetServiceUsageReport;
@@ -22,6 +23,7 @@ internal static class CrossModuleReadModels
     [
         new("Innovayse.Hostpanel.Application.Reports.Queries", "Reports are read-only projections across billing, clients, services, domains and support by definition."),
         new(typeof(GetDashboardStatsHandler).FullName!, "The admin dashboard counts rows of every module on one screen."),
+        new(typeof(GetDashboardChartsHandler).FullName!, "The admin dashboard charts read income, orders, clients, invoices and tickets of one period on one screen."),
         new(typeof(GetRecentActivityHandler).FullName!, "The admin activity feed merges recent rows of several modules into one timeline."),
         new(typeof(GetServiceUsageReportHandler).FullName!, "A usage report is a read-only projection of services per product for the admin dashboard."),
         new(typeof(ExportClientDataHandler).FullName!, "A personal data export must gather every row a client owns, whichever module stores it."),

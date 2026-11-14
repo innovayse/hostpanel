@@ -1720,4 +1720,7 @@
   <data name="OrderReviewReasonTooLong" xml:space="preserve">
     <value>Причина не должна быть длиннее 1000 символов.</value>
   </data>
+  <data name="DashboardPeriodInvalid" xml:space="preserve">
+    <value>Выберите период: 30 или 90 дней.</value>
+  </data>
 </root>

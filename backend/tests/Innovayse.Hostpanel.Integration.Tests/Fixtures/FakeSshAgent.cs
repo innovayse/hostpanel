@@ -85,6 +85,25 @@ public sealed class FakeSshAgent : ISshKeyProvider
         return Task.CompletedTask;
     }
 
+    /// <summary>Accounts whose jail removal was asked, in call order.</summary>
+    public ConcurrentQueue<string> RemovedJails { get; } = new();
+
+    /// <summary>When set, <see cref="RemoveDeletedAccountJailAsync"/> throws this failure.</summary>
+    public SshProviderFailure? RemoveJailFailure { get; set; }
+
+    /// <inheritdoc />
+    public Task<bool> RemoveDeletedAccountJailAsync(SshAccount account, CancellationToken ct)
+    {
+        Record("remove-jail", account);
+        if (RemoveJailFailure is { } failure)
+        {
+            throw new SshProviderException(failure, "fake remove-jail failure");
+        }
+
+        RemovedJails.Enqueue(account.Username);
+        return Task.FromResult(true);
+    }
+
     /// <summary>Domains prepared per account, in call order.</summary>
     public ConcurrentQueue<(string Account, string Domain)> PreparedSites { get; } = new();
 

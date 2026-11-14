@@ -78,6 +78,34 @@ public sealed class AgentSshKeyProviderTests
         Assert.Equal(failure, ex.Failure);
     }
 
+    /// <summary>Removing a jail sends one <c>remove-jail</c> request for the account and reads whether a jail was removed.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task RemoveJail_SendsAccountAndReadsRemovedAsync()
+    {
+        var transport = new RecordingTransport("""{"v":1,"ok":true,"removed":true}""");
+
+        var removed = await new AgentSshKeyProvider(Endpoint, transport.SendAsync).RemoveDeletedAccountJailAsync(new SshAccount(7, "web"), default);
+
+        Assert.True(removed);
+        var (_, request) = Assert.Single(transport.Sent);
+        Assert.Equal("remove-jail", request["op"]!.GetValue<string>());
+        Assert.Equal("web", request["account"]!.GetValue<string>());
+        Assert.Equal(3, request.Count);
+    }
+
+    /// <summary>An agent refusing because the account still exists maps to <see cref="SshProviderFailure.AccountExists"/>.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task RemoveJail_AccountExists_MapsToItsFailureAsync()
+    {
+        var provider = new AgentSshKeyProvider(Endpoint, new RecordingTransport("""{"v":1,"ok":false,"error":"account_exists"}""").SendAsync);
+
+        var ex = await Assert.ThrowsAsync<SshProviderException>(() => provider.RemoveDeletedAccountJailAsync(new SshAccount(7, "web"), default));
+
+        Assert.Equal(SshProviderFailure.AccountExists, ex.Failure);
+    }
+
     /// <summary>Ping reads the version, profile and binding, and an agent older than bindings answers with neither.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

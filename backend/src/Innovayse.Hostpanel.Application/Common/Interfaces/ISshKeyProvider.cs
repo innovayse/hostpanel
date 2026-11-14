@@ -57,4 +57,14 @@ public interface ISshKeyProvider
     /// <returns>The steps the server reported.</returns>
     /// <exception cref="SshProviderException">Thrown when the server fails or refuses.</exception>
     public Task<IReadOnlyList<string>> PrepareSiteAsync(SshAccount account, string domain, CancellationToken ct);
+
+    /// <summary>
+    /// Removes the SSH jail (and its home mount) of an account the panel has already deleted (agent 1.4.0+, op
+    /// <c>remove-jail</c>). The server refuses while the account still exists, so a live account's jail is never touched.
+    /// </summary>
+    /// <param name="account">The deleted hosting account on this provider's server.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when a jail was removed, <see langword="false"/> when there was none.</returns>
+    /// <exception cref="SshProviderException">Thrown when the server fails or refuses.</exception>
+    public Task<bool> RemoveDeletedAccountJailAsync(SshAccount account, CancellationToken ct);
 }

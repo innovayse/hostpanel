@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- SSH key agent 1.4.0: a new `remove-jail` operation removes the SSH jail and its home mount unit of an account the hosting panel has already deleted (it refuses while the account exists and while anything is still mounted inside the jail, and removes the tree on its own filesystem only). HostPanel asks for it after it terminated a service's hosting account. Before, every terminated jailed account left its jail and an enabled systemd mount unit on the server, because the agent keeps a jail for cheap re-enrolment.
+
+### Fixed
+
 - SSH key agent 1.3.1: the CWP `prepare-site` helper sets `HOME=/root`. The agent runs helpers with `PATH` only, so `mysql` could not read root's client credentials and every site preparation through the agent failed with `site_prepare_failed`, while the same helper worked when run by hand.
 
 ### Added

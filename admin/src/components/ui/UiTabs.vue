@@ -5,7 +5,7 @@
  * Renders the tab buttons (`role="tablist"`); the screen shows the matching panel from the model
  * (`v-if="tab === 'x'"`) or from the scoped slot's `active` value. The slot is drawn in a panel
  * 22px under the tab line (the standard section gap), so content never touches it. Left/Right arrow keys move
- * between enabled tabs.
+ * between enabled tabs and move focus with the selection (roving tabindex: only the selected tab is in the tab order).
  */
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { neighbourValue } from '@/utils/ui/tabs'
@@ -33,8 +33,25 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+/** The tab buttons by tab value, so a key press can move focus to the tab it selects. */
+const buttons = new Map<string, HTMLElement>()
+
 /**
- * Moves the selection to the neighbouring enabled tab.
+ * Keeps the button of one tab in {@link buttons}; Vue calls it with `null` when the button goes away.
+ *
+ * @param value - Value of the tab.
+ * @param element - The tab's button, or null once unmounted.
+ */
+const setButton = (value: string, element: unknown): void => {
+  if (element instanceof HTMLElement) {
+    buttons.set(value, element)
+  } else {
+    buttons.delete(value)
+  }
+}
+
+/**
+ * Moves the selection and the focus to the neighbouring enabled tab (roving tabindex).
  *
  * @param event - The keydown event; only Left and Right are handled.
  * @param index - Index of the tab that has focus.
@@ -44,6 +61,7 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
   if (target !== undefined) {
     event.preventDefault()
     emit('update:modelValue', target)
+    buttons.get(target)?.focus()
   }
 }
 </script>
@@ -59,6 +77,7 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
       <button
         v-for="(item, index) in items"
         :key="item.value"
+        :ref="(element) => setButton(item.value, element)"
         type="button"
         role="tab"
         :aria-selected="item.value === modelValue"

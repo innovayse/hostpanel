@@ -677,6 +677,17 @@
       }
     }
   },
+  "tabs": {
+    "label": "Settings sections",
+    "general": "General",
+    "appearance": "Appearance",
+    "integrations": "Integrations",
+    "advanced": "Advanced"
+  },
+  "advanced": {
+    "title": "Advanced settings",
+    "description": "Settings that have no card of their own. Edit the key and value pairs here."
+  },
   "saveBar": {
     "unsaved": "{count} unsaved change | {count} unsaved changes",
     "clean": "No unsaved changes",

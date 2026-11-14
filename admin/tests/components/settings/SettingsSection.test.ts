@@ -49,6 +49,15 @@ describe('SettingsSection', () => {
     expect(wrapper.attributes('aria-busy')).toBe('true')
   })
 
+  it('is a section landmark named by its title', () => {
+    const wrapper = mount(SettingsSection, { props: { title: 'Branding' } })
+
+    expect(wrapper.element.tagName).toBe('SECTION')
+    const titleId = wrapper.get('h2').attributes('id')
+    expect(titleId).toBeTruthy()
+    expect(wrapper.attributes('aria-labelledby')).toBe(titleId)
+  })
+
   it('keeps the classes the caller passes on the card', () => {
     const wrapper = mount(SettingsSection, { props: { title: 'A' }, attrs: { class: 'mb-24' } })
 

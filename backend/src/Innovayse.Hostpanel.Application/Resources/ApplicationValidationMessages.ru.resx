@@ -808,6 +808,12 @@
   <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
     <value>Укажите корректного клиента для фильтрации.</value>
   </data>
+  <data name="ServiceListStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть одним из: Pending, Active, Suspended, Terminated.</value>
+  </data>
+  <data name="ServiceListBillingCycleInvalid" xml:space="preserve">
+    <value>Период оплаты должен быть одним из: Monthly, Quarterly, SemiAnnual, Annual, Biennial.</value>
+  </data>
   <data name="HostingAccountDomainTooLong" xml:space="preserve">
     <value>Домен не может быть длиннее 253 символов.</value>
   </data>

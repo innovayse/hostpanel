@@ -31,6 +31,19 @@ describe('servicesStore', () => {
     expect(store.loading).toBe(false)
   })
 
+  it('fetchAll sends the search, trimmed, and the status, product and billing cycle filters', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const store = useServicesStore()
+
+    expect(await store.fetchAll(2, {
+      search: '  shop.example ',
+      status: ServiceStatus.Suspended,
+      productId: 4,
+      billingCycle: BillingCycle.Annual,
+    })).toBe(true)
+    expect(callOf(mock).url).toBe('/api/services?page=2&pageSize=20&search=shop.example&status=Suspended&productId=4&billingCycle=Annual')
+  })
+
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useServicesStore()
     stubFetch(problem('Not allowed.', 403))
@@ -50,6 +63,16 @@ describe('servicesStore', () => {
     expect(await store.fetchClientServices(7)).toEqual([{ id: 5 }])
     expect(callOf(mock, 0).url).toBe('/api/services?clientId=7&page=2&pageSize=10')
     expect(callOf(mock, 1).url).toBe('/api/services?clientId=7&page=1&pageSize=100')
+    expect(store.services).toEqual([])
+  })
+
+  it('fetchClientPage sends the filters of the list with the client and leaves the shared list alone', async () => {
+    const mock = stubFetch(json({ items: [{ id: 5 }], totalCount: 1 }))
+    const store = useServicesStore()
+
+    expect(await store.fetchClientPage(7, 1, 20, { search: ' vps ', status: ServiceStatus.Active, billingCycle: BillingCycle.Monthly }))
+      .toEqual({ items: [{ id: 5 }], totalCount: 1 })
+    expect(callOf(mock).url).toBe('/api/services?clientId=7&page=1&pageSize=20&search=vps&status=Active&billingCycle=Monthly')
     expect(store.services).toEqual([])
   })
 

@@ -745,6 +745,12 @@
   <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
     <value>Զտման համար նշեք վավեր հաճախորդ։</value>
   </data>
+  <data name="ServiceListStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Pending, Active, Suspended, Terminated։</value>
+  </data>
+  <data name="ServiceListBillingCycleInvalid" xml:space="preserve">
+    <value>Վճարման պարբերությունը պետք է լինի հետևյալներից մեկը՝ Monthly, Quarterly, SemiAnnual, Annual, Biennial։</value>
+  </data>
   <data name="HostingAccountDomainTooLong" xml:space="preserve">
     <value>Դոմեյնը չի կարող գերազանցել 253 նիշը։</value>
   </data>

@@ -102,7 +102,7 @@ export const useBillableItemsApi = () => {
    * @returns One page of services (up to 100).
    */
   const listServices = (clientId: string): Promise<PaginatedList<ServiceListItem>> =>
-    request<PaginatedList<ServiceListItem>>(`${ApiPath.Services}${buildQuery({ clientId, pageSize: LOOKUP_PAGE_SIZE })}`)
+    request<PaginatedList<ServiceListItem>>(`${ApiPath.Services}${buildQuery({ clientId, page: 1, pageSize: LOOKUP_PAGE_SIZE })}`)
 
   /**
    * Adds one billable item to a client.

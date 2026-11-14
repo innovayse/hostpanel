@@ -97,6 +97,10 @@ Quick links at the top right: **Create Invoice**, **Add Billable Item**, **Creat
 
 Click **Profile** to edit the client's contact details, billing address, currency, payment method, and account settings. Click **Save Changes** to apply.
 
+## Services
+
+Go to **Services** to see every client service, or click the **Products / Services** tab of a client to see that client's services. Use the search box to find a service by its domain (the registered domain linked to it counts too), by the name of its product or by its id, and the Filters button to narrow the list by Status (Pending, Active, Suspended, Terminated), by Product and by Billing Cycle. Each applied filter shows as a chip you can remove, and Clear all removes them at once. A typed `%` or `_` is searched as the character itself. The search, the filters and the page stay in the address, so a link or a reload opens the same list.
+
 ## Users of a client account
 
 Click the **Users** tab. Each client account has one **Owner** and may have additional **Users**.

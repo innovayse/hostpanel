@@ -808,6 +808,12 @@
   <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
     <value>Provide a valid client to filter by.</value>
   </data>
+  <data name="ServiceListStatusInvalid" xml:space="preserve">
+    <value>Status must be one of: Pending, Active, Suspended, Terminated.</value>
+  </data>
+  <data name="ServiceListBillingCycleInvalid" xml:space="preserve">
+    <value>Billing cycle must be one of: Monthly, Quarterly, SemiAnnual, Annual, Biennial.</value>
+  </data>
   <data name="HostingAccountDomainTooLong" xml:space="preserve">
     <value>Domain cannot be longer than 253 characters.</value>
   </data>

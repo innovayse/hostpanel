@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetLinkedDomainNames;
@@ -14,7 +15,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Services.Queries.GetServices;
 
-/// <summary>Returns a paginated list of all client services for admin use, enriched with client, domain, and pricing data.</summary>
+/// <summary>
+/// Returns a paginated list of client services for admin use, narrowed by the search text and by owner, status, product
+/// and billing cycle, all in SQL ahead of paging, enriched with client, domain, and pricing data.
+/// </summary>
 public sealed class GetServicesHandler
 {
     /// <summary>Price shown when the product has no price in the client's currency for that cycle.</summary>
@@ -44,9 +48,9 @@ public sealed class GetServicesHandler
     /// Handles the query by resolving product names, client names, linked domains, and the price
     /// in each owning client's currency for the billing cycle.
     /// </summary>
-    /// <param name="qry">The page, page size and optional client filter.</param>
+    /// <param name="qry">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success, always: an out-of-range page answers an empty page, not a refusal.</returns>
+    /// <returns>Success with the requested page; a page past the last answers an empty page, not a refusal.</returns>
     /// <exception cref="InvalidOperationException">A service names a product or a client that does not exist, so the database is broken.</exception>
     public async Task<Result<PaginatedList<ServiceListItemDto>>> HandleAsync(GetServicesQuery qry, CancellationToken ct)
     {
@@ -56,9 +60,34 @@ public sealed class GetServicesHandler
             servicesQuery = servicesQuery.Where(s => s.ClientId == qry.ClientId.Value);
         }
 
-        var total = await servicesQuery.CountAsync(ct);
-        var services = await servicesQuery
-            .OrderByDescending(s => s.CreatedAt)
+        // A service shows its registered domain when one is linked and its own domain otherwise, so the search looks
+        // at both; the product name is a lookup in SQL too, because the name is not a column of the service.
+        servicesQuery = servicesQuery.SearchIncludingId(
+            qry.Search,
+            s => s.Id,
+            s => s.Domain,
+            s => _context.Domains.Where(d => d.LinkedServiceId == s.Id).Select(d => d.Name).FirstOrDefault(),
+            s => _context.Products.Where(p => p.Id == s.ProductId).Select(p => p.Name).FirstOrDefault());
+
+        if (qry.Status is { } status)
+        {
+            servicesQuery = servicesQuery.Where(s => s.Status == status);
+        }
+
+        if (qry.ProductId is { } productId)
+        {
+            servicesQuery = servicesQuery.Where(s => s.ProductId == productId);
+        }
+
+        if (qry.BillingCycle is { } billingCycle)
+        {
+            servicesQuery = servicesQuery.Where(s => s.BillingCycle == billingCycle);
+        }
+
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var orderedServices = servicesQuery.OrderByDescending(s => s.CreatedAt).ThenByDescending(s => s.Id);
+        var total = await orderedServices.CountAsync(ct);
+        var services = await orderedServices
             .Paginate(qry.Page, qry.PageSize)
             .ToListAsync(ct);
 

@@ -139,8 +139,20 @@ export interface CancellationRequestItem {
   createdAt: string
 }
 
+/** What narrows the service list: the search text and the filters of the filter dialog; each member left out means no narrowing. */
+export interface ServiceListFilters {
+  /** Search term matched against the domain, the product name and the service id; empty for none. */
+  search?: string
+  /** Keep only the services in this lifecycle status. */
+  status?: ServiceStatus
+  /** Keep only the services of this product. */
+  productId?: number
+  /** Keep only the services billed on this cycle. */
+  billingCycle?: BillingCycle
+}
+
 /** Filter and paging of the service list. */
-export interface ServiceFilter {
+export interface ServiceFilter extends ServiceListFilters {
   /** Page, 1-based. */
   page: number
   /** Items per page. */

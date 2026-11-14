@@ -16,6 +16,7 @@ import type {
   ServiceBillingTermsPayload,
   ServiceDetail,
   ServiceHostingAccountPayload,
+  ServiceListFilters,
   ServiceListItem,
   ServiceNotesPayload,
   ServiceStatus,
@@ -51,14 +52,18 @@ export const useServicesStore = defineStore('services', () => {
   const fieldErrors = ref<Record<string, string>>({})
 
   /**
-   * Loads one page of services. The page comes from the list's address, so the store keeps no copy of it.
+   * Loads one page of services. The page, the search and the filters come from the list's address, so the store keeps
+   * no copy of them.
    *
    * @param page - Page to load, 1-based.
+   * @param filters - The search text and the status, product and billing cycle filters; empty for none.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (page: number): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: ServiceListFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.listServices({ page, pageSize: pageSize.value }))
+    const result = await runAction(error, () =>
+      api.listServices({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+    )
     loading.value = false
     if (result.ok) {
       services.value = result.value.items
@@ -73,16 +78,18 @@ export const useServicesStore = defineStore('services', () => {
    * @param clientId - The client identifier to filter by.
    * @param pageNumber - Page, 1-based.
    * @param size - Items per page.
+   * @param filters - The search text and the status, product and billing cycle filters; empty for none.
    * @returns The page, or null when refused (see `error`).
    */
   const fetchClientPage = async (
     clientId: number | string,
     pageNumber: number,
     size: number,
+    filters: ServiceListFilters = {},
   ): Promise<PaginatedList<ServiceListItem> | null> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listServices({ clientId, page: pageNumber, pageSize: size }),
+      api.listServices({ ...filters, clientId, page: pageNumber, pageSize: size, search: filters.search?.trim() }),
     )
     loading.value = false
     return result.ok ? result.value : null

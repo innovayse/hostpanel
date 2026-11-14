@@ -362,7 +362,10 @@
   "clientServicesList": {
     "nextDue": "Next Due",
     "totalcountServiceValue": "Services: {totalCount}",
-    "noServicesFoundForThis": "No services found for this client"
+    "noServicesFoundForThis": "No services found for this client",
+    "searchServices": "Search by domain, product or ID",
+    "noServicesMatchYourFilters": "No services match your filters",
+    "clearFilters": "Clear filters"
   },
   "clientsList": {
     "manageYourClientAccounts": "Manage your client accounts",

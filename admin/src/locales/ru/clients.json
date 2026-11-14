@@ -362,7 +362,10 @@
   "clientServicesList": {
     "nextDue": "Следующая оплата",
     "totalcountServiceValue": "Услуг: {totalCount}",
-    "noServicesFoundForThis": "Для этого клиента услуги не найдены"
+    "noServicesFoundForThis": "Для этого клиента услуги не найдены",
+    "searchServices": "Поиск по домену, продукту или ID",
+    "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам",
+    "clearFilters": "Сбросить фильтры"
   },
   "clientsList": {
     "manageYourClientAccounts": "Управление аккаунтами клиентов",

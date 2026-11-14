@@ -5,6 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useTldConfigsApi } from '@/composables/apis/useTldConfigsApi'
+import { RegistrarModule } from '@/types/registrarmodule'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -12,14 +13,19 @@ afterEach(() => {
 })
 
 describe('useTldConfigsApi', () => {
-  it('listTldConfigs and getTldConfig read their endpoints', async () => {
-    const mock = stubFetch(json([]))
+  it('listTldConfigs sends the page, its size, the search and the filters, and getTldConfig reads one config', async () => {
+    const mock = stubFetch(json({ items: [] }))
     const api = useTldConfigsApi()
 
-    await api.listTldConfigs()
+    await api.listTldConfigs({ page: 2, pageSize: 20, search: 'com', registrarModule: RegistrarModule.NameAm, enabled: true })
+    await api.listTldConfigs({ page: 1, pageSize: 20 })
     await api.getTldConfig(5)
-    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/tld-configs', method: 'GET' })
-    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/tld-configs/5', method: 'GET' })
+    expect(callOf(mock, 0)).toMatchObject({
+      url: '/api/admin/tld-configs?page=2&pageSize=20&search=com&registrarModule=NameAm&enabled=true',
+      method: 'GET',
+    })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/tld-configs?page=1&pageSize=20', method: 'GET' })
+    expect(callOf(mock, 2)).toMatchObject({ url: '/api/admin/tld-configs/5', method: 'GET' })
   })
 
   it('createTldConfig POSTs the payload and returns the id', async () => {

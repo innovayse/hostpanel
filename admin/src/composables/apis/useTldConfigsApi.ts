@@ -5,10 +5,12 @@
  * No state lives here; every function rejects with an `ApiError` carrying the problem+json body.
  */
 
-import { useApi } from '@/composables/useApi'
+import { buildQuery, useApi } from '@/composables/useApi'
+import type { PaginatedList } from '@/types/paginatedlist'
 import type {
   CreateTldConfigPayload,
   TldConfig,
+  TldConfigFilter,
   TldConfigListItem,
   TldImportResult,
   UpdateTldConfigPayload,
@@ -25,12 +27,21 @@ export const useTldConfigsApi = () => {
   const { request } = useApi()
 
   /**
-   * Lists every TLD config.
+   * Lists TLD configs, one page.
    *
-   * @returns The list rows.
+   * @param filter - Page, page size, TLD search, registrar module and enabled state.
+   * @returns The page and the total count.
    */
-  const listTldConfigs = (): Promise<TldConfigListItem[]> =>
-    request<TldConfigListItem[]>(ApiPath.AdminTldConfigs)
+  const listTldConfigs = (filter: TldConfigFilter): Promise<PaginatedList<TldConfigListItem>> =>
+    request<PaginatedList<TldConfigListItem>>(
+      `${ApiPath.AdminTldConfigs}${buildQuery({
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        registrarModule: filter.registrarModule,
+        enabled: filter.enabled,
+      })}`,
+    )
 
   /**
    * Reads one TLD config.

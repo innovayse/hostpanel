@@ -1717,6 +1717,9 @@
   <data name="FraudDecisionInvalid" xml:space="preserve">
     <value>The fraud decision is not valid.</value>
   </data>
+  <data name="FraudReasonInvalid" xml:space="preserve">
+    <value>The fraud reason is not valid.</value>
+  </data>
   <data name="OrderReviewReasonRequired" xml:space="preserve">
     <value>Give the reason the client is told.</value>
   </data>
@@ -1725,5 +1728,8 @@
   </data>
   <data name="DashboardPeriodInvalid" xml:space="preserve">
     <value>Choose a period of 30 or 90 days.</value>
+  </data>
+  <data name="CampaignListStatusInvalid" xml:space="preserve">
+    <value>Status must be one of: Draft, Scheduled, Sending, Sent.</value>
   </data>
 </root>

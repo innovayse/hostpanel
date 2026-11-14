@@ -123,7 +123,7 @@ Two contacts on the same client account cannot share an email address (`CONTACT_
 
 ## All users
 
-Go to **Clients → Manage Users** to see every user across all client accounts. From this screen you can:
+Go to **Clients → Manage Users** to see every user across all client accounts. Type a name or an email address in the search box to narrow the list; the search and the page stay in the address, so a link or a reload opens the same list. From this screen you can:
 
 - **Send Password Reset Email**: sends a reset link to the user's email address. <Label type="local" /> Local accounts only; not available for SSO users.
 - **Change Password**: set a new password directly. <Label type="local" /> Local accounts only.

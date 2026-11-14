@@ -4,12 +4,14 @@
  * No state lives here; every function rejects with an `ApiError` carrying the problem+json body.
  */
 
-import { useApi } from '@/composables/useApi'
+import { buildQuery, useApi } from '@/composables/useApi'
+import type { PaginatedList } from '@/types/paginatedlist'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 import type {
   EmailCampaign,
   EmailCampaignAudience,
+  EmailCampaignFilter,
   EmailCampaignListItem,
   EmailCampaignPayload,
   EmailCampaignPreview,
@@ -25,12 +27,20 @@ export const useEmailCampaignsApi = () => {
   const { request } = useApi()
 
   /**
-   * Lists every campaign with its delivery counters.
+   * Lists campaigns with their delivery counters, one page.
    *
-   * @returns The campaigns.
+   * @param filter - Page, page size, subject search and status.
+   * @returns The page and the total count.
    */
-  const listCampaigns = (): Promise<EmailCampaignListItem[]> =>
-    request<EmailCampaignListItem[]>(ApiPath.AdminEmailCampaigns)
+  const listCampaigns = (filter: EmailCampaignFilter): Promise<PaginatedList<EmailCampaignListItem>> =>
+    request<PaginatedList<EmailCampaignListItem>>(
+      `${ApiPath.AdminEmailCampaigns}${buildQuery({
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        status: filter.status,
+      })}`,
+    )
 
   /**
    * Reads one campaign with its body and audience.

@@ -5,12 +5,11 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import ClientServicesListView from '@/views/ClientServicesListView.vue'
-import UiSelect from '@/components/ui/UiSelect.vue'
 import { mountClientView } from '../helpers/clientViews'
 import { flushPromises } from '@vue/test-utils'
-import type { VueWrapper } from '@vue/test-utils'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { applyListFilter } from '../helpers/listFilter'
 import { json } from '../helpers/fetch'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 
@@ -68,26 +67,6 @@ const mountTabAt = async (query = '') => {
 const listUrls = (mock: ReturnType<typeof vi.fn>): string[] =>
   mock.mock.calls.map(([url]) => url as string).filter((url) => url.startsWith('/api/services?'))
 
-/**
- * Opens the filter dialog, chooses a value in one of its selects and applies it.
- *
- * @param wrapper - The mounted tab.
- * @param testid - The `data-testid` of the select to use.
- * @param value - The option value to choose.
- */
-const applyFilter = async (wrapper: VueWrapper, testid: string, value: string) => {
-  await wrapper.get('[data-testid="client-services-filter"]').trigger('click')
-  await flushPromises()
-  const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === testid)
-  if (select === undefined) {
-    throw new Error(`No select has the test id ${testid}`)
-  }
-  select.vm.$emit('update:modelValue', value)
-  await flushPromises()
-  await wrapper.get('[data-testid="filter-apply"]').trigger('click')
-  await flushPromises()
-}
-
 describe('ClientServicesListView', () => {
   it('mounts without throwing', async () => {
     const wrapper = await mountClientView(ClientServicesListView)
@@ -130,13 +109,13 @@ describe('ClientServicesListView', () => {
     const mock = stubTab()
     const { wrapper, router } = await mountTabAt()
 
-    await applyFilter(wrapper, 'client-services-filter-status', 'Active')
+    await applyListFilter(wrapper, { 'client-services-filter-status': 'Active' }, 'client-services-filter')
     expect(listUrls(mock).at(-1)).toBe('/api/services?clientId=5&page=1&pageSize=20&status=Active')
 
-    await applyFilter(wrapper, 'client-services-filter-product', '1')
+    await applyListFilter(wrapper, { 'client-services-filter-product': '1' }, 'client-services-filter')
     expect(wrapper.get('[data-testid="filter-chip-productId"]').text()).toContain('Shared Starter')
 
-    await applyFilter(wrapper, 'client-services-filter-billing-cycle', 'Quarterly')
+    await applyListFilter(wrapper, { 'client-services-filter-billing-cycle': 'Quarterly' }, 'client-services-filter')
     expect(router.currentRoute.value.query).toEqual({ status: 'Active', productId: '1', billingCycle: 'Quarterly' })
     expect(listUrls(mock).at(-1)).toBe('/api/services?clientId=5&page=1&pageSize=20&status=Active&productId=1&billingCycle=Quarterly')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('3')

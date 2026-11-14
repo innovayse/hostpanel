@@ -1,13 +1,14 @@
 /**
- * Endpoints behind the tax rules store: the rule list and the create, update and delete of one rule.
+ * Endpoints behind the tax rules store: the paged rule list and the create, update and delete of one rule.
  *
  * No state lives here; every function rejects with an `ApiError` carrying the problem+json body.
  */
 
-import { useApi } from '@/composables/useApi'
+import { buildQuery, useApi } from '@/composables/useApi'
+import type { PaginatedList } from '@/types/paginatedlist'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
-import type { SaveTaxRulePayload, TaxRuleDto } from '@/types/taxrule'
+import type { SaveTaxRulePayload, TaxRuleDto, TaxRuleFilter } from '@/types/taxrule'
 
 /**
  * Endpoint functions for `/admin/tax-rules`.
@@ -18,11 +19,20 @@ export const useTaxRulesApi = () => {
   const { request } = useApi()
 
   /**
-   * Lists every tax rule.
+   * Lists tax rules, one page.
    *
-   * @returns The rules.
+   * @param filter - Page, page size, search and enabled state.
+   * @returns The page and the total count.
    */
-  const listTaxRules = (): Promise<TaxRuleDto[]> => request<TaxRuleDto[]>(ApiPath.AdminTaxRules)
+  const listTaxRules = (filter: TaxRuleFilter): Promise<PaginatedList<TaxRuleDto>> =>
+    request<PaginatedList<TaxRuleDto>>(
+      `${ApiPath.AdminTaxRules}${buildQuery({
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        enabled: filter.enabled,
+      })}`,
+    )
 
   /**
    * Creates a tax rule for a country, or for one region of it.

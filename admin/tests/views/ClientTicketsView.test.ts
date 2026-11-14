@@ -5,11 +5,10 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import type { VueWrapper } from '@vue/test-utils'
-import UiSelect from '@/components/ui/UiSelect.vue'
 import ClientTicketsView from '@/views/ClientTicketsView.vue'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import { mountClientView } from '../helpers/clientViews'
+import { applyListFilter } from '../helpers/listFilter'
 import { json } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
@@ -69,25 +68,6 @@ const mountTabAt = async (query = '') => {
  */
 const listUrls = (mock: ReturnType<typeof vi.fn>): string[] =>
   mock.mock.calls.map(([url]) => url as string).filter((url) => url.startsWith('/api/tickets/client/7?'))
-
-/**
- * Opens the filter dialog, chooses a value in one of its selects and applies it.
- *
- * @param wrapper - The mounted tab.
- * @param testid - The `data-testid` of the select to use.
- * @param value - The option value to choose.
- */
-const applyFilter = async (wrapper: VueWrapper, testid: string, value: string) => {
-  await wrapper.get('[data-testid="client-tickets-filter"]').trigger('click')
-  await flushPromises()
-  wrapper
-    .findAllComponents(UiSelect)
-    .find((select) => select.attributes('data-testid') === testid)
-    ?.vm.$emit('update:modelValue', value)
-  await flushPromises()
-  await wrapper.get('[data-testid="filter-apply"]').trigger('click')
-  await flushPromises()
-}
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -152,7 +132,7 @@ describe('ClientTicketsView', () => {
     const mock = stubTab()
     const { wrapper, router } = await mountTabAt()
 
-    await applyFilter(wrapper, 'client-tickets-filter-status', TicketStatus.Closed)
+    await applyListFilter(wrapper, { 'client-tickets-filter-status': TicketStatus.Closed }, 'client-tickets-filter')
 
     expect(router.currentRoute.value.query).toEqual({ status: 'Closed' })
     expect(listUrls(mock).at(-1)).toBe('/api/tickets/client/7?page=1&pageSize=20&status=Closed')
@@ -163,8 +143,8 @@ describe('ClientTicketsView', () => {
     const mock = stubTab()
     const { wrapper, router } = await mountTabAt()
 
-    await applyFilter(wrapper, 'client-tickets-filter-priority', TicketPriority.High)
-    await applyFilter(wrapper, 'client-tickets-filter-department', '2')
+    await applyListFilter(wrapper, { 'client-tickets-filter-priority': TicketPriority.High }, 'client-tickets-filter')
+    await applyListFilter(wrapper, { 'client-tickets-filter-department': '2' }, 'client-tickets-filter')
 
     expect(router.currentRoute.value.query).toEqual({ priority: 'High', departmentId: '2' })
     expect(listUrls(mock).at(-1)).toBe('/api/tickets/client/7?page=1&pageSize=20&priority=High&departmentId=2')

@@ -93,3 +93,9 @@ Orders are numbered in the format `ORD-0042`. The prefix and digit count are set
 | `Orders__RetryLeaseMinutes` | 10 | Minutes a claim on an order line (the accept's, or a retry's) is respected before a retry may take the line over (1 to 1440). Set it longer than the slowest registrar or provisioning call. |
 
 See the [Configuration reference](/operators/configuration) for how to change these.
+
+## Fraud log and block lists {#fraud-log-and-block-lists}
+
+**Fraud → Fraud log** lists every registration and order the fraud check scored, newest first, with its decision, score and reasons. Type part of an email address or an IP address in the search box to find the checks of one person. The **Filters** button narrows the log by the kind of check (registration or order), the decision and the reason; applied filters show as chips you can remove. The search, the filters and the page stay in the address, so a link or a reload opens the same list.
+
+**Fraud → Block lists** has one tab for each kind of value (IP address, IP range, email domain, country). The search box finds an entry by part of its value or of its note, within the tab you are on; choosing another tab starts from the first page with an empty search. The tab, the search and the page stay in the address.

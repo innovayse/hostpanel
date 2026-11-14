@@ -518,6 +518,7 @@
     "sendPasswordResetEmail": "Send Password Reset Email",
     "totalcountUserValue": "Users: {totalCount}",
     "noUsersFound": "No users found",
+    "noUsersMatchYourSearch": "No users match your search",
     "passwordResetEmailSent": "Password reset email sent.",
     "never": "Never",
     "userSaved": "User saved.",

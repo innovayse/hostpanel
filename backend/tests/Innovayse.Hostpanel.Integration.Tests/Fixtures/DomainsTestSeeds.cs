@@ -202,6 +202,22 @@ internal static class DomainsTestSeeds
         return domain.Id;
     }
 
+    /// <summary>Seeds a TLD configuration directly, so a list test can set up the exact mix a filter must tell apart.</summary>
+    /// <param name="context">The data context to seed through.</param>
+    /// <param name="tld">The extension without its leading dot.</param>
+    /// <param name="registrarModule">The registrar module the TLD is sourced from.</param>
+    /// <param name="isEnabled">Whether the TLD is on sale.</param>
+    /// <param name="sortOrder">The display order, ascending.</param>
+    /// <returns>The saved configuration's id.</returns>
+    public static async Task<int> SeedTldConfigAsync(
+        IHostpanelDbContext context, string tld, RegistrarModule registrarModule, bool isEnabled, int sortOrder)
+    {
+        var config = TldConfig.Create(tld, registrarModule, TestCurrencies.Base, TestCurrencies.Base, isEnabled, sortOrder, []);
+        context.TldConfigs.Add(config);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return config.Id;
+    }
+
     /// <summary>Seeds an active, registrar-linked domain for a DB-level (non-HTTP) test to act on.</summary>
     /// <param name="context">The data context to seed through.</param>
     /// <returns>The saved domain's id.</returns>

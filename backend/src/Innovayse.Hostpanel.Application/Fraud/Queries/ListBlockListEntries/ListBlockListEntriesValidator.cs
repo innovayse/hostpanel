@@ -1,3 +1,4 @@
+using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
@@ -5,15 +6,17 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Fraud.Queries.ListBlockListEntries;
 
 /// <summary>
-/// Validator for <see cref="ListBlockListEntriesQuery"/>. Page and page size are clamped by the handler, and the type is typed, so
-/// an unknown value is refused at binding; no rule is declared here.
+/// Validator for <see cref="ListBlockListEntriesQuery"/>. The page, page size and search are the shared list rules
+/// (<see cref="ListQueryValidator{T}"/>); this adds the rule of the type filter.
 /// </summary>
-public sealed class ListBlockListEntriesValidator : LocalizedValidator<ListBlockListEntriesQuery>
+public sealed class ListBlockListEntriesValidator : ListQueryValidator<ListBlockListEntriesQuery>
 {
     /// <summary>Initializes the validator.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
     public ListBlockListEntriesValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
+        // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
+        RuleFor(x => x.Type).IsInEnum().WithMessage(L["FraudBlockListTypeInvalid"]);
     }
 }

@@ -137,6 +137,10 @@ Go to **Reports** and select the report you need:
 | Ticket Feedback Comments | Individual feedback comments submitted by clients |
 | Support Ticket Replies | Breakdown of tickets handled per admin for a selected month |
 
+## Email campaigns
+
+**Support → Email campaigns** lists the campaigns with their status, send times and delivery counters, newest first. Type part of a subject in the search box to find a campaign. The **Filters** button narrows the list by status (draft, scheduled, sending or sent); an applied filter shows as a chip you can remove. The list is paged, 20 campaigns to a page, and the search, the filter and the page stay in the address. Search treats `%` and `_` as ordinary characters.
+
 ## What is not built in
 
 <Callout type="note">

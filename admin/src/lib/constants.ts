@@ -13,6 +13,8 @@ import { ClientStatus } from '@/types/client'
 import { CurrencyCode } from '@/types/currency'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
+import { CampaignStatus } from '@/types/emailcampaign'
+import { EnabledFilter } from '@/types/enabledfilter'
 import { PaymentGateway } from '@/types/gateway'
 import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { InvoiceStatus } from '@/types/invoice'
@@ -74,6 +76,20 @@ export const DOMAIN_STATUS_OPTIONS: SelectOption[] = [
 export const REGISTRAR_MODULE_OPTIONS: SelectOption[] = [
   { value: RegistrarModule.NameAm, get label() { return translate('settings.tldConfigs.nameAm') } },
   { value: RegistrarModule.Namecheap, get label() { return translate('settings.tldConfigs.namecheap') } },
+]
+
+/** Enabled-state filter options of a list whose rows are switched on or off (TLD configurations, tax rules). */
+export const ENABLED_FILTER_OPTIONS: SelectOption<EnabledFilter>[] = [
+  { value: EnabledFilter.Enabled, get label() { return translate('shared.enabled') } },
+  { value: EnabledFilter.Disabled, get label() { return translate('shared.disabled') } },
+]
+
+/** Email campaign status options for the list's status filter. */
+export const CAMPAIGN_STATUS_OPTIONS: SelectOption<CampaignStatus>[] = [
+  { value: CampaignStatus.Draft, get label() { return translate('emailCampaigns.status.Draft') } },
+  { value: CampaignStatus.Scheduled, get label() { return translate('emailCampaigns.status.Scheduled') } },
+  { value: CampaignStatus.Sending, get label() { return translate('emailCampaigns.status.Sending') } },
+  { value: CampaignStatus.Sent, get label() { return translate('emailCampaigns.status.Sent') } },
 ]
 
 /** Payment method options for dropdowns (the empty entry means "none"). */

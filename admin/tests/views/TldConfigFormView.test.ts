@@ -79,7 +79,6 @@ describe('TldConfigFormView', () => {
   it('creates a TLD with only the priced periods and returns to the list', async () => {
     const mock = stubRouteTable({
       'POST /admin/tld-configs': () => json(8),
-      'GET /admin/tld-configs': () => json([]),
     })
     const { wrapper, router } = await mountScreen(TldConfigFormView, {}, CREATE, CREATE)
 
@@ -107,7 +106,6 @@ describe('TldConfigFormView', () => {
   it('loads the configuration being edited, locks the TLD and updates with PUT', async () => {
     const mock = stubRouteTable({
       'GET /admin/tld-configs/5': () => json(stored),
-      'GET /admin/tld-configs': () => json([]),
       'PUT /admin/tld-configs/5': () => new Response(null, { status: 204 }),
     })
     const { wrapper } = await mountScreen(TldConfigFormView, {}, '/settings/tld-pricing/5/edit', EDIT)

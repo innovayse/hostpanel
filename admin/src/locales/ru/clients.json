@@ -518,6 +518,7 @@
     "sendPasswordResetEmail": "Отправить письмо для сброса пароля",
     "totalcountUserValue": "Пользователей: {totalCount}",
     "noUsersFound": "Пользователи не найдены",
+    "noUsersMatchYourSearch": "Нет пользователей, подходящих под поиск",
     "passwordResetEmailSent": "Письмо для сброса пароля отправлено.",
     "never": "Никогда",
     "userSaved": "Пользователь сохранён.",

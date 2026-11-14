@@ -7,9 +7,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useEmailCampaignsApi } from '@/composables/apis/useEmailCampaignsApi'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
 import type {
   EmailCampaign,
+  EmailCampaignListFilters,
   EmailCampaignListItem,
   EmailCampaignPayload,
   EmailCampaignPreview,
@@ -20,8 +22,14 @@ import type {
 export const useEmailCampaignsStore = defineStore('emailCampaigns', () => {
   const api = useEmailCampaignsApi()
 
-  /** Every campaign with its delivery counters. */
+  /** The campaigns of the loaded page, with their delivery counters. */
   const campaigns = ref<EmailCampaignListItem[]>([])
+
+  /** Items per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
+
+  /** Total number of matching campaigns across all pages. */
+  const totalCount = ref(0)
 
   /** The campaign loaded into the form, null while none is. */
   const current = ref<EmailCampaign | null>(null)
@@ -51,16 +59,22 @@ export const useEmailCampaignsStore = defineStore('emailCampaigns', () => {
   let latestCount = 0
 
   /**
-   * Loads the campaign list.
+   * Loads one page of the campaign list. The page, the search and the filters come from the list's address, so the
+   * store keeps no copy of them.
    *
+   * @param page - Page to load, 1-based.
+   * @param filters - The subject search text and the status filter; empty for none.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: EmailCampaignListFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, api.listCampaigns)
+    const result = await runAction(error, () =>
+      api.listCampaigns({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+    )
     loading.value = false
     if (result.ok) {
-      campaigns.value = result.value
+      campaigns.value = result.value.items
+      totalCount.value = result.value.totalCount
     }
     return result.ok
   }
@@ -201,7 +215,7 @@ export const useEmailCampaignsStore = defineStore('emailCampaigns', () => {
   }
 
   return {
-    campaigns, current, preview, audienceCount, loading, counting, error, audienceError, fieldErrors,
+    campaigns, pageSize, totalCount, current, preview, audienceCount, loading, counting, error, audienceError, fieldErrors,
     fetchAll, fetchById, clearCurrent, create, update, remove, schedule, cancel, fetchPreview, clearPreview,
     fetchAudienceCount, clearAudience,
   }

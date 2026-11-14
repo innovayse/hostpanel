@@ -77,6 +77,31 @@ describe('useFilterQuery', () => {
     expect(router.currentRoute.value.query.page).toBe('2')
   })
 
+  it('writes the text of the search box with the draft on apply, so a screen can change both in one step', async () => {
+    const { router, filters } = await setup('/list?search=old&page=3')
+    filters().draft.value.status = 'active'
+    filters().search.value = ''
+
+    await filters().apply()
+
+    expect(router.currentRoute.value.query).toEqual({ status: 'active' })
+    const addressAfterApply = router.currentRoute.value.fullPath
+    // The pause of the search box then finds the address already holding the text and navigates nowhere.
+    vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS)
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe(addressAfterApply)
+  })
+
+  it('writes a search typed a moment ago when a filter is applied before the pause is over', async () => {
+    const { router, filters } = await setup('/list')
+    filters().search.value = '  acme '
+    filters().draft.value.group = 'vip'
+
+    await filters().apply()
+
+    expect(router.currentRoute.value.query).toEqual({ group: 'vip', search: 'acme' })
+  })
+
   it('empties the draft on reset without touching the address, and restores it on cancel', async () => {
     const { router, filters } = await setup('/list?status=active')
 

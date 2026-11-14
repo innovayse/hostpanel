@@ -34,6 +34,13 @@ export interface ListQuery<K extends string> extends FilterQuery<K> {
    */
   loadOnChange: (load: () => unknown) => void
   /**
+   * After a delete: steps back one page when the page just read is empty and is not the first.
+   *
+   * @param pageIsEmpty - Whether the page just read holds no row.
+   * @returns A promise that settles when the navigation, if any, has finished.
+   */
+  stepBackWhenEmpty: (pageIsEmpty: boolean) => Promise<void>
+  /**
    * Reads an applied filter as a member of a closed set.
    *
    * @param key - The filter field in the address.
@@ -63,7 +70,7 @@ export interface ListQuery<K extends string> extends FilterQuery<K> {
  * Must run in a component's setup, because it reads the router and registers hooks.
  *
  * @param keys - The filter fields, each stored in the query under its own name.
- * @returns Everything `useFilterQuery` returns, plus `narrowed`, `loadOnChange`, `enumOf`, `idOf` and `chipsOf`.
+ * @returns Everything `useFilterQuery` returns, plus `narrowed`, `loadOnChange`, `stepBackWhenEmpty`, `enumOf`, `idOf` and `chipsOf`.
  */
 export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K> => {
   /** The address-backed filters, search and page. */
@@ -91,6 +98,17 @@ export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K>
       // Every change of a filter, the search or the page loads the list the address names.
       watch(listKey, () => load())
       onMounted(() => load())
+    },
+    /**
+     * Steps back one page when a delete emptied the page the reader is on.
+     *
+     * @param pageIsEmpty - Whether the page just read holds no row.
+     * @returns A promise that settles when the navigation, if any, has finished.
+     */
+    stepBackWhenEmpty: async (pageIsEmpty) => {
+      if (pageIsEmpty && query.page.value > 1) {
+        await query.setPage(query.page.value - 1)
+      }
     },
     /**
      * The filter under the key as one of the enum's members.

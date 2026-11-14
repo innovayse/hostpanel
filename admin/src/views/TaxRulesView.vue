@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * Admin Tax Rules settings view: the table of tax rules (name, country, region, rate and status)
- * with create, edit and delete.
+ * Admin Tax Rules settings view: a search box, the filter dialog with its removable chips, and a paged table of tax
+ * rules (name, country, region, rate and status) with create, edit and delete.
  *
- * The add and edit dialog shows a refused save inside itself; a result banner reports a delete, which
- * a confirmation dialog guards.
+ * The search text, the enabled filter and the page live in the address (`useListQuery`), so a reload, a shared link
+ * and the back button restore the same list, and the API applies them before it pages. The add and edit dialog shows
+ * a refused save inside itself; a result banner reports a delete, which a confirmation dialog guards. A save or a
+ * delete reads the page the address names again.
  */
-import { onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TaxRuleFormModal from '@/components/settings/TaxRuleFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -14,11 +16,17 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -26,18 +34,71 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { ENABLED_FILTER_OPTIONS } from '@/lib/constants'
+import { enabledOfFilter } from '@/lib/enabledFilter'
 import { Icon } from '@/lib/icons'
 import { reportCountryName } from '@/lib/reportsCountry'
+import { statusLabel } from '@/lib/tones'
 import { useTaxRulesStore } from '@/stores/taxRules'
-import type { SaveTaxRulePayload, TaxRuleDto } from '@/types/taxrule'
+import { EnabledFilter } from '@/types/enabledfilter'
+import type { SaveTaxRulePayload, TaxRuleDto, TaxRuleListFilters } from '@/types/taxrule'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t, locale } = useI18n()
 
-/** Tax rules store: the list, the loading flag and the refusal sentences. */
+/** The filter field the dialog edits; it is one query key and one `TaxRuleListFilters` member. */
+const FilterKey = {
+  Enabled: 'enabled',
+} as const
+
+/** Tax rules store: the page, the loading flag and the refusal sentences. */
 const store = useTaxRulesStore()
+
+/** The enabled filter, the search text and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
+
+/** Enabled-state filter options; the empty value means any. */
+const enabledOptions = computed(() => [{ value: '', label: t('shared.any') }, ...ENABLED_FILTER_OPTIONS])
+
+/** The enabled state in the address as a filter choice, undefined when none is set or the value is not one. */
+const enabledOfAddress = enumOf(FilterKey.Enabled, EnabledFilter)
+
+/** What the address narrows the list by, as the store sends it to the API. */
+const filters = computed<TaxRuleListFilters>(() => ({
+  search: appliedSearch.value,
+  enabled: enabledOfFilter(enabledOfAddress.value),
+}))
+
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Enabled,
+    label: t('shared.status'),
+    value: enabledOfAddress.value === undefined ? undefined : statusLabel(ENABLED_FILTER_OPTIONS, enabledOfAddress.value),
+  },
+])
+
+/**
+ * Loads the page the address names with the filter and search it holds.
+ *
+ * @returns True when loaded; false when refused (see `store.error`).
+ */
+const load = (): Promise<boolean> => store.fetchAll(page.value, filters.value)
+
+// Every change of the filter, the search or the page loads the list the address names.
+loadOnChange(load)
+
+/** Whether the current page has any rule to list. */
+const hasRows = computed<boolean>(() => store.taxRules.length > 0)
+
+/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
+const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
 /** The result banner for a delete. */
 const banner = useResultBanner()
@@ -76,7 +137,7 @@ const openEdit = (rule: TaxRuleDto): void => {
 }
 
 /**
- * Saves the rule from the dialog (a new one, or the edited one) and closes the dialog on success.
+ * Saves the rule from the dialog (a new one, or the edited one), closes the dialog and reloads the page on success.
  *
  * @param payload - The rule's fields.
  */
@@ -88,10 +149,14 @@ const handleSave = async (payload: SaveTaxRulePayload): Promise<void> => {
   saving.value = false
   if (saved) {
     showModal.value = false
+    await load()
   }
 }
 
-/** Deletes the rule the dialog asked about and reports the outcome. */
+/**
+ * Deletes the rule the dialog asked about, reports the outcome and reloads the page. When the delete emptied the last
+ * page, the list steps back to the page before it.
+ */
 const confirmDelete = async (): Promise<void> => {
   if (deleteTarget.value === null) {
     return
@@ -102,6 +167,8 @@ const confirmDelete = async (): Promise<void> => {
   deleteTarget.value = null
   if (removed) {
     banner.show(t('taxRules.toasts.deleted'), false)
+    await load()
+    await stepBackWhenEmpty(!hasRows.value)
   } else if (store.actionError) {
     banner.show(store.actionError, true)
   }
@@ -147,8 +214,6 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
     },
   },
 ]
-
-onMounted(() => store.fetchAll())
 </script>
 
 <template>
@@ -171,19 +236,44 @@ onMounted(() => store.fetchAll())
       {{ banner.message.value }}
     </UiAlert>
 
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="tax-rules-search"
+      :search-placeholder="t('taxRules.searchPlaceholder')"
+      :active-count="activeCount"
+      :chips="chips"
+      :loading="initialLoading"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <UiStack>
+        <UiField :label="t('shared.status')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.enabled"
+              :options="enabledOptions"
+              :placeholder="t('shared.any')"
+              data-testid="tax-rules-filter-enabled"
+            />
+          </template>
+        </UiField>
+      </UiStack>
+    </UiListToolbar>
+
     <UiErrorState
       v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="tax-rules-error"
-      @retry="store.fetchAll()"
+      @retry="load"
     />
 
-    <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="store.taxRules.length === 0" :loading="store.loading">
-        <template #empty>
-          {{ t('taxRules.empty') }}
-        </template>
+    <UiCard v-else-if="hasRows || store.loading" class="overflow-hidden">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="tax-rules-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader align="left">{{ t('taxRules.table.name') }}</UiTableHeader>
@@ -216,6 +306,37 @@ onMounted(() => store.fetchAll())
           </UiTableRow>
         </UiTableBody>
       </UiTable>
+
+      <template #footer>
+        <UiStack direction="row" justify="between" align="center" wrap>
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
+            {{ t('taxRules.totalCount', { totalCount: store.totalCount }) }}
+          </UiResultCount>
+          <UiPagination
+            :page="page"
+            :total="store.totalCount"
+            :page-size="store.pageSize"
+            testid="tax-rules-pagination"
+            @update:page="setPage"
+          />
+        </UiStack>
+      </template>
+    </UiCard>
+
+    <UiCard v-else>
+      <UiEmptyState
+        :title="narrowed ? t('taxRules.noMatches') : t('taxRules.empty')"
+        data-testid="tax-rules-empty"
+      >
+        <template #icon>
+          <UiIcon :markup="Icon.Dollar" size="lg" />
+        </template>
+        <template v-if="activeCount > 0" #actions>
+          <UiButton :variant="UiButtonVariant.Link" data-testid="tax-rules-clear-empty" @click="clearAll">
+            {{ t('taxRules.clearFilters') }}
+          </UiButton>
+        </template>
+      </UiEmptyState>
     </UiCard>
 
     <!-- Add/edit tax rule dialog -->

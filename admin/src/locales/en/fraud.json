@@ -22,6 +22,8 @@
     "addedAt": "Added",
     "removed": "Entry removed from the block list.",
     "empty": "This block list is empty.",
+    "searchPlaceholder": "Search by value or note",
+    "noMatches": "No entries match your search.",
     "deleteTitle": "Remove from block list?",
     "deleteMessage": "{value} will no longer be flagged by the fraud check."
   },
@@ -34,7 +36,9 @@
     "score": "Score",
     "reasons": "Reasons",
     "noReasons": "None",
-    "order": "Order"
+    "order": "Order",
+    "searchPlaceholder": "Search by email or IP address",
+    "noMatches": "No log entries match your search or filters."
   },
   "settings": {
     "title": "Fraud settings",

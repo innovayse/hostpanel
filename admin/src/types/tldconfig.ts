@@ -1,7 +1,8 @@
 /**
- * The TLD price book: one row, its list shape, the payloads that write it, and what an
+ * The TLD price book: one row, its list shape and filters, the payloads that write it, and what an
  * import reports back.
  */
+import type { RegistrarModule } from '@/types/registrarmodule'
 
 /** The prices of one TLD for each action, keyed by period in years (e.g. "1", "2"). */
 export interface TldPriceTable {
@@ -67,6 +68,24 @@ export interface TldConfigListItem {
   lastSyncedAt: string | null
   /** Display order. */
   sortOrder: number
+}
+
+/** What narrows the TLD list: the search text and the filters of the filter dialog; each member left out means no narrowing. */
+export interface TldConfigListFilters {
+  /** TLD search term; empty for none. */
+  search?: string
+  /** Keep only the TLDs sourced from this registrar module. */
+  registrarModule?: RegistrarModule
+  /** Keep only the TLDs that are on sale (true) or switched off (false). */
+  enabled?: boolean
+}
+
+/** Filter and paging of the TLD list. */
+export interface TldConfigFilter extends TldConfigListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
 }
 
 /** Payload for creating a new TLD config. */

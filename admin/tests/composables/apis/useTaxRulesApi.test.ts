@@ -16,11 +16,19 @@ afterEach(() => {
 })
 
 describe('useTaxRulesApi', () => {
-  it('listTaxRules reads /admin/tax-rules', async () => {
-    const mock = stubFetch(json([{ id: 1, name: 'Germany VAT' }]))
+  it('listTaxRules sends the page, its size, the search and the enabled filter', async () => {
+    const page = { items: [{ id: 1, name: 'Germany VAT' }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }
+    const mock = stubFetch(json(page))
 
-    expect(await useTaxRulesApi().listTaxRules()).toEqual([{ id: 1, name: 'Germany VAT' }])
-    expect(callOf(mock)).toMatchObject({ url: '/api/admin/tax-rules', method: 'GET' })
+    expect(await useTaxRulesApi().listTaxRules({ page: 2, pageSize: 20, search: 'vat', enabled: false })).toEqual(page)
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/tax-rules?page=2&pageSize=20&search=vat&enabled=false', method: 'GET' })
+  })
+
+  it('listTaxRules leaves out a filter that is not set', async () => {
+    const mock = stubFetch(json({ items: [] }))
+
+    await useTaxRulesApi().listTaxRules({ page: 1, pageSize: 20 })
+    expect(callOf(mock).url).toBe('/api/admin/tax-rules?page=1&pageSize=20')
   })
 
   it('createTaxRule POSTs the payload and returns the new id', async () => {

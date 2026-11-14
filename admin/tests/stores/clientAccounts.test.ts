@@ -44,9 +44,25 @@ describe('usersStore loads', () => {
     const mock = stubFetch(json({ items: [{ id: 'u1' }], totalCount: 1 }))
     const store = useUsersStore()
 
-    await store.fetchAll('ann')
+    expect(await store.fetchAll(1, { search: 'ann' })).toBe(true)
     expect(store.users).toEqual([{ id: 'u1' }])
     expect(callOf(mock).url).toBe('/api/admin/users?page=1&pageSize=20&search=ann')
+  })
+
+  it('fetchAll asks for the page it is given and leaves an empty search out', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const store = useUsersStore()
+
+    await store.fetchAll(3, { search: '' })
+    expect(callOf(mock).url).toBe('/api/admin/users?page=3&pageSize=20')
+  })
+
+  it('fetchAll answers false and shows the sentence when the list is refused', async () => {
+    const store = useUsersStore()
+    stubFetch(problem('Users are not available.', 403))
+
+    expect(await store.fetchAll(1)).toBe(false)
+    expect(store.error).toBe('Users are not available.')
   })
 
   it('fetchById sets the user and shows the sentence on refusal', async () => {

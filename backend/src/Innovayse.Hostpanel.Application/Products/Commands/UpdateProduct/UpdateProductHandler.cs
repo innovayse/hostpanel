@@ -85,6 +85,16 @@ public sealed class UpdateProductHandler
             product.SetGracePeriodDays(gracePeriodDays);
         }
 
+        // Hidden is the Inactive status; null leaves the status as stored.
+        if (cmd.IsHidden == true)
+        {
+            product.Deactivate();
+        }
+        else if (cmd.IsHidden == false)
+        {
+            product.Activate();
+        }
+
         if (cmd.IsFeatured == true)
         {
             await product.UnfeatureSiblingsAsync(_context, ct);

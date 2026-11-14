@@ -139,6 +139,7 @@ describe('ProductFormModal', () => {
       sku: '',
       metadata: '',
       gracePeriodDays: 7,
+      isHidden: false,
     }]])
   })
 
@@ -198,6 +199,28 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
     expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isFeatured: true, sortOrder: 7 })
+  })
+
+  it('emits the hidden flag when the operator turns Hidden on for a new product', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: true })
+  })
+
+  it('opens an inactive product as hidden and emits isHidden false once the operator turns it off', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    expect(wrapper.get('[data-testid="product-form-hidden"]').attributes('aria-checked')).toBe('true')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: false })
   })
 
   it('opens an existing product with its recommended flag and sort order', async () => {

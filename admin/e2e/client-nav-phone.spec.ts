@@ -196,6 +196,8 @@ test.describe('the menu bottom sheet on a phone', () => {
     await page.goto('/clients/7/summary')
     await page.getByTestId('topbar-toggle-sidebar').click()
     await expect(page.getByTestId('drawer-grip')).toBeVisible()
+    // The close button shows only once the enter transition has ended, so the sheet is at its resting place from here on.
+    await expect(page.getByTestId('drawer-close')).toBeVisible()
   }
 
   test('rises from the bottom edge with a grab handle, a height limit and the theme and language menus', async ({ page }) => {

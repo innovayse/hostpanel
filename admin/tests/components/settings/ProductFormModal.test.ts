@@ -135,6 +135,7 @@ describe('ProductFormModal', () => {
       prices: [{ currencyCode: 'USD', monthly: null, annual: null, quarterly: null, semiAnnual: null, biennial: null }],
       serverGroupId: null,
       isFeatured: false,
+      isHidden: false,
       sortOrder: 0,
       sku: '',
       metadata: '',
@@ -186,6 +187,29 @@ describe('ProductFormModal', () => {
       (wrapper.get(`[data-testid="product-form-price-USD-${cycle}"] input`).element as HTMLInputElement).value
     expect(valueOf('quarterly')).toBe('27')
     expect(valueOf('semiAnnual')).toBe('50')
+  })
+
+  it('emits the hidden switch the operator turned on', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: true })
+  })
+
+  it('emits a stored inactive product as hidden and a shown one after the switch is turned off', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: true })
+    expect(wrapper.emitted('save')?.[1]?.[0]).toMatchObject({ isHidden: false })
   })
 
   it('emits the recommended flag and the sort order the operator set', async () => {

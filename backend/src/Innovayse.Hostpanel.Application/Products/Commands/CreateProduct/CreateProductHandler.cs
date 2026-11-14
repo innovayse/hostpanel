@@ -67,6 +67,11 @@ public sealed class CreateProductHandler
         product.ReplacePrices(prices.CurrencyPrices, prices.ReplaceAllCurrencies);
         product.SetSku(cmd.Sku);
         product.SetMetadata(cmd.Metadata);
+        if (cmd.IsHidden)
+        {
+            product.Deactivate();
+        }
+
         if (cmd.GracePeriodDays is { } gracePeriodDays)
         {
             product.SetGracePeriodDays(gracePeriodDays);

@@ -128,6 +128,68 @@ describe('ProductsView', () => {
     expect(requestsOf(mock)).toContain('POST /products')
   })
 
+  it('sends the hidden switch of a new product through POST', async () => {
+    let sent: unknown
+    stubRouteTable({
+      ...routes,
+      'POST /products': (body) => {
+        sent = body
+        return json(3)
+      },
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="products-create"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-name"]').setValue('New plan')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(sent).toMatchObject({ name: 'New plan', isHidden: true })
+    })
+  })
+
+  it('sends a hidden product as hidden through PUT, so saving it does not show it again', async () => {
+    let sent: unknown
+    stubRouteTable({
+      ...routes,
+      'PUT /products/2': (body) => {
+        sent = body
+        return new Response(null, { status: 204 })
+      },
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="product-actions-2"]').trigger('click')
+    await wrapper.get('[data-testid="product-edit-2"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(sent).toMatchObject({ id: 2, isHidden: true })
+    })
+  })
+
+  it('sends a shown product after the hidden switch is turned off through PUT', async () => {
+    let sent: unknown
+    stubRouteTable({
+      ...routes,
+      'PUT /products/2': (body) => {
+        sent = body
+        return new Response(null, { status: 204 })
+      },
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="product-actions-2"]').trigger('click')
+    await wrapper.get('[data-testid="product-edit-2"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(sent).toMatchObject({ id: 2, isHidden: false })
+    })
+  })
+
   it('updates an existing product through PUT', async () => {
     const mock = stubRouteTable({ ...routes, 'PUT /products/1': () => new Response(null, { status: 204 }) })
     const { wrapper } = await mountScreen(ProductsView)

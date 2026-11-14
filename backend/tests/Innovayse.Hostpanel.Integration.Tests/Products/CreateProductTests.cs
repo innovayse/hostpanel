@@ -341,6 +341,52 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
         await ProductsTestSeeds.AssertFieldRefusedAsync(response, "gracePeriodDays");
     }
 
+    /// <summary>A product created with the Hidden switch on is saved inactive and the storefront does not list it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_Hidden_IsSavedInactiveAndLeftOutOfTheStorefront()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Hidden plan",
+            type = ProductType.SharedHosting,
+            monthlyPrice = 1m,
+            annualPrice = 10m,
+            isHidden = true,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("status").GetString().Should().Be("Inactive");
+        (await ProductsTestSeeds.PublicProductIdsAsync(factory, groupId)).Should().NotContain(id);
+    }
+
+    /// <summary>A product created without the Hidden switch is saved active and the storefront lists it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_WithoutHidden_IsSavedActiveAndListedInTheStorefront()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Visible plan",
+            type = ProductType.SharedHosting,
+            monthlyPrice = 1m,
+            annualPrice = 10m,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("status").GetString().Should().Be("Active");
+        (await ProductsTestSeeds.PublicProductIdsAsync(factory, groupId)).Should().Contain(id);
+    }
+
     /// <summary>The body of a Digital product create, with the fulfilment fields under test.</summary>
     /// <param name="groupId">The group the product joins.</param>
     /// <param name="name">The product name.</param>

@@ -170,6 +170,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       prices: payload.prices,
       serverGroupId: payload.serverGroupId,
       isFeatured: payload.isFeatured,
+      isHidden: payload.isHidden,
       sortOrder: payload.sortOrder,
       sku: payload.sku,
       metadata: payload.metadata,

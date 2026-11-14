@@ -63,7 +63,7 @@ public static class TextSearchExtensions
     /// <param name="children">Selects the children of a row.</param>
     /// <param name="columns">The text to look in on a child, one selector each.</param>
     /// <returns>The query narrowed by the search, or <paramref name="source"/> when the term is blank.</returns>
-    public static IQueryable<T> Search<T, TChild>(
+    public static IQueryable<T> SearchChildren<T, TChild>(
         this IQueryable<T> source,
         string? term,
         Expression<Func<T, IEnumerable<TChild>>> children,

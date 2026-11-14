@@ -165,7 +165,9 @@ export interface ServerDto {
 
 /**
  * A server as a picker or a summary reads it: no credential, name server or hosting detail. The whole set comes from one
- * unpaged request, so a screen that chooses a server or sums up every server never pages through the list.
+ * unpaged request, so a screen that chooses a server or sums up every server never pages through the list. It is the server
+ * brief (id, name, host name and address, flat as `ServerBriefDto` sends them) plus the state and capacity; the nested `endpoint` of
+ * {@link ServerDto} stays on the detail, because a picker has no use for the SSL flag and the assigned addresses.
  */
 export interface ServerOptionDto {
   /** Unique server identifier. */

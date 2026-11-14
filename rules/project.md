@@ -1803,14 +1803,16 @@ feature does not exist is not kept. The decisions:
   filter, `State` being `ServerState` (`Online`, `Offline`, `Untested`, read from the outcome of the last connection test, so a server never tested is its own state), both checked with `IsInEnum`
   (`ServerListModuleInvalid`, `ServerListStateInvalid`), ordered by name and id; the group names are looked up for the servers of the page only, and `ServerQueryableExtensions.Matching` applies
   the module and state once for the list and the option lookup. A connection test, a save and a delete no longer re-read the list from the store: the screen reads the page the address names again, and
-  the group form reads the option lookup when it opens, so it offers every server and not the page. The product list (`ListProductsQuery`, `GET /api/admin/products`, the admin Products screen) searches
+  the group form reads the option lookup when it opens, so it offers every server and not the page. The product list (`ListProductsQuery`, `GET /api/admin/products`, the admin Products screen; the action sits in `ProductsController` under the absolute route `/api/admin/products` beside the `/api/products` and `/api/public/products` ones, so the admin screen keeps its own address) searches
   the name, SKU and slug and takes a group id (`ProductGroupIdInvalid`), a `ProductType` and a `ProductStatus` filter (`ProductListTypeInvalid`, `ProductListStatusInvalid`), is ordered by sort order, name
   and id, lists the products with no price in the caller's currency too (the admin grid shows every product), and maps them with the same `ToDto` and narrows them with the same
   `ProductQueryableExtensions.Matching` and `InDisplayOrder` as the unpaged picker read `GetProductsQuery`. The Products screen's `fetchProductsPage(page, filters)` fills its own page state; the picker callers
   keep reading `fetchProducts`.
   The logs, the knowledge base, the announcements and the network issues are on it too. A list that offers a period implements `IPeriodListFilter` (`DateOnly? From`, `To`), validated once by
-  `PeriodListQueryValidator<T>` (`DateRangeInvalid` when the last day is before the first) and applied by `DateRangeExtensions.InPeriod` in `Common/Extensions`, which the billing lists use too: the one place a
-  range of days becomes the half-open UTC window, so a one-day range lists that whole day. The client activity log (`ListClientActivityLogsQuery`, a client's Log tab) searches the admin name, admin email,
+  `PeriodListQueryValidator<T>` (`DateRangeInvalid` when the last day is before the first) and applied by `DateRangeExtensions.InPeriod` in `Common/Extensions`: the one place a
+  range of days becomes the half-open UTC window, so a one-day range lists that whole day. The billing lists use the same pieces: `IInvoiceListFilters` and `ITransactionListFilters` extend
+  `IPeriodListFilter`, and `InvoiceListQueryValidator<T>` and `TransactionListQueryValidator<T>` derive from `PeriodListQueryValidator<T>`, so the period is declared and validated once for every list that has one.
+  The only period that is not an `IPeriodListFilter` is `DailyPerformanceValidator`'s, a report and not a list. The client activity log (`ListClientActivityLogsQuery`, a client's Log tab) searches the admin name, admin email,
   description and IP address with one `Search` and takes the period, newest first and then by id; its old `Date`, `AdminSearch`, `Description` and `IpAddress` parameters, their clamp and hand-written `LIKE`s
   (which did not escape `%` and `_`) are gone. The gateway log (`ListGatewayLogsQuery`, derived from the invoice transactions and the open payment sessions) searches the gateway and the debug text with one
   `Search` and takes the period as days (it took exact instants before, and the admin sent the day bounds itself) and a `Result` checked with `IsInEnum` (`GatewayLogResultInvalid`). The email logs
@@ -1818,7 +1820,7 @@ feature does not exist is not kept. The decisions:
   `ListEmailLogsQuery` (the staff log, which now answers a `PaginatedList` and has no screen yet); `ListMyEmailLogsQuery`, the portal's own mail list, keeps its defaults and dispatches the client query with
   a page and a size only. The knowledge base article list (`ListKbArticlesQuery`, `GET /api/admin/knowledgebase`) searches with `KbArticleSearchExtensions.MatchingText` and takes a `CategoryId` and an
   `IsPublished` filter and answers a `PaginatedList<KbArticleDto>`; the public list (`ListPublishedKbArticlesQuery`) uses the same `MatchingText`, derives from `ListQueryValidator` keeping only its category
-  length rule, and keeps `Page = 1`, `PageSize = 20` as defaults because the client portal never sends a page. `MatchingText` is the sub-collection overload `TextSearchExtensions.Search(term, children, columns)`:
+  length rule, and keeps `Page = 1`, `PageSize = 20` as defaults because the client portal never sends a page. `MatchingText` is `TextSearchExtensions.SearchChildren(term, children, columns)`, a method of its own rather than an overload of `Search` (a `string` is an `IEnumerable<char>`, so an overload would be one wrong argument away from the wrong method):
   an `EXISTS` over the translations built from the same escaped `LIKE` as the other overloads, so an article that matches in several languages is listed once. The announcement list searches the title and the
   content and takes `IsPublished`; the network issue list searches the title, server and description and takes one `Status`, `Type` and `Priority` (the `statuses` array and the Open, Scheduled and Resolved
   tabs are gone), each checked with `IsInEnum`. All of them are ordered newest first with the id last, except the knowledge base list, which keeps the oldest first order of its ids. On the frontend each
@@ -1835,7 +1837,7 @@ feature does not exist is not kept. The decisions:
   The Installed plugins tab is the one documented above.
   The server option lookup (`ListServerOptionsQuery`, `GET /api/admin/servers/options`) is a documented picker: the group form, the add existing service dialog, the service
   detail, the CWP 7 integration (which asks for its own module) and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
-  rows (name, host name, address, state, account count and capacity, no credential or hosting detail), ordered by name, while the Servers screen reads the paged `ListServersQuery`.
+  rows (name, host name, address, state, account count and capacity, no credential or hosting detail), ordered by name; `ServerOptionDto` extends `ServerBriefDto` (the id, name, host name and address other modules show next to a service), so those four facts are declared once, and it keeps the host name and address flat like the brief, where `ServerDto` nests them in `endpoint` with the SSL flag and assigned addresses a picker has no use for, while the Servers screen reads the paged `ListServersQuery`.
   The unpaged product read (`GetProductsQuery`, `GET /api/products`) is the same kind of picker for the screens that choose a product, and the Products screen reads the paged
   `ListProductsQuery`. Knowledge base categories (`ListKbCategories`) are a short
   curated tree that the article screen turns into tabs and the article and predefined reply forms use as a picker, so every caller needs the whole set. Downloads
@@ -1857,13 +1859,12 @@ feature does not exist is not kept. The decisions:
   the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list does not search the client name, which only the Clients
   module can read, so it offers the client as a picker (`ClientId`, `useClientOptions`) and Billing never joins the client tables. The credit
   note list (`ListCreditNotesQuery`) is on it with `SearchIncludingId` over the number, the reason and the refund reference and `InvoiceId`,
-  `ClientId`, `Status` and `Method` filters. The two billing lists that offer a period, the invoice lists and the transaction lists, take `From` and `To` as bare days (`DateOnly`, bound from
-  `yyyy-MM-dd`; a timestamp is a 400) and apply them with `DateRangeExtensions.InPeriod` (`Billing/Extensions`), which turns the days into UTC instants with the
-  one helper every report uses, `DateOnlyExtensions.StartOfDayUtc` and `EndOfDayExclusiveUtc` (`Common/Extensions`): the window is the half-open
+  `ClientId`, `Status` and `Method` filters. The two billing lists that offer a period, the invoice lists and the transaction lists, take it through `IPeriodListFilter` (see the paragraph on the
+  logs above): `From` and `To` are bare days (`DateOnly`, bound from `yyyy-MM-dd`; a timestamp is a 400), applied by `DateRangeExtensions.InPeriod` in `Common/Extensions`,
+  which turns the days into UTC instants with the one helper every report uses, `DateOnlyExtensions.StartOfDayUtc` and `EndOfDayExclusiveUtc` (same folder): the window is the half-open
   `[from 00:00, to + 1 day 00:00)` in UTC whatever zone the host runs in, so a range of one day lists that whole day (a test runs it on hosts east and west of UTC).
-  The range compares the column itself, so an index can serve it, and a `To` before its `From` is refused (`DateRangeInvalid`, `MustNotBeBefore`). The credit
-  note and quote lists have no period. The payment gateway log keeps `From` and `To` as instants, because its admin screen sends exact ones (`T00:00:00Z` and
-  `T23:59:59.999Z`), not bare days. Every list validator words a bad client filter with the one key `ListClientIdInvalid` instead of a creation message.
+  The range compares the column itself, so an index can serve it, and a `To` before its `From` is refused once, by `PeriodListQueryValidator<T>` (`DateRangeInvalid`, `MustNotBeBefore`). The credit
+  note and quote lists have no period, and the payment gateway log takes its period as days like the rest. Every list validator words a bad client filter with the one key `ListClientIdInvalid` instead of a creation message.
   The quote lists (`ListQuotesQuery`, the admin Quotes screen, and `ListClientQuotesQuery`, the quotes tab of a client) are on it with
   `SearchIncludingId` over the quote id and subject and the shared `IQuoteListFilters` (`Stage`, `Validity`), validated once by
   `QuoteListQueryValidator<T>` and applied once by `QuoteFilterExtensions.Matching(query, now)`; `Validity` (`QuoteValidity`: `Valid` or `Expired`) is

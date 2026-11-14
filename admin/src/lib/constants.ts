@@ -196,8 +196,8 @@ export const GATEWAY_LOG_RESULT_OPTIONS: SelectOption<GatewayLogResult>[] = [
 
 /** Email log outcome options for the log's outcome filter; a filter puts its own "any" choice in front. */
 export const EMAIL_LOG_OUTCOME_OPTIONS: SelectOption<EmailLogOutcome>[] = [
-  { value: EmailLogOutcome.Delivered, get label() { return translate('clients.clientEmails.delivered') } },
-  { value: EmailLogOutcome.Failed, get label() { return translate('clients.clientEmails.failure.unknown') } },
+  { value: EmailLogOutcome.Delivered, get label() { return translate('constants.emailLogOutcomeOptions.delivered') } },
+  { value: EmailLogOutcome.Failed, get label() { return translate('constants.emailLogOutcomeOptions.failed') } },
 ]
 
 /** Published-state options for the knowledge base and announcement filters; a filter puts its own "any" choice in front. */
@@ -208,7 +208,7 @@ export const PUBLISHED_FILTER_OPTIONS: SelectOption<PublishedFilter>[] = [
 
 /** Every network issue type, for the issue form and the list filter; a filter puts its own "any" choice in front. */
 export const NETWORK_ISSUE_TYPE_OPTIONS: SelectOption<NetworkIssueType>[] = [
-  { value: NetworkIssueType.Server, get label() { return translate('clients.clientServiceDetail.server') } },
+  { value: NetworkIssueType.Server, get label() { return translate('support.networkIssueForm.server') } },
   { value: NetworkIssueType.Other, get label() { return translate('support.networkIssueForm.other') } },
 ]
 

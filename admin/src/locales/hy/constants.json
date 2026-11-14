@@ -62,5 +62,9 @@
     "cidr": "IP տիրույթ (CIDR)",
     "emailDomain": "Էլ. փոստի դոմեն",
     "country": "Երկիր"
+  },
+  "emailLogOutcomeOptions": {
+    "delivered": "Առաքված է",
+    "failed": "Չի առաքվել"
   }
 }

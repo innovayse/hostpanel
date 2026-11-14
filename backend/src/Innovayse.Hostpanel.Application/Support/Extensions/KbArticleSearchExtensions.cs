@@ -20,6 +20,6 @@ public static class KbArticleSearchExtensions
     {
         ArgumentNullException.ThrowIfNull(articles);
 
-        return articles.Search(term, a => a.Translations, t => t.Title, t => t.Content);
+        return articles.SearchChildren(term, a => a.Translations, t => t.Title, t => t.Content);
     }
 }

@@ -55,6 +55,36 @@ public sealed class ListProductsTests(IntegrationTestFactory factory) : IClassFi
         row.GetProperty("pricing").GetProperty("monthly").GetDecimal().Should().Be(1m);
     }
 
+    /// <summary>
+    /// A product priced only in another currency than the caller's is still listed: the admin grid shows every product, and its
+    /// price in the caller's currency is empty while the stored prices keep the one it has.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task List_IncludesAProductWithNoPriceInTheCallersCurrency()
+    {
+        var admin = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(admin);
+        var created = await admin.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Priced in AMD only",
+            type = ProductType.SharedHosting,
+            prices = new[] { new { currencyCode = "AMD", monthly = 1200m, annual = (decimal?)null } },
+        });
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var page = await PagedListReads.PageAsync(admin, $"{Route}?page=1&pageSize=100&groupId={groupId}");
+
+        var items = page.GetProperty("items").EnumerateArray().ToList();
+        items.Should().ContainSingle(p => p.GetProperty("id").GetInt32() == id);
+        var row = items.Single();
+        row.GetProperty("pricing").GetProperty("monthly").ValueKind.Should().Be(System.Text.Json.JsonValueKind.Null);
+        row.GetProperty("prices").EnumerateArray().Single().GetProperty("currencyCode").GetString().Should().Be("AMD");
+        page.GetProperty("totalCount").GetInt32().Should().Be(1);
+    }
+
     /// <summary>The search matches the name, the SKU and the slug in any letter case, as a substring.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

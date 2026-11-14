@@ -20,7 +20,7 @@ The search box looks in the title, the server and the description, in any letter
 | Type | Server, Other |
 | Priority | Low, Medium, High, Critical |
 
-Each applied filter shows as a chip that you can remove. The search, the filters and the page stay in the address, so a link opens the same list. The list is paged and shows the newest issue first. There are no status tabs: to see the issues still open, filter by status Reported or Investigating one after the other, or search for the issue you need.
+Each applied filter shows as a chip that you can remove. The search, the filters and the page stay in the address, so a link opens the same list. The list is paged and shows the newest issue first. The old status tabs are gone: the combined **Open** tab (Reported and Investigating together) is replaced by the **Status** filter, which keeps one status at a time. To see the issues still open, filter by status Reported and then Investigating, or search for the issue you need.
 
 An issue that does not exist returns `NETWORKISSUE_NOT_FOUND`.
 

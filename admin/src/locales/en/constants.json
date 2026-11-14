@@ -62,5 +62,9 @@
     "cidr": "IP range (CIDR)",
     "emailDomain": "Email domain",
     "country": "Country"
+  },
+  "emailLogOutcomeOptions": {
+    "delivered": "Delivered",
+    "failed": "Not delivered"
   }
 }

@@ -204,6 +204,22 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         (await RefusedFieldsAsync(response)).Should().Contain(field);
     }
 
+    /// <summary>A client id that is not a positive number is refused with 400 on the client id (<c>ActivityLogClientIdInvalid</c>).</summary>
+    /// <param name="clientId">The client id in the route.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-3)]
+    public async Task ClientIdThatIsNotPositiveIsRefused(int clientId)
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync(Route(clientId, string.Empty));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await RefusedFieldsAsync(response)).Should().Contain("clientid");
+    }
+
     /// <summary>The route is not for anonymous callers.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

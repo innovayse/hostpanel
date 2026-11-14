@@ -95,7 +95,7 @@ public sealed class TextSearchExtensionsTests(IntegrationTestFactory factory) : 
         var inEnglish = await SeedArticleAsync(token, ("en", $"Title {token}", "Body"), ("ru", "Заголовок", "Текст"));
         var unrelated = await SeedArticleAsync(token, ("en", "Unrelated", "Nothing"), ("ru", "Другое", "Ничего"));
 
-        var ids = await SearchArticlesAsync(q => q.Search(token, a => a.Translations, t => t.Title, t => t.Content), token);
+        var ids = await SearchArticlesAsync(q => q.SearchChildren(token, a => a.Translations, t => t.Title, t => t.Content), token);
 
         ids.Should().BeEquivalentTo([inRussian, inEnglish]).And.NotContain(unrelated);
     }
@@ -109,8 +109,8 @@ public sealed class TextSearchExtensionsTests(IntegrationTestFactory factory) : 
         var byTitle = await SeedArticleAsync(token, ("en", $"Title {token}", "Body"));
         var byContent = await SeedArticleAsync(token, ("en", "Title", $"Body {token}"));
 
-        var upper = await SearchArticlesAsync(q => q.Search(token.ToUpperInvariant(), a => a.Translations, t => t.Title, t => t.Content), token);
-        var titleOnly = await SearchArticlesAsync(q => q.Search(token, a => a.Translations, t => t.Title), token);
+        var upper = await SearchArticlesAsync(q => q.SearchChildren(token.ToUpperInvariant(), a => a.Translations, t => t.Title, t => t.Content), token);
+        var titleOnly = await SearchArticlesAsync(q => q.SearchChildren(token, a => a.Translations, t => t.Title), token);
 
         upper.Should().BeEquivalentTo([byTitle, byContent]);
         titleOnly.Should().Equal(byTitle);
@@ -130,7 +130,7 @@ public sealed class TextSearchExtensionsTests(IntegrationTestFactory factory) : 
         var exact = await SeedArticleAsync(token, ("en", $"{token} {stored}", "Body"));
         var lookalike = await SeedArticleAsync(token, ("en", $"{token} 100 pure axb backXslash", "Body"));
 
-        var ids = await SearchArticlesAsync(q => q.Search($"{token} {term}", a => a.Translations, t => t.Title), token);
+        var ids = await SearchArticlesAsync(q => q.SearchChildren($"{token} {term}", a => a.Translations, t => t.Title), token);
 
         ids.Should().Contain(exact).And.NotContain(lookalike);
     }
@@ -148,7 +148,7 @@ public sealed class TextSearchExtensionsTests(IntegrationTestFactory factory) : 
         var first = await SeedArticleAsync(token, ("en", "One", "Body"));
         var second = await SeedArticleAsync(token, ("en", "Two", "Body"));
 
-        var ids = await SearchArticlesAsync(q => q.Search(term, a => a.Translations, t => t.Title), token);
+        var ids = await SearchArticlesAsync(q => q.SearchChildren(term, a => a.Translations, t => t.Title), token);
 
         ids.Should().BeEquivalentTo([first, second]);
     }
@@ -161,7 +161,7 @@ public sealed class TextSearchExtensionsTests(IntegrationTestFactory factory) : 
         var token = Guid.NewGuid().ToString("N")[..8];
         var id = await SeedArticleAsync(token, ("en", $"Title {token}", $"Body {token}"), ("ru", $"Заголовок {token}", token), ("hy", token, token));
 
-        var ids = await SearchArticlesAsync(q => q.Search(token, a => a.Translations, t => t.Title, t => t.Content), token);
+        var ids = await SearchArticlesAsync(q => q.SearchChildren(token, a => a.Translations, t => t.Title, t => t.Content), token);
 
         ids.Should().Equal(id);
     }

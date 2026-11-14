@@ -7,12 +7,12 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 
 /// <summary>
-/// Validates the part every transaction list query shares: the page, page size and search (<see cref="ListQueryValidator{T}"/>)
-/// and the client, direction, payment method, period and amount filters (<see cref="ITransactionListFilters"/>). A list
-/// derives from this and adds the rules of its own members.
+/// Validates the part every transaction list query shares: the page, page size, search and period
+/// (<see cref="PeriodListQueryValidator{T}"/>) and the client, direction, payment method and amount filters
+/// (<see cref="ITransactionListFilters"/>). A list derives from this and adds the rules of its own members.
 /// </summary>
 /// <typeparam name="T">The transaction list query being validated.</typeparam>
-public abstract class TransactionListQueryValidator<T> : ListQueryValidator<T>
+public abstract class TransactionListQueryValidator<T> : PeriodListQueryValidator<T>
     where T : IListQuery, ITransactionListFilters
 {
     /// <summary>The longest payment method a transaction stores, so a longer filter value can match nothing.</summary>
@@ -29,7 +29,6 @@ public abstract class TransactionListQueryValidator<T> : ListQueryValidator<T>
         RuleFor(x => x.Direction).IsInEnum().WithMessage(L["TransactionDirectionInvalid"]);
         RuleFor(x => x.PaymentMethod).MaximumLength(PaymentMethodMaxLength)
             .WithMessage(L["TransactionPaymentMethodTooLong", PaymentMethodMaxLength]);
-        RuleFor(x => x.To).MustNotBeBefore(x => x.From, L["DateRangeInvalid"]);
         RuleFor(x => x.Amount).GreaterThan(0m).WithMessage(L["TransactionAmountInvalid"]);
     }
 }

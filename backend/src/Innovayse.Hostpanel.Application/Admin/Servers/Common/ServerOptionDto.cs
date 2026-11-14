@@ -1,8 +1,8 @@
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 
 /// <summary>
-/// What a screen that picks or summarises a server needs to know about it: its name, where it answers, whether it is
-/// up and how full it is. No credential, name server or hosting detail travels with it, so the whole set is cheap to send.
+/// What a screen that picks or summarises a server needs to know about it: the brief (name and where it answers), whether it
+/// is up and how full it is. No credential, name server or hosting detail travels with it, so the whole set is cheap to send.
 /// </summary>
 /// <param name="Id">The server's id.</param>
 /// <param name="Name">The server's display name.</param>
@@ -18,4 +18,4 @@ public sealed record ServerOptionDto(
     string? IpAddress,
     bool? IsOnline,
     int? AccountsCount,
-    ServerLimitsDto Limits);
+    ServerLimitsDto Limits) : ServerBriefDto(Id, Name, Hostname, IpAddress);

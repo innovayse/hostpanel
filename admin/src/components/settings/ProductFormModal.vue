@@ -354,6 +354,7 @@ const handleSubmit = (): void => {
     prices: buildPricesPayload(),
     serverGroupId: serverGroupId.value || null,
     isFeatured: isFeatured.value,
+    isHidden: isHidden.value,
     sortOrder: Math.max(0, Math.trunc(Number(sortOrder.value)) || 0),
     sku: sku.value.trim(),
     metadata: metadata.value.trim(),

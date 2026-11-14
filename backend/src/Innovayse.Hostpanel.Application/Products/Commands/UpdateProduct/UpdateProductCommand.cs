@@ -48,6 +48,11 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 /// <see cref="Product.MinGracePeriodDays"/> to <see cref="Product.MaxGracePeriodDays"/>; null keeps
 /// the stored value.
 /// </param>
+/// <param name="IsHidden">
+/// Whether the product is hidden: <c>true</c> makes it inactive, so off the order form and the public
+/// catalogue, and <c>false</c> makes it active again. Null keeps the stored status, so a caller that
+/// does not know the field never changes it.
+/// </param>
 public sealed record UpdateProductCommand(
     int Id,
     string Name,
@@ -63,4 +68,5 @@ public sealed record UpdateProductCommand(
     int? SortOrder = null,
     string? Sku = null,
     string? Metadata = null,
-    int? GracePeriodDays = null);
+    int? GracePeriodDays = null,
+    bool? IsHidden = null);

@@ -114,14 +114,24 @@ public static class ProductsTestSeeds
         return product.Id;
     }
 
-    /// <summary>Reads back a created product's admin-grid view, including unsellable rows.</summary>
+    /// <summary>Reads back a created product's admin-grid view, including unsellable and inactive rows.</summary>
     /// <param name="client">An authenticated admin client.</param>
     /// <param name="productId">The product to find.</param>
     /// <returns>The product's JSON element from the admin list.</returns>
     public static async Task<JsonElement> GetProductAsync(HttpClient client, int productId)
     {
-        var list = await client.GetFromJsonAsync<JsonElement[]>("/api/products?includeUnsellable=true");
+        var list = await client.GetFromJsonAsync<JsonElement[]>("/api/products?activeOnly=false&includeUnsellable=true");
         return list!.Single(p => p.GetProperty("id").GetInt32() == productId);
+    }
+
+    /// <summary>Reads the ids the anonymous storefront catalogue lists for a group.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="groupId">The group whose catalogue is read.</param>
+    /// <returns>The ids of the products the storefront shows.</returns>
+    public static async Task<int[]> PublicProductIdsAsync(IntegrationTestFactory factory, int groupId)
+    {
+        var list = await factory.CreateClient().GetFromJsonAsync<JsonElement[]>($"/api/public/products?groupId={groupId}");
+        return list!.Select(p => p.GetProperty("id").GetInt32()).ToArray();
     }
 
     /// <summary>Creates a product option group through the API and returns its id.</summary>

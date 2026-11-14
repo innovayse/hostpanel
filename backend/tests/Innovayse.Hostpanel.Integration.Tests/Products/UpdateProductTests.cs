@@ -554,6 +554,58 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         await ProductsTestSeeds.AssertFieldRefusedAsync(response, "gracePeriodDays");
     }
 
+    /// <summary>
+    /// Turning Hidden on sets the product inactive and takes it off the storefront; turning it off sets it
+    /// active again and brings it back.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_Hidden_HidesTheProductAndUnhidingBringsItBack()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+        var groupId = (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("groupId").GetInt32();
+        (await ProductsTestSeeds.PublicProductIdsAsync(factory, groupId)).Should().Contain(id);
+
+        var hidden = await client.PutAsJsonAsync($"/api/products/{id}", HiddenBody(isHidden: true));
+
+        hidden.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("status").GetString().Should().Be("Inactive");
+        (await ProductsTestSeeds.PublicProductIdsAsync(factory, groupId)).Should().NotContain(id);
+
+        var shown = await client.PutAsJsonAsync($"/api/products/{id}", HiddenBody(isHidden: false));
+
+        shown.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("status").GetString().Should().Be("Active");
+        (await ProductsTestSeeds.PublicProductIdsAsync(factory, groupId)).Should().Contain(id);
+    }
+
+    /// <summary>An update that does not mention Hidden keeps the product's status, hidden or visible.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_WithoutHidden_KeepsTheStatus()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+        (await client.PutAsJsonAsync($"/api/products/{id}", HiddenBody(isHidden: true))).EnsureSuccessStatusCode();
+
+        var renamed = await client.PutAsJsonAsync($"/api/products/{id}", HiddenBody(isHidden: null));
+
+        renamed.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("status").GetString().Should().Be("Inactive");
+    }
+
+    /// <summary>The body of an update that keeps the seeded name and prices and sends the Hidden switch under test.</summary>
+    /// <param name="isHidden">The switch to send; null leaves it out of the body.</param>
+    /// <returns>The anonymous body the endpoint binds.</returns>
+    private static object HiddenBody(bool? isHidden) => new
+    {
+        name = "Featured",
+        monthlyPrice = 1m,
+        annualPrice = 10m,
+        isHidden,
+    };
+
     /// <summary>The body of an update that keeps the seeded name and prices and sends the fulfilment fields under test.</summary>
     /// <param name="sku">The SKU to send; null keeps, empty clears.</param>
     /// <param name="metadata">The metadata to send; null keeps, empty clears.</param>

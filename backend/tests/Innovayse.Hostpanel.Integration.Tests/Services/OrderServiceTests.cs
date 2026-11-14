@@ -288,6 +288,35 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
         outcome.ErrorCode.Should().Be(HostpanelErrorCodes.PRODUCT_NOT_AVAILABLE);
     }
 
+    /// <summary>
+    /// A product the operator hides through the product API cannot be ordered, and showing it again lets the
+    /// order through: the Hidden switch of the admin form reaches the order check.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task OrderService_ProductHiddenThroughTheApi_RefusesNotAvailableUntilShownAgain()
+    {
+        using var scope = factory.Services.CreateScope();
+        var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 2m);
+        var admin = await ServicesTestSeeds.AdminClientAsync(factory);
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var prices = new[] { new { currencyCode = "USD", monthly = (decimal?)2m, annual = (decimal?)null } };
+
+        (await admin.PutAsJsonAsync($"/api/products/{productId}", new { name = "Starter", prices, isHidden = true }))
+            .EnsureSuccessStatusCode();
+        var whileHidden = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m), CancellationToken.None);
+
+        (await admin.PutAsJsonAsync($"/api/products/{productId}", new { name = "Starter", prices, isHidden = false }))
+            .EnsureSuccessStatusCode();
+        var afterShown = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m), CancellationToken.None);
+
+        whileHidden.IsFailure.Should().BeTrue();
+        whileHidden.ErrorCode.Should().Be(HostpanelErrorCodes.PRODUCT_NOT_AVAILABLE);
+        afterShown.IsSuccess.Should().BeTrue();
+    }
+
     /// <summary>An unauthenticated caller cannot order through <c>/api/me/services</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

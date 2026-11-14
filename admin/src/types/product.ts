@@ -97,6 +97,8 @@ export interface CreateProductPayload {
   isFeatured: boolean
   /** Position inside the group, lowest first; zero or more. */
   sortOrder: number
+  /** Hides the product: inactive, so off the order form and the public catalogue; omitted keeps the stored status on update and creates it visible. */
+  isHidden?: boolean
   /** SKU; an empty string clears the stored one on update, omitted keeps it. */
   sku?: string
   /** Metadata as JSON object text, at most 16 KB; an empty string clears it on update, omitted keeps it. */
@@ -125,6 +127,8 @@ export interface UpdateProductPayload {
   isFeatured: boolean
   /** Position inside the group, lowest first; zero or more. */
   sortOrder: number
+  /** Hides the product: inactive, so off the order form and the public catalogue; omitted keeps the stored status on update and creates it visible. */
+  isHidden?: boolean
   /** SKU; an empty string clears the stored one on update, omitted keeps it. */
   sku?: string
   /** Metadata as JSON object text, at most 16 KB; an empty string clears it on update, omitted keeps it. */

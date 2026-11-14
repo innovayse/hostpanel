@@ -85,6 +85,20 @@ public sealed class UpdateProductHandler
             product.SetGracePeriodDays(gracePeriodDays);
         }
 
+        // A null switch keeps the stored status, so a caller that does not know the field never
+        // changes it.
+        if (cmd.IsHidden is { } isHidden)
+        {
+            if (isHidden)
+            {
+                product.Deactivate();
+            }
+            else
+            {
+                product.Activate();
+            }
+        }
+
         if (cmd.IsFeatured == true)
         {
             await product.UnfeatureSiblingsAsync(_context, ct);

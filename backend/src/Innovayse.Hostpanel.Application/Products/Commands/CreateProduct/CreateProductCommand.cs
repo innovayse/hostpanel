@@ -43,6 +43,10 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 /// <see cref="Product.MinGracePeriodDays"/> to <see cref="Product.MaxGracePeriodDays"/>; null keeps
 /// <see cref="Product.DefaultGracePeriodDays"/>.
 /// </param>
+/// <param name="IsHidden">
+/// Whether the product is created hidden: inactive, so off the order form and the public catalogue.
+/// <c>false</c> by default, which creates it active.
+/// </param>
 public sealed record CreateProductCommand(
     int GroupId,
     string Name,
@@ -59,4 +63,5 @@ public sealed record CreateProductCommand(
     int SortOrder = 0,
     string? Sku = null,
     string? Metadata = null,
-    int? GracePeriodDays = null);
+    int? GracePeriodDays = null,
+    bool IsHidden = false);

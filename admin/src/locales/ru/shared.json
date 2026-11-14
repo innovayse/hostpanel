@@ -79,6 +79,8 @@
   "delete": "Удалить",
   "reason": "Причина",
   "dateRange": "Период",
+  "dateFrom": "Дата с",
+  "dateTo": "Дата по",
   "selectDateRange": "Выберите период",
   "totalcountRecordsFound": "Найдено записей: {totalCount}",
   "back": "Назад",

@@ -79,6 +79,8 @@
   "delete": "Ջնջել",
   "reason": "Պատճառ",
   "dateRange": "Ժամանակահատված",
+  "dateFrom": "Ամսաթիվ սկսած",
+  "dateTo": "Ամսաթիվ մինչև",
   "selectDateRange": "Ընտրեք ժամանակահատվածը",
   "totalcountRecordsFound": "Գտնվել է գրառում՝ {totalCount}",
   "back": "Հետ",

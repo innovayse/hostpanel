@@ -133,6 +133,9 @@
     "deleteRequest": "Delete request",
     "totalcountRequestValue": "Requests: {totalCount}",
     "noCancellationRequestsFound": "No cancellation requests found",
+    "searchRequests": "Search by reason or id",
+    "noRequestsMatchYourFilters": "No cancellation requests match your filters",
+    "clearFilters": "Clear filters",
     "deleteCancellationRequest": "Delete Cancellation Request",
     "areYouSureYouWant": "Are you sure you want to delete this cancellation request?",
     "requestDeleted": "Cancellation request deleted."
@@ -148,6 +151,9 @@
     "invoicedItems": "Invoiced Items",
     "invoicedtotalcountItemValue": "Items: {invoicedTotalCount}",
     "noInvoicedBillableItems": "No invoiced billable items.",
+    "searchItems": "Search by description or id",
+    "noUninvoicedItemsMatchYourFilters": "No uninvoiced billable items match your filters.",
+    "noInvoicedItemsMatchYourFilters": "No invoiced billable items match your filters.",
     "confirmInvoice": "Confirm Invoice",
     "areYouSureYouWant": "Are you sure you want to invoice the selected items immediately?",
     "confirmDelete": "Confirm Delete",
@@ -240,8 +246,6 @@
     "addItem": "+ Add Item",
     "createInvoice2": "Create Invoice",
     "allStatuses": "All Statuses",
-    "from": "From",
-    "filter": "Filter",
     "clientinvoicestotalInvoiceValue": "Invoices: {clientInvoicesTotal}",
     "deleteInvoice": "Delete Invoice",
     "confirmDeleteInvoice": "Are you sure you want to delete invoice #{id}?",
@@ -301,7 +305,9 @@
     "clientquotestotalQuoteValue": "Quotes: {clientQuotesTotal}",
     "deleteQuote": "Delete Quote",
     "confirmDeleteQuote": "Are you sure you want to delete quote #{id}?",
-    "quoteDeleted": "Quote deleted."
+    "quoteDeleted": "Quote deleted.",
+    "noQuotesMatchYourFilters": "No quotes match your filters",
+    "clearFilters": "Clear filters"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Service #{id}: {productName}",
@@ -470,7 +476,9 @@
     "deleteTransaction": "Delete Transaction",
     "confirmDeleteTransaction": "Are you sure you want to delete transaction #{id}?",
     "transactionAdded": "Transaction added.",
-    "transactionDeleted": "Transaction deleted."
+    "transactionDeleted": "Transaction deleted.",
+    "noTransactionsMatchYourFilters": "No transactions match your filters",
+    "clearFilters": "Clear filters"
   },
   "clientUsers": {
     "usersLength": "Users ({length})",

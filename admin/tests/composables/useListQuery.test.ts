@@ -124,6 +124,15 @@ describe('useListQuery', () => {
     expect((await setup('/list')).list().idOf('groupId').value).toBeUndefined()
   })
 
+  it('reads a filter as a day and ignores anything that is not exactly YYYY-MM-DD', async () => {
+    expect((await setup('/list?status=2026-03-10')).list().dateOf('status').value).toBe('2026-03-10')
+    expect((await setup('/list?status=soon')).list().dateOf('status').value).toBeUndefined()
+    expect((await setup('/list?status=2026-03-10T00:00:00Z')).list().dateOf('status').value).toBeUndefined()
+    expect((await setup('/list?status=2026-3-1')).list().dateOf('status').value).toBeUndefined()
+    expect((await setup('/list?status=2026-13-45')).list().dateOf('status').value).toBeUndefined()
+    expect((await setup('/list')).list().dateOf('status').value).toBeUndefined()
+  })
+
   it('builds a chip for each filter that has a value, in the order described', async () => {
     const { list } = await setup('/list?status=Closed')
     const chips = list().chipsOf(() => [

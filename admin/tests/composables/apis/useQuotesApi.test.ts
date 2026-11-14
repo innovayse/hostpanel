@@ -23,6 +23,18 @@ describe('useQuotesApi', () => {
     expect(callOf(mock, 1).url).toBe('/api/billing/quotes/client/7?page=1&pageSize=5')
   })
 
+  it('list and listByClient send the search and the filters that are set and leave the others off', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const api = useQuotesApi()
+
+    await api.list(1, 25, { search: 'logo', clientId: 4, stage: 'Delivered', validity: 'Expired' })
+    await api.list(1, 25, { search: '', stage: undefined })
+    await api.listByClient(7, 2, 5, { search: 'logo', stage: 'Accepted', validity: 'Valid' })
+    expect(callOf(mock, 0).url).toBe('/api/billing/quotes?page=1&pageSize=25&search=logo&clientId=4&stage=Delivered&validity=Expired')
+    expect(callOf(mock, 1).url).toBe('/api/billing/quotes?page=1&pageSize=25')
+    expect(callOf(mock, 2).url).toBe('/api/billing/quotes/client/7?page=2&pageSize=5&search=logo&stage=Accepted&validity=Valid')
+  })
+
   it('get reads one quote', async () => {
     const mock = stubFetch(json({ id: 3 }))
 

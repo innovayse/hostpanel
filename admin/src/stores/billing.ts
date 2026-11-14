@@ -16,6 +16,7 @@ import type {
   FulfilmentRecord,
   Invoice,
   InvoiceDetail,
+  InvoiceFilters,
   InvoiceItemInput,
   InvoiceItemUpdate,
   InvoiceOptionsPayload,
@@ -99,17 +100,15 @@ export const useBillingStore = defineStore('billing', () => {
   }
 
   /**
-   * Fetches all invoices with optional pagination and filters.
+   * Fetches a page of all invoices, narrowed by the server.
    *
    * @param page - Page number (1-based).
+   * @param filters - The search text and the client, status and period filters; a member left out does not narrow.
    * @param pageSize - Items per page.
-   * @param status - Optional status filter.
-   * @param from - Optional start date filter (ISO 8601).
-   * @param to - Optional end date filter (ISO 8601).
    * @returns Promise that resolves when data is loaded.
    */
-  const fetchAll = async (page = 1, pageSize = LEDGER_PAGE_SIZE, status = '', from = '', to = ''): Promise<void> => {
-    const result = await run(() => api.list(page, pageSize, { status, from, to }))
+  const fetchAll = async (page = 1, filters: InvoiceFilters = {}, pageSize = LEDGER_PAGE_SIZE): Promise<void> => {
+    const result = await run(() => api.list(page, pageSize, filters))
     if (result.ok) {
       invoices.value = result.value.items
       totalCount.value = result.value.totalCount
@@ -130,25 +129,21 @@ export const useBillingStore = defineStore('billing', () => {
   }
 
   /**
-   * Fetches invoices scoped to a specific client.
+   * Fetches a page of the invoices of one client, narrowed by the server.
    *
    * @param clientId - The client id.
    * @param page - Page number (1-based).
+   * @param filters - The search text and the status and period filters; a member left out does not narrow.
    * @param pageSize - Items per page.
-   * @param status - Optional status filter.
-   * @param from - Optional start date filter.
-   * @param to - Optional end date filter.
    * @returns Promise that resolves when data is loaded.
    */
   const fetchClientInvoices = async (
     clientId: number | string,
     page = 1,
+    filters: InvoiceFilters = {},
     pageSize = LEDGER_PAGE_SIZE,
-    status = '',
-    from = '',
-    to = '',
   ): Promise<void> => {
-    const result = await run(() => api.listByClient(clientId, page, pageSize, { status, from, to }))
+    const result = await run(() => api.listByClient(clientId, page, pageSize, filters))
     if (result.ok) {
       clientInvoices.value = result.value.items
       clientInvoicesTotal.value = result.value.totalCount

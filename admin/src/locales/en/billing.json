@@ -103,15 +103,14 @@
   "billableItems": {
     "billableItems": "Billable Items",
     "manageUninvoicedAndRecurringCharges": "Manage uninvoiced and recurring charges",
-    "searchDescription": "Search description",
+    "searchItems": "Search by description or id",
     "lengthRecordsFound": "{length} Records Found",
     "invoiced": "Invoiced",
     "typeOneTime": "One time",
     "typeRecurring": "Recurring",
     "noItemsFound": "No items found.",
-    "uninvoiced": "Uninvoiced",
-    "activeRecurring": "Active Recurring",
-    "completedRecurring": "Completed Recurring",
+    "noItemsMatchYourFilters": "No billable items match your filters.",
+    "clearFilters": "Clear filters",
     "deleteItems": "Delete billable items",
     "deleteItemsMessage": "Delete {count} selected billable item? This action cannot be undone. | Delete {count} selected billable items? This action cannot be undone.",
     "itemsDeleted": "Billable items deleted."
@@ -224,8 +223,6 @@
     "manageBillingInvoices": "Manage billing invoices",
     "due": "Due",
     "summaryHint": "{count} invoice on this page | {count} invoices on this page",
-    "dateFrom": "Date from",
-    "dateTo": "Date to",
     "dateRefunded": "Date Refunded",
     "totalcountRecordsFoundShowingValue": "{totalCount} Records Found, Showing {value} to {value2}",
     "markPaid": "Mark Paid",
@@ -233,6 +230,7 @@
     "duplicateInvoice": "Duplicate Invoice",
     "collections": "Collections",
     "paymentPending": "Payment Pending",
+    "searchInvoices": "Search by invoice number or payment method",
     "deleteInvoice": "Delete invoice",
     "deleteInvoiceMessage": "Delete invoice #{id}? This action cannot be undone.",
     "deleteInvoices": "Delete invoices",
@@ -280,7 +278,8 @@
     "created": "Created",
     "noQuotesFound": "No quotes found.",
     "expired": "Expired",
-    "valid": "Valid"
+    "valid": "Valid",
+    "searchQuotes": "Search by subject or quote number"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Payment transactions and records",
@@ -296,7 +295,8 @@
     "paymentsReceived": "Payments Received",
     "paymentsSent": "Payments Sent",
     "deleteTransaction": "Delete transaction",
-    "deleteTransactionMessage": "Delete transaction #{id}? This action cannot be undone."
+    "deleteTransactionMessage": "Delete transaction #{id}? This action cannot be undone.",
+    "searchTransactions": "Search by description, reference or payment method"
   },
   "invoiceItems": {
     "removeItem": "Remove line",
@@ -368,9 +368,7 @@
     "voidedAt": "Voided",
     "empty": "No credit notes found.",
     "emptyForInvoice": "No credit notes were issued against this invoice.",
-    "allStatuses": "All statuses",
-    "statusFilter": "Status",
-    "statusFilterPlaceholder": "Filter by status",
+    "searchCreditNotes": "Search by number, reason, refund reference or id",
     "status": {
       "Draft": "Draft",
       "Issued": "Issued",

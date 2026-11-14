@@ -31,7 +31,7 @@ public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFi
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
 
-        var response = await admin.GetAsync("/api/billing");
+        var response = await admin.GetAsync("/api/billing?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -92,5 +92,132 @@ public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFi
         var response = await admin.GetAsync("/api/billing?page=1&pageSize=20&status=NotAStatus");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>The search matches the payment method in any letter case and the invoice id, and nothing else.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchMatchesThePaymentMethodAndTheIdAsync()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var token = PagedListReads.UniqueToken();
+        var byMethod = await InvoiceListTestSeeds.SeedAsync(factory, clientId, paymentMethod: $"Wire-{token}");
+        var other = await InvoiceListTestSeeds.SeedAsync(factory, clientId, paymentMethod: "card");
+
+        var methodPage = await PagedListReads.PageAsync(admin, $"/api/billing?page=1&pageSize=100&clientId={clientId}&search=wire-{token}");
+        var idPage = await PagedListReads.PageAsync(admin, $"/api/billing?page=1&pageSize=100&clientId={clientId}&search={other}");
+
+        PagedListReads.IdsOf(methodPage).Should().Equal(byMethod);
+        PagedListReads.IdsOf(idPage).Should().Contain(other).And.NotContain(byMethod);
+    }
+
+    /// <summary>A literal percent sign or underscore in the search matches itself, not any text.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchTreatsPercentAndUnderscoreAsLiteralTextAsync()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var token = PagedListReads.UniqueToken();
+        var literal = await InvoiceListTestSeeds.SeedAsync(factory, clientId, paymentMethod: $"a%b_{token}");
+        await InvoiceListTestSeeds.SeedAsync(factory, clientId, paymentMethod: $"aXbY{token}");
+
+        var page = await PagedListReads.PageAsync(
+            admin, $"/api/billing?page=1&pageSize=100&clientId={clientId}&search={Uri.EscapeDataString($"a%b_{token}")}");
+
+        PagedListReads.IdsOf(page).Should().Equal(literal);
+    }
+
+    /// <summary>The client filter keeps only that client's invoices.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ClientFilterKeepsOnlyThatClientsInvoicesAsync()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var otherClientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var mine = await InvoiceListTestSeeds.SeedAsync(factory, clientId);
+        await InvoiceListTestSeeds.SeedAsync(factory, otherClientId);
+
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing?page=1&pageSize=100&clientId={clientId}");
+
+        PagedListReads.IdsOf(page).Should().Equal(mine);
+    }
+
+    /// <summary>The status filter keeps only the invoices in that state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StatusFilterKeepsOnlyThatStatusAsync()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        await InvoiceListTestSeeds.SeedAsync(factory, clientId);
+        var draft = await InvoiceListTestSeeds.SeedAsync(factory, clientId, isDraft: true);
+
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing?page=1&pageSize=100&clientId={clientId}&status=Draft");
+
+        PagedListReads.IdsOf(page).Should().Equal(draft);
+    }
+
+    /// <summary>The period keeps the first day from its first instant and the last day to its last instant.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task PeriodIncludesTheWholeFirstAndLastDayAsync()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var before = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2020, 3, 9, 23, 59, 59, TimeSpan.Zero));
+        var firstInstant = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2020, 3, 10, 0, 0, 0, TimeSpan.Zero));
+        var lastInstant = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2020, 3, 10, 23, 59, 59, TimeSpan.Zero));
+        var after = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2020, 3, 11, 0, 0, 0, TimeSpan.Zero));
+
+        var page = await PagedListReads.PageAsync(
+            admin, $"/api/billing?page=1&pageSize=100&clientId={clientId}&from=2020-03-10&to=2020-03-10");
+
+        var ids = PagedListReads.IdsOf(page);
+        ids.Should().BeEquivalentTo([firstInstant, lastInstant]);
+        ids.Should().NotContain([before, after]);
+    }
+
+    /// <summary>A page holds the newest invoices first, the total counts every match and the next page continues where it stopped.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task PagingSlicesTheNewestFirstOrderAsync()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var oldest = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2021, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var middle = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2021, 1, 2, 0, 0, 0, TimeSpan.Zero));
+        var newest = await InvoiceListTestSeeds.SeedAsync(factory, clientId, new DateTimeOffset(2021, 1, 3, 0, 0, 0, TimeSpan.Zero));
+
+        var first = await PagedListReads.PageAsync(admin, $"/api/billing?page=1&pageSize=2&clientId={clientId}");
+        var second = await PagedListReads.PageAsync(admin, $"/api/billing?page=2&pageSize=2&clientId={clientId}");
+
+        PagedListReads.IdsOf(first).Should().Equal(newest, middle);
+        PagedListReads.IdsOf(second).Should().Equal(oldest);
+        first.GetProperty("totalCount").GetInt32().Should().Be(3);
+    }
+
+    /// <summary>A value out of range is refused with 400 and names the field, never clamped.</summary>
+    /// <param name="queryString">The query string sent.</param>
+    /// <param name="field">The field the refusal must name, in lower case.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("page=0&pageSize=20", "page")]
+    [InlineData("page=1&pageSize=0", "pagesize")]
+    [InlineData("page=1&pageSize=101", "pagesize")]
+    [InlineData("page=1&pageSize=20&clientId=0", "clientid")]
+    [InlineData("page=1&pageSize=20&status=99", "status")]
+    [InlineData("page=1&pageSize=20&from=2020-03-11&to=2020-03-10", "to")]
+    [InlineData("page=1&pageSize=20&from=2020-03-10T00:00:00Z", "from")]
+    public async Task OutOfRangeValueIsRefusedNamingTheFieldAsync(string queryString, string field)
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/billing?{queryString}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 }

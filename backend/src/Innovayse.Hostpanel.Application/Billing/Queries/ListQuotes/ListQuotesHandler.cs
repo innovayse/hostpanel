@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
@@ -10,7 +9,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListQuotes;
 
-/// <summary>Returns a paginated list of all quotes for admin consumption.</summary>
+/// <summary>
+/// Returns a paginated list of all quotes for admin consumption, narrowed by the search text, the client, the stage and
+/// the validity in SQL ahead of paging.
+/// </summary>
 public sealed class ListQuotesHandler
 {
     /// <summary>The module's data context.</summary>
@@ -19,17 +21,22 @@ public sealed class ListQuotesHandler
     /// <summary>The message bus, for the Clients module's client briefs; Billing never reads the client tables.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>The clock a quote's validity is judged against.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">The message bus, for the Clients module's client briefs; Billing never reads the client tables.</param>
-    public ListQuotesHandler(IHostpanelDbContext context, IMessageBus bus)
+    /// <param name="clock">The clock a quote's validity is judged against.</param>
+    public ListQuotesHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock)
     {
         _context = context;
         _bus = bus;
+        _clock = clock;
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The list quotes query.</param>
+    /// <param name="query">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with a page of quote list items. Never refuses.</returns>
     public async Task<Result<PaginatedList<QuoteListItemDto>>> HandleAsync(
@@ -37,13 +44,17 @@ public sealed class ListQuotesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
+        var quotes = _context.Quotes.AsNoTracking().Matching(query, _clock.UtcNow);
+        if (query.ClientId is { } clientId)
+        {
+            quotes = quotes.Where(q => q.ClientId == clientId);
+        }
 
-        var ordered = _context.Quotes.AsNoTracking().OrderByDescending(x => x.CreatedAt);
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = quotes.OrderByDescending(q => q.CreatedAt).ThenByDescending(q => q.Id);
         var total = await ordered.CountAsync(ct);
         var items = await ordered
-            .Paginate(page, pageSize)
+            .Paginate(query.Page, query.PageSize)
             .SelectDto()
             .ToListAsync(ct);
 
@@ -55,6 +66,6 @@ public sealed class ListQuotesHandler
             .ToList();
 
         return Result<PaginatedList<QuoteListItemDto>>.Success(
-            new PaginatedList<QuoteListItemDto>(dtos, total, page, pageSize));
+            new PaginatedList<QuoteListItemDto>(dtos, total, query.Page, query.PageSize));
     }
 }

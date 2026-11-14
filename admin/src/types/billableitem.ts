@@ -54,12 +54,28 @@ export interface CurrencyAmount {
 
 /** Response from the client-scoped billable items endpoint. */
 export interface BillableItemsResult {
-  /** All uninvoiced items for the client. */
+  /** All uninvoiced items for the client that match the search and type filter. */
   uninvoicedItems: ClientBillableItem[]
   /** Sum of the uninvoiced item amounts, one entry per currency (empty when there are none). */
   uninvoicedTotal: CurrencyAmount[]
-  /** Paginated invoiced items. */
+  /** Paginated invoiced items that match the search and type filter. */
   invoicedItems: PaginatedList<ClientBillableItem>
+}
+
+/** What narrows one client's billable item lists: the search text and the type; each member left out means no narrowing. */
+export interface ClientBillableItemFilters {
+  /** Search text matched against the description and the item id; empty for none. */
+  search?: string
+  /** Keep only the items of this type. */
+  type?: BillableItemType
+}
+
+/** What narrows the admin-wide billable item list; each member left out means no narrowing. */
+export interface BillableItemListFilters extends ClientBillableItemFilters {
+  /** Keep only the items of this client. */
+  clientId?: number
+  /** Keep only the invoiced items (`Yes`) or only the uninvoiced ones (`No`). */
+  invoiced?: BillableItemInvoiced
 }
 
 /**
@@ -104,6 +120,14 @@ export enum BillableItemType {
   OneTime = 'OneTime',
   /** Charged again every recurring period. */
   Recurring = 'Recurring',
+}
+
+/** The two values of the invoiced filter, as the address and the API's `invoiced` parameter spell them. */
+export enum BillableItemInvoiced {
+  /** Only the items already put on an invoice. */
+  Yes = 'true',
+  /** Only the items still waiting to be invoiced. */
+  No = 'false',
 }
 
 /** How often a recurring billable item repeats, spelled as the API stores and reads it. */

@@ -1,22 +1,23 @@
-using Innovayse.Hostpanel.Application.Common;
+using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Services.Queries.ListCancellationRequests;
 
-/// <summary>Validates <see cref="ListCancellationRequestsQuery"/> before the handler executes.</summary>
-public sealed class ListCancellationRequestsValidator : LocalizedValidator<ListCancellationRequestsQuery>
+/// <summary>
+/// Validates <see cref="ListCancellationRequestsQuery"/>. The page, page size and search are the shared list rules
+/// (<see cref="ListQueryValidator{T}"/>); this adds the rules of the type and status filters.
+/// </summary>
+public sealed class ListCancellationRequestsValidator : ListQueryValidator<ListCancellationRequestsQuery>
 {
-    /// <summary>Most rows a page may hold.</summary>
-    private const int MaxPageSize = PagingLimits.MaxPageSize;
-
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
     public ListCancellationRequestsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.Page).MustBePage(L["ServicePageInvalid"]);
-        RuleFor(x => x.PageSize).MustBePageSize(MaxPageSize, L["ServicePageSizeInvalid"]);
+        // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
+        RuleFor(x => x.Type).IsInEnum().WithMessage(L["CancellationTypeInvalid"]);
+        RuleFor(x => x.Status).IsInEnum().WithMessage(L["CancellationStatusInvalid"]);
     }
 }

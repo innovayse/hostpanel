@@ -1,25 +1,29 @@
 <script setup lang="ts">
 /**
- * Billable items: the uninvoiced and recurring charges of every client, narrowed as the operator
- * types by client, description, amount and status, paged on the page, with a confirmed bulk
- * delete of the selected rows (`useRowSelection`, the floating `UiBulkBar`). The outcome of the delete (success, or the API's sentence) shows above
- * the table; a refused load shows the sentence with a Retry.
+ * Billable items: the uninvoiced and recurring charges of every client, searched by description or id, narrowed by
+ * client, type and invoiced state, and paged by the API, with a confirmed bulk delete of the selected rows
+ * (`useRowSelection`, the floating `UiBulkBar`).
+ *
+ * The search text, the filters and the page live in the address (`useListQuery`): the filter button opens the client,
+ * type and invoiced fields, an applied filter shows as a removable chip, and a reload or a shared link restores the
+ * same list, which the API narrows before it pages, so every item is reachable however many there are. The client is
+ * chosen from the picker, not typed, because only the Clients module can read client names. The outcome of the delete
+ * (success, or the API's sentence) shows above the table; a refused load shows the sentence with a Retry.
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import BillableItemTypeField from '@/components/billing/BillableItemTypeField.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiBulkBar from '@/components/ui/UiBulkBar.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiFilterCard from '@/components/ui/UiFilterCard.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -33,49 +37,79 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
+import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useRowSelection } from '@/composables/useRowSelection'
 import { useBillableItemsStore } from '@/stores/billableItems'
-import { pageSlice } from '@/lib/paging'
-import { BillableItemType } from '@/types/billableitem'
-import type { BillableItem } from '@/types/billableitem'
-import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
+import { BILLABLE_ITEM_TYPE_OPTIONS } from '@/lib/constants'
+import { statusLabel } from '@/lib/tones'
+import { BillableItemInvoiced, BillableItemType } from '@/types/billableitem'
+import type { BillableItemListFilters } from '@/types/billableitem'
 import { AppRoute } from '@/lib/routes'
 import { formatPlainAmount } from '@/lib/money'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
-/** What the status filter can single out. */
-const ItemStatus = {
-  Any: 'any',
-  Uninvoiced: 'uninvoiced',
-  Invoiced: 'invoiced',
-  Recurring: 'recurring',
-  ActiveRecurring: 'active-recurring',
-  CompletedRecurring: 'completed-recurring',
-} as const
-
 const store = useBillableItemsStore()
 const { clients, load: loadClients } = useClientOptions()
 
-/** Current page (1-based). */
-const page = ref(1)
+/** The filter fields the dialog edits; each is one query key and one `BillableItemListFilters` member. */
+const FilterKey = {
+  ClientId: 'clientId',
+  Type: 'type',
+  Invoiced: 'invoiced',
+} as const
 
-/** True while the filter card is open. */
-const filtersOpen = ref(false)
+/** The search text, the filters and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, idOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
 
-/** Client filter, as the picker holds the id; empty means every client. */
-const filterClientId = ref('')
+/** The client in the address as an id, undefined when none is set or the value is not an id. */
+const clientIdOfAddress = idOf(FilterKey.ClientId)
 
-/** Description filter. */
-const filterDescription = ref('')
+/** The type in the address as a billable item type, undefined when none is set or the value is not one. */
+const typeOfAddress = enumOf(FilterKey.Type, BillableItemType)
 
-/** Amount filter; 0 means any. */
-const filterAmount = ref(0)
+/** The invoiced filter in the address, undefined when none is set or the value is not one of its two. */
+const invoicedOfAddress = enumOf(FilterKey.Invoiced, BillableItemInvoiced)
 
-/** Status filter. */
-const filterStatus = ref<string>(ItemStatus.Any)
+/** What the address narrows the list by, as the store sends it to the API. */
+const filters = computed<BillableItemListFilters>(() => ({
+  search: appliedSearch.value,
+  clientId: clientIdOfAddress.value,
+  type: typeOfAddress.value,
+  invoiced: invoicedOfAddress.value,
+}))
+
+/** Choices of the invoiced field; the empty value means any. */
+const invoicedOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  { value: BillableItemInvoiced.Yes, label: t('shared.yes') },
+  { value: BillableItemInvoiced.No, label: t('shared.no') },
+])
+
+/** The applied client, type and invoiced state as removable chips, none while the list is not filtered. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.ClientId,
+    label: t('shared.client'),
+    value: clientIdOfAddress.value === undefined
+      ? undefined
+      : (clients.value.find(client => client.id === clientIdOfAddress.value)?.name ?? `#${clientIdOfAddress.value}`),
+  },
+  {
+    key: FilterKey.Type,
+    label: t('shared.type'),
+    value: typeOfAddress.value === undefined ? undefined : statusLabel(BILLABLE_ITEM_TYPE_OPTIONS, typeOfAddress.value),
+  },
+  {
+    key: FilterKey.Invoiced,
+    label: t('billing.billableItems.invoiced'),
+    value: invoicedOfAddress.value === undefined ? undefined : statusLabel(invoicedOptions.value, invoicedOfAddress.value),
+  },
+])
 
 /** True while the bulk-delete confirmation is open. */
 const deleteOpen = ref(false)
@@ -93,24 +127,23 @@ const feedback = useResultBanner()
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /**
- * Loads the items and records whether the load was refused.
+ * Loads the page the address names with the filters and search it holds, and records whether the load was refused.
  *
  * @returns Resolves when the list has settled.
  */
 const load = async (): Promise<void> => {
-  await store.fetchAll()
-  loadError.value = store.error
+  const loaded = await store.fetchAll(page.value, filters.value)
+  loadError.value = loaded ? null : store.error
 }
 
-/** Options of the status select. */
-const statusOptions = computed(() => [
-  { value: ItemStatus.Any, label: t('shared.any') },
-  { value: ItemStatus.Uninvoiced, label: t('billing.billableItems.uninvoiced') },
-  { value: ItemStatus.Invoiced, label: t('billing.billableItems.invoiced') },
-  { value: ItemStatus.Recurring, label: t('orders.orderDetail.recurring') },
-  { value: ItemStatus.ActiveRecurring, label: t('billing.billableItems.activeRecurring') },
-  { value: ItemStatus.CompletedRecurring, label: t('billing.billableItems.completedRecurring') },
-])
+// Every change of a filter, the search or the page loads the list the address names.
+loadOnChange(load)
+
+/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
+const initialLoading = computed<boolean>(() => store.loading && store.items.length === 0)
+
+/** The selected rows of the page. */
+const selection = useRowSelection(() => store.items.map((item) => item.id))
 
 /**
  * The name of a billable item's type, as the operator reads it.
@@ -118,70 +151,12 @@ const statusOptions = computed(() => [
  * @param type - The type the API sent.
  * @returns The translated name.
  */
-const typeLabel = (type: string): string =>
-  type === BillableItemType.Recurring ? t('billing.billableItems.typeRecurring') : t('billing.billableItems.typeOneTime')
+const typeLabel = (type: string): string => statusLabel(BILLABLE_ITEM_TYPE_OPTIONS, type)
 
 /**
- * Tells whether an item passes the status filter.
+ * Deletes the selected rows one by one, stopping at the first refusal, reloads the page and shows the outcome.
  *
- * @param item - A billable item.
- * @returns True when the item has the chosen status.
- */
-const hasStatus = (item: BillableItem): boolean => {
-  const recurring = item.type === BillableItemType.Recurring
-  switch (filterStatus.value) {
-    case ItemStatus.Uninvoiced:
-      return !item.isInvoiced
-    case ItemStatus.Invoiced:
-      return item.isInvoiced
-    case ItemStatus.Recurring:
-      return recurring
-    case ItemStatus.ActiveRecurring:
-      return recurring && !item.isInvoiced
-    case ItemStatus.CompletedRecurring:
-      return recurring && item.isInvoiced
-    default:
-      return true
-  }
-}
-
-/** Every loaded item that passes the filter card. */
-const filteredItems = computed<BillableItem[]>(() =>
-  store.items.filter((item) => {
-    if (filterClientId.value !== '' && String(item.clientId) !== filterClientId.value) {
-      return false
-    }
-    if (filterDescription.value !== '' && !item.description.toLowerCase().includes(filterDescription.value.toLowerCase())) {
-      return false
-    }
-    if (filterAmount.value > 0 && item.amount !== filterAmount.value) {
-      return false
-    }
-    return hasStatus(item)
-  }),
-)
-
-/** The page of filtered items on show. */
-const pageItems = computed<BillableItem[]>(() =>
-  pageSlice(filteredItems.value, page.value, DEFAULT_PAGE_SIZE),
-)
-
-/** The selected rows of the page. */
-const selection = useRowSelection(() => pageItems.value.map((item) => item.id))
-
-/** Clears every filter. */
-const clearFilters = (): void => {
-  filterClientId.value = ''
-  filterDescription.value = ''
-  filterAmount.value = 0
-  filterStatus.value = ItemStatus.Any
-}
-
-/**
- * Deletes the selected rows one by one (the store reloads the list after each), stopping at the
- * first refusal, and shows the outcome.
- *
- * @returns Resolves when the deletes have settled.
+ * @returns Resolves when the deletes have settled and the list has been refreshed.
  */
 const deleteSelected = async (): Promise<void> => {
   feedback.clear()
@@ -196,8 +171,11 @@ const deleteSelected = async (): Promise<void> => {
   deleting.value = false
   deleteOpen.value = false
   selection.clear()
+  // The refusal is read before the reload, because the reload starts by forgetting the store's last sentence.
+  const refusal = store.error ?? t('errors.noAnswer')
+  await load()
   if (refused) {
-    feedback.show(store.error ?? t('errors.noAnswer'), true)
+    feedback.show(refusal, true)
   } else {
     feedback.show(t('billing.billableItems.itemsDeleted'), false)
   }
@@ -210,15 +188,8 @@ const dismissDelete = (): void => {
   }
 }
 
-/** Filtering from the first page again, with nothing selected, so a bulk delete never takes rows the filter hides. */
-watch([filterClientId, filterDescription, filterAmount, filterStatus], () => {
-  page.value = 1
-  selection.clear()
-})
-
-/** Loads the items and the client picker's options. */
+/** Loads the client picker's options; the list itself loads through `loadOnChange`. */
 onMounted(() => {
-  void load()
   void loadClients()
 })
 </script>
@@ -227,48 +198,47 @@ onMounted(() => {
   <UiStack data-testid="billing-billable-items-view">
     <UiPageHeader :title="t('billing.billableItems.billableItems')" :subtitle="t('billing.billableItems.manageUninvoicedAndRecurringCharges')">
       <template #actions>
-        <UiButton variant="secondary" data-testid="billing-billable-items-filter-toggle" @click="filtersOpen = !filtersOpen">
-          {{ filtersOpen ? t('shared.hideFilters') : t('shared.searchFilter') }}
-        </UiButton>
         <UiLink :to="AppRoute.BillingBillableItemsAdd" variant="primary" data-testid="billing-billable-items-add">
           {{ t('shared.addItem') }}
         </UiLink>
       </template>
     </UiPageHeader>
 
-    <UiFilterCard v-if="filtersOpen">
-      <UiGrid :columns="2">
-        <UiField :label="t('shared.client')">
-          <UiClientSelect
-            v-model="filterClientId"
-            :clients="clients"
-            :placeholder="t('shared.startTypingToSearchClients')"
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="billing-billable-items-search"
+      :search-placeholder="t('billing.billableItems.searchItems')"
+      filter-testid="billing-billable-items-filter-toggle"
+      :active-count="activeCount"
+      :chips="chips"
+      :loading="initialLoading"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <UiField :label="t('shared.client')">
+        <UiClientSelect
+          v-model="draft.clientId"
+          :clients="clients"
+          :placeholder="t('shared.startTypingToSearchClients')"
+          data-testid="billing-billable-items-filter-client"
+        />
+      </UiField>
+      <BillableItemTypeField v-model="draft.type" testid="billing-billable-items-filter-type" />
+      <UiField :label="t('billing.billableItems.invoiced')">
+        <template #default="{ id }">
+          <UiSelect
+            :id="id"
+            v-model="draft.invoiced"
+            :options="invoicedOptions"
+            :placeholder="t('shared.any')"
+            data-testid="billing-billable-items-filter-invoiced"
           />
-        </UiField>
-        <UiField :label="t('shared.description')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="filterDescription"
-              type="text"
-              :placeholder="t('billing.billableItems.searchDescription')"
-              data-testid="billing-billable-items-filter-description"
-            />
-          </template>
-        </UiField>
-        <UiField :label="t('shared.amount')">
-          <UiNumberInput v-model="filterAmount" :step="0.01" :min="0" placeholder="0.00" />
-        </UiField>
-        <UiField :label="t('shared.status')">
-          <UiSelect v-model="filterStatus" :options="statusOptions" :placeholder="t('shared.status')" />
-        </UiField>
-      </UiGrid>
-      <template #actions>
-        <UiButton variant="ghost" data-testid="billing-billable-items-clear" @click="clearFilters">
-          {{ t('shared.clear') }}
-        </UiButton>
-      </template>
-    </UiFilterCard>
+        </template>
+      </UiField>
+    </UiListToolbar>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-billable-items-feedback" />
 
@@ -280,14 +250,13 @@ onMounted(() => {
       @retry="load"
     />
 
-    <UiResultCount :loading="store.loading && store.items.length === 0" data-testid="billing-billable-items-count">
-      {{ t('billing.billableItems.lengthRecordsFound', { length: filteredItems.length }) }}
+    <UiResultCount :loading="initialLoading" data-testid="billing-billable-items-count">
+      {{ t('billing.billableItems.lengthRecordsFound', { length: store.totalCount }) }}
     </UiResultCount>
 
-    <UiCard>
+    <UiCard v-if="store.items.length > 0 || store.loading">
       <UiTable
-        :loading="store.loading && store.items.length === 0"
-        :empty="!store.loading && pageItems.length === 0"
+        :loading="initialLoading"
         :selection="selection"
         select-all-testid="billing-billable-items-select-all"
         data-testid="billing-billable-items-table"
@@ -304,7 +273,7 @@ onMounted(() => {
         </UiTableHead>
         <UiTableBody divided>
           <UiTableRow
-            v-for="item in pageItems"
+            v-for="item in store.items"
             :key="item.id"
             hoverable
             :row-id="item.id"
@@ -322,17 +291,28 @@ onMounted(() => {
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('billing.billableItems.noItemsFound') }}
-        </template>
       </UiTable>
     </UiCard>
 
+    <UiCard v-else-if="loadError === null">
+      <UiEmptyState
+        :title="narrowed ? t('billing.billableItems.noItemsMatchYourFilters') : t('billing.billableItems.noItemsFound')"
+        data-testid="billing-billable-items-empty"
+      >
+        <template v-if="activeCount > 0" #actions>
+          <UiButton :variant="UiButtonVariant.Link" data-testid="billing-billable-items-clear" @click="clearAll">
+            {{ t('billing.billableItems.clearFilters') }}
+          </UiButton>
+        </template>
+      </UiEmptyState>
+    </UiCard>
+
     <UiPagination
-      v-model:page="page"
-      :total="filteredItems.length"
-      :page-size="DEFAULT_PAGE_SIZE"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
       testid="billing-billable-items-pagination"
+      @update:page="setPage"
     />
 
     <UiBulkBar :count="selection.count.value" data-testid="billing-billable-items-bulk" @clear="selection.clear">

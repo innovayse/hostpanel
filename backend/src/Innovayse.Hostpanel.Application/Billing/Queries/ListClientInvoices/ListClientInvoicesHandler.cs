@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
@@ -10,7 +9,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListClientInvoices;
 
-/// <summary>Returns a paginated, filtered list of invoices for a specific client.</summary>
+/// <summary>
+/// Returns a paginated list of invoices for a specific client, narrowed by the search text, the status and the creation
+/// period, all in SQL ahead of paging.
+/// </summary>
 public sealed class ListClientInvoicesHandler
 {
     /// <summary>The module's data context.</summary>
@@ -37,30 +39,15 @@ public sealed class ListClientInvoicesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
-
-        var filtered = _context.Invoices.AsNoTracking().Where(x => x.ClientId == query.ClientId);
-
-        if (query.Status.HasValue)
-        {
-            filtered = filtered.Where(x => x.Status == query.Status.Value);
-        }
-
-        if (query.From.HasValue)
-        {
-            filtered = filtered.Where(x => x.CreatedAt >= query.From.Value);
-        }
-
-        if (query.To.HasValue)
-        {
-            filtered = filtered.Where(x => x.CreatedAt <= query.To.Value);
-        }
-
-        var ordered = filtered.OrderByDescending(x => x.CreatedAt);
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = _context.Invoices.AsNoTracking()
+            .Where(x => x.ClientId == query.ClientId)
+            .Matching(query)
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id);
         var total = await ordered.CountAsync(ct);
         var items = await ordered
-            .Paginate(page, pageSize)
+            .Paginate(query.Page, query.PageSize)
             .SelectDto()
             .ToListAsync(ct);
 
@@ -70,6 +57,6 @@ public sealed class ListClientInvoicesHandler
         var dtos = items.Select(inv => inv with { ClientName = clientMap[inv.ClientId].FullName }).ToList();
 
         return Result<PaginatedList<InvoiceListItemDto>>.Success(new PaginatedList<InvoiceListItemDto>(
-            dtos, total, page, pageSize));
+            dtos, total, query.Page, query.PageSize));
     }
 }

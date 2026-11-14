@@ -178,6 +178,40 @@ public static class ServicesTestSeeds
     }
 
     /// <summary>
+    /// Seeds cancellation requests of one service straight into the database, each created a minute after the one given
+    /// before it, so the first given is the oldest.
+    /// </summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="serviceId">The service the requests are about.</param>
+    /// <param name="requests">The type, the reason and whether it is closed, for each request.</param>
+    /// <returns>The primary keys of the new requests, in the order given.</returns>
+    public static async Task<List<int>> SeedCancellationRequestsAsync(
+        IntegrationTestFactory factory, int serviceId, IReadOnlyList<(CancellationType Type, string? Reason, bool Closed)> requests)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var created = new List<Domain.Services.CancellationRequest>();
+        var moment = DateTimeOffset.UtcNow.AddHours(-1);
+        foreach (var (type, reason, closed) in requests)
+        {
+            var request = Domain.Services.CancellationRequest.Create(serviceId, type, reason);
+            request.Backdate(moment);
+            moment = moment.AddMinutes(1);
+            if (closed)
+            {
+                request.Close();
+            }
+
+            created.Add(request);
+        }
+
+        context.CancellationRequests.AddRange(created);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return created.Select(r => r.Id).ToList();
+    }
+
+    /// <summary>
     /// Seeds a client, a product and one service of theirs in the given status. The transitions are
     /// recorded as already done on the hosting panel, so no panel call is asked for.
     /// </summary>

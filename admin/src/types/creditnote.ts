@@ -111,10 +111,14 @@ export interface IssueCreditNotePayload {
 
 /** Filters of the credit note list. */
 export interface CreditNoteFilters {
+  /** Search term matched against the number, the reason, the refund reference and the id; empty for none. */
+  search?: string
   /** Only the notes of this invoice. */
   invoiceId?: number
   /** Only the notes of this client. */
   clientId?: number
   /** Only the notes in this state. */
   status?: CreditNoteStatus
+  /** Only the notes given back this way. */
+  method?: CreditNoteMethod
 }

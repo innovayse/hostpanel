@@ -10,7 +10,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListTransactions;
 
-/// <summary>Returns a paginated list of transactions with financial summary totals.</summary>
+/// <summary>
+/// Returns a paginated list of transactions, narrowed by the search text and the filters, with the financial summary
+/// totals of the same narrowed set.
+/// </summary>
 public sealed class ListTransactionsHandler
 {
     /// <summary>The module's data context.</summary>
@@ -29,22 +32,20 @@ public sealed class ListTransactionsHandler
     }
 
     /// <summary>Handles <see cref="ListTransactionsQuery"/>.</summary>
-    /// <param name="query">The query with client ID and pagination params.</param>
+    /// <param name="query">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success with the paginated transactions and financial summary. Never refuses.</returns>
+    /// <returns>Success with the paginated transactions and the summary of every transaction the filters keep. Never refuses.</returns>
     public async Task<Result<TransactionsResultDto>> HandleAsync(
         ListTransactionsQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        // Credit-only lines moved no cash and belong to the credit history, not to this list.
-        IQueryable<Transaction> filtered = _context.Transactions.AsNoTracking().Where(Transaction.MovedMoneyFilter);
-        if (query.ClientId.HasValue)
-        {
-            filtered = filtered.Where(t => t.ClientId == query.ClientId.Value);
-        }
+        // Credit-only lines moved no cash and belong to the credit history, not to this list. The summary totals below
+        // run on this same narrowed set, so the tiles always describe the rows the filters left, not the whole ledger.
+        var filtered = _context.Transactions.AsNoTracking().Where(Transaction.MovedMoneyFilter).Matching(query);
 
-        var ordered = filtered.OrderByDescending(t => t.Date);
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = filtered.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
         var totalCount = await ordered.CountAsync(ct);
         var items = await ordered
             .Paginate(query.Page, query.PageSize)

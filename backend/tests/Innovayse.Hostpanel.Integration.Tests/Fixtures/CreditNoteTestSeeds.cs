@@ -186,13 +186,13 @@ public static class CreditNoteTestSeeds
         return note.Id;
     }
 
-    /// <summary>Reads the page of notes the staff list answers with.</summary>
+    /// <summary>Reads the first page of 100 notes the staff list answers with for the given filters.</summary>
     /// <param name="admin">An admin HTTP client.</param>
-    /// <param name="query">The query string such as <c>?invoiceId=3</c>.</param>
+    /// <param name="filters">The filters after the paging, such as <c>invoiceId=3&amp;status=Applied</c>.</param>
     /// <returns>The body.</returns>
-    public static async Task<JsonElement> ListAsync(HttpClient admin, string query)
+    public static async Task<JsonElement> ListAsync(HttpClient admin, string filters)
     {
-        var response = await admin.GetAsync($"/api/billing/credit-notes{query}");
+        var response = await admin.GetAsync($"/api/billing/credit-notes?page=1&pageSize=100&{filters}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         return await response.Content.ReadFromJsonAsync<JsonElement>();
     }

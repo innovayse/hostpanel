@@ -133,6 +133,9 @@
     "deleteRequest": "Ջնջել հայտը",
     "totalcountRequestValue": "Հայտեր՝ {totalCount}",
     "noCancellationRequestsFound": "Չեղարկման հայտեր չեն գտնվել",
+    "searchRequests": "Որոնում ըստ պատճառի կամ համարի",
+    "noRequestsMatchYourFilters": "Ֆիլտրերին համապատասխան չեղարկման հայտեր չկան",
+    "clearFilters": "Մաքրել ֆիլտրերը",
     "deleteCancellationRequest": "Ջնջել չեղարկման հայտը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս չեղարկման հայտը։",
     "requestDeleted": "Չեղարկման հայտը ջնջվեց։"
@@ -148,6 +151,9 @@
     "invoicedItems": "Հաշվարկված դիրքեր",
     "invoicedtotalcountItemValue": "Դիրքեր՝ {invoicedTotalCount}",
     "noInvoicedBillableItems": "Հաշվարկված վճարվող դիրքեր չկան։",
+    "searchItems": "Որոնում ըստ նկարագրության կամ համարի",
+    "noUninvoicedItemsMatchYourFilters": "Ֆիլտրերին համապատասխան չհաշվարկված վճարվող դիրքեր չկան։",
+    "noInvoicedItemsMatchYourFilters": "Ֆիլտրերին համապատասխան հաշվարկված վճարվող դիրքեր չկան։",
     "confirmInvoice": "Հաստատեք հաշվի դուրսգրումը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք անմիջապես հաշիվ դուրս գրել ընտրված դիրքերի համար։",
     "confirmDelete": "Հաստատեք ջնջումը",
@@ -240,8 +246,6 @@
     "addItem": "+ Ավելացնել դիրք",
     "createInvoice2": "Ստեղծել հաշիվ",
     "allStatuses": "Բոլոր կարգավիճակները",
-    "from": "Սկսած",
-    "filter": "Ֆիլտր",
     "clientinvoicestotalInvoiceValue": "Հաշիվներ՝ {clientInvoicesTotal}",
     "deleteInvoice": "Ջնջել հաշիվը",
     "confirmDeleteInvoice": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} հաշիվ-ապրանքագիրը։",
@@ -301,7 +305,9 @@
     "clientquotestotalQuoteValue": "Առաջարկներ՝ {clientQuotesTotal}",
     "deleteQuote": "Ջնջել առաջարկը",
     "confirmDeleteQuote": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} առաջարկը։",
-    "quoteDeleted": "Առաջարկը ջնջվեց։"
+    "quoteDeleted": "Առաջարկը ջնջվեց։",
+    "noQuotesMatchYourFilters": "Ձեր զտիչներին համապատասխան առաջարկներ չկան",
+    "clearFilters": "Մաքրել զտիչները"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Ծառայություն №{id}՝ {productName}",
@@ -470,7 +476,9 @@
     "deleteTransaction": "Ջնջել գործարքը",
     "confirmDeleteTransaction": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} գործարքը։",
     "transactionAdded": "Գործարքը ավելացվեց։",
-    "transactionDeleted": "Գործարքը ջնջվեց։"
+    "transactionDeleted": "Գործարքը ջնջվեց։",
+    "noTransactionsMatchYourFilters": "Ձեր զտիչներին համապատասխան գործարքներ չկան",
+    "clearFilters": "Մաքրել զտիչները"
   },
   "clientUsers": {
     "usersLength": "Օգտատերեր ({length})",

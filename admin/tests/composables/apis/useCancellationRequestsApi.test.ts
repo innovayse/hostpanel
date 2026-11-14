@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useCancellationRequestsApi } from '@/composables/apis/useCancellationRequestsApi'
 import { ApiError } from '@/composables/useApi'
+import { CancellationStatus, CancellationType } from '@/types/service'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -18,6 +19,16 @@ describe('useCancellationRequestsApi', () => {
 
     await useCancellationRequestsApi().list(2, 20)
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/cancellation-requests?page=2&pageSize=20', method: 'GET' })
+  })
+
+  it('list sends the search, the type and the status that are set and drops the rest', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const api = useCancellationRequestsApi()
+
+    await api.list(1, 20, { search: '', type: undefined, status: undefined })
+    await api.list(2, 20, { search: 'moving', type: CancellationType.Immediate, status: CancellationStatus.Closed })
+    expect(callOf(mock, 0).url).toBe('/api/admin/cancellation-requests?page=1&pageSize=20')
+    expect(callOf(mock, 1).url).toBe('/api/admin/cancellation-requests?page=2&pageSize=20&search=moving&type=Immediate&status=Closed')
   })
 
   it('remove DELETEs the request', async () => {

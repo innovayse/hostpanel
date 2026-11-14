@@ -125,6 +125,25 @@ public static class ValidationRuleExtensions
         return rule.InclusiveBetween(PagingLimits.MinPageSize, maxPageSize).WithMessage(message);
     }
 
+    /// <summary>
+    /// Requires the last day of a date range, when the range names both ends, not to be before its first day. A range
+    /// with only one end, or none, passes.
+    /// </summary>
+    /// <typeparam name="T">The command or query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the last day.</param>
+    /// <param name="firstDay">Reads the first day of the range from the command or query.</param>
+    /// <param name="message">The localized sentence reported when the range ends before it starts.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, DateOnly?> MustNotBeBefore<T>(
+        this IRuleBuilder<T, DateOnly?> rule, Func<T, DateOnly?> firstDay, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(firstDay);
+
+        return rule.Must((model, lastDay) => lastDay is not { } last || firstDay(model) is not { } first || last >= first)
+            .WithMessage(message);
+    }
+
     /// <summary>Requires a discount within the range <see cref="PriceDiscount"/> allows: 0 to 100 percent.</summary>
     /// <typeparam name="T">The command or query being validated.</typeparam>
     /// <param name="rule">The rule builder for the discount property.</param>

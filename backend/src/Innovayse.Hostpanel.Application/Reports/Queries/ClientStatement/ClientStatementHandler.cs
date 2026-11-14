@@ -1,9 +1,9 @@
 using System.Globalization;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Common.Enums;
-using Innovayse.Hostpanel.Application.Reports.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;

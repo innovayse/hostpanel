@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { ActivityEventType } from '@/types/activityevent'
 import { LogoutScope } from '@/types/auth'
-import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
+import { BillableItemInvoiced, BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { ClientStatus, ExternalAccountField } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { CurrencyCode } from '@/types/currency'
@@ -66,6 +66,7 @@ describe('billing value sets', () => {
     expect(PaymentGateway.BankTransfer).toBe('BankTransfer')
     expect(Object.values(BillingCycle)).toEqual(['Monthly', 'Quarterly', 'SemiAnnual', 'Annual', 'Biennial'])
     expect(Object.values(BillableItemType)).toEqual(['OneTime', 'Recurring'])
+    expect(Object.values(BillableItemInvoiced)).toEqual(['true', 'false'])
     expect(Object.values(RecurringPeriod)).toEqual(['weekly', 'monthly', 'quarterly', 'annually'])
     expect(Object.values(DnsRecordType)).toEqual(['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV'])
     expect(Object.values(CurrencyCode)).toEqual(['AMD', 'USD', 'EUR', 'GBP', 'RUB'])

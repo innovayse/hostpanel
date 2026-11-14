@@ -143,3 +143,28 @@ export interface UpdateQuotePayload extends QuoteFields {
   /** Line items. */
   items: QuoteItemUpdate[]
 }
+
+/** Whether a quote's validity date is still ahead, as the quote lists filter on it; the API binds it by name. */
+export const QuoteValidity = {
+  Valid: 'Valid',
+  Expired: 'Expired',
+} as const
+
+/** One of the {@link QuoteValidity} values. */
+export type QuoteValidity = (typeof QuoteValidity)[keyof typeof QuoteValidity]
+
+/** The quote filters both quote lists share (the admin list and the tab of a client): stage and validity. */
+export interface QuoteListFilters {
+  /** Keep only the quotes in this stage; undefined for every stage. */
+  stage?: QuoteStage
+  /** Keep only the quotes still valid or only the expired ones; undefined for both. */
+  validity?: QuoteValidity
+}
+
+/** What narrows a quote list: the search text and the shared filters; each member left out means no narrowing. */
+export interface QuoteFilters extends QuoteListFilters {
+  /** Search term matched against the quote subject and id; empty for none. */
+  search?: string
+  /** Keep only the quotes of this client; the admin list only, the tab of a client names its client in the route. */
+  clientId?: number
+}

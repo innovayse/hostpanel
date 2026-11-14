@@ -103,15 +103,14 @@
   "billableItems": {
     "billableItems": "Оплачиваемые позиции",
     "manageUninvoicedAndRecurringCharges": "Управление невыставленными и повторяющимися начислениями",
-    "searchDescription": "Поиск по описанию",
+    "searchItems": "Поиск по описанию или номеру",
     "lengthRecordsFound": "Найдено записей: {length}",
     "invoiced": "Выставлено",
     "typeOneTime": "Разовое",
     "typeRecurring": "Повторяющееся",
     "noItemsFound": "Позиции не найдены.",
-    "uninvoiced": "Не выставлено",
-    "activeRecurring": "Активные повторяющиеся",
-    "completedRecurring": "Завершённые повторяющиеся",
+    "noItemsMatchYourFilters": "Нет позиций, подходящих под фильтры.",
+    "clearFilters": "Сбросить фильтры",
     "deleteItems": "Удалить начисления",
     "deleteItemsMessage": "Удалить {count} выбранное начисление? Это действие нельзя отменить. | Удалить {count} выбранных начисления? Это действие нельзя отменить. | Удалить {count} выбранных начислений? Это действие нельзя отменить.",
     "itemsDeleted": "Оплачиваемые позиции удалены."
@@ -224,8 +223,6 @@
     "manageBillingInvoices": "Управление счетами на оплату",
     "due": "К оплате",
     "summaryHint": "{count} счёт на странице | {count} счета на странице | {count} счетов на странице",
-    "dateFrom": "Дата с",
-    "dateTo": "Дата по",
     "dateRefunded": "Дата возврата",
     "totalcountRecordsFoundShowingValue": "Найдено записей: {totalCount}, показаны {value}-{value2}",
     "markPaid": "Отметить оплаченным",
@@ -233,6 +230,7 @@
     "duplicateInvoice": "Дублировать счёт",
     "collections": "Взыскание",
     "paymentPending": "Ожидает оплаты",
+    "searchInvoices": "Поиск по номеру счёта или способу оплаты",
     "deleteInvoice": "Удалить счёт",
     "deleteInvoiceMessage": "Удалить счёт №{id}? Это действие нельзя отменить.",
     "deleteInvoices": "Удалить счета",
@@ -280,7 +278,8 @@
     "created": "Создано",
     "noQuotesFound": "Предложения не найдены.",
     "expired": "Истекло",
-    "valid": "Действительно"
+    "valid": "Действительно",
+    "searchQuotes": "Поиск по теме или номеру предложения"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Платёжные транзакции и записи",
@@ -296,7 +295,8 @@
     "paymentsReceived": "Полученные платежи",
     "paymentsSent": "Отправленные платежи",
     "deleteTransaction": "Удалить транзакцию",
-    "deleteTransactionMessage": "Удалить транзакцию №{id}? Это действие нельзя отменить."
+    "deleteTransactionMessage": "Удалить транзакцию №{id}? Это действие нельзя отменить.",
+    "searchTransactions": "Поиск по описанию, ссылке или способу оплаты"
   },
   "invoiceItems": {
     "removeItem": "Удалить строку",
@@ -368,9 +368,7 @@
     "voidedAt": "Аннулирована",
     "empty": "Кредит-ноты не найдены.",
     "emptyForInvoice": "По этому счёту кредит-ноты не выписывались.",
-    "allStatuses": "Все статусы",
-    "statusFilter": "Статус",
-    "statusFilterPlaceholder": "Фильтр по статусу",
+    "searchCreditNotes": "Поиск по номеру, причине, номеру возврата или идентификатору",
     "status": {
       "Draft": "Черновик",
       "Issued": "Выписана",

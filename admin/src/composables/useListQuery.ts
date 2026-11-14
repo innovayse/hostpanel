@@ -3,7 +3,7 @@
  *
  * `useFilterQuery` keeps the filters, the search text and the page in the URL. This builds on it the parts each
  * list screen needs next and used to copy: loading whenever the address names another list, knowing whether the
- * list is narrowed, reading a filter as the enum member it stands for, and turning the applied filters into chips.
+ * list is narrowed, reading a filter as the enum member, the id or the date it stands for, and turning the applied filters into chips.
  * A screen names its filter keys, reads the result, and hands over its `load` function once it has defined it
  * (`loadOnChange`); it keeps only what is its own: the table, the filter fields and the labels.
  */
@@ -12,6 +12,9 @@ import type { ComputedRef } from 'vue'
 import { useFilterQuery } from '@/composables/useFilterQuery'
 import type { FilterQuery } from '@/composables/useFilterQuery'
 import type { UiFilterChip } from '@/utils/ui/filter'
+
+/** The one shape of a day the lists send to the API: `YYYY-MM-DD`, with no time and no zone. */
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 /** One filter a screen shows as a chip: its key, the caption of its field and the value as the operator reads it. */
 export interface ListChipSource<K extends string> {
@@ -56,6 +59,13 @@ export interface ListQuery<K extends string> extends FilterQuery<K> {
    */
   idOf: (key: K) => ComputedRef<number | undefined>
   /**
+   * Reads an applied filter as a date.
+   *
+   * @param key - The filter field in the address.
+   * @returns A computed holding the day as written (`YYYY-MM-DD`), undefined when the filter is not set or the address holds anything else, such as a timestamp.
+   */
+  dateOf: (key: K) => ComputedRef<string | undefined>
+  /**
    * Builds the chips of the applied filters.
    *
    * @param describe - Lists every filter with the value it has now; the ones with no value are left out.
@@ -70,7 +80,7 @@ export interface ListQuery<K extends string> extends FilterQuery<K> {
  * Must run in a component's setup, because it reads the router and registers hooks.
  *
  * @param keys - The filter fields, each stored in the query under its own name.
- * @returns Everything `useFilterQuery` returns, plus `narrowed`, `loadOnChange`, `stepBackWhenEmpty`, `enumOf`, `idOf` and `chipsOf`.
+ * @returns Everything `useFilterQuery` returns, plus `narrowed`, `loadOnChange`, `stepBackWhenEmpty`, `enumOf`, `idOf`, `dateOf` and `chipsOf`.
  */
 export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K> => {
   /** The address-backed filters, search and page. */
@@ -127,6 +137,16 @@ export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K>
     idOf: key => computed(() => {
       const id = Number(query.applied.value[key])
       return Number.isInteger(id) && id > 0 ? id : undefined
+    }),
+    /**
+     * The filter under the key as a date.
+     *
+     * @param key - The filter key in the address.
+     * @returns The date as written, undefined when the value is not one.
+     */
+    dateOf: key => computed(() => {
+      const value = query.applied.value[key]
+      return DAY_PATTERN.test(value) && !Number.isNaN(Date.parse(value)) ? value : undefined
     }),
     /**
      * The chips for the filters that have a value.

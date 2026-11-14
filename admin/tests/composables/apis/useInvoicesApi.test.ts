@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useInvoicesApi } from '@/composables/apis/useInvoicesApi'
-import { InvoiceRefundType } from '@/types/invoice'
+import { InvoiceRefundType, InvoiceStatus } from '@/types/invoice'
 import { ApiError } from '@/composables/useApi'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
@@ -20,7 +20,7 @@ describe('useInvoicesApi', () => {
   it('list sends page, size and only the filters that are set', async () => {
     const mock = stubFetch(json({ items: [], pageNumber: 1, pageSize: 25, totalCount: 0, totalPages: 0 }))
 
-    await useInvoicesApi().list(2, 25, { status: 'Paid', from: '', to: '2026-01-31' })
+    await useInvoicesApi().list(2, 25, { status: InvoiceStatus.Paid, from: '', to: '2026-01-31' })
     expect(callOf(mock)).toMatchObject({ url: '/api/billing?page=2&pageSize=25&status=Paid&to=2026-01-31', method: 'GET' })
   })
 

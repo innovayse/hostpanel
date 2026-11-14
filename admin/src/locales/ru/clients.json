@@ -133,6 +133,9 @@
     "deleteRequest": "Удалить запрос",
     "totalcountRequestValue": "Запросов: {totalCount}",
     "noCancellationRequestsFound": "Запросы на отмену не найдены",
+    "searchRequests": "Поиск по причине или номеру",
+    "noRequestsMatchYourFilters": "Нет запросов на отмену, подходящих под фильтры",
+    "clearFilters": "Сбросить фильтры",
     "deleteCancellationRequest": "Удалить запрос на отмену",
     "areYouSureYouWant": "Вы уверены, что хотите удалить этот запрос на отмену?",
     "requestDeleted": "Запрос на отмену удалён."
@@ -148,6 +151,9 @@
     "invoicedItems": "Выставленные позиции",
     "invoicedtotalcountItemValue": "Позиций: {invoicedTotalCount}",
     "noInvoicedBillableItems": "Нет выставленных оплачиваемых позиций.",
+    "searchItems": "Поиск по описанию или номеру",
+    "noUninvoicedItemsMatchYourFilters": "Нет невыставленных оплачиваемых позиций, подходящих под фильтры.",
+    "noInvoicedItemsMatchYourFilters": "Нет выставленных оплачиваемых позиций, подходящих под фильтры.",
     "confirmInvoice": "Подтвердите выставление счёта",
     "areYouSureYouWant": "Вы уверены, что хотите немедленно выставить счёт по выбранным позициям?",
     "confirmDelete": "Подтвердите удаление",
@@ -240,8 +246,6 @@
     "addItem": "+ Добавить позицию",
     "createInvoice2": "Создать счёт",
     "allStatuses": "Все статусы",
-    "from": "От",
-    "filter": "Фильтр",
     "clientinvoicestotalInvoiceValue": "Счетов: {clientInvoicesTotal}",
     "deleteInvoice": "Удалить счёт",
     "confirmDeleteInvoice": "Вы уверены, что хотите удалить счёт #{id}?",
@@ -301,7 +305,9 @@
     "clientquotestotalQuoteValue": "Предложений: {clientQuotesTotal}",
     "deleteQuote": "Удалить предложение",
     "confirmDeleteQuote": "Вы уверены, что хотите удалить предложение #{id}?",
-    "quoteDeleted": "Предложение удалено."
+    "quoteDeleted": "Предложение удалено.",
+    "noQuotesMatchYourFilters": "Предложения по вашим фильтрам не найдены",
+    "clearFilters": "Сбросить фильтры"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Услуга №{id}: {productName}",
@@ -470,7 +476,9 @@
     "deleteTransaction": "Удалить транзакцию",
     "confirmDeleteTransaction": "Вы уверены, что хотите удалить транзакцию #{id}?",
     "transactionAdded": "Транзакция добавлена.",
-    "transactionDeleted": "Транзакция удалена."
+    "transactionDeleted": "Транзакция удалена.",
+    "noTransactionsMatchYourFilters": "Транзакции по вашим фильтрам не найдены",
+    "clearFilters": "Сбросить фильтры"
   },
   "clientUsers": {
     "usersLength": "Пользователи ({length})",

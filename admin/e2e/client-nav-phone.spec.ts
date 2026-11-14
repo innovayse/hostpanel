@@ -203,7 +203,7 @@ test.describe('the menu bottom sheet on a phone', () => {
   test('rises from the bottom edge with a grab handle, a height limit and the theme and language menus', async ({ page }) => {
     await openMenu(page)
 
-    const sheet = page.getByRole('dialog')
+    const sheet = page.getByTestId('drawer')
     await expect.poll(async () => (await boxOf(sheet)).y + (await boxOf(sheet)).height).toBe(800)
     expect((await boxOf(sheet)).height).toBeLessThanOrEqual(800 * 0.85 + 1)
     await expect(page.getByTestId('sidebar-theme')).toBeVisible()
@@ -213,22 +213,22 @@ test.describe('the menu bottom sheet on a phone', () => {
   test('closes on Escape, on the backdrop and after choosing a page', async ({ page }) => {
     await openMenu(page)
     await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect(page.getByTestId('drawer')).toBeHidden()
 
     await page.getByTestId('topbar-toggle-sidebar').click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByTestId('drawer')).toBeVisible()
     await page.mouse.click(195, 20)
-    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect(page.getByTestId('drawer')).toBeHidden()
 
     await page.getByTestId('topbar-toggle-sidebar').click()
     // The Clients entry opens its sub-menu in place; the last of the two is the list link inside it.
-    await page.getByRole('dialog').getByTestId('nav-clients').last().click()
-    await expect(page.getByRole('dialog')).toBeHidden()
+    await page.getByTestId('drawer').getByTestId('nav-clients').last().click()
+    await expect(page.getByTestId('drawer')).toBeHidden()
   })
 
   test('follows a drag down on the handle, springs back when short and closes past the distance', async ({ page }) => {
     await openMenu(page)
-    const sheet = page.getByRole('dialog')
+    const sheet = page.getByTestId('drawer')
     const grip = await boxOf(page.getByTestId('drawer-grip'))
     const x = grip.x + grip.width / 2
     const y = grip.y + grip.height / 2

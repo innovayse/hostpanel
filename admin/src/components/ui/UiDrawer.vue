@@ -6,8 +6,9 @@
  * to the opener. The panel is an opaque elevated surface (nothing shows through it). With `sheet` it is a bottom
  * sheet below the `sm` breakpoint (below `lg` with `sheetBelow`; rounded top corners, a grip, room for the home
  * indicator through the safe-area inset) and the usual side panel from there up. A sheet follows touch gestures
- * ({@link useSheetDrag}): dragged down it closes past a distance or on a flick, a short drag springs back, dragged
- * up from a partial height it opens to full height. The default slot is the body and `footer` an optional pinned action row. It slides in from its
+ * ({@link useSheetDrag}): dragged down by the grip or the header (or by the body of a touch, while it is scrolled to
+ * its top) it closes past a distance or on a flick, a short drag springs back, dragged up from a partial height it
+ * opens to full height. The default slot is the body and `footer` an optional pinned action row. It slides in from its
  * edge (`UiTransition`, nothing moves under reduced motion); focus goes to the first control when the enter has
  * ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
  */
@@ -20,8 +21,7 @@ import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useSheetDrag } from '@/composables/useSheetDrag'
 import { useModalSurface } from '@/utils/ui/modalSurface'
 import { modalPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
-import { sheetQueries, UiDrawerSheetBelow } from '@/utils/ui/drawer'
-import type { UiDrawerSide } from '@/utils/ui/drawer'
+import { sheetQueries, UiDrawerSheetBelow, type UiDrawerSide } from '@/utils/ui/drawer'
 
 const { t } = useI18n()
 
@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<{
   narrow?: boolean
   /** Becomes a bottom sheet on a phone (below `sm`); a side panel from there up. Off keeps the side panel everywhere. */
   sheet?: boolean
-  /** The breakpoint under which a `sheet` is a bottom sheet: a phone (`sm`, the default) or anything below `lg` (the menu). Read once at setup. */
+  /** The breakpoint under which a `sheet` is a bottom sheet: a phone (`sm`, the default) or anything below `lg` (the menu). Follows a change of the prop. */
   sheetBelow?: UiDrawerSheetBelow
 }>(), {
   side: 'right',
@@ -85,7 +85,7 @@ const slideClasses: Record<UiDrawerSide, string> = {
 const body = ref<HTMLElement | null>(null)
 
 /** Whether the screen is narrow enough for a `sheet` to be a bottom sheet right now. */
-const underSheetBreakpoint = useMediaQuery(sheetQueries[props.sheetBelow])
+const underSheetBreakpoint = useMediaQuery(() => sheetQueries[props.sheetBelow])
 
 /** Whether the drawer is a bottom sheet at this moment: asked for with `sheet` and on a narrow enough screen. */
 const sheetActive = computed<boolean>(() => props.sheet && underSheetBreakpoint.value)
@@ -205,6 +205,7 @@ const onLeaveCancelled = (): void => {
           ref="panel"
           role="dialog"
           aria-modal="true"
+          data-testid="drawer"
           :aria-labelledby="titleId"
           tabindex="-1"
           class="glass-strong absolute w-full shadow-overlay flex flex-col overflow-hidden outline-none"
@@ -216,10 +217,10 @@ const onLeaveCancelled = (): void => {
           @pointerup="onPointerup"
           @pointercancel="onPointercancel"
         >
-          <div v-if="sheetActive" class="flex shrink-0 touch-none justify-center pt-2" aria-hidden="true" data-testid="drawer-grip">
+          <div v-if="sheetActive" class="flex shrink-0 touch-none justify-center pt-2" aria-hidden="true" data-sheet-handle data-testid="drawer-grip">
             <span class="h-1 w-10 rounded-pill bg-border-strong" />
           </div>
-          <div class="flex h-(--shell-header-h) items-center justify-between gap-3 border-b border-border-subtle px-6 shrink-0" :class="{ 'touch-none': sheetActive }">
+          <div class="flex h-(--shell-header-h) items-center justify-between gap-3 border-b border-border-subtle px-6 shrink-0" :class="{ 'touch-none': sheetActive }" data-sheet-handle>
             <UiHeading :id="titleId" :level="2" variant="card">
               {{ title }}
             </UiHeading>

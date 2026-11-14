@@ -2,8 +2,8 @@
  * Unit tests for the sheet gestures: the release speed, the close / expand / restore thresholds and the
  * pointer handling around them.
  */
-import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { nextTick, ref } from 'vue'
 import {
   flickVelocity,
   resolveRelease,
@@ -11,6 +11,7 @@ import {
   SHEET_DRAG_SLOP,
   SHEET_EXPAND_DISTANCE,
   SHEET_FLICK_VELOCITY,
+  SheetPointerType,
   SheetRelease,
   useSheetDrag,
 } from '@/composables/useSheetDrag'
@@ -56,36 +57,57 @@ describe('resolveRelease', () => {
   })
 })
 
+beforeAll(() => {
+  // jsdom has no pointer capture; the sheet takes it for the finger that drags.
+  HTMLElement.prototype.setPointerCapture = vi.fn()
+})
+
+afterAll(() => {
+  Reflect.deleteProperty(HTMLElement.prototype, 'setPointerCapture')
+})
+
 /**
  * Builds a pointer event for the gesture.
  *
  * @param clientY - Vertical position.
  * @param timeStamp - Time in ms.
  * @param target - Element under the pointer.
+ * @param pointerType - Kind of pointer.
  * @returns The event.
  */
-const pointer = (clientY: number, timeStamp: number, target: EventTarget | null = null): SheetPointerEvent => ({
+const pointer = (
+  clientY: number,
+  timeStamp: number,
+  target: EventTarget | null = null,
+  pointerType: string = SheetPointerType.Touch,
+): SheetPointerEvent => ({
   pointerId: 1,
   clientY,
   timeStamp,
   target,
   button: 0,
+  pointerType,
 })
 
 /**
- * Sets up a 400 px tall sheet with a body inside it.
+ * Sets up a 400 px tall sheet with a grip, a body and a text field inside it.
  *
  * @param enabled - Whether the drawer is a bottom sheet.
- * @returns The gesture, the elements and the close spy.
+ * @returns The gesture, the elements, the enabled flag and the close spy.
  */
 const setup = (enabled = true) => {
   const panelEl = document.createElement('aside')
   const bodyEl = document.createElement('div')
-  panelEl.appendChild(bodyEl)
+  const gripEl = document.createElement('div')
+  gripEl.setAttribute('data-sheet-handle', '')
+  const inputEl = document.createElement('input')
+  bodyEl.appendChild(inputEl)
+  panelEl.append(gripEl, bodyEl)
   Object.defineProperty(panelEl, 'offsetHeight', { value: 400 })
   const close = vi.fn()
-  const drag = useSheetDrag({ panel: ref(panelEl), body: ref(bodyEl), enabled: ref(enabled), close })
-  return { drag, panelEl, bodyEl, close }
+  const active = ref(enabled)
+  const drag = useSheetDrag({ panel: ref(panelEl), body: ref(bodyEl), enabled: active, close })
+  return { drag, panelEl, bodyEl, gripEl, inputEl, active, close }
 }
 
 describe('useSheetDrag', () => {
@@ -140,6 +162,96 @@ describe('useSheetDrag', () => {
     drag.onPointerup(pointer(40, 40))
 
     expect(close).toHaveBeenCalledTimes(1)
+  })
+
+  it('measures the release from the moment of lifting, so a pause before it is a slow release', () => {
+    const { drag, close } = setup()
+
+    drag.onPointerdown(pointer(0, 0))
+    drag.onPointermove(pointer(20, 20))
+    drag.onPointerup(pointer(20, 400))
+
+    expect(close).not.toHaveBeenCalled()
+  })
+
+  it('puts the sheet back after a close that did nothing, so it does not hang where the finger let go', () => {
+    const { drag, panelEl, close } = setup()
+
+    drag.onPointerdown(pointer(0, 0))
+    drag.onPointermove(pointer(130, 1000))
+    drag.onPointerup(pointer(130, 2000))
+
+    expect(close).toHaveBeenCalledTimes(1)
+    expect(panelEl.style.getPropertyValue('--sheet-drag')).toBe('0px')
+  })
+
+  it('starts for a touch or a pen anywhere, and for a mouse only from the grip or the header', () => {
+    const { drag, bodyEl, gripEl } = setup()
+
+    drag.onPointerdown(pointer(0, 0, bodyEl, SheetPointerType.Touch))
+    drag.onPointermove(pointer(50, 10))
+    expect(drag.dragging.value).toBe(true)
+    drag.onPointercancel()
+
+    drag.onPointerdown(pointer(0, 0, bodyEl, SheetPointerType.Pen))
+    drag.onPointermove(pointer(50, 10))
+    expect(drag.dragging.value).toBe(true)
+    drag.onPointercancel()
+
+    drag.onPointerdown(pointer(0, 0, bodyEl, SheetPointerType.Mouse))
+    drag.onPointermove(pointer(50, 10))
+    expect(drag.dragging.value).toBe(false)
+
+    drag.onPointerdown(pointer(0, 0, gripEl, SheetPointerType.Mouse))
+    drag.onPointermove(pointer(50, 10))
+    expect(drag.dragging.value).toBe(true)
+  })
+
+  it('never starts from a text field, a select, a textarea or a listbox', () => {
+    const { drag, bodyEl, inputEl } = setup()
+    const listbox = document.createElement('ul')
+    listbox.setAttribute('role', 'listbox')
+    const option = document.createElement('li')
+    listbox.appendChild(option)
+    bodyEl.appendChild(listbox)
+
+    for (const target of [inputEl, document.createElement('textarea'), document.createElement('select'), option]) {
+      if (!bodyEl.contains(target)) {
+        bodyEl.appendChild(target)
+      }
+      drag.onPointerdown(pointer(0, 0, target, SheetPointerType.Touch))
+      drag.onPointermove(pointer(50, 10))
+      expect(drag.dragging.value).toBe(false)
+    }
+  })
+
+  it('ignores an unknown kind of pointer', () => {
+    const { drag, gripEl } = setup()
+
+    drag.onPointerdown(pointer(0, 0, gripEl, 'other'))
+    drag.onPointermove(pointer(50, 10))
+
+    expect(drag.dragging.value).toBe(false)
+  })
+
+  it('forgets a gesture, a drag and the full height when the drawer stops being a sheet', async () => {
+    const { drag, active, panelEl, close } = setup()
+    drag.onPointerdown(pointer(300, 0))
+    drag.onPointermove(pointer(200, 800))
+    drag.onPointerup(pointer(200, 1600))
+    expect(drag.expanded.value).toBe(true)
+    drag.onPointerdown(pointer(0, 2000))
+    drag.onPointermove(pointer(100, 2010))
+    expect(drag.dragging.value).toBe(true)
+
+    active.value = false
+    await nextTick()
+
+    expect(drag.dragging.value).toBe(false)
+    expect(drag.expanded.value).toBe(false)
+    expect(panelEl.style.getPropertyValue('--sheet-drag')).toBe('0px')
+    drag.onPointerup(pointer(400, 2020))
+    expect(close).not.toHaveBeenCalled()
   })
 
   it('springs back from a short slow drag', () => {

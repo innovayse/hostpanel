@@ -1,13 +1,14 @@
 /**
  * Touch gestures of a bottom sheet (`UiDrawer` in sheet mode), on pointer events and without a dependency.
  *
- * Dragging the grip, the header or the sheet down moves it with the finger; past a distance or a fast flick it
- * closes, a short drag springs back. Dragging up from a partial height expands it to the full height. Content that
- * scrolls inside the sheet keeps its scroll: a drag that starts in the body only moves the sheet while the body is
- * at its top. The decisions are pure functions ({@link resolveRelease}, {@link flickVelocity}) so the thresholds are
+ * Dragging the grip or the header down moves the sheet with the finger; past a distance or a fast flick it closes,
+ * a short drag springs back. Dragging up from a partial height expands it to the full height. A touch or a pen can
+ * also drag from the body, but only while the body is scrolled to its top (and only where the browser leaves the
+ * gesture to the script, as `touch-action` allows); a mouse drags only from the grip or the header, and nothing
+ * starts from a text field, a select or a listbox. The decisions are pure functions ({@link resolveRelease}, {@link flickVelocity}) so the thresholds are
  * tested without a browser; the composable only feeds them the pointer.
  */
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { Ref } from 'vue'
 
 /** Fraction of the sheet's height it must be dragged down by to close on release. */
@@ -24,6 +25,25 @@ export const SHEET_DRAG_SLOP = 6
 
 /** Window in ms of the last pointer samples a release speed is measured over. */
 export const SHEET_VELOCITY_WINDOW = 100
+
+/** Selector of the elements a mouse may start a drag from: the grip and the header carry this attribute. */
+export const SHEET_HANDLE_SELECTOR = '[data-sheet-handle]'
+
+/** Selector of the controls a drag never starts from, so typing, selecting and choosing keep working. */
+export const SHEET_IGNORED_SELECTOR = 'input, textarea, select, [role="listbox"]'
+
+/** Closed set of pointer kinds a drag can start from. */
+export const SheetPointerType = {
+  /** A finger. */
+  Touch: 'touch',
+  /** A stylus. */
+  Pen: 'pen',
+  /** A mouse, which drags only from the grip or the header. */
+  Mouse: 'mouse',
+} as const
+
+/** One of the SheetPointerType values. */
+export type SheetPointerType = (typeof SheetPointerType)[keyof typeof SheetPointerType]
 
 /** Closed set of outcomes of releasing a drag. */
 export const SheetRelease = {
@@ -58,6 +78,8 @@ export interface SheetPointerEvent {
   target: EventTarget | null
   /** The mouse button, 0 for a finger or the primary button. */
   button: number
+  /** The kind of pointer, one of {@link SheetPointerType} (any other kind never starts a drag). */
+  pointerType: string
 }
 
 /**
@@ -77,6 +99,20 @@ export const flickVelocity = (samples: readonly SheetSample[]): number => {
     return 0
   }
   return (last.y - first.y) / (last.t - first.t)
+}
+
+/**
+ * Records a pointer sample and drops those older than {@link SHEET_VELOCITY_WINDOW}, so a long drag keeps a short list.
+ *
+ * @param samples - The samples of the gesture, oldest first; changed in place.
+ * @param sample - The new sample.
+ * @returns Nothing; the list is updated.
+ */
+const recordSample = (samples: SheetSample[], sample: SheetSample): void => {
+  samples.push(sample)
+  while (samples.length > 1 && sample.t - (samples[0] as SheetSample).t > SHEET_VELOCITY_WINDOW) {
+    samples.shift()
+  }
 }
 
 /**
@@ -166,15 +202,36 @@ export const useSheetDrag = (options: SheetDragOptions) => {
     moveTo(0)
   }
 
+  // A drawer that stops being a bottom sheet (the screen widened) must not keep a half-made gesture or full height.
+  watch(options.enabled, reset)
+
   /**
-   * Starts a gesture, unless the drawer is not a sheet or the content under the pointer is scrolled down (its
-   * scroll wins until it is back at the top).
+   * Whether a press may start a drag: a touch or a pen anywhere on the sheet, a mouse only on the grip or the
+   * header, and never on a text field, a select or a listbox.
+   *
+   * @param event - The pointer press.
+   * @returns True when a drag may start from it.
+   */
+  const startsDrag = (event: SheetPointerEvent): boolean => {
+    const target = event.target instanceof Element ? event.target : null
+    if (target?.closest(SHEET_IGNORED_SELECTOR) != null) {
+      return false
+    }
+    if (event.pointerType === SheetPointerType.Touch || event.pointerType === SheetPointerType.Pen) {
+      return true
+    }
+    return event.pointerType === SheetPointerType.Mouse && target?.closest(SHEET_HANDLE_SELECTOR) != null
+  }
+
+  /**
+   * Starts a gesture, unless the drawer is not a sheet, the press cannot start a drag ({@link startsDrag}) or the
+   * content under the pointer is scrolled down (its scroll wins until it is back at the top).
    *
    * @param event - The pointer press.
    * @returns Nothing; a gesture is recorded.
    */
   const onPointerdown = (event: SheetPointerEvent): void => {
-    if (!options.enabled.value || event.button !== 0) {
+    if (!options.enabled.value || event.button !== 0 || !startsDrag(event)) {
       return
     }
     const body = options.body.value
@@ -207,9 +264,9 @@ export const useSheetDrag = (options: SheetDragOptions) => {
       }
       gesture.active = true
       dragging.value = true
-      options.panel.value?.setPointerCapture?.(event.pointerId)
+      options.panel.value?.setPointerCapture(event.pointerId)
     }
-    gesture.samples.push({ y: event.clientY, t: event.timeStamp })
+    recordSample(gesture.samples, { y: event.clientY, t: event.timeStamp })
     moveTo(Math.max(0, offset))
   }
 
@@ -229,6 +286,8 @@ export const useSheetDrag = (options: SheetDragOptions) => {
       return
     }
     dragging.value = false
+    // The release is a sample too, so a pause before lifting the finger is a slow release.
+    recordSample(ended.samples, { y: event.clientY, t: event.timeStamp })
     const height = options.panel.value?.offsetHeight ?? 0
     const outcome = resolveRelease(event.clientY - ended.startY, flickVelocity(ended.samples), height, expanded.value)
     if (outcome === SheetRelease.Expand) {
@@ -236,8 +295,8 @@ export const useSheetDrag = (options: SheetDragOptions) => {
     }
     if (outcome === SheetRelease.Close) {
       options.close()
-      return
     }
+    // After a close too: a vetoed or ignored close must not leave the sheet hanging where the finger let go.
     moveTo(0)
   }
 

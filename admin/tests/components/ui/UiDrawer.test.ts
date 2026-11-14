@@ -1,9 +1,10 @@
 /**
  * Unit tests for UiDrawer: shown only when open, closing paths, edge and footer.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
+import { UiDrawerSheetBelow } from '@/utils/ui/drawer'
 import { createTestI18n } from '../../helpers/i18n'
 
 /**
@@ -91,6 +92,15 @@ const stubNarrow = (narrow: boolean): void => {
 }
 
 describe('UiDrawer as a sheet', () => {
+  beforeAll(() => {
+    // jsdom has no pointer capture; the sheet takes it for the finger that drags.
+    HTMLElement.prototype.setPointerCapture = vi.fn()
+  })
+
+  afterAll(() => {
+    Reflect.deleteProperty(HTMLElement.prototype, 'setPointerCapture')
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -127,7 +137,7 @@ describe('UiDrawer as a sheet', () => {
       return { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }
     })
 
-    mountDrawer({ open: true, title: 'x', sheet: true, sheetBelow: 'lg' })
+    mountDrawer({ open: true, title: 'x', sheet: true, sheetBelow: UiDrawerSheetBelow.Lg })
 
     expect(queries).toEqual(['(max-width: 1023.98px)'])
   })
@@ -146,7 +156,7 @@ describe('UiDrawer as a sheet', () => {
     const aside = wrapper.get('aside')
     Object.defineProperty(aside.element, 'offsetHeight', { value: 400 })
 
-    await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0 })
+    await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0, pointerType: 'mouse' })
     await aside.trigger('pointermove', { pointerId: 1, clientY: 160 })
     expect((aside.element as HTMLElement).style.getPropertyValue('--sheet-drag')).toBe('60px')
     expect(aside.attributes('data-dragging')).toBeDefined()
@@ -161,7 +171,7 @@ describe('UiDrawer as a sheet', () => {
     const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
     const aside = wrapper.get('aside')
 
-    await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0 })
+    await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0, pointerType: 'mouse' })
     await aside.trigger('pointermove', { pointerId: 1, clientY: 150 })
     await aside.trigger('pointercancel', { pointerId: 1 })
 
@@ -175,7 +185,7 @@ describe('UiDrawer as a sheet', () => {
     const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
     const aside = wrapper.get('aside')
 
-    await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 300, button: 0 })
+    await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 300, button: 0, pointerType: 'touch' })
     await aside.trigger('pointermove', { pointerId: 1, clientY: 200 })
     await aside.trigger('pointerup', { pointerId: 1, clientY: 200 })
 
@@ -191,11 +201,26 @@ describe('UiDrawer as a sheet', () => {
     Object.defineProperty(body.element, 'scrollTop', { value: 40 })
     Object.defineProperty(aside.element, 'offsetHeight', { value: 400 })
 
-    await body.trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0 })
+    await body.trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0, pointerType: 'touch' })
     await aside.trigger('pointermove', { pointerId: 1, clientY: 300 })
     await aside.trigger('pointerup', { pointerId: 1, clientY: 300 })
 
     expect(wrapper.emitted('close')).toBeUndefined()
+  })
+
+  it('follows a change of the breakpoint it was given', async () => {
+    const queries: string[] = []
+    vi.stubGlobal('matchMedia', (query: string) => {
+      queries.push(query)
+      return { matches: query === '(max-width: 1023.98px)', addEventListener: vi.fn(), removeEventListener: vi.fn() }
+    })
+    const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
+    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(false)
+
+    await wrapper.setProps({ sheetBelow: UiDrawerSheetBelow.Lg })
+
+    expect(queries).toContain('(max-width: 1023.98px)')
+    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
   })
 
   it('does not drag a side panel', async () => {
@@ -203,7 +228,7 @@ describe('UiDrawer as a sheet', () => {
     const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
     const aside = wrapper.get('aside')
 
-    await aside.trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0 })
+    await aside.trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0, pointerType: 'touch' })
     await aside.trigger('pointermove', { pointerId: 1, clientY: 300 })
     await aside.trigger('pointerup', { pointerId: 1, clientY: 400 })
 

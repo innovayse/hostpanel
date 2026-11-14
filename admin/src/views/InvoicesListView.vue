@@ -322,13 +322,13 @@ watch(loadKey, load, { immediate: true })
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
+            <UiTableHeader card-role="title">{{ t('shared.invoice') }}</UiTableHeader>
             <UiTableHeader hide-below="sm">{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader hide-below="md">{{ t('shared.invoiceDate') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('shared.dueDate') }}</UiTableHeader>
             <UiTableHeader numeric hide-below="sm">{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('shared.paymentMethod') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>

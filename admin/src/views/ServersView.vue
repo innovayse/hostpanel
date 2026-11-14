@@ -579,7 +579,7 @@ onMounted(loadAll)
         <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" data-testid="server-groups-table">
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader>{{ t('servers.servers.groupName') }}</UiTableHeader>
+              <UiTableHeader card-role="title">{{ t('servers.servers.groupName') }}</UiTableHeader>
               <UiTableHeader>{{ t('servers.servers.fillType') }}</UiTableHeader>
               <UiTableHeader>{{ t('servers.servers.servers') }}</UiTableHeader>
               <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>

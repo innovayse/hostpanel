@@ -9,12 +9,13 @@
  * actions column at its one fixed width); `hideBelow` hides the column under a breakpoint. The cell paints the one hairline under the header (an inset
  * shadow, because a border does not travel with a sticky header in a collapsed-border table); the fill of a
  * sticky header comes from the scrolling box (`UiTable` with `maxHeight`). `select` marks the checkbox column of a selectable table
- * (drawn by `UiTableRow`, not set by a screen).
+ * (drawn by `UiTableRow`, not set by a screen). The caption is also the label of the column's value on a card (below `sm`, see `UiTable`),
+ * where `cardRole` sets what the column is (the heading, the top right badge, a field or left out); the header itself is not drawn there.
  */
-import { computed, inject, onBeforeUnmount } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
-import { columnClasses, headerDensityClasses, UiSortDirection } from '@/utils/ui/table'
+import { columnClasses, headerDensityClasses, UiCardRole, UiSortDirection } from '@/utils/ui/table'
 import type { UiAlign, UiHideBelow } from '@/utils/ui/table'
 
 /** Props for UiTableHeader. */
@@ -35,7 +36,10 @@ const props = withDefaults(defineProps<{
   hideBelow?: UiHideBelow
   /** Heads the checkbox column of a selectable table: narrow, like its cells. */
   select?: boolean
+  /** What the column is on a card (below `sm`): the heading, the badge, a labelled field or left out. */
+  cardRole?: UiCardRole
 }>(), {
+  cardRole: UiCardRole.Field,
   hideBelow: undefined,
   select: false,
   numeric: false,
@@ -54,6 +58,20 @@ const emit = defineEmits<{
 /** Density shared by the parent table (plain when used outside one). */
 const context = inject(UI_TABLE_CONTEXT, { density: UiTableDensity.Plain })
 
+/** The element around the caption, read for the label the column's values get on a card. */
+const captionElement = ref<HTMLElement | null>(null)
+
+/** The caption as text (the sort arrow is not part of it). */
+const label = ref<string>('')
+
+/** Reads the caption from the rendered header. */
+const readLabel = (): void => {
+  label.value = captionElement.value?.textContent?.trim() ?? ''
+}
+
+onMounted(readLabel)
+onUpdated(readLabel)
+
 /** The column this header declares: its cells and the loading skeleton share its shape and visibility. */
 const column = computed<UiTableColumn>(() => ({
   align: props.align,
@@ -61,6 +79,8 @@ const column = computed<UiTableColumn>(() => ({
   actions: props.actions,
   hideBelow: props.hideBelow,
   select: props.select,
+  label: label.value,
+  cardRole: props.cardRole,
 }))
 
 // Registered in render order so the skeleton rows get one cell per header, with the same classes.
@@ -70,9 +90,10 @@ onBeforeUnmount(() => {
   unregisterColumn?.()
 })
 
-/** Padding and alignment classes. */
+/** Padding and alignment classes; below `sm` only the select-all cell is drawn. */
 const classes = computed<string[]>(() => [
   headerDensityClasses[context.density],
+  props.select ? '' : 'max-sm:hidden',
   ...columnClasses(column.value),
 ])
 
@@ -98,9 +119,9 @@ const arrow = computed<string>(() => {
       :data-testid="sortTestid"
       @click="emit('sort')"
     >
-      <slot />
+      <span ref="captionElement" class="contents"><slot /></span>
       <span aria-hidden="true">{{ arrow }}</span>
     </button>
-    <slot v-else />
+    <span v-else ref="captionElement" class="contents"><slot /></span>
   </th>
 </template>

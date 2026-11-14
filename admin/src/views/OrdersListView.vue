@@ -254,9 +254,9 @@ onMounted(() => load())
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('orders.ordersList.order') }}</UiTableHeader>
+            <UiTableHeader card-role="title">{{ t('orders.ordersList.order') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>

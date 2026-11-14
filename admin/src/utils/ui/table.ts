@@ -119,6 +119,84 @@ export const selectColumnClasses = 'w-12 select-none'
  */
 export const selectedRowClasses = 'bg-primary-500/10 [&>:first-child]:shadow-[inset_3px_0_0_var(--text-accent)]'
 
+/** Closed set of roles a column plays when the table is drawn as cards (below the `sm` breakpoint). */
+export const UiCardRole = {
+  /** A label and value pair of the card (the default). */
+  Field: 'field',
+  /** The heading of the card. */
+  Title: 'title',
+  /** The chip at the top right of the card. */
+  Badge: 'badge',
+  /** Not drawn on the card. */
+  Hidden: 'hidden',
+} as const
+
+/** One of the card roles. */
+export type UiCardRole = (typeof UiCardRole)[keyof typeof UiCardRole]
+
+/**
+ * Below `sm` every table part is a block and a body row becomes a card: a wrapping flex box in which the
+ * checkbox, the title and the badge share the first line and the fields and the actions take a line each.
+ */
+export const cardTableClasses = 'max-sm:block'
+
+/** Classes of a body row drawn as a card; `last:` repeats the border because the row's own `last:border-0` would drop it. */
+export const cardRowClasses =
+  'max-sm:flex max-sm:flex-wrap max-sm:items-center max-sm:gap-x-3 max-sm:gap-y-1.5 max-sm:mb-2 max-sm:p-3 max-sm:rounded-xl max-sm:border max-sm:last:border max-sm:border-border-subtle'
+
+/** Classes of a header row drawn as cards: only the select-all cell is left in it. */
+export const cardHeadRowClasses = 'max-sm:flex'
+
+/** Classes that drop a cell's table sizing (padding, height, fixed or zero width) once it is a card part. */
+const cardCellResetClasses = 'max-sm:h-auto max-sm:p-0 max-sm:max-w-none'
+
+/** Classes of the checkbox cell of a card: the first item of the first line. */
+const cardSelectClasses = `${cardCellResetClasses} max-sm:order-1 max-sm:w-auto`
+
+/** Classes of the title cell of a card: takes the first line's free width. */
+const cardTitleClasses = `${cardCellResetClasses} max-sm:order-2 max-sm:flex-1 max-sm:min-w-0 max-sm:w-auto max-sm:font-semibold max-sm:text-text-primary max-sm:text-start`
+
+/** Classes of the badge cell of a card: the end of the first line. */
+const cardBadgeClasses = `${cardCellResetClasses} max-sm:order-3 max-sm:w-auto max-sm:text-end`
+
+/** Classes of a field cell of a card: the column's caption (from `data-label`) at the start, the value at the end. */
+const cardFieldClasses = `${cardCellResetClasses} max-sm:order-4 max-sm:flex max-sm:w-full max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:text-end max-sm:before:content-[attr(data-label)] max-sm:before:text-xs max-sm:before:font-semibold max-sm:before:text-text-muted max-sm:before:text-start`
+
+/** Classes of the actions cell of a card: the footer line. */
+const cardActionsClasses = `${cardCellResetClasses} max-sm:order-5 max-sm:w-full max-sm:pt-1.5 max-sm:border-t max-sm:border-border-subtle max-sm:text-end`
+
+/** Classes of a hidden column: not drawn on the card, whatever its `hideBelow`. */
+const cardHiddenClasses = 'max-sm:hidden'
+
+/**
+ * Classes a column gives each of its cells, header, data and placeholder alike, once the table is drawn as cards.
+ * The select and actions columns have fixed roles, any other follows the column's `cardRole`.
+ *
+ * @param column - The column of the cell, absent for a cell that matches no header (it keeps the plain block layout).
+ * @returns The card layout classes of the cell.
+ */
+export const cardCellClasses = (column: UiTableColumn | undefined): string => {
+  if (!column) {
+    return ''
+  }
+  if (column.select) {
+    return cardSelectClasses
+  }
+  if (column.actions) {
+    return cardActionsClasses
+  }
+  switch (column.cardRole) {
+    case UiCardRole.Title:
+      return cardTitleClasses
+    case UiCardRole.Badge:
+      return cardBadgeClasses
+    case UiCardRole.Hidden:
+      return cardHiddenClasses
+    default:
+      return cardFieldClasses
+  }
+}
+
 /**
  * Classes a column gives each of its cells, header, data and placeholder alike: the select, actions and numeric shapes
  * win over `align`, then the breakpoint below which the column is hidden.

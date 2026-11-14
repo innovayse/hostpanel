@@ -79,13 +79,13 @@ onMounted(() => load())
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
+            <UiTableHeader card-role="title">{{ t('shared.productService') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.nextDueDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>

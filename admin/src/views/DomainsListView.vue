@@ -107,9 +107,9 @@ onMounted(() => load())
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.domainName') }}</UiTableHeader>
+            <UiTableHeader card-role="title">{{ t('shared.domainName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('domains.domainsList.expiresAt') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('domains.domainsList.renewalPrice') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>

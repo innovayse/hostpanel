@@ -9,6 +9,8 @@
  * select-all cell (indeterminate over a partial selection), in the body a row checkbox for a row with a `rowId`. A click
  * toggles the row and Shift extends the range from the last toggled row. A ticked row gets the selected look (soft accent
  * background, accent bar on the left edge) and `aria-selected`.
+ *
+ * Below `sm` a body row is a card (see `UiTable`); the header row keeps only its select-all cell.
  */
 import { computed, inject } from 'vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
@@ -16,7 +18,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import type { RowId } from '@/composables/useRowSelection'
 import { UI_TABLE_CONTEXT, UI_TABLE_HEAD } from '@/utils/ui/injection'
-import { selectedRowClasses } from '@/utils/ui/table'
+import { cardHeadRowClasses, cardRowClasses, selectedRowClasses } from '@/utils/ui/table'
 
 /** Props for UiTableRow. */
 const props = withDefaults(defineProps<{
@@ -60,6 +62,7 @@ const classes = computed<string[]>(() => [
   props.hoverable ? 'hover:bg-surface-hover transition-colors' : '',
   isSelected.value ? selectedRowClasses : '',
   props.bordered ? 'border-b border-border-subtle last:border-0' : '',
+  inHead ? cardHeadRowClasses : cardRowClasses,
 ])
 
 /**

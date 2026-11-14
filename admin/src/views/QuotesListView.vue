@@ -189,8 +189,8 @@ onMounted(loadClients)
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader card-role="title">{{ t('shared.subject') }}</UiTableHeader>
+            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.expiryDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.quotesList.created') }}</UiTableHeader>

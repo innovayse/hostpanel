@@ -22,6 +22,12 @@
  * `selection` (from `useRowSelection`) makes the table selectable: the `UiTableRow` of the header draws a select-all checkbox
  * (indeterminate over a partial selection) and every body row that has a `rowId` draws its own, so a screen writes no checkbox column.
  * The rows toggle through the selection (Shift extends a range); the bulk actions live in a `UiBulkBar`.
+ *
+ * Below the `sm` breakpoint the table is drawn as cards with the same markup: each body row is a card, the column
+ * whose header says `card-role="title"` its heading and the `badge` one a chip at the top right, the other columns
+ * label/value pairs under the caption their header registered (`card-role="hidden"` leaves a column out), and the
+ * actions column the footer. The loading placeholders take the same card shape, and the empty row, selection and a row's
+ * click work as they do in the table.
  */
 import { computed, provide, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -29,7 +35,7 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
 import type { RowSelection } from '@/composables/useRowSelection'
-import { cellDensityClasses, columnClasses, scrollBoxClasses, stickyHeadFill, tableMaxHeightClasses } from '@/utils/ui/table'
+import { cardCellClasses, cardRowClasses, cardTableClasses, cellDensityClasses, columnClasses, scrollBoxClasses, stickyHeadFill, tableMaxHeightClasses } from '@/utils/ui/table'
 import type { UiTableMaxHeight } from '@/utils/ui/table'
 
 /** The attributes a screen sets (classes, test ids) belong on the table; the box around it only scrolls. */
@@ -72,8 +78,13 @@ const rowIndexes = computed<number[]>(() => Array.from({ length: props.skeletonR
 /** Getters of the registered header columns, in render order. */
 const columnSources = ref<Array<() => UiTableColumn>>([])
 
-/** Classes of each placeholder cell, one per header column: the same width and visibility as the column. */
-const columnCellClasses = computed<string[][]>(() => columnSources.value.map((source) => columnClasses(source())))
+/** Classes of each placeholder cell, one per header column: the same width and visibility as the column, and its card role below `sm`. */
+const columnCellClasses = computed<string[][]>(() =>
+  columnSources.value.map((source) => [...columnClasses(source()), cardCellClasses(source())]),
+)
+
+/** Captions of the placeholder cells, one per header column: the label a card shows before the bar. */
+const columnLabels = computed<Array<string | undefined>>(() => columnSources.value.map((source) => source().label))
 
 /** Width of the status row: every header column (at least one). */
 const columnCount = computed<number>(() => Math.max(columnSources.value.length, 1))
@@ -90,6 +101,14 @@ const registerColumn = (column: () => UiTableColumn): (() => void) => {
     columnSources.value = columnSources.value.filter((source) => source !== column)
   }
 }
+
+/**
+ * Finds the registered column at a position.
+ *
+ * @param index - Position of a cell in its row.
+ * @returns The column the header at that position declared, or `undefined` when there is none.
+ */
+const columnAt = (index: number): UiTableColumn | undefined => columnSources.value[index]?.()
 
 /** Box of a placeholder cell: the same height and padding as a real data cell of this density. */
 const skeletonCellClasses = computed<string>(() => cellDensityClasses[props.density])
@@ -111,6 +130,7 @@ provide(UI_TABLE_CONTEXT, {
     return props.loading
   },
   registerColumn,
+  columnAt,
   get selection() {
     return props.selection
   },
@@ -128,16 +148,16 @@ provide(UI_TABLE_CONTEXT, {
 
 <template>
   <div :class="boxClasses">
-    <table v-bind="$attrs" class="[:where(&)]:w-full" :class="scrollable ? '' : stickyHeadFill">
+    <table v-bind="$attrs" class="[:where(&)]:w-full" :class="[cardTableClasses, scrollable ? '' : stickyHeadFill]">
       <slot />
-      <tbody v-if="loading" aria-busy="true" data-testid="ui-table-skeleton">
-        <tr v-for="row in rowIndexes" :key="row" class="border-b border-border-subtle last:border-0" aria-hidden="true">
-          <td v-for="(classes, column) in columnCellClasses" :key="column" :class="[skeletonCellClasses, classes]">
+      <tbody v-if="loading" :class="cardTableClasses" aria-busy="true" data-testid="ui-table-skeleton">
+        <tr v-for="row in rowIndexes" :key="row" class="border-b border-border-subtle last:border-0" :class="cardRowClasses" aria-hidden="true">
+          <td v-for="(classes, column) in columnCellClasses" :key="column" :class="[skeletonCellClasses, classes]" :data-label="columnLabels[column]">
             <UiSkeletonBar class="h-3 w-3/4 rounded" />
           </td>
         </tr>
       </tbody>
-      <tbody v-else-if="empty">
+      <tbody v-else-if="empty" :class="cardTableClasses">
         <tr>
           <td :colspan="columnCount" class="text-center text-sm text-text-muted" :class="$slots.empty ? '' : 'px-4 py-8'">
             <slot name="empty">

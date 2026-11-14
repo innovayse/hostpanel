@@ -325,7 +325,7 @@ watch(filters.page, load, { immediate: true })
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
+            <UiTableHeader card-role="title">{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>

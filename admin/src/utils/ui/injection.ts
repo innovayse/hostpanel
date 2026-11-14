@@ -6,7 +6,7 @@
  */
 import type { InjectionKey, Ref } from 'vue'
 import type { RowSelection } from '@/composables/useRowSelection'
-import type { UiAlign, UiHideBelow } from '@/utils/ui/table'
+import type { UiAlign, UiCardRole, UiHideBelow } from '@/utils/ui/table'
 
 /** Closed set of table paddings. */
 export const UiTableDensity = {
@@ -31,6 +31,10 @@ export interface UiTableColumn {
   hideBelow?: UiHideBelow
   /** The column is the checkbox column of a selectable table. */
   select?: boolean
+  /** Caption of the column (the text of its header), the label of its value on a card. */
+  label?: string
+  /** What the column is on a card (a field when omitted). */
+  cardRole?: UiCardRole
 }
 
 /** What `UiTable` shares with its parts. */
@@ -44,6 +48,8 @@ export interface UiTableContext {
    * every render so the column follows its header's props. Absent outside a table.
    */
   registerColumn?: (column: () => UiTableColumn) => () => void
+  /** The registered column at a position, which is where a cell finds its caption and role for the card layout. Absent outside a table. */
+  columnAt?: (index: number) => UiTableColumn | undefined
   /** The selection of a selectable table; its rows and header draw the checkbox column. Absent on a plain table. */
   selection?: RowSelection
   /** Accessible name of the select-all checkbox in the header. */

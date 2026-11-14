@@ -294,11 +294,11 @@ watch([activeFilter, appliedSearch, page], load, { immediate: true })
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader />
-            <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
+            <UiTableHeader card-role="title">{{ t('shared.subject') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.department') }}</UiTableHeader>
             <UiTableHeader>{{ t('support.supportTickets.requestor') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.lastReply') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>

@@ -12,9 +12,6 @@
   "paymentMethodOptions": {
     "bankTransfer": "Bank Transfer"
   },
-  "quoteStageOptions": {
-    "allStages": "All Stages"
-  },
   "orderStatusOptions": {
     "fraud": "Fraud",
     "incomplete": "Incomplete",

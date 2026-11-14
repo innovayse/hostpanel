@@ -36,7 +36,7 @@ public sealed class ClientQuotesController : BaseApiController
 
     /// <summary>Returns a paginated list of quotes for a specific client.</summary>
     /// <param name="clientId">The client's primary key; wins over any client id in the query.</param>
-    /// <param name="query">The page and page size to list by.</param>
+    /// <param name="query">The paging window, the optional subject or id search and the optional stage and validity filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not staff;

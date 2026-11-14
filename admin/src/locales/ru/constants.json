@@ -12,9 +12,6 @@
   "paymentMethodOptions": {
     "bankTransfer": "Банковский перевод"
   },
-  "quoteStageOptions": {
-    "allStages": "Все этапы"
-  },
   "orderStatusOptions": {
     "fraud": "Мошенничество",
     "incomplete": "Не завершён",

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useClientBillableItemsStore } from '@/stores/clientBillableItems'
 import { BillableItemType } from '@/types/billableitem'
-import { invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
+import { callOf, invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 
 describe('clientBillableItemsStore', () => {
   beforeEach(() => {
@@ -25,6 +25,16 @@ describe('clientBillableItemsStore', () => {
     expect(await store.fetchItems('7', 1, 20)).toEqual(page)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
+  })
+
+  it('fetchItems sends the page, the page size and the trimmed search and type', async () => {
+    const mock = stubFetch(json({ uninvoicedItems: [], uninvoicedTotal: [], invoicedItems: { items: [], totalCount: 0 } }))
+    const store = useClientBillableItemsStore()
+
+    await store.fetchItems('7', 2, 20)
+    await store.fetchItems('7', 1, 20, { search: '  hosting ', type: BillableItemType.Recurring })
+    expect(callOf(mock, 0).url).toBe('/api/clients/7/billable-items?page=2&pageSize=20')
+    expect(callOf(mock, 1).url).toBe('/api/clients/7/billable-items?page=1&pageSize=20&search=hosting&type=Recurring')
   })
 
   it('fetchItems returns null with the API sentence on refusal', async () => {

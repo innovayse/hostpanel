@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useBillableItemsApi } from '@/composables/apis/useBillableItemsApi'
 import { ApiError } from '@/composables/useApi'
-import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
+import { BillableItemInvoiced, BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -14,14 +14,18 @@ afterEach(() => {
 })
 
 describe('useBillableItemsApi', () => {
-  it('list drops an unset type and sends a set one', async () => {
+  it('list drops the filters that are not set and sends the ones that are', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
     const api = useBillableItemsApi()
 
-    await api.list(1, 100)
-    await api.list(1, 100, 'Recurring')
-    expect(callOf(mock, 0).url).toBe('/api/billing/billable-items?page=1&pageSize=100')
-    expect(callOf(mock, 1).url).toBe('/api/billing/billable-items?page=1&pageSize=100&type=Recurring')
+    await api.list(1, 20)
+    await api.list(1, 20, { search: '', clientId: undefined, type: undefined, invoiced: undefined })
+    await api.list(3, 20, { search: 'hosting', clientId: 7, type: BillableItemType.Recurring, invoiced: BillableItemInvoiced.No })
+    expect(callOf(mock, 0).url).toBe('/api/billing/billable-items?page=1&pageSize=20')
+    expect(callOf(mock, 1).url).toBe('/api/billing/billable-items?page=1&pageSize=20')
+    expect(callOf(mock, 2).url).toBe(
+      '/api/billing/billable-items?page=3&pageSize=20&search=hosting&clientId=7&type=Recurring&invoiced=false',
+    )
   })
 
   it('create POSTs the payload and remove DELETEs by id', async () => {
@@ -35,11 +39,14 @@ describe('useBillableItemsApi', () => {
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/billing/billable-items/4', method: 'DELETE' })
   })
 
-  it('listByClient pages the invoiced items', async () => {
+  it('listByClient pages the invoiced items and sends the search and the type', async () => {
     const mock = stubFetch(json({ uninvoicedItems: [] }))
+    const api = useBillableItemsApi()
 
-    await useBillableItemsApi().listByClient('7', 2, 20)
-    expect(callOf(mock).url).toBe('/api/clients/7/billable-items?invoicedPage=2&invoicedPageSize=20')
+    await api.listByClient('7', 2, 20)
+    await api.listByClient('7', 1, 20, { search: 'hosting', type: BillableItemType.OneTime })
+    expect(callOf(mock, 0).url).toBe('/api/clients/7/billable-items?page=2&pageSize=20')
+    expect(callOf(mock, 1).url).toBe('/api/clients/7/billable-items?page=1&pageSize=20&search=hosting&type=OneTime')
   })
 
   it('invoiceSelected, removeForClient, addForClient and addTimeBilling use the client paths', async () => {

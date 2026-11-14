@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import { useQuotesApi } from '@/composables/apis/useQuotesApi'
 import { runAction } from '@/lib/runAction'
 import { translate } from '@/lib/translate'
-import type { CreateQuotePayload, Quote, QuoteListItem, UpdateQuotePayload } from '@/types/quote'
+import type { CreateQuotePayload, Quote, QuoteFilters, QuoteListItem, UpdateQuotePayload } from '@/types/quote'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 
 /** Loads, creates and changes quotes for the admin billing screens. */
@@ -62,14 +62,16 @@ export const useQuotesStore = defineStore('quotes', () => {
   }
 
   /**
-   * Fetches all quotes (global billing view) with pagination.
+   * Fetches a page of all quotes (global billing view), narrowed by the server. The page and the filters come from the
+   * list's address, so the store keeps no copy of them.
    *
    * @param page - Page number (1-based).
+   * @param filters - The search text and the client, stage and validity filters; a member left out does not narrow.
    * @param size - Items per page; the store page size when omitted.
    * @returns Promise that resolves when data is loaded.
    */
-  const fetchAll = async (page = 1, size?: number): Promise<void> => {
-    const result = await run(() => api.list(page, size ?? pageSize.value))
+  const fetchAll = async (page = 1, filters: QuoteFilters = {}, size?: number): Promise<void> => {
+    const result = await run(() => api.list(page, size ?? pageSize.value, filters))
     if (result.ok) {
       quotes.value = result.value.items
       totalCount.value = result.value.totalCount
@@ -77,15 +79,21 @@ export const useQuotesStore = defineStore('quotes', () => {
   }
 
   /**
-   * Fetches quotes for a specific client with pagination.
+   * Fetches a page of the quotes of one client, narrowed by the server.
    *
    * @param clientId - The client id.
    * @param page - Page number (1-based).
+   * @param filters - The search text and the stage and validity filters; a member left out does not narrow.
    * @param size - Items per page.
    * @returns Promise that resolves when data is loaded.
    */
-  const fetchClientQuotes = async (clientId: number | string, page = 1, size = LEDGER_PAGE_SIZE): Promise<void> => {
-    const result = await run(() => api.listByClient(clientId, page, size))
+  const fetchClientQuotes = async (
+    clientId: number | string,
+    page = 1,
+    filters: QuoteFilters = {},
+    size = LEDGER_PAGE_SIZE,
+  ): Promise<void> => {
+    const result = await run(() => api.listByClient(clientId, page, size, filters))
     if (result.ok) {
       clientQuotes.value = result.value.items
       clientQuotesTotal.value = result.value.totalCount

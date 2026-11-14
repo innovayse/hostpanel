@@ -26,13 +26,11 @@ An invoice moves through these statuses during its life:
 | Collections | Sent to a collections agency |
 | Payment Pending | An online payment is awaiting confirmation from the gateway |
 
-<Callout type="note">
-The invoice list status filter shows Draft, Unpaid, Overdue, Paid, Partially Refunded, Refunded, and Cancelled only. Collections and Payment Pending are not included in the filter dropdown.
-</Callout>
-
 ## The invoice list
 
-Go to **Invoices** to see all invoices. Use **Search/Filter** to narrow by client, status, date range, or amount.
+Go to **Invoices** to see all invoices, newest first. The search box looks at the invoice number and the payment method; a `%` or `_` you type is an ordinary character. **Filters** opens a dialog with the client, the status (any of the statuses above) and the invoice date range. The client is chosen from the list, because client names are not searched. The last day of the date range is included to its end.
+
+The search, the filters and the page stay in the address, so a reload or a shared link shows the same list, and every applied filter is a chip you can remove. The server applies them before it pages, so a match is found on any page. A page size over 100, a search longer than the limit, an unknown status or a client id that is not positive is refused instead of cut. The **Invoices** tab of a client has the same search, status and date range.
 
 **Bulk actions (With Selected:):** Mark Paid, Mark Unpaid, Mark Cancelled, Duplicate Invoice, Delete.
 
@@ -272,7 +270,7 @@ An issued credit note is never deleted. It can only be voided, and a voided note
 
 ### List, open, void and PDF
 
-**Billing, Credit Notes** lists every note, newest first, with a status filter. Open a note to see its lines, its totals, the refund reference of a gateway refund note and, for a voided one, why it was voided.
+**Billing, Credit Notes** lists every note, newest first. The search box looks at the number, the reason, the refund reference and the id (a whole number matches the id), and **Filters** narrows by client, status and method. The search, the filters and the page stay in the address, and the server applies them before it pages. Open a note to see its lines, its totals, the refund reference of a gateway refund note and, for a voided one, why it was voided.
 
 - **Void credit note** asks for a reason. For a note given as account credit, the value comes off the client's balance and off the invoice's credited amount, so the invoice can be credited or refunded again. If the client has already spent the credit and the balance is short, the void is refused whole (`CLIENT_CREDIT_INSUFFICIENT`).
 - A note paid out as a gateway refund cannot be voided (`CREDIT_NOTE_REFUND_NOT_VOIDABLE`): the refund cannot be taken back.

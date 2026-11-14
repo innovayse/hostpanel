@@ -139,6 +139,16 @@ export interface CancellationRequestItem {
   createdAt: string
 }
 
+/** What narrows the cancellation request list: the search text and the type and status filters; each member left out means no narrowing. */
+export interface CancellationRequestFilters {
+  /** Search text matched against the reason and the request id; empty for none. */
+  search?: string
+  /** Keep only the requests of this type. */
+  type?: CancellationType
+  /** Keep only the requests in this status. */
+  status?: CancellationStatus
+}
+
 /** What narrows the service list: the search text and the filters of the filter dialog; each member left out means no narrowing. */
 export interface ServiceListFilters {
   /** Search term matched against the domain, the product name and the service id; empty for none. */

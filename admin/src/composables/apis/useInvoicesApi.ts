@@ -37,7 +37,7 @@ export const useInvoicesApi = () => {
    *
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
-   * @param filters - Optional status and date filters.
+   * @param filters - The search text and the client, status and period filters; a member left out is not sent.
    * @returns One page of invoices.
    */
   const list = (page: number, pageSize: number, filters: InvoiceFilters = {}): Promise<PaginatedList<Invoice>> =>
@@ -49,7 +49,7 @@ export const useInvoicesApi = () => {
    * @param clientId - The client id.
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
-   * @param filters - Optional status and date filters.
+   * @param filters - The search text and the status and period filters; a member left out is not sent.
    * @returns One page of invoices.
    */
   const listByClient = (

@@ -10,7 +10,7 @@ import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { useTransactionsApi } from '@/composables/apis/useTransactionsApi'
 import { runAction } from '@/lib/runAction'
-import type { CreateClientTransactionPayload, Transaction } from '@/types/transaction'
+import type { CreateClientTransactionPayload, Transaction, TransactionFilters } from '@/types/transaction'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { CurrencyCode } from '@/types/currency'
 
@@ -48,16 +48,23 @@ export const useClientTransactionsStore = defineStore('clientTransactions', () =
   const fieldErrors = ref<Record<string, string>>({})
 
   /**
-   * Fetches transactions for a specific client with pagination.
+   * Fetches a page of the transactions of one client, narrowed by the server, with the totals of the rows the filters
+   * keep. The page and the filters come from the list's address, so the store keeps no copy of them.
    *
    * @param clientId - The client id.
    * @param page - Page number (1-based).
+   * @param filters - The search text and the direction, payment method, period and amount filters; a member left out does not narrow.
    * @param pageSize - Items per page.
    * @returns Promise that resolves when data is loaded.
    */
-  const fetchByClient = async (clientId: number | string, page = 1, pageSize = LEDGER_PAGE_SIZE): Promise<void> => {
+  const fetchByClient = async (
+    clientId: number | string,
+    page = 1,
+    filters: TransactionFilters = {},
+    pageSize = LEDGER_PAGE_SIZE,
+  ): Promise<void> => {
     loading.value = true
-    const result = await runAction(error, () => api.listByClient(clientId, page, pageSize))
+    const result = await runAction(error, () => api.listByClient(clientId, page, pageSize, filters))
     loading.value = false
     if (result.ok) {
       transactions.value = result.value.transactions.items

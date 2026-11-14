@@ -1,6 +1,9 @@
 <script setup lang="ts">
 /**
- * Credit notes: every credit note issued against a paid invoice, newest first, with a status filter.
+ * Credit notes: every credit note issued against a paid invoice, newest first, with a search box (number, reason, refund
+ * reference or id) and a filter dialog (client, status and method) whose applied filters show as chips. The search text, the
+ * filters and the page live in the address (`useListQuery`), so a reload or a shared link shows the same list, and the API
+ * applies them before it pages. The client is chosen, not typed: only the Clients module can read client names.
  *
  * A credit note is not an invoice credit: it is a numbered document that reverses part of an invoice that was already paid, as
  * account credit or as a gateway refund. Each row names the note, its invoice and client, how its value went back and its
@@ -12,8 +15,10 @@ import CreditNoteStatusBadge from '@/components/billing/CreditNoteStatusBadge.vu
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -25,53 +30,99 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { useClientOptions } from '@/composables/useClientOptions'
+import { useListQuery } from '@/composables/useListQuery'
 import { formatDateTime } from '@/lib/format'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { formatPlainAmount } from '@/lib/money'
 import { clientPath, creditNotePath, invoicePath } from '@/lib/routes'
 import { useCreditNotesStore } from '@/stores/creditNotes'
-import { CreditNoteStatus } from '@/types/creditnote'
+import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
 
 const { t } = useI18n()
 
 /** Store holding the notes of the current page and the load state. */
 const store = useCreditNotesStore()
 
-/** Current page (1-based). */
-const page = ref(1)
+/** The filter fields kept in the address, beside the search text and the page. */
+const FilterKey = {
+  ClientId: 'clientId',
+  Status: 'status',
+  Method: 'method',
+} as const
 
-/** Value of the status filter: a status name, or an empty string for every status. */
-const statusFilter = ref<CreditNoteStatus | ''>('')
+/** One of the {@link FilterKey} values. */
+type FilterKey = (typeof FilterKey)[keyof typeof FilterKey]
+
+/** The filters, the search text and the page of the list, as the address holds them. */
+const list = useListQuery<FilterKey>(Object.values(FilterKey))
+
+/** The applied client as an id, undefined when none is set or the address holds something that is not an id. */
+const clientId = list.idOf(FilterKey.ClientId)
+
+/** The applied status, undefined when none is set or the address holds a value that is not a status. */
+const status = list.enumOf(FilterKey.Status, CreditNoteStatus)
+
+/** The applied method, undefined when none is set or the address holds a value that is not a method. */
+const method = list.enumOf(FilterKey.Method, CreditNoteMethod)
+
+/** The clients the client filter offers, and the call that loads them. */
+const { clients, load: loadClients } = useClientOptions()
 
 /** The sentence of the last refused load, shown with Retry; null when the list loaded. */
 const loadError = ref<string | null>(null)
 
-/** Options of the status filter. */
+/** Options of the status filter; the empty value means any. */
 const statusOptions = computed(() => [
-  { value: '' as CreditNoteStatus | '', label: t('billing.creditNotes.allStatuses') },
-  ...Object.values(CreditNoteStatus).map((status) => ({ value: status as CreditNoteStatus | '', label: t(`billing.creditNotes.status.${status}`) })),
+  { value: '', label: t('shared.any') },
+  ...Object.values(CreditNoteStatus).map((value) => ({ value: value as string, label: t(`billing.creditNotes.status.${value}`) })),
+])
+
+/** Options of the method filter; the empty value means any. */
+const methodOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...Object.values(CreditNoteMethod).map((value) => ({ value: value as string, label: t(`billing.creditNotes.method.${value}`) })),
+])
+
+/** One chip per applied filter, in the order they are shown. */
+const chips = list.chipsOf(() => [
+  {
+    key: FilterKey.ClientId,
+    label: t('shared.client'),
+    value: clientId.value === undefined
+      ? undefined
+      : (clients.value.find(client => client.id === clientId.value)?.name ?? String(clientId.value)),
+  },
+  {
+    key: FilterKey.Status,
+    label: t('shared.status'),
+    value: status.value === undefined ? undefined : t(`billing.creditNotes.status.${status.value}`),
+  },
+  {
+    key: FilterKey.Method,
+    label: t('billing.creditNotes.methodLabel'),
+    value: method.value === undefined ? undefined : t(`billing.creditNotes.method.${method.value}`),
+  },
 ])
 
 /**
- * Loads a page of notes for the chosen status.
+ * Loads the page the address names, with the search text and filters it holds.
  *
- * @param next - Page number (1-based).
  * @returns Promise that resolves when the page has settled.
  */
-const load = async (next: number): Promise<void> => {
-  page.value = next
-  await store.fetchPage(statusFilter.value === '' ? {} : { status: statusFilter.value }, next, DEFAULT_PAGE_SIZE)
+const load = async (): Promise<void> => {
+  await store.fetchPage(
+    { search: list.appliedSearch.value, clientId: clientId.value, status: status.value, method: method.value },
+    list.page.value,
+    DEFAULT_PAGE_SIZE,
+  )
   loadError.value = store.error
 }
 
-/**
- * Reloads from the first page when the filter changes.
- *
- * @returns Promise that resolves when the first page has settled.
- */
-const applyFilter = (): Promise<void> => load(1)
+// The address is the source of truth: the first load and every change of a filter, the search or the page read the list.
+list.loadOnChange(load)
 
-onMounted(() => load(1))
+onMounted(loadClients)
 </script>
 
 <template>
@@ -80,22 +131,54 @@ onMounted(() => load(1))
 
     <UiAlert variant="info" data-testid="billing-credit-notes-explain">{{ t('billing.creditNotes.explain') }}</UiAlert>
 
-    <UiErrorState v-if="loadError !== null" :message="loadError" :loading="store.loading" testid="billing-credit-notes-error" @retry="load(page)" />
+    <UiErrorState v-if="loadError !== null" :message="loadError" :loading="store.loading" testid="billing-credit-notes-error" @retry="load" />
 
-    <UiCard>
-      <UiField :label="t('billing.creditNotes.statusFilter')">
-        <template #default="{ id }">
-          <UiSelect
-            :id="id"
-            v-model="statusFilter"
-            :options="statusOptions"
-            :placeholder="t('billing.creditNotes.statusFilterPlaceholder')"
-            data-testid="billing-credit-notes-status-filter"
-            @update:model-value="applyFilter"
+    <UiListToolbar
+      v-model:search="list.search.value"
+      search-testid="billing-credit-notes-search"
+      :search-placeholder="t('billing.creditNotes.searchCreditNotes')"
+      filter-testid="billing-credit-notes-filter"
+      :active-count="list.activeCount.value"
+      :chips="chips"
+      @apply="list.apply"
+      @reset="list.reset"
+      @cancel="list.cancel"
+      @remove="list.remove"
+      @clear="list.clearAll"
+    >
+      <UiStack gap="md">
+        <UiField :label="t('shared.client')">
+          <UiClientSelect
+            v-model="list.draft.value.clientId"
+            :clients="clients"
+            :placeholder="t('shared.startTypingToSearchClients')"
+            data-testid="billing-credit-notes-filter-client"
           />
-        </template>
-      </UiField>
-    </UiCard>
+        </UiField>
+        <UiField :label="t('shared.status')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="list.draft.value.status"
+              :options="statusOptions"
+              :placeholder="t('shared.any')"
+              data-testid="billing-credit-notes-filter-status"
+            />
+          </template>
+        </UiField>
+        <UiField :label="t('billing.creditNotes.methodLabel')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="list.draft.value.method"
+              :options="methodOptions"
+              :placeholder="t('shared.any')"
+              data-testid="billing-credit-notes-filter-method"
+            />
+          </template>
+        </UiField>
+      </UiStack>
+    </UiListToolbar>
 
     <UiResultCount v-if="loadError === null" :loading="store.loading && store.notes.length === 0" data-testid="billing-credit-notes-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
@@ -144,11 +227,11 @@ onMounted(() => load(1))
     </UiCard>
 
     <UiPagination
-      :page="page"
+      :page="list.page.value"
       :total="store.totalCount"
       :page-size="DEFAULT_PAGE_SIZE"
       testid="billing-credit-notes-pagination"
-      @update:page="load"
+      @update:page="list.setPage"
     />
   </UiStack>
 </template>

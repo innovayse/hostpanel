@@ -124,6 +124,12 @@ describe('useListQuery', () => {
     expect((await setup('/list')).list().idOf('groupId').value).toBeUndefined()
   })
 
+  it('reads a filter as a date and ignores anything that is not one', async () => {
+    expect((await setup('/list?status=2026-03-10')).list().dateOf('status').value).toBe('2026-03-10')
+    expect((await setup('/list?status=soon')).list().dateOf('status').value).toBeUndefined()
+    expect((await setup('/list')).list().dateOf('status').value).toBeUndefined()
+  })
+
   it('builds a chip for each filter that has a value, in the order described', async () => {
     const { list } = await setup('/list?status=Closed')
     const chips = list().chipsOf(() => [

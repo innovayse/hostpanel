@@ -1814,6 +1814,36 @@ feature does not exist is not kept. The decisions:
   Status incidents (`ListStatusIncidents`, the public status page) are bounded by their time window (`Days`, 1 to 365, 90 by default) and are the same for every visitor, so the answer is
   cached whole. The SSH keys of a service (`ListMySshKeys`) are the few keys of one of the caller's own services, shown whole on that service. The credit notes of a client
   (`ListMyCreditNotes`) are the caller's own account's only, a short list the portal's credit notes page shows whole; the list is scoped by the credential and not by a client id, so no screen can ask for more than its own.
+  The billable item list (`ListBillableItemsQuery`, the admin Billable Items screen) is on it with `SearchIncludingId` on the description and id and
+  `ClientId`, `Type` and `Invoiced` filters (type and invoiced together cover the screen's six status choices); it does not search the client name,
+  which only the Clients module can read, so the screen filters by a client chosen from the client picker. The billable items tab of a client
+  (`ListClientBillableItemsQuery`: `ClientId`, `Page`, `PageSize`, `Search`, `Type`) shares `BillableItemQueryExtensions.Matching` with it, so the search and
+  the type narrow the uninvoiced list and the invoiced list alike, while `Page` and `PageSize` cut the invoiced list only. The cancellation request list
+  (`ListCancellationRequestsQuery`) is on it with `SearchIncludingId` on the reason and id and `Type` and `Status` filters, all applied to the requests
+  before they are joined to their service (and counted there), and it does not search the product or the client name, which other modules own.
+  The invoice lists (`ListInvoicesQuery`, the admin Invoices screen, and `ListClientInvoicesQuery`, the invoices tab of a client) are on it
+  with `SearchIncludingId` over the invoice id and its payment method and the shared `IInvoiceListFilters` (`Status`, `From`, `To`),
+  validated once by `InvoiceListQueryValidator<T>` and applied once by `InvoiceFilterExtensions.Matching`; the staff list adds `ClientId`, and
+  the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list does not search the client name, which only the Clients
+  module can read, so it offers the client as a picker (`ClientId`, `useClientOptions`) and Billing never joins the client tables. The credit
+  note list (`ListCreditNotesQuery`) is on it with `SearchIncludingId` over the number, the reason and the refund reference and `InvoiceId`,
+  `ClientId`, `Status` and `Method` filters. A billing date range is applied by `DateRangeExtensions.InPeriod` (`Billing/Extensions`): `From`
+  is inclusive from its first instant and `To` is inclusive to the end of its UTC day (the half-open end is the next midnight), so every billing
+  list that offers a period agrees on what the last day means; the range compares the column itself, so an index can serve it.
+  The quote lists (`ListQuotesQuery`, the admin Quotes screen, and `ListClientQuotesQuery`, the quotes tab of a client) are on it with
+  `SearchIncludingId` over the quote id and subject and the shared `IQuoteListFilters` (`Stage`, `Validity`), validated once by
+  `QuoteListQueryValidator<T>` and applied once by `QuoteFilterExtensions.Matching(query, now)`; `Validity` (`QuoteValidity`: `Valid` or `Expired`) is
+  judged on `ExpiryDate` against `IClock` alone, so a quote in the `Expired` stage with a date still ahead is valid. The staff list adds `ClientId`
+  (a picker, since client names belong to the Clients module); the screens share `useQuoteFilters` and `QuoteFilterFields`. The transaction
+  lists (`ListTransactionsQuery`, behind the admin Transactions screen and the transactions tab of a client, which the controller overlays with
+  `ClientId` from the route) are on it with `SearchIncludingId` over the id, description, reference and payment method and the shared
+  `ITransactionListFilters` (`ClientId`, `Direction`, `PaymentMethod`, `From`, `To`, `Amount`), validated once by `TransactionListQueryValidator<T>` and
+  applied once by `TransactionFilterExtensions.Matching`: `Direction` (`TransactionDirection`) keeps the rows with an amount in or an amount out, the method
+  is compared whole, the period is `InPeriod` on `Date`, and `Amount` equals the amount in or the amount out. The handler starts from
+  `Transaction.MovedMoneyFilter`, so credit-only rows stay out whatever is asked, and the per-currency summary totals are computed on the same narrowed
+  set as the page, so the tiles, the count and the rows always describe the same transactions. The quote lists order by `CreatedAt` and the transaction lists by `Date`, each then by id, so a page never repeats a row.
+  The screens share `useTransactionFilters` and `TransactionFilterFields`, and the transaction store no longer reloads after a create or a delete: the
+  screen reads the list again through its own address.
 
 ### Email campaigns
 

@@ -1,9 +1,12 @@
 /**
  * Mount tests for ClientBillableItemsView: it renders against the real kit and settles on an API
- * refusal with a Retry, and a delete is confirmed first and reports its outcome next to the lists.
+ * refusal with a Retry, the search, the type filter and the invoiced page live in the address and are sent to the API,
+ * and a delete is confirmed first and reports its outcome next to the lists.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import ClientBillableItemsView from '@/views/ClientBillableItemsView.vue'
 import { mountClientView } from '../helpers/clientViews'
 import { json, problem } from '../helpers/fetch'
@@ -31,15 +34,46 @@ const items = (currency = 'USD', invoiced: object[] = []) =>
   })
 
 /**
- * Mounts the screen for client 7 and waits for its first load.
+ * Mounts the screen for client 7 at an address and waits for its first load.
+ *
+ * @param query - The query string of the address, with its leading question mark, or none.
+ * @returns The wrapper and the router.
+ */
+const mountItemsAt = async (query = '') => {
+  const screen = await mountRouted(ClientBillableItemsView, '/clients/:id/billable-items', `/clients/7/billable-items${query}`)
+  await flushPromises()
+  return screen
+}
+
+/**
+ * Mounts the screen for client 7 at its plain address and waits for its first load.
  *
  * @returns The wrapper.
  */
-const mountItems = async () => {
-  const { wrapper } = await mountRouted(ClientBillableItemsView, '/clients/:id/billable-items', '/clients/7/billable-items')
-  await flushPromises()
-  return wrapper
+const mountItems = async () => (await mountItemsAt()).wrapper
+
+/**
+ * Finds the type select of the filter dialog.
+ *
+ * @param wrapper - The mounted screen.
+ * @returns The select.
+ */
+const typeSelect = (wrapper: VueWrapper) => {
+  const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === 'client-billable-filter-type')
+  if (select === undefined) {
+    throw new Error('The type select is not mounted.')
+  }
+  return select
 }
+
+/**
+ * Reads the requests the screen made for the client's items.
+ *
+ * @param mock - The fetch mock.
+ * @returns The request urls, oldest first.
+ */
+const itemUrls = (mock: ReturnType<typeof stubRoutes>): string[] =>
+  mock.mock.calls.map(([url]) => url as string).filter((url) => url.startsWith('/api/clients/7/billable-items?'))
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -111,6 +145,79 @@ describe('ClientBillableItemsView', () => {
 
     expect(wrapper.text()).toContain('Uninvoiced Items (0)')
     expect(wrapper.text()).not.toContain('0.00')
+  })
+
+  it('asks the API for the first invoiced page with no filters', async () => {
+    const mock = stubRoutes({ 'GET /api/clients/7/billable-items': items })
+    await mountItems()
+
+    expect(itemUrls(mock)).toEqual(['/api/clients/7/billable-items?page=1&pageSize=20'])
+  })
+
+  it('reads the search, the type and the page from the address, sends them and shows the chip', async () => {
+    const mock = stubRoutes({ 'GET /api/clients/7/billable-items': items })
+    const { wrapper } = await mountItemsAt('?search=hosting&type=Recurring&page=2')
+
+    expect(itemUrls(mock)[0]).toBe('/api/clients/7/billable-items?page=2&pageSize=20&search=hosting&type=Recurring')
+    expect(wrapper.get('[data-testid="filter-chip-type"]').text()).toContain('Recurring')
+  })
+
+  it('puts the chosen type in the address and sends it', async () => {
+    const mock = stubRoutes({ 'GET /api/clients/7/billable-items': items })
+    const { wrapper, router } = await mountItemsAt()
+
+    await wrapper.get('[data-testid="client-billable-filter"]').trigger('click')
+    await flushPromises()
+    typeSelect(wrapper).vm.$emit('update:modelValue', 'OneTime')
+    await flushPromises()
+    await wrapper.get('[data-testid="filter-apply"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ type: 'OneTime' })
+    expect(itemUrls(mock).at(-1)).toBe('/api/clients/7/billable-items?page=1&pageSize=20&type=OneTime')
+  })
+
+  it('clears the type from its chip and reloads', async () => {
+    const mock = stubRoutes({ 'GET /api/clients/7/billable-items': items })
+    const { wrapper } = await mountItemsAt('?type=Recurring')
+
+    await wrapper.get('[data-testid="filter-chip-remove-type"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="filter-chip-type"]').exists()).toBe(false)
+    expect(itemUrls(mock).at(-1)).toBe('/api/clients/7/billable-items?page=1&pageSize=20')
+  })
+
+  it('pages the invoiced items from the address', async () => {
+    const invoiced = { id: 6, clientId: 7, description: 'Hosting', amount: 5, currency: 'USD', type: 'OneTime', recurringPeriod: null, isInvoiced: true, invoiceId: 9, nextDueDate: null, createdAt: '2026-09-01T00:00:00Z' }
+    const mock = stubRoutes({
+      'GET /api/clients/7/billable-items': () => json({
+        uninvoicedItems: [],
+        uninvoicedTotal: [],
+        invoicedItems: { items: [invoiced], pageNumber: 1, pageSize: 20, totalCount: 45, totalPages: 3 },
+      }),
+    })
+    const { wrapper, router } = await mountItemsAt()
+
+    await wrapper.get('[data-testid="client-billable-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+    expect(itemUrls(mock).at(-1)).toBe('/api/clients/7/billable-items?page=2&pageSize=20')
+  })
+
+  it('says no item matches in each list when the narrowed lists are empty', async () => {
+    stubRoutes({
+      'GET /api/clients/7/billable-items': () => json({
+        uninvoicedItems: [],
+        uninvoicedTotal: [],
+        invoicedItems: { items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 1 },
+      }),
+    })
+    const { wrapper } = await mountItemsAt('?search=nothing')
+
+    expect(wrapper.get('[data-testid="client-billable-uninvoiced-empty"]').text()).toContain('No uninvoiced billable items match your filters.')
+    expect(wrapper.get('[data-testid="client-billable-invoiced-empty"]').text()).toContain('No invoiced billable items match your filters.')
   })
 
   it('reports a deleted item next to the lists', async () => {

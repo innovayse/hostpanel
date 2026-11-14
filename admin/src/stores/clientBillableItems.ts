@@ -10,7 +10,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useBillableItemsApi } from '@/composables/apis/useBillableItemsApi'
 import { runAction } from '@/lib/runAction'
-import type { BillableItemsResult, CreateClientBillableItemPayload, ServiceOption } from '@/types/billableitem'
+import type {
+  BillableItemsResult,
+  ClientBillableItemFilters,
+  CreateClientBillableItemPayload,
+  ServiceOption,
+} from '@/types/billableitem'
 
 /** Loads, adds, invoices and deletes the billable items of a client. */
 export const useClientBillableItemsStore = defineStore('clientBillableItems', () => {
@@ -29,20 +34,24 @@ export const useClientBillableItemsStore = defineStore('clientBillableItems', ()
   const loading = ref(false)
 
   /**
-   * Loads the uninvoiced items and one page of invoiced items.
+   * Loads the uninvoiced items and one page of invoiced items; the filters narrow both.
    *
    * @param clientId - Client id.
-   * @param invoicedPage - Invoiced page, 1-based.
-   * @param invoicedPageSize - Invoiced items per page.
+   * @param page - Invoiced page, 1-based.
+   * @param pageSize - Invoiced items per page.
+   * @param filters - The search text and type filter; empty for none.
    * @returns The items, or null when refused (see `error`).
    */
   const fetchItems = async (
     clientId: string,
-    invoicedPage: number,
-    invoicedPageSize: number,
+    page: number,
+    pageSize: number,
+    filters: ClientBillableItemFilters = {},
   ): Promise<BillableItemsResult | null> => {
     loading.value = true
-    const result = await runAction(error, () => api.listByClient(clientId, invoicedPage, invoicedPageSize))
+    const result = await runAction(error, () =>
+      api.listByClient(clientId, page, pageSize, { ...filters, search: filters.search?.trim() }),
+    )
     loading.value = false
     return result.ok ? result.value : null
   }

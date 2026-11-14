@@ -31,7 +31,7 @@ public sealed class ClientBillableItemsController : BaseApiController
 
     /// <summary>Returns uninvoiced and paginated invoiced billable items for a client.</summary>
     /// <param name="clientId">The client's primary key; wins over any client id in the query.</param>
-    /// <param name="query">The invoiced-items page and page size to list by.</param>
+    /// <param name="query">The invoiced-items page and page size, and the search text and type filter that narrow both lists.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the result; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not staff;

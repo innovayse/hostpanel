@@ -12,9 +12,6 @@
   "paymentMethodOptions": {
     "bankTransfer": "Բանկային փոխանցում"
   },
-  "quoteStageOptions": {
-    "allStages": "Բոլոր փուլերը"
-  },
   "orderStatusOptions": {
     "fraud": "Խարդախություն",
     "incomplete": "Թերի",

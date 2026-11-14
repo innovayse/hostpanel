@@ -181,6 +181,9 @@
 <data name="QuoteStageInvalid" xml:space="preserve">
     <value>Նշեք նախահաշվի վավեր փուլ։</value>
   </data>
+<data name="QuoteValidityInvalid" xml:space="preserve">
+    <value>Նշեք՝ նախահաշիվները վավեր են, թե ժամկետանց։</value>
+  </data>
 <data name="QuoteItemsRequired" xml:space="preserve">
     <value>Ավելացրեք առնվազն մեկ տող։</value>
   </data>
@@ -234,6 +237,15 @@
   </data>
 <data name="TransactionClientIdInvalid" xml:space="preserve">
     <value>Նշեք գործարքի համար վավեր հաճախորդ։</value>
+  </data>
+<data name="TransactionDirectionInvalid" xml:space="preserve">
+    <value>Նշեք՝ գործարքները մուտքեր են, թե ելքեր։</value>
+  </data>
+<data name="TransactionAmountInvalid" xml:space="preserve">
+    <value>Փնտրվող գումարը պետք է մեծ լինի զրոյից։</value>
+  </data>
+<data name="TransactionPaymentMethodTooLong" xml:space="preserve">
+    <value>Վճարման եղանակը կարող է լինել առավելագույնը {0} նիշ։</value>
   </data>
 <data name="TransactionDescriptionInvalid" xml:space="preserve">
     <value>Գործարքի նկարագրությունը կարող է ունենալ առավելագույնը {0} նիշ։</value>
@@ -699,6 +711,9 @@
   </data>
   <data name="CancellationTypeInvalid" xml:space="preserve">
     <value>Տեսակը պետք է լինի 'Immediate' կամ 'EndOfBillingPeriod'։</value>
+  </data>
+  <data name="CancellationStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի 'Open' կամ 'Closed'։</value>
   </data>
   <data name="CancellationRequestIdInvalid" xml:space="preserve">
     <value>Նշեք չեղարկման վավեր հայտ։</value>

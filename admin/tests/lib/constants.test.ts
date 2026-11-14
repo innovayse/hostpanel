@@ -23,9 +23,11 @@ import {
   ORDER_STATUS_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
   QUOTE_STAGE_OPTIONS,
+  QUOTE_VALIDITY_OPTIONS,
   RECURRING_PERIOD_OPTIONS,
   SERVICE_STATUS_OPTIONS,
   TICKET_PRIORITY_OPTIONS,
+  TRANSACTION_DIRECTION_OPTIONS,
   TRANSACTION_METHOD_OPTIONS,
 } from '@/lib/constants'
 import type { SelectOption } from '@/lib/constants'
@@ -39,10 +41,10 @@ import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@
 import { PaymentGateway } from '@/types/gateway'
 import { InvoiceStatus } from '@/types/invoice'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
-import { QuoteStage } from '@/types/quote'
+import { QuoteStage, QuoteValidity } from '@/types/quote'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { TicketPriority } from '@/types/ticket'
-import { PaymentMethod } from '@/types/transaction'
+import { PaymentMethod, TransactionDirection } from '@/types/transaction'
 
 /**
  * The non-empty values of an option list, sorted.
@@ -69,6 +71,8 @@ describe('option lists', () => {
     expect(valuesOf(ORDER_STATUS_OPTIONS)).toEqual(membersOf(OrderStatus))
     expect(valuesOf(ORDER_LINE_FULFILMENT_OPTIONS)).toEqual(membersOf(OrderItemFulfilmentState))
     expect(valuesOf(QUOTE_STAGE_OPTIONS)).toEqual(membersOf(QuoteStage))
+    expect(valuesOf(QUOTE_VALIDITY_OPTIONS)).toEqual(membersOf(QuoteValidity))
+    expect(valuesOf(TRANSACTION_DIRECTION_OPTIONS)).toEqual(membersOf(TransactionDirection))
     expect(valuesOf(TICKET_PRIORITY_OPTIONS)).toEqual(membersOf(TicketPriority))
     expect(valuesOf(DNS_RECORD_TYPE_OPTIONS)).toEqual(membersOf(DnsRecordType))
     expect(valuesOf(BILLING_CYCLE_OPTIONS)).toEqual(membersOf(BillingCycle))
@@ -96,6 +100,10 @@ describe('option lists', () => {
 
     expect(option?.label).toBe(translate('clients.clientSummary.partiallyRefunded'))
     expect(option?.label).toBe('Partially Refunded')
+  })
+
+  it('name every invoice status once, with no "all" entry, so a filter puts its own any choice in front', () => {
+    expect(valuesOf(INVOICE_STATUS_OPTIONS).sort()).toEqual(membersOf(InvoiceStatus).sort())
   })
 
   it('name every fraud reason once, each under its own sentence, and offer the review status in the order filter', () => {
@@ -127,7 +135,16 @@ describe('option lists', () => {
   })
 
   it('give every option a readable label', () => {
-    const lists = [CLIENT_STATUS_OPTIONS, ORDER_STATUS_OPTIONS, QUOTE_STAGE_OPTIONS, GATEWAY_OPTIONS, CAMPAIGN_STATUS_OPTIONS, ENABLED_FILTER_OPTIONS]
+    const lists = [
+      CLIENT_STATUS_OPTIONS,
+      ORDER_STATUS_OPTIONS,
+      QUOTE_STAGE_OPTIONS,
+      QUOTE_VALIDITY_OPTIONS,
+      TRANSACTION_DIRECTION_OPTIONS,
+      GATEWAY_OPTIONS,
+      CAMPAIGN_STATUS_OPTIONS,
+      ENABLED_FILTER_OPTIONS,
+    ]
 
     for (const option of lists.flat()) {
       expect(option.label).not.toBe('')

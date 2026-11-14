@@ -29,7 +29,7 @@ public sealed class TransactionsController : BaseApiController
     }
 
     /// <summary>Returns a paginated list of all transactions.</summary>
-    /// <param name="query">The page and page size to list by.</param>
+    /// <param name="query">The paging window, the optional search and the optional client, direction, payment method, period and amount filters; the totals follow them.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the transactions; 400 when a value is refused; 401 when the caller is not signed in;
@@ -50,7 +50,7 @@ public sealed class TransactionsController : BaseApiController
 
     /// <summary>Returns a paginated list of transactions for a specific client.</summary>
     /// <param name="clientId">The client's primary key; wins over any client id in the query.</param>
-    /// <param name="query">The page and page size to list by.</param>
+    /// <param name="query">The paging window, the optional search and the optional direction, payment method, period and amount filters; the totals follow them.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the client's transactions; 400 when a value is refused;

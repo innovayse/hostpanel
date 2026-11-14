@@ -181,6 +181,9 @@
 <data name="QuoteStageInvalid" xml:space="preserve">
     <value>Name a valid quote stage.</value>
   </data>
+<data name="QuoteValidityInvalid" xml:space="preserve">
+    <value>Name whether the quotes are valid or expired.</value>
+  </data>
 <data name="QuoteItemsRequired" xml:space="preserve">
     <value>Add at least one line item.</value>
   </data>
@@ -234,6 +237,15 @@
   </data>
 <data name="TransactionClientIdInvalid" xml:space="preserve">
     <value>Name a valid client for the transaction.</value>
+  </data>
+<data name="TransactionDirectionInvalid" xml:space="preserve">
+    <value>Name whether the transactions are money in or money out.</value>
+  </data>
+<data name="TransactionAmountInvalid" xml:space="preserve">
+    <value>The amount to look for must be greater than zero.</value>
+  </data>
+<data name="TransactionPaymentMethodTooLong" xml:space="preserve">
+    <value>The payment method may be at most {0} characters.</value>
   </data>
 <data name="TransactionDescriptionInvalid" xml:space="preserve">
     <value>A transaction needs a description of at most {0} characters.</value>
@@ -762,6 +774,9 @@
   </data>
   <data name="CancellationTypeInvalid" xml:space="preserve">
     <value>Type must be 'Immediate' or 'EndOfBillingPeriod'.</value>
+  </data>
+  <data name="CancellationStatusInvalid" xml:space="preserve">
+    <value>Status must be 'Open' or 'Closed'.</value>
   </data>
   <data name="CancellationRequestIdInvalid" xml:space="preserve">
     <value>Provide a valid cancellation request.</value>

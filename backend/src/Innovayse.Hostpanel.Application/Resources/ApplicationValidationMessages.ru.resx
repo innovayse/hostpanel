@@ -181,6 +181,9 @@
 <data name="QuoteStageInvalid" xml:space="preserve">
     <value>Укажите корректный этап сметы.</value>
   </data>
+<data name="QuoteValidityInvalid" xml:space="preserve">
+    <value>Укажите, действительны сметы или просрочены.</value>
+  </data>
 <data name="QuoteItemsRequired" xml:space="preserve">
     <value>Добавьте хотя бы одну позицию.</value>
   </data>
@@ -234,6 +237,15 @@
   </data>
 <data name="TransactionClientIdInvalid" xml:space="preserve">
     <value>Укажите действительного клиента для транзакции.</value>
+  </data>
+<data name="TransactionDirectionInvalid" xml:space="preserve">
+    <value>Укажите, поступления это или списания.</value>
+  </data>
+<data name="TransactionAmountInvalid" xml:space="preserve">
+    <value>Искомая сумма должна быть больше нуля.</value>
+  </data>
+<data name="TransactionPaymentMethodTooLong" xml:space="preserve">
+    <value>Способ оплаты может содержать не более {0} символов.</value>
   </data>
 <data name="TransactionDescriptionInvalid" xml:space="preserve">
     <value>Описание транзакции не должно превышать {0} символов.</value>
@@ -762,6 +774,9 @@
   </data>
   <data name="CancellationTypeInvalid" xml:space="preserve">
     <value>Тип должен быть 'Immediate' или 'EndOfBillingPeriod'.</value>
+  </data>
+  <data name="CancellationStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть 'Open' или 'Closed'.</value>
   </data>
   <data name="CancellationRequestIdInvalid" xml:space="preserve">
     <value>Укажите корректный запрос на отмену.</value>

@@ -19,11 +19,11 @@ import { PaymentGateway } from '@/types/gateway'
 import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { InvoiceStatus } from '@/types/invoice'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
-import { QuoteStage } from '@/types/quote'
+import { QuoteStage, QuoteValidity } from '@/types/quote'
 import { RegistrarModule } from '@/types/registrarmodule'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
-import { PaymentMethod } from '@/types/transaction'
+import { PaymentMethod, TransactionDirection } from '@/types/transaction'
 
 /**
  * One option of a dropdown or radio group: the wire value and the label shown for it.
@@ -146,21 +146,21 @@ export const RECURRING_PERIOD_OPTIONS: SelectOption<RecurringPeriod>[] = [
   { value: RecurringPeriod.Annually, get label() { return translate('constants.recurringPeriodOptions.annually') } },
 ]
 
-/** Invoice status options for filter dropdowns. */
-export const INVOICE_STATUS_OPTIONS: SelectOption[] = [
-  { value: '', get label() { return translate('clients.clientInvoices.allStatuses') } },
+/** Every invoice status, for the invoice filters and for naming a status; a filter puts its own "any" choice in front. */
+export const INVOICE_STATUS_OPTIONS: SelectOption<InvoiceStatus>[] = [
   { value: InvoiceStatus.Draft, get label() { return translate('clients.clientSummary.draft') } },
   { value: InvoiceStatus.Unpaid, get label() { return translate('billing.invoiceDetail.unpaid') } },
+  { value: InvoiceStatus.PaymentPending, get label() { return translate('billing.invoicesList.paymentPending') } },
   { value: InvoiceStatus.Paid, get label() { return translate('clients.clientSummary.paid') } },
   { value: InvoiceStatus.Overdue, get label() { return translate('clients.clientSummary.overdue') } },
+  { value: InvoiceStatus.Collections, get label() { return translate('billing.invoicesList.collections') } },
   { value: InvoiceStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
   { value: InvoiceStatus.PartiallyRefunded, get label() { return translate('clients.clientSummary.partiallyRefunded') } },
   { value: InvoiceStatus.Refunded, get label() { return translate('clients.clientSummary.refunded') } },
 ]
 
-/** Quote stage options for filter dropdowns. */
-export const QUOTE_STAGE_OPTIONS: SelectOption[] = [
-  { value: '', get label() { return translate('constants.quoteStageOptions.allStages') } },
+/** Every quote stage, for the quote form and the quote filters; a filter puts its own "any" choice in front. */
+export const QUOTE_STAGE_OPTIONS: SelectOption<QuoteStage>[] = [
   { value: QuoteStage.Draft, get label() { return translate('clients.clientSummary.draft') } },
   { value: QuoteStage.Delivered, get label() { return translate('billing.addQuote.delivered') } },
   { value: QuoteStage.OnHold, get label() { return translate('billing.addQuote.onHold') } },
@@ -168,6 +168,18 @@ export const QUOTE_STAGE_OPTIONS: SelectOption[] = [
   { value: QuoteStage.Lost, get label() { return translate('billing.addQuote.lost') } },
   { value: QuoteStage.Expired, get label() { return translate('billing.quotesList.expired') } },
   { value: QuoteStage.Dead, get label() { return translate('billing.addQuote.dead') } },
+]
+
+/** Quote validity options for the quote filters; a filter puts its own "any" choice in front. */
+export const QUOTE_VALIDITY_OPTIONS: SelectOption<QuoteValidity>[] = [
+  { value: QuoteValidity.Valid, get label() { return translate('billing.quotesList.valid') } },
+  { value: QuoteValidity.Expired, get label() { return translate('billing.quotesList.expired') } },
+]
+
+/** Transaction direction options for the transaction filters; a filter puts its own "any" choice in front. */
+export const TRANSACTION_DIRECTION_OPTIONS: SelectOption<TransactionDirection>[] = [
+  { value: TransactionDirection.In, get label() { return translate('billing.transactionsList.paymentsReceived') } },
+  { value: TransactionDirection.Out, get label() { return translate('billing.transactionsList.paymentsSent') } },
 ]
 
 /** Payment gateway options. */

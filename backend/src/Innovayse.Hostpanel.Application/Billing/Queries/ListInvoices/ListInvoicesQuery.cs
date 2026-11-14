@@ -1,16 +1,21 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListInvoices;
 
-/// <summary>Paginated, optionally filtered query for all invoices: admin view.</summary>
+/// <summary>Paginated, searchable, filterable query for all invoices: admin view.</summary>
 /// <param name="Page">1-based page number.</param>
-/// <param name="PageSize">Number of items per page (max 100).</param>
-/// <param name="Status">Optional status filter.</param>
-/// <param name="From">Optional start date filter (inclusive, UTC).</param>
-/// <param name="To">Optional end date filter (inclusive, UTC).</param>
+/// <param name="PageSize">Items per page (1 to 100); a size outside that range is refused, not clamped.</param>
+/// <param name="Search">Optional text; only invoices whose id or payment method contains it (case-insensitive) are listed. Blank lists all.</param>
+/// <param name="ClientId">Optional client filter; <see langword="null"/> for every client.</param>
+/// <param name="Status">Optional status filter, bound by name from the query string; <see langword="null"/> for every status.</param>
+/// <param name="From">Optional first creation moment (inclusive, UTC); <see langword="null"/> for no lower bound.</param>
+/// <param name="To">Optional last creation day (UTC), the whole day included; <see langword="null"/> for no upper bound.</param>
 public sealed record ListInvoicesQuery(
     int Page,
     int PageSize,
+    string? Search = null,
+    int? ClientId = null,
     InvoiceStatus? Status = null,
     DateTimeOffset? From = null,
-    DateTimeOffset? To = null);
+    DateTimeOffset? To = null) : IListQuery, IInvoiceListFilters;

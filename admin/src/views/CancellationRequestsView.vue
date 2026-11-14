@@ -1,24 +1,33 @@
 <script setup lang="ts">
 /**
- * Cancellation requests: paged table of every service cancellation request.
+ * Cancellation requests: a search box, the type and status filters and a paged table of the service cancellation
+ * requests.
  *
- * Shows date, product/service, client, reason, type, status and a delete action that asks first.
- * Reads and writes `stores/cancellationRequests`. The outcome of a delete (success, or the API's
- * sentence) shows above the table; a refused load shows the sentence with a Retry.
+ * The search text (matched against the reason and the request id), the filters and the page live in the address
+ * (`useListQuery`): the filter button opens the type and status fields, an applied filter shows as a removable chip,
+ * and a reload or a shared link restores the same list, which the API narrows before it pages. Shows date,
+ * product/service, client, reason, type, status and a delete action that asks first. Reads and writes
+ * `stores/cancellationRequests`. The outcome of a delete (success, or the API's sentence) shows above the table; a
+ * refused load shows the sentence with a Retry.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -29,12 +38,14 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import type { CancellationRequestItem } from '@/types/service'
+import { CancellationStatus, CancellationType } from '@/types/service'
+import type { CancellationRequestFilters, CancellationRequestItem } from '@/types/service'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { cancellationStatusLabel, cancellationStatusTone, cancellationTypeLabel, cancellationTypeTone } from '@/lib/tones'
 import { useCancellationRequestsStore } from '@/stores/cancellationRequests'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { clientPath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -42,8 +53,57 @@ import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
-/** Cancellation requests store: the page, its paging and the load state. */
+/** Cancellation requests store: the page and the load state. */
 const store = useCancellationRequestsStore()
+
+/** The filter fields the dialog edits; each is one query key and one `CancellationRequestFilters` member. */
+const FilterKey = {
+  Type: 'type',
+  Status: 'status',
+} as const
+
+/** The search text, the filters and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
+
+/** The type in the address as a cancellation type, undefined when none is set or the value is not one. */
+const typeOfAddress = enumOf(FilterKey.Type, CancellationType)
+
+/** The status in the address as a cancellation status, undefined when none is set or the value is not one. */
+const statusOfAddress = enumOf(FilterKey.Status, CancellationStatus)
+
+/** What the address narrows the list by, as the store sends it to the API. */
+const filters = computed<CancellationRequestFilters>(() => ({
+  search: appliedSearch.value,
+  type: typeOfAddress.value,
+  status: statusOfAddress.value,
+}))
+
+/** Choices of the type field; the empty value means any. */
+const typeOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...Object.values(CancellationType).map(type => ({ value: type, label: cancellationTypeLabel(type) })),
+])
+
+/** Choices of the status field; the empty value means any. */
+const statusOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...Object.values(CancellationStatus).map(status => ({ value: status, label: cancellationStatusLabel(status) })),
+])
+
+/** The applied type and status as removable chips, none while the list is not filtered. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Type,
+    label: t('shared.type'),
+    value: typeOfAddress.value === undefined ? undefined : cancellationTypeLabel(typeOfAddress.value),
+  },
+  {
+    key: FilterKey.Status,
+    label: t('shared.status'),
+    value: statusOfAddress.value === undefined ? undefined : cancellationStatusLabel(statusOfAddress.value),
+  },
+])
 
 /** Longest reason shown in the table before it is cut with an ellipsis. */
 const REASON_MAX_LENGTH = 60
@@ -64,17 +124,23 @@ const feedback = useResultBanner()
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /**
- * Loads the current page and records whether the load was refused.
+ * Loads the page the address names with the filters and search it holds, and records whether the load was refused.
  *
  * @returns Resolves when the list has settled.
  */
 const load = async (): Promise<void> => {
-  await store.fetchAll()
-  loadError.value = store.error
+  const loaded = await store.fetchAll(page.value, filters.value)
+  loadError.value = loaded ? null : store.error
 }
+
+// Every change of a filter, the search or the page loads the list the address names.
+loadOnChange(load)
 
 /** Whether the current page has any request to list. */
 const hasRows = computed<boolean>(() => store.cancellations.length > 0)
+
+/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
+const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
 /**
  * Shortens a reason for the table row, keeping the full text for the tooltip.
@@ -84,16 +150,6 @@ const hasRows = computed<boolean>(() => store.cancellations.length > 0)
  */
 const shorten = (text: string): string =>
   text.length <= REASON_MAX_LENGTH ? text : `${text.slice(0, REASON_MAX_LENGTH)}…`
-
-/**
- * Moves to a page of the list and loads it.
- *
- * @param page - Target page, 1-based.
- */
-const goToPage = (page: number): void => {
-  store.page = page
-  void load()
-}
 
 /**
  * Stages a cancellation request for deletion. Only opens the prompt; {@link handleDelete} does the
@@ -106,9 +162,9 @@ const confirmDelete = (id: number): void => {
 }
 
 /**
- * Deletes the staged cancellation request, clears the prompt and shows the outcome.
+ * Deletes the staged cancellation request, clears the prompt, reloads the page and shows the outcome.
  *
- * @returns Promise that resolves when the delete attempt has finished.
+ * @returns Promise that resolves when the delete attempt has finished and the list has been refreshed.
  */
 const handleDelete = async (): Promise<void> => {
   const id = deleteTarget.value
@@ -121,6 +177,7 @@ const handleDelete = async (): Promise<void> => {
   deleting.value = false
   deleteTarget.value = null
   if (deleted) {
+    await load()
     feedback.show(t('clients.cancellationRequests.requestDeleted'), false)
   } else {
     feedback.show(store.error ?? t('errors.noAnswer'), true)
@@ -155,9 +212,6 @@ const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
     danger: true,
   },
 ]
-
-/** Loads the first page. */
-onMounted(() => load())
 </script>
 
 <template>
@@ -167,6 +221,44 @@ onMounted(() => load())
       :subtitle="t('clients.cancellationRequests.reviewAndProcessServiceCancellation')"
       data-testid="cancellations-header"
     />
+
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="cancellations-search"
+      :search-placeholder="t('clients.cancellationRequests.searchRequests')"
+      filter-testid="cancellations-filter"
+      :active-count="activeCount"
+      :chips="chips"
+      :loading="initialLoading"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <UiField :label="t('shared.type')">
+        <template #default="{ id }">
+          <UiSelect
+            :id="id"
+            v-model="draft.type"
+            :options="typeOptions"
+            :placeholder="t('shared.any')"
+            data-testid="cancellations-filter-type"
+          />
+        </template>
+      </UiField>
+      <UiField :label="t('shared.status')">
+        <template #default="{ id }">
+          <UiSelect
+            :id="id"
+            v-model="draft.status"
+            :options="statusOptions"
+            :placeholder="t('shared.any')"
+            data-testid="cancellations-filter-status"
+          />
+        </template>
+      </UiField>
+    </UiListToolbar>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="cancellations-feedback" />
 
@@ -179,7 +271,7 @@ onMounted(() => load())
     />
 
     <UiCard v-if="hasRows || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" data-testid="cancellations-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="cancellations-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
@@ -227,26 +319,31 @@ onMounted(() => load())
       </UiTable>
 
       <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiResultCount :loading="store.loading && !hasRows" :size="UiTextSize.Xs">
+        <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
           {{ t('clients.cancellationRequests.totalcountRequestValue', { totalCount: store.totalCount }) }}
         </UiResultCount>
         <UiPagination
-          :page="store.page"
+          :page="page"
           :total="store.totalCount"
           :page-size="store.pageSize"
           testid="cancellations-pagination"
-          @update:page="goToPage"
+          @update:page="setPage"
         />
       </UiStack>
     </UiCard>
 
-    <UiCard v-else-if="!store.error">
+    <UiCard v-else-if="loadError === null">
       <UiEmptyState
-        :title="t('clients.cancellationRequests.noCancellationRequestsFound')"
+        :title="narrowed ? t('clients.cancellationRequests.noRequestsMatchYourFilters') : t('clients.cancellationRequests.noCancellationRequestsFound')"
         data-testid="cancellations-empty"
       >
         <template #icon>
           <UiIcon :markup="Icon.Remove" size="lg" />
+        </template>
+        <template v-if="activeCount > 0" #actions>
+          <UiButton :variant="UiButtonVariant.Link" data-testid="cancellations-clear-filters" @click="clearAll">
+            {{ t('clients.cancellationRequests.clearFilters') }}
+          </UiButton>
         </template>
       </UiEmptyState>
     </UiCard>

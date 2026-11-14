@@ -8,7 +8,7 @@
 
 import { buildQuery, useApi } from '@/composables/useApi'
 import type { PaginatedList } from '@/types/paginatedlist'
-import type { CreateQuotePayload, Quote, QuoteListItem, UpdateQuotePayload } from '@/types/quote'
+import type { CreateQuotePayload, Quote, QuoteFilters, QuoteListItem, UpdateQuotePayload } from '@/types/quote'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 
@@ -25,10 +25,11 @@ export const useQuotesApi = () => {
    *
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
+   * @param filters - The search text and the client, stage and validity filters; a member left out is not sent.
    * @returns One page of quotes.
    */
-  const list = (page: number, pageSize: number): Promise<PaginatedList<QuoteListItem>> =>
-    request<PaginatedList<QuoteListItem>>(`${ApiPath.BillingQuotes}${buildQuery({ page, pageSize })}`)
+  const list = (page: number, pageSize: number, filters: QuoteFilters = {}): Promise<PaginatedList<QuoteListItem>> =>
+    request<PaginatedList<QuoteListItem>>(`${ApiPath.BillingQuotes}${buildQuery({ page, pageSize, ...filters })}`)
 
   /**
    * Lists the quotes of one client.
@@ -36,10 +37,16 @@ export const useQuotesApi = () => {
    * @param clientId - The client id.
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
+   * @param filters - The search text and the stage and validity filters; a member left out is not sent.
    * @returns One page of quotes.
    */
-  const listByClient = (clientId: number | string, page: number, pageSize: number): Promise<PaginatedList<QuoteListItem>> =>
-    request<PaginatedList<QuoteListItem>>(`${ApiPath.BillingQuotes}/client/${clientId}${buildQuery({ page, pageSize })}`)
+  const listByClient = (
+    clientId: number | string,
+    page: number,
+    pageSize: number,
+    filters: QuoteFilters = {},
+  ): Promise<PaginatedList<QuoteListItem>> =>
+    request<PaginatedList<QuoteListItem>>(`${ApiPath.BillingQuotes}/client/${clientId}${buildQuery({ page, pageSize, ...filters })}`)
 
   /**
    * Loads one quote with its lines.

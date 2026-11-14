@@ -115,23 +115,43 @@ describe('InvoicesListView', () => {
     expect(requestsOf(mock).filter(url => url.includes('/billing?')).at(-1)).not.toContain('status=')
   })
 
-  it('narrows the page by the search text without asking the server again', async () => {
-    const mock = stubRoutes({
-      'GET /api/billing?': () =>
-        json({
-          items: [invoiceRowFixture(), invoiceRowFixture({ id: 2, clientName: 'Grace Hopper' })],
-          pageNumber: 1,
-          pageSize: 25,
-          totalCount: 2,
-          totalPages: 1,
-        }),
-    })
-    const wrapper = await mountList()
+  it('puts the typed search in the address and has the server narrow the list after the pause', async () => {
+    const mock = stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    const { wrapper, router } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices')
+    await flushPromises()
 
-    await wrapper.get('[data-testid="billing-invoices-search"]').setValue('grace')
+    await wrapper.get('[data-testid="billing-invoices-search"]').setValue('wire')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await flushPromises()
 
-    expect(wrapper.findAll('[data-testid="billing-invoices-table"] tbody tr')).toHaveLength(1)
-    expect(requestsOf(mock).filter(url => url.includes('/billing?'))).toHaveLength(1)
+    expect(router.currentRoute.value.query).toEqual({ search: 'wire' })
+    expect(requestsOf(mock).filter(url => url.includes('/billing?')).at(-1)).toBe('GET /billing?page=1&pageSize=25&search=wire')
+  })
+
+  it('sends the client of the address and shows it on a chip', async () => {
+    const mock = stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    const { wrapper } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices?clientId=7')
+    await flushPromises()
+
+    expect(requestsOf(mock).find(url => url.includes('/billing?'))).toBe('GET /billing?page=1&pageSize=25&clientId=7')
+    expect(wrapper.get('[data-testid="filter-chip-clientId"]').text()).toContain('7')
+  })
+
+  it('does not send a client the address holds that is not an id', async () => {
+    const mock = stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    const { wrapper } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices?clientId=abc')
+    await flushPromises()
+
+    expect(requestsOf(mock).find(url => url.includes('/billing?'))).toBe('GET /billing?page=1&pageSize=25')
+    expect(wrapper.find('[data-testid="filter-chip-clientId"]').exists()).toBe(false)
+  })
+
+  it('does not send a status or a date the address holds that is not a known value', async () => {
+    const mock = stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices?status=Gone&from=yesterday')
+    await flushPromises()
+
+    expect(requestsOf(mock).find(url => url.includes('/billing?'))).toBe('GET /billing?page=1&pageSize=25')
   })
 
   it('sums the page into paid, due and overdue tiles', async () => {

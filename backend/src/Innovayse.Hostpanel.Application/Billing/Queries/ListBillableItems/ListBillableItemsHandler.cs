@@ -1,8 +1,7 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +9,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListBillableItems;
 
-/// <summary>Returns a paginated list of billable items with client names.</summary>
+/// <summary>
+/// Returns a paginated list of billable items with client names, narrowed by the search text, the client, the type and
+/// whether the item is invoiced in SQL ahead of paging.
+/// </summary>
 public sealed class ListBillableItemsHandler
 {
     /// <summary>The module's data context.</summary>
@@ -29,7 +31,7 @@ public sealed class ListBillableItemsHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The list billable items query.</param>
+    /// <param name="query">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with a page of billable item DTOs. Never refuses.</returns>
     public async Task<Result<PaginatedList<BillableItemDto>>> HandleAsync(
@@ -37,19 +39,22 @@ public sealed class ListBillableItemsHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
-
-        IQueryable<BillableItem> filtered = _context.BillableItems.AsNoTracking();
-        if (query.Type is { } type)
+        var filtered = _context.BillableItems.AsNoTracking().Matching(query.Search, query.Type);
+        if (query.ClientId is { } clientId)
         {
-            filtered = filtered.Where(x => x.Type == type);
+            filtered = filtered.Where(x => x.ClientId == clientId);
         }
 
-        var ordered = filtered.OrderByDescending(x => x.CreatedAt);
+        if (query.Invoiced is { } invoiced)
+        {
+            filtered = filtered.Where(x => x.IsInvoiced == invoiced);
+        }
+
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = filtered.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id);
         var total = await ordered.CountAsync(ct);
         var items = await ordered
-            .Paginate(page, pageSize)
+            .Paginate(query.Page, query.PageSize)
             .Select(item => new BillableItemDto(
                 item.Id, item.ClientId, string.Empty, item.Description, item.Amount, item.Currency,
                 item.Type, item.RecurringPeriod, item.IsInvoiced, item.InvoiceId, item.NextDueDate,
@@ -64,6 +69,6 @@ public sealed class ListBillableItemsHandler
             .ToList();
 
         return Result<PaginatedList<BillableItemDto>>.Success(
-            new PaginatedList<BillableItemDto>(dtos, total, page, pageSize));
+            new PaginatedList<BillableItemDto>(dtos, total, query.Page, query.PageSize));
     }
 }

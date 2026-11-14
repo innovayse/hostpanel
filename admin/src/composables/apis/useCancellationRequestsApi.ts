@@ -7,7 +7,7 @@
 
 import { buildQuery, useApi } from '@/composables/useApi'
 import type { PaginatedList } from '@/types/paginatedlist'
-import type { CancellationRequestItem } from '@/types/service'
+import type { CancellationRequestFilters, CancellationRequestItem } from '@/types/service'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 
@@ -24,10 +24,13 @@ export const useCancellationRequestsApi = () => {
    *
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
-   * @returns One page of requests.
+   * @param filters - The search text, type and status filters; empty for none.
+   * @returns One page of requests and the total count of matches.
    */
-  const list = (page: number, pageSize: number): Promise<PaginatedList<CancellationRequestItem>> =>
-    request<PaginatedList<CancellationRequestItem>>(`${ApiPath.AdminCancellationRequests}${buildQuery({ page, pageSize })}`)
+  const list = (page: number, pageSize: number, filters: CancellationRequestFilters = {}): Promise<PaginatedList<CancellationRequestItem>> =>
+    request<PaginatedList<CancellationRequestItem>>(
+      `${ApiPath.AdminCancellationRequests}${buildQuery({ page, pageSize, ...filters })}`,
+    )
 
   /**
    * Deletes a cancellation request.

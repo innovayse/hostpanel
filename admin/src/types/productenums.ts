@@ -45,6 +45,8 @@ export enum ProductField {
   Metadata = 'metadata',
   /** Days a lapsed digital product stays usable. */
   GracePeriodDays = 'gracePeriodDays',
+  /** The free-trial settings. */
+  Trial = 'trial',
 }
 
 /** Machine-readable API error codes (`type` of a problem response) the product screens branch on. */

@@ -1,5 +1,6 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Domain.Products;
 
 namespace Innovayse.Hostpanel.Application.Products.Extensions;
@@ -58,6 +59,22 @@ public static class ProductRuleExtensions
             .Must(metadata => string.IsNullOrWhiteSpace(metadata) || Product.IsValidMetadata(metadata))
             .WithErrorCode(HostpanelErrorCodes.PRODUCT_METADATA_INVALID)
             .WithMessage(invalidMessage);
+    }
+
+    /// <summary>Requires free-trial settings, when sent, to be inside what <see cref="ProductTrial.IsValid"/> accepts.</summary>
+    /// <typeparam name="T">The command type.</typeparam>
+    /// <param name="rule">The rule builder of the trial settings.</param>
+    /// <param name="message">The localized refusal text.</param>
+    /// <returns>The rule options, for chaining.</returns>
+    public static IRuleBuilderOptions<T, ProductTrialDto?> MustBeProductTrial<T>(
+        this IRuleBuilder<T, ProductTrialDto?> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule
+            .Must(trial => trial is null || ProductTrial.IsValid(trial.Days, trial.ReminderDays, trial.GracePeriodDays))
+            .WithErrorCode(HostpanelErrorCodes.PRODUCT_TRIAL_INVALID)
+            .WithMessage(message);
     }
 
     /// <summary>

@@ -42,7 +42,7 @@ import { Icon } from '@/lib/icons'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { useServersStore } from '@/stores/servers'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
-import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle } from '@/types/product'
+import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle, ProductTrial } from '@/types/product'
 import { ProductField, ProductStatus, ProductType } from '@/types/productenums'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -50,6 +50,15 @@ const { t } = useI18n()
 
 /** Grace period a new product starts with, the same default the API applies. */
 const DEFAULT_GRACE_PERIOD_DAYS = 7
+
+/** Trial length a new product starts with, the same default the API applies. */
+const DEFAULT_TRIAL_DAYS = 14
+
+/** Reminder days a new product starts with, the same default the API applies. */
+const DEFAULT_TRIAL_REMINDERS = '3, 1'
+
+/** Grace period of a converted trial a new product starts with, the same default the API applies. */
+const DEFAULT_TRIAL_GRACE_DAYS = 3
 
 /** Servers store: owns the server groups the product can be assigned to. */
 const serversStore = useServersStore()
@@ -166,6 +175,21 @@ const metadata = ref('')
 /** Grace period in days. */
 const gracePeriodDays = ref(DEFAULT_GRACE_PERIOD_DAYS)
 
+/** Whether the product is offered as a free trial. */
+const trialEnabled = ref(false)
+
+/** Trial length in days. */
+const trialDays = ref(DEFAULT_TRIAL_DAYS)
+
+/** Whether the trial turns into a paid service at its end. */
+const trialAutoConvert = ref(true)
+
+/** Reminder days as the operator types them: whole numbers separated by commas. */
+const trialReminders = ref(DEFAULT_TRIAL_REMINDERS)
+
+/** Days the invoice of a converted trial may stay unpaid. */
+const trialGracePeriodDays = ref(DEFAULT_TRIAL_GRACE_DAYS)
+
 /** Available server groups (owned by the servers store). */
 const serverGroups = computed(() => serversStore.groups)
 
@@ -217,6 +241,11 @@ watch(() => props.product, (p) => {
     sku.value = p.sku ?? ''
     metadata.value = p.metadata ?? ''
     gracePeriodDays.value = p.gracePeriodDays
+    trialEnabled.value = p.trial.enabled
+    trialDays.value = p.trial.days
+    trialAutoConvert.value = p.trial.autoConvert
+    trialReminders.value = p.trial.reminderDays.join(', ')
+    trialGracePeriodDays.value = p.trial.gracePeriodDays
     resetPriceRows(p.prices)
   } else {
     type.value = ProductType.SharedHosting
@@ -233,6 +262,11 @@ watch(() => props.product, (p) => {
     sku.value = ''
     metadata.value = ''
     gracePeriodDays.value = DEFAULT_GRACE_PERIOD_DAYS
+    trialEnabled.value = false
+    trialDays.value = DEFAULT_TRIAL_DAYS
+    trialAutoConvert.value = true
+    trialReminders.value = DEFAULT_TRIAL_REMINDERS
+    trialGracePeriodDays.value = DEFAULT_TRIAL_GRACE_DAYS
     resetPriceRows()
   }
 }, { immediate: true })
@@ -329,6 +363,23 @@ const buildPricesPayload = (): ProductPrice[] =>
       ...(Object.fromEntries(PRODUCT_PRICE_CYCLES.map((cycle) => [cycle, row[cycle] || null])) as ProductPriceAmounts),
     }))
 
+/**
+ * Builds the `trial` payload from the trial fields. A reminder day that is not a whole number becomes 0,
+ * which the API refuses, so a typo shows as a message instead of being dropped.
+ *
+ * @returns The free-trial settings as the API takes them.
+ */
+const buildTrialPayload = (): ProductTrial => ({
+  enabled: trialEnabled.value,
+  days: Number(trialDays.value),
+  autoConvert: trialAutoConvert.value,
+  reminderDays: trialReminders.value
+    .split(/[\s,;]+/)
+    .filter((part) => part !== '')
+    .map((part) => Math.trunc(Number(part)) || 0),
+  gracePeriodDays: Number(trialGracePeriodDays.value),
+})
+
 /** Drops the API's message of each field as soon as the operator edits that field. */
 useFieldErrorClear(
   () => props.fieldErrors,
@@ -337,6 +388,11 @@ useFieldErrorClear(
     [ProductField.Sku, sku],
     [ProductField.Metadata, metadata],
     [ProductField.GracePeriodDays, gracePeriodDays],
+    [ProductField.Trial, trialEnabled],
+    [ProductField.Trial, trialDays],
+    [ProductField.Trial, trialAutoConvert],
+    [ProductField.Trial, trialReminders],
+    [ProductField.Trial, trialGracePeriodDays],
   ],
 )
 
@@ -361,6 +417,7 @@ const handleSubmit = (): void => {
     sku: sku.value.trim(),
     metadata: metadata.value.trim(),
     gracePeriodDays: Number(gracePeriodDays.value),
+    trial: buildTrialPayload(),
   })
 }
 </script>
@@ -508,6 +565,60 @@ const handleSubmit = (): void => {
           data-testid="product-form-grace-period"
         />
       </UiField>
+
+      <!-- Free trial -->
+      <UiStack direction="row" align="center" justify="between">
+        <UiStack gap="xs">
+          <UiText tone="primary" size="md">{{ t('settings.productForm.trial') }}</UiText>
+          <UiText tone="muted" size="sm">{{ t('settings.productForm.trialHint') }}</UiText>
+        </UiStack>
+        <UiToggle v-model="trialEnabled" data-testid="product-form-trial-enabled" />
+      </UiStack>
+
+      <template v-if="trialEnabled">
+        <UiField :label="t('settings.productForm.trialDays')">
+          <UiNumberInput
+            v-model="trialDays"
+            :min="1"
+            :step="1"
+            :placeholder="t('settings.productForm.trialDaysPlaceholder')"
+            data-testid="product-form-trial-days"
+          />
+        </UiField>
+
+        <UiField :label="t('settings.productForm.trialReminderDays')" :hint="t('settings.productForm.trialReminderDaysHint')">
+          <template #default="{ id, describedby }">
+            <UiInput
+              :id="id"
+              v-model="trialReminders"
+              type="text"
+              :aria-describedby="describedby"
+              :placeholder="t('settings.productForm.trialReminderDaysPlaceholder')"
+              data-testid="product-form-trial-reminders"
+            />
+          </template>
+        </UiField>
+
+        <UiField :label="t('settings.productForm.trialGracePeriod')" :hint="t('settings.productForm.trialGracePeriodHint')">
+          <UiNumberInput
+            v-model="trialGracePeriodDays"
+            :min="0"
+            :step="1"
+            :placeholder="t('settings.productForm.trialGracePeriodPlaceholder')"
+            data-testid="product-form-trial-grace-period"
+          />
+        </UiField>
+
+        <UiStack direction="row" align="center" justify="between">
+          <UiStack gap="xs">
+            <UiText tone="primary" size="md">{{ t('settings.productForm.trialAutoConvert') }}</UiText>
+            <UiText tone="muted" size="sm">{{ t('settings.productForm.trialAutoConvertHint') }}</UiText>
+          </UiStack>
+          <UiToggle v-model="trialAutoConvert" data-testid="product-form-trial-auto-convert" />
+        </UiStack>
+
+        <UiStatusMessage :message="props.fieldErrors[ProductField.Trial] ?? null" :tone="UiTone.Danger" data-testid="product-form-trial-error" />
+      </template>
 
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">

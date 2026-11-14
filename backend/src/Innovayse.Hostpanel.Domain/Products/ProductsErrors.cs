@@ -33,6 +33,15 @@ public static class ProductsErrors
     public const string ProductGracePeriodOutOfRange = "PRODUCT_GRACE_PERIOD_OUT_OF_RANGE";
 
     /// <summary>
+    /// The free-trial settings are outside what is accepted (400): a length outside
+    /// <see cref="ProductTrial.MinDays"/> to <see cref="ProductTrial.MaxDays"/> days, a grace period outside
+    /// <see cref="ProductTrial.MinGracePeriodDays"/> to <see cref="ProductTrial.MaxGracePeriodDays"/> days, or
+    /// reminder days that repeat, number more than <see cref="ProductTrial.MaxReminders"/> or do not fall
+    /// before the end of the trial: <see cref="Product.ConfigureTrial"/>.
+    /// </summary>
+    public const string ProductTrialInvalid = "PRODUCT_TRIAL_INVALID";
+
+    /// <summary>
     /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):
     /// <see cref="ProductBundle.Update"/>.
     /// </summary>

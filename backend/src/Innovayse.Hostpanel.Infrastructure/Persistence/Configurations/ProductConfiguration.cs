@@ -48,6 +48,33 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             "CK_Products_GracePeriodDays",
             $"\"GracePeriodDays\" BETWEEN {Product.MinGracePeriodDays} AND {Product.MaxGracePeriodDays}"));
 
+        // Free-trial settings. The defaults fill the columns of rows that existed before them; the
+        // sentinels are values the domain never holds, so EF always writes the product's own settings.
+        // The read-only Trial value is built from these columns and is not a column of its own.
+        builder.Ignore(x => x.Trial);
+        builder.Property(x => x.TrialDays)
+            .IsRequired()
+            .HasDefaultValue(ProductTrial.DefaultDays)
+            .HasSentinel(int.MinValue);
+        builder.Property(x => x.TrialGracePeriodDays)
+            .IsRequired()
+            .HasDefaultValue(ProductTrial.DefaultGracePeriodDays)
+            .HasSentinel(int.MinValue);
+        builder.Property(x => x.TrialReminderDays)
+            .IsRequired()
+            .HasMaxLength(20)
+            .HasDefaultValue(ProductTrial.DefaultReminderDaysText);
+
+        builder.ToTable(table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Products_TrialDays",
+                $"\"TrialDays\" BETWEEN {ProductTrial.MinDays} AND {ProductTrial.MaxDays}");
+            table.HasCheckConstraint(
+                "CK_Products_TrialGracePeriodDays",
+                $"\"TrialGracePeriodDays\" BETWEEN {ProductTrial.MinGracePeriodDays} AND {ProductTrial.MaxGracePeriodDays}");
+        });
+
         // Per-currency prices. ProductPrice.ProductId is never set in memory, SetPrice leaves it 0,
         // so this foreign key is what stamps it when the product is saved.
         builder.HasMany(x => x.Prices)

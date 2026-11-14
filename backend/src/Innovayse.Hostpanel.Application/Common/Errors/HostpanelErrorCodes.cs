@@ -1644,6 +1644,12 @@ public static class HostpanelErrorCodes
     public const string PRODUCT_GRACE_PERIOD_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductGracePeriodOutOfRange;
 
     /// <summary>
+    /// The free-trial settings of a product are outside what is accepted (400):
+    /// <see cref="Domain.Products.Product.ConfigureTrial"/>.
+    /// </summary>
+    public const string PRODUCT_TRIAL_INVALID = Domain.Products.ProductsErrors.ProductTrialInvalid;
+
+    /// <summary>
     /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):
     /// <see cref="Domain.Products.ProductBundle.Update"/>.
     /// </summary>

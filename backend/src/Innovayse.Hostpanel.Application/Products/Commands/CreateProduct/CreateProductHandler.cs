@@ -72,6 +72,11 @@ public sealed class CreateProductHandler
             product.SetGracePeriodDays(gracePeriodDays);
         }
 
+        if (cmd.Trial is { } trial)
+        {
+            product.ConfigureTrial(trial.ToDomain());
+        }
+
         if (cmd.IsFeatured)
         {
             await product.UnfeatureSiblingsAsync(_context, ct);

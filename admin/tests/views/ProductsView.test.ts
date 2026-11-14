@@ -43,6 +43,7 @@ const plan: Product = {
   sku: null,
   metadata: null,
   gracePeriodDays: 7,
+  trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 }
 
 /** Answers for everything the screen and its dialogs load. */
@@ -126,6 +127,27 @@ describe('ProductsView', () => {
     })
 
     expect(requestsOf(mock)).toContain('POST /products')
+  })
+
+  it('sends the trial settings of the edited product through PUT', async () => {
+    let sent: unknown
+    stubRouteTable({
+      ...routes,
+      'PUT /products/1': (body) => {
+        sent = body
+        return new Response(null, { status: 204 })
+      },
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="product-actions-1"]').trigger('click')
+    await wrapper.get('[data-testid="product-edit-1"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-trial-enabled"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(sent).toMatchObject({ id: 1, trial: { enabled: true, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 } })
+    })
   })
 
   it('updates an existing product through PUT', async () => {

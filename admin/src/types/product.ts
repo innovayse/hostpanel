@@ -103,6 +103,8 @@ export interface CreateProductPayload {
   metadata?: string
   /** Grace period in days, 0 to 365; omitted keeps the stored value on update. */
   gracePeriodDays?: number
+  /** Hides the product (Inactive status) from the storefront and order form; omitted keeps the stored status on update. */
+  isHidden?: boolean
 }
 
 /** Payload for updating an existing product. */
@@ -131,4 +133,6 @@ export interface UpdateProductPayload {
   metadata?: string
   /** Grace period in days, 0 to 365; omitted keeps the stored value on update. */
   gracePeriodDays?: number
+  /** Hides the product (Inactive status) from the storefront and order form; omitted keeps the stored status on update. */
+  isHidden?: boolean
 }

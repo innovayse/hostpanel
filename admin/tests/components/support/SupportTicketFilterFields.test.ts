@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SupportTicketFilterFields from '@/components/support/SupportTicketFilterFields.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import type { UiSelectOption } from '@/utils/ui/select'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** The support departments the department field offers. */
@@ -35,6 +36,16 @@ const mountFields = () =>
 const selectOf = (wrapper: ReturnType<typeof mountFields>, suffix: string) =>
   wrapper.findAllComponents(UiSelect).find((select) => select.attributes('data-testid') === `tickets-filter-${suffix}`)
 
+/**
+ * Reads the options one of the selects offers. UiSelect is generic, so its props are typed through a cast.
+ *
+ * @param wrapper - The mounted fields.
+ * @param suffix - `status`, `priority` or `department`.
+ * @returns The options the select offers.
+ */
+const optionsOf = (wrapper: ReturnType<typeof mountFields>, suffix: string): UiSelectOption<string>[] =>
+  (selectOf(wrapper, suffix)?.props() as unknown as { options: UiSelectOption<string>[] }).options
+
 describe('SupportTicketFilterFields', () => {
   it('shows a status, a priority and a department select under the given test id prefix', () => {
     const wrapper = mountFields()
@@ -47,14 +58,14 @@ describe('SupportTicketFilterFields', () => {
   it('offers any first, then the ticket statuses and priorities', () => {
     const wrapper = mountFields()
 
-    expect(selectOf(wrapper, 'status')?.props('options').map((option: { value: string }) => option.value)).toEqual(['', 'Open', 'AwaitingReply', 'Closed'])
-    expect(selectOf(wrapper, 'priority')?.props('options').map((option: { value: string }) => option.value)).toEqual(['', 'Low', 'Medium', 'High'])
+    expect(optionsOf(wrapper, 'status').map(option => option.value)).toEqual(['', 'Open', 'AwaitingReply', 'Closed'])
+    expect(optionsOf(wrapper, 'priority').map(option => option.value)).toEqual(['', 'Low', 'Medium', 'High'])
   })
 
   it('offers any first, then one choice per support department', () => {
     const wrapper = mountFields()
 
-    expect(selectOf(wrapper, 'department')?.props('options')).toEqual([
+    expect(optionsOf(wrapper, 'department')).toEqual([
       { value: '', label: 'Any' },
       { value: '1', label: 'Support' },
       { value: '2', label: 'Billing' },

@@ -32,6 +32,7 @@ internal static class AgentFailureCodes
             ["not_supported"] = SshProviderFailure.NotSupported,
             ["site_not_owned"] = SshProviderFailure.SiteNotOwned,
             ["site_prepare_failed"] = SshProviderFailure.SitePrepareFailed,
+            ["account_exists"] = SshProviderFailure.AccountExists,
         };
 
     /// <summary>Translates an agent error code.</summary>

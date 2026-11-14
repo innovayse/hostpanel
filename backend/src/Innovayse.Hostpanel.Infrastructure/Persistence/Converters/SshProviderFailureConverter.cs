@@ -42,6 +42,7 @@ public sealed class SshProviderFailureConverter : ValueConverter<SshProviderFail
             [SshProviderFailure.NotSupported] = "not_supported",
             [SshProviderFailure.SiteNotOwned] = "site_not_owned",
             [SshProviderFailure.SitePrepareFailed] = "site_prepare_failed",
+            [SshProviderFailure.AccountExists] = "account_exists",
         };
 
     /// <summary>The failure each stored form reads back as.</summary>

@@ -39,11 +39,22 @@ public sealed class SshKeyInstaller
     /// <summary>Records a provider failure without putting its detail on the wire.</summary>
     private readonly ILogger<SshKeyInstaller> _logger;
 
+    /// <summary>Stamps a take-back revoke.</summary>
+    private readonly IClock _clock;
+
+    /// <summary>
+    /// How long taking back a plugin key may run once the caller's own call ended or was cancelled: long enough for a
+    /// slow agent, independent of the caller (a plugin route is cut off at its own limit).
+    /// </summary>
+    private static readonly TimeSpan TakeBackTimeout = TimeSpan.FromSeconds(60);
+
     /// <summary>Initializes the installer.</summary>
     /// <param name="context">Data context the key record is saved through.</param>
     /// <param name="logger">Records a provider failure without putting its detail on the wire.</param>
-    public SshKeyInstaller(IHostpanelDbContext context, ILogger<SshKeyInstaller> logger)
+    /// <param name="clock">Stamps a take-back revoke.</param>
+    public SshKeyInstaller(IHostpanelDbContext context, ILogger<SshKeyInstaller> logger, IClock clock)
     {
+        _clock = clock;
         _context = context;
         _logger = logger;
     }
@@ -125,11 +136,55 @@ public sealed class SshKeyInstaller
             }
 
             record.MarkInstallFailed(ex.Failure);
-            await _context.SaveChangesAsync(ct);
+            if (issuedToPluginId is not null)
+            {
+                // A plugin is told the issue failed and never sees this key id, so nothing would ever revoke a key
+                // the agent did add (a timeout: the add may have landed). Take it back now.
+                await TakeBackAsync(provider, account, record);
+            }
+
+            await _context.SaveChangesAsync(CancellationToken.None);
             return Result<SshKey>.FailureCode(HostpanelErrorCodes.SSH_SERVER_UNAVAILABLE);
+        }
+        catch (OperationCanceledException) when (issuedToPluginId is not null)
+        {
+            // The plugin's call was cut off (its route limit) while the agent worked: the add may have landed and the
+            // plugin never learns the key id. Take it back with a budget of its own, then let the cancellation through.
+            record.MarkInstallFailed(SshProviderFailure.Timeout);
+            await TakeBackAsync(provider, account, record);
+            await _context.SaveChangesAsync(CancellationToken.None);
+            throw;
         }
 
         return Result<SshKey>.Success(record);
+    }
+
+    /// <summary>
+    /// Revokes a plugin key whose install ended without a confirmed outcome, with its own time budget, and records the
+    /// result on the key (Revoked, or RevokeFailed for staff to settle). Never throws.
+    /// </summary>
+    /// <param name="provider">The server's key agent client.</param>
+    /// <param name="account">The hosting account.</param>
+    /// <param name="record">The key record.</param>
+    /// <returns>A task that completes once the revoke was tried.</returns>
+    private async Task TakeBackAsync(ISshKeyProvider provider, SshAccount account, SshKey record)
+    {
+        using var budget = new CancellationTokenSource(TakeBackTimeout);
+        try
+        {
+            await provider.RevokeKeyAsync(account, record.KeyId, budget.Token);
+            record.MarkRevoked(_clock.UtcNow);
+        }
+        catch (SshProviderException ex)
+        {
+            record.MarkRevokeFailed(ex.Failure);
+            _logger.LogWarning(ex, "Taking back plugin SSH key {KeyId} on server {ServerId} failed: {Failure}", record.KeyId, account.ServerId, ex.Failure);
+        }
+        catch (OperationCanceledException)
+        {
+            record.MarkRevokeFailed(SshProviderFailure.Timeout);
+            _logger.LogWarning("Taking back plugin SSH key {KeyId} on server {ServerId} timed out.", record.KeyId, account.ServerId);
+        }
     }
 
     /// <summary>Stops tracking the key and the service row one attempt staged, and nothing else.</summary>

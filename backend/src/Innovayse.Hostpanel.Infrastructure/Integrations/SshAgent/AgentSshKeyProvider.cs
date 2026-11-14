@@ -87,6 +87,13 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
         await SendAsync(request, ct);
     }
 
+    /// <inheritdoc />
+    public async Task<bool> RemoveDeletedAccountJailAsync(SshAccount account, CancellationToken ct)
+    {
+        var response = await SendAsync(Request("remove-jail", account), ct);
+        return response["removed"]?.GetValue<bool>() == true;
+    }
+
     /// <summary>The longest a site preparation may run: the first one copies PHP into the jail.</summary>
     private static readonly TimeSpan PrepareSiteTimeout = TimeSpan.FromMinutes(10);
 

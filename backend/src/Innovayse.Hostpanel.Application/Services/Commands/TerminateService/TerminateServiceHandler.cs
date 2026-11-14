@@ -2,8 +2,10 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Common.Enums;
+using Innovayse.Hostpanel.Application.Services.Commands.RemoveTerminatedAccountJail;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Services.Commands.TerminateService;
 
@@ -27,12 +29,17 @@ public sealed class TerminateServiceHandler
     /// <summary>Reads the current moment.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Queues the removal of the deleted account's SSH jail.</summary>
+    private readonly IMessageBus _bus;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="hostedAccounts">Sends the operation to the panel the account lives on.</param>
     /// <param name="clock">Reads the current moment.</param>
-    public TerminateServiceHandler(IHostpanelDbContext context, IHostedAccountOperations hostedAccounts, IClock clock)
+    /// <param name="bus">Queues the removal of the deleted account's SSH jail.</param>
+    public TerminateServiceHandler(IHostpanelDbContext context, IHostedAccountOperations hostedAccounts, IClock clock, IMessageBus bus)
     {
+        _bus = bus;
         _context = context;
         _hostedAccounts = hostedAccounts;
         _clock = clock;
@@ -70,6 +77,12 @@ public sealed class TerminateServiceHandler
         service.Terminate(_clock.UtcNow, cmd.Reason ?? string.Empty, hostingAlreadyUpdated: true);
 
         await _context.SaveChangesAsync(ct);
+        if (outcome is HostedAccountOutcome.Updated)
+        {
+            // The panel deleted the account: its SSH jail on the server (kept for re-enrolment) can go too.
+            await _bus.PublishAsync(new RemoveTerminatedAccountJailCommand(service.Id));
+        }
+
         return Result.Success();
     }
 }

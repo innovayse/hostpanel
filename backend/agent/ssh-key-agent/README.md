@@ -184,6 +184,14 @@ Answers: `{"ok":true,"prepared":true,"steps":[...]}`, or `not_supported`, `site_
 the account, or no jail/vhost), `site_prepare_failed`. HostPanel calls it with a 10 minute timeout after provisioning a
 service whose product metadata holds `{"innovayseSites": {"prepare": true}}`.
 
+## Removing the jail of a deleted account (`remove-jail`, agent 1.4.0+)
+
+`{"v":1,"op":"remove-jail","account":"<user>"}` runs before the usual account checks, because the account is gone by
+design: it answers `account_exists` (and changes nothing) while the passwd entry exists, then disables and deletes the
+jail's home mount unit, refuses if anything is still mounted inside the jail, and removes `<jail_root>/<user>` with
+`rm -rf --one-file-system`. Answer: `{"ok":true,"removed":true|false}`. HostPanel sends it after a hosting account was
+terminated on the panel; an older agent answers `unknown_operation`, which HostPanel only logs.
+
 ## Lifecycle
 
 | Task | Command (as root on the server, in the unpacked bundle) |

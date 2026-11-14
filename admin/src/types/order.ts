@@ -120,14 +120,20 @@ export interface OrderFulfillment {
   failedLines: OrderLineFailure[]
 }
 
+/** What narrows the order list: the search text and the status filter; each member left out means no narrowing. */
+export interface OrderListFilters {
+  /** Search text matched against the order number and id; empty for none. */
+  search?: string
+  /** Keep only the orders in this status. */
+  status?: OrderStatus
+}
+
 /** Filter and paging of the order list. */
-export interface OrderFilter {
+export interface OrderFilter extends OrderListFilters {
   /** Page, 1-based. */
   page: number
   /** Items per page. */
   pageSize: number
-  /** Status to keep; null or empty for all. */
-  status?: OrderStatus | null
 }
 
 /** Status of an order, exactly as the API sends it. */

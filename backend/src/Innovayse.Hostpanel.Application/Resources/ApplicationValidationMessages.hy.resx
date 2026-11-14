@@ -1294,6 +1294,9 @@
   <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
     <value>Պատվերի տողի վերադարձի արդյունքը պետք է լինի NothingRefunded կամ PartlyRefunded։</value>
   </data>
+  <data name="OrderStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Pending, Active, Cancelled, Fraud, Incomplete, UnderReview։</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Ընտրեք վճարման եղանակը։</value>
   </data>

@@ -1771,6 +1771,8 @@ feature does not exist is not kept. The decisions:
   frontend the pieces every list repeated (loading when the address changes, `narrowed`, reading a filter as an enum member
   or an id, building chips) are `useListQuery`, and the ticket filters both ticket screens share are `useTicketFilters` and
   `SupportTicketFilterFields`.
+  The order list (`ListOrdersQuery`, the admin Orders screen) is on it with `SearchIncludingId` on the order number and id and a
+  `Status` enum filter; it does not search the client name, which only the Clients module can read, so Orders never joins it.
 
 ### Email campaigns
 

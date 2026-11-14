@@ -35,7 +35,7 @@
   "ordersList": {
     "orders": "Заказы",
     "manageCustomerOrders": "Управление заказами клиентов",
-    "filterByStatus": "Фильтр по статусу",
+    "searchOrders": "Поиск заказов по номеру или id",
     "order": "Заказ №",
     "items": "Позиции",
     "accept": "Принять",

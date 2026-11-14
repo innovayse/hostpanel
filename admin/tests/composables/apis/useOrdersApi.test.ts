@@ -13,14 +13,16 @@ afterEach(() => {
 })
 
 describe('useOrdersApi', () => {
-  it('listOrders sends paging and the status only when set', async () => {
+  it('listOrders sends paging, the search and the status only when set', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
     const api = useOrdersApi()
 
     await api.listOrders({ page: 1, pageSize: 20, status: OrderStatus.Pending })
-    await api.listOrders({ page: 1, pageSize: 20, status: null })
+    await api.listOrders({ page: 2, pageSize: 20, search: 'ORD-00', status: OrderStatus.Cancelled })
+    await api.listOrders({ page: 1, pageSize: 20, search: '' })
     expect(callOf(mock, 0).url).toBe('/api/orders?page=1&pageSize=20&status=Pending')
-    expect(callOf(mock, 1).url).toBe('/api/orders?page=1&pageSize=20')
+    expect(callOf(mock, 1).url).toBe('/api/orders?page=2&pageSize=20&search=ORD-00&status=Cancelled')
+    expect(callOf(mock, 2).url).toBe('/api/orders?page=1&pageSize=20')
   })
 
   it('getOrder reads the detail', async () => {

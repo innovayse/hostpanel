@@ -11,7 +11,10 @@
     "days90": "90 days"
   },
   "stats": {
-    "monthlyRevenue": "Revenue this month",
+    "revenue": {
+      "Days30": "Revenue, 30 days",
+      "Days90": "Revenue, 90 days"
+    },
     "activeServices": "Active services",
     "overdueInvoices": "Overdue invoices",
     "openTickets": "Open tickets"
@@ -30,9 +33,25 @@
   },
   "revenue": {
     "title": "Revenue against target",
-    "note": "Dashed line: monthly average",
+    "note": "Dashed line: daily average",
     "income": "Income",
-    "average": "Monthly average"
+    "average": "Daily average"
+  },
+  "growth": {
+    "title": "New orders and clients",
+    "note": "Per day, in the chosen period",
+    "orders": "New orders",
+    "clients": "New clients"
+  },
+  "invoiceStatus": {
+    "title": "Invoices by status",
+    "note": "Raised in the chosen period",
+    "count": "Invoices"
+  },
+  "tickets": {
+    "title": "Open tickets by priority",
+    "note": "Right now, not tied to the period",
+    "open": "Open tickets"
   },
   "serverLoad": {
     "title": "Server capacity",

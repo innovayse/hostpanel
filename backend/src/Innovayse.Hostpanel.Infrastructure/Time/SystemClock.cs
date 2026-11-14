@@ -23,4 +23,7 @@ public sealed class SystemClock : IClock
 
     /// <inheritdoc/>
     public DateTimeOffset UtcNow => _time.GetUtcNow();
+
+    /// <inheritdoc/>
+    public TimeZoneInfo TimeZone => _time.LocalTimeZone;
 }

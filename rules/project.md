@@ -1400,7 +1400,12 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   count as use cases).
 - **Time comes from `IClock`; timestamps are stamped on save.** `IClock`
   (`Application/Common/Interfaces/`) is the port, `Infrastructure/Time/SystemClock` reads the
-  registered `TimeProvider`, so a test that swaps `TimeProvider` moves both. The entities declare
+  registered `TimeProvider`, so a test that swaps `TimeProvider` moves both. `IClock.TimeZone` is the host zone
+  (`TimeProvider.LocalTimeZone`, the API container's `TZ`, UTC by default; `docs/*/operators/configuration.md`): a per-day
+  series cuts its days through `Application/Common/DayWindow` and counts them with `CountPerDayAsync`
+  (`Common/Extensions/DayWindowExtensions`; income sums with `IncomeExtensions.SumPerDayAsync`), which group in the database by UTC
+  quarter hour (`TimeBucket`) and assign the few buckets to days in code, so the dashboard charts and the daily performance
+  report agree and no timestamp is loaded. Other reports still bucket by UTC (`ReportDateExtensions`). The entities declare
   their own audit columns rather than deriving from `AuditableEntity`, so
   `Infrastructure/Persistence/AuditableEntityInterceptor.cs` stamps by convention: `CreatedAt` on
   insert unless already set (`Backdate` before the first save wins), `UpdatedAt` on change unless

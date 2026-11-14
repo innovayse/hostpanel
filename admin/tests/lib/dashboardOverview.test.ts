@@ -1,20 +1,10 @@
 /**
- * Tests for the dashboard helpers: the month-over-month change, the target average, the signed
- * change text and the server load share.
+ * Tests for the dashboard helpers: the part of the day, the signed change text, the chart day caption and the
+ * server load share.
  */
 import { describe, expect, it } from 'vitest'
-import { averageIncome, dayPartOf, DashboardPeriod, DayPart, formatChange, incomeInPeriod, monthlyIncomeChange, serverLoadPercent } from '@/lib/dashboardOverview'
-import type { ReportMonthIncome } from '@/types/reportmonthincome'
+import { dayPartOf, DayPart, formatChange, formatDayCaption, serverLoadPercent } from '@/lib/dashboardOverview'
 import type { ServerDto } from '@/types/server'
-
-/**
- * Builds income rows from plain amounts.
- *
- * @param amounts - Income per month, January first.
- * @returns The rows.
- */
-const income = (...amounts: number[]): ReportMonthIncome[] =>
-  amounts.map((amount, index) => ({ month: `M${index + 1}`, amount, currency: 'USD' }))
 
 /**
  * Builds a server with only the fields the load share reads.
@@ -39,47 +29,22 @@ describe('dayPartOf', () => {
   })
 })
 
-describe('incomeInPeriod', () => {
-  it('takes the current month and the one before for 30 days', () => {
-    expect(incomeInPeriod(income(1, 2, 3, 4, 5), 4, DashboardPeriod.Days30).map((m) => m.amount)).toEqual([4, 5])
-  })
-
-  it('takes the current month and the three before for 90 days', () => {
-    expect(incomeInPeriod(income(1, 2, 3, 4, 5), 4, DashboardPeriod.Days90).map((m) => m.amount)).toEqual([2, 3, 4, 5])
-  })
-
-  it('stops at January', () => {
-    expect(incomeInPeriod(income(1, 2), 1, DashboardPeriod.Days90).map((m) => m.amount)).toEqual([1, 2])
-  })
-})
-
-describe('monthlyIncomeChange', () => {
-  it('compares the month with the one before', () => {
-    expect(monthlyIncomeChange(income(100, 150), 1)).toBe(50)
-    expect(monthlyIncomeChange(income(200, 100), 1)).toBe(-50)
-  })
-
-  it('has no change in January or after an empty month', () => {
-    expect(monthlyIncomeChange(income(100), 0)).toBeNull()
-    expect(monthlyIncomeChange(income(0, 100), 1)).toBeNull()
-  })
-})
-
-describe('averageIncome', () => {
-  it('averages the months up to the current one', () => {
-    expect(averageIncome(income(100, 200, 900), 1)).toBe(150)
-  })
-
-  it('is undefined without data', () => {
-    expect(averageIncome([], 3)).toBeUndefined()
-  })
-})
-
 describe('formatChange', () => {
   it('writes the sign so it reads without colour', () => {
     expect(formatChange(12.4)).toBe('+12%')
     expect(formatChange(-4.6)).toBe('-5%')
     expect(formatChange(0)).toBe('0%')
+  })
+})
+
+describe('formatDayCaption', () => {
+  it('writes the day and the short month in the language given', () => {
+    expect(formatDayCaption('2026-03-12', 'en')).toBe('Mar 12')
+    expect(formatDayCaption('2026-03-12', 'ru')).toMatch(/^12 мар/)
+  })
+
+  it('does not move the day with the time zone of the machine', () => {
+    expect(formatDayCaption('2026-01-01', 'en')).toBe('Jan 1')
   })
 })
 

@@ -1720,4 +1720,7 @@
   <data name="OrderReviewReasonTooLong" xml:space="preserve">
     <value>The reason must not be longer than 1000 characters.</value>
   </data>
+  <data name="DashboardPeriodInvalid" xml:space="preserve">
+    <value>Choose a period of 30 or 90 days.</value>
+  </data>
 </root>

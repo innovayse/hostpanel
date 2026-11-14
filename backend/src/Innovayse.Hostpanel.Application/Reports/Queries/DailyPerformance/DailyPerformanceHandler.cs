@@ -1,6 +1,7 @@
+using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
-using Innovayse.Hostpanel.Application.Reports.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -14,12 +15,12 @@ public sealed class DailyPerformanceHandler
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>The source of the current moment.</summary>
+    /// <summary>The source of the current moment and of the host time zone.</summary>
     private readonly IClock _clock;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    /// <param name="clock">The source of the current moment.</param>
+    /// <param name="clock">The source of the current moment and of the host time zone.</param>
     public DailyPerformanceHandler(IHostpanelDbContext context, IClock clock)
     {
         _context = context;
@@ -35,41 +36,31 @@ public sealed class DailyPerformanceHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var to = query.To ?? DateOnly.FromDateTime(_clock.UtcNow.UtcDateTime);
-        var from = query.From ?? to.AddDays(-29);
+        // Days are the host time zone's, the same as on the dashboard: the window is half-open, [first day 00:00,
+        // the day after the last 00:00), so the last day counts in full. The count applies the window's bounds itself.
+        var to = query.To ?? DayWindow.DayIn(_clock.UtcNow, _clock.TimeZone);
+        var window = DayWindow.Create(query.From ?? to.AddDays(-29), to, _clock.TimeZone);
 
-        // The window is half-open, [first day 00:00, the day after the last 00:00), so the last
-        // day counts in full and the bounds compare the columns themselves.
-        var fromUtc = from.StartOfDayUtc();
-        var toUtc = to.EndOfDayExclusiveUtc();
-
-        var newInvoices = await CountByDayAsync(
-            _context.Invoices.AsNoTracking().Where(i => i.CreatedAt >= fromUtc && i.CreatedAt < toUtc).Select(i => i.CreatedAt), ct);
+        var newInvoices = await _context.Invoices.AsNoTracking().Select(i => i.CreatedAt).CountPerDayAsync(window, ct);
 
         // An invoice counts as paid on the day it was paid, not the day it was raised.
-        var paidInvoices = await CountByDayAsync(
-            _context.Invoices.AsNoTracking()
-                .Where(i => Invoice.PaidStatuses.Contains(i.Status) && i.PaidAt >= fromUtc && i.PaidAt < toUtc)
-                .Select(i => i.PaidAt!.Value),
-            ct);
+        var paidInvoices = await _context.Invoices.AsNoTracking()
+            .Where(i => Invoice.PaidStatuses.Contains(i.Status) && i.PaidAt != null)
+            .Select(i => i.PaidAt!.Value)
+            .CountPerDayAsync(window, ct);
 
         // Only an accepted order is completed; a pending, cancelled or fraud order is not. An accepted order
         // with a failed line is still accepted (its client was charged and its other lines delivered).
-        var completedOrders = await CountByDayAsync(
-            _context.Orders.AsNoTracking()
-                .Where(o => (o.Status == OrderStatus.Active || o.Status == OrderStatus.Incomplete) && o.CreatedAt >= fromUtc && o.CreatedAt < toUtc)
-                .Select(o => o.CreatedAt),
-            ct);
+        var completedOrders = await _context.Orders.AsNoTracking()
+            .Where(o => o.Status == OrderStatus.Active || o.Status == OrderStatus.Incomplete)
+            .Select(o => o.CreatedAt)
+            .CountPerDayAsync(window, ct);
 
-        var cancellations = await CountByDayAsync(
-            _context.CancellationRequests.AsNoTracking().Where(c => c.CreatedAt >= fromUtc && c.CreatedAt < toUtc).Select(c => c.CreatedAt), ct);
+        var cancellations = await _context.CancellationRequests.AsNoTracking().Select(c => c.CreatedAt).CountPerDayAsync(window, ct);
 
-        var openedTickets = await CountByDayAsync(
-            _context.Tickets.AsNoTracking().Where(t => t.CreatedAt >= fromUtc && t.CreatedAt < toUtc).Select(t => t.CreatedAt), ct);
+        var openedTickets = await _context.Tickets.AsNoTracking().Select(t => t.CreatedAt).CountPerDayAsync(window, ct);
 
-        var days = Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).Select(i => from.AddDays(i));
-
-        IReadOnlyList<DailyPerformanceDto> rows = days.Select(day => new DailyPerformanceDto(
+        IReadOnlyList<DailyPerformanceDto> rows = window.Days.Select(day => new DailyPerformanceDto(
             Date: day.ToString("yyyy-MM-dd"),
             CompletedOrders: completedOrders.GetValueOrDefault(day),
             NewInvoices: newInvoices.GetValueOrDefault(day),
@@ -81,19 +72,5 @@ public sealed class DailyPerformanceHandler
             CancellationRequests: cancellations.GetValueOrDefault(day))).ToList();
 
         return Result<IReadOnlyList<DailyPerformanceDto>>.Success(rows);
-    }
-
-    /// <summary>Counts moments per UTC calendar day, grouped in the database.</summary>
-    /// <param name="moments">The moments to count, already filtered to the window.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The count of each day that has at least one moment.</returns>
-    private static async Task<Dictionary<DateOnly, int>> CountByDayAsync(IQueryable<DateTimeOffset> moments, CancellationToken ct)
-    {
-        var counts = await moments
-            .GroupBy(m => new { m.Year, m.Month, m.Day })
-            .Select(g => new { g.Key.Year, g.Key.Month, g.Key.Day, Count = g.Count() })
-            .ToListAsync(ct);
-
-        return counts.ToDictionary(c => new DateOnly(c.Year, c.Month, c.Day), c => c.Count);
     }
 }

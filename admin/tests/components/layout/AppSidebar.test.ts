@@ -294,7 +294,7 @@ describe('AppSidebar', () => {
     const wrapper = await mountSidebar('/dashboard')
     expect(wrapper.find('[data-testid="nav-clients-count"]').exists()).toBe(false)
 
-    useDashboardStore().stats = { totalRevenue: 0, monthlyRevenue: 0, activeServices: 0, overdueInvoices: 0, openTickets: 7, totalClients: 120, currency: 'USD' }
+    useDashboardStore().stats = { activeServices: 0, overdueInvoices: 0, openTickets: 7, totalClients: 120 }
     await flushPromises()
 
     expect(wrapper.get('[data-testid="nav-clients-count"]').text()).toBe('120')

@@ -258,5 +258,6 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         var response = await admin.GetAsync($"/api/domains?page=1&pageSize=20&{filter}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
     }
 }

@@ -17,7 +17,7 @@ public sealed class ListDomainsValidator : ListQueryValidator<ListDomainsQuery>
         : base(localizer)
     {
         // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
-        RuleFor(x => x.Status).IsInEnum().WithMessage(L["DomainListStatusInvalid"]);
+        RuleFor(x => x.Status).IsInEnum().WithMessage(L["DomainStatusInvalid"]);
         RuleFor(x => x.RegistrarModule).IsInEnum().WithMessage(L["DomainListRegistrarInvalid"]);
     }
 }

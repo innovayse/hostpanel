@@ -370,9 +370,6 @@
   <data name="DomainStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled։</value>
   </data>
-  <data name="DomainListStatusInvalid" xml:space="preserve">
-    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled։</value>
-  </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
     <value>Գրանցողը պետք է լինի հետևյալներից մեկը՝ NameAm, Namecheap։</value>
   </data>

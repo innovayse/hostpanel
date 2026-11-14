@@ -31,12 +31,12 @@ describe('servicesStore', () => {
     expect(store.loading).toBe(false)
   })
 
-  it('fetchAll sends the search, trimmed, and the status, product and billing cycle filters', async () => {
+  it('fetchAll sends the search as typed and the status, product and billing cycle filters', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
     const store = useServicesStore()
 
     expect(await store.fetchAll(2, {
-      search: '  shop.example ',
+      search: 'shop.example',
       status: ServiceStatus.Suspended,
       productId: 4,
       billingCycle: BillingCycle.Annual,
@@ -70,7 +70,7 @@ describe('servicesStore', () => {
     const mock = stubFetch(json({ items: [{ id: 5 }], totalCount: 1 }))
     const store = useServicesStore()
 
-    expect(await store.fetchClientPage(7, 1, 20, { search: ' vps ', status: ServiceStatus.Active, billingCycle: BillingCycle.Monthly }))
+    expect(await store.fetchClientPage(7, 1, 20, { search: 'vps', status: ServiceStatus.Active, billingCycle: BillingCycle.Monthly }))
       .toEqual({ items: [{ id: 5 }], totalCount: 1 })
     expect(callOf(mock).url).toBe('/api/services?clientId=7&page=1&pageSize=20&search=vps&status=Active&billingCycle=Monthly')
     expect(store.services).toEqual([])

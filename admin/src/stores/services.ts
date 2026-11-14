@@ -62,7 +62,7 @@ export const useServicesStore = defineStore('services', () => {
   const fetchAll = async (page: number, filters: ServiceListFilters = {}): Promise<boolean> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listServices({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+      api.listServices({ ...filters, page, pageSize: pageSize.value }),
     )
     loading.value = false
     if (result.ok) {
@@ -89,7 +89,7 @@ export const useServicesStore = defineStore('services', () => {
   ): Promise<PaginatedList<ServiceListItem> | null> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listServices({ ...filters, clientId, page: pageNumber, pageSize: size, search: filters.search?.trim() }),
+      api.listServices({ ...filters, clientId, page: pageNumber, pageSize: size }),
     )
     loading.value = false
     return result.ok ? result.value : null

@@ -1,6 +1,9 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -168,6 +171,33 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
         total.Should().Be(1);
     }
 
+    /// <summary>A service with several linked registered domains is found by any of them, not only the first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GetServicesAsync_SearchMatchesAnyOfSeveralLinkedDomainsAsync()
+    {
+        var admin = await ServicesTestSeeds.AdminClientAsync(factory);
+        var mix = await ServicesTestSeeds.SeedServiceMixAsync(factory);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var second = RegisteredDomain.Import(
+                mix.ClientId, $"second-{mix.Token}.com", DomainStatus.Active, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+                autoRenew: false, TestCurrencies.Base, registrar: null, registrarModule: null);
+            second.LinkService(mix.Suspended);
+            context.Domains.Add(second);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var (first, firstTotal) = await ServicesTestSeeds.ListServiceIdsAsync(admin, $"page=1&pageSize=100&search=linked-{mix.Token}");
+        var (other, otherTotal) = await ServicesTestSeeds.ListServiceIdsAsync(admin, $"page=1&pageSize=100&search=second-{mix.Token}");
+
+        first.Should().Equal(mix.Suspended);
+        firstTotal.Should().Be(1);
+        other.Should().Equal(mix.Suspended);
+        otherTotal.Should().Be(1);
+    }
+
     /// <summary>The search matches the name of the ordered product, so the services of one product are found by it.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -185,7 +215,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
         betaTotal.Should().Be(2);
     }
 
-    /// <summary>A search that is a whole number finds the service with that id.</summary>
+    /// <summary>A search that is a whole number finds the service with that id, and only it.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServicesAsync_SearchMatchesTheServiceIdAsync()
@@ -193,9 +223,16 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
         var admin = await ServicesTestSeeds.AdminClientAsync(factory);
         var mix = await ServicesTestSeeds.SeedServiceMixAsync(factory);
 
-        var (ids, _) = await ServicesTestSeeds.ListServiceIdsAsync(admin, $"page=1&pageSize=100&search={mix.Active}");
+        // The digits of an id can also sit inside a random token, so the test searches for an id that none of the
+        // mix's own domains and product names contain, which makes the one match certain.
+        var texts = new[] { $"pending-{mix.Token}", $"active-{mix.Token}", $"gone-{mix.Token}", $"linked-{mix.Token}", $"alpha-{mix.Token}", $"beta-{mix.Token}" };
+        var searched = new[] { mix.Pending, mix.Active, mix.Suspended, mix.Terminated }
+            .First(id => !texts.Any(text => text.Contains(id.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)));
 
-        ids.Should().Contain(mix.Active);
+        var (ids, total) = await ServicesTestSeeds.ListServiceIdsAsync(admin, $"page=1&pageSize=100&clientId={mix.ClientId}&search={searched}");
+
+        ids.Should().Equal(searched);
+        total.Should().Be(1);
     }
 
     /// <summary>A percent or an underscore typed into the search matches itself, not any text or any character.</summary>

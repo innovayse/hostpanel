@@ -23,7 +23,7 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { useDropdown } from '@/composables/useDropdown'
 import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
+import { FLOATING_PANEL_CLASSES, FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { fieldInvalidClasses, fieldSurfaceClasses } from '@/utils/ui/input'
 import { Key } from '@/utils/ui/keys'
@@ -164,8 +164,8 @@ const panelClasses = computed<string>(() => {
   // A wide list is at least 18rem, but never wider than the screen less a margin, so on a phone it cannot reach past the page edge and widen the page.
   const width = props.wide ? 'min-w-[18rem] max-w-[calc(100vw-4rem)]' : 'w-[var(--fp-width)]'
   return props.compact
-    ? `${FLOATING_PLACE_CLASSES} z-50 min-w-[5.5rem] origin-top overflow-hidden rounded-xl border border-border bg-surface-card p-1 shadow-lg shadow-black/20 ${width}`
-    : `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`
+    ? `${FLOATING_PLACE_CLASSES} z-50 min-w-[5.5rem] origin-top overflow-hidden rounded-xl p-1 ${FLOATING_PANEL_CLASSES} ${width}`
+    : `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden rounded-[10px] ${FLOATING_PANEL_CLASSES} ${width}`
 })
 
 /**

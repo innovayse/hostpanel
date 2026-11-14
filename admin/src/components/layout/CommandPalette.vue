@@ -23,6 +23,7 @@ import type { PaletteEntry } from '@/lib/commandPalette'
 import { Icon } from '@/lib/icons'
 import { useNavSections } from '@/composables/useNavSections'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import { Key } from '@/utils/ui/keys'
 import { useModalSurface } from '@/utils/ui/modalSurface'
 import { UiTransitionKind } from '@/utils/ui/transition'
@@ -246,7 +247,8 @@ onBeforeUnmount(() => {
           aria-modal="true"
           :aria-label="t('commandPalette.title')"
           tabindex="-1"
-          class="glass-strong flex h-dvh w-full flex-col overflow-hidden border-border-strong shadow-2xl outline-none sm:h-auto sm:max-h-[70dvh] sm:max-w-xl sm:rounded-panel sm:border"
+          :class="FLOATING_PANEL_CLASSES"
+          class="flex h-dvh w-full flex-col overflow-hidden outline-none sm:h-auto sm:max-h-[70dvh] sm:max-w-xl sm:rounded-panel"
           @keydown="onKeydown"
         >
           <div class="flex shrink-0 items-center gap-2 border-b border-border-subtle p-3">

@@ -78,6 +78,13 @@ const VIEWPORT_EDGE_GAP_PX = 16
 export const FLOATING_PLACE_CLASSES = 'fixed left-[var(--fp-left,auto)] right-[var(--fp-right,auto)] top-[var(--fp-top,auto)] bottom-[var(--fp-bottom,auto)]'
 
 /**
+ * The surface every floating panel wears: a fully opaque raised ground (`--surface-elevated` is solid in both
+ * themes), a hairline border and the popover shadow. Never a frosted glass utility, which would let the fields
+ * behind an open list show through. Shape and size stay with each panel.
+ */
+export const FLOATING_PANEL_CLASSES = 'bg-surface-elevated border border-border shadow-popover'
+
+/**
  * Works out where a panel sits for a trigger box.
  *
  * @param anchor - The trigger's box in viewport pixels.

@@ -28,7 +28,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import { Icon } from '@/lib/icons'
 import { useDropdown } from '@/composables/useDropdown'
 import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
+import { FLOATING_PANEL_CLASSES, FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { Key } from '@/utils/ui/keys'
 import { elementAttrs, isLink, itemRole, toneClasses } from '@/utils/ui/menu'
 import type { UiMenuAction } from '@/utils/ui/menu'
@@ -170,7 +170,7 @@ watch(open, async (val) => {
           v-if="open"
           ref="panel"
           role="menu"
-          :class="[FLOATING_PLACE_CLASSES, 'glass-strong z-50 min-w-[12rem] rounded-control p-1.5 shadow-popover']"
+          :class="[FLOATING_PLACE_CLASSES, FLOATING_PANEL_CLASSES, 'z-50 min-w-[12rem] rounded-control p-1.5 shadow-popover']"
           :data-testid="panelTestid"
           @focusout="onFocusOut"
           @keydown="onKeydown"

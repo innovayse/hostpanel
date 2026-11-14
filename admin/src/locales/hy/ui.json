@@ -101,9 +101,5 @@
   },
   "errorState": {
     "retry": "Կրկնել"
-  },
-  "rating": {
-    "label": "Գնահատական {average} 5-ից, կարծիքներ՝ {count}",
-    "summary": "{average} ({count})"
   }
 }

@@ -795,7 +795,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     `... -- sign <package-dir> <private-key-file> <key-id>` writes `plugin.sig`; `... -- public-key <private-key-file>`
     prints the public key again. The tool refuses a key file inside a git working tree. Sign the folder that will be
     zipped, after its last change. The future plugin repositories (#780) sign in their release pipeline with the same tool.
-  - **Admin.** The plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
+  - **Admin.** The Settings tab of the plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
     saved through the settings store like every other settings row.
 - **Plugin registry (#866).** The admin panel can browse and install plugins from a remote catalogue the operator points it
   at. Off by default and no address is shipped: `PluginRegistryOptions` (sealed, section `PluginRegistry`, validated on

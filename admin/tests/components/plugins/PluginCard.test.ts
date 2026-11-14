@@ -1,242 +1,116 @@
 /**
- * Unit tests for PluginCard: name, version and status, the built-in mark, the registry update badge, the capability badges, and the remove event.
+ * Unit tests for PluginCard: the title row, the meta line, the clamped description, the tags, the footer, the badges, the
+ * stretched details link and the action and notice slots.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createRouter, createMemoryHistory } from 'vue-router'
 import PluginCard from '@/components/plugins/PluginCard.vue'
-import { PluginCapability, PluginStatus } from '@/types/plugin'
-import type { PluginListItemDto } from '@/types/plugin'
+import { PluginCardBadge } from '@/types/plugin'
+import type { PluginCardModel } from '@/types/plugin'
 import { createTestI18n } from '../../helpers/i18n'
 
-/** An installed plugin that is already running. */
-const plugin: PluginListItemDto = {
+/** A running plugin with everything filled in. */
+const model: PluginCardModel = {
   id: 'example-pay',
   name: 'Example Pay',
-  version: '1.2.0',
-  author: 'Hostpanel',
-  description: 'Card payments',
-  type: 'payment',
-  category: 'Payments',
-  color: '#123456',
   iconUrl: null,
-  isLoaded: true,
-  isBuiltIn: false,
-  status: PluginStatus.Loaded,
-  refusedRule: null,
-  refusedDetail: null,
+  color: '#123456',
+  verified: true,
+  publisher: 'Hostpanel',
+  category: 'Payment',
+  pricingLabel: 'Free',
+  description: 'Card payments',
+  tags: ['cards', 'sepa'],
+  downloads: 1234,
+  version: '1.2.0',
+  badges: [PluginCardBadge.Active],
+  updateVersion: null,
   stagedVersion: null,
-  capabilities: [],
+  refusal: null,
 }
+
+/** Router that knows the details route, so the link resolves. */
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes: [{ path: '/', component: { template: '<div />' } }, { path: '/plugins/:id', name: 'plugin-details', component: { template: '<div />' } }],
+})
 
 /**
  * Mounts the card.
  *
- * @param overrides - Props to change.
+ * @param overrides - Model fields to change.
+ * @param slots - Slot content to pass.
  * @returns The wrapper.
  */
-const mountCard = (overrides: Record<string, unknown> = {}) =>
-  mount(PluginCard, { props: { plugin, removing: false, ...overrides }, global: { plugins: [createTestI18n()] } })
+const mountCard = (overrides: Partial<PluginCardModel> = {}, slots: Record<string, string> = {}) =>
+  mount(PluginCard, {
+    props: { plugin: { ...model, ...overrides }, to: { name: 'plugin-details', params: { id: 'example-pay' } } },
+    slots,
+    global: { plugins: [createTestI18n(), router] },
+  })
 
 describe('PluginCard', () => {
-  it('shows the plugin and its active status', () => {
+  it('shows the name, the meta line, the description, the tags and the footer', () => {
     const wrapper = mountCard()
 
-    expect(wrapper.text()).toContain('Example Pay')
-    expect(wrapper.text()).toContain('v1.2.0')
-    expect(wrapper.text()).toContain('Active')
+    expect(wrapper.get('[data-testid="plugin-card-link-example-pay"]').text()).toBe('Example Pay')
+    expect(wrapper.get('[data-testid="plugin-card-meta-example-pay"]').text()).toBe('by Hostpanel · Payment · Free')
+    expect(wrapper.get('[data-testid="plugin-card-description-example-pay"]').classes()).toContain('line-clamp-2')
+    expect(wrapper.get('[data-testid="plugin-card-tags-example-pay"]').text()).toContain('#cards')
+    expect(wrapper.get('[data-testid="plugin-card-downloads-example-pay"]').text()).toContain('1,234')
+    expect(wrapper.get('[data-testid="plugin-card-version-example-pay"]').text()).toBe('v1.2.0')
   })
 
-  it('marks a plugin that is not loaded yet as pending restart', () => {
-    const wrapper = mountCard({ plugin: { ...plugin, isLoaded: false } })
-
-    expect(wrapper.text()).toContain('Pending restart')
-  })
-
-  it('emits remove with the plugin id', async () => {
+  it('stretches the name link over the card and gives the name the primary tone', () => {
     const wrapper = mountCard()
+    const link = wrapper.get('[data-testid="plugin-card-link-example-pay"]')
 
-    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
-
-    expect(wrapper.emitted('remove')).toEqual([['example-pay']])
+    expect(link.attributes('href')).toBe('/plugins/example-pay')
+    expect(link.classes()).toContain('after:absolute')
+    expect(link.find('.text-text-primary').exists()).toBe(true)
   })
 
-  it('marks a built-in plugin and offers no remove button', () => {
-    const wrapper = mountCard({ plugin: { ...plugin, isBuiltIn: true } })
-
-    expect(wrapper.get('[data-testid="plugin-builtin-example-pay"]').text()).toBe('Built-in')
-    expect(wrapper.find('[data-testid="plugin-remove-example-pay"]').exists()).toBe(false)
+  it('marks a verified publisher', () => {
+    expect(mountCard().find('[data-testid="plugin-card-verified-example-pay"]').exists()).toBe(true)
+    expect(mountCard({ verified: false }).find('[data-testid="plugin-card-verified-example-pay"]').exists()).toBe(false)
   })
 
-  it('shows an update badge with the newer registry version', () => {
-    const wrapper = mountCard({ updateVersion: '2.0.0' })
+  it('leaves out the parts it has no data for', () => {
+    const wrapper = mountCard({ publisher: '', pricingLabel: '', tags: [], downloads: null })
 
-    expect(wrapper.get('[data-testid="plugin-update-example-pay"]').text()).toBe('Update available: 2.0.0')
+    expect(wrapper.get('[data-testid="plugin-card-meta-example-pay"]').text()).toBe('Payment')
+    expect(wrapper.find('[data-testid="plugin-card-tags-example-pay"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-card-downloads-example-pay"]').exists()).toBe(false)
   })
 
-  it('shows no update badge without a newer version', () => {
-    expect(mountCard().find('[data-testid="plugin-update-example-pay"]').exists()).toBe(false)
-    expect(mountCard({ updateVersion: null }).find('[data-testid="plugin-update-example-pay"]').exists()).toBe(false)
-  })
-
-  it('offers Update with the newer version and emits the id and version', async () => {
-    const wrapper = mountCard({ updateVersion: '2.0.0' })
-    const button = wrapper.get('[data-testid="plugin-update-button-example-pay"]')
-
-    expect(button.text()).toBe('Update to 2.0.0')
-    await button.trigger('click')
-
-    expect(wrapper.emitted('update')).toEqual([['example-pay', '2.0.0']])
-  })
-
-  it('offers no Update button without a newer version', () => {
-    expect(mountCard().find('[data-testid="plugin-update-button-example-pay"]').exists()).toBe(false)
-  })
-
-  it('opens the release notes of the installed version as Markdown, and says when there are none', async () => {
-    const withNotes = mountCard({ plugin: { ...plugin, changelog: '- Faster **refunds**' } })
-    await withNotes.get('[data-testid="plugin-notes-toggle-example-pay"]').trigger('click')
-
-    expect(withNotes.get('[data-testid="plugin-notes-example-pay"]').find('li strong').text()).toBe('refunds')
-
-    const without = mountCard()
-    await without.get('[data-testid="plugin-notes-toggle-example-pay"]').trigger('click')
-
-    expect(without.get('[data-testid="plugin-notes-example-pay"]').text()).toBe('This version has no release notes.')
-  })
-
-  it('shows the release notes of the offered update behind its own toggle, and says when there are none', async () => {
-    const withNotes = mountCard({ updateVersion: '2.0.0', updateChangelog: '- Faster **refunds**' })
-
-    expect(withNotes.get('[data-testid="plugin-update-notes-toggle-example-pay"]').text()).toBe('What is new in 2.0.0')
-    await withNotes.get('[data-testid="plugin-update-notes-toggle-example-pay"]').trigger('click')
-    expect(withNotes.get('[data-testid="plugin-update-notes-example-pay"]').find('li strong').text()).toBe('refunds')
-
-    const without = mountCard({ updateVersion: '2.0.0' })
-    await without.get('[data-testid="plugin-update-notes-toggle-example-pay"]').trigger('click')
-    expect(without.get('[data-testid="plugin-update-notes-example-pay"]').text()).toBe('This version has no release notes.')
-
-    expect(mountCard().find('[data-testid="plugin-update-notes-toggle-example-pay"]').exists()).toBe(false)
-  })
-
-  it('points an update to the details page where the changes are listed', async () => {
-    const wrapper = mountCard({ updateVersion: '2.0.0', hasDetails: true })
-    const button = wrapper.get('[data-testid="plugin-changes-example-pay"]')
-
-    expect(button.text()).toBe('What changes in 2.0.0')
-    await button.trigger('click')
-
-    expect(wrapper.emitted('details')).toEqual([['example-pay']])
-    expect(mountCard({ updateVersion: '2.0.0' }).find('[data-testid="plugin-changes-example-pay"]').exists()).toBe(false)
-  })
-
-  it('disables Update and Remove while the update runs', () => {
-    const wrapper = mountCard({ updateVersion: '2.0.0', updating: true })
-
-    expect(wrapper.get('[data-testid="plugin-update-button-example-pay"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[data-testid="plugin-remove-example-pay"]').attributes('disabled')).toBeDefined()
-  })
-
-  it('shows Details for a registry plugin and emits its id', async () => {
-    const wrapper = mountCard({ hasDetails: true })
-
-    await wrapper.get('[data-testid="plugin-details-example-pay"]').trigger('click')
-
-    expect(wrapper.emitted('details')).toEqual([['example-pay']])
-  })
-
-  it('shows no Details button for a plugin the registry does not list', () => {
-    expect(mountCard().find('[data-testid="plugin-details-example-pay"]').exists()).toBe(false)
-  })
-
-  it('does not mark an uploaded plugin as built-in', () => {
-    const wrapper = mountCard()
-
-    expect(wrapper.find('[data-testid="plugin-builtin-example-pay"]').exists()).toBe(false)
-  })
-
-  it('shows a refused plugin with its id, rule, localised reason and detail, never as active', () => {
+  it('labels every badge, naming the versions where it has one', () => {
     const wrapper = mountCard({
-      plugin: {
-        ...plugin,
-        isLoaded: false,
-        status: 'Refused',
-        refusedRule: 'PermissionUnknown',
-        refusedDetail: 'Billing.Everything',
-      },
+      badges: [
+        PluginCardBadge.Active,
+        PluginCardBadge.PendingRestart,
+        PluginCardBadge.Refused,
+        PluginCardBadge.Staged,
+        PluginCardBadge.Update,
+        PluginCardBadge.BuiltIn,
+      ],
+      stagedVersion: '1.3.0',
+      updateVersion: '2.0.0',
     })
 
-    expect(wrapper.get('[data-testid="plugin-refused-example-pay"]').text()).toBe('Refused')
-    const refusal = wrapper.get('[data-testid="plugin-refusal-example-pay"]').text()
-    expect(refusal).toContain('A client entry names a permission that does not exist.')
-    expect(refusal).toContain('example-pay')
-    expect(refusal).toContain('PermissionUnknown')
-    expect(refusal).toContain('Billing.Everything')
-    expect(wrapper.text()).not.toContain('Active')
-    expect(wrapper.text()).not.toContain('Pending restart')
+    expect(wrapper.get('[data-testid="plugin-card-badge-active-example-pay"]').text()).toBe('Active')
+    expect(wrapper.get('[data-testid="plugin-card-badge-pendingRestart-example-pay"]').text()).toBe('Pending restart')
+    expect(wrapper.get('[data-testid="plugin-card-badge-refused-example-pay"]').text()).toBe('Refused')
+    expect(wrapper.get('[data-testid="plugin-card-badge-staged-example-pay"]').text()).toContain('1.3.0')
+    expect(wrapper.get('[data-testid="plugin-card-badge-update-example-pay"]').text()).toContain('2.0.0')
+    expect(wrapper.get('[data-testid="plugin-card-badge-builtIn-example-pay"]').text()).toBe('Built-in')
   })
 
-  it('lets a refused plugin be removed', async () => {
-    const wrapper = mountCard({ plugin: { ...plugin, isLoaded: false, status: 'Refused', refusedRule: 'RouteDuplicate' } })
+  it('renders the action and notice slots, and omits them when empty', () => {
+    const withSlots = mountCard({}, { action: '<button data-testid="act">Remove</button>', notice: '<p data-testid="note">Broken</p>' })
 
-    await wrapper.get('[data-testid="plugin-remove-example-pay"]').trigger('click')
-
-    expect(wrapper.emitted('remove')).toEqual([['example-pay']])
-  })
-
-  it('shows no refusal block for a loaded plugin', () => {
-    const wrapper = mountCard()
-
-    expect(wrapper.find('[data-testid="plugin-refused-example-pay"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="plugin-refusal-example-pay"]').exists()).toBe(false)
-  })
-
-  it('shows the staged version of a pending upgrade', () => {
-    const wrapper = mountCard({ plugin: { ...plugin, stagedVersion: '1.3.0' } })
-
-    expect(wrapper.get('[data-testid="plugin-staged-example-pay"]').text()).toContain('Version 1.3.0 staged')
-  })
-
-  it('shows no staged mark when no upgrade waits', () => {
-    const wrapper = mountCard()
-
-    expect(wrapper.find('[data-testid="plugin-staged-example-pay"]').exists()).toBe(false)
-  })
-
-  it('shows a badge per declared capability', () => {
-    const wrapper = mountCard({ plugin: { ...plugin, type: 'fulfilment', capabilities: [PluginCapability.Endpoints] } })
-
-    expect(wrapper.get('[data-testid="plugin-capability-example-pay-endpoints"]').text()).toBe('Serves pages')
-  })
-
-  it('shows no capability badge when none is declared', () => {
-    const wrapper = mountCard()
-
-    expect(wrapper.find('[data-testid^="plugin-capability-example-pay"]').exists()).toBe(false)
-  })
-
-  it('disables the remove button and marks it busy while removing, keeping its label', () => {
-    const wrapper = mountCard({ removing: true })
-    const button = wrapper.get('[data-testid="plugin-remove-example-pay"]')
-
-    expect(button.attributes('disabled')).toBeDefined()
-    expect(button.attributes('aria-busy')).toBe('true')
-    expect(button.text()).toBe('Remove')
-  })
-
-  it('shows the plugin icon when it has one and the colour block with the initial when not', () => {
-    const withIcon = mountCard({ plugin: { ...plugin, iconUrl: '/api/admin/plugins/example-pay/icon' } })
-    const without = mountCard()
-
-    expect(withIcon.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/api/admin/plugins/example-pay/icon')
-    expect(without.find('[data-testid="plugin-avatar-image"]').exists()).toBe(false)
-    expect(without.get('[data-testid="plugin-avatar-fallback"] text').text()).toBe('E')
-  })
-
-  it('draws the same card as placeholders while the list loads, with remove disabled', () => {
-    const wrapper = mountCard({ plugin: null, loading: true })
-
-    expect(wrapper.get('[data-testid="plugin-card-loading"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(0)
-    expect(wrapper.get('[data-testid="plugin-remove-"]').attributes('disabled')).toBeDefined()
+    expect(withSlots.get('[data-testid="act"]').text()).toBe('Remove')
+    expect(withSlots.get('[data-testid="note"]').text()).toBe('Broken')
+    expect(mountCard().find('[data-testid="act"]').exists()).toBe(false)
   })
 })

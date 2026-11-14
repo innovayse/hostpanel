@@ -78,14 +78,17 @@ export const usePluginsStore = defineStore('plugins', () => {
   /** Sentence for the last refused install or remove, null when none. */
   const actionError = ref<string | null>(null)
 
-  /** Slot widgets with their product binding, by plugin id; filled by {@link fetchSlotWidgets}. */
+  /** Slot widgets with their product binding, by plugin id; each entry is filled by {@link fetchSlotWidgetsFor}. */
   const slotWidgets = ref<Record<string, PluginSlotWidgetBindingDto[]>>({})
 
-  /** Every product a widget can be bound to, populated by {@link fetchSlotWidgets}. */
+  /** Every product a widget can be bound to, populated by {@link fetchSlotWidgetsFor}. */
   const productOptions = ref<Product[]>([])
 
-  /** Sentence for the last failed load of the slot widgets or the products, null when none. */
-  const slotWidgetsError = ref<string | null>(null)
+  /** Sentence for the last failed load of one plugin's slot widgets or of the products, by plugin id; absent or null when none. */
+  const slotWidgetsError = ref<Record<string, string | null>>({})
+
+  /** Plugin ids whose slot widgets are loading; each plugin loads on its own. */
+  const slotWidgetsLoading = ref<Record<string, boolean>>({})
 
   /** Sentence for the last refused binding save, null when none. */
   const bindingError = ref<string | null>(null)
@@ -355,25 +358,26 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   /**
-   * Fetches the slot widgets of every loaded plugin with their product binding, then the products
-   * they can be bound to. A plugin that is not loaded declares nothing the server can list.
+   * Fetches the slot widgets of one plugin with their product binding, then the products they can be
+   * bound to. The error is kept for that plugin only. A plugin that is not loaded declares nothing the server can list.
    *
-   * @returns Resolves when the requests are over; a refusal is left in `slotWidgetsError`.
+   * @param id - Plugin identifier as declared in plugin.json.
+   * @returns Resolves when the requests are over; a refusal is left in `slotWidgetsError` under the plugin id.
    */
-  const fetchSlotWidgets = async (): Promise<void> => {
-    const byPlugin: Record<string, PluginSlotWidgetBindingDto[]> = {}
-    for (const plugin of plugins.value.filter(p => p.isLoaded)) {
-      const widgets = await runAction(slotWidgetsError, () => api.listSlotWidgets(plugin.id))
-      if (!widgets.ok) {
-        return
+  const fetchSlotWidgetsFor = async (id: string): Promise<void> => {
+    slotWidgetsLoading.value = { ...slotWidgetsLoading.value, [id]: true }
+    /** Local sink so one plugin's refusal does not touch another's state. */
+    const failure = ref<string | null>(null)
+    const widgets = await runAction(failure, () => api.listSlotWidgets(id))
+    if (widgets.ok) {
+      slotWidgets.value = { ...slotWidgets.value, [id]: widgets.value }
+      const products = await runAction(failure, productsApi.listProducts)
+      if (products.ok) {
+        productOptions.value = products.value
       }
-      byPlugin[plugin.id] = widgets.value
     }
-    slotWidgets.value = byPlugin
-    const products = await runAction(slotWidgetsError, productsApi.listProducts)
-    if (products.ok) {
-      productOptions.value = products.value
-    }
+    slotWidgetsError.value = { ...slotWidgetsError.value, [id]: failure.value }
+    slotWidgetsLoading.value = { ...slotWidgetsLoading.value, [id]: false }
   }
 
   /**
@@ -395,7 +399,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       () => api.saveSlotWidgetProducts(pluginId, widget.slotId, widget.widgetId, { productIds }),
     )
     if (result.ok) {
-      await fetchSlotWidgets()
+      await fetchSlotWidgetsFor(pluginId)
     }
     return result.ok
   }
@@ -621,12 +625,12 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   return {
-    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, bindingError,
+    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, bindingError,
     registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError,
     registryInstallError, registryInstallingId, updateVersions, updateChangelogs, licenceError, registryDetails,
     registryInstance, registryInstanceBusy, registryInstanceError,
     isBusy, fetchRegistryDetails, saveLicenceKey, removeLicenceKey,
     fetchRegistry, setRegistryFilter, fetchRegistryUpdates, fetchRegistryInstance, retryRegistryInstance, installFromRegistry,
-    fetchAll, inspect, confirmInstall, dismissPreview, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgets, saveSlotWidgetProducts,
+    fetchAll, inspect, confirmInstall, dismissPreview, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgetsFor, saveSlotWidgetProducts,
   }
 })

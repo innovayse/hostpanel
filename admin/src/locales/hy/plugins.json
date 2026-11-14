@@ -7,19 +7,11 @@
       "storedCredentials": "Պահպանված վճարման եղանակներ"
     },
     "pendingRestart": "Սպասում է վերագործարկման",
-    "categoryByAuthor": "{category} · հեղինակ՝ {author}",
     "remove": "Հեռացնել",
-    "details": "Մանրամասներ",
     "refused": "Մերժված",
     "staged": "{version} տարբերակը պատրաստ է, կկիրառվի վերագործարկումից հետո",
     "brokenRule": "{id} · խախտված կանոն՝ {rule}",
-    "updateAvailable": "Հասանելի է թարմացում՝ {version}",
-    "showNotes": "{version} տարբերակի փոփոխությունները",
-    "hideNotes": "Թաքցնել փոփոխությունները",
-    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։",
-    "whatChanged": "Ինչ կփոխվի {to} տարբերակում",
-    "showUpdateNotes": "Ինչ նոր է {version} տարբերակում",
-    "hideUpdateNotes": "Թաքցնել նորությունները"
+    "updateAvailable": "Հասանելի է թարմացում՝ {version}"
   },
   "pluginUploader": {
     "valueKbReadyToInstall": "{value} ԿԲ · պատրաստ է տեղադրման",
@@ -65,13 +57,7 @@
     "installAndManageProviderPlugins": "Պրովայդեր պլագինների տեղադրում և կառավարում",
     "lengthInstalled": "· տեղադրված՝ {length}",
     "noPluginsInstalledYet": "Պլագիններ դեռ տեղադրված չեն",
-    "uploadA": "Վերբեռնեք",
-    "fileAboveToGetStarted": "ֆայլ վերևում՝ սկսելու համար",
-    "zip": ".zip",
-    "installedPlugins": "Տեղադրված պլագիններ",
     "noPluginsMatch": "Ֆիլտրերին ոչ մի տեղադրված պլագին չի համապատասխանում",
-    "pluginInstalled": "Պլագինը տեղադրված է։",
-    "pluginRemoved": "Պլագինը հեռացված է։",
     "confirmRemoveTitle": "Հեռացնե՞լ այս պլագինը",
     "confirmRemoveMessage": "{id} պլագինը կհեռացվի սերվերից։ Նրա կարգավորումները և պահված տվյալները կպահպանվեն, կրկին տեղադրելիս դրանք կվերականգնվեն։ Տվյալները կարելի է ջնջել հետո։",
     "dataPurged": "Պլագինի տվյալները ջնջվեցին։",
@@ -83,10 +69,24 @@
     "pluginStaged": "{version} տարբերակը բեռնվեց և պատրաստ է։ Այն կփոխարինի տեղադրվածին սերվերի վերագործարկումից հետո։",
     "tabInstalled": "Տեղադրված",
     "tabBrowse": "Կատալոգ",
-    "registryInstalled": "Պլագինը տեղադրվել է կատալոգից։",
     "confirmUpdateTitle": "Թարմացնե՞լ այս պլագինը",
     "confirmUpdateMessage": "Թարմացնե՞լ {id} պլագինը մինչև {version} տարբերակ։ Փոփոխությունը կգործի սերվերի վերագործարկումից հետո։",
-    "confirmUpdate": "Թարմացնել"
+    "confirmUpdate": "Թարմացնել",
+    "tabSettings": "Կարգավորումներ",
+    "uploadPlugin": "Վերբեռնել պլագին",
+    "uploadTitle": "Պլագինի փաթեթի վերբեռնում",
+    "noPluginsInstalledHint": "Վերբեռնեք պլագինի փաթեթը կամ տեղադրեք այն կատալոգից։",
+    "searchInstalled": "Որոնել տեղադրված պլագինները",
+    "tabsLabel": "Պլագինների բաժիններ"
+  },
+  "processing": {
+    "installing": "Տեղադրվում է՝ {name}",
+    "updating": "Թարմացվում է՝ {name}",
+    "removing": "Հեռացվում է՝ {name}",
+    "uploading": "Վերբեռնվում է՝ {name}",
+    "done": "Պատրաստ է։",
+    "restartNeeded": "Փոփոխությունն ուժի մեջ մտնելու համար վերագործարկեք սերվերը։",
+    "close": "Փակել"
   },
   "pluginSlotWidgets": {
     "title": "Սլոտի վիջեթներ. {plugin}",
@@ -109,13 +109,10 @@
     "allCategories": "Բոլոր կատեգորիաները",
     "byAuthor": "հեղինակ՝ {author}",
     "version": "v{version}",
-    "sdkVersion": "SDK {version}",
     "verified": "Ստուգված",
     "install": "Տեղադրել",
     "update": "Թարմացնել մինչև {version}",
     "details": "Մանրամասներ",
-    "uninstall": "Ապատեղադրել",
-    "installed": "Տեղադրված է {version}",
     "emptyTitle": "Պլագիններ չեն գտնվել",
     "emptyDescription": "Փորձեք այլ հարցում կամ կատեգորիա։",
     "total": "Պլագիններ՝ {total}",
@@ -131,17 +128,9 @@
       "Paid": "Վճարովի",
       "Private": "Մասնավոր"
     },
-    "publisherKind": {
-      "Personal": "Անհատ",
-      "Organization": "Կազմակերպություն"
-    },
     "tag": "#{tag}",
-    "moreTags": "+{count}",
     "downloads": "Ներբեռնումներ՝ {count}",
-    "whatChanged": "Ինչ է փոխվել",
-    "showNotes": "Ինչ նոր է {version} տարբերակում",
-    "hideNotes": "Թաքցնել նորությունները",
-    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։"
+    "settings": "Կարգավորումներ"
   },
   "registryTrust": {
     "title": "Վստահություն կատալոգի նկատմամբ",

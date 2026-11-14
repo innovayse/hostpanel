@@ -1,17 +1,19 @@
 /**
- * Mount tests for PluginDetailsView: the loading, error (with retry) and not-found states, the
- * details with their versions, an install behind a confirmation, a downgrade behind its own
- * explicit confirmation, an update to the newest version, an uninstall behind a confirmation that
- * raises the restart banner, a refusal shown as the API's sentence, and the write-only licence key
- * of a paid plugin (save, remove, refusal). Versions, Licence and Changes sit behind the page's tabs, which the tests switch.
+ * Mount tests for PluginDetailsView: the page of every installed plugin, built from this server's list. The loading, error
+ * (with retry) and not-found states; the registry as optional enrichment (a refusal, a 404 or a switched-off registry only hides
+ * the Versions, Licence and Changes tabs and the update action); the Settings tab; an install behind a confirmation, a downgrade
+ * behind its own explicit confirmation, an update to the newest version, an uninstall behind the shared removal confirmation that
+ * raises the restart banner and returns to the plugins page, a refusal shown as the API's sentence, and the write-only licence key
+ * of a paid plugin (save, remove, refusal).
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PluginDetailsView from '@/views/PluginDetailsView.vue'
-import { PluginErrorCode, PluginPricing } from '@/types/plugin'
+import { PluginCapability, PluginErrorCode, PluginPricing, PluginStatus } from '@/types/plugin'
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
-import { makeDetails, makeVersion } from '../helpers/pluginDetails'
+import { integrationDetail, integrationDto } from '../helpers/integrationFixtures'
+import { makeDetails, makeInstalled, makeVersion } from '../helpers/pluginDetails'
 import { stubRoutes as stubAllRoutes } from '../helpers/routes'
 
 /** The address of the fixture plugin's details. */
@@ -29,25 +31,39 @@ const stubRoutes = (routes: Record<string, () => Response>) =>
     Object.entries({
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry?': () => json({ items: [], total: 0, pageSize: 20 }),
-      'GET /api/admin/plugins': () => json([]),
+      'GET /api/admin/plugins/example-pay/slot-widgets': () => json([]),
+      'GET /api/admin/plugins': () => json([makeInstalled()]),
+      'GET /api/admin/integrations': () => json([]),
+      'GET /api/products': () => json([]),
       ...routes,
     }).sort(([a], [b]) => b.length - a.length),
   ))
 
+/** The tabs a test may open. */
+type PageTab = 'settings' | 'versions' | 'licence' | 'changes'
+
 /**
  * Mounts the page for the fixture plugin, waits for the load and opens a tab when one is named.
  *
- * @param tab - The tab to switch to (`versions`, `licence` or `changes`); the overview stays on show when omitted.
- * @returns The wrapper.
+ * @param tab - The tab to switch to; the overview stays on show when omitted.
+ * @returns The wrapper and the router.
  */
-const mountPage = async (tab?: 'versions' | 'licence' | 'changes') => {
-  const { wrapper } = await mountRouted(PluginDetailsView, '/plugins/:id', '/plugins/example-pay')
+const mountScreenAt = async (tab?: PageTab) => {
+  const screen = await mountRouted(PluginDetailsView, '/plugins/:id', '/plugins/example-pay')
   await flushPromises()
   if (tab !== undefined) {
-    await wrapper.get(`[data-testid="plugin-details-tab-${tab}"]`).trigger('click')
+    await screen.wrapper.get(`[data-testid="plugin-details-tab-${tab}"]`).trigger('click')
   }
-  return wrapper
+  return screen
 }
+
+/**
+ * Mounts the page for the fixture plugin, waits for the load and opens a tab when one is named.
+ *
+ * @param tab - The tab to switch to; the overview stays on show when omitted.
+ * @returns The wrapper.
+ */
+const mountPage = async (tab?: PageTab) => (await mountScreenAt(tab)).wrapper
 
 /**
  * The requests of the mock that used a verb.
@@ -92,7 +108,7 @@ describe('PluginDetailsView', () => {
     expect(wrapper.find('[data-testid="plugin-details-loading"]').exists()).toBe(false)
   })
 
-  it('shows the API sentence when the load is refused and loads again from the retry', async () => {
+  it('shows the installed plugin and the API sentence when only the registry is refused, and loads again from the retry', async () => {
     let calls = 0
     stubRoutes({
       [DETAILS_URL]: () => {
@@ -102,19 +118,131 @@ describe('PluginDetailsView', () => {
     })
     const wrapper = await mountPage()
 
-    expect(wrapper.get('[data-testid="plugin-details-error"]').text()).toContain('The registry is unavailable.')
+    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.get('[data-testid="plugin-details-registry-error"]').text()).toContain('The registry is unavailable.')
+    expect(wrapper.find('[data-testid="plugin-details-tab-versions"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="plugin-details-registry-error-retry"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-details-registry-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-tab-versions"]').exists()).toBe(true)
+  })
+
+  it('shows the API sentence when the installed list is refused and loads again from the retry', async () => {
+    let refused = true
+    stubRoutes({
+      'GET /api/admin/plugins': () => (refused ? problem('The server is busy.', 503) : json([makeInstalled()])),
+      [DETAILS_URL]: () => json(makeDetails()),
+    })
+    const wrapper = await mountPage()
+
+    expect(wrapper.get('[data-testid="plugin-details-error"]').text()).toContain('The server is busy.')
+    expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(false)
+    refused = false
     await wrapper.get('[data-testid="plugin-details-error-retry"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
   })
 
-  it('shows the not-found state, not a retryable error, when the registry answers 404', async () => {
-    stubRoutes({ [DETAILS_URL]: () => problem('No such plugin.', 404) })
+  it('shows the not-found state for an id that is not installed', async () => {
+    stubRoutes({ 'GET /api/admin/plugins': () => json([makeInstalled({ id: 'other' })]), [DETAILS_URL]: () => json(makeDetails()) })
     const wrapper = await mountPage()
 
     expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="plugin-details-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-name"]').exists()).toBe(false)
+  })
+
+  it('shows a removed plugin that only keeps data as not found', async () => {
+    stubRoutes({ 'GET /api/admin/plugins': () => json([makeInstalled({ status: PluginStatus.Removed })]), [DETAILS_URL]: () => json(makeDetails()) })
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(true)
+  })
+
+  it('works without registry details when the registry answers 404, with no error and no registry tabs', async () => {
+    stubRoutes({ [DETAILS_URL]: () => problem('No such plugin.', 404) })
+    const wrapper = await mountPage()
+
+    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-registry-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-overview"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-tab-versions"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-tab-licence"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-tab-changes"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-update"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-uninstall"]').exists()).toBe(true)
+  })
+
+  it('works without registry details when the registry is switched off, silently', async () => {
+    stubRoutes({
+      [DETAILS_URL]: () => json({ type: PluginErrorCode.RegistryDisabled, title: 'Off', status: 409, detail: 'The registry is switched off.' }, 409),
+    })
+    const wrapper = await mountPage()
+
+    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.find('[data-testid="plugin-details-registry-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-tab-versions"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-update"]').exists()).toBe(false)
+  })
+
+  it('shows the installed plugin of the list with no registry listing for a built-in one, without uninstall', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([makeInstalled({ isBuiltIn: true })]),
+      [DETAILS_URL]: () => problem('No such plugin.', 404),
+    })
+    const wrapper = await mountPage()
+
+    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.find('[data-testid="plugin-details-uninstall"]').exists()).toBe(false)
+  })
+
+  it('shows the capabilities and release notes of the installed plugin on the overview', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([makeInstalled({ changelog: 'Faster refunds.', capabilities: [PluginCapability.Endpoints] })]),
+      [DETAILS_URL]: () => problem('No such plugin.', 404),
+    })
+    const wrapper = await mountPage()
+
+    expect(wrapper.get('[data-testid="plugin-details-changelog"]').text()).toBe('Faster refunds.')
+    expect(wrapper.find('[data-testid="plugin-details-capability-endpoints"]').exists()).toBe(true)
+  })
+
+  it('shows the config form on the Settings tab when the integrations list has the plugin id as a slug', async () => {
+    stubRoutes({
+      [DETAILS_URL]: () => problem('No such plugin.', 404),
+      'GET /api/admin/integrations/example-pay': () => json(integrationDetail({ slug: 'example-pay' })),
+      'GET /api/admin/integrations': () => json([integrationDto({ slug: 'example-pay', isPlugin: true })]),
+    })
+    const wrapper = await mountPage('settings')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
+  })
+
+  it('shows no config form on the Settings tab for a plugin without an integration, and the slot widgets of that plugin', async () => {
+    const widget = { slotId: 'admin.service.panels', widgetId: 'usage', title: 'Usage', manifestProductIds: [], productIds: [], isBound: false }
+    const mock = stubRoutes({
+      [DETAILS_URL]: () => problem('No such plugin.', 404),
+      'GET /api/admin/plugins/example-pay/slot-widgets': () => json([widget]),
+    })
+    const wrapper = await mountPage('settings')
+
+    expect(wrapper.find('[data-testid="integration-config-panel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-slot-widgets-example-pay"]').exists()).toBe(true)
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/example-pay/slot-widgets')).toBe(true)
+  })
+
+  it('offers no Settings tab and loads no widgets for a plugin that is not loaded', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins': () => json([makeInstalled({ isLoaded: false })]),
+      [DETAILS_URL]: () => problem('No such plugin.', 404),
+    })
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('[data-testid="plugin-details-tab-settings"]').exists()).toBe(false)
+    expect(mock.mock.calls.some(([url]) => String(url).includes('slot-widgets'))).toBe(false)
   })
 
   it('links back to the list from the start of the row, with an icon', async () => {
@@ -139,9 +267,9 @@ describe('PluginDetailsView', () => {
           return new Response(null, { status: 204 })
         },
       })
-      const wrapper = await mountPage()
+      const wrapper = await mountPage('licence')
 
-      expect(wrapper.get('[data-testid="plugin-details-error"]').text()).toContain('A licence key is needed.')
+      expect(wrapper.get('[data-testid="plugin-details-registry-error"]').text()).toContain('A licence key is needed.')
       expect(wrapper.find('[data-testid="plugin-licence-card"]').exists()).toBe(true)
       await wrapper.get('[data-testid="plugin-licence-input"]').setValue('KEY-123')
       await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
@@ -149,7 +277,7 @@ describe('PluginDetailsView', () => {
 
       const [put] = callsWith(mock, 'PUT')
       expect(callOf(mock, put as number).body).toEqual({ key: 'KEY-123' })
-      expect(wrapper.find('[data-testid="plugin-details-error"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="plugin-details-registry-error"]').exists()).toBe(false)
       expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
     },
   )
@@ -159,14 +287,7 @@ describe('PluginDetailsView', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.find('[data-testid="plugin-licence-card"]').exists()).toBe(false)
-  })
-
-  it('still shows a retryable error for a failure that is not a not-found answer', async () => {
-    stubRoutes({ [DETAILS_URL]: () => problem('The registry is unavailable.', 503) })
-    const wrapper = await mountPage()
-
-    expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="plugin-details-error"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-tab-licence"]').exists()).toBe(false)
   })
 
   it('installs a newer version only after the confirmation, without allowing a downgrade', async () => {
@@ -185,7 +306,8 @@ describe('PluginDetailsView', () => {
 
     const [post] = callsWith(mock, 'POST')
     expect(callOf(mock, post as number).body).toEqual({ version: '3.0.0', allowDowngrade: false })
-    expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('3.0.0')
+    expect(wrapper.find('[data-testid="plugin-processing-outcome"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-processing-restart"]').exists()).toBe(true)
   })
 
   it('lists the release notes of every version between the installed one and the new one', async () => {
@@ -257,7 +379,7 @@ describe('PluginDetailsView', () => {
 
     const [post] = callsWith(mock, 'POST')
     expect(callOf(mock, post as number).body).toEqual({ version: '3.0.0', allowDowngrade: false })
-    expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('staged')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('staged')
   })
 
   it('asks for an explicit downgrade confirmation before installing an older version', async () => {
@@ -306,26 +428,44 @@ describe('PluginDetailsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('This version needs a licence key.')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('This version needs a licence key.')
   })
 
-  it('uninstalls behind a confirmation and raises the restart banner', async () => {
+  it('uninstalls behind the shared confirmation, raises the restart banner and returns to the plugins page', async () => {
+    let removed = false
     const mock = stubRoutes({
+      'GET /api/admin/plugins': () => json(removed ? [makeInstalled({ status: PluginStatus.Removed })] : [makeInstalled()]),
       [DETAILS_URL]: () => json(makeDetails()),
-      'DELETE /api/admin/plugins/example-pay': () => json({ requiresRestart: true }),
+      'DELETE /api/admin/plugins/example-pay': () => {
+        removed = true
+        return json({ requiresRestart: true })
+      },
     })
-    const wrapper = await mountPage()
+    const { wrapper, router } = await mountScreenAt()
 
     await wrapper.get('[data-testid="plugin-details-uninstall"]').trigger('click')
     await flushPromises()
     expect(callsWith(mock, 'DELETE')).toHaveLength(0)
-    expect(wrapper.get('[data-testid="plugin-details-uninstall-dialog"]').text()).toContain('server restart')
+    expect(wrapper.get('[data-testid="plugin-remove-dialog"]').text()).toContain('stored data are kept')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
     expect(callsWith(mock, 'DELETE')).toHaveLength(1)
-    expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('uninstalled')
+    expect(router.currentRoute.value.path).toBe('/plugins')
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
+  })
+
+  it('does not remove anything when the removal confirmation is dismissed', async () => {
+    const mock = stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
+    const wrapper = await mountPage()
+
+    await wrapper.get('[data-testid="plugin-details-uninstall"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
+    await flushPromises()
+
+    expect(callsWith(mock, 'DELETE')).toHaveLength(0)
+    expect(wrapper.find('[data-testid="plugin-remove-dialog"]').exists()).toBe(false)
   })
 
   it('shows the API sentence when the uninstall is refused', async () => {
@@ -340,7 +480,7 @@ describe('PluginDetailsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('Plugin is in use.')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Plugin is in use.')
   })
 
   it('shows a yanked version with its reason and replacement', async () => {

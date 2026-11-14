@@ -7,7 +7,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListRegistryPlug
 
 /// <summary>
 ///     Validates <see cref="ListRegistryPluginsQuery"/>. The search text is forwarded to the registry, so its length
-///     is bounded here and the category must be a defined one; <c>Page</c> and <c>PageSize</c> are clamped by the handler.
+///     is bounded here and the category must be a defined one; <c>Page</c> and <c>PageSize</c> are refused when out of range by
+///     <see cref="ListQueryValidator{T}"/>.
 /// </summary>
 public sealed class ListRegistryPluginsValidator : ListQueryValidator<ListRegistryPluginsQuery>
 {

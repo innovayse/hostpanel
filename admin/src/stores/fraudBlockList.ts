@@ -9,8 +9,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useFraudApi } from '@/composables/apis/useFraudApi'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
-import type { AddBlockListEntryPayload, BlockListEntry, BlockListType } from '@/types/fraud'
+import type { AddBlockListEntryPayload, BlockListEntry, BlockListFilters } from '@/types/fraud'
 
 /** Lists one block list a page at a time and adds and removes its entries. */
 export const useFraudBlockListStore = defineStore('fraud-block-list', () => {
@@ -18,6 +19,9 @@ export const useFraudBlockListStore = defineStore('fraud-block-list', () => {
 
   /** Entries of the current page. */
   const entries = ref<BlockListEntry[]>([])
+
+  /** Entries per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /** Total number of entries in the list, across all pages. */
   const totalCount = ref(0)
@@ -37,20 +41,19 @@ export const useFraudBlockListStore = defineStore('fraud-block-list', () => {
   /**
    * Reads one page of a block list.
    *
-   * @param type - Which block list to read.
    * @param page - Page number (1-based).
-   * @param pageSize - Entries per page.
-   * @param search - Text the value or the note must contain; empty or missing for none.
-   * @returns Promise that resolves when the page is read; a refusal is left in `error`.
+   * @param filters - Which block list to read and the text its value or note must contain; no text for none.
+   * @returns True when read; false when refused (see `error`).
    */
-  const fetchPage = async (type: BlockListType, page: number, pageSize: number, search?: string): Promise<void> => {
+  const fetchPage = async (page: number, filters: BlockListFilters): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.listBlockList(type, page, pageSize, search))
+    const result = await runAction(error, () => api.listBlockList(filters.type, page, pageSize.value, filters.search))
     loading.value = false
     if (result.ok) {
       entries.value = result.value.items
       totalCount.value = result.value.totalCount
     }
+    return result.ok
   }
 
   /**
@@ -81,5 +84,5 @@ export const useFraudBlockListStore = defineStore('fraud-block-list', () => {
     fieldErrors.value = {}
   }
 
-  return { entries, totalCount, loading, error, actionError, fieldErrors, fetchPage, add, remove, clearAction }
+  return { entries, pageSize, totalCount, loading, error, actionError, fieldErrors, fetchPage, add, remove, clearAction }
 })

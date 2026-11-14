@@ -36,7 +36,8 @@ public sealed class ListTldConfigsHandler
     /// </returns>
     public async Task<Result<PaginatedList<TldConfigListItemDto>>> HandleAsync(ListTldConfigsQuery query, CancellationToken ct)
     {
-        var filtered = _context.TldConfigs.AsNoTracking().Search(query.Search, x => x.Tld);
+        // A TLD is stored without its dot, so ".com" typed into the search must find "com".
+        var filtered = _context.TldConfigs.AsNoTracking().Search(query.Search?.Trim().TrimStart('.'), x => x.Tld);
 
         if (query.RegistrarModule is { } registrarModule)
         {

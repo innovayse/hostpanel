@@ -48,7 +48,7 @@ const router = useRouter()
 const store = useUsersStore()
 
 /** The search text and the page of the list, kept in the address; the list has no filter fields. */
-const { search, appliedSearch, page, setPage, narrowed, loadOnChange } = useListQuery([])
+const { search, appliedSearch, page, setPage, narrowed, loadOnChange, stepBackWhenEmpty } = useListQuery([])
 
 /** User being edited in the modal. */
 const editingUser = ref<UserDetail | null>(null)
@@ -98,9 +98,9 @@ const showSuccess = (message: string): void => {
 /**
  * Loads the page the address names with the search it holds.
  *
- * @returns Resolves when the list has settled.
+ * @returns True when loaded; false when refused (see `store.error`).
  */
-const reload = (): Promise<void> => store.fetchAll(page.value, appliedSearch.value || undefined)
+const reload = (): Promise<boolean> => store.fetchAll(page.value, { search: appliedSearch.value })
 
 // Every change of the search or the page loads the list the address names.
 loadOnChange(reload)
@@ -146,7 +146,7 @@ const handleSaveUser = async (
   }
 }
 
-/** Deletes the user being edited. */
+/** Deletes the user being edited, then reads the list again; when that emptied the last page, steps back one page. */
 const handleDeleteUser = async (): Promise<void> => {
   if (!editingUser.value) {
     return
@@ -156,6 +156,7 @@ const handleDeleteUser = async (): Promise<void> => {
     editingUser.value = null
     showSuccess(t('clients.manageUsers.userDeleted'))
     await reload()
+    await stepBackWhenEmpty(store.users.length === 0)
   }
 }
 

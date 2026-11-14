@@ -38,7 +38,7 @@
     "noReasons": "None",
     "order": "Order",
     "searchPlaceholder": "Search by email or IP address",
-    "noMatches": "No log entries match your search or filters"
+    "noMatches": "No log entries match your search or filters."
   },
   "settings": {
     "title": "Fraud settings",

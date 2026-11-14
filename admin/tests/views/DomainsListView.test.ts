@@ -6,12 +6,11 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import type { VueWrapper } from '@vue/test-utils'
-import UiSelect from '@/components/ui/UiSelect.vue'
 import DomainsListView from '@/views/DomainsListView.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
+import { applyListFilter } from '../helpers/listFilter'
 import { DomainStatus } from '@/types/domain'
 import { RegistrarModule } from '@/types/registrarmodule'
 
@@ -58,25 +57,6 @@ const mountList = async () => (await mountListAt('/domains')).wrapper
  */
 const listUrls = (mock: ReturnType<typeof vi.fn>): string[] =>
   mock.mock.calls.map(([url]) => url as string).filter((url) => url.startsWith('/api/domains?'))
-
-/**
- * Opens the filter dialog, chooses a value in one of its selects and applies it.
- *
- * @param wrapper - The mounted list.
- * @param testid - The `data-testid` of the select to use.
- * @param value - The option value to choose.
- */
-const applyFilter = async (wrapper: VueWrapper, testid: string, value: string) => {
-  await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
-  await flushPromises()
-  wrapper
-    .findAllComponents(UiSelect)
-    .find((select) => select.attributes('data-testid') === testid)
-    ?.vm.$emit('update:modelValue', value)
-  await flushPromises()
-  await wrapper.get('[data-testid="filter-apply"]').trigger('click')
-  await flushPromises()
-}
 
 describe('DomainsListView', () => {
   afterEach(() => {
@@ -134,7 +114,7 @@ describe('DomainsListView', () => {
     const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const { wrapper, router } = await mountListAt('/domains')
 
-    await applyFilter(wrapper, 'domains-filter-status', DomainStatus.Expired)
+    await applyListFilter(wrapper, { 'domains-filter-status': DomainStatus.Expired })
 
     expect(router.currentRoute.value.query).toEqual({ status: 'Expired' })
     expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&status=Expired')
@@ -146,7 +126,7 @@ describe('DomainsListView', () => {
     const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const { wrapper, router } = await mountListAt('/domains')
 
-    await applyFilter(wrapper, 'domains-filter-registrar', RegistrarModule.Namecheap)
+    await applyListFilter(wrapper, { 'domains-filter-registrar': RegistrarModule.Namecheap })
 
     expect(router.currentRoute.value.query).toEqual({ registrarModule: 'Namecheap' })
     expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&registrarModule=Namecheap')

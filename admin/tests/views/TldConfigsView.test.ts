@@ -145,7 +145,7 @@ describe('TldConfigsView', () => {
     const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
     const { wrapper, router } = await mountListAt()
 
-    await applyListFilter(wrapper, 'tld-configs-filter-registrar', RegistrarModule.Namecheap)
+    await applyListFilter(wrapper, { 'tld-configs-filter-registrar': RegistrarModule.Namecheap })
 
     expect(router.currentRoute.value.query).toEqual({ registrarModule: 'Namecheap' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/tld-configs?page=1&pageSize=20&registrarModule=Namecheap')
@@ -156,7 +156,7 @@ describe('TldConfigsView', () => {
     const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
     const { wrapper, router } = await mountListAt()
 
-    await applyListFilter(wrapper, 'tld-configs-filter-enabled', EnabledFilter.Enabled)
+    await applyListFilter(wrapper, { 'tld-configs-filter-enabled': EnabledFilter.Enabled })
 
     expect(router.currentRoute.value.query).toEqual({ enabled: 'enabled' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/tld-configs?page=1&pageSize=20&enabled=true')

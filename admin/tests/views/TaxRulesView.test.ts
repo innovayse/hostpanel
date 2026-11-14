@@ -127,7 +127,7 @@ describe('TaxRulesView', () => {
     const mock = stubRoutes({ 'GET /api/admin/tax-rules?': () => json(page([germany])) })
     const { wrapper, router } = await mountListAt()
 
-    await applyListFilter(wrapper, 'tax-rules-filter-enabled', EnabledFilter.Enabled)
+    await applyListFilter(wrapper, { 'tax-rules-filter-enabled': EnabledFilter.Enabled })
 
     expect(router.currentRoute.value.query).toEqual({ enabled: 'enabled' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/tax-rules?page=1&pageSize=20&enabled=true')

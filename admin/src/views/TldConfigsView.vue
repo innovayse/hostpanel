@@ -75,7 +75,7 @@ const banner = useResultBanner()
 const { guideUrl } = useDocsGuide()
 
 /** The filters, the search text and the page of the list, kept in the address. */
-const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
 
 /** Tone of the result banner: danger for a refusal, success otherwise. */
@@ -176,9 +176,7 @@ const confirmDelete = async (): Promise<void> => {
   if (removed) {
     banner.show(t('shared.recordDeleted'), false)
     await load()
-    if (!hasRows.value && page.value > 1) {
-      setPage(page.value - 1)
-    }
+    await stepBackWhenEmpty(!hasRows.value)
   } else {
     banner.show(store.actionError ?? t('errors.noAnswer'), true)
   }

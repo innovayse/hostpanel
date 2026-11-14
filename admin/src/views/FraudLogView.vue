@@ -30,7 +30,6 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { FRAUD_CHECK_KIND_OPTIONS, FRAUD_DECISION_OPTIONS, FRAUD_REASON_OPTIONS } from '@/lib/constants'
 import { formatDateTime } from '@/lib/format'
-import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { clientPath, orderPath } from '@/lib/routes'
 import { fraudDecisionTone, statusLabel } from '@/lib/tones'
 import { useListQuery } from '@/composables/useListQuery'
@@ -103,9 +102,9 @@ const chips = chipsOf(() => [
 /**
  * Reads the page the address names with the search and filters it holds.
  *
- * @returns Promise that resolves when the page is read.
+ * @returns True when read; false when refused (see `store.error`).
  */
-const load = (): Promise<void> => store.fetchPage(filters.value, page.value, DEFAULT_PAGE_SIZE)
+const load = (): Promise<boolean> => store.fetchPage(page.value, filters.value)
 
 // Every change of a filter, the search or the page loads the log the address names.
 loadOnChange(load)
@@ -236,7 +235,7 @@ const initialLoading = computed<boolean>(() => store.loading && store.entries.le
     <UiPagination
       :page="page"
       :total="store.totalCount"
-      :page-size="DEFAULT_PAGE_SIZE"
+      :page-size="store.pageSize"
       testid="fraud-log-pagination"
       @update:page="setPage"
     />

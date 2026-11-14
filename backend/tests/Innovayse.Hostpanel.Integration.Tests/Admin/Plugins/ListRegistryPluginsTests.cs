@@ -101,13 +101,15 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>
-    /// A page below 1, a page size outside 1 to 100 and a category that is not a member are refused before the registry is
+    /// A missing page or page size, a page below 1, a page size outside 1 to 100 and a category that is not a member are refused before the registry is
     /// asked; an unknown category name or number is refused by the model binder, so the field is named in the answer.
     /// </summary>
     /// <param name="query">The query string that must be refused.</param>
     /// <param name="field">The field the 400 names.</param>
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
+    [InlineData("pageSize=20", "page")]
+    [InlineData("page=1", "pageSize")]
     [InlineData("page=0&pageSize=20", "page")]
     [InlineData("page=1&pageSize=0", "pageSize")]
     [InlineData("page=1&pageSize=101", "pageSize")]

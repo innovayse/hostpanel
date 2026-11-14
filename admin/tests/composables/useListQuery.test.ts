@@ -90,6 +90,22 @@ describe('useListQuery', () => {
     expect((await setup('/list?search=acme')).list().narrowed.value).toBe(true)
   })
 
+  it('steps back one page when a delete left the page empty, and only then', async () => {
+    const { router, list } = await setup('/list?page=3')
+
+    await list().stepBackWhenEmpty(false)
+    expect(router.currentRoute.value.query.page).toBe('3')
+
+    await list().stepBackWhenEmpty(true)
+    expect(router.currentRoute.value.query.page).toBe('2')
+
+    await list().stepBackWhenEmpty(true)
+    expect(router.currentRoute.value.query.page).toBeUndefined()
+
+    await list().stepBackWhenEmpty(true)
+    expect(router.currentRoute.value.query.page).toBeUndefined()
+  })
+
   it('reads a filter as a member of a closed set and ignores a value that is not one', async () => {
     const known = (await setup('/list?status=Closed')).list().enumOf('status', Status)
     const unknown = (await setup('/list?status=Nonsense')).list().enumOf('status', Status)

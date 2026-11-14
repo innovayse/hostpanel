@@ -5,14 +5,14 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import type { VueWrapper } from '@vue/test-utils'
-import UiSelect from '@/components/ui/UiSelect.vue'
 import FraudLogView from '@/views/FraudLogView.vue'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import type { FraudLogEntry } from '@/types/fraud'
 import { json, problem } from '../helpers/fetch'
+import { applyListFilter } from '../helpers/listFilter'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { optionValues } from '../helpers/select'
 
 /** Request line of the unfiltered first page. */
 const FIRST_PAGE = 'GET /admin/fraud/log?page=1&pageSize=20'
@@ -59,48 +59,6 @@ const pageOf = (items: FraudLogEntry[], totalCount = items.length): unknown => (
   totalCount,
   totalPages: Math.max(1, Math.ceil(totalCount / 20)),
 })
-
-/**
- * Finds one of the filter selects of the dialog.
- *
- * @param wrapper - The mounted log.
- * @param testId - The test id of the select.
- * @returns The select.
- */
-const selectOf = (wrapper: VueWrapper, testId: string) => {
-  const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === testId)
-  if (select === undefined) {
-    throw new Error(`The select ${testId} is not mounted.`)
-  }
-  return select
-}
-
-/**
- * Chooses values in the filter dialog and applies them.
- *
- * @param wrapper - The mounted log.
- * @param chosen - The value to pick per filter, by the test id of its select.
- */
-const applyFilters = async (wrapper: VueWrapper, chosen: Record<string, string>) => {
-  await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
-  await flushPromises()
-  for (const [testId, value] of Object.entries(chosen)) {
-    selectOf(wrapper, testId).vm.$emit('update:modelValue', value)
-  }
-  await flushPromises()
-  await wrapper.get('[data-testid="filter-apply"]').trigger('click')
-  await flushPromises()
-}
-
-/**
- * Reads the option values a mounted filter select offers, through its typed props because the select is generic.
- *
- * @param wrapper - The mounted log.
- * @param testId - The test id of the select.
- * @returns The option values, in order.
- */
-const optionValues = (wrapper: VueWrapper, testId: string): string[] =>
-  (selectOf(wrapper, testId).props() as unknown as { options: { value: string }[] }).options.map((option) => option.value)
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -155,7 +113,7 @@ describe('FraudLogView', () => {
     const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
     const { wrapper, router } = await mountScreen(FraudLogView)
 
-    await applyFilters(wrapper, { 'fraud-log-decision': FraudDecision.Rejected })
+    await applyListFilter(wrapper, { 'fraud-log-decision': FraudDecision.Rejected })
 
     expect(router.currentRoute.value.query).toEqual({ decision: 'Rejected' })
     expect(wrapper.get('[data-testid="filter-chip-decision"]').text()).toContain('Rejected')
@@ -167,7 +125,7 @@ describe('FraudLogView', () => {
     const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
     const { wrapper } = await mountScreen(FraudLogView)
 
-    await applyFilters(wrapper, {
+    await applyListFilter(wrapper, {
       'fraud-log-kind': FraudCheckKind.Registration,
       'fraud-log-decision': FraudDecision.Review,
       'fraud-log-reason': FraudReasonCode.AnonymousIp,
@@ -250,7 +208,7 @@ describe('FraudLogView', () => {
     const { wrapper, router } = await mountScreen(FraudLogView, {}, '/?page=2')
     expect(requestsOf(mock)[0]).toBe('GET /admin/fraud/log?page=2&pageSize=20')
 
-    await applyFilters(wrapper, { 'fraud-log-kind': FraudCheckKind.Order })
+    await applyListFilter(wrapper, { 'fraud-log-kind': FraudCheckKind.Order })
 
     expect(router.currentRoute.value.query).toEqual({ kind: 'Order' })
     expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=1&pageSize=20&kind=Order'])

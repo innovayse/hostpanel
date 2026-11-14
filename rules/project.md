@@ -1798,7 +1798,7 @@ feature does not exist is not kept. The decisions:
   counters are read in one grouped query for the ids of the page only. The tax rule list (`ListTaxRulesQuery`) searches the name, country and region and takes an `Enabled` switch,
   with the country-wide rule before the regions of its country. A bool filter is a plain `bool?`: an unparsable value is refused by the model binder with the field named. On the
   frontend the three screens read their filters through `useListQuery`; the enabled switch is the shared `EnabledFilter` (`types/enabledfilter.ts`, `ENABLED_FILTER_OPTIONS`,
-  `enabledOfFilter`), and a store's write no longer re-reads the list itself: the screen reloads the page the address names, and steps back one page when a delete emptied the last.
+  `enabledOfFilter`), and a store's write no longer re-reads the list itself: the screen reloads the page the address names, and steps back one page when a delete emptied the last (`useListQuery`'s `stepBackWhenEmpty`, used by every list screen with a delete). A list store loads with `fetchAll(page, filters)` (`fetchPage` on the fraud stores) and answers true or false, and the store owns the page size, so a screen never names it. The TLD search ignores a leading dot, because a TLD is stored without it.
 - **Lists that are deliberately not paged.** A list is paged, searched and filtered on the server unless it is one of these, each with its reason; a new one is added here, with its
   reason, or it is paged. The storefront content lists (slides, testimonials, FAQs, locations, partners and projects) are curated sets of a few rows that staff reorder by dragging, and a
   reorder writes the order of the whole set, so a page of it could not be reordered. Server groups, product groups and client groups are a handful of rows that other forms
@@ -1806,6 +1806,14 @@ feature does not exist is not kept. The decisions:
   are the few currencies the panel prices in; every price form, picker and `ListCurrenciesQuery` caller needs the whole set. Email templates are a fixed catalogue with one
   template per kind of mail, edited in place. Integrations are the catalogue of providers the panel ships or has installed, grouped by category and bounded by that catalogue.
   The Installed plugins tab is the one documented above.
+  The server list (`ListServers`, the admin Servers screen) and the knowledge base article list (`ListKbArticles`, the admin Knowledge Base screen) are not paged yet
+  and are paged in a later PR. The server list is also read whole by the screens that choose a server (the product form, the add existing service dialog, the service
+  detail and the CWP 7 integration), which the paging change has to keep serving. Knowledge base categories (`ListKbCategories`) are a short
+  curated tree that the article screen turns into tabs and the article and predefined reply forms use as a picker, so every caller needs the whole set. Downloads
+  (`ListDownloads`) are read one category folder at a time by the admin Downloads screen, and the folder is the bound: a folder holds a handful of files and the screen has no page controls.
+  Status incidents (`ListStatusIncidents`, the public status page) are bounded by their time window (`Days`, 1 to 365, 90 by default) and are the same for every visitor, so the answer is
+  cached whole. The SSH keys of a service (`ListMySshKeys`) are the few keys of one of the caller's own services, shown whole on that service. The credit notes of a client
+  (`ListMyCreditNotes`) are the caller's own account's only, a short list the portal's credit notes page shows whole; the list is scoped by the credential and not by a client id, so no screen can ask for more than its own.
 
 ### Email campaigns
 

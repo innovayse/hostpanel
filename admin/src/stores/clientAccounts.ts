@@ -11,7 +11,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useUsersApi } from '@/composables/apis/useUsersApi'
 import { runAction } from '@/lib/runAction'
-import type { UpdateUserPayload, UserDetail, UserListItem } from '@/types/useraccount'
+import type { UpdateUserPayload, UserDetail, UserListFilters, UserListItem } from '@/types/useraccount'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
 /** Lists, opens and changes Identity users. */
@@ -47,17 +47,18 @@ export const useUsersStore = defineStore('clientAccounts', () => {
    * keeps no copy of them.
    *
    * @param page - Page to load, 1-based.
-   * @param search - Optional search text; empty or missing for every user.
-   * @returns Promise that resolves when data is loaded.
+   * @param filters - The search text; empty for every user.
+   * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (page: number, search?: string): Promise<void> => {
+  const fetchAll = async (page: number, filters: UserListFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.list(page, pageSize.value, search))
+    const result = await runAction(error, () => api.list(page, pageSize.value, filters.search))
     loading.value = false
     if (result.ok) {
       users.value = result.value.items
       totalCount.value = result.value.totalCount
     }
+    return result.ok
   }
 
   /**

@@ -32,9 +32,7 @@ import UiTabs from '@/components/ui/UiTabs.vue'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { BLOCK_LIST_TYPE_OPTIONS } from '@/lib/constants'
-import { enumValueOf } from '@/lib/enumValue'
 import { formatDateTime } from '@/lib/format'
-import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { useFraudBlockListStore } from '@/stores/fraudBlockList'
 import { BlockListType } from '@/types/fraud'
 import type { BlockListEntry } from '@/types/fraud'
@@ -55,7 +53,7 @@ const FilterKey = {
 } as const
 
 /** The tab, the search text and the page of the list, kept in the address. */
-const { draft, search, appliedSearch, page, apply, setPage, loadOnChange, enumOf } = useListQuery(Object.values(FilterKey))
+const { draft, search, appliedSearch, page, apply, setPage, loadOnChange, stepBackWhenEmpty, enumOf } = useListQuery(Object.values(FilterKey))
 
 /** The type in the address as a block list type, undefined when none is set or the value is not one. */
 const typeOfAddress = enumOf(FilterKey.Type, BlockListType)
@@ -89,9 +87,9 @@ const tabs = computed<UiTabItem[]>(() =>
 /**
  * Reads the page of the list the address names, with the search it holds.
  *
- * @returns Promise that resolves when the page is read.
+ * @returns True when read; false when refused (see `store.error`).
  */
-const load = (): Promise<void> => store.fetchPage(type.value, page.value, DEFAULT_PAGE_SIZE, appliedSearch.value || undefined)
+const load = (): Promise<boolean> => store.fetchPage(page.value, { type: type.value, search: appliedSearch.value })
 
 // Every change of the tab, the search or the page loads the list the address names.
 loadOnChange(load)
@@ -120,9 +118,7 @@ const showFirstPage = async (): Promise<void> => {
  */
 const reload = async (): Promise<void> => {
   await load()
-  if (store.entries.length === 0 && page.value > 1) {
-    await setPage(page.value - 1)
-  }
+  await stepBackWhenEmpty(store.entries.length === 0)
 }
 
 /**
@@ -132,8 +128,9 @@ const reload = async (): Promise<void> => {
  * @returns Promise that resolves when the address names the new list.
  */
 const selectType = async (next: string): Promise<void> => {
-  const chosen = enumValueOf(BlockListType, next)
-  if (chosen === null) {
+  // The tab values come from this very list, so finding the one that was chosen also gives the typed member.
+  const chosen = BLOCK_LIST_TYPE_OPTIONS.find((option) => option.value === next)?.value
+  if (chosen === undefined) {
     return
   }
   value.value = ''
@@ -284,7 +281,7 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
     <UiPagination
       :page="page"
       :total="store.totalCount"
-      :page-size="DEFAULT_PAGE_SIZE"
+      :page-size="store.pageSize"
       testid="fraud-block-list-pagination"
       @update:page="setPage"
     />

@@ -75,6 +75,19 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
         totalCount.Should().Be(1);
     }
 
+    /// <summary>A leading dot typed in the search is ignored, because a TLD is stored without its dot.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task List_SearchIgnoresALeadingDotAsync()
+    {
+        var mix = await SeedMixAsync();
+
+        var (ids, totalCount) = await ListAsync($"page=1&pageSize=100&search=.{mix.Token}a");
+
+        ids.Should().Equal(mix.First);
+        totalCount.Should().Be(1);
+    }
+
     /// <summary>A <c>%</c> or <c>_</c> typed in the search matches itself, not any text or any single character.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

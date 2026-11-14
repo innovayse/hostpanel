@@ -173,7 +173,7 @@ describe('ManageUsersView', () => {
    * @param wrapper - The mounted screen.
    * @returns Resolves when the confirmation prompt is open.
    */
-  const askDelete = async (wrapper: Awaited<ReturnType<typeof mountUsers>>): Promise<void> => {
+  const askDelete = async (wrapper: Awaited<ReturnType<typeof mountUsersAt>>['wrapper']): Promise<void> => {
     await wrapper.get('[data-testid="users-actions-u1"]').trigger('click')
     await wrapper.get('[data-testid="users-manage-u1"]').trigger('click')
     await flushPromises()
@@ -195,6 +195,27 @@ describe('ManageUsersView', () => {
 
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(true)
     expect(wrapper.get('[data-testid="users-action-success"]').text()).toContain('User deleted.')
+  })
+
+  it('steps back a page when deleting the user empties the last one', async () => {
+    let deleted = false
+    const mock = stubRoutes({
+      'GET /api/admin/users/u1': () => json({ ...user, accounts: [] }),
+      'DELETE /api/admin/users/u1': () => {
+        deleted = true
+        return new Response(null, { status: 204 })
+      },
+      'GET /api/admin/users?': () => json({ items: deleted ? [] : [user], totalCount: deleted ? 20 : 21 }),
+    })
+    const { wrapper, router } = await mountUsersAt('/clients/users?page=2')
+    await askDelete(wrapper)
+
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.query.page).toBeUndefined()
+    })
+    expect(urlsOf(mock).at(-1)).toBe('/api/admin/users?page=1&pageSize=20')
   })
 
   it('keeps the user when the confirmation is cancelled', async () => {

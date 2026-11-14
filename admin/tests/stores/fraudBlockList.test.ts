@@ -36,7 +36,7 @@ describe('fraudBlockListStore', () => {
     const mock = stubFetch(json({ items: [entry], pageNumber: 1, pageSize: 20, totalCount: 5, totalPages: 1 }))
     const store = useFraudBlockListStore()
 
-    await store.fetchPage(BlockListType.Ip, 1, 20)
+    expect(await store.fetchPage(1, { type: BlockListType.Ip })).toBe(true)
 
     expect(store.entries).toEqual([entry])
     expect(store.totalCount).toBe(5)
@@ -49,8 +49,8 @@ describe('fraudBlockListStore', () => {
     const mock = stubFetch(json({ items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }))
     const store = useFraudBlockListStore()
 
-    await store.fetchPage(BlockListType.EmailDomain, 2, 20, 'spam')
-    await store.fetchPage(BlockListType.EmailDomain, 1, 20, '')
+    await store.fetchPage(2, { type: BlockListType.EmailDomain, search: 'spam' })
+    await store.fetchPage(1, { type: BlockListType.EmailDomain, search: '' })
 
     expect(callOf(mock, 0).url).toBe('/api/admin/fraud/blocklist?page=2&pageSize=20&type=EmailDomain&search=spam')
     expect(callOf(mock, 1).url).toBe('/api/admin/fraud/blocklist?page=1&pageSize=20&type=EmailDomain')
@@ -59,10 +59,10 @@ describe('fraudBlockListStore', () => {
   it('fetchPage shows the API sentence on refusal and keeps the earlier page', async () => {
     const store = useFraudBlockListStore()
     stubFetch(json({ items: [entry], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 }))
-    await store.fetchPage(BlockListType.Ip, 1, 20)
+    await store.fetchPage(1, { type: BlockListType.Ip })
 
     stubFetch(problem('Not allowed.', 403))
-    await store.fetchPage(BlockListType.Ip, 1, 20)
+    expect(await store.fetchPage(1, { type: BlockListType.Ip })).toBe(false)
 
     expect(store.error).toBe('Not allowed.')
     expect(store.entries).toEqual([entry])
@@ -73,7 +73,7 @@ describe('fraudBlockListStore', () => {
     stubOffline()
     const store = useFraudBlockListStore()
 
-    await store.fetchPage(BlockListType.Ip, 1, 20)
+    await store.fetchPage(1, { type: BlockListType.Ip })
 
     expect(store.error).toBe(NO_ANSWER)
   })

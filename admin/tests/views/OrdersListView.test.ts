@@ -5,12 +5,12 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import type { VueWrapper } from '@vue/test-utils'
-import UiSelect from '@/components/ui/UiSelect.vue'
 import OrdersListView from '@/views/OrdersListView.vue'
 import { OrderStatus } from '@/types/order'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { applyListFilter } from '../helpers/listFilter'
+import { optionValues } from '../helpers/select'
 import { json, problem } from '../helpers/fetch'
 
 /** One pending order as the list endpoint returns it. */
@@ -53,38 +53,6 @@ const mountListAt = async (url: string) => {
  * @returns The wrapper.
  */
 const mountList = async () => (await mountListAt('/orders')).wrapper
-
-/**
- * Chooses a status in the filter dialog and applies it.
- *
- * @param wrapper - The mounted list.
- * @param status - The status to choose.
- */
-const applyStatus = async (wrapper: VueWrapper, status: OrderStatus) => {
-  await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
-  await flushPromises()
-  wrapper
-    .findAllComponents(UiSelect)
-    .find((select) => select.attributes('data-testid') === 'orders-filter-status')
-    ?.vm.$emit('update:modelValue', status)
-  await flushPromises()
-  await wrapper.get('[data-testid="filter-apply"]').trigger('click')
-  await flushPromises()
-}
-
-/**
- * Reads the options a mounted status select offers, through its typed props because the select is generic.
- *
- * @param wrapper - The mounted list.
- * @returns The option values of the status select, in order.
- */
-const statusOptionValues = (wrapper: VueWrapper): string[] => {
-  const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === 'orders-filter-status')
-  if (select === undefined) {
-    throw new Error('The status select is not mounted.')
-  }
-  return (select.props() as unknown as { options: { value: string }[] }).options.map((option) => option.value)
-}
 
 describe('OrdersListView', () => {
   afterEach(() => {
@@ -241,7 +209,7 @@ describe('OrdersListView', () => {
     const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
     const { wrapper, router } = await mountListAt('/orders')
 
-    await applyStatus(wrapper, OrderStatus.Fraud)
+    await applyListFilter(wrapper, { 'orders-filter-status': OrderStatus.Fraud })
 
     expect(router.currentRoute.value.query).toEqual({ status: OrderStatus.Fraud })
     expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Fraud')
@@ -280,7 +248,7 @@ describe('OrdersListView', () => {
     await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
     await flushPromises()
 
-    expect(statusOptionValues(wrapper)).toEqual(['', ...Object.values(OrderStatus)])
+    expect(optionValues(wrapper, 'orders-filter-status')).toEqual(['', ...Object.values(OrderStatus)])
   })
 
   it('clears the status from the address and reloads when its chip is removed', async () => {
@@ -300,7 +268,7 @@ describe('OrdersListView', () => {
     const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
     const wrapper = await mountList()
 
-    await applyStatus(wrapper, OrderStatus.Incomplete)
+    await applyListFilter(wrapper, { 'orders-filter-status': OrderStatus.Incomplete })
 
     const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=Incomplete')

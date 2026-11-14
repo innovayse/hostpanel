@@ -8,6 +8,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useFraudApi } from '@/composables/apis/useFraudApi'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
 import type { FraudLogEntry, FraudLogFilters } from '@/types/fraud'
 
@@ -17,6 +18,9 @@ export const useFraudLogStore = defineStore('fraud-log', () => {
 
   /** Entries of the current page. */
   const entries = ref<FraudLogEntry[]>([])
+
+  /** Entries per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /** Total number of entries matching the filters, across all pages. */
   const totalCount = ref(0)
@@ -30,20 +34,20 @@ export const useFraudLogStore = defineStore('fraud-log', () => {
   /**
    * Reads one filtered page of the log.
    *
-   * @param filters - Search text, kind, decision and reason; a member left out means no narrowing.
    * @param page - Page number (1-based).
-   * @param pageSize - Entries per page.
-   * @returns Promise that resolves when the page is read; a refusal is left in `error`.
+   * @param filters - Search text, kind, decision and reason; a member left out means no narrowing.
+   * @returns True when read; false when refused (see `error`).
    */
-  const fetchPage = async (filters: FraudLogFilters, page: number, pageSize: number): Promise<void> => {
+  const fetchPage = async (page: number, filters: FraudLogFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.listLog(filters, page, pageSize))
+    const result = await runAction(error, () => api.listLog(filters, page, pageSize.value))
     loading.value = false
     if (result.ok) {
       entries.value = result.value.items
       totalCount.value = result.value.totalCount
     }
+    return result.ok
   }
 
-  return { entries, totalCount, loading, error, fetchPage }
+  return { entries, pageSize, totalCount, loading, error, fetchPage }
 })

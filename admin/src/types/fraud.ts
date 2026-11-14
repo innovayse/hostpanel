@@ -61,6 +61,14 @@ export enum FraudReasonCode {
   AnonymousIp = 'AnonymousIp',
 }
 
+/** What a block list read asks for: the list and the text its entries must contain. */
+export interface BlockListFilters {
+  /** Which block list to read. */
+  type: BlockListType
+  /** Text the value or the note must contain; empty or missing for none. */
+  search?: string
+}
+
 /** One entry of a block list. */
 export interface BlockListEntry {
   /** Entry id. */

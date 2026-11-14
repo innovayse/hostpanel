@@ -60,7 +60,7 @@ const FilterKey = {
 const store = useTaxRulesStore()
 
 /** The enabled filter, the search text and the page of the list, kept in the address. */
-const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
 
 /** Enabled-state filter options; the empty value means any. */
@@ -79,7 +79,7 @@ const filters = computed<TaxRuleListFilters>(() => ({
 const chips = chipsOf(() => [
   {
     key: FilterKey.Enabled,
-    label: t('taxRules.table.enabled'),
+    label: t('shared.status'),
     value: enabledOfAddress.value === undefined ? undefined : statusLabel(ENABLED_FILTER_OPTIONS, enabledOfAddress.value),
   },
 ])
@@ -168,9 +168,7 @@ const confirmDelete = async (): Promise<void> => {
   if (removed) {
     banner.show(t('taxRules.toasts.deleted'), false)
     await load()
-    if (!hasRows.value && page.value > 1) {
-      setPage(page.value - 1)
-    }
+    await stepBackWhenEmpty(!hasRows.value)
   } else if (store.actionError) {
     banner.show(store.actionError, true)
   }
@@ -252,7 +250,7 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
       @clear="clearAll"
     >
       <UiStack>
-        <UiField :label="t('taxRules.table.enabled')">
+        <UiField :label="t('shared.status')">
           <template #default="{ id }">
             <UiSelect
               :id="id"

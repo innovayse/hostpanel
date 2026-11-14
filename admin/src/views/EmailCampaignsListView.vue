@@ -61,7 +61,7 @@ const FilterKey = {
 const store = useEmailCampaignsStore()
 
 /** The status filter, the search text and the page of the list, kept in the address. */
-const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
 
 /** Status filter options; the empty value means any. */
@@ -138,9 +138,7 @@ const handleDelete = async (): Promise<void> => {
   if (removed) {
     feedback.show(t('emailCampaigns.list.deleted'), false)
     await load()
-    if (!hasRows.value && page.value > 1) {
-      setPage(page.value - 1)
-    }
+    await stepBackWhenEmpty(!hasRows.value)
   } else {
     feedback.show(store.error ?? t('errors.noAnswer'), true)
   }

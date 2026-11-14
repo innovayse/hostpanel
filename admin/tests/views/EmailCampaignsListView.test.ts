@@ -132,7 +132,7 @@ describe('EmailCampaignsListView', () => {
     const mock = stubRoutes({ 'GET /api/admin/email-campaigns?': () => json(page([sent])) })
     const { wrapper, router } = await mountListAt()
 
-    await applyListFilter(wrapper, 'email-campaigns-filter-status', CampaignStatus.Sent)
+    await applyListFilter(wrapper, { 'email-campaigns-filter-status': CampaignStatus.Sent })
 
     expect(router.currentRoute.value.query).toEqual({ status: 'Sent' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/email-campaigns?page=1&pageSize=20&status=Sent')

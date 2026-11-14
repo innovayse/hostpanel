@@ -1,7 +1,10 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
+using Innovayse.Hostpanel.Application.Provisioning.Common.Enums;
+using Innovayse.Hostpanel.Application.Services.Commands.RemoveTerminatedAccountJail;
 using Innovayse.Hostpanel.Domain.Provisioning.Events;
 using Microsoft.EntityFrameworkCore;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Provisioning.Events;
 
@@ -17,11 +20,16 @@ public sealed class ServiceTerminatedHandler
     /// <summary>Sends the operation to the panel the account lives on and logs a failure.</summary>
     private readonly IHostedAccountOperations _hostedAccounts;
 
+    /// <summary>Queues the removal of the deleted account's SSH jail.</summary>
+    private readonly IMessageBus _bus;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="hostedAccounts">Sends the operation to the panel the account lives on and logs a failure.</param>
-    public ServiceTerminatedHandler(IHostpanelDbContext context, IHostedAccountOperations hostedAccounts)
+    /// <param name="bus">Queues the removal of the deleted account's SSH jail.</param>
+    public ServiceTerminatedHandler(IHostpanelDbContext context, IHostedAccountOperations hostedAccounts, IMessageBus bus)
     {
+        _bus = bus;
         _context = context;
         _hostedAccounts = hostedAccounts;
     }
@@ -42,7 +50,12 @@ public sealed class ServiceTerminatedHandler
 
         // The outcome is not acted on: the platform's record already changed, and a failure has
         // been logged by the operation for whoever has to bring the panel back in step.
-        await _hostedAccounts.TerminateAsync(
+        var outcome = await _hostedAccounts.TerminateAsync(
             new HostedAccountTermination(HostedAccountTarget.Of(service), evt.Reason), ct);
+        if (outcome is HostedAccountOutcome.Updated)
+        {
+            // The panel deleted the account: its SSH jail on the server (kept for re-enrolment) can go too.
+            await _bus.PublishAsync(new RemoveTerminatedAccountJailCommand(service.Id));
+        }
     }
 }

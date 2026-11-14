@@ -581,3 +581,89 @@ class SitePrepareTests(AgentTestCase):
         argv_file = self.helper()
         self.assertFalse(self.call(op="prepare-site", account="mallory", domain="a.com")["ok"])
         self.assertFalse(os.path.exists(argv_file))
+
+
+class RemoveJailTests(unittest.TestCase):
+    """op remove-jail (1.4.0): only for a deleted account; mount unit first, then the jail on its own filesystem."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = os.path.join(self.tmp.name, "jail")
+        self.units = os.path.join(self.tmp.name, "units")
+        os.makedirs(os.path.join(self.root, "bob", "home", "bob"))
+        os.makedirs(self.units)
+        self.unit = "jail-bob-home-bob.mount"
+        open(os.path.join(self.units, self.unit), "w").close()
+        self.mounts = os.path.join(self.tmp.name, "mounts")
+        open(self.mounts, "w").close()
+        self.config = {"jail_root": self.root, "systemd_unit_dir": self.units, "deny_accounts": {"root"},
+                       "audit_log": os.path.join(self.tmp.name, "audit.log")}
+        self.calls = []
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_(self, argv):
+        self.calls.append(argv)
+        if argv[0].endswith("systemd-escape"):
+            return self.unit + "\n"
+        if argv[0].endswith("/rm"):
+            import shutil
+            shutil.rmtree(argv[-1])
+        return ""
+
+    @staticmethod
+    def gone(name):
+        raise KeyError(name)
+
+    def remove(self, name="bob", getpwnam=None):
+        return agent.remove_jail_of_deleted_account(name, self.config, getpwnam=getpwnam or self.gone, run=self.run_,
+                                                    mounts_file=self.mounts)
+
+    def test_removes_unit_then_jail_of_a_deleted_account(self):
+        self.assertEqual(self.remove(), {"removed": True})
+        self.assertFalse(os.path.exists(os.path.join(self.units, self.unit)))
+        self.assertFalse(os.path.exists(os.path.join(self.root, "bob")))
+        ops = [c[1] if c[0].endswith("systemctl") else os.path.basename(c[0]) for c in self.calls]
+        self.assertEqual(ops, ["systemd-escape", "disable", "daemon-reload", "rm"])
+        self.assertIn("--one-file-system", self.calls[-1])
+        with open(self.config["audit_log"]) as handle:
+            self.assertIn('"jail_remove"', handle.read())
+
+    def test_refused_while_the_account_exists(self):
+        with self.assertRaises(agent.AgentError) as ctx:
+            self.remove(getpwnam=lambda name: object())
+        self.assertEqual(ctx.exception.code, "account_exists")
+        self.assertTrue(os.path.isdir(os.path.join(self.root, "bob")))
+        self.assertEqual(self.calls, [])
+
+    def test_refused_while_something_is_still_mounted_inside(self):
+        with open(self.mounts, "w") as handle:
+            handle.write("/dev/sda4 %s xfs rw 0 0\n" % os.path.join(self.root, "bob", "home", "bob"))
+        with self.assertRaises(agent.AgentError):
+            self.remove()
+        self.assertTrue(os.path.isdir(os.path.join(self.root, "bob")))
+        self.assertFalse(any(c[0].endswith("/rm") for c in self.calls))
+
+    def test_no_jail_is_not_an_error(self):
+        import shutil
+        shutil.rmtree(os.path.join(self.root, "bob"))
+        self.assertEqual(self.remove(), {"removed": False})
+
+    def test_bad_or_denied_names_refused(self):
+        for name in ["root", "../etc", "", "Bob", 5]:
+            with self.assertRaises(agent.AgentError, msg=name):
+                self.remove(name=name)
+        self.assertEqual(self.calls, [])
+
+    def test_request_reaches_it_without_account_checks(self):
+        config = dict(self.config)
+        orig = agent.remove_jail_of_deleted_account
+        seen = {}
+        agent.remove_jail_of_deleted_account = lambda name, cfg: seen.setdefault("name", name) and {"removed": True}
+        try:
+            response = agent.handle(json.dumps({"v": 1, "op": "remove-jail", "account": "bob"}), config)
+        finally:
+            agent.remove_jail_of_deleted_account = orig
+        self.assertEqual(seen["name"], "bob")
+        self.assertTrue(response["ok"])

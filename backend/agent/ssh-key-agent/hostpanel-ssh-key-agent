@@ -21,6 +21,7 @@ Contract version 1 (see README.md beside this file for the full specification):
     {"v": 1, "op": "add",    "account": "<user>", "key_id": "<uuid>", "public_key": "ssh-ed25519 AAAA..."}
     {"v": 1, "op": "revoke", "account": "<user>", "key_id": "<uuid>"}
     {"v": 1, "op": "prepare-site", "account": "<user>", "domain": "<the account's domain>"}   (1.3.0+, opt-in)
+    {"v": 1, "op": "remove-jail", "account": "<user>"}   (1.4.0+: only once the account itself is deleted)
 
 Every response is {"v": 1, "ok": true, ...} or {"v": 1, "ok": false, "error": "<code>"}.
 
@@ -61,7 +62,7 @@ import sys
 import time
 
 CONTRACT_VERSION = 1
-AGENT_VERSION = "1.3.1"
+AGENT_VERSION = "1.4.0"
 CONFIG_PATH = "/etc/hostpanel-ssh-key-agent/agent.conf"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_AUTHORIZED_KEYS_BYTES = 256 * 1024
@@ -610,6 +611,46 @@ def withdraw_jail(account, config):
     audit_event(config, name, "jail_withdraw")
 
 
+def remove_jail_of_deleted_account(name, config, getpwnam=pwd.getpwnam, run=None, mounts_file="/proc/mounts"):
+    """
+    Root side, for an account the panel has already deleted (its passwd entry is gone): removes the jail enrol_jail made,
+    the home bind-mount unit first, then the jail tree on its own filesystem only. withdraw_jail keeps a jail for cheap
+    re-enrolment, so without this every terminated jailed account left its jail and an enabled mount unit behind.
+    Refuses (account_exists) while the account exists, and (internal_error) while anything is still mounted inside the jail.
+    """
+    run = run or _jail_run
+    if not isinstance(name, str) or not ACCOUNT_RE.match(name) or name in config.get("deny_accounts", set()):
+        raise AgentError("invalid_account")
+    try:
+        getpwnam(name)
+        raise AgentError("account_exists")
+    except KeyError:
+        pass
+    jail_root = config["jail_root"]
+    jail = os.path.join(jail_root, name)
+    if os.path.dirname(jail) != jail_root or os.path.islink(jail):
+        raise AgentError("internal_error")
+    where = os.path.join(jail, "home", name)
+    unit = run(["/usr/bin/systemd-escape", "-p", "--suffix=mount", where]).strip()
+    if not re.match(r"^[A-Za-z0-9_.\\-]+\.mount$", unit):
+        raise AgentError("internal_error")
+    unit_path = os.path.join(config["systemd_unit_dir"], unit)
+    if os.path.exists(unit_path):
+        run(["/usr/bin/systemctl", "disable", "--now", unit])
+        os.remove(unit_path)
+        run(["/usr/bin/systemctl", "daemon-reload"])
+    if not os.path.isdir(jail):
+        return {"removed": False}
+    with open(mounts_file, encoding="utf-8") as handle:
+        inside = [line.split()[1] for line in handle if len(line.split()) > 1
+                  and (line.split()[1] == jail or line.split()[1].startswith(jail + "/"))]
+    if inside:
+        raise AgentError("internal_error")
+    run(["/usr/bin/rm", "-rf", "--one-file-system", "--", jail])
+    audit_event(config, name, "jail_remove")
+    return {"removed": True}
+
+
 # --------------------------------------------------------------------------- request handling (root)
 
 REQUIRED_FIELDS = {
@@ -619,6 +660,7 @@ REQUIRED_FIELDS = {
     "add": {"account", "key_id", "public_key"},
     "revoke": {"account", "key_id"},
     "prepare-site": {"account", "domain"},
+    "remove-jail": {"account"},
 }
 
 DOMAIN_RE = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
@@ -759,6 +801,11 @@ def handle(raw, config):
     request = None
     try:
         request = validate_request(raw)
+        if request["op"] == "remove-jail":
+            # Before resolve_account: the account is gone by design, so its identity checks cannot apply.
+            response = {"v": CONTRACT_VERSION, "ok": True}
+            response.update(remove_jail_of_deleted_account(request["account"], config))
+            return response
         if request["op"] == "ping":
             return {"v": CONTRACT_VERSION, "ok": True, "agent_version": AGENT_VERSION,
                     "provider": config.get("provider", "generic-linux"), "binding": config.get("binding", "")}

@@ -89,4 +89,7 @@ public enum SshProviderFailure
 
     /// <summary>Preparing the account's site for deploys failed on the server.</summary>
     SitePrepareFailed,
+
+    /// <summary>A jail removal was asked for an account that still exists on the server; nothing was changed.</summary>
+    AccountExists,
 }

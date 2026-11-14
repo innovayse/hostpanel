@@ -56,4 +56,15 @@ describe('NotificationsView', () => {
     expect(wrapper.find('[data-testid="notifications-error"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="notifications-empty"]').text()).toContain('No notifications')
   })
+
+  it('draws the rows of the real list with bars where the events go while the feed loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountRoutedSettled(NotificationsView, '/notifications')
+
+    const list = wrapper.get('[data-testid="notifications-list"]')
+    expect(list.attributes('aria-busy')).toBe('true')
+    expect(list.findAll('a')).toHaveLength(5)
+    expect(list.find('a').attributes('href')).toBeUndefined()
+    expect(wrapper.find('[data-testid="notifications-empty"]').exists()).toBe(false)
+  })
 })

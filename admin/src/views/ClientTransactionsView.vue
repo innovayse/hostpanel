@@ -20,6 +20,7 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -281,9 +282,9 @@ onMounted(() => fetchTransactions())
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
             {{ t('clients.clientTransactions.totalcountTransactionValue', { totalCount: store.totalCount }) }}
-          </UiText>
+          </UiResultCount>
           <UiPagination
             :page="page"
             :total="store.totalCount"

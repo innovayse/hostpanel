@@ -18,6 +18,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -37,6 +38,7 @@ import { useCancellationRequestsStore } from '@/stores/cancellationRequests'
 import { UiTone } from '@/utils/ui/tone'
 import { clientPath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -225,9 +227,9 @@ onMounted(() => load())
       </UiTable>
 
       <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiText tone="muted" size="xs">
+        <UiResultCount :loading="store.loading && !hasRows" :size="UiTextSize.Xs">
           {{ t('clients.cancellationRequests.totalcountRequestValue', { totalCount: store.totalCount }) }}
-        </UiText>
+        </UiResultCount>
         <UiPagination
           :page="store.page"
           :total="store.totalCount"

@@ -24,6 +24,7 @@ import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -31,11 +32,11 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
+import { UiTextSize } from '@/utils/ui/text'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -365,9 +366,9 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       align="center"
       justify="between"
     >
-      <UiText tone="muted" size="sm">
+      <UiResultCount :loading="store.loading && store.users.length === 0" :size="UiTextSize.Sm">
         {{ t('clients.manageUsers.totalcountUserValue', { totalCount: store.totalCount }) }}
-      </UiText>
+      </UiResultCount>
       <UiPagination
         :page="store.page"
         :total="store.totalCount"

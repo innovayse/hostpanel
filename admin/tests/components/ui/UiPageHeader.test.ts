@@ -46,6 +46,24 @@ describe('UiPageHeader', () => {
     expect(plain.attributes('aria-busy')).toBe('true')
   })
 
+  it('draws the title and a bar for the subtitle alone while only the subtitle loads', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'Clients', subtitle: 'All accounts', subtitleLoading: true } })
+
+    expect(wrapper.get('h1').text()).toBe('Clients')
+    expect(wrapper.find('[data-testid="ui-page-header-subtitle-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-page-header-skeleton"]').exists()).toBe(false)
+    expect(wrapper.find('p').exists()).toBe(false)
+    expect(wrapper.attributes('aria-busy')).toBe('true')
+  })
+
+  it('draws the subtitle and no bar when the subtitle is not loading', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'Clients', subtitle: 'All accounts' } })
+
+    expect(wrapper.find('[data-testid="ui-page-header-subtitle-skeleton"]').exists()).toBe(false)
+    expect(wrapper.get('p').text()).toBe('All accounts')
+    expect(wrapper.attributes('aria-busy')).toBeUndefined()
+  })
+
   it('needs no title while loading', () => {
     const wrapper = mount(UiPageHeader, { props: { loading: true } })
 

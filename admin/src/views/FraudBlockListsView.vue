@@ -15,6 +15,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -23,7 +24,6 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { BLOCK_LIST_TYPE_OPTIONS } from '@/lib/constants'
 import { enumValueOf } from '@/lib/enumValue'
@@ -206,9 +206,9 @@ onMounted(() => load(1))
       @retry="load(page)"
     />
 
-    <UiText tone="muted" size="md" data-testid="fraud-block-list-count">
+    <UiResultCount :loading="store.loading && store.entries.length === 0" data-testid="fraud-block-list-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
+    </UiResultCount>
 
     <UiCard class="overflow-hidden">
       <UiTable

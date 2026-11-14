@@ -334,11 +334,10 @@ onMounted(() => fetchBillableItems())
             : t('clients.clientBillableItems.uninvoicedItemsLength', { length: uninvoicedItems.length }) }}
         </UiHeading>
 
-        <UiCard v-if="initialLoading" loading :skeleton-lines="4" data-testid="client-billable-loading" />
-
-        <UiCard v-else-if="uninvoicedItems.length > 0" class="overflow-x-auto">
+        <UiCard v-if="initialLoading || uninvoicedItems.length > 0" class="overflow-x-auto">
           <UiTable
             :density="UiTableDensity.Comfortable"
+            :loading="initialLoading"
             :selection="selection"
             select-all-testid="client-billable-select-all"
             data-testid="client-billable-uninvoiced-table"
@@ -378,10 +377,8 @@ onMounted(() => fetchBillableItems())
       <UiStack>
         <UiHeading :level="2" variant="card">{{ t('clients.clientBillableItems.invoicedItems') }}</UiHeading>
 
-        <UiCard v-if="initialLoading" loading :skeleton-lines="4" />
-
-        <UiCard v-else-if="invoicedItems.length > 0" class="overflow-x-auto">
-          <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-invoiced-table">
+        <UiCard v-if="initialLoading || invoicedItems.length > 0" class="overflow-x-auto">
+          <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-billable-invoiced-table">
             <UiTableHead>
               <UiTableRow>
                 <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
@@ -403,18 +400,20 @@ onMounted(() => fetchBillableItems())
             </UiTableBody>
           </UiTable>
           <UiStack
-            v-if="invoicedTotalCount > invoicedPageSize"
+            v-if="initialLoading || invoicedTotalCount > invoicedPageSize"
             direction="row"
             :justify="UiJustify.Between"
             :align="UiAlignItems.Center"
           >
-            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+            <UiSkeletonBar v-if="initialLoading" class="h-3 w-36 rounded" aria-hidden="true" />
+            <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
               {{ t('clients.clientBillableItems.invoicedtotalcountItemValue', { invoicedTotalCount }) }}
             </UiText>
             <UiPagination
               :page="invoicedPage"
               :total="invoicedTotalCount"
               :page-size="invoicedPageSize"
+              :loading="initialLoading"
               testid="client-billable-pagination"
               @update:page="goToInvoicedPage"
             />

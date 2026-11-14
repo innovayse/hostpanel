@@ -392,6 +392,7 @@ describe('UiSelect', () => {
       await wrapper.get('button').trigger('click')
 
       expect(wrapper.get('[data-testid="ui-select-loading"]').attributes('aria-busy')).toBe('true')
+      expect(wrapper.get('[data-testid="ui-select-loading"]').findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(3)
       expect(wrapper.find('[data-testid="ui-select-empty"]').exists()).toBe(false)
     })
 

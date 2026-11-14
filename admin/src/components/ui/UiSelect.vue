@@ -19,7 +19,7 @@
  */
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { useDropdown } from '@/composables/useDropdown'
 import { useFloatingPlace } from '@/composables/useFloatingPlace'
@@ -39,6 +39,9 @@ import type { UiSelectOption } from '@/utils/ui/select'
 import { UiTransitionKind } from '@/utils/ui/transition'
 
 const { t } = useI18n()
+
+/** Placeholder rows drawn under the trigger while the owner fetches options. */
+const LOADING_ROWS = 3
 
 /** Props for UiSelect. */
 const props = defineProps<{
@@ -506,8 +509,9 @@ onUnmounted(cancelSearchTimer)
           </div>
 
           <!-- Loading and empty rows sit beside the listbox, not in it: they are not options -->
-          <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" class="px-3 py-2">
-            <UiSkeleton :lines="3" />
+          <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" class="flex flex-col gap-2 px-3 py-2">
+            <!-- Rows of the height of an option, the last one shorter, like the options that will replace them -->
+            <UiSkeletonBar v-for="row in LOADING_ROWS" :key="row" class="h-4 rounded-md" :class="row === LOADING_ROWS ? 'w-2/3' : 'w-full'" aria-hidden="true" />
             <span class="sr-only">{{ t('ui.loading') }}</span>
           </div>
           <p v-else-if="visibleOptions.length === 0" role="status" data-testid="ui-select-empty" class="px-3 py-2 text-[0.82rem] text-text-secondary">

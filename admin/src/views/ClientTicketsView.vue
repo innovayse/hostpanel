@@ -18,6 +18,7 @@ import UiLabel from '@/components/ui/UiLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -26,10 +27,9 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE, SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { ClientSection, clientItemPath, clientTicketNewPath } from '@/lib/routes'
@@ -211,9 +211,9 @@ onBeforeUnmount(() => {
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
             {{ t('clients.clientTickets.totalcountTicketValue', { totalCount: store.totalCount }) }}
-          </UiText>
+          </UiResultCount>
           <UiPagination
             :page="page"
             :total="store.totalCount"

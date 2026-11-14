@@ -48,7 +48,7 @@
     "lengthServerValue": "Servers: {length}",
     "noCwp7ServersConfiguredYet": "No CWP7 servers configured yet.",
     "addYourFirstServer": "Add your first server →",
-    "accountscountValueAccounts": "{accountsCount} / {value} accounts"
+    "accountsUsage": "{usage} accounts"
   },
   "cwpIntegration": {
     "centosWebPanel": "CentOS Web Panel"

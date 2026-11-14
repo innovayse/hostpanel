@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { usePluginSource } from '@/composables/usePluginView'
 import { pluginUiTone } from '@/lib/pluginView'
@@ -33,7 +33,7 @@ const tone = computed<UiTone>(() => pluginUiTone(props.block.tone))
 </script>
 
 <template>
-  <UiSkeleton v-if="loading" :lines="1" class="w-20" />
+  <UiSkeletonBar v-if="loading" class="h-5 w-20 self-start rounded-full" aria-hidden="true" data-testid="plugin-badge-loading" />
   <UiText v-else-if="error" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-badge-error">{{ error }}</UiText>
   <UiBadge v-else-if="text" :tone="tone" class="self-start" data-testid="plugin-badge">{{ text }}</UiBadge>
 </template>

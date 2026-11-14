@@ -35,11 +35,13 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { API_BASE } from '@/lib/apiPaths'
 import { COPIED_VISIBLE_MS } from '@/lib/limits'
+import { placeholderRows } from '@/lib/placeholderRows'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -142,6 +144,15 @@ const flags = reactive<MigrationExportFlags>({
 const allSelected = computed<boolean>(() =>
   MIGRATION_ENTITY_KEYS.every(key => flags[EXPORT_FLAG[key]]),
 )
+
+/** How many placeholder rows the history draws while the jobs load. */
+const HISTORY_PLACEHOLDER_ROWS = 3
+
+/** True until the first read of the jobs has answered: the history draws its rows as placeholders. */
+const historyLoading = computed<boolean>(() => store.loading && store.jobs.length === 0)
+
+/** The rows of the history: the jobs, or null placeholders while they load. */
+const historyRows = computed(() => placeholderRows(store.jobs, historyLoading.value, HISTORY_PLACEHOLDER_ROWS))
 
 /** Whether the selected job's import report is shown (finished jobs only). */
 const showReport = computed<boolean>(() =>
@@ -286,7 +297,7 @@ onUnmounted(() => {
     <!-- Body: history + selected job; the cards stay in place while the list loads -->
     <UiStack direction="row" align="start" gap="md" wrap>
       <!-- History -->
-      <UiCard padding="sm" class="w-full lg:w-72 shrink-0" :loading="store.loading" data-testid="migration-history">
+      <UiCard padding="sm" class="w-full lg:w-72 shrink-0" :aria-busy="historyLoading ? 'true' : undefined" data-testid="migration-history">
         <template #header>
           <UiStack direction="row" align="center" justify="between">
             <UiHeading :level="3" variant="card">{{ t('migration.migration.history') }}</UiHeading>
@@ -295,19 +306,25 @@ onUnmounted(() => {
         </template>
         <UiStack gap="sm" class="mt-3">
 
-          <UiText v-if="store.jobs.length === 0" tone="muted" size="sm" data-testid="migration-history-empty">
+          <UiText v-if="!historyLoading && store.jobs.length === 0" tone="muted" size="sm" data-testid="migration-history-empty">
             {{ t('migration.migration.noMigrationsYet') }}
           </UiText>
 
+          <!-- The jobs; while the history loads the same rows are drawn with bars where a job goes -->
           <UiStack
-            v-for="job in store.jobs"
-            :key="job.id"
+            v-for="(job, index) in historyRows"
+            :key="job?.id ?? `placeholder-${index}`"
             direction="row"
             align="center"
             gap="xs"
-            :data-testid="`migration-job-${job.id}`"
+            :data-testid="job ? `migration-job-${job.id}` : undefined"
           >
+            <UiStack v-if="job === null" gap="xs" class="min-w-0 flex-1 px-3 py-1.5" aria-hidden="true">
+              <UiSkeletonBar class="h-4 w-32 rounded-md" />
+              <UiSkeletonBar class="h-3 w-24 rounded-md" />
+            </UiStack>
             <UiButton
+              v-else
               type="button"
               :variant="store.activeJob?.id === job.id ? UiButtonVariant.Secondary : UiButtonVariant.Ghost"
               size="sm"
@@ -327,7 +344,9 @@ onUnmounted(() => {
                 </UiStack>
               </UiStack>
             </UiButton>
+            <UiSkeletonBar v-if="job === null" class="size-8 shrink-0 rounded-control" aria-hidden="true" />
             <UiIconButton
+              v-else
               :label="t('migration.migration.deleteMigration')"
               variant="danger"
               size="sm"

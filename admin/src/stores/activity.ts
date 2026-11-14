@@ -3,7 +3,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useDashboardApi } from '@/composables/apis/useDashboardApi'
 import { runAction } from '@/lib/runAction'
 import type { ActivityEvent } from '@/types/activityevent'
@@ -23,6 +23,9 @@ export const useActivityStore = defineStore('activity', () => {
   /** True while events are being fetched. */
   const loading = ref(false)
 
+  /** True until the first read has answered: nothing is held yet, so a list draws placeholders instead of an empty state. */
+  const initialLoading = computed<boolean>(() => loading.value && events.value.length === 0)
+
   /** Sentence for the last failed call, null when no error. */
   const error = ref<string | null>(null)
 
@@ -41,5 +44,5 @@ export const useActivityStore = defineStore('activity', () => {
     loading.value = false
   }
 
-  return { events, loading, error, fetchActivity }
+  return { events, loading, initialLoading, error, fetchActivity }
 })

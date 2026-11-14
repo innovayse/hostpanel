@@ -110,6 +110,14 @@ describe('OrderDetailView', () => {
     expect(wrapper.findAll('[data-testid="order-fact-loading"]').length).toBeGreaterThan(0)
   })
 
+  it('keeps the notes field read only until the order has arrived', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountDetail()
+    await openTab(wrapper, 'notes')
+
+    expect(wrapper.get('[data-testid="order-notes-input"]').attributes('disabled')).toBeDefined()
+  })
+
   it('renders the order number, status, invoice link, items and notes', async () => {
     stubRoutes({ 'GET /api/orders/8': () => json(pendingOrder) })
     const { wrapper } = await mountDetail()

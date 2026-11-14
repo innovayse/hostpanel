@@ -4,13 +4,14 @@
  * and filters sit above it, in the screen).
  *
  * The list has three columns on a wide screen, two on a medium one and one on a narrow one; while the
- * first page loads it shows card placeholders. Each card opens the plugin's details page and carries its
+ * first page loads the same grid, total line and pager are drawn with card placeholders. Each card opens the plugin's details page and carries its
  * action in the footer: Install for a plugin that is not installed, Update for one with a newer version,
  * and Details in place of Install for a plugin that needs a licence key not yet saved. An installed plugin
  * also shows a gear that opens its details page, where it is configured and removed.
  * Only the card whose install or update runs is disabled. The component owns no data: it reports the
  * chosen page and the install, and the screen hands the result to the store.
  */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PluginCard from '@/components/plugins/PluginCard.vue'
 import PluginCardSkeleton from '@/components/plugins/PluginCardSkeleton.vue'
@@ -21,8 +22,8 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { fromRegistry } from '@/lib/pluginCard'
 import { pluginPath } from '@/lib/routes'
@@ -30,6 +31,7 @@ import { PluginPricing } from '@/types/plugin'
 import type { PluginRegistryItemDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
+import { UiTextSize } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -81,6 +83,9 @@ const emit = defineEmits<{
   retry: []
 }>()
 
+/** True until the first page has answered: the list is drawn with placeholder cards in its real grid. */
+const initialLoading = computed<boolean>(() => props.loading && props.items.length === 0)
+
 /**
  * Whether a listing offers an action: Install when absent, Update when a newer version exists.
  *
@@ -120,23 +125,22 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
       @retry="emit('retry')"
     />
 
-    <UiGrid v-else-if="loading && items.length === 0" :columns="3" gap="md" aria-busy="true" data-testid="plugin-registry-loading">
-      <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
-      <PluginCardSkeleton v-for="slot in pageSize" :key="slot" />
-    </UiGrid>
-
     <UiEmptyState
-      v-else-if="items.length === 0"
+      v-else-if="!initialLoading && items.length === 0"
       :title="t('plugins.pluginRegistry.emptyTitle')"
       :description="t('plugins.pluginRegistry.emptyDescription')"
       data-testid="plugin-registry-empty"
     />
 
     <template v-else>
-      <UiText tone="muted" size="sm" data-testid="plugin-registry-total">
+      <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm" data-testid="plugin-registry-total">
         {{ t('plugins.pluginRegistry.total', { total }) }}
-      </UiText>
-      <UiGrid :columns="3" gap="md" data-testid="plugin-registry-list">
+      </UiResultCount>
+      <UiGrid :columns="3" gap="md" :aria-busy="initialLoading" data-testid="plugin-registry-list">
+        <template v-if="initialLoading">
+          <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
+          <PluginCardSkeleton v-for="slot in pageSize" :key="slot" />
+        </template>
         <PluginCard
           v-for="item in items"
           :key="item.id"

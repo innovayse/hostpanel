@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PluginBlockKind } from '@/types/pluginview'
 import { json } from '../../../helpers/fetch'
-import { ext, mountPluginView } from '../../../helpers/pluginView'
+import { ext, mountLoadingPluginView, mountPluginView } from '../../../helpers/pluginView'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -51,6 +51,13 @@ describe('PluginLinkBlock', () => {
       routes: { [`GET ${ext('site')}`]: () => json({ url: 'javascript:alert(1)' }) },
     })
 
+    expect(wrapper.find('[data-testid="plugin-link"]').exists()).toBe(false)
+  })
+
+  it('draws a button-sized bar while the address is read', async () => {
+    const wrapper = await mountLoadingPluginView([{ kind: PluginBlockKind.Link, label: 'Open', source: { route: { method: 'get', path: '/target' }, field: 'url' } }])
+
+    expect(wrapper.get('[data-testid="plugin-link-loading"]').classes()).toContain('h-8')
     expect(wrapper.find('[data-testid="plugin-link"]').exists()).toBe(false)
   })
 })

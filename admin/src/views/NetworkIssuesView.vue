@@ -17,6 +17,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -41,6 +42,7 @@ import { AppRoute, editPath } from '@/lib/routes'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -195,9 +197,9 @@ const rowActions = (issue: NetworkIssue): UiMenuAction[] => {
     <UiHeading :level="2" variant="card" data-testid="network-issues-heading">{{ activeHeading }}</UiHeading>
 
     <UiStack direction="row" justify="between" wrap>
-      <UiText tone="muted" size="sm" data-testid="network-issues-count">
+      <UiResultCount :loading="store.loading && store.issues.length === 0" :size="UiTextSize.Sm" data-testid="network-issues-count">
         {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-      </UiText>
+      </UiResultCount>
       <UiText tone="muted" size="sm">
         {{ t('shared.pagePageOfTotalpages', { page: store.page, totalPages }) }}
       </UiText>

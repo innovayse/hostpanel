@@ -251,3 +251,11 @@ export const ServerRefresh = {
 
 /** One of the {@link ServerRefresh} values. */
 export type ServerRefresh = (typeof ServerRefresh)[keyof typeof ServerRefresh]
+
+/** Result of one connection test, as shown on the server's card. */
+export interface ServerTestOutcome {
+  /** Whether the server answered. */
+  ok: boolean
+  /** The sentence to show: the summary on success, the server's reason otherwise. */
+  message: string
+}

@@ -17,6 +17,7 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -24,7 +25,6 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { formatDateTime } from '@/lib/format'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { formatPlainAmount } from '@/lib/money'
@@ -97,9 +97,9 @@ onMounted(() => load(1))
       </UiField>
     </UiCard>
 
-    <UiText v-if="loadError === null" tone="muted" size="md" data-testid="billing-credit-notes-count">
+    <UiResultCount v-if="loadError === null" :loading="store.loading && store.notes.length === 0" data-testid="billing-credit-notes-count">
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
+    </UiResultCount>
 
     <UiCard>
       <UiTable

@@ -19,6 +19,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -252,9 +253,9 @@ onMounted(load)
         :justify="UiJustify.Between"
         :align="UiAlignItems.Center"
       >
-        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+        <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
           {{ t('clients.clientLog.totalcountEntrValue', { totalCount: store.totalCount }) }}
-        </UiText>
+        </UiResultCount>
         <UiPagination
           :page="page"
           :total="store.totalCount"

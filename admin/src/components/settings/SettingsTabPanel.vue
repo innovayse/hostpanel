@@ -4,14 +4,16 @@
  *
  * The panel provides its own draft registry, so every control below registers with it and the bar counts,
  * saves and discards the unsaved edits of this tab, not of the whole screen. While `loading` is set the
- * bar is left out, since there is nothing to edit yet.
+ * bar is left out, since there is nothing to edit yet, and every card below draws its fields as placeholders
+ * (the panel provides `UI_FIELD_LOADING`), so the tab keeps the shape it will have.
  */
-import { computed } from 'vue'
+import { computed, provide, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { provideSettingsDraftRegistry } from '@/composables/useSettingsDraftRegistry'
 import type { SettingSave } from '@/types/setting'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 
 /** Props for SettingsTabPanel. */
 const props = withDefaults(defineProps<{
@@ -24,6 +26,9 @@ const props = withDefaults(defineProps<{
 })
 
 const { t } = useI18n()
+
+// Every card and field below reads this flag, so the panel needs no per-card loading prop.
+provide(UI_FIELD_LOADING, toRef(props, 'loading'))
 
 /** Collects the drafts of every control below, for this tab's bar. */
 const registry = provideSettingsDraftRegistry()

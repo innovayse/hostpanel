@@ -31,6 +31,9 @@ describe('MigrationView', () => {
     const wrapper = await mountMigration()
 
     expect(wrapper.get('[data-testid="migration-history"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('[data-testid="migration-history"]').find('[data-testid="ui-card-skeleton"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="migration-history"]').findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(9)
+    expect(wrapper.find('[data-testid="migration-history-empty"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="migration-loading"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="migration-none-selected"]').exists()).toBe(false)
   })

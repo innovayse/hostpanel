@@ -4,7 +4,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { createTestI18n } from '../../helpers/i18n'
 
 describe('SettingNotSeeded', () => {
@@ -28,5 +30,16 @@ describe('SettingNotSeeded', () => {
     expect(wrapper.attributes('role')).toBe('alert')
     expect(wrapper.find('b').exists()).toBe(false)
     expect(wrapper.text()).toContain('a<b>c')
+  })
+
+  it('draws the placeholder of the control instead of the warning while the settings load', () => {
+    const wrapper = mount(SettingNotSeeded, {
+      props: { settingKey: 'portal.site.name', envName: 'ENV' },
+      global: { plugins: [createTestI18n()], provide: { [UI_FIELD_LOADING as symbol]: ref(true) } },
+    })
+
+    expect(wrapper.find('[data-testid="ui-field-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('has not been seeded yet')
   })
 })

@@ -40,10 +40,11 @@ describe('IntegrationDetailView', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountDetail('bank-transfer')
 
-    expect(wrapper.get('[data-testid="integration-loading"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-config-loading"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(4)
+    expect(wrapper.find('[data-testid="integration-save"]').attributes('disabled')).toBeDefined()
     expect(wrapper.find('[data-testid="integration-status-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(false)
   })
 
   it('shows the breadcrumb, the form and the status sidebar', async () => {

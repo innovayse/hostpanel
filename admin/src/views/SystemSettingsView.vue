@@ -21,7 +21,6 @@ import RawSettingsTable from '@/components/settings/RawSettingsTable.vue'
 import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsTabPanel from '@/components/settings/SettingsTabPanel.vue'
 import VersionLabel from '@/components/layout/VersionLabel.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
@@ -58,7 +57,7 @@ const tabItems = computed<UiTabItem[]>(() =>
   })),
 )
 
-/** True while the settings are read for the first time: the tab keeps its place as placeholders. */
+/** True while the settings are read for the first time: every card keeps its place with its fields as placeholders. */
 const initialLoading = computed<boolean>(() => store.loading && store.settings.length === 0)
 
 onMounted(store.fetchSettings)
@@ -140,9 +139,7 @@ const onSelect = (value: string): void => {
             </UiStack>
             <RawSettingsTable :settings="store.settings" :loading="initialLoading" />
           </template>
-          <UiStack v-else-if="initialLoading" gap="none" data-testid="system-settings-loading">
-            <UiCard v-for="(card, index) in definition.cards" :key="index" loading :skeleton-lines="4" padding="md" class="mb-5" />
-          </UiStack>
+          <!-- The real cards also while the settings load: their fields draw as placeholders (the panel provides the flag) -->
           <template v-else>
             <component
               :is="card"

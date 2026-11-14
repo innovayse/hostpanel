@@ -14,12 +14,12 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServersStore } from '@/stores/servers'
 import { FILL_TYPE_LABELS, MODULE_LABELS, ServerModule, ServerState } from '@/types/server'
-import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerPayload } from '@/types/server'
+import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerPayload, ServerTestOutcome } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
+import ServerCard from '@/components/servers/ServerCard.vue'
 import GroupFormModal from '@/components/servers/GroupFormModal.vue'
 import ServerFormModal from '@/components/servers/ServerFormModal.vue'
 import ServerSshSettingsModal from '@/components/servers/ServerSshSettingsModal.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -29,10 +29,8 @@ import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiLoader from '@/components/ui/UiLoader.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
-import UiProgress from '@/components/ui/UiProgress.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -49,7 +47,7 @@ import type { UiSelectOption } from '@/utils/ui/select'
 import type { UiFilterChip } from '@/utils/ui/filter'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { pageSlice } from '@/lib/paging'
-import { filterServers, serverLoadPercent, serverState } from '@/lib/servers'
+import { filterServers, SERVER_STATE_KEYS } from '@/lib/servers'
 import { useFilterQuery } from '@/composables/useFilterQuery'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -58,39 +56,14 @@ import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { EMPTY_VALUE } from '@/lib/format'
 
-/** Translation function and the active locale (for date formatting). */
-const { t, locale } = useI18n()
+/** Translation function. */
+const { t } = useI18n()
 
 /** Servers store: the lists, the refusal sentences and the actions. */
 const store = useServersStore()
 
-/** Locale key of the caption of each server state. */
-const STATE_KEYS: Record<ServerState, string> = {
-  [ServerState.Online]: 'servers.servers.online',
-  [ServerState.Offline]: 'servers.servers.offline',
-  [ServerState.Untested]: 'servers.servers.notTested',
-}
-
-/** Badge tone of each server state. */
-const STATE_TONES: Record<ServerState, UiTone> = {
-  [ServerState.Online]: UiTone.Success,
-  [ServerState.Offline]: UiTone.Danger,
-  [ServerState.Untested]: UiTone.Neutral,
-}
-
-/** Load percentage from which a server's bar turns to the warning colour. */
-const LOAD_WARN_AT = 80
-
 /** Placeholder cards drawn in the servers grid while the list loads. */
 const LOADING_CARD_COUNT = 3
-
-/** Result of one connection test, as shown on the server's card. */
-interface TestOutcome {
-  /** Whether the server answered. */
-  ok: boolean
-  /** The sentence to show: the summary on success, the server's reason otherwise. */
-  message: string
-}
 
 /** True while a server save is in flight. */
 const savingServer = ref(false)
@@ -102,7 +75,7 @@ const savingGroup = ref(false)
 const testingIds = ref<number[]>([])
 
 /** Last test result per server id. */
-const testResults = ref<Record<number, TestOutcome>>({})
+const testResults = ref<Record<number, ServerTestOutcome>>({})
 
 /** The server being edited, or null when creating. */
 const editingServer = ref<ServerDto | null>(null)
@@ -173,7 +146,7 @@ const moduleOptions = computed<UiSelectOption<string>[]>(() => [
 /** The state choices of the filter, "any" first. */
 const stateOptions = computed<UiSelectOption<string>[]>(() => [
   { value: '', label: t('servers.servers.anyState') },
-  ...Object.values(ServerState).map(state => ({ value: state, label: t(STATE_KEYS[state]) })),
+  ...Object.values(ServerState).map(state => ({ value: state, label: t(SERVER_STATE_KEYS[state]) })),
 ])
 
 /** The servers that match the applied filters and the search text. */
@@ -194,7 +167,7 @@ const filterChips = computed<UiFilterChip<'module' | 'state'>[]>(() => {
     chips.push({ key: 'module', label: t('servers.servers.filterModule'), value: MODULE_LABELS[module as ServerModule] ?? module })
   }
   if (state !== '') {
-    chips.push({ key: 'state', label: t('servers.servers.filterState'), value: t(STATE_KEYS[state as ServerState]) })
+    chips.push({ key: 'state', label: t('servers.servers.filterState'), value: t(SERVER_STATE_KEYS[state as ServerState]) })
   }
   return chips
 })
@@ -210,7 +183,7 @@ const handleTestConnection = async (id: number): Promise<void> => {
     Object.entries(testResults.value).filter(([key]) => Number(key) !== id),
   )
   const result = await store.testConnection(id)
-  let outcome: TestOutcome
+  let outcome: ServerTestOutcome
   if (result === null) {
     outcome = { ok: false, message: store.actionError ?? '' }
   } else if (result.connected) {
@@ -226,30 +199,6 @@ const handleTestConnection = async (id: number): Promise<void> => {
   }
   testResults.value = { ...testResults.value, [id]: outcome }
   testingIds.value = testingIds.value.filter(i => i !== id)
-}
-
-/**
- * Tone and caption of a server's last known state.
- *
- * @param server - The server.
- * @returns The badge tone and the locale key of its caption.
- */
-const stateOf = (server: ServerDto): { tone: UiTone; key: string } => {
-  const state = serverState(server)
-  return { tone: STATE_TONES[state], key: STATE_KEYS[state] }
-}
-
-/**
- * Formats the account usage of a server.
- *
- * @param server - The server.
- * @returns `count / max`, `count`, or a dash when unknown.
- */
-const accountsLabel = (server: ServerDto): string => {
-  if (server.accountsCount === null) {
-    return EMPTY_VALUE
-  }
-  return server.limits.maxAccounts === null ? `${server.accountsCount}` : `${server.accountsCount} / ${server.limits.maxAccounts}`
 }
 
 /** Opens the server create dialog. */
@@ -494,65 +443,29 @@ onMounted(loadAll)
         </UiGrid>
       </UiListToolbar>
 
-      <!-- Servers load in place: placeholder cards in the grid the cards will fill -->
-      <UiGrid v-if="store.loading" min-item-width="md" gap="md" data-testid="servers-loading">
-        <UiCard v-for="placeholder in LOADING_CARD_COUNT" :key="placeholder" padding="md" loading :skeleton-lines="3" />
-      </UiGrid>
-
-      <!-- Servers, every module in one grid -->
-      <UiStack v-else-if="matchingServers.length > 0" gap="md" data-testid="servers-list">
+      <!-- Servers, every module in one grid; while the list loads the same grid holds placeholder cards -->
+      <UiStack v-if="store.loading || matchingServers.length > 0" gap="md" data-testid="servers-list">
         <!-- One grid for every module, so a module with a single server never leaves half the row empty -->
         <UiGrid min-item-width="md" gap="md">
-          <UiCard v-for="server in pagedServers" :key="server.id" padding="md" :data-testid="`server-row-${server.id}`">
-            <UiStack gap="md">
-              <UiStack direction="row" justify="between" align="start" gap="sm">
-                <UiStack gap="xs" class="min-w-0">
-                  <UiText tone="muted" size="xs" class="font-semibold" :data-testid="`servers-module-${server.module}`">{{ MODULE_LABELS[server.module] }}</UiText>
-                  <UiStack direction="row" align="center" gap="sm" wrap>
-                    <UiText tone="primary" size="lg" class="min-w-0 break-words font-medium">{{ server.name }}</UiText>
-                    <UiBadge v-if="server.limits.isDefault" tone="warning" small>{{ t('servers.servers.default') }}</UiBadge>
-                    <UiBadge v-if="server.limits.isDisabled" tone="neutral" small>{{ t('servers.servers.disabled') }}</UiBadge>
-                  </UiStack>
-                  <UiText tone="muted" size="sm" class="font-mono">{{ server.endpoint.ipAddress ?? EMPTY_VALUE }}</UiText>
-                </UiStack>
-                <UiRowActions :actions="serverActions(server)" :testid="`server-actions-${server.id}`" />
-              </UiStack>
-
-              <UiProgress
-                v-if="serverLoadPercent(server) !== null"
-                :value="serverLoadPercent(server) ?? 0"
-                :label="t('servers.servers.accountsLoad')"
-                :value-text="accountsLabel(server)"
-                :warn-at="LOAD_WARN_AT"
-              />
-              <UiStack v-else direction="row" justify="between" gap="sm">
-                <UiText tone="secondary" size="sm">{{ t('shared.accounts') }}</UiText>
-                <UiText tone="muted" size="sm">{{ accountsLabel(server) }}</UiText>
-              </UiStack>
-
-              <UiLoader v-if="testingIds.includes(server.id)" :data-testid="`server-testing-${server.id}`" />
-              <UiBadge
-                v-else-if="testResults[server.id]"
-                :tone="testResults[server.id]?.ok ? 'success' : 'danger'"
-                :data-testid="`server-test-result-${server.id}`"
-              >
-                {{ testResults[server.id]?.message }}
-              </UiBadge>
-              <UiStack v-else gap="xs">
-                <UiBadge :tone="stateOf(server).tone" dot :data-testid="`server-state-${server.id}`">
-                  {{ t(stateOf(server).key) }}
-                </UiBadge>
-                <UiText v-if="server.lastTestedAt" tone="muted" size="xs">
-                  {{ new Date(server.lastTestedAt).toLocaleString(locale) }}
-                </UiText>
-              </UiStack>
-            </UiStack>
-          </UiCard>
+          <template v-if="store.loading">
+            <ServerCard v-for="placeholder in LOADING_CARD_COUNT" :key="placeholder" />
+          </template>
+          <template v-else>
+            <ServerCard
+              v-for="server in pagedServers"
+              :key="server.id"
+              :server="server"
+              :actions="serverActions(server)"
+              :testing="testingIds.includes(server.id)"
+              :test-outcome="testResults[server.id] ?? null"
+            />
+          </template>
         </UiGrid>
         <UiPagination
           :page="query.page.value"
           :total="matchingServers.length"
           :page-size="DEFAULT_PAGE_SIZE"
+          :loading="store.loading"
           testid="servers-pagination"
           @update:page="query.setPage"
         />

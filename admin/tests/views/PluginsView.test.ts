@@ -151,11 +151,12 @@ describe('PluginsView', () => {
     vi.unstubAllGlobals()
   })
 
-  it('draws card placeholders while the list loads', async () => {
+  it('keeps the toolbar and draws card placeholders while the list loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountPlugins()
 
-    expect(wrapper.get('[data-testid="plugins-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('[data-testid="plugins-list"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="plugins-installed-search"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="plugin-card-skeleton"]')).toHaveLength(6)
   })
 

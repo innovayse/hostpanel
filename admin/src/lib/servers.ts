@@ -4,6 +4,8 @@
  */
 import { ServerState } from '@/types/server'
 import type { ServerDto } from '@/types/server'
+import { EMPTY_VALUE } from '@/lib/format'
+import { UiTone } from '@/utils/ui/tone'
 
 /** The server list narrowed by these; an empty string means the criterion is not set. */
 interface ServerCriteria {
@@ -13,6 +15,20 @@ interface ServerCriteria {
   state: string
   /** Text that must appear in the server's name, hostname or IP address (ignoring case), or an empty string. */
   search: string
+}
+
+/** Locale key of the caption of each server state. */
+export const SERVER_STATE_KEYS: Record<ServerState, string> = {
+  [ServerState.Online]: 'servers.servers.online',
+  [ServerState.Offline]: 'servers.servers.offline',
+  [ServerState.Untested]: 'servers.servers.notTested',
+}
+
+/** Badge tone of each server state. */
+export const SERVER_STATE_TONES: Record<ServerState, UiTone> = {
+  [ServerState.Online]: UiTone.Success,
+  [ServerState.Offline]: UiTone.Danger,
+  [ServerState.Untested]: UiTone.Neutral,
 }
 
 /**
@@ -65,4 +81,17 @@ export const filterServers = (servers: readonly ServerDto[], criteria: ServerCri
     return [server.name, server.endpoint.hostname, server.endpoint.ipAddress ?? '']
       .some(text => text.toLowerCase().includes(needle))
   })
+}
+
+/**
+ * Formats the account usage of a server.
+ *
+ * @param server - The server.
+ * @returns `count / max`, `count`, or a dash when unknown.
+ */
+export const serverAccountsLabel = (server: ServerDto): string => {
+  if (server.accountsCount === null) {
+    return EMPTY_VALUE
+  }
+  return server.limits.maxAccounts === null ? `${server.accountsCount}` : `${server.accountsCount} / ${server.limits.maxAccounts}`
 }

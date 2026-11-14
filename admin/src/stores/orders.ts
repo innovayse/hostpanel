@@ -11,7 +11,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useOrdersApi } from '@/composables/apis/useOrdersApi'
 import { runAction } from '@/lib/runAction'
-import type { OrderDetail, OrderLineFailure, OrderListItem, OrderStatus } from '@/types/order'
+import type { OrderDetail, OrderLineFailure, OrderListFilters, OrderListItem } from '@/types/order'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
 /** Loads and changes orders. */
@@ -54,16 +54,18 @@ export const useOrdersStore = defineStore('orders', () => {
   )
 
   /**
-   * Loads one page of orders. The page and the status come from the list's address, so the store keeps
-   * no copy of them.
+   * Loads one page of orders. The page, the search text and the status come from the list's address, so the store
+   * keeps no copy of them.
    *
    * @param page - Page to load, 1-based.
-   * @param status - Status to keep; null for all.
+   * @param filters - The search text and the status filter; empty for none.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (page: number, status: OrderStatus | null): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: OrderListFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.listOrders({ page, pageSize: pageSize.value, status }))
+    const result = await runAction(error, () =>
+      api.listOrders({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+    )
     loading.value = false
     if (result.ok) {
       orders.value = result.value.items

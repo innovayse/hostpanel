@@ -35,7 +35,7 @@
   "ordersList": {
     "orders": "Պատվերներ",
     "manageCustomerOrders": "Հաճախորդների պատվերների կառավարում",
-    "filterByStatus": "Զտել ըստ կարգավիճակի",
+    "searchOrders": "Պատվերների որոնում ըստ համարի կամ id-ի",
     "order": "Պատվեր №",
     "items": "Դիրքեր",
     "accept": "Ընդունել",

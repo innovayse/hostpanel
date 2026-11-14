@@ -1,7 +1,7 @@
 /**
  * Mount tests for OrdersListView: the table renders what the API sent, a pending order can be
- * accepted (and the list reloads), a refused load or command shows the API's sentence, and the status
- * filter and the page live in the address.
+ * accepted (and the list reloads), a refused load or command shows the API's sentence, and the search, the status
+ * filter and the page live in the address and are sent to the API.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -70,6 +70,20 @@ const applyStatus = async (wrapper: VueWrapper, status: OrderStatus) => {
   await flushPromises()
   await wrapper.get('[data-testid="filter-apply"]').trigger('click')
   await flushPromises()
+}
+
+/**
+ * Reads the options a mounted status select offers, through its typed props because the select is generic.
+ *
+ * @param wrapper - The mounted list.
+ * @returns The option values of the status select, in order.
+ */
+const statusOptionValues = (wrapper: VueWrapper): string[] => {
+  const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === 'orders-filter-status')
+  if (select === undefined) {
+    throw new Error('The status select is not mounted.')
+  }
+  return (select.props() as unknown as { options: { value: string }[] }).options.map((option) => option.value)
 }
 
 describe('OrdersListView', () => {
@@ -236,6 +250,39 @@ describe('OrdersListView', () => {
     expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=Fraud')
   })
 
+  it('puts the typed search in the address and sends it after the pause', async () => {
+    const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
+    const { wrapper, router } = await mountListAt('/orders')
+
+    await wrapper.get('[data-testid="orders-search"]').setValue('ORD-00')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ search: 'ORD-00' })
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&search=ORD-00')
+  })
+
+  it('restores the search from the address and sends it with the status', async () => {
+    const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
+    const { wrapper } = await mountListAt('/orders?search=ORD-00&status=Cancelled')
+
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls[0]).toBe('/api/orders?page=1&pageSize=20&search=ORD-00&status=Cancelled')
+    expect((wrapper.get('[data-testid="orders-search"]').element as HTMLInputElement).value).toBe('ORD-00')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Cancelled')
+  })
+
+  it('offers every order status in the filter dialog', async () => {
+    stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
+    const wrapper = await mountList()
+
+    await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
+    await flushPromises()
+
+    expect(statusOptionValues(wrapper)).toEqual(['', ...Object.values(OrderStatus)])
+  })
+
   it('clears the status from the address and reloads when its chip is removed', async () => {
     const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
     const { wrapper, router } = await mountListAt('/orders?status=Fraud')
@@ -308,6 +355,15 @@ describe('OrdersListView', () => {
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="orders-empty"]').text()).toContain('No orders found')
+  })
+
+  it('names the search in the empty state of a searched list', async () => {
+    stubRoutes({ 'GET /api/orders?': () => json({ items: [], totalCount: 0 }) })
+    const { wrapper } = await mountListAt('/orders?search=nothing')
+
+    expect(wrapper.get('[data-testid="orders-empty"]').text()).toContain('No orders match your filter')
+    // The search box clears itself, so the empty state offers a clear button only for an applied status.
+    expect(wrapper.find('[data-testid="orders-clear-filters"]').exists()).toBe(false)
   })
 
   it('names the filter in the empty state of a filtered list and clears it from there', async () => {

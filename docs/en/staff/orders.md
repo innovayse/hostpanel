@@ -12,7 +12,9 @@ Go to **Orders** to see all orders across all clients.
 
 **Columns:** Order number, Client, Date, Total, Status, and action buttons.
 
-**Status filter:** Pending, Active, Incomplete, Cancelled, Fraud. Incomplete is an accepted order with at least one line that failed to be fulfilled; the list shows how many lines failed, and filtering by Incomplete gives the orders that still need attention.
+**Search:** by order number, or by order id when you type a whole number. The search and the status filter stay in the address, so a link or a reload opens the same list, and an applied status shows as a chip you can remove.
+
+**Status filter:** Pending, Active, Incomplete, Cancelled, Fraud, Pending review (the fraud review queue). Incomplete is an accepted order with at least one line that failed to be fulfilled; the list shows how many lines failed, and filtering by Incomplete gives the orders that still need attention.
 
 **Row actions:** **Accept** (Pending only), **Cancel** (Pending only), **View**. Attempting to accept or cancel an order that is not Pending returns `ORDER_NOT_PENDING`.
 

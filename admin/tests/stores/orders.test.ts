@@ -21,12 +21,12 @@ describe('ordersStore', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fetchAll sends the page and the status and fills the list', async () => {
+  it('fetchAll sends the page, the trimmed search and the status and fills the list', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 1 }))
     const store = useOrdersStore()
 
-    expect(await store.fetchAll(2, OrderStatus.Pending)).toBe(true)
-    expect(callOf(mock).url).toBe('/api/orders?page=2&pageSize=20&status=Pending')
+    expect(await store.fetchAll(2, { search: '  ORD-00 ', status: OrderStatus.Pending })).toBe(true)
+    expect(callOf(mock).url).toBe('/api/orders?page=2&pageSize=20&search=ORD-00&status=Pending')
     expect(store.orders).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(1)
     expect(store.loading).toBe(false)
@@ -35,11 +35,11 @@ describe('ordersStore', () => {
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useOrdersStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchAll(1, null)).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe('Not allowed.')
 
     stubOffline()
-    expect(await store.fetchAll(1, null)).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
   })
 

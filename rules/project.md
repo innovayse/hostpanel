@@ -1771,6 +1771,8 @@ feature does not exist is not kept. The decisions:
   frontend the pieces every list repeated (loading when the address changes, `narrowed`, reading a filter as an enum member
   or an id, building chips) are `useListQuery`, and the ticket filters both ticket screens share are `useTicketFilters` and
   `SupportTicketFilterFields`.
+  The order list (`ListOrdersQuery`, the admin Orders screen) is on it with `SearchIncludingId` on the order number and id and a
+  `Status` enum filter; it does not search the client name, which only the Clients module can read, so Orders never joins it.
 
 ### Email campaigns
 
@@ -1843,7 +1845,7 @@ adds the weights and holds the sum to 0 to 100. A block list hit weighs 100, so 
 - **The held state is a status, not a flag.** `OrderStatus.UnderReview` (5) is only reached from Pending (`Order.HoldForReview`); fulfilment acts on Pending orders
   only, so a payment for a held order fulfils nothing, and `ApproveOrderReview` returns the order to Pending and fulfils it at once when its invoice is already
   paid. `RejectOrderReview` cancels the open invoice through Billing (a paid invoice refuses, and the order stays held until it is refunded) and
-  `Order.RejectFromReview` makes the order `Fraud` and raises the event the `order-rejected` mail answers. The queue is `GET /api/orders?status=UnderReview`.
+  `Order.RejectFromReview` makes the order `Fraud` and raises the event the `order-rejected` mail answers. The queue is `GET /api/orders?page=1&pageSize=20&status=UnderReview`.
 - **The check runs before anything is created** in `PlaceOrderHandler` (a refusal creates no account, order number or invoice) and in `RegisterHandler` (local
   mode; a sign-up through the external sign-on provider never reaches this host). A held order is stored already `UnderReview`, never Pending.
 - **The log is the memory of the signals.** Orders from one address within the velocity window and the other e-mail addresses seen from it within 30 days are

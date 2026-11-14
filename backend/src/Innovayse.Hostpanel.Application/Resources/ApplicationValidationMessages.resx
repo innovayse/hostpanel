@@ -550,6 +550,9 @@
   <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
     <value>Order line refund outcome must be NothingRefunded or PartlyRefunded.</value>
   </data>
+  <data name="OrderStatusInvalid" xml:space="preserve">
+    <value>Status must be one of: Pending, Active, Cancelled, Fraud, Incomplete, UnderReview.</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Select a payment method.</value>
   </data>

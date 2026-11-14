@@ -550,6 +550,9 @@
   <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
     <value>Результат возврата по позиции заказа должен быть NothingRefunded или PartlyRefunded.</value>
   </data>
+  <data name="OrderStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть одним из: Pending, Active, Cancelled, Fraud, Incomplete, UnderReview.</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Выберите способ оплаты.</value>
   </data>

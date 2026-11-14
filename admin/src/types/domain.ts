@@ -3,6 +3,7 @@
  * forwarding rules and renewal reminders.
  */
 
+import type { RegistrarModule } from '@/types/registrarmodule'
 
 /** Represents a domain registration. */
 export interface Domain {
@@ -190,14 +191,22 @@ export interface DomainReminderItem {
   sentAt: string
 }
 
+/** What narrows the domain list: the search text and the filters of the filter dialog; each member left out means no narrowing. */
+export interface DomainListFilters {
+  /** Name search term; empty for none. */
+  search?: string
+  /** Keep only the domains in this lifecycle status. */
+  status?: DomainStatus
+  /** Keep only the domains managed through this registrar module. */
+  registrarModule?: RegistrarModule
+}
+
 /** Filter and paging of the domain list. */
-export interface DomainFilter {
+export interface DomainFilter extends DomainListFilters {
   /** Page, 1-based. */
   page: number
   /** Items per page. */
   pageSize: number
-  /** Name search term; empty for none. */
-  search?: string
   /** Keep only this client's domains. */
   clientId?: number | string
 }

@@ -69,7 +69,7 @@
       },
       {
         "path": "clients/domain-registrations",
-        "component": "DomainRegistrationsView.vue"
+        "redirect": "/domains"
       },
       {
         "path": "clients/cancellations",

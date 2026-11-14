@@ -31,7 +31,7 @@ export const useDomainsApi = () => {
   /**
    * Lists domain registrations, one page.
    *
-   * @param filter - Page, page size, name search and owning client.
+   * @param filter - Page, page size, name search, status, registrar module and owning client.
    * @returns The page and the total count.
    */
   const listDomains = (filter: DomainFilter): Promise<PaginatedList<DomainRegistration>> =>
@@ -41,6 +41,8 @@ export const useDomainsApi = () => {
         page: filter.page,
         pageSize: filter.pageSize,
         search: filter.search,
+        status: filter.status,
+        registrarModule: filter.registrarModule,
       })}`,
     )
 

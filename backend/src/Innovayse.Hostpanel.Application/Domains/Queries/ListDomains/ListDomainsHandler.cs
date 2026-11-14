@@ -1,5 +1,5 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -9,7 +9,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Domains.Queries.ListDomains;
 
-/// <summary>Returns a paginated list of all domains for the admin view.</summary>
+/// <summary>
+/// Returns a paginated list of all domains for the admin view, narrowed by the search text on the name and by owner,
+/// status and registrar module, all in SQL ahead of paging.
+/// </summary>
 public sealed class ListDomainsHandler
 {
     /// <summary>The data context the page is read from.</summary>
@@ -30,7 +33,7 @@ public sealed class ListDomainsHandler
     /// <summary>
     /// Handles <see cref="ListDomainsQuery"/>.
     /// </summary>
-    /// <param name="query">The list domains query with pagination and search parameters.</param>
+    /// <param name="query">The list domains query with pagination, search and filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A paged result containing domain registration items with client names. Never refuses.</returns>
     public async Task<Result<PaginatedList<DomainRegistrationDto>>> HandleAsync(
@@ -42,15 +45,20 @@ public sealed class ListDomainsHandler
             domainsQuery = domainsQuery.Where(x => x.ClientId == query.ClientId.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
+        domainsQuery = domainsQuery.Search(query.Search, x => x.Name);
+
+        if (query.Status is { } status)
         {
-            // EF.Functions.Like rather than the Npgsql-only ILike: Application does not reference the
-            // provider. The term is escaped so a typed % or _ matches itself.
-            var pattern = LikePattern.Contains(query.Search.Trim());
-            domainsQuery = domainsQuery.Where(x => EF.Functions.Like(x.Name.ToLower(), pattern, LikePattern.EscapeCharacter));
+            domainsQuery = domainsQuery.Where(x => x.Status == status);
         }
 
-        var orderedDomains = domainsQuery.OrderBy(x => x.Name);
+        if (query.RegistrarModule is { } registrarModule)
+        {
+            domainsQuery = domainsQuery.Where(x => x.RegistrarModule == registrarModule);
+        }
+
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var orderedDomains = domainsQuery.OrderBy(x => x.Name).ThenBy(x => x.Id);
         var totalCount = await orderedDomains.CountAsync(ct);
         var items = await orderedDomains
             .Paginate(query.Page, query.PageSize)

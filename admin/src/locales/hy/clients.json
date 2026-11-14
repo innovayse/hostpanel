@@ -498,12 +498,6 @@
     "invitationSentTo": "Հրավերն ուղարկվել է {email}-ին",
     "never": "Երբեք"
   },
-  "domainRegistrations": {
-    "domainRegistrations": "Դոմեյնների գրանցումներ",
-    "viewAndManageClientDomain": "Հաճախորդների դոմեյնների գրանցումների դիտում և կառավարում",
-    "regPeriod": "Գրանցման ժամկետ",
-    "noDomainRegistrationsFound": "Դոմեյնների գրանցումներ չեն գտնվել"
-  },
   "manageAffiliates": {
     "manageAffiliates": "Գործընկերների կառավարում",
     "viewAndManageTheAffiliate": "Գործընկերային ծրագրի դիտում և կառավարում",

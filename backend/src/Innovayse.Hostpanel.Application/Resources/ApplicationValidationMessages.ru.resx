@@ -370,14 +370,11 @@
   <data name="DomainStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
-  <data name="DomainPageRequired" xml:space="preserve">
-    <value>Номер страницы должен быть не меньше 1.</value>
+  <data name="DomainListStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть одним из: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
-  <data name="DomainListSearchTooLong" xml:space="preserve">
-    <value>Текст поиска доменов не может быть длиннее {0} символов.</value>
-  </data>
-  <data name="DomainPageSizeRange" xml:space="preserve">
-    <value>Размер страницы должен быть от 1 до 100.</value>
+  <data name="DomainListRegistrarInvalid" xml:space="preserve">
+    <value>Регистратор должен быть одним из: NameAm, Namecheap.</value>
   </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>Номер страницы должен быть не меньше 1.</value>

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The domain list searches, filters and pages on the server. Besides the name search it takes a status and a registrar filter from the Filters button, shown as removable chips and kept in the address. The separate Domain Registrations page was the same list, so it is gone from the Clients menu and its old address opens the domain list; the domain list now shows the registrar, the registration period and the next due date too. A search longer than the limit, an unknown status or an unknown registrar is refused with 400.
+
 ### Fixed
 
 - SSH key agent 1.4.0: a new `remove-jail` operation removes the SSH jail and its home mount unit of an account the hosting panel has already deleted (it refuses while the account exists and while anything is still mounted inside the jail, and removes the tree on its own filesystem only). HostPanel asks for it after it terminated a service's hosting account. Before, every terminated jailed account left its jail and an enabled systemd mount unit on the server, because the agent keeps a jail for cheap re-enrolment.

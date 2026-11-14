@@ -18,6 +18,7 @@ import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@
 import { InvoiceStatus } from '@/types/invoice'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
+import { RegistrarModule } from '@/types/registrarmodule'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { TicketPriority } from '@/types/ticket'
 import { PaymentMethod } from '@/types/transaction'
@@ -67,6 +68,12 @@ export const DOMAIN_STATUS_OPTIONS: SelectOption[] = [
   { value: DomainStatus.Redemption, get label() { return translate('constants.domainStatusOptions.redemption') } },
   { value: DomainStatus.Transferred, get label() { return translate('constants.domainStatusOptions.transferred') } },
   { value: DomainStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
+]
+
+/** Registrar module options for dropdowns: the registrar a TLD is sourced from and the registrar a domain list is filtered by. */
+export const REGISTRAR_MODULE_OPTIONS: SelectOption[] = [
+  { value: RegistrarModule.NameAm, get label() { return translate('settings.tldConfigs.nameAm') } },
+  { value: RegistrarModule.Namecheap, get label() { return translate('settings.tldConfigs.namecheap') } },
 ]
 
 /** Payment method options for dropdowns (the empty entry means "none"). */

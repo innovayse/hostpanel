@@ -22,5 +22,5 @@ const table = inject(UI_TABLE_CONTEXT, null)
 </script>
 
 <template>
-  <tbody v-if="!table?.loading" :class="[cardTableClasses, divided ? 'divide-y divide-border-subtle max-sm:divide-y-0' : '']"><slot /></tbody>
+  <tbody v-if="!table?.loading" role="rowgroup" :class="[cardTableClasses, divided ? 'divide-y divide-border-subtle max-sm:divide-y-0' : '']"><slot /></tbody>
 </template>

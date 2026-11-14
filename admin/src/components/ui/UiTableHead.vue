@@ -14,5 +14,5 @@ provide(UI_TABLE_HEAD, true)
 </script>
 
 <template>
-  <thead class="sticky top-0 z-10" :class="cardTableClasses"><slot /></thead>
+  <thead role="rowgroup" class="sticky top-0 z-10" :class="cardTableClasses"><slot /></thead>
 </template>

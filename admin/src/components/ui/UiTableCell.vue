@@ -8,13 +8,15 @@
  * every table), so no screen picks those classes itself. `truncate` makes the cell the one that gives way when the row is too wide. `select` marks the checkbox cell of a
  * selectable table (drawn by `UiTableRow`, not set by a screen).
  *
- * Below `sm` the cell is a part of a card (see `UiTable`): the cell reads which header column it sits under (its position in the
- * row) and takes that column's role, and a field shows the column's caption before its value.
+ * Below `sm` the cell is a part of a card (see `UiTable`): the row hands the cell its position (`columnIndex`, counted over the row's
+ * cells at render time, so a cell that is not rendered or one that spans columns does not shift the others), the cell takes the role of the
+ * header column at that position, and a field shows the column's caption before its value, as real text that is hidden from `sm` up.
+ * A cell with no column of its own (one that spans the row) is a full width line of the card.
  */
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
-import { cardCellClasses, cellDensityClasses, columnClasses, truncateCellClasses } from '@/utils/ui/table'
+import { cardCellClasses, cardLabelClasses, cellDensityClasses, columnClasses, truncateCellClasses } from '@/utils/ui/table'
 import type { UiAlign, UiHideBelow } from '@/utils/ui/table'
 
 /** Props for UiTableCell. */
@@ -35,7 +37,10 @@ const props = withDefaults(defineProps<{
   truncate?: boolean
   /** The checkbox cell of a selectable table: narrow, like its header. */
   select?: boolean
+  /** Position of the cell among the cells of its row; set by `UiTableRow`, never by a screen. */
+  columnIndex?: number
 }>(), {
+  columnIndex: undefined,
   hideBelow: undefined,
   align: undefined,
   muted: false,
@@ -49,18 +54,16 @@ const props = withDefaults(defineProps<{
 /** Density shared by the parent table (plain when used outside one). */
 const context = inject(UI_TABLE_CONTEXT, { density: UiTableDensity.Plain })
 
-/** The `<td>`, whose position in its row says which header column it belongs to. */
-const cellElement = ref<HTMLTableCellElement | null>(null)
+/** The header column of this cell, absent outside a table or for a cell that spans the row. */
+const column = computed<UiTableColumn | undefined>(() =>
+  props.columnIndex === undefined ? undefined : context.columnAt?.(props.columnIndex),
+)
 
-/** Position of the cell in its row; unknown until the cell is mounted. */
-const position = ref<number>(-1)
+/** True inside a table, where a cell without a column of its own is a card line; a lone cell has no card layout. */
+const inTable = computed<boolean>(() => context.columnAt !== undefined)
 
-onMounted(() => {
-  position.value = cellElement.value?.cellIndex ?? -1
-})
-
-/** The header column of this cell, absent outside a table or before the cell is mounted. */
-const column = computed<UiTableColumn | undefined>(() => context.columnAt?.(position.value))
+/** Classes of the caption element, empty when the cell draws none. */
+const labelClasses = computed<string>(() => cardLabelClasses(column.value))
 
 /** Padding, alignment and tone classes. */
 const classes = computed<string[]>(() => [
@@ -69,10 +72,13 @@ const classes = computed<string[]>(() => [
   props.muted ? 'text-text-muted' : '',
   props.strong ? 'font-semibold text-text-primary' : '',
   props.truncate ? truncateCellClasses : '',
-  cardCellClasses(column.value),
+  inTable.value ? cardCellClasses(column.value) : '',
 ])
 </script>
 
 <template>
-  <td ref="cellElement" :class="classes" :data-label="column?.label"><slot /></td>
+  <td role="cell" :class="classes">
+    <span v-if="labelClasses" :class="labelClasses">{{ column?.label }}</span>
+    <slot />
+  </td>
 </template>

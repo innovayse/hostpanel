@@ -21,7 +21,11 @@ test('the clients table is a list of cards on a phone', async ({ page }) => {
 
   const first = cards.first()
   await expect(first).toContainText(`${ada.firstName} ${ada.lastName}`)
-  await expect(first.locator('td[data-label]').first()).toBeVisible()
+  // The email column is hidden below lg in the table, so its header asks to stay on the card, captioned by real text.
+  await expect(first.getByText('Email', { exact: true })).toBeVisible()
+  await expect(first).toContainText(ada.email)
+  // The id column is hidden below md and stays off the card.
+  await expect(first.getByText('ID', { exact: true })).toHaveCount(0)
   await expect(page.locator('th').first()).toBeHidden()
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)

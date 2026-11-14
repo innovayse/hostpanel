@@ -80,7 +80,9 @@
     "rowsPerPage": "Rows per page"
   },
   "table": {
-    "empty": "No data"
+    "empty": "No data",
+    "sortBy": "Sort by",
+    "sortDirection": "Reverse the sort order"
   },
   "bulkBar": {
     "label": "Bulk actions",

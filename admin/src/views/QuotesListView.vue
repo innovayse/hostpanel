@@ -26,6 +26,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useFilterQuery } from '@/composables/useFilterQuery'
@@ -189,8 +190,8 @@ onMounted(loadClients)
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader card-role="title">{{ t('shared.subject') }}</UiTableHeader>
-            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.subject') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.expiryDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.quotesList.created') }}</UiTableHeader>

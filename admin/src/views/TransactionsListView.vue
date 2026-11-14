@@ -41,6 +41,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { TRANSACTION_METHOD_OPTIONS } from '@/lib/constants'
@@ -325,7 +326,7 @@ watch(filters.page, load, { immediate: true })
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader card-role="title">{{ t('shared.clientName') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>

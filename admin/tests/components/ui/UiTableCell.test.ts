@@ -49,8 +49,15 @@ describe('UiTableCell', () => {
     expect(classes).not.toContain('text-start')
   })
 
-  it('adds no padding outside a table and aligns left like the header', () => {
-    expect(mount(UiTableCell).classes()).toEqual(['text-start'])
+  it('adds no padding outside a table and aligns left like the header, with no card layout', () => {
+    const wrapper = mount(UiTableCell)
+
+    expect(wrapper.classes()).toEqual(['text-start'])
+    expect(wrapper.find('span').exists()).toBe(false)
+  })
+
+  it('is a cell for assistive technology whatever the layout', () => {
+    expect(mount(UiTableCell).attributes('role')).toBe('cell')
   })
 
   it('takes the remaining width and lets its content truncate when asked to', () => {

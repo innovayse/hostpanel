@@ -121,8 +121,10 @@ export const selectedRowClasses = 'bg-primary-500/10 [&>:first-child]:shadow-[in
 
 /** Closed set of roles a column plays when the table is drawn as cards (below the `sm` breakpoint). */
 export const UiCardRole = {
-  /** A label and value pair of the card (the default). */
+  /** A label and value pair of the card, the value at the end of the line (the default). */
   Field: 'field',
+  /** A label over a full width value: the role of a column whose cells hold a form control (an input, a textarea, a number input). */
+  Control: 'control',
   /** The heading of the card. */
   Title: 'title',
   /** The chip at the top right of the card. */
@@ -151,33 +153,56 @@ export const cardHeadRowClasses = 'max-sm:flex'
 const cardCellResetClasses = 'max-sm:h-auto max-sm:p-0 max-sm:max-w-none'
 
 /** Classes of the checkbox cell of a card: the first item of the first line. */
-const cardSelectClasses = `${cardCellResetClasses} max-sm:order-1 max-sm:w-auto`
+const cardSelectClasses = `${cardCellResetClasses} max-sm:block max-sm:order-1 max-sm:w-auto`
 
 /** Classes of the title cell of a card: takes the first line's free width. */
-const cardTitleClasses = `${cardCellResetClasses} max-sm:order-2 max-sm:flex-1 max-sm:min-w-0 max-sm:w-auto max-sm:font-semibold max-sm:text-text-primary max-sm:text-start`
+const cardTitleClasses = `${cardCellResetClasses} max-sm:block max-sm:order-2 max-sm:flex-1 max-sm:min-w-0 max-sm:w-auto max-sm:font-semibold max-sm:text-text-primary max-sm:text-start`
 
 /** Classes of the badge cell of a card: the end of the first line. */
-const cardBadgeClasses = `${cardCellResetClasses} max-sm:order-3 max-sm:w-auto max-sm:text-end`
+const cardBadgeClasses = `${cardCellResetClasses} max-sm:block max-sm:order-3 max-sm:w-auto max-sm:text-end`
 
-/** Classes of a field cell of a card: the column's caption (from `data-label`) at the start, the value at the end. */
-const cardFieldClasses = `${cardCellResetClasses} max-sm:order-4 max-sm:flex max-sm:w-full max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:text-end max-sm:before:content-[attr(data-label)] max-sm:before:text-xs max-sm:before:font-semibold max-sm:before:text-text-muted max-sm:before:text-start`
+/** Classes of a field cell of a card: the column's caption at the start of the line, the value at the end. */
+const cardFieldClasses = `${cardCellResetClasses} max-sm:order-4 max-sm:flex max-sm:w-full max-sm:items-center max-sm:justify-between max-sm:gap-3 max-sm:text-end`
+
+/** Classes of a control cell of a card: the caption over the form control, which takes the full width of the card. */
+const cardControlClasses = `${cardCellResetClasses} max-sm:order-4 max-sm:flex max-sm:w-full max-sm:flex-col max-sm:items-stretch max-sm:gap-1 max-sm:text-start`
 
 /** Classes of the actions cell of a card: the footer line. */
-const cardActionsClasses = `${cardCellResetClasses} max-sm:order-5 max-sm:w-full max-sm:pt-1.5 max-sm:border-t max-sm:border-border-subtle max-sm:text-end`
+const cardActionsClasses = `${cardCellResetClasses} max-sm:block max-sm:order-5 max-sm:w-full max-sm:pt-1.5 max-sm:border-t max-sm:border-border-subtle max-sm:text-end`
 
 /** Classes of a hidden column: not drawn on the card, whatever its `hideBelow`. */
 const cardHiddenClasses = 'max-sm:hidden'
 
+/** Classes of a cell that spans the row (a `colspan` cell, or one with no header column of its own): a full width line of the card. */
+const cardSpanClasses = `${cardCellResetClasses} max-sm:block max-sm:order-4 max-sm:w-full`
+
+/** Classes of the caption a field or control cell draws before its value: real text, so it is read like the header it stands for. */
+const cardVisibleLabelClasses = 'text-xs font-semibold text-text-muted text-start sm:hidden'
+
+/** Classes of the caption a title or badge cell carries for assistive technology only. */
+const cardHiddenLabelClasses = 'sr-only sm:hidden'
+
+/**
+ * The role a column plays on a card. A column that sets no `cardRole` is a field, except one that is hidden
+ * below a breakpoint: it was left out of the narrow layout on purpose, so it stays out of the card too
+ * unless its header says `card-role="field"` (or another role) explicitly.
+ *
+ * @param column - The column.
+ * @returns The explicit role, else `hidden` for a `hideBelow` column, else `field`.
+ */
+export const cardRoleOf = (column: UiTableColumn): UiCardRole =>
+  column.cardRole ?? (column.hideBelow ? UiCardRole.Hidden : UiCardRole.Field)
+
 /**
  * Classes a column gives each of its cells, header, data and placeholder alike, once the table is drawn as cards.
- * The select and actions columns have fixed roles, any other follows the column's `cardRole`.
+ * The select and actions columns have fixed roles, any other follows its card role.
  *
- * @param column - The column of the cell, absent for a cell that matches no header (it keeps the plain block layout).
+ * @param column - The column of the cell, absent for a cell that matches none (a `colspan` cell): it becomes a full width line.
  * @returns The card layout classes of the cell.
  */
 export const cardCellClasses = (column: UiTableColumn | undefined): string => {
   if (!column) {
-    return ''
+    return cardSpanClasses
   }
   if (column.select) {
     return cardSelectClasses
@@ -185,15 +210,41 @@ export const cardCellClasses = (column: UiTableColumn | undefined): string => {
   if (column.actions) {
     return cardActionsClasses
   }
-  switch (column.cardRole) {
+  switch (cardRoleOf(column)) {
     case UiCardRole.Title:
       return cardTitleClasses
     case UiCardRole.Badge:
       return cardBadgeClasses
+    case UiCardRole.Control:
+      return cardControlClasses
     case UiCardRole.Hidden:
       return cardHiddenClasses
     default:
       return cardFieldClasses
+  }
+}
+
+/**
+ * Classes of the caption element a cell draws for its column on a card, hidden from `sm` up where the header says it.
+ * Fields and controls show it, a title or badge carries it for assistive technology, and the select, actions and
+ * hidden columns have none (the checkbox and the buttons name themselves).
+ *
+ * @param column - The column of the cell, absent for a cell that matches none.
+ * @returns The classes, or an empty string when the cell draws no caption.
+ */
+export const cardLabelClasses = (column: UiTableColumn | undefined): string => {
+  if (!column || column.select || column.actions || !column.label) {
+    return ''
+  }
+  switch (cardRoleOf(column)) {
+    case UiCardRole.Field:
+    case UiCardRole.Control:
+      return cardVisibleLabelClasses
+    case UiCardRole.Title:
+    case UiCardRole.Badge:
+      return cardHiddenLabelClasses
+    default:
+      return ''
   }
 }
 

@@ -39,6 +39,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
@@ -322,13 +323,13 @@ watch(loadKey, load, { immediate: true })
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader card-role="title">{{ t('shared.invoice') }}</UiTableHeader>
-            <UiTableHeader hide-below="sm">{{ t('shared.clientName') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.invoice') }}</UiTableHeader>
+            <UiTableHeader hide-below="sm" :card-role="UiCardRole.Field">{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader hide-below="md">{{ t('shared.invoiceDate') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('shared.dueDate') }}</UiTableHeader>
-            <UiTableHeader numeric hide-below="sm">{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader numeric hide-below="sm" :card-role="UiCardRole.Field">{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('shared.paymentMethod') }}</UiTableHeader>
-            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>

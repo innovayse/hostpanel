@@ -43,6 +43,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems } from '@/utils/ui/layout'
@@ -296,10 +297,10 @@ onMounted(() => {
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader hide-below="md">{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader card-role="title">{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader hide-below="lg">{{ t('shared.email') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('shared.company') }}</UiTableHeader>
-            <UiTableHeader card-role="badge">{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.name') }}</UiTableHeader>
+            <UiTableHeader hide-below="lg" :card-role="UiCardRole.Field">{{ t('shared.email') }}</UiTableHeader>
+            <UiTableHeader hide-below="xl" :card-role="UiCardRole.Field">{{ t('shared.company') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('clients.clientGroups.group') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('clients.clientsList.2fa') }}</UiTableHeader>
             <UiTableHeader hide-below="lg">{{ t('clients.clientsList.joined') }}</UiTableHeader>

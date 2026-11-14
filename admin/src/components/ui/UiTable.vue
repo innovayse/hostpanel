@@ -27,15 +27,30 @@
  * whose header says `card-role="title"` its heading and the `badge` one a chip at the top right, the other columns
  * label/value pairs under the caption their header registered (`card-role="hidden"` leaves a column out), and the
  * actions column the footer. The loading placeholders take the same card shape, and the empty row, selection and a row's
- * click work as they do in the table.
+ * click work as they do in the table. A column that is hidden below a breakpoint stays out of the card too, unless its header
+ * sets `card-role` itself. A column whose cells hold a form control says `card-role="control"`: the caption goes over the control,
+ * which takes the full width of the card.
+ *
+ * The header captions that hold the sort buttons are not drawn on a card, so when a header is `sortable` the table draws one compact
+ * control above the cards (a select of the sortable columns and a button for the direction). It asks the screen to sort through the
+ * same `sort` event the header's button emits, so a screen writes nothing for it.
+ *
+ * The table gives the semantics of its parts as explicit roles (table, rowgroup, row, columnheader, cell), because a part
+ * drawn as a block would otherwise lose them for assistive technology.
  */
 import { computed, provide, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import { Icon } from '@/lib/icons'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
 import type { RowSelection } from '@/composables/useRowSelection'
-import { cardCellClasses, cardRowClasses, cardTableClasses, cellDensityClasses, columnClasses, scrollBoxClasses, stickyHeadFill, tableMaxHeightClasses } from '@/utils/ui/table'
+import type { UiSelectOption } from '@/utils/ui/select'
+import { UiSize } from '@/utils/ui/size'
+import { cardCellClasses, cardLabelClasses, cardRowClasses, cardTableClasses, cellDensityClasses, columnClasses, scrollBoxClasses, stickyHeadFill, tableMaxHeightClasses, UiSortDirection } from '@/utils/ui/table'
 import type { UiTableMaxHeight } from '@/utils/ui/table'
 
 /** The attributes a screen sets (classes, test ids) belong on the table; the box around it only scrolls. */
@@ -75,30 +90,60 @@ const props = withDefaults(defineProps<{
 /** Indexes of the placeholder rows. */
 const rowIndexes = computed<number[]>(() => Array.from({ length: props.skeletonRows }, (_, index) => index))
 
-/** Getters of the registered header columns, in render order. */
-const columnSources = ref<Array<() => UiTableColumn>>([])
+/** Getters of the registered header columns, by their position in the header row (a position nobody holds is empty). */
+const columnSources = ref<Array<(() => UiTableColumn) | undefined>>([])
 
-/** Classes of each placeholder cell, one per header column: the same width and visibility as the column, and its card role below `sm`. */
-const columnCellClasses = computed<string[][]>(() =>
-  columnSources.value.map((source) => [...columnClasses(source()), cardCellClasses(source())]),
+/** One registered header column with its position in the header row. */
+interface PositionedColumn {
+  /** Position of the header in its row. */
+  index: number
+  /** The column the header declared. */
+  column: UiTableColumn
+}
+
+/** The registered header columns, in header order. */
+const columns = computed<PositionedColumn[]>(() =>
+  columnSources.value.flatMap((source, index) => (source ? [{ index, column: source() }] : [])),
 )
 
-/** Captions of the placeholder cells, one per header column: the label a card shows before the bar. */
-const columnLabels = computed<Array<string | undefined>>(() => columnSources.value.map((source) => source().label))
+/** One placeholder cell: the same width and visibility as its column, its card role below `sm` and the caption a card shows before the bar. */
+interface PlaceholderCell {
+  /** Position of the column. */
+  index: number
+  /** Classes of the cell. */
+  classes: string[]
+  /** Classes of the caption element, empty when the cell draws none. */
+  labelClasses: string
+  /** Caption of the column. */
+  label: string | undefined
+}
+
+/** The placeholder cells of one skeleton row, one per header column. */
+const placeholderCells = computed<PlaceholderCell[]>(() =>
+  columns.value.map(({ index, column }) => ({
+    index,
+    classes: [...columnClasses(column), cardCellClasses(column)],
+    labelClasses: cardLabelClasses(column),
+    label: column.label,
+  })),
+)
 
 /** Width of the status row: every header column (at least one). */
-const columnCount = computed<number>(() => Math.max(columnSources.value.length, 1))
+const columnCount = computed<number>(() => Math.max(columns.value.length, 1))
 
 /**
- * Registers a header column and returns the function that removes it.
+ * Registers a header column at its position and returns the function that removes it.
  *
+ * @param index Position of the header in its row.
  * @param column Getter of the header's current shape.
- * @returns Removes the column again.
+ * @returns Removes the column again, unless another header has taken the position since.
  */
-const registerColumn = (column: () => UiTableColumn): (() => void) => {
-  columnSources.value.push(column)
+const registerColumn = (index: number, column: () => UiTableColumn): (() => void) => {
+  columnSources.value[index] = column
   return () => {
-    columnSources.value = columnSources.value.filter((source) => source !== column)
+    if (columnSources.value[index] === column) {
+      columnSources.value[index] = undefined
+    }
   }
 }
 
@@ -109,6 +154,40 @@ const registerColumn = (column: () => UiTableColumn): (() => void) => {
  * @returns The column the header at that position declared, or `undefined` when there is none.
  */
 const columnAt = (index: number): UiTableColumn | undefined => columnSources.value[index]?.()
+
+/** The sortable columns: what the sort control of the card layout offers. */
+const sortableColumns = computed<PositionedColumn[]>(() => columns.value.filter(({ column }) => column.sortable))
+
+/** The options of the sort control: one per sortable column, valued by its position. */
+const sortOptions = computed<UiSelectOption<number>[]>(() =>
+  sortableColumns.value.map(({ index, column }) => ({ value: index, label: column.label ?? '' })),
+)
+
+/** The sortable column the rows are ordered by now, absent while none is. */
+const activeSort = computed<PositionedColumn | undefined>(() =>
+  sortableColumns.value.find(({ column }) => column.direction !== undefined && column.direction !== UiSortDirection.None),
+)
+
+/** Icon of the direction button: the arrow of the active order. */
+const directionIcon = computed<string>(() =>
+  activeSort.value?.column.direction === UiSortDirection.Descending ? Icon.ArrowDown : Icon.ArrowUp,
+)
+
+/**
+ * Orders by the column the user picked in the sort control.
+ *
+ * @param index - Position of the picked column, or `null` when the pick was cleared.
+ */
+const sortBy = (index: number | null): void => {
+  if (index !== null) {
+    columnAt(index)?.sort?.()
+  }
+}
+
+/** Asks the active column to sort again, which the screen answers by reversing the order, as a second click on its header would. */
+const reverseSort = (): void => {
+  activeSort.value?.column.sort?.()
+}
 
 /** Box of a placeholder cell: the same height and padding as a real data cell of this density. */
 const skeletonCellClasses = computed<string>(() => cellDensityClasses[props.density])
@@ -148,18 +227,41 @@ provide(UI_TABLE_CONTEXT, {
 
 <template>
   <div :class="boxClasses">
-    <table v-bind="$attrs" class="[:where(&)]:w-full" :class="[cardTableClasses, scrollable ? '' : stickyHeadFill]">
+    <!-- The header captions are not drawn on a card, so ordering is offered here, on phones only. -->
+    <div v-if="sortableColumns.length > 0" class="mb-2 flex items-center gap-2 sm:hidden" data-testid="ui-table-sort">
+      <UiSelect
+        class="min-w-0 flex-1"
+        compact
+        :model-value="activeSort?.index ?? null"
+        :options="sortOptions"
+        :placeholder="t('ui.table.sortBy')"
+        :aria-label="t('ui.table.sortBy')"
+        data-testid="ui-table-sort-column"
+        @update:model-value="sortBy"
+      />
+      <UiIconButton
+        :label="t('ui.table.sortDirection')"
+        :size="UiSize.Sm"
+        :disabled="activeSort === undefined"
+        data-testid="ui-table-sort-direction"
+        @click="reverseSort"
+      >
+        <UiIcon :markup="directionIcon" :size="UiSize.Sm" />
+      </UiIconButton>
+    </div>
+    <table v-bind="$attrs" role="table" class="[:where(&)]:w-full" :class="[cardTableClasses, scrollable ? '' : stickyHeadFill]">
       <slot />
-      <tbody v-if="loading" :class="cardTableClasses" aria-busy="true" data-testid="ui-table-skeleton">
-        <tr v-for="row in rowIndexes" :key="row" class="border-b border-border-subtle last:border-0" :class="cardRowClasses" aria-hidden="true">
-          <td v-for="(classes, column) in columnCellClasses" :key="column" :class="[skeletonCellClasses, classes]" :data-label="columnLabels[column]">
+      <tbody v-if="loading" role="rowgroup" :class="cardTableClasses" aria-busy="true" data-testid="ui-table-skeleton">
+        <tr v-for="row in rowIndexes" :key="row" role="row" class="border-b border-border-subtle last:border-0" :class="cardRowClasses" aria-hidden="true">
+          <td v-for="cell in placeholderCells" :key="cell.index" role="cell" :class="[skeletonCellClasses, cell.classes]">
+            <span v-if="cell.labelClasses" :class="cell.labelClasses">{{ cell.label }}</span>
             <UiSkeletonBar class="h-3 w-3/4 rounded" />
           </td>
         </tr>
       </tbody>
-      <tbody v-else-if="empty" :class="cardTableClasses">
-        <tr>
-          <td :colspan="columnCount" class="text-center text-sm text-text-muted" :class="$slots.empty ? '' : 'px-4 py-8'">
+      <tbody v-else-if="empty" role="rowgroup" :class="cardTableClasses">
+        <tr role="row">
+          <td role="cell" :colspan="columnCount" class="text-center text-sm text-text-muted" :class="$slots.empty ? '' : 'px-4 py-8'">
             <slot name="empty">
               {{ t('ui.table.empty') }}
             </slot>

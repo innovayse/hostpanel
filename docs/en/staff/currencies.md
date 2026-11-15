@@ -36,6 +36,17 @@ The **base currency** is always enabled and always has a rate of 1. It cannot be
 Update Product Prices overwrites your existing product prices. This cannot be undone.
 </Callout>
 
+## Exchange rate source
+
+The **Exchange rate source** card above the table chooses the bank the rates are taken from, for the daily update and the button alike. The choice is the `billing.exchange_rates.provider` setting and applies from the next update, without a restart.
+
+| Source | Value | Quotes against |
+|--------|-------|----------------|
+| Central Bank of Armenia | `Cba` (the default, so an existing installation keeps its source) | the Armenian dram |
+| European Central Bank | `Ecb` | the euro |
+
+Either bank's figures are converted to your base currency. A bank that does not publish the base currency cannot be used with it: the update is refused with `EXCHANGE_RATE_BASE_NOT_QUOTED` and nothing changes, so pick the other bank or another base currency. A currency the bank does not publish keeps its rate and is listed as not quoted. The European Central Bank publishes on working days only, so an update on a weekend or a bank holiday keeps the rates of the last published day. If the bank does not answer, answers with an error or sends something that is not its rates, the update is refused with `EXCHANGE_RATE_SOURCE_UNAVAILABLE`, the rates stay as they were, and the next daily update tries again.
+
 ## How renewals work
 
 When a service or domain is approaching its renewal date, the system:

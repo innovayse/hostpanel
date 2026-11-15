@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Admin Currencies settings view: table of configured currencies with rate, base and enabled
- * state, plus the bulk exchange-rate and product-price actions.
+ * Admin Currencies settings view: the exchange rate source choice and the table of configured
+ * currencies with rate, base and enabled state, plus the bulk exchange-rate and product-price actions.
  *
  * A result banner reports the async actions, a confirmation dialog guards the destructive or global
  * ones, and each row has its own edit button.
@@ -9,6 +9,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CurrencyFormModal from '@/components/settings/CurrencyFormModal.vue'
+import ExchangeRateProviderCard from '@/components/settings/ExchangeRateProviderCard.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -33,7 +34,9 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { Icon } from '@/lib/icons'
 import { formatAffixed } from '@/lib/money'
 import { useCurrenciesStore } from '@/stores/currencies'
+import { useSettingsStore } from '@/stores/settings'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
+import type { SettingSaveResult } from '@/types/setting'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
 
@@ -41,6 +44,9 @@ const { t } = useI18n()
 
 /** Currencies store: the list, the loading flag and the refusal sentences. */
 const store = useCurrenciesStore()
+
+/** Settings store: the rows the rate source card reads and writes. */
+const settingsStore = useSettingsStore()
 
 /** The result banner for the bulk actions. */
 const banner = useResultBanner()
@@ -86,6 +92,18 @@ const nonBaseCurrencies = computed<CurrencyDto[]>(() => store.currencies.filter(
  */
 const formatSample = (currency: CurrencyDto): string =>
   `2.99 → ${formatAffixed(2.99, currency)}`
+
+/**
+ * Persists the rate source row and reports how it went to the card that asked.
+ *
+ * @param id - Setting ID.
+ * @param value - New value, an exchange rate provider name.
+ * @returns Whether the value was stored, and the API's sentence when it was refused.
+ */
+const saveSetting = async (id: number, value: string): Promise<SettingSaveResult> => {
+  const saved = await settingsStore.updateSetting(id, value)
+  return { saved, error: saved ? null : settingsStore.actionError }
+}
 
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
@@ -217,7 +235,7 @@ const currencyActions = (currency: CurrencyDto): UiMenuAction[] => [
   },
 ]
 
-onMounted(() => store.fetchAll())
+onMounted(() => Promise.all([store.fetchAll(), settingsStore.fetchSettings()]))
 </script>
 
 <template>
@@ -258,6 +276,12 @@ onMounted(() => store.fetchAll())
     >
       {{ banner.message.value }}
     </UiAlert>
+
+    <ExchangeRateProviderCard
+      v-if="settingsStore.settings.length > 0"
+      :settings="settingsStore.settings"
+      :save="saveSetting"
+    />
 
     <UiErrorState
       v-if="store.error"

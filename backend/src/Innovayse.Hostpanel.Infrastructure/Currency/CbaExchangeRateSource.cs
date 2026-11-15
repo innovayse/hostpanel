@@ -1,12 +1,9 @@
-using System.Globalization;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.Logging;
-using Polly;
 
 namespace Innovayse.Hostpanel.Infrastructure.Currency;
 
@@ -91,25 +88,7 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
             return Result<ExchangeRateQuotes>.FailureCode(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
         }
 
-        var upperBase = lookup.BaseCode.ToUpperInvariant();
-        var amdPerBase = AmdPerUnit(quotes, upperBase);
-        if (amdPerBase is null)
-        {
-            return Result<ExchangeRateQuotes>.FailureCode(HostpanelErrorCodes.EXCHANGE_RATE_BASE_NOT_QUOTED);
-        }
-
-        var rates = new Dictionary<string, decimal>(StringComparer.Ordinal);
-        foreach (var code in lookup.Codes)
-        {
-            var upper = code.ToUpperInvariant();
-            var amdPerUnit = AmdPerUnit(quotes, upper);
-            if (amdPerUnit is not null)
-            {
-                rates[upper] = amdPerUnit.Value / amdPerBase.Value;
-            }
-        }
-
-        return Result<ExchangeRateQuotes>.Success(new ExchangeRateQuotes(rates));
+        return PivotRates.Quote(lookup, PivotCode, quotes);
     }
 
     /// <summary>Downloads the bulletin and keeps only the properties that carry a usable quote.</summary>
@@ -120,29 +99,16 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
     /// </returns>
     private async Task<Dictionary<string, decimal>?> FetchAmdPerUnitAsync(CancellationToken ct)
     {
+        var body = await ExchangeRateFeed.TryReadAsync(_http, LatestRatesPath, _logger, ct);
+        if (body is null)
+        {
+            return null;
+        }
+
         Dictionary<string, JsonElement>? raw;
         try
         {
-            using var response = await _http.GetAsync(LatestRatesPath, ct);
-            response.EnsureSuccessStatusCode();
-            raw = await response.Content.ReadFromJsonAsync<Dictionary<string, JsonElement>>(ct);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogWarning(ex, "The exchange rate bulletin could not be fetched.");
-            return null;
-        }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
-        {
-            // HttpClient reports its own timeout as a cancellation the caller never asked for.
-            _logger.LogWarning(ex, "The exchange rate bulletin did not answer in time.");
-            return null;
-        }
-        catch (ExecutionRejectedException ex)
-        {
-            // The resilience pipeline gave up: its total timeout elapsed or its breaker is open.
-            _logger.LogWarning(ex, "The exchange rate bulletin was refused by the resilience pipeline.");
-            return null;
+            raw = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
         }
         catch (JsonException ex)
         {
@@ -204,19 +170,12 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
     /// <returns>The positive decimal, or <see langword="null"/> when there is none.</returns>
     private static decimal? ParseDecimal(JsonElement value)
     {
-        decimal parsed;
-        switch (value.ValueKind)
+        return value.ValueKind switch
         {
-            case JsonValueKind.Number when value.TryGetDecimal(out parsed):
-                break;
-            case JsonValueKind.String when decimal.TryParse(
-                value.GetString(), NumberStyles.Number, CultureInfo.InvariantCulture, out parsed):
-                break;
-            default:
-                return null;
-        }
-
-        return parsed > 0 ? parsed : null;
+            JsonValueKind.Number => value.TryGetDecimal(out var number) && number > 0 ? number : null,
+            JsonValueKind.String => PivotRates.ParsePositive(value.GetString()),
+            _ => null,
+        };
     }
 
     /// <summary>Finds a property of an object without regard to the case of its name.</summary>
@@ -237,19 +196,5 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
 
         property = default;
         return false;
-    }
-
-    /// <summary>How many AMD one unit of a currency is worth, the dram itself included.</summary>
-    /// <param name="quotes">The parsed bulletin.</param>
-    /// <param name="upperCode">An upper-case ISO 4217 alpha code.</param>
-    /// <returns>The quote, or <see langword="null"/> when the bank does not carry it.</returns>
-    private static decimal? AmdPerUnit(Dictionary<string, decimal> quotes, string upperCode)
-    {
-        if (upperCode == PivotCode)
-        {
-            return 1m;
-        }
-
-        return quotes.TryGetValue(upperCode, out var quote) ? quote : null;
     }
 }

@@ -1,14 +1,17 @@
 /**
- * Smoke tests for CurrenciesView: the table, the edit dialog, "make base" with its confirmation,
+ * Smoke tests for CurrenciesView: the exchange rate source choice, the table, the edit dialog, "make base" with its confirmation,
  * the exchange-rate refresh and the product-price picker, all through the store at network level.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import CurrenciesView from '@/views/CurrenciesView.vue'
+import { ExchangeRateProvider } from '@/types/currency'
 import type { CurrencyDto } from '@/types/currency'
+import { BillingSettingKey } from '@/types/setting'
 import { json, problem, stubFetch } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { flushPromises } from '@vue/test-utils'
+import { pickOption } from '../helpers/select'
 
 /** The base currency. */
 const usd: CurrencyDto = {
@@ -31,6 +34,24 @@ describe('CurrenciesView', () => {
     expect(wrapper.get('[data-testid="currency-row-USD"]').text()).toContain('2.99 → $2.99')
     expect(wrapper.get('[data-testid="currency-row-EUR"]').text()).toContain('0.92000000')
     expect(wrapper.get('[data-testid="currency-row-USD"]').text()).toContain('Base')
+  })
+
+  it('shows which bank the rates come from and saves another choice through the settings row', async () => {
+    const mock = stubRouteTable({
+      'GET /admin/currencies': () => json([usd, eur]),
+      'GET /admin/settings': () => json([{ id: 7, key: BillingSettingKey.RateProvider, value: ExchangeRateProvider.Cba }]),
+      'PUT /admin/settings/7': () => new Response(null, { status: 204 }),
+    })
+    const { wrapper } = await mountScreen(CurrenciesView)
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="exchange-rate-provider-select"]').text()).toContain('Central Bank of Armenia')
+
+    await pickOption(wrapper, 'exchange-rate-provider-select', 'European Central Bank')
+    await wrapper.get('[data-testid="exchange-rate-provider-save"]').trigger('click')
+    await flushPromises()
+
+    expect(requestsOf(mock)).toContain('PUT /admin/settings/7')
   })
 
   it('opens the edit dialog with the stored values and closes it again', async () => {

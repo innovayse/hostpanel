@@ -163,6 +163,15 @@ export const PluginSettingKey = {
 /** One of the {@link PluginSettingKey} values. */
 export type PluginSettingKey = (typeof PluginSettingKey)[keyof typeof PluginSettingKey]
 
+/** Keys of the billing settings a card edits; the strings are the rows' `key` values. */
+export const BillingSettingKey = {
+  /** Which bank the currency exchange rates are taken from: an `ExchangeRateProvider` value. */
+  RateProvider: 'billing.exchange_rates.provider',
+} as const
+
+/** One of the {@link BillingSettingKey} values. */
+export type BillingSettingKey = (typeof BillingSettingKey)[keyof typeof BillingSettingKey]
+
 /** Prefix of the environment variable a portal setting falls back to until its row exists. */
 const SETTING_ENV_PREFIX = 'NUXT_PUBLIC_PORTAL_'
 

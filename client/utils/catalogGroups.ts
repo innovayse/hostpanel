@@ -6,6 +6,7 @@
 
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
 import { DEFAULT_PRODUCT_ICON, productTypeIcon } from '~/constants/productTypeIcon'
+import { SITE_HOSTING_PATH, siteProductFamilyPath } from '~/constants/siteRoutes'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
@@ -32,9 +33,6 @@ export const FAMILY_ICON = DEFAULT_PRODUCT_ICON
 
 /** Accent of the hosting family. */
 export const HOSTING_FAMILY_COLOR = '#0ea5e9'
-
-/** Page of the hosting family. */
-export const HOSTING_FAMILY_URL = '/hosting'
 
 /** Accents a catalogue family is painted in; the catalogue stores no colour, so one is picked by key. */
 export const FAMILY_COLORS: readonly string[] = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899', '#ef4444', '#10b981']
@@ -131,9 +129,9 @@ export const familyConfig = (group: PortalProductGroup, products: readonly Porta
   const type = group.id === HOSTING_GROUP_ID ? ProductType.SharedHosting : dominantProductType(products)
   const icon = productTypeIcon(type)
   if (group.id === HOSTING_GROUP_ID) {
-    return { name: group.name, icon, color: HOSTING_FAMILY_COLOR, learnMoreUrl: HOSTING_FAMILY_URL }
+    return { name: group.name, icon, color: HOSTING_FAMILY_COLOR, learnMoreUrl: SITE_HOSTING_PATH }
   }
-  return { name: group.name, icon, color: familyColor(key), learnMoreUrl: `/products/${key}` }
+  return { name: group.name, icon, color: familyColor(key), learnMoreUrl: siteProductFamilyPath(key) }
 }
 
 /** The HTML entities a legacy description may contain, by name or code. */

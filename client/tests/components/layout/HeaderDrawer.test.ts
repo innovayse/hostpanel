@@ -14,12 +14,12 @@ import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { CLIENT_INVOICES_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
-import { SitePage } from '~/tests/helpers/sitePaths'
 import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { HeaderNavItem } from '~/types/headernavitem'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -134,7 +134,7 @@ describe('LayoutHeaderDrawer', () => {
     const wrapper = mountDrawer()
 
     expect(wrapper.find('[data-testid="header-drawer-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
-    expect(wrapper.find('[data-testid="header-drawer-get-started"]').attributes('href')).toBe(SitePage.Hosting)
+    expect(wrapper.find('[data-testid="header-drawer-get-started"]').attributes('href')).toBe(SITE_HOSTING_PATH)
     expect(wrapper.find('[data-testid="header-drawer-account"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="header-drawer-sign-out"]').exists()).toBe(false)
   })

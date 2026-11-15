@@ -19,6 +19,7 @@
 
 import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
 import { UiSize } from '~/utils/ui/enums'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 /** Props of SectionsDomainSearch. */
 interface Props {
@@ -40,7 +41,7 @@ const query = ref('')
 /** Opens the domains page for the typed name; an empty field opens it without a search. */
 const search = async (): Promise<void> => {
   const name = query.value.trim()
-  const path = localePath('/domains')
+  const path = localePath(SITE_DOMAINS_PATH)
   await navigateTo(name ? `${path}?${DOMAIN_SEARCH_QUERY_PARAM}=${encodeURIComponent(name)}` : path)
 }
 </script>

@@ -23,7 +23,7 @@
   <UiStack v-else align="center" justify="center" class="min-h-[60dvh] bg-ui-page" data-testid="product-not-found">
     <!-- Not found -->
     <UiEmptyState :icon="Package" :title="$t('products.notFound')" :description="$t('products.notFoundDescription')">
-      <UiButton :to="localePath('/products')" icon="mdi:arrow-left" data-testid="product-back">
+      <UiButton :to="localePath(SITE_PRODUCTS_PATH)" icon="mdi:arrow-left" data-testid="product-back">
         {{ $t('common.backToProducts') }}
       </UiButton>
     </UiEmptyState>
@@ -53,6 +53,7 @@ import { detailTitle } from '~/utils/seoTitle'
 import { findProductDetail, firstOfferedPrice, pricedCycles } from '~/utils/productFamilies'
 import { buildSeoLinks, localizedUrl } from '~/utils/seoLinks'
 import { shareImageMeta } from '~/utils/shareImage'
+import { SITE_PRODUCTS_PATH, siteProductFamilyPath } from '~/constants/siteRoutes'
 
 /** Translation helpers and the active language. */
 const { t, locale } = useI18n()
@@ -144,7 +145,7 @@ const isInCart = (plan: ProductPlan): boolean => cart.hasItem(plan.id, selectedC
 
 /** Breadcrumb steps: the products list, then this product. */
 const breadcrumbItems = computed(() => [
-  { label: t('common.products'), to: localePath('/products') },
+  { label: t('common.products'), to: localePath(SITE_PRODUCTS_PATH) },
   { label: productData.value?.name || '' },
 ])
 
@@ -212,7 +213,7 @@ const addPlanToCart = (plan: ProductPlan): void => {
 }
 
 /** Path of this page, without the language prefix. */
-const productPath = computed(() => `/products/${productId}`)
+const productPath = computed(() => siteProductFamilyPath(productId))
 
 /** Canonical address of this page in the current language. */
 const productCanonical = computed(() => localizedUrl(baseUrl, productPath.value, locale.value))

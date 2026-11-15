@@ -5,7 +5,7 @@
     <UiContainer class="relative">
       <UiStack as="section" gap="none" class="relative pb-5 pt-[clamp(36px,5vw,56px)]">
         <UiLink
-          :to="localePath('/hosting')"
+          :to="localePath(SITE_HOSTING_PATH)"
           tone="inherit"
           :underline="false"
           testid="checkout-back"
@@ -50,7 +50,7 @@
             <UiText tone="inherit" class="mb-10 text-mut">{{ $t('cart.emptyDesc') }}</UiText>
             <UiButton
               variant="bare"
-              :to="localePath('/hosting')"
+              :to="localePath(SITE_HOSTING_PATH)"
               data-testid="checkout-browse-hosting"
               :class="[BRAND_BUTTON, 'px-7 py-3.5 text-base']"
             >
@@ -304,7 +304,7 @@
                     <UiText as="span" size="xs" tone="inherit" class="text-mut2">{{ $t('aurora.checkout.helpBody') }}</UiText>
                   </UiStack>
                   <UiLink
-                    :to="localePath('/contact')"
+                    :to="localePath(SITE_CONTACT_PATH)"
                     tone="inherit"
                     :underline="false"
                     testid="checkout-help-cta"
@@ -338,6 +338,7 @@ import {
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 import { BRAND_BUTTON } from '~/templates/aurora/buttons'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
+import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the active locale. */
 const { t: $t } = useI18n()

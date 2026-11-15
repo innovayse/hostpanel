@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import NovaDashboard from '~/templates/nova/sections/NovaDashboard.vue'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 describe('NovaDashboard', () => {
   beforeEach(() => {
@@ -15,7 +16,7 @@ describe('NovaDashboard', () => {
     const wrapper = mountWithKit(NovaDashboard)
 
     expect(wrapper.find('h2').text()).toBe('nova.dashboard.title')
-    expect(wrapper.find('[data-testid="nova-dashboard-cta"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="nova-dashboard-cta"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
     expect(wrapper.find('[aria-hidden="true"]').exists()).toBe(true)
   })
 

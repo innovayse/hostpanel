@@ -18,7 +18,7 @@
       <UiNavItem :icon="RefreshCw" :disabled="isPending" testid="domain-action-renew" @click="choose(DomainTab.Renew)">
         {{ $t('client.domains.actionRenewDomain') }}
       </UiNavItem>
-      <UiNavItem to="/domains" :icon="PlusCircle" testid="domain-action-register">
+      <UiNavItem :to="SITE_DOMAINS_PATH" :icon="PlusCircle" testid="domain-action-register">
         {{ $t('client.domains.actionRegisterNew') }}
       </UiNavItem>
     </UiNavGroup>
@@ -36,6 +36,7 @@ import { LayoutGrid, Lock, Network, PlusCircle, RefreshCw, Settings, UserCog, Za
 import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { DomainTab } from '~/types/domaintab'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()

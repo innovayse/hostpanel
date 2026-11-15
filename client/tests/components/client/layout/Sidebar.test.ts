@@ -10,11 +10,12 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { Globe, Server } from 'lucide-vue-next'
 import { mountClient } from '~/tests/helpers/mountClient'
 import Sidebar from '~/components/client/layout/Sidebar.vue'
+import { CLIENT_DOMAINS_PATH, CLIENT_SERVICES_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
 
 /** Two links, as the layout would pass after filtering by permission. */
 const ITEMS = [
-  { to: '/client/services', label: 'My Services', icon: Server },
-  { to: '/client/domains', label: 'My Domains', icon: Globe }
+  { to: CLIENT_SERVICES_PATH, label: 'My Services', icon: Server },
+  { to: CLIENT_DOMAINS_PATH, label: 'My Domains', icon: Globe }
 ]
 
 /**
@@ -39,7 +40,7 @@ describe('ClientLayoutSidebar', () => {
   })
 
   it('highlights the section the route is inside, including nested pages', () => {
-    routeAt('/client/services/16/setup')
+    routeAt(clientServiceSetupPath(16))
     const wrapper = mountClient(Sidebar, { props: { items: ITEMS, open: false } })
 
     expect(wrapper.find('[data-testid="nav-client-services"]').classes()).toContain('bg-primary-500/10')

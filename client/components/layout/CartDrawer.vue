@@ -130,6 +130,7 @@ import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
 import { formatMoney } from '~/utils/formatMoney'
 import { UiHeadingLevel } from '~/utils/ui/enums'
+import { SITE_CHECKOUT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** The cart store: items, totals and the open flag the drawer follows. */
 const cart = useCartStore()
@@ -176,13 +177,13 @@ const totalLabel = computed(() => {
 /** Closes the drawer and goes to the hosting plans. */
 const handleBrowse = (): void => {
   cart.close()
-  router.push(localePath('/hosting'))
+  router.push(localePath(SITE_HOSTING_PATH))
 }
 
 /** Closes the drawer and goes to the checkout. */
 const handleCheckout = (): void => {
   cart.close()
-  router.push(localePath('/checkout'))
+  router.push(localePath(SITE_CHECKOUT_PATH))
 }
 
 onMounted(() => {

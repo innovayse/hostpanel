@@ -248,7 +248,7 @@
               >
                 <UiText as="span" size="sm" tone="muted">
                   {{ t('contact.form.consentPrefix') }}
-                  <UiLink :to="localePath('/privacy')" :underline="false" testid="contact-privacy-link">
+                  <UiLink :to="localePath(SITE_PRIVACY_PATH)" :underline="false" testid="contact-privacy-link">
                     {{ t('contact.form.consentLink') }}
                   </UiLink>
                   {{ t('contact.form.consentSuffix') }}
@@ -323,6 +323,7 @@ import { useSupportStore } from '~/stores/support'
 import { ContactService } from '~/types/contactservice'
 import { SubmitOutcome } from '~/types/submitoutcome'
 import { SeoPageType } from '~/types/seopagetype'
+import { SITE_CONTACT_PATH, SITE_PRIVACY_PATH } from '~/constants/siteRoutes'
 
 /** Operator-set working hours with their time zone; empty when unset. */
 const { workingHours } = useContactHours()
@@ -343,7 +344,7 @@ const { baseUrl } = useSeo({
   description: t('seo.contact.description', { site: siteName.value }),
   keywords: t('seo.contact.keywords', { site: siteName.value }),
   type: SeoPageType.Website,
-  path: '/contact'
+  path: SITE_CONTACT_PATH
 })
 
 // Schema.org

@@ -27,6 +27,7 @@ import { ServiceStatus } from '~/types/servicestatus'
 import { SuspensionSource } from '~/types/suspensionsource'
 import { settle } from '~/tests/helpers/settle'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { clientServiceSetupPath } from '~/constants/clientRoutes'
 
 /** The BFF paths the page reads for service 4. */
 const PATHS = {
@@ -172,7 +173,7 @@ describe('service page', () => {
 
     await mountService()
 
-    expect(navigate).toHaveBeenCalledWith('/client/services/4/setup')
+    expect(navigate).toHaveBeenCalledWith(clientServiceSetupPath(4))
   })
 
   it('keeps a digital service on its page, which has nothing to set up and no control-panel account', async () => {

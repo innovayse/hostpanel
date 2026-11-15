@@ -15,6 +15,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ResetPasswordPage from '~/pages/client/reset-password.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { CLIENT_FORGOT_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /** The BFF path the page posts the new password to. */
 const RESET_PATH = '/api/portal/auth/reset-password'
@@ -62,7 +63,7 @@ describe('client reset-password page', () => {
 
     expect(wrapper.find('[data-testid="reset-invalid"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="reset-form"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="reset-request-new"]').attributes('href')).toBe('/client/forgot')
+    expect(wrapper.find('[data-testid="reset-request-new"]').attributes('href')).toBe(CLIENT_FORGOT_PATH)
   })
 
   it('shows the form with placeholders for a valid link', async () => {
@@ -94,7 +95,7 @@ describe('client reset-password page', () => {
     await waitUntil(() => expect(wrapper.find('[data-testid="reset-success"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, RESET_PATH)[0])).toEqual({ email: 'ada@example.com', token: 'tok', newPassword: 'new-password-1' })
-    expect(wrapper.find('[data-testid="reset-success-signin"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="reset-success-signin"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('shows the API sentence and keeps the form when the reset is refused', async () => {

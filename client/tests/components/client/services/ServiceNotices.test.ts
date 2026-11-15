@@ -11,6 +11,7 @@ import { makeClientService } from '~/tests/helpers/clientServiceFixture'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
 import { UiAlertVariant } from '~/utils/ui/enums'
+import { clientServiceSetupPath } from '~/constants/clientRoutes'
 
 /**
  * Builds a service in a status.
@@ -84,7 +85,7 @@ describe('ServiceNotices', () => {
     const wrapper = mountClient(ServiceNotices, { props: { service: service(ServiceStatus.Pending), serviceId: '4', cancelStatus: { pending: false } } })
 
     expect(wrapper.find('[data-testid="service-setup-required"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="service-complete-setup"]').attributes('href')).toBe('/client/services/4/setup')
+    expect(wrapper.find('[data-testid="service-complete-setup"]').attributes('href')).toBe(clientServiceSetupPath(4))
   })
 
   it('asks for no setup of a pending digital service, which has nothing to set up', () => {

@@ -17,9 +17,10 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
 
 /** The BFF path that takes the new control-panel password of service 4. */
-const PASSWORD_PATH = '/api/portal/client/services/4/change-password'
+const PASSWORD_PATH = servicePath(4, ServiceAction.ChangePassword)
 
 /** The stub playing the BFF. */
 let stub: StubServer

@@ -8,6 +8,7 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import NovaHeader from '~/templates/nova/layout/NovaHeader.vue'
 import { NAV_ITEMS } from '~/templates/nova/content'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /**
  * Mounts the header in the document so focus and document listeners work.
@@ -68,7 +69,7 @@ describe('NovaHeader', () => {
   it('sends the sign-in action to the deployment-chosen target', () => {
     stubTemplateGlobals()
 
-    expect(mountHeader().find('[data-testid="nova-nav-login"]').attributes('href')).toBe('/client/login')
+    expect(mountHeader().find('[data-testid="nova-nav-login"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('opens the mobile panel with aria-expanded and closes it on Escape, returning focus', async () => {

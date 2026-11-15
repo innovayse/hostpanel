@@ -42,7 +42,7 @@
       </li>
     </UiList>
 
-    <NovaCta :to="localePath('/contact')" tone="outline" class="mt-9" data-testid="nova-migration-cta">
+    <NovaCta :to="localePath(SITE_CONTACT_PATH)" tone="outline" class="mt-9" data-testid="nova-migration-cta">
       {{ t('nova.migration.cta') }}
     </NovaCta>
   </UiSection>
@@ -60,6 +60,7 @@ import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import { SETTING_ON } from '~/constants/settingValue'
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { MIGRATION_FREE_SETTING, MIGRATION_STEPS } from '~/templates/nova/content'
+import { SITE_CONTACT_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the copy. */
 const { t } = useI18n()

@@ -138,7 +138,7 @@
             {{ contactDescription }}
           </UiText>
           <UiButton
-            :to="localePath('/contact')"
+            :to="localePath(SITE_CONTACT_PATH)"
             :variant="contactDanger ? 'danger' : 'primary'"
             size="lg"
             data-testid="legal-contact-link"
@@ -175,6 +175,7 @@ import { revealDelay } from '~/utils/reveal'
 import type { Component } from 'vue'
 import { ArrowRight, CheckCircle } from 'lucide-vue-next'
 import type { LegalSection } from '~/types/legalsection'
+import { SITE_CONTACT_PATH } from '~/constants/siteRoutes'
 
 /** Props of LegalDocument. */
 interface Props {

@@ -2,7 +2,7 @@
   <UiStack gap="lg">
     <UiPageHeader :title="$t('client.domains.title')" :description="$t('client.domains.subtitle')" :icon="Globe" class="!mb-0">
       <template #actions>
-        <UiButton to="/domains" variant="outline" data-testid="domains-register-new">
+        <UiButton :to="SITE_DOMAINS_PATH" variant="outline" data-testid="domains-register-new">
           <Plus :size="16" :stroke-width="2" class="mr-2" />
           {{ $t('client.domains.registerNew') }}
         </UiButton>
@@ -32,7 +32,7 @@
       </UiStack>
 
       <UiEmptyState v-if="!filtered.length" :icon="Globe" :title="$t('client.domains.empty')">
-        <UiButton v-if="!search" to="/domains" data-testid="domains-search-domains">{{ $t('client.domains.searchDomains') }}</UiButton>
+        <UiButton v-if="!search" :to="SITE_DOMAINS_PATH" data-testid="domains-search-domains">{{ $t('client.domains.searchDomains') }}</UiButton>
       </UiEmptyState>
 
       <UiTable v-else data-testid="domains-table">
@@ -93,6 +93,7 @@ import { DomainStatus } from '~/types/domainstatus'
 import { ListFilter } from '~/types/listfilter'
 import { isExpiringSoon } from '~/utils/domainExpiry'
 import { formatDate } from '~/utils/formatDate'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

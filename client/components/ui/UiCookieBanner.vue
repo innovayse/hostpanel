@@ -37,7 +37,7 @@
               </h3>
               <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                 {{ $t('cookieBanner.descriptionShort') }}
-                <UiLink :to="localePath('/cookie-policy')" testid="cookie-banner-learn-more">
+                <UiLink :to="localePath(SITE_COOKIE_POLICY_PATH)" testid="cookie-banner-learn-more">
                   {{ $t('cookieBanner.learnMore') }}
                 </UiLink>
               </p>
@@ -88,6 +88,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Cookie } from 'lucide-vue-next'
 import { CookieConsent } from '~/types/cookieconsent'
 import { COOKIE_BANNER_HEIGHT_VAR } from '~/utils/ui/cookieBanner'
+import { SITE_COOKIE_POLICY_PATH } from '~/constants/siteRoutes'
 
 /** Localised path builder from the i18n module. */
 const localePath = useLocalePath()

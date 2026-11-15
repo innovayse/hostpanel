@@ -19,6 +19,7 @@ import { DashboardStat } from '~/types/dashboardstat'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { ServiceStatus } from '~/types/servicestatus'
 import { TicketStatus } from '~/types/ticketstatus'
+import { CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
 
 /**
  * Reads the number a tile shows.
@@ -57,10 +58,10 @@ describe('ClientDashboardStatGrid', () => {
   it('links each tile to its section', () => {
     const wrapper = mountClient(StatGrid, { props: { loading: false } })
 
-    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Services}"]`).attributes('href')).toBe('/client/services')
-    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Domains}"]`).attributes('href')).toBe('/client/domains')
-    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Invoices}"]`).attributes('href')).toBe('/client/invoices')
-    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Tickets}"]`).attributes('href')).toBe('/client/tickets')
+    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Services}"]`).attributes('href')).toBe(CLIENT_SERVICES_PATH)
+    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Domains}"]`).attributes('href')).toBe(CLIENT_DOMAINS_PATH)
+    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Invoices}"]`).attributes('href')).toBe(CLIENT_INVOICES_PATH)
+    expect(wrapper.find(`[data-testid="dashboard-stat-${DashboardStat.Tickets}"]`).attributes('href')).toBe(CLIENT_TICKETS_PATH)
   })
 
   it('flags unpaid invoices as needing action and says nothing when there are none', async () => {

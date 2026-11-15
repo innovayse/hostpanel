@@ -5,6 +5,7 @@
  * @module constants/homeSections
  */
 
+import { SITE_HOME_PATH } from '~/constants/siteRoutes'
 import { HomeSectionId } from '~/types/homesectionid'
 
 /**
@@ -30,7 +31,7 @@ export const homeSectionHash = (id: HomeSectionId): string => `#${id}`
  * @returns The localised home path followed by the section hash.
  */
 export const homeSectionPath = (localePath: (path: string) => string, id: HomeSectionId): string =>
-  `${localePath('/')}${homeSectionHash(id)}`
+  `${localePath(SITE_HOME_PATH)}${homeSectionHash(id)}`
 
 /**
  * The section a hash selects, when it names one.

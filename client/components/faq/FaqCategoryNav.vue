@@ -8,7 +8,7 @@
   >
     <UiButton
       v-if="showAll"
-      :to="localePath('/faq')"
+      :to="localePath(SITE_FAQ_PATH)"
       variant="subtle"
       size="sm"
       :class="CLASSIC_CHIP"
@@ -19,7 +19,7 @@
     <UiButton
       v-for="category in categories"
       :key="category.value"
-      :to="localePath(`/faq/${category.slug}`)"
+      :to="localePath(siteFaqCategoryPath(category.slug))"
       :variant="category.value === active ? 'primary' : 'subtle'"
       size="sm"
       :class="category.value === active ? CLASSIC_CHIP_ACTIVE : CLASSIC_CHIP"
@@ -41,6 +41,7 @@
  */
 import { FaqCategory } from '~/types/faqcategory'
 import { faqCategorySlug } from '~/utils/faqCategory'
+import { SITE_FAQ_PATH, siteFaqCategoryPath } from '~/constants/siteRoutes'
 
 /** Props of FaqCategoryNav. */
 interface Props {

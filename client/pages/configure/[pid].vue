@@ -37,6 +37,7 @@ import { familyConfig, parseDescription } from '~/utils/catalogGroups'
 import { formatMoney } from '~/utils/formatMoney'
 import { cycleAmount } from '~/utils/productFamilies'
 import { detailTitle } from '~/utils/seoTitle'
+import { SITE_CHECKOUT_PATH, siteConfigurePath } from '~/constants/siteRoutes'
 
 /** The current route. */
 const route = useRoute()
@@ -149,12 +150,12 @@ const addToCart = (): void => {
     currency: currencyStore.payerCode,
     productType: product.value?.type,
   })
-  navigateTo(localePath('/checkout'))
+  navigateTo(localePath(SITE_CHECKOUT_PATH))
 }
 
 useSeo({
   title: detailTitle(t('configure.title'), productName.value),
   description: productDesc.value,
-  path: `/configure/${pid}`,
+  path: siteConfigurePath(pid),
 })
 </script>

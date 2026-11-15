@@ -6,6 +6,7 @@ import { mountAccount } from '~/tests/helpers/mountAccount'
 import EmailsTab from '~/components/account/EmailsTab.vue'
 import { useAccountStore } from '~/stores/account'
 import type { ClientEmailSummary } from '~/types/clientemailsummary'
+import { clientEmailPath } from '~/constants/clientRoutes'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -50,7 +51,7 @@ describe('EmailsTab', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-testid="account-email-2"]').text()).toContain('Mail 2')
-    expect(wrapper.find('[data-testid="account-email-2"] a').attributes('href')).toBe('/client/emails/2')
+    expect(wrapper.find('[data-testid="account-email-2"] a').attributes('href')).toBe(clientEmailPath(2))
   })
 
   it('shows only the first page of ten', async () => {

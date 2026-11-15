@@ -2,7 +2,7 @@
   <header class="relative border-b border-line font-aurora">
     <UiContainer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 py-[18px]">
       <UiLink
-        :to="localePath('/')"
+        :to="localePath(SITE_HOME_PATH)"
         tone="inherit"
         :underline="false"
         testid="site-home"
@@ -46,7 +46,7 @@
 
         <UiButton
           variant="bare"
-          :to="localePath('/cart')"
+          :to="localePath(SITE_CART_PATH)"
           :title="t('aurora.nav.cart')"
           :aria-label="t('aurora.nav.cart')"
           data-testid="nav-cart"
@@ -89,7 +89,7 @@
 
           <UiButton
             variant="bare"
-            :to="localePath('/hosting')"
+            :to="localePath(SITE_HOSTING_PATH)"
             data-testid="nav-start"
             class="hidden whitespace-nowrap rounded-xl bg-brand px-5 py-[11px] text-[15px] font-semibold text-on-brand hover:brightness-110 sm:inline-flex"
           >
@@ -164,7 +164,7 @@
 
           <UiButton
             variant="bare"
-            :to="localePath('/hosting')"
+            :to="localePath(SITE_HOSTING_PATH)"
             data-testid="nav-mobile-start"
             class="w-full rounded-xl bg-brand px-5 py-3 text-base font-semibold text-on-brand hover:brightness-110"
             @click="menuOpen = false"
@@ -199,6 +199,13 @@ import { HomeSectionId } from '~/types/homesectionid'
 import { HEADER_CONTROL, NAV_LINK, NAV_LINK_ACTIVE } from '~/templates/aurora/buttons'
 import { UiIconButtonVariant, UiSize } from '~/utils/ui/enums'
 import { useCartStore } from '~/stores/cart'
+import {
+  SITE_CART_PATH,
+  SITE_DOMAINS_PATH,
+  SITE_FAQ_PATH,
+  SITE_HOME_PATH,
+  SITE_HOSTING_PATH,
+} from '~/constants/siteRoutes'
 
 /** Props of the header. */
 const props = withDefaults(defineProps<{
@@ -245,10 +252,10 @@ const activeKey = computed(() => homeSectionFromHash(route.hash ?? '') ?? active
 
 /** Navigation entries, in display order. */
 const navLinks = computed(() => [
-  { key: 'hosting', label: t('aurora.nav.hosting'), to: localePath('/hosting') },
-  { key: 'domains', label: t('aurora.nav.domains'), to: localePath('/domains') },
+  { key: 'hosting', label: t('aurora.nav.hosting'), to: localePath(SITE_HOSTING_PATH) },
+  { key: 'domains', label: t('aurora.nav.domains'), to: localePath(SITE_DOMAINS_PATH) },
   { key: HomeSectionId.Services, label: t('aurora.nav.services'), to: homeSectionPath(localePath, HomeSectionId.Services) },
   { key: HomeSectionId.Process, label: t('aurora.nav.process'), to: homeSectionPath(localePath, HomeSectionId.Process) },
-  { key: 'faq', label: t('aurora.nav.faq'), to: localePath('/faq') },
+  { key: 'faq', label: t('aurora.nav.faq'), to: localePath(SITE_FAQ_PATH) },
 ])
 </script>

@@ -51,7 +51,7 @@
 
         <!-- View all FAQs (when limited) -->
         <div v-if="hasMore" class="text-center mb-8">
-          <UiButton variant="outline" size="lg" :to="localePath('/faq')" data-testid="faq-view-all">
+          <UiButton variant="outline" size="lg" :to="localePath(SITE_FAQ_PATH)" data-testid="faq-view-all">
             <span>{{ $t('faq.viewAll') }}</span>
             <ArrowRight :size="18" :stroke-width="2" class="ml-2" />
           </UiButton>
@@ -63,7 +63,7 @@
             <ClassicIconTile icon="mdi:message-text-outline" />
             <UiHeading :level="3" size="bare" class="text-xl font-semibold text-classic-ink">{{ $t('faq.cta.title') }}</UiHeading>
             <UiText tone="inherit" size="sm" class="mb-3 max-w-[75ch] text-classic-muted">{{ $t('faq.cta.description') }}</UiText>
-            <UiButton :to="localePath('/contact')" data-testid="faq-contact-button">
+            <UiButton :to="localePath(SITE_CONTACT_PATH)" data-testid="faq-contact-button">
               <MessageSquare :size="18" :stroke-width="2" class="mr-2" />
               {{ $t('faq.cta.button') }}
             </UiButton>
@@ -80,7 +80,7 @@
           <MessageCircle :size="48" :stroke-width="2" class="relative text-primary-600 dark:text-primary-400 mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
           <UiHeading :level="3" size="subsection" class="relative text-xl mb-2">{{ $t('faq.cta.title') }}</UiHeading>
           <UiText tone="muted" size="sm" class="relative mb-6 max-w-[75ch] mx-auto">{{ $t('faq.cta.description') }}</UiText>
-          <UiButton class="relative hover:shadow-lg hover:shadow-primary-500/50 transition-all duration-300" :to="localePath('/contact')" data-testid="faq-contact-button">
+          <UiButton class="relative hover:shadow-lg hover:shadow-primary-500/50 transition-all duration-300" :to="localePath(SITE_CONTACT_PATH)" data-testid="faq-contact-button">
             <MessageSquare :size="18" :stroke-width="2" class="mr-2" />
             {{ $t('faq.cta.button') }}
           </UiButton>
@@ -113,6 +113,7 @@ import { FaqCategory } from '~/types/faqcategory'
 import { faqCategorySlug } from '~/utils/faqCategory'
 import type { ChipTab } from '~/types/chiptab'
 import { TemplateName } from '~/types/templatename'
+import { SITE_CONTACT_PATH, SITE_FAQ_PATH } from '~/constants/siteRoutes'
 
 /** Props of SectionsFAQ. */
 interface Props {

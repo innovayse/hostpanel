@@ -94,6 +94,7 @@ import type { ClientNavItem } from '~/types/clientnavitem'
 import { PluginPageLayout } from '~/types/pluginpagelayout'
 import { pluginIcon } from '~/utils/plugins'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'
+import { SITE_ANNOUNCEMENTS_PATH, SITE_KNOWLEDGEBASE_PATH } from '~/constants/siteRoutes'
 
 /** How often the widget script is polled for, in milliseconds, until it has loaded. */
 const WIDGET_POLL_MS = 200
@@ -222,8 +223,8 @@ const navItems = computed<NavEntry[]>(() => [
   { to: CLIENT_CREDIT_PATH, label: t('client.nav.credit'), icon: Wallet, permission: Permission.ViewPayInvoices },
   { to: CLIENT_CREDIT_NOTES_PATH, label: t('client.nav.creditNotes'), icon: FileMinus, permission: Permission.ViewPayInvoices },
   { to: CLIENT_TICKETS_PATH, label: t('client.nav.support'), icon: MessageSquare, permission: Permission.ViewOpenSupportTickets },
-  { to: '/announcements', label: t('announcements.title'), icon: Megaphone, permission: Permission.None },
-  { to: '/knowledgebase', label: t('kb.title'), icon: BookOpen, permission: Permission.None },
+  { to: SITE_ANNOUNCEMENTS_PATH, label: t('announcements.title'), icon: Megaphone, permission: Permission.None },
+  { to: SITE_KNOWLEDGEBASE_PATH, label: t('kb.title'), icon: BookOpen, permission: Permission.None },
   { to: CLIENT_ACCOUNT_PATH, label: t('client.nav.account'), icon: UserCog, permission: Permission.None }
 ])
 

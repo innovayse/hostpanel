@@ -96,7 +96,7 @@ public sealed class StartGatewayPaymentSessionKindTests(IntegrationTestFactory f
         body.GetProperty("kind").GetString().Should().Be(nameof(GatewaySessionKind.FormPost));
         body.GetProperty("redirectUrl").GetString().Should().Be(form.Action);
         var sent = body.GetProperty("formPost");
-        sent.GetProperty("action").GetString().Should().Be(form.Action);
+        sent.TryGetProperty("action", out _).Should().BeFalse("the address of a form post is carried once, as redirectUrl");
         sent.GetProperty("fields").EnumerateArray()
             .Select(f => (f.GetProperty("name").GetString(), f.GetProperty("value").GetString()))
             .Should().Equal(("token", "t1"), ("token", "t2"), ("lang", "hy"));

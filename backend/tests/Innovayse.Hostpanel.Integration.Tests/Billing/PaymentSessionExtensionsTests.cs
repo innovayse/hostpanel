@@ -67,8 +67,7 @@ public sealed class PaymentSessionExtensionsTests
         var dto = session.ToRedirectDto();
         dto.Kind.Should().Be(GatewaySessionKind.FormPost);
         dto.RedirectUrl.Should().Be(GoodAction);
-        dto.FormPost!.Action.Should().Be(GoodAction);
-        dto.FormPost.Fields.Select(f => (f.Name, f.Value)).Should().Equal(("token", "t1"), ("token", "t2"), ("empty", string.Empty));
+        dto.FormPost!.Fields.Select(f => (f.Name, f.Value)).Should().Equal(("token", "t1"), ("token", "t2"), ("empty", string.Empty));
     }
 
     /// <summary>A form post whose action is not an absolute https address without user info or control characters is refused.</summary>

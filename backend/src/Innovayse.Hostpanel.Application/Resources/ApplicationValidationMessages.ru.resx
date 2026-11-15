@@ -1747,4 +1747,13 @@
   <data name="ProductListStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из: Active, Inactive.</value>
   </data>
+  <data name="PaymentReturnParametersTooMany" xml:space="preserve">
+    <value>Слишком много параметров возврата.</value>
+  </data>
+  <data name="PaymentReturnParameterNameTooLong" xml:space="preserve">
+    <value>Имя параметра возврата ограничено 64 символами.</value>
+  </data>
+  <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
+    <value>Значение параметра возврата слишком длинное.</value>
+  </data>
 </root>

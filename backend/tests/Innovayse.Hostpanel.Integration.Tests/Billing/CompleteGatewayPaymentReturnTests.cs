@@ -108,21 +108,22 @@ public sealed class CompleteGatewayPaymentReturnTests(IntegrationTestFactory fac
         plugin.Completions[0].Parameters.Should().BeEquivalentTo(new Dictionary<string, string> { ["token"] = "first", ["Token"] = "upper" });
     }
 
-    /// <summary>A return over a limit of the plugin contract reaches the plugin as an empty set, and the status is still read.</summary>
+    /// <summary>A return over a limit of the plugin contract is refused as a validation error, and the plugin is never called.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task AReturn_OverALimit_ReachesThePluginAsAnEmptySet()
+    public async Task AReturn_OverALimit_IsRefusedBeforeThePluginIsCalled()
     {
         var plugin = new FakeReturnPaymentPlugin();
         var (_, client, invoiceId) = await OpenSessionAsync(plugin, "ret-limit");
         var tooMany = Enumerable.Range(0, PaymentReturnLimits.MaxParameters + 1).Select(i => ($"p{i}", "v")).ToArray();
 
-        (await CompleteAsync(client, invoiceId, tooMany)).StatusCode.Should().Be(HttpStatusCode.OK);
-        (await CompleteAsync(client, invoiceId, ("v", new string('x', PaymentReturnLimits.MaxValueLength + 1)))).StatusCode.Should().Be(HttpStatusCode.OK);
+        var tooManyResponse = await CompleteAsync(client, invoiceId, tooMany);
+        var tooLongResponse = await CompleteAsync(client, invoiceId, ("v", new string('x', PaymentReturnLimits.MaxValueLength + 1)));
 
-        plugin.Completions.Should().HaveCount(2);
-        plugin.Completions.Should().OnlyContain(c => c.Parameters.Count == 0);
-        plugin.Calls.Should().Equal("complete", "status", "complete", "status");
+        tooManyResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        tooLongResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(tooManyResponse)).Should().Be("VALIDATION_ERROR");
+        plugin.Calls.Should().BeEmpty();
     }
 
     /// <summary>A return that carried nothing is still a return: the plugin is asked, with an empty set.</summary>

@@ -324,13 +324,13 @@ docker/                              compose set (shared·dev·prod·platform), 
   `https` action without user info or control characters, field count, name and value lengths) and a browser step from a plugin
   that is not an `IPaymentReturnPlugin`, answers `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, stores no session and cancels the order
   the gateway just registered (`GatewayPaymentCanceller`); an accepted one is mapped by the same class to `RedirectDto`
-  (`RedirectUrl`, `Kind`, `FormPost`), which the three start routes answer with. The portal never renders plugin markup: it builds
+  (`RedirectUrl`, `Kind`, `FormPost`), which the three start routes answer with; the address a form is posted to is `RedirectUrl` only, `FormPost` carries the fields. The portal never renders plugin markup: it builds
   the form from the fields as element properties and submits it (`utils/externalRedirect`, `redirectToGateway`), a redirect and a
   browser step open the address. The payer returns to `/payment/result`, which posts the other query pairs as
   `returnParameters` to the three complete routes (`CompleteMyGatewayPayment`, `CompleteOrderGatewayPayment`, then
-  `CompleteGatewayPayment`); `null` (the reconciliation job) is not a return and only reads the status. For a return the handler
+  `CompleteGatewayPayment`), whose validators hold them to `PaymentReturnLimits` with the one rule `MustBePaymentReturnParameters` (400 over a limit); `null` (the reconciliation job) is not a return and only reads the status. For a return the handler
   calls `IPaymentReturnPlugin.CompleteAsync` first, with `PaymentReturnParameterExtensions.ToPluginParameters` (ordinal names,
-  first value wins, a set over `PaymentReturnLimits` is dropped whole), and then `GetStatusAsync`, whose answer alone decides;
+  first value wins; a set over `PaymentReturnLimits` never gets here, the validator refused it), and then `GetStatusAsync`, whose answer alone decides;
   an invoice already settled is never completed again, and a plugin that throws leaves the status unread (503
   `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, the reconciliation job settles it later). `paymentReturn` is a payment-only capability
   checked against `IPaymentReturnPlugin` by the activator. A callback may answer an HTML page (`PluginReply.Raw` with
@@ -621,7 +621,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     - **Sandbox decision.** `allow-scripts allow-forms`, **never `allow-same-origin`**: a client chooses a service's
       domain, so it could name the panel's own host, and that pair is an escape from the sandbox on a shared origin. The
       opaque origin also means a framed site's session can never be driven from the panel. Accepted cost: a page that
-      needs its own cookies or storage degrades in the preview.
+      needs its own cookies or storage degrades in the preview. The sandbox limits what the framed page is, not
+      where it can go: a sandboxed page can still navigate itself to another host (a link, `location`, a form), so the
+      frame may end up on a site other than the address that was framed. It stays in an opaque origin there, with no access
+      to the panel, its cookies or its storage, which is why the address is never treated as a promise of what will be
+      shown and the page's messages stay claims (see the selection rule below).
     - **http only in Development.** `PluginPreviewOptionsValidator` refuses to start with `DevelopmentHttpOrigins` set
       outside Development (a blank entry counts as unset, which is what `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN`, a dev compose key only,
       passes when empty), and with anything but an http origin on a loopback host (a browser blocks other http frames in

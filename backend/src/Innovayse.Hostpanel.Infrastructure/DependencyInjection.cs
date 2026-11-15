@@ -487,10 +487,9 @@ public static class DependencyInjection
         services.AddHttpClient();
 
         // The factory's unnamed client: what CreateClient() with no argument hands back. It is
-        // used by CpanelWhmApi for per-server WHM calls and by any plugin that asks for a client
-        // without naming one, so nobody knows what it calls: a plugin's POST may well be a
-        // charge. Unknown means unrepeatable, and no breaker, since every caller addresses a
-        // different host. AddHttpClient() above only registers the factory; the empty name is
+        // used by any plugin that asks for a client without naming one, so nobody knows what it
+        // calls: a plugin's POST may well be a charge. Unknown means unrepeatable, and no breaker,
+        // since every caller addresses a different host. AddHttpClient() above only registers the factory; the empty name is
         // what configures the default client itself.
         services.AddHttpClient(string.Empty)
             .AddNoRedirects()

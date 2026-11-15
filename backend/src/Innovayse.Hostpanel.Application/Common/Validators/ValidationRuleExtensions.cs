@@ -1,9 +1,12 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using Hostpanel.Sdk.Plugins.Payment;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Common.Validators;
 
@@ -174,6 +177,50 @@ public static class ValidationRuleExtensions
 
         return rule.NotEmpty().WithMessage(requiredMessage)
             .MaximumLength(maxLength).WithMessage(tooLongMessage);
+    }
+
+    /// <summary>
+    /// Requires the return request a payer came back from a gateway with to keep the limits a payment plugin is
+    /// promised (<see cref="PaymentReturnLimits"/>). The limits apply to the set the plugin receives
+    /// (<see cref="PaymentReturnParameterExtensions.ToPluginParameters"/>): a repeated name counts once, a name
+    /// without text or a missing value is ignored rather than refused. At most the allowed number of parameters may
+    /// remain, each with a name no longer than the name limit and a value no longer than the value limit. The first
+    /// limit broken is reported. An absent set passes: a check that is not a return carries none.
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="rule">The rule builder for the return parameters property.</param>
+    /// <param name="localizer">The localizer the three sentences (<c>PaymentReturnParametersTooMany</c>,
+    /// <c>PaymentReturnParameterNameTooLong</c>, <c>PaymentReturnParameterValueTooLong</c>) are looked up in.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptionsConditions<T, IReadOnlyList<PaymentReturnParameterDto>?>
+        MustBePaymentReturnParameters<T>(
+            this IRuleBuilder<T, IReadOnlyList<PaymentReturnParameterDto>?> rule,
+            IStringLocalizer localizer)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(localizer);
+
+        return rule.Custom((returned, context) =>
+        {
+            if (returned is null)
+            {
+                return;
+            }
+
+            var set = returned.ToPluginParameters();
+            if (set.Count > PaymentReturnLimits.MaxParameters)
+            {
+                context.AddFailure(localizer["PaymentReturnParametersTooMany"]);
+            }
+            else if (set.Keys.Any(name => name.Length > PaymentReturnLimits.MaxNameLength))
+            {
+                context.AddFailure(localizer["PaymentReturnParameterNameTooLong"]);
+            }
+            else if (set.Values.Any(value => value.Length > PaymentReturnLimits.MaxValueLength))
+            {
+                context.AddFailure(localizer["PaymentReturnParameterValueTooLong"]);
+            }
+        });
     }
 
     /// <summary>Requires a whole number that is zero or more: a position in a list, a count.</summary>

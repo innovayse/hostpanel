@@ -4,7 +4,9 @@ using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.CompleteMyGatewayPayment;
 
-/// <summary>Validates <see cref="CompleteMyGatewayPaymentCommand"/> before it reaches the handler.</summary>
+/// <summary>
+/// Validates the id and the return parameters of <see cref="CompleteMyGatewayPaymentCommand"/> before it reaches the handler.
+/// </summary>
 public sealed class CompleteMyGatewayPaymentValidator : LocalizedValidator<CompleteMyGatewayPaymentCommand>
 {
     /// <summary>Initializes the validator with the localization service.</summary>
@@ -13,5 +15,6 @@ public sealed class CompleteMyGatewayPaymentValidator : LocalizedValidator<Compl
         : base(localizer)
     {
         RuleFor(x => x.InvoiceId).MustBePositiveId(L["InvoiceIdInvalid"]);
+        RuleFor(x => x.ReturnParameters).MustBePaymentReturnParameters(L);
     }
 }

@@ -99,7 +99,7 @@ public sealed class UpperCaseBillableItemCurrencyMigrationTests
             """,
             ("client", clientId),
             ("currency", currency),
-            ("now", DateTimeOffset.UtcNow));
+            ("now", TestMoments.Seeded));
 
     /// <summary>Reads the stored currency code of one billable item.</summary>
     /// <param name="connectionString">The connection string of the database.</param>

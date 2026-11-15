@@ -14,7 +14,7 @@ public sealed class CreditNoteIssuedHandlerTests(IntegrationTestFactory factory)
     {
         var sender = new FakeEmailSender();
         var host = BankTransferTestSeeds.HostWithMail(factory, sender);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var (_, clientId, _, email) = await BillingTestSeeds.RegisterClientAsync(factory, host, "cn-mail");
         var invoiceId = await CreditNoteTestSeeds.PaidInvoiceAsync(host, clientId, price: 100m, taxRate: 20m);
         var noteId = 0;
@@ -34,7 +34,7 @@ public sealed class CreditNoteIssuedHandlerTests(IntegrationTestFactory factory)
     {
         var sender = new FakeEmailSender();
         var host = BankTransferTestSeeds.HostWithMail(factory, sender);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var (_, clientId, _, email) = await BillingTestSeeds.RegisterClientAsync(factory, host, "cn-mail-none");
         var invoiceId = await CreditNoteTestSeeds.PaidInvoiceAsync(host, clientId, price: 10m);
 

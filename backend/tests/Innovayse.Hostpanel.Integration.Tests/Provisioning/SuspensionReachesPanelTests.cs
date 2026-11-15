@@ -53,7 +53,7 @@ public sealed class SuspensionReachesPanelTests(IntegrationTestFactory factory) 
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             (_, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
             var service = await context.ClientServices.FindAsync(serviceId);
-            service!.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service!.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -78,13 +78,13 @@ public sealed class SuspensionReachesPanelTests(IntegrationTestFactory factory) 
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
-            var due = DateTimeOffset.UtcNow.AddDays(-10);
-            var invoice = Invoice.Create(clientId, due, "USD", DateTimeOffset.UtcNow);
+            var due = TestMoments.Seeded.AddDays(-10);
+            var invoice = Invoice.Create(clientId, due, "USD", TestMoments.Seeded);
             invoice.AddItem("Hosting", 25m, 1, serviceId);
             invoice.UpdateOptions(due.AddDays(-14), due, null, 0m);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
-            invoice.MarkOverdue(DateTimeOffset.UtcNow);
+            invoice.MarkOverdue(TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

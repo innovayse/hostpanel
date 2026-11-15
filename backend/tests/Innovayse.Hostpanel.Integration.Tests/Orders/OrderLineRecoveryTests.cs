@@ -44,10 +44,11 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
         using (var failing = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            // Real time: the lines stamped here are read later by the shared host on the system clock, which a fixed moment would put out of step.
+            new ManualTimeProvider(TestMoments.Seeded),
             tracker => tracker.Entries<ClientService>().Any(e => e.State == EntityState.Modified && e.Entity.Status == ServiceStatus.Active)))
         {
-            var accept = await (await OrdersTestReads.AdminOfAsync(failing, factory)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
+            var accept = await (await AuthTestSeeds.AdminClientAsync(factory, failing)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
             accept.EnsureSuccessStatusCode();
         }
 
@@ -81,7 +82,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.Domain);
         using var host = HostWith<TimingOutRegistrar>();
 
-        var accept = await (await OrdersTestReads.AdminOfAsync(host, factory)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
+        var accept = await (await AuthTestSeeds.AdminClientAsync(factory, host)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
 
         accept.StatusCode.Should().Be(HttpStatusCode.OK);
         var order = await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId);
@@ -111,7 +112,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
 
         using (var host = HostWith<TimingOutRegistrar>())
         {
-            var thrown = await (await OrdersTestReads.AdminOfAsync(host, factory)).PostAsync(url, content: null);
+            var thrown = await (await AuthTestSeeds.AdminClientAsync(factory, host)).PostAsync(url, content: null);
 
             thrown.StatusCode.Should().Be(HttpStatusCode.OK);
             var failed = (await thrown.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("failedLines");
@@ -178,7 +179,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.SecondDomain);
         RendezvousRegistrar.Gate = new ChargeRendezvous(2);
         using var host = HostWith<RendezvousRegistrar>();
-        var hostAdmin = await OrdersTestReads.AdminOfAsync(host, factory);
+        var hostAdmin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var responses = await Task.WhenAll(lines.Select(l => hostAdmin.PostAsync($"/api/orders/{seeded.OrderId}/items/{l.Id}/retry", content: null)));
 
@@ -229,7 +230,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         {
             using var host = HostWith<ProbingRegistrar>();
 
-            var accept = await (await OrdersTestReads.AdminOfAsync(host, factory)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
+            var accept = await (await AuthTestSeeds.AdminClientAsync(factory, host)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
 
             accept.StatusCode.Should().Be(HttpStatusCode.OK);
         }
@@ -257,11 +258,12 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
         using var host = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            // Real time: the lines stamped here are read later by the shared host on the system clock, which a fixed moment would put out of step.
+            new ManualTimeProvider(TestMoments.Seeded),
             tracker => tracker.Entries<OrderItem>().Any(
                 e => e.State == EntityState.Modified && e.Entity.FulfilmentState == OrderItemFulfilmentState.Failed && e.Entity.Domain != null));
 
-        var accept = await (await OrdersTestReads.AdminOfAsync(host, factory)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
+        var accept = await (await AuthTestSeeds.AdminClientAsync(factory, host)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
 
         accept.StatusCode.Should().Be(HttpStatusCode.OK);
         var order = await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId);
@@ -375,7 +377,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Domains.Add(RegisteredDomain.Register(
-            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
+            clientId, domain, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
             orderId: orderId));
         await db.SaveChangesAsync();
     }
@@ -389,7 +391,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var held = RegisteredDomain.Register(
-            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD");
+            clientId, domain, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD");
         held.Cancel();
         db.Domains.Add(held);
         await db.SaveChangesAsync();

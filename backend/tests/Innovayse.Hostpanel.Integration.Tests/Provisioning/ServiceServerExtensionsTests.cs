@@ -64,8 +64,8 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId, serverId) = await SeedAsync(context);
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "ref-1", DateTimeOffset.UtcNow, serverId);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "ref-1", TestMoments.Seeded, serverId);
         await context.SaveChangesAsync(CancellationToken.None);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
@@ -85,7 +85,7 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId, _) = await SeedAsync(context);
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

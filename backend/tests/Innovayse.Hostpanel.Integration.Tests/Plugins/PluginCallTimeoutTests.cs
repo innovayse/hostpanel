@@ -410,10 +410,10 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
         }
 
         // The lease goes when the server finishes the response, which can be just after the client read its end: a bounded retry.
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        var waited = Stopwatch.StartNew();
         HttpResponseMessage next;
         while ((next = await ClientCallAsync(http, HttpMethod.Get, "stream")).StatusCode == HttpStatusCode.TooManyRequests
-            && DateTime.UtcNow < deadline)
+            && waited.Elapsed < TimeSpan.FromSeconds(15))
         {
             next.Dispose();
             await Task.Delay(TimeSpan.FromMilliseconds(50));

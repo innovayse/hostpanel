@@ -41,16 +41,16 @@ public sealed class RenewalPaymentReceivedHandlerTests(IntegrationTestFactory fa
             context.Products.Add(product);
             await context.SaveChangesAsync(CancellationToken.None);
 
-            var start = DateTimeOffset.UtcNow.AddDays(5);
-            var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-            await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", DateTimeOffset.UtcNow);
+            var start = TestMoments.Seeded.AddDays(5);
+            var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+            await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", TestMoments.Seeded);
             service.ChangeBillingTerms(new ServiceBillingTerms(
                 BillingCycle: BillingCycle.Monthly, Quantity: 1, FirstPaymentAmount: 5m,
                 RecurringAmount: 5m, NextRenewalAt: start, PaymentMethod: null,
                 PromotionCode: null, SubscriptionId: null));
             await context.SaveChangesAsync(CancellationToken.None);
 
-            var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddServiceRenewal("Starter renewal", 5m, service.Id, start, start.AddMonths(1));
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);

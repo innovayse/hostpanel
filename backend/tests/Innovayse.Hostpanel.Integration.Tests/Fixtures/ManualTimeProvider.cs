@@ -23,6 +23,13 @@ public sealed class ManualTimeProvider : TimeProvider
     /// <inheritdoc/>
     public override TimeZoneInfo LocalTimeZone => _zone ?? base.LocalTimeZone;
 
+    /// <summary>Puts the clock at a moment, forward or back.</summary>
+    /// <param name="moment">The instant the clock reports from now on.</param>
+    public void Set(DateTimeOffset moment)
+    {
+        _now = moment;
+    }
+
     /// <summary>Moves the clock forward (or back, for a negative span).</summary>
     /// <param name="by">How far to move it.</param>
     public void Advance(TimeSpan by)

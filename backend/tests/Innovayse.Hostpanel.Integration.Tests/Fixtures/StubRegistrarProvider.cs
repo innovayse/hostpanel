@@ -8,22 +8,38 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// Test stub for <see cref="IRegistrarProvider"/>.
 /// Returns hardcoded success results without making any real network calls.
 /// </summary>
+/// <remarks>
+/// The expiry it reports is a year from the moment its host's clock reads: on a clocked host (<see cref="ClockedHost"/>, standing at
+/// <see cref="TestMoments.Seeded"/> unless the test says otherwise) that is the expiry of the domains the tests seed relative to the
+/// clock, and on the shared host, which runs on the system clock, it is a year from the real present.
+/// </remarks>
 public sealed class StubRegistrarProvider : IRegistrarProvider
 {
+    /// <summary>The clock of the host the stub answers for.</summary>
+    private readonly TimeProvider _time;
+
+    /// <summary>Initializes a new instance of the <see cref="StubRegistrarProvider"/> class.</summary>
+    /// <param name="time">The clock of the host the stub answers for.</param>
+    public StubRegistrarProvider(TimeProvider time)
+    {
+        _time = time;
+    }
+
     /// <summary>Every name <see cref="GetWhoisAsync"/> was asked about, in call order; the stub is scoped, so the record is static.</summary>
     public static readonly System.Collections.Concurrent.ConcurrentQueue<string> WhoisLookups = new();
 
     /// <inheritdoc/>
     public Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, "STUB-REF-123", DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, "STUB-REF-123", _time.GetUtcNow().AddYears(1), null));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> TransferAsync(DomainTransferOrder request, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, "STUB-TRANSFER-456", DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, "STUB-TRANSFER-456", _time.GetUtcNow().AddYears(1), null));
 
     /// <inheritdoc/>
+    /// <remarks>A domain seeded relative to the host's clock expires a year after it, so a renewal reports that year plus the years bought.</remarks>
     public Task<RegistrarResult> RenewAsync(DomainRenewalOrder request, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, "STUB-RENEW-789", DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, "STUB-RENEW-789", _time.GetUtcNow().AddYears(1 + request.Years), null));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> CancelTransferAsync(DomainRef domain, CancellationToken ct)
@@ -119,7 +135,7 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
 
     /// <inheritdoc/>
     public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, domainName, DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, domainName, _time.GetUtcNow().AddYears(1), null));
 
     /// <inheritdoc/>
     public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)

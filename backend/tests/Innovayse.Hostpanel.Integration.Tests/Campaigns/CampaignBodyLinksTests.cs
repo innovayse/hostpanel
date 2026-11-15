@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Innovayse.Hostpanel.Application.Campaigns.Common;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Campaigns;
@@ -140,9 +141,9 @@ public sealed class CampaignBodyLinksTests
     {
         var body = string.Concat(Enumerable.Repeat("<a href=\"https://shop.example/x", 20_000));
 
-        var started = DateTime.UtcNow;
+        var stopwatch = Stopwatch.StartNew();
         CampaignBodyLinks.Extract(body);
 
-        (DateTime.UtcNow - started).Should().BeLessThan(TimeSpan.FromSeconds(5));
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
     }
 }

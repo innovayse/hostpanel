@@ -38,7 +38,8 @@ public sealed class GetMyStoredPaymentMethodsTests(IntegrationTestFactory factor
         item.GetProperty("brand").GetString().Should().Be("visa");
         item.GetProperty("last4").GetString().Should().Be("4242");
         item.GetProperty("expiryMonth").GetInt32().Should().Be(12);
-        item.GetProperty("expiryYear").GetInt32().Should().BeGreaterThan(DateTimeOffset.UtcNow.Year);
+        // Real time: the stub plugin derives the card expiry from the system clock.
+        item.GetProperty("expiryYear").GetInt32().Should().BeGreaterThan(TestMoments.Present().Year);
         item.GetProperty("isDefault").GetBoolean().Should().BeTrue();
     }
 
@@ -195,7 +196,7 @@ public sealed class GetMyStoredPaymentMethodsTests(IntegrationTestFactory factor
         using var scope = scenario.Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<Innovayse.Hostpanel.Application.Common.Interfaces.IHostpanelDbContext>();
         context.CardChargeConsents.Add(
-            CardChargeConsent.Grant(clientId, scenario.Module, $"session-{Guid.NewGuid():N}", DateTimeOffset.UtcNow));
+            CardChargeConsent.Grant(clientId, scenario.Module, $"session-{Guid.NewGuid():N}", TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 }

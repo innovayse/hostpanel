@@ -30,8 +30,8 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         using var scope = factory.Services.CreateScope();
         var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref-1", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref-1", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -53,7 +53,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         using var scope = factory.Services.CreateScope();
         var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -106,7 +106,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         await using var host = ProvisioningTestSeeds.WithRecordingProvider(factory, new RecordingProvisioningProvider());
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
 
         // The grouped server is the worse pick on its own (a one-account limit loses the capacity
         // tie-break to an unlimited one, and the other is the default), so only the group can be

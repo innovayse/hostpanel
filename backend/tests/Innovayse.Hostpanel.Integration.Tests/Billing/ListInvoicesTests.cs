@@ -67,7 +67,7 @@ public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFi
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(14), "EUR", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(14), "EUR", TestMoments.Seeded);
             invoice.AddItem("Hosting", 12m, 1, null);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);

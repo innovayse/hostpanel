@@ -1,8 +1,6 @@
-using System.Net.Http.Headers;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,17 +12,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// </summary>
 public static class OrdersTestReads
 {
-    /// <summary>Builds a client carrying the seeded admin's bearer token against a host derived from the shared factory.</summary>
-    /// <param name="host">The derived host to send requests to.</param>
-    /// <param name="factory">The shared factory that mints the admin token.</param>
-    /// <returns>An authenticated admin <see cref="HttpClient"/>.</returns>
-    public static async Task<HttpClient> AdminOfAsync(WebApplicationFactory<Program> host, IntegrationTestFactory factory)
-    {
-        var client = host.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
-        return client;
-    }
-
     /// <summary>Reads an order's lines from the database, with their fulfilment records.</summary>
     /// <param name="services">The host's service provider.</param>
     /// <param name="orderId">The order.</param>

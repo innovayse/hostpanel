@@ -71,8 +71,8 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var token = Guid.NewGuid().ToString("N")[..10];
-        var alpha = await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Alpha-{token}", DateTimeOffset.UtcNow.AddDays(30));
-        await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Beta-{token}", DateTimeOffset.UtcNow.AddDays(30));
+        var alpha = await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Alpha-{token}", QuoteListTestSeeds.ExpiresAhead);
+        await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Beta-{token}", QuoteListTestSeeds.ExpiresAhead);
 
         var page = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&search=ALPHA-{token.ToUpperInvariant()}");
 
@@ -87,8 +87,8 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        var hosting = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Hosting upgrade", DateTimeOffset.UtcNow.AddDays(30));
-        await QuoteListTestSeeds.SeedAsync(factory, clientId, "Domain transfer", DateTimeOffset.UtcNow.AddDays(30));
+        var hosting = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Hosting upgrade", QuoteListTestSeeds.ExpiresAhead);
+        await QuoteListTestSeeds.SeedAsync(factory, clientId, "Domain transfer", QuoteListTestSeeds.ExpiresAhead);
 
         var page = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&search={hosting}");
 
@@ -103,7 +103,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var token = Guid.NewGuid().ToString("N")[..10];
-        var expiry = DateTimeOffset.UtcNow.AddDays(30);
+        var expiry = QuoteListTestSeeds.ExpiresAhead;
         var percent = await QuoteListTestSeeds.SeedAsync(factory, clientId, $"{token} 50% off", expiry);
         await QuoteListTestSeeds.SeedAsync(factory, clientId, $"{token} 50x off", expiry);
         var underscore = await QuoteListTestSeeds.SeedAsync(factory, clientId, $"{token} a_c", expiry);
@@ -126,8 +126,8 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var first = await BillingTestSeeds.SeedClientAsync(factory);
         var second = await BillingTestSeeds.SeedClientAsync(factory);
-        var firstQuote = await QuoteListTestSeeds.SeedAsync(factory, first, "First", DateTimeOffset.UtcNow.AddDays(30));
-        var secondQuote = await QuoteListTestSeeds.SeedAsync(factory, second, "Second", DateTimeOffset.UtcNow.AddDays(30));
+        var firstQuote = await QuoteListTestSeeds.SeedAsync(factory, first, "First", QuoteListTestSeeds.ExpiresAhead);
+        var secondQuote = await QuoteListTestSeeds.SeedAsync(factory, second, "Second", QuoteListTestSeeds.ExpiresAhead);
 
         var firstPage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={first}");
         var secondPage = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={second}");
@@ -143,7 +143,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        var expiry = DateTimeOffset.UtcNow.AddDays(30);
+        var expiry = QuoteListTestSeeds.ExpiresAhead;
         await QuoteListTestSeeds.SeedAsync(factory, clientId, "Draft", expiry);
         var delivered = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Delivered", expiry, QuoteStage.Delivered);
         var accepted = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Accepted", expiry, QuoteStage.Accepted);
@@ -165,10 +165,10 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        var ahead = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Ahead", DateTimeOffset.UtcNow.AddDays(30));
+        var ahead = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Ahead", QuoteListTestSeeds.ExpiresAhead);
         var expiredStageAhead = await QuoteListTestSeeds.SeedAsync(
-            factory, clientId, "Expired stage", DateTimeOffset.UtcNow.AddDays(30), QuoteStage.Expired);
-        var passed = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Passed", DateTimeOffset.UtcNow.AddDays(-2), QuoteStage.Delivered);
+            factory, clientId, "Expired stage", QuoteListTestSeeds.ExpiresAhead, QuoteStage.Expired);
+        var passed = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Passed", QuoteListTestSeeds.ExpiredBefore, QuoteStage.Delivered);
 
         var valid = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&validity=Valid");
         var expired = await PagedListReads.PageAsync(admin, $"/api/billing/quotes?page=1&pageSize=100&clientId={clientId}&validity=Expired");
@@ -186,10 +186,10 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var other = await BillingTestSeeds.SeedClientAsync(factory);
         var token = Guid.NewGuid().ToString("N")[..10];
-        var ahead = DateTimeOffset.UtcNow.AddDays(30);
+        var ahead = QuoteListTestSeeds.ExpiresAhead;
         var match = await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Alpha {token}", ahead, QuoteStage.Delivered);
         await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Alpha {token}", ahead, QuoteStage.Accepted);
-        await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Alpha {token}", DateTimeOffset.UtcNow.AddDays(-2), QuoteStage.Delivered);
+        await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Alpha {token}", QuoteListTestSeeds.ExpiredBefore, QuoteStage.Delivered);
         await QuoteListTestSeeds.SeedAsync(factory, clientId, $"Beta {token}", ahead, QuoteStage.Delivered);
         await QuoteListTestSeeds.SeedAsync(factory, other, $"Alpha {token}", ahead, QuoteStage.Delivered);
 
@@ -206,7 +206,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        var expiry = DateTimeOffset.UtcNow.AddDays(30);
+        var expiry = QuoteListTestSeeds.ExpiresAhead;
         var oldest = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Oldest", expiry, createdAt: TestMoments.Seeded);
         var sameMoment = TestMoments.Seeded.AddDays(1);
         var tiedFirst = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Tied first", expiry, createdAt: sameMoment);

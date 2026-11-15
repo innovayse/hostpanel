@@ -270,7 +270,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
         var sku = ProductsTestSeeds.UniqueSku();
         var race = new SkuRaceSaveInterceptor(sku.ToUpperInvariant());
         using var host = SkuRaceHost.Create(factory, race);
-        var client = await SkuRaceHost.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
 
         var response = await client.PostAsJsonAsync("/api/products", DigitalBody(groupId, "Loser", sku));

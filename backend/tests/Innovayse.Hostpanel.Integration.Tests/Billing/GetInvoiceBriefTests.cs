@@ -27,12 +27,12 @@ public sealed class GetInvoiceBriefTests(IntegrationTestFactory factory) : IClas
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Hosting", 12.50m, 1);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
             context.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 2.50m, 0m, null, TransactionSource.Manual));
+                TestMoments.Seeded, PaymentMethodNames.Manual, $"part-{Guid.NewGuid():N}", 2.50m, 0m, null, TransactionSource.Manual));
             await context.SaveChangesAsync(CancellationToken.None);
             invoiceId = invoice.Id;
         }

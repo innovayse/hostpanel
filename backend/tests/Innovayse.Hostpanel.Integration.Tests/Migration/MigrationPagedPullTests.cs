@@ -65,7 +65,7 @@ public sealed class MigrationPagedPullTests(IntegrationTestFactory factory) : IC
         var failed = await context.MigrationJobs.SingleAsync(j => j.Id == job.Id);
         // The heartbeat is on the real clock: the recovery job runs on the shared host every few minutes and fails a
         // queued job whose heartbeat is stale, which a fixed moment in the past would be.
-        failed.Queue(DateTimeOffset.UtcNow);
+        failed.Queue(TestMoments.Present());
         await context.SaveChangesAsync(CancellationToken.None);
         await worker.RunAsync(job.Id, CancellationToken.None);
 

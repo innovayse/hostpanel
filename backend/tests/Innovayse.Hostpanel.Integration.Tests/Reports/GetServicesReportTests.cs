@@ -33,7 +33,7 @@ public sealed class GetServicesReportTests(IntegrationTestFactory factory) : ICl
             db.Products.Add(product);
             await db.SaveChangesAsync();
 
-            var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+            var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
             db.ClientServices.Add(service);
             await db.SaveChangesAsync();
         }

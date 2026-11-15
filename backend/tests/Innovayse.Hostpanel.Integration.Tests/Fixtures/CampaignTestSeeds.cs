@@ -59,7 +59,8 @@ internal static class CampaignTestSeeds
     /// <returns>A task that completes once the campaign is queued.</returns>
     public static async Task ScheduleAsync(HttpClient client, int id, DateTimeOffset? at = null)
     {
-        var response = await client.PostAsJsonAsync($"{Route}/{id}/schedule", new { at = at ?? DateTimeOffset.UtcNow.AddDays(1) });
+        // Real time on purpose: the shared host refuses a send time that is not ahead of its own system clock.
+        var response = await client.PostAsJsonAsync($"{Route}/{id}/schedule", new { at = at ?? TestMoments.Present().AddDays(1) });
         response.EnsureSuccessStatusCode();
     }
 
@@ -182,7 +183,7 @@ internal static class CampaignTestSeeds
     {
         var context = services.GetRequiredService<IHostpanelDbContext>();
         var seeded = await SeedAudienceClientAsync(services);
-        seeded.Client.Suspend(DateTimeOffset.UtcNow);
+        seeded.Client.Suspend(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         return seeded;
     }
@@ -214,7 +215,8 @@ internal static class CampaignTestSeeds
     /// <returns>A task that completes once both are saved.</returns>
     public static async Task SetSignInHistoryAsync(IServiceProvider services, Client client, int? lastSignInDaysAgo, int? createdDaysAgo = null)
     {
-        var now = DateTimeOffset.UtcNow;
+        // Read from the clock of the host the test drives: the segment rules measure the days against it.
+        var now = services.GetRequiredService<IClock>().UtcNow;
         var identity = services.GetRequiredService<AppDbContext>();
         var user = await identity.Users.SingleAsync(u => u.Id == client.UserId);
         user.LastLoginAt = lastSignInDaysAgo is null ? null : now.AddDays(-lastSignInDaysAgo.Value);
@@ -241,7 +243,8 @@ internal static class CampaignTestSeeds
     public static async Task<int> SeedServiceAsync(IServiceProvider services, int clientId, int? productId = null, int periodStartedDaysAgo = 0)
     {
         var context = services.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        // Read from the clock of the host the test drives: the segment rules measure the days against it.
+        var now = services.GetRequiredService<IClock>().UtcNow;
         if (productId is null)
         {
             var group = ProductGroup.Create($"campaign-{Guid.NewGuid():N}", null);

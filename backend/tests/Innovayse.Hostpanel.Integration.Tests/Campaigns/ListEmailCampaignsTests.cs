@@ -36,11 +36,12 @@ public sealed class ListEmailCampaignsTests(IntegrationTestFactory factory) : IC
     [Fact]
     public async Task List_RowCarriesItsOwnStats()
     {
-        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var token = Guid.NewGuid().ToString("N")[..10];
         var draft = await CampaignTestSeeds.CreateAsync(client, subject: $"{token} draft row");
         var sending = await CampaignTestSeeds.CreateAsync(client, subject: $"{token} sending row");
-        await CampaignTestSeeds.ScheduleAsync(client, sending);
+        await CampaignTestSeeds.ScheduleAsync(client, sending, host.Clock.GetUtcNow().AddDays(1));
         await CampaignTestSeeds.SeedSendingWithRecipientsAsync(factory, sending);
 
         var rows = (await PageAsync($"page=1&pageSize=100&search={token}")).GetProperty("items");
@@ -52,7 +53,7 @@ public sealed class ListEmailCampaignsTests(IntegrationTestFactory factory) : IC
         draftRow.TryGetProperty("segments", out _).Should().BeFalse();
         var sendingRow = rows.EnumerateArray().Single(x => x.GetProperty("id").GetInt32() == sending);
         sendingRow.GetProperty("status").GetString().Should().Be("Sending");
-        sendingRow.GetProperty("scheduledAt").GetDateTimeOffset().Should().BeAfter(DateTimeOffset.UtcNow);
+        sendingRow.GetProperty("scheduledAt").GetDateTimeOffset().Should().BeAfter(host.Clock.GetUtcNow());
         var stats = sendingRow.GetProperty("stats");
         stats.GetProperty("total").GetInt32().Should().Be(4);
         stats.GetProperty("pending").GetInt32().Should().Be(1);

@@ -67,7 +67,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var row = body.RootElement.EnumerateArray().Single(s => s.GetProperty("id").GetInt32() == serviceId);
-        row.GetProperty("createdAt").GetDateTimeOffset().Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
+        row.GetProperty("createdAt").GetDateTimeOffset().Should().BeCloseTo(TestMoments.Present(), TimeSpan.FromMinutes(5)); // Real time on purpose: saving the row stamps CreatedAt from the shared host system clock.
     }
 
     /// <summary>The client's own list names the product even when the product has no price in the client's currency.</summary>
@@ -219,7 +219,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var service = Domain.Services.ClientService.CreateOrdered(clientId, product.Id, BillingCycle.Monthly, domain, 2m, 2m, null, null, now);
         await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref-usage", now, server.Id);
         service.Suspend(now, hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);

@@ -28,9 +28,9 @@ public sealed class GetOwnedDomainNamesTests(IntegrationTestFactory factory) : I
             clientId = await DomainsTestSeeds.SeedClientAsync(context);
             var otherClientId = await DomainsTestSeeds.SeedClientAsync(context);
             context.Domains.Add(RegisteredDomain.Register(
-                clientId, mine, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
+                clientId, mine, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
             context.Domains.Add(RegisteredDomain.Register(
-                otherClientId, theirs, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
+                otherClientId, theirs, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -63,12 +63,12 @@ public sealed class GetOwnedDomainNamesTests(IntegrationTestFactory factory) : I
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             clientId = await DomainsTestSeeds.SeedClientAsync(context);
             var pendingDomain = RegisteredDomain.Register(
-                clientId, pending, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+                clientId, pending, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             var activeDomain = RegisteredDomain.Register(
-                clientId, active, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-            activeDomain.Activate("REF-LIVE", DateTimeOffset.UtcNow.AddYears(1), DateTimeOffset.UtcNow);
+                clientId, active, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            activeDomain.Activate("REF-LIVE", TestMoments.Seeded.AddYears(1), TestMoments.Seeded);
             var cancelledDomain = RegisteredDomain.Register(
-                clientId, cancelled, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+                clientId, cancelled, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             cancelledDomain.Cancel();
             context.Domains.AddRange(pendingDomain, activeDomain, cancelledDomain);
             await context.SaveChangesAsync(CancellationToken.None);
@@ -102,11 +102,11 @@ public sealed class GetOwnedDomainNamesTests(IntegrationTestFactory factory) : I
             clientId = await DomainsTestSeeds.SeedClientAsync(context);
             context.Domains.AddRange(
                 RegisteredDomain.Register(
-                    clientId, own, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base, orderId: 4_242),
+                    clientId, own, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base, orderId: 4_242),
                 RegisteredDomain.Register(
-                    clientId, elsewhere, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base),
+                    clientId, elsewhere, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base),
                 RegisteredDomain.Register(
-                    clientId, another, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base, orderId: 4_243));
+                    clientId, another, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base, orderId: 4_243));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

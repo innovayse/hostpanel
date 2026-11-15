@@ -38,7 +38,7 @@ public sealed class DemoAdaptersTests
     [Fact]
     public async Task Registrar_RegistersDeterministicallyAndOffersAvailabilityBothWaysAsync()
     {
-        var registrar = new DemoRegistrarProvider(new SystemClock(TimeProvider.System));
+        var registrar = new DemoRegistrarProvider(new SystemClock(new ManualTimeProvider(TestMoments.Seeded)));
         var contact = new DomainContact(
             "Ani", "Hakobyan", null, "ani@example.test", "+374.10123456", "1 Main St", null, "Yerevan", "Yerevan", "0010", "AM");
         var order = new DomainRegistrationOrder("Example.COM", 1, true, true, null, null, contact);
@@ -48,7 +48,7 @@ public sealed class DemoAdaptersTests
 
         first.Success.Should().BeTrue();
         first.RegistrarRef.Should().Be("DEMO-example.com").And.Be(second.RegistrarRef);
-        first.ExpiresAt.Should().BeAfter(DateTimeOffset.UtcNow);
+        first.ExpiresAt.Should().BeAfter(TestMoments.Seeded);
         (await registrar.CheckAvailabilityAsync("free-name.com", CancellationToken.None)).Should().BeTrue();
         (await registrar.CheckAvailabilityAsync("taken-name.com", CancellationToken.None)).Should().BeFalse();
         (await registrar.GetDnsRecordsAsync(new DomainRef("example.com", "DEMO-example.com"), CancellationToken.None)).Should().HaveCount(3);

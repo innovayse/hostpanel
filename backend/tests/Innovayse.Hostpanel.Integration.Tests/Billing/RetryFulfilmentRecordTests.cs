@@ -29,7 +29,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
         using var scenario = new FulfilmentScenario(factory);
         var invoiceId = await scenario.SeedInvoiceAsync();
         var recordId = await scenario.SeedFailedRecordAsync(invoiceId, FulfilmentKind.Paid, "plugin said no");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         HttpResponseMessage? response = null;
         Func<IMessageContext, Task> retry = async _ =>
         {
@@ -58,7 +58,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
         var invoiceId = await scenario.SeedInvoiceAsync();
         await scenario.SeedRecordsAsync(invoiceId, FulfilmentKind.Paid);
         var recordId = (await scenario.ReadAsync(invoiceId, FulfilmentKind.Paid)).Id;
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/fulfilment/{recordId}/retry", content: null);
 
@@ -74,7 +74,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
     {
         using var scenario = new FulfilmentScenario(factory);
         var invoiceId = await scenario.SeedInvoiceAsync();
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.PostAsync(
             $"/api/billing/{invoiceId}/fulfilment/{BillingTestSeeds.NoSuchId}/retry", content: null);
@@ -92,7 +92,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
         var invoiceId = await scenario.SeedInvoiceAsync();
         var otherInvoiceId = await scenario.SeedInvoiceAsync();
         var recordId = await scenario.SeedFailedRecordAsync(otherInvoiceId, FulfilmentKind.Paid, "plugin said no");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/fulfilment/{recordId}/retry", content: null);
 

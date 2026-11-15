@@ -120,7 +120,7 @@ public sealed class BankTransferGatewaySessionTests(IntegrationTestFactory facto
         var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000) };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         using var host = BuildHost(resolver, clock);
         var (invoiceId, clientId) = await SeedTransferWithSessionAsync(host, module, clock.GetUtcNow(), TimeSpan.FromHours(sessionAgeHours), confirmTransfer: false);
 
@@ -143,7 +143,7 @@ public sealed class BankTransferGatewaySessionTests(IntegrationTestFactory facto
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         using var host = BuildHost(resolver, clock);
         var (invoiceId, _) = await SeedTransferWithSessionAsync(host, module, clock.GetUtcNow(), TimeSpan.FromHours(2), confirmTransfer: false);
 
@@ -168,7 +168,7 @@ public sealed class BankTransferGatewaySessionTests(IntegrationTestFactory facto
         var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000) };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         using var host = BuildHost(resolver, clock);
         var (invoiceId, clientId) = await SeedTransferWithSessionAsync(host, module, clock.GetUtcNow(), TimeSpan.FromHours(30), confirmTransfer: true);
 

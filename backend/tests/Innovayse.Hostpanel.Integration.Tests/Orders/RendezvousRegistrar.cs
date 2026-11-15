@@ -9,7 +9,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 /// Wolverine's generated handler code can name it; the gate is static because the registrar is scoped and a fresh instance
 /// serves every handler.
 /// </summary>
-public sealed class RendezvousRegistrar : TestRegistrar
+/// <param name="time">The clock of the host the registrar answers for.</param>
+public sealed class RendezvousRegistrar(TimeProvider time) : TestRegistrar(time)
 {
     /// <summary>The gate both runs arrive at; set by the running test before it dispatches.</summary>
     public static ChargeRendezvous? Gate { get; set; }

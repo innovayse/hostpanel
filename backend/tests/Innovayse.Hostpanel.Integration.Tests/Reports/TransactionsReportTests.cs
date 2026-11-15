@@ -25,7 +25,7 @@ public sealed class TransactionsReportTests(IntegrationTestFactory factory) : IC
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var tx = Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Hosting payment", $"tx-{Guid.NewGuid():N}",
+                clientId, TestMoments.Seeded, "Hosting payment", $"tx-{Guid.NewGuid():N}",
                 invoiceId: null, paymentMethod: "manual", amountIn: 30m, amountOut: 0m, fees: 1m, addedToCredit: false, currency: "USD", TransactionSource.Manual);
             db.Transactions.Add(tx);
             await db.SaveChangesAsync();
@@ -53,7 +53,7 @@ public sealed class TransactionsReportTests(IntegrationTestFactory factory) : IC
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Transactions.Add(Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Invoice payment", $"tx-{Guid.NewGuid():N}",
+                clientId, TestMoments.Seeded, "Invoice payment", $"tx-{Guid.NewGuid():N}",
                 invoiceId: invoiceId, paymentMethod: "manual", amountIn: 20m, amountOut: 0m, fees: 0m, addedToCredit: false, currency: "AMD", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }

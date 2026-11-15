@@ -22,10 +22,10 @@ public sealed class ListEndOfCycleTerminationsDueTests(IntegrationTestFactory fa
     public async Task HandleAsync_MixedServices_ListsOnlyEndedCyclesSetToTerminateAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var dueBy = DateTimeOffset.UtcNow;
-        var ended = await RenewalTestSeeds.SeedActiveServiceAsync(host, dueBy.AddDays(-1));
-        var running = await RenewalTestSeeds.SeedActiveServiceAsync(host, dueBy.AddDays(10));
-        var renewing = await RenewalTestSeeds.SeedActiveServiceAsync(host, dueBy.AddDays(-1));
+        var dueBy = TestMoments.Seeded;
+        var ended = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, dueBy.AddDays(-1));
+        var running = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, dueBy.AddDays(10));
+        var renewing = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, dueBy.AddDays(-1));
         await SetToTerminateAsync(host, ended.ServiceId);
         await SetToTerminateAsync(host, running.ServiceId);
 

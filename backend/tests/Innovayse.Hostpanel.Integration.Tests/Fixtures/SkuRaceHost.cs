@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -19,17 +18,4 @@ internal static class SkuRaceHost
     public static WebApplicationFactory<Program> Create(IntegrationTestFactory factory, SkuRaceSaveInterceptor race) =>
         factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
             services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(race))));
-
-    /// <summary>A client of <paramref name="host"/> carrying the seeded admin's bearer token.</summary>
-    /// <param name="factory">The shared host the admin token is minted from.</param>
-    /// <param name="host">The derived host the client talks to.</param>
-    /// <returns>An authenticated client.</returns>
-    public static async Task<HttpClient> AdminClientAsync(
-        IntegrationTestFactory factory, WebApplicationFactory<Program> host)
-    {
-        var client = host.CreateClient();
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
-        return client;
-    }
 }

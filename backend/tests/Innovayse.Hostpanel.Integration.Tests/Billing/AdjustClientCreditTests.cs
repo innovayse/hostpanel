@@ -173,7 +173,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     {
         var sender = new FakeEmailSender();
         var host = BankTransferTestSeeds.HostWithMail(factory, sender);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var (_, clientId, _, email) = await BillingTestSeeds.RegisterClientAsync(factory, host, "adjust-mail");
 
         await BankTransferTestSeeds.RunTrackedAsync(host, async () =>

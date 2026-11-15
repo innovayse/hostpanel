@@ -25,7 +25,7 @@ public sealed class OrderRejectedFromReviewHandlerTests(IntegrationTestFactory f
         var seeded = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "rejected");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new OrderRejectedFromReviewEvent(77, seeded.Client.Id, "ORD-0077", "The card could not be verified.") { OccurredAt = DateTimeOffset.UtcNow });
+            new OrderRejectedFromReviewEvent(77, seeded.Client.Id, "ORD-0077", "The card could not be verified.") { OccurredAt = TestMoments.Seeded });
 
         var message = emailSender.Sent.Should().ContainSingle().Subject;
         message.To.Should().Be(seeded.Email);

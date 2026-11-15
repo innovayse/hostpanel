@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,24 +20,32 @@ internal static class RenewalTestSeeds
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <returns>The isolated host.</returns>
     public static WebApplicationFactory<Program> SuppressedHost(IntegrationTestFactory factory) =>
-        factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+        factory.WithWebHostBuilder(UseSuppressedGate);
+
+    /// <summary>
+    /// Stops a host being built from dispatching domain events, for a host derived for more than this
+    /// (<see cref="ClockedHost"/> takes it as its <c>configure</c>), so the host is derived once.
+    /// </summary>
+    /// <param name="builder">The host builder to configure.</param>
+    public static void UseSuppressedGate(IWebHostBuilder builder) =>
+        builder.ConfigureTestServices(services =>
         {
             services.AddScoped<IDomainEventGate, SuppressedDomainEventGate>();
-        }));
+        });
 
     /// <summary>Seeds a client, a product and one active monthly service at 5.00 a month.</summary>
-    /// <param name="host">The host to seed through.</param>
+    /// <param name="services">The services of the host to seed through.</param>
     /// <param name="nextRenewalAt">The service's renewal date, or <see langword="null"/> for an undated one.</param>
     /// <returns>The client, product and service ids.</returns>
     public static async Task<SeededRenewingService> SeedActiveServiceAsync(
-        WebApplicationFactory<Program> host, DateTimeOffset? nextRenewalAt)
+        IServiceProvider services, DateTimeOffset? nextRenewalAt)
     {
-        using var scope = host.Services.CreateScope();
+        using var scope = services.CreateScope();
         var ids = await ServicesTestSeeds.SeedClientAndProductAsync(scope, 5m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
-        var service = ClientService.Create(ids.ClientId, ids.ProductId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(ids.ClientId, ids.ProductId, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", TestMoments.Seeded);
         service.ChangeBillingTerms(new ServiceBillingTerms(BillingCycle.Monthly, 1, 5m, 5m, nextRenewalAt, null, null, null));
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -44,19 +53,19 @@ internal static class RenewalTestSeeds
     }
 
     /// <summary>Seeds an active, registrar-linked domain for a fresh client.</summary>
-    /// <param name="host">The host to seed through.</param>
+    /// <param name="services">The services of the host to seed through.</param>
     /// <param name="expiresAt">The domain's expiry.</param>
     /// <param name="autoRenew">Whether the domain renews automatically.</param>
     /// <returns>The saved domain.</returns>
     public static async Task<RegisteredDomain> SeedActiveDomainAsync(
-        WebApplicationFactory<Program> host, DateTimeOffset expiresAt, bool autoRenew)
+        IServiceProvider services, DateTimeOffset expiresAt, bool autoRenew)
     {
-        using var scope = host.Services.CreateScope();
+        using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
 
         var domain = RegisteredDomain.Register(clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiresAt, autoRenew, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain;
     }

@@ -461,7 +461,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.Transactions.Add(Transaction.Create(
-            clientId, DateTimeOffset.UtcNow, "Totals test", $"tx-{Guid.NewGuid():N}", null, "manual",
+            clientId, TestMoments.Seeded, "Totals test", $"tx-{Guid.NewGuid():N}", null, "manual",
             amountIn, 0m, fees, false, currency, TransactionSource.Manual));
         await context.SaveChangesAsync(CancellationToken.None);
     }
@@ -474,7 +474,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(14), currency, DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(14), currency, TestMoments.Seeded);
         invoice.AddItem("Hosting", 20m, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);

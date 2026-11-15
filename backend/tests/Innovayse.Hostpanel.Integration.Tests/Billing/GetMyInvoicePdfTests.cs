@@ -65,7 +65,7 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
     {
         using var host = BillingTestSeeds.RenderBusyHost(factory);
         var (owner, ownerClientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "pdf-busy");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, ownerClientId, 10m);
         using var held = await host.Services.GetRequiredService<InvoicePdfRenderGate>().TryEnterAsync(CancellationToken.None);
 

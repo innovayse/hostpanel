@@ -167,7 +167,7 @@ public sealed class InstallPluginHostVersionTests(IntegrationTestFactory factory
     private async Task<HttpClient> ClientAsync(string hostVersion)
     {
         Host.Services.GetRequiredService<FakeInstalledVersionProvider>().Version = hostVersion;
-        return await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        return await AuthTestSeeds.AdminClientAsync(factory, Host);
     }
 
     /// <summary>The folder an uploaded plugin is unpacked into under this class's upload folder.</summary>

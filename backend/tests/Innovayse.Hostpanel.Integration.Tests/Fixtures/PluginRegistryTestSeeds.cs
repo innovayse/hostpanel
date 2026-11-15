@@ -49,7 +49,7 @@ internal static class PluginRegistryTestSeeds
             services.AddSingleton(PluginSigningTestSeeds.Verifier(enforced: false));
         }));
 
-        return await PluginsTestSeeds.AdminClientAsync(factory, host);
+        return await AuthTestSeeds.AdminClientAsync(factory, host);
     }
 
     /// <summary>Saves a setting through the admin settings endpoint.</summary>

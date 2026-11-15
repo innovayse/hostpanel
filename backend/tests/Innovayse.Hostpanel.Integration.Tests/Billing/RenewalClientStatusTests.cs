@@ -27,8 +27,8 @@ public sealed class RenewalClientStatusTests(IntegrationTestFactory factory) : I
     [InlineData(ClientStatus.Closed, HostpanelErrorCodes.CLIENT_CLOSED)]
     public async Task Raise_ForASuspendedOrClosedClient_IsRefusedAsync(ClientStatus status, string expectedCode)
     {
-        var host = RenewalTestSeeds.SuppressedHost(factory);
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(5));
+        using var host = new ClockedHost(factory, configure: RenewalTestSeeds.UseSuppressedGate);
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, host.Clock.GetUtcNow().AddDays(5));
         await ClientStatusSeeds.SetAsync(factory, seeded.ClientId, status);
         using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -46,9 +46,9 @@ public sealed class RenewalClientStatusTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task DailyRun_SkipsASuspendedClientAndStillBillsAnActiveOneAsync()
     {
-        var host = RenewalTestSeeds.SuppressedHost(factory);
-        var active = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(5));
-        var suspended = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(5));
+        using var host = new ClockedHost(factory, configure: RenewalTestSeeds.UseSuppressedGate);
+        var active = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, host.Clock.GetUtcNow().AddDays(5));
+        var suspended = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, host.Clock.GetUtcNow().AddDays(5));
         await ClientStatusSeeds.SetAsync(factory, suspended.ClientId, ClientStatus.Suspended);
         using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

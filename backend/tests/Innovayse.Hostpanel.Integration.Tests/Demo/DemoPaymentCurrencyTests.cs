@@ -48,7 +48,7 @@ public sealed class DemoPaymentCurrencyTests(IntegrationTestFactory factory) : I
             await db.SaveChangesAsync();
         }
 
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 5000m);
 
         var response = await client.PostAsJsonAsync(

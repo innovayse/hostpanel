@@ -100,6 +100,6 @@ public sealed class PluginUpdateRuleTests
     private static RegistryPluginVersion Version(
         string version, PluginRegistryVersionStatus status = PluginRegistryVersionStatus.Published, string? min = null, string? max = null)
     {
-        return new RegistryPluginVersion(version, "1.0", 1, DateTimeOffset.UtcNow, status, null, null, min, max, null, [], null, []);
+        return new RegistryPluginVersion(version, "1.0", 1, TestMoments.Seeded, status, null, null, min, max, null, [], null, []);
     }
 }

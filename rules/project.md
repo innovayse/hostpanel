@@ -1416,6 +1416,46 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   the entity set it itself. Factories do not write `CreatedAt`; a domain method that needs a
   moment takes it from the caller (`ClientService.Activate` gets its billing anchor that way: the
   activation moment, when provisioning succeeds, not the order date; it never lowers a later renewal date).
+  **Read time through the clock, in production and in tests (issue 1208).** `NoDirectClockTests` fails on any
+  `DateTimeOffset.UtcNow`, `DateTimeOffset.Now`, `DateTime.UtcNow`, `DateTime.Now` or `DateTime.Today` under
+  `backend/src` outside the `Hostpanel.Sdk` submodule (a separate repository; no file is exempt, `SystemClock` asks the
+  `TimeProvider`). The scan (`DirectClockScan`) reads the syntax tree, so a comment never counts as a read and a `//` or
+  `/*` inside a string literal hides nothing on its line; both are proved on planted sources. It checks the `Type.Member`
+  form only: a bare `UtcNow` from `using static` and a read through an alias of the type are out of scope, and a planted case says so.
+- **Time in the tests has five sources, and a test takes the one that matches what judges the time (issue 1208).**
+  - *The host clock.* A test that depends on a time window (renewal, expiry, cron pass, reminder period, month or day
+    boundary) runs on `ClockedHost`, which derives a host of its own on a `ManualTimeProvider`. It stands at
+    `TestMoments.Seeded` unless the test names a moment; the test sets it with `host.Clock.Set(...)` or moves it with
+    `host.Clock.Advance(...)`, reads it as `host.Clock.GetUtcNow()` and seeds its rows relative to it, never to the real
+    clock. What else the test changes on the host (a setting, a fake in place of an adapter) goes in through the
+    `configure` argument, so the host is derived once and `ClockedHost` disposes it; a test never wraps an intermediate
+    `WithWebHostBuilder` host it would have to dispose itself.
+  - *`TestMoments.Seeded`.* The start of every clocked host, and the label or timestamp of any seeded row of a test
+    that does not depend on a time window.
+  - *`TestMoments.Present()`.* The one read of the system clock in the tests, cut to whole seconds. It is for what has to
+    agree with the shared host's own clock: a row the shared host judges by its own date (a due date, an expiry, a
+    lease), the bound a stamp the shared host wrote is checked against, and the start of a derived host that must accept
+    the tokens and cookies the shared host mints (`TwoFactorHost`, `SessionRenewalHost`). A stamp the shared host wrote
+    itself keeps the system clock's full precision, so a test compares it with `BeCloseTo`. No test reads
+    `DateTimeOffset.UtcNow` itself.
+  - *The host's `IClock`.* What a handler stamped is read back through the host's own clock port: the host clock above,
+    or the system clock on the shared host.
+  - *`Stopwatch`.* A duration the test measures itself (how long a call waited), which is not a moment.
+- **The shared host keeps the system clock, and which hosts need a real start follows from what they check.** The sign-in
+  tokens, cookies and their expiry the tests mint and validate run against real time and would be born expired or never
+  expire on a fixed clock, so a test about a token lifetime moves a clocked host it derives (see `SessionRenewalHost`,
+  `TwoFactorHost`), not the shared one. JWT bearer validation checks the token's expiry only, so an admin or client
+  token minted by the shared host works on a clocked host standing at `Seeded` (`AuthTestSeeds.AdminClientAsync(factory,
+  host)` is the one admin client for any host derived from the shared one, clocked or not). The 401 note applies to the
+  cookie and two-factor hosts only: they also check when the token was issued, so a token issued "later" than the host's
+  clock is refused, and a derived host that must accept tokens minted by the shared host starts at `TestMoments.Present()`.
+  Only the test that moves the clock past a token lifetime leaves it.
+- **A clocked host runs its jobs by hand and does not repeat them.** The Testing host schedules no recurring chain at
+  start (the demo reset aside); a cron a test dispatches reschedules itself through `RecurringJobs`, which hands the bus
+  the next run as a delay measured on the host's clock, because the bus counts a scheduled run against the system clock.
+  So a clock fixed in the past puts the next run a real day away instead of making it due at once: the job is never
+  repeated behind the test and never meets the lease of its own repeat. Cron tests therefore stand at `Seeded` with exact
+  assertions and clean nothing out of `JobRuns`; `RecurringJobsTests` proves the past clock on a fixed moment.
 - **A module owns its tables** (`ModuleTableOwnershipTests`, allow-list in `CrossModuleReadModels`). Another
   module's rows are reached through its query on `IMessageBus` or a port, never its `DbSet`. The shared
   blocks: `GetClientBriefsQuery` (id, owner subject, name, company, currency, status, invoicing preference, credit balance and, on request, the

@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Auth;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -30,30 +31,41 @@ public static class EventHandlerTestHost
     /// <returns>The isolated host.</returns>
     public static WebApplicationFactory<Program> WithFakeRelay(
         IntegrationTestFactory factory, IEmailSender emailSender, string? adminEmail = null, string? contactEmail = null) =>
-        factory.WithWebHostBuilder(builder =>
+        factory.WithWebHostBuilder(builder => UseFakeRelay(builder, emailSender, adminEmail, contactEmail));
+
+    /// <summary>
+    /// Puts the fake SMTP relay and the suppressed event gate on a host being built, for a host that is derived for more
+    /// than this (<see cref="ClockedHost"/> takes it as its <c>configure</c>), so the host is derived once.
+    /// </summary>
+    /// <param name="builder">The host builder to configure.</param>
+    /// <param name="emailSender">The fake relay the host's send-email pipeline will use.</param>
+    /// <param name="adminEmail">The platform admin address to configure, or <c>null</c> to leave it unset.</param>
+    /// <param name="contactEmail">The contact-form inbox to configure, or <c>null</c> to leave it unset.</param>
+    public static void UseFakeRelay(
+        IWebHostBuilder builder, IEmailSender emailSender, string? adminEmail = null, string? contactEmail = null)
+    {
+        if (adminEmail is not null)
         {
-            if (adminEmail is not null)
-            {
-                builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
-                    new Dictionary<string, string?> { [$"{NotificationOptions.SectionName}:AdminEmail"] = adminEmail }));
-            }
+            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
+                new Dictionary<string, string?> { [$"{NotificationOptions.SectionName}:AdminEmail"] = adminEmail }));
+        }
 
-            if (contactEmail is not null)
-            {
-                builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
-                    new Dictionary<string, string?> { [$"{NotificationOptions.SectionName}:ContactEmail"] = contactEmail }));
-            }
+        if (contactEmail is not null)
+        {
+            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
+                new Dictionary<string, string?> { [$"{NotificationOptions.SectionName}:ContactEmail"] = contactEmail }));
+        }
 
-            builder.ConfigureTestServices(services =>
-            {
-                services.RemoveAll<IEmailSender>();
-                services.AddSingleton<IEmailSender>(emailSender);
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(emailSender);
 
-                // Seeding saves must not publish their own events; each test dispatches its one event by hand.
-                services.RemoveAll<IDomainEventGate>();
-                services.AddScoped<IDomainEventGate, SuppressedDomainEventGate>();
-            });
+            // Seeding saves must not publish their own events; each test dispatches its one event by hand.
+            services.RemoveAll<IDomainEventGate>();
+            services.AddScoped<IDomainEventGate, SuppressedDomainEventGate>();
         });
+    }
 
     /// <summary>
     /// Seeds a client backed by a genuine ASP.NET Identity user, and returns it alongside the

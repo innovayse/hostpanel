@@ -80,7 +80,7 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.Set<ClientService>().Add(service);
         await context.SaveChangesAsync();
         await context.Database.ExecuteSqlRawAsync("UPDATE \"ClientServices\" SET \"BillingCycle\" = {0} WHERE \"Id\" = {1}", legacy, service.Id);
@@ -100,7 +100,7 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], clientId, "bank_transfer", null, "USD", DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], clientId, "bank_transfer", null, "USD", TestMoments.Seeded);
         order.AddItem(productId, "Domain", BillingCycle.Annual, 1m, 1m, "example.test", null, DomainAction.Renew, null, 1);
         context.Set<Order>().Add(order);
         await context.SaveChangesAsync();

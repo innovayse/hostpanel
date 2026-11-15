@@ -33,7 +33,7 @@ public sealed class CampaignTokenPathEnricherTests
             new LogEventProperty("RequestPath", new ScalarValue(path)),
             new LogEventProperty("StatusCode", new ScalarValue(200)),
         };
-        logger.Write(new LogEvent(DateTimeOffset.UtcNow, LogEventLevel.Information, null, template, properties));
+        logger.Write(new LogEvent(TestMoments.Seeded, LogEventLevel.Information, null, template, properties));
         return received.Single();
     }
 

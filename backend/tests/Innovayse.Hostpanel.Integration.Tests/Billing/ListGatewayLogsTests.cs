@@ -251,7 +251,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     /// <param name="gateway">The gateway name to record the payment under.</param>
     /// <param name="reference">The gateway transaction reference.</param>
     /// <param name="amount">The invoice total and payment amount.</param>
-    /// <param name="date">The moment of the payment; now when not given.</param>
+    /// <param name="date">The moment of the payment; <see cref="TestMoments.Seeded"/> when not given.</param>
     /// <returns>The invoice id.</returns>
     private async Task<int> SeedPaymentAsync(HttpClient admin, string gateway, string reference, decimal amount, DateTimeOffset? date = null)
     {
@@ -259,7 +259,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, amount);
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = date ?? DateTimeOffset.UtcNow,
+            date = date ?? TestMoments.Seeded,
             gateway,
             transactionId = reference,
             amount,

@@ -12,6 +12,15 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// </summary>
 public static class QuoteListTestSeeds
 {
+    /// <summary>
+    /// An expiry date ahead of any real clock. The shared host judges a quote's validity against its own system clock, so
+    /// a quote meant to be valid is given a date that clock does not reach while the suite runs.
+    /// </summary>
+    public static DateTimeOffset ExpiresAhead { get; } = TestMoments.Seeded.AddYears(100);
+
+    /// <summary>An expiry date behind any real clock: a quote given it has expired for the shared host.</summary>
+    public static DateTimeOffset ExpiredBefore { get; } = TestMoments.Seeded.AddDays(-2);
+
     /// <summary>Seeds one quote of one line for a client.</summary>
     /// <param name="host">The host whose database is seeded.</param>
     /// <param name="clientId">The quoted client.</param>
@@ -33,7 +42,7 @@ public static class QuoteListTestSeeds
         var quote = Quote.Create(clientId, subject, expiryDate, "USD");
         quote.AddItem("Design", 10m, 1);
         quote.UpdateDetails(subject, stage, expiryDate, null);
-        quote.Backdate(createdAt ?? DateTimeOffset.UtcNow);
+        quote.Backdate(createdAt ?? TestMoments.Seeded);
         context.Quotes.Add(quote);
         await context.SaveChangesAsync(CancellationToken.None);
         return quote.Id;

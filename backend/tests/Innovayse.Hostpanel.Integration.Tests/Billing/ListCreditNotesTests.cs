@@ -65,7 +65,7 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
     {
         var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-list" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
         var credit = await CreditNoteTestSeeds.IssueOkAsync(admin, invoiceId, 10m);
@@ -85,7 +85,7 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
     {
         var plugin = new FakePaymentPlugin { RefundResult = $"gw-ref-{Guid.NewGuid():N}" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
         var token = Guid.NewGuid().ToString("N");

@@ -219,7 +219,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var startedAt = DateTimeOffset.UtcNow - age;
+        var startedAt = TestMoments.Seeded - age;
         await db.OrderItems.Where(i => i.Id == lineId).ExecuteUpdateAsync(s => s
             .SetProperty(i => i.LastFulfilmentAttemptAt, startedAt));
     }

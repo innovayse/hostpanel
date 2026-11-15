@@ -58,8 +58,8 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", TestMoments.Seeded);
         service.ChangeBillingTerms(new ServiceBillingTerms(
             BillingCycle: BillingCycle.Monthly, Quantity: 1, FirstPaymentAmount: 5m,
             RecurringAmount: 5m, NextRenewalAt: nextRenewalAt, PaymentMethod: null,
@@ -82,8 +82,8 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     {
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, expiresAt, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiresAt, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain;
     }
@@ -95,7 +95,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// <returns>The saved invoice (still tracked).</returns>
     private static async Task<Invoice> SeedServiceRenewalInvoiceAsync(IHostpanelDbContext context, ClientService service, DateTimeOffset start)
     {
-        var invoice = Invoice.Create(service.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(service.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddServiceRenewal("Starter renewal", 5m, service.Id, start, start.AddMonths(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -142,10 +142,10 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(5);
+        var start = TestMoments.Seeded.AddDays(5);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -175,10 +175,10 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(5);
+        var start = TestMoments.Seeded.AddDays(5);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         service.ExtendRenewalTo(start.AddMonths(1));
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -204,18 +204,18 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var rivalScope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var rivalContext = rivalScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var start = DateTimeOffset.UtcNow.AddDays(-4);
+        var start = TestMoments.Seeded.AddDays(-4);
         var raced = await SeedActiveServiceAsync(context, start);
         var other = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, raced, start);
         invoice.AddServiceRenewal("Starter renewal (second)", 5m, other.Id, start, start.AddMonths(1));
-        invoice.MarkOverdue(DateTimeOffset.UtcNow);
-        raced.Suspend(DateTimeOffset.UtcNow, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+        invoice.MarkOverdue(TestMoments.Seeded);
+        raced.Suspend(TestMoments.Seeded, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         var racedLineId = invoice.Items.Single(l => l.ClientServiceId == raced.Id).Id;
-        var rivalMarker = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var rivalMarker = TestMoments.Seeded.AddMinutes(-1);
 
         // The rival runner's marker lands from its own scope while this scope still tracks the line
         // unapplied: the handler here extends again (a no-op) and its marker save is the one that loses.
@@ -247,11 +247,11 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(5);
+        var start = TestMoments.Seeded.AddDays(5);
         var service = await SeedActiveServiceAsync(context, start);
         var before = (await ReloadServiceAsync(context, service.Id)).NextRenewalAt;
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null, TransactionSource.Manual);
+        invoice.AddPayment(TestMoments.Seeded, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -270,13 +270,13 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(5);
+        var start = TestMoments.Seeded.AddDays(5);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null, TransactionSource.Manual);
+        invoice.AddPayment(TestMoments.Seeded, "Manual", $"part-{Guid.NewGuid():N}", 1m, 0m, null, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"rest-{Guid.NewGuid():N}", invoice.AmountDue, 0m, null, TransactionSource.Manual);
+        invoice.AddPayment(TestMoments.Seeded, "Manual", $"rest-{Guid.NewGuid():N}", invoice.AmountDue, 0m, null, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
 
@@ -295,7 +295,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(5);
+        var start = TestMoments.Seeded.AddDays(5);
         var service = await SeedActiveServiceAsync(context, start);
         var before = (await ReloadServiceAsync(context, service.Id)).NextRenewalAt;
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
@@ -331,13 +331,13 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var service = await SeedActiveServiceAsync(context, DateTimeOffset.UtcNow.AddDays(5));
+        var service = await SeedActiveServiceAsync(context, TestMoments.Seeded.AddDays(5));
         var before = (await ReloadServiceAsync(context, service.Id)).NextRenewalAt;
-        var invoice = Invoice.Create(service.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(service.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Starter (legacy line)", 5m, 1, service.Id);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -358,13 +358,13 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(-4);
+        var start = TestMoments.Seeded.AddDays(-4);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.MarkOverdue(DateTimeOffset.UtcNow);
-        service.Suspend(DateTimeOffset.UtcNow, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+        invoice.MarkOverdue(TestMoments.Seeded);
+        service.Suspend(TestMoments.Seeded, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -384,12 +384,12 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(-4);
+        var start = TestMoments.Seeded.AddDays(-4);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        service.Suspend(DateTimeOffset.UtcNow, "abuse", hostingAlreadyUpdated: true, source: SuspensionSource.Manual);
+        service.Suspend(TestMoments.Seeded, "abuse", hostingAlreadyUpdated: true, source: SuspensionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -411,19 +411,19 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(-4);
+        var start = TestMoments.Seeded.AddDays(-4);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.MarkOverdue(DateTimeOffset.UtcNow);
+        invoice.MarkOverdue(TestMoments.Seeded);
 
-        var other = Invoice.Create(service.ClientId, DateTimeOffset.UtcNow.AddDays(-10), "USD", DateTimeOffset.UtcNow);
+        var other = Invoice.Create(service.ClientId, TestMoments.Seeded.AddDays(-10), "USD", TestMoments.Seeded);
         other.AddItem("Starter add-on", 3m, 1, service.Id);
         context.Invoices.Add(other);
         await context.SaveChangesAsync(CancellationToken.None);
-        other.MarkOverdue(DateTimeOffset.UtcNow);
-        service.Suspend(DateTimeOffset.UtcNow, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+        other.MarkOverdue(TestMoments.Seeded);
+        service.Suspend(TestMoments.Seeded, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -443,15 +443,15 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var service = await SeedActiveServiceAsync(context, DateTimeOffset.UtcNow.AddDays(-4));
-        var invoice = Invoice.Create(service.ClientId, DateTimeOffset.UtcNow.AddDays(-4), "USD", DateTimeOffset.UtcNow);
+        var service = await SeedActiveServiceAsync(context, TestMoments.Seeded.AddDays(-4));
+        var invoice = Invoice.Create(service.ClientId, TestMoments.Seeded.AddDays(-4), "USD", TestMoments.Seeded);
         invoice.AddItem("Starter (legacy line)", 5m, 1, service.Id);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.MarkOverdue(DateTimeOffset.UtcNow);
-        service.Suspend(DateTimeOffset.UtcNow, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+        invoice.MarkOverdue(TestMoments.Seeded);
+        service.Suspend(TestMoments.Seeded, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -471,13 +471,13 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var domain = await SeedDomainAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var domain = await SeedDomainAsync(context, TestMoments.Seeded.AddDays(10));
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
-        var invoice = Invoice.Create(domain.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(domain.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -485,8 +485,8 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         result.IsSuccess.Should().BeTrue();
         var reloaded = await context.Domains.AsNoTracking().FirstAsync(d => d.Id == domain.Id);
 
-        // The stub registrar answers every renewal with now + 1 year.
-        reloaded.ExpiresAt.Should().BeAfter(DateTimeOffset.UtcNow.AddDays(300));
+        // The stub registrar answers every renewal with one year after TestMoments.Seeded.
+        reloaded.ExpiresAt.Should().BeAfter(TestMoments.Seeded.AddDays(300));
         reloaded.NextDueDate.Should().Be(reloaded.ExpiresAt);
         (await ReloadLineAsync(context, invoice.Id)).RenewalAppliedAt.Should().NotBeNull();
 
@@ -507,15 +507,15 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var domain = await SeedDomainAsync(context, DateTimeOffset.UtcNow.AddYears(1));
+        var domain = await SeedDomainAsync(context, TestMoments.Seeded.AddYears(1));
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
 
         // The invoice was raised for the period starting a year ago; the domain moved on since.
-        var invoice = Invoice.Create(domain.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(domain.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry.AddYears(-1), expiry);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -541,13 +541,13 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var domain = await SeedDomainAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var domain = await SeedDomainAsync(context, TestMoments.Seeded.AddDays(10));
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
-        var invoice = Invoice.Create(domain.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(domain.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var nudged = expiry.AddHours(9);
@@ -558,9 +558,9 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
 
         result.IsSuccess.Should().BeTrue();
 
-        // The stub registrar answers every renewal with now + 1 year.
+        // The stub registrar answers every renewal with one year after TestMoments.Seeded.
         (await context.Domains.AsNoTracking().FirstAsync(d => d.Id == domain.Id)).ExpiresAt
-            .Should().BeAfter(DateTimeOffset.UtcNow.AddDays(300));
+            .Should().BeAfter(TestMoments.Seeded.AddDays(300));
         (await ReloadLineAsync(context, invoice.Id)).RenewalAppliedAt.Should().NotBeNull();
         await Task.Delay(1000);
         sender.Sent.Should().NotContain(m => m.To == AdminEmail, "a renewed domain needs no staff attention");
@@ -577,13 +577,13 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var domain = await SeedDomainAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var domain = await SeedDomainAsync(context, TestMoments.Seeded.AddDays(10));
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
-        var invoice = Invoice.Create(domain.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(domain.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -615,15 +615,15 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
-        var invoice = Invoice.Create(domain.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(domain.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -650,7 +650,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using (var scope = refusing.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+            var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, TestMoments.Seeded.AddDays(10));
             invoiceId = invoice.Id;
             domainId = domain.Id;
             await scope.ServiceProvider.GetRequiredService<IMessageBus>()
@@ -668,7 +668,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
             line.RenewalAppliedAt.Should().NotBeNull();
             line.RenewalAttemptAt.Should().NotBeNull("the winning run's claim is kept as the record of the registrar call");
             (await context.Domains.AsNoTracking().FirstAsync(d => d.Id == domainId)).ExpiresAt
-                .Should().BeAfter(DateTimeOffset.UtcNow.AddDays(300));
+                .Should().BeAfter(TestMoments.Seeded.AddDays(300));
         }
     }
 
@@ -682,11 +682,11 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, TestMoments.Seeded.AddDays(10));
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
         var lineId = invoice.Items.Single().Id;
         await context.InvoiceItems.Where(l => l.Id == lineId)
-            .ExecuteUpdateAsync(set => set.SetProperty(l => l.RenewalAttemptAt, DateTimeOffset.UtcNow.AddMinutes(-1)));
+            .ExecuteUpdateAsync(set => set.SetProperty(l => l.RenewalAttemptAt, TestMoments.Seeded.AddMinutes(-1)));
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
 
@@ -711,10 +711,10 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
             b.ConfigureTestServices(s => s.AddScoped<IRegistrarProvider, CountingRegistrar>()));
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, TestMoments.Seeded.AddDays(10));
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
         var lineId = invoice.Items.Single().Id;
-        var rivalClaim = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var rivalClaim = TestMoments.Seeded.AddMinutes(-1);
 
         // The scope still tracks the line as unclaimed, so the handler reads it unclaimed while the
         // database already holds the rival runner's claim: its own claim save is the one that loses.
@@ -748,7 +748,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, TestMoments.Seeded.AddDays(10));
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
 
@@ -778,7 +778,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, TestMoments.Seeded.AddDays(10));
         domain.MarkTransferred();
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -802,7 +802,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (domain, invoice) = await SeedPaidDomainRenewalAsync(context, TestMoments.Seeded.AddDays(10));
         await context.Domains.Where(d => d.Id == domain.Id).ExecuteDeleteAsync();
 
         var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -823,17 +823,17 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var start = DateTimeOffset.UtcNow.AddDays(-4);
+        var start = TestMoments.Seeded.AddDays(-4);
         var service = await SeedActiveServiceAsync(context, start);
         var invoice = await SeedServiceRenewalInvoiceAsync(context, service, start);
-        invoice.MarkOverdue(DateTimeOffset.UtcNow);
+        invoice.MarkOverdue(TestMoments.Seeded);
 
-        var next = Invoice.Create(service.ClientId, DateTimeOffset.UtcNow.AddDays(20), "USD", DateTimeOffset.UtcNow);
+        var next = Invoice.Create(service.ClientId, TestMoments.Seeded.AddDays(20), "USD", TestMoments.Seeded);
         next.AddServiceRenewal("Starter renewal (next)", 5m, service.Id, start.AddMonths(1), start.AddMonths(2));
         context.Invoices.Add(next);
-        service.Suspend(DateTimeOffset.UtcNow, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+        service.Suspend(TestMoments.Seeded, "overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
@@ -850,11 +850,11 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     {
         var domain = await SeedDomainAsync(context, expiresAt);
         var expiry = await context.Domains.AsNoTracking().Where(d => d.Id == domain.Id).Select(d => d.ExpiresAt).FirstAsync();
-        var invoice = Invoice.Create(domain.ClientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(domain.ClientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         return new(domain, invoice);
     }

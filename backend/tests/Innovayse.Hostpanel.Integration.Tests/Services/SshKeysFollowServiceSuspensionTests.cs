@@ -26,13 +26,13 @@ public sealed class SshKeysFollowServiceSuspensionTests(IntegrationTestFactory f
         var agent = SshTestSeeds.Agents(factory).AgentFor(serverId);
         var installed = agent.KeysOf("web").Keys.ToList();
 
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         await PublishAsync(new ClientServiceSuspendedEvent(serviceId, clientId, TestMoments.Seeded));
 
         agent.KeysOf("web").Should().BeEmpty();
         (await StatesAsync(serviceId)).Should().Equal(SshKeySyncState.Suspended, SshKeySyncState.Suspended);
 
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         await PublishAsync(new ClientServiceUnsuspendedEvent(serviceId, clientId, TestMoments.Seeded));
 
         agent.KeysOf("web").Keys.Should().BeEquivalentTo(installed, "the same keys come back, under the same ids");

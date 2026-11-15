@@ -1,22 +1,22 @@
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Demo.Commands.ResetDemoData;
 using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Infrastructure.Scheduling;
 
 /// <summary>
 /// Hosted service that schedules the first <see cref="ResetDemoDataCommand"/> one reset interval
-/// after startup, and does nothing when the deployment is not a demo. The handler re-schedules
-/// itself after every run, so this fires exactly once per process start.
+/// after startup, and does nothing when the deployment is not a demo. The run goes on the bus through
+/// <see cref="RecurringJobs.ScheduleAsync{TCommand}"/>, which logs it. The handler re-schedules itself after every run, so this
+/// fires exactly once per process start.
 /// </summary>
 public sealed class DemoScheduledJobsStartup : IHostedService
 {
-    /// <summary>Creates a scope to resolve the bus from.</summary>
+    /// <summary>Creates a scope to resolve the job runner from.</summary>
     private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>The demo switch and the reset interval.</summary>
@@ -25,29 +25,23 @@ public sealed class DemoScheduledJobsStartup : IHostedService
     /// <summary>Records when the next reset is due.</summary>
     private readonly IDemoResetSchedule _schedule;
 
-    /// <summary>Structured logger.</summary>
-    private readonly ILogger<DemoScheduledJobsStartup> _logger;
-
     /// <summary>The source of the current moment.</summary>
     private readonly IClock _clock;
 
     /// <summary>Creates the hosted service.</summary>
-    /// <param name="scopeFactory">Creates a scope to resolve the bus from.</param>
+    /// <param name="scopeFactory">Creates a scope to resolve the job runner from.</param>
     /// <param name="options">The demo switch and the reset interval.</param>
     /// <param name="schedule">Records when the next reset is due.</param>
-    /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The source of the current moment.</param>
     public DemoScheduledJobsStartup(
         IServiceScopeFactory scopeFactory,
         IOptions<DemoOptions> options,
         IDemoResetSchedule schedule,
-        ILogger<DemoScheduledJobsStartup> logger,
         IClock clock)
     {
         _scopeFactory = scopeFactory;
         _options = options;
         _schedule = schedule;
-        _logger = logger;
         _clock = clock;
     }
 
@@ -65,11 +59,11 @@ public sealed class DemoScheduledJobsStartup : IHostedService
         var next = _clock.UtcNow.AddHours(options.ResetIntervalHours);
 
         await using var scope = _scopeFactory.CreateAsyncScope();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        await bus.ScheduleAsync(new ResetDemoDataCommand(), next);
-        _schedule.Set(next);
-
-        _logger.LogInformation("ResetDemoDataCommand scheduled for {ScheduledAt:u}.", next);
+        var jobs = scope.ServiceProvider.GetRequiredService<RecurringJobs>();
+        if (await jobs.ScheduleAsync<ResetDemoDataCommand>(next) is { } at)
+        {
+            _schedule.Set(at);
+        }
     }
 
     /// <summary>No-op: the scheduled message needs no cleanup on shutdown.</summary>

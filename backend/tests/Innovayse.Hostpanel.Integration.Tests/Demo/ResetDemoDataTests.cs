@@ -49,7 +49,7 @@ public sealed class ResetDemoDataTests(IntegrationTestFactory factory) : IClassF
         var admin = await provider.GetRequiredService<UserManager<AppUser>>().FindByEmailAsync(DemoTestHost.AdminEmail);
         admin.Should().NotBeNull("the published accounts come back after the wipe");
         provider.GetRequiredService<IDemoResetSchedule>().NextResetAt.Should().BeCloseTo(
-            DateTimeOffset.UtcNow.AddHours(DemoTestHost.ResetIntervalHours), TimeSpan.FromMinutes(5));
+            provider.GetRequiredService<IClock>().UtcNow.AddHours(DemoTestHost.ResetIntervalHours), TimeSpan.FromMinutes(5));
     }
 
     /// <summary>Outside a demo the command is a no-op, so a stray dispatch cannot wipe a real database.</summary>

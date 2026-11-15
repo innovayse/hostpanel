@@ -32,6 +32,9 @@ public sealed class StoredCredentialScenario : IDisposable
     /// <summary>The shared API + PostgreSQL host the scenario builds on.</summary>
     private readonly IntegrationTestFactory _factory;
 
+    /// <summary>How many consents were granted so far, so each later grant is a later moment than the one before.</summary>
+    private int _grants;
+
     /// <summary>Creates the scenario and its host.</summary>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <param name="emailSender">
@@ -115,7 +118,7 @@ public sealed class StoredCredentialScenario : IDisposable
     {
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = NextGrantMoment();
         if (!await context.GatewayCustomers.AnyAsync(c => c.ClientId == clientId && c.GatewayModuleId == Module, CancellationToken.None))
         {
             context.GatewayCustomers.Add(GatewayCustomer.Create(clientId, Module, $"demo-cus-client-{clientId}", now));
@@ -164,7 +167,7 @@ public sealed class StoredCredentialScenario : IDisposable
     {
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Present();
         var claim = InvoicePaymentClaim.Open(invoiceId, clientId, Module, MethodRef, $"held-{Guid.NewGuid():N}", 1000, "USD", now);
         claim.MarkHeld("held-tx", now);
         context.InvoicePaymentClaims.Add(claim);
@@ -179,7 +182,7 @@ public sealed class StoredCredentialScenario : IDisposable
     {
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var old = DateTimeOffset.UtcNow - by;
+        var old = TestMoments.Present() - by;
         await context.InvoicePaymentClaims
             .Where(c => c.InvoiceId == invoiceId && (c.Status == InvoicePaymentClaimStatus.Declined || c.Status == InvoicePaymentClaimStatus.Abandoned))
             .ExecuteUpdateAsync(set => set.SetProperty(c => c.ResolvedAt, (DateTimeOffset?)old).SetProperty(c => c.CreatedAt, old));
@@ -200,7 +203,7 @@ public sealed class StoredCredentialScenario : IDisposable
 
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = NextGrantMoment();
         if (!await context.GatewayCustomers.AnyAsync(c => c.ClientId == clientId && c.GatewayModuleId == Module, CancellationToken.None))
         {
             context.GatewayCustomers.Add(GatewayCustomer.Create(clientId, Module, customerRef, now));
@@ -221,7 +224,7 @@ public sealed class StoredCredentialScenario : IDisposable
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var consent = await context.CardChargeConsents.SingleAsync(c => c.Id == consentId, CancellationToken.None);
-        consent.Revoke(DateTimeOffset.UtcNow);
+        consent.Revoke(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
@@ -237,7 +240,8 @@ public sealed class StoredCredentialScenario : IDisposable
     {
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var now = TestMoments.Present();
+        var invoice = Invoice.Create(clientId, now.AddDays(7), "USD", now);
         invoice.AddItem("Hosting", amount, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -254,7 +258,7 @@ public sealed class StoredCredentialScenario : IDisposable
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId, CancellationToken.None);
         context.Transactions.Add(invoice.AddPayment(
-            DateTimeOffset.UtcNow, "manual", $"manual-{Guid.NewGuid():N}", amount, 0m, null, TransactionSource.Manual));
+            TestMoments.Seeded, "manual", $"manual-{Guid.NewGuid():N}", amount, 0m, null, TransactionSource.Manual));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
@@ -316,9 +320,16 @@ public sealed class StoredCredentialScenario : IDisposable
     {
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var old = DateTimeOffset.UtcNow - InvoicePaymentClaim.StaleAfter - TimeSpan.FromMinutes(1);
+        var old = TestMoments.Present() - InvoicePaymentClaim.StaleAfter - TimeSpan.FromMinutes(1);
         await context.InvoicePaymentClaims.Where(c => c.Id == claimId)
             .ExecuteUpdateAsync(set => set.SetProperty(c => c.CreatedAt, old).SetProperty(c => c.CheckedAt, (DateTimeOffset?)null));
+    }
+
+    /// <summary>Gives the moment of the next consent grant: the shared seed moment plus one minute per grant already made, so the newest is told apart.</summary>
+    /// <returns>The moment the next consent is granted at.</returns>
+    private DateTimeOffset NextGrantMoment()
+    {
+        return TestMoments.Seeded.AddMinutes(_grants++);
     }
 
     /// <summary>Disposes the test host, so its background jobs stop and the memory is given back before the next test starts.</summary>

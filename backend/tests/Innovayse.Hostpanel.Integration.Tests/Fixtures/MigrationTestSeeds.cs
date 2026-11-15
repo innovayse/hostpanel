@@ -156,7 +156,7 @@ public static class MigrationTestSeeds
                 Announcements: only == Domain.Migration.Enums.MigrationEntityType.Announcements,
                 Downloads: only == Domain.Migration.Enums.MigrationEntityType.Downloads,
                 NetworkIssues: only == Domain.Migration.Enums.MigrationEntityType.NetworkIssues)));
-        job.Queue(DateTimeOffset.UtcNow);
+        job.Queue(TestMoments.Seeded);
         context.MigrationJobs.Add(job);
         await context.SaveChangesAsync(CancellationToken.None);
         return job;

@@ -31,7 +31,7 @@ public sealed class AddTransactionSourceMigrationTests
         {
             var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).Options;
             await MigrateAsync(options, PreviousMigration);
-            var now = DateTimeOffset.UtcNow;
+            var now = TestMoments.Seeded;
             var clientId = await InsertClientAsync(connectionString, now);
             var importedInvoice = await InsertInvoiceAsync(connectionString, clientId, now, externalId: "src-1");
             var ownInvoice = await InsertInvoiceAsync(connectionString, clientId, now, externalId: null);
@@ -86,7 +86,7 @@ public sealed class AddTransactionSourceMigrationTests
         {
             var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).Options;
             await MigrateAsync(options, PreviousMigration);
-            var now = DateTimeOffset.UtcNow;
+            var now = TestMoments.Seeded;
             var clientId = await InsertClientAsync(connectionString, now);
             var first = await InsertTransactionAsync(connectionString, clientId, null, "Invoice #1 Payment", "bank-gateway", "dup-1", 10m, 0m, now);
             var second = await InsertTransactionAsync(connectionString, clientId, null, "Gateway payment for Invoice #2 credited to balance", "bank-gateway", "dup-1", 10m, 0m, now);

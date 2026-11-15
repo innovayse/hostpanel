@@ -45,7 +45,7 @@ public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClass
     [Fact]
     public async Task CancelTransfer_RegistrarWithoutCancellation_Returns409AndKeepsTheTransferAsync()
     {
-        var registrar = new RecordingRegistrar
+        var registrar = new RecordingRegistrar(new ManualTimeProvider(TestMoments.Seeded))
         {
             CancelTransferAnswer = new RegistrarResult(false, null, null, HostpanelErrorCodes.REGISTRAR_OPERATION_UNSUPPORTED),
         };

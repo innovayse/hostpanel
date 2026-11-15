@@ -60,7 +60,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     private async Task<int> CreateInvoiceWithSessionAsync(
         WebApplicationFactory<Program> host, HttpClient client, int clientId, FakePaymentPlugin plugin)
     {
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         plugin.CreatePaymentResult = new("gw-1", "https://pg.example/pay?mdOrder=gw-1");
@@ -99,7 +99,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("state").GetString().Should().Be(nameof(GatewayCompletionState.Paid));
 
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var fetchedBody = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         fetchedBody.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Paid));
@@ -140,7 +140,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var fetchedBody = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         fetchedBody.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Unpaid));
@@ -211,7 +211,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("state").GetString().Should().Be(nameof(GatewayCompletionState.Pending));
 
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var fetchedBody = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         fetchedBody.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Unpaid));
@@ -266,7 +266,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         {
             var winnerContext = winnerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var winnerInvoice = await winnerContext.Invoices.FirstAsync(i => i.Id == invoiceId);
-            winnerInvoice.Settle("bank-gateway", "ref-9", DateTimeOffset.UtcNow, TransactionSource.Manual);
+            winnerInvoice.Settle("bank-gateway", "ref-9", TestMoments.Seeded, TransactionSource.Manual);
             await winnerContext.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -341,7 +341,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             var seed = seedScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var clientId = await seed.Invoices.AsNoTracking().Where(i => i.Id == invoiceId).Select(i => i.ClientId).SingleAsync();
             seed.Transactions.Add(Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Earlier payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
+                clientId, TestMoments.Seeded, "Earlier payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
                 TransactionSource.GatewayPayment));
             await seed.SaveChangesAsync(CancellationToken.None);
         }
@@ -378,7 +378,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             var adminContext = adminScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await adminContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
             adminContext.Transactions.Add(invoice.AddPayment(
-                DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", 4m, 0m, null, TransactionSource.Manual));
+                TestMoments.Seeded, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", 4m, 0m, null, TransactionSource.Manual));
             await adminContext.SaveChangesAsync(CancellationToken.None);
             clientId = invoice.ClientId;
         }
@@ -453,7 +453,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             var adminContext = adminScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await adminContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
             adminContext.Transactions.Add(invoice.Settle(
-                PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", DateTimeOffset.UtcNow, TransactionSource.Manual)!);
+                PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", TestMoments.Seeded, TransactionSource.Manual)!);
             await adminContext.SaveChangesAsync(CancellationToken.None);
             clientId = invoice.ClientId;
         }
@@ -502,7 +502,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-admin-then-gateway");
         var invoiceId = await CreateInvoiceWithSessionAsync(host, client, clientId, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BillingTestSeeds.MarkPaidAsync(admin, invoiceId, 10m);
 
         var gatewayReference = $"ref-{Guid.NewGuid():N}";
@@ -549,7 +549,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         using (var adminScope = factory.Services.CreateScope())
         {
             var adminContext = adminScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            (await adminContext.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel(DateTimeOffset.UtcNow);
+            (await adminContext.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel(TestMoments.Seeded);
             await adminContext.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -779,7 +779,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         using (var seed = factory.Services.CreateScope())
         {
             var context = seed.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            (await context.Invoices.SingleAsync(i => i.Id == invoiceId)).MarkGatewayStalledNotified(DateTimeOffset.UtcNow);
+            (await context.Invoices.SingleAsync(i => i.Id == invoiceId)).MarkGatewayStalledNotified(TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -1013,7 +1013,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
                 using var other = factory.Services.CreateScope();
                 var otherContext = other.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
                 otherContext.Transactions.Add(Transaction.Create(
-                    clientId, DateTimeOffset.UtcNow, "Gateway payment held for operator review", reference, null, "bank-gateway",
+                    clientId, TestMoments.Seeded, "Gateway payment held for operator review", reference, null, "bank-gateway",
                     10m, 0m, 0m, false, "USD", TransactionSource.GatewayPayment));
                 await otherContext.SaveChangesAsync(CancellationToken.None);
             });
@@ -1107,7 +1107,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             var winnerContext = winnerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var winnerInvoice = await winnerContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
             winnerContext.Transactions.Add(winnerInvoice.Settle(
-                "bank-gateway", reference, DateTimeOffset.UtcNow, TransactionSource.GatewayPayment)!);
+                "bank-gateway", reference, TestMoments.Seeded, TransactionSource.GatewayPayment)!);
             await winnerContext.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -1144,7 +1144,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         {
             var seed = seedScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             seed.Transactions.Add(Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Earlier payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
+                clientId, TestMoments.Seeded, "Earlier payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
                 TransactionSource.GatewayPayment));
             await seed.SaveChangesAsync(CancellationToken.None);
         }
@@ -1190,7 +1190,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        (await context.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel(DateTimeOffset.UtcNow);
+        (await context.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
@@ -1256,7 +1256,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId);
         context.Transactions.Add(invoice.AddPayment(
-            DateTimeOffset.UtcNow, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", amount, 0m, null, TransactionSource.Manual));
+            TestMoments.Seeded, PaymentMethodNames.Manual, $"manual-{Guid.NewGuid():N}", amount, 0m, null, TransactionSource.Manual));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
@@ -1309,7 +1309,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(14), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(14), "USD", TestMoments.Seeded);
         invoice.AddItem("Hosting", 10m, 1);
         invoice.SetGatewaySession("bank-gateway", sessionId, scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
         context.Invoices.Add(invoice);

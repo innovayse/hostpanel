@@ -51,7 +51,7 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             foreach (var (currency, amount) in new[] { ("SEK", 100m), ("SEK", 50m), ("NOK", 80m) })
             {
-                var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), currency, DateTimeOffset.UtcNow);
+                var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), currency, TestMoments.Seeded);
                 invoice.AddItem("Hosting", amount, 1);
                 invoice.UpdateOptions(invoice.InvoiceDate, invoice.DueDate, null, 10m);
                 invoice.RecordPaidHistory($"tx-{Guid.NewGuid():N}", paidAt);

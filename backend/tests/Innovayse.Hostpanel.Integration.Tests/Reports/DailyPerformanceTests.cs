@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -26,7 +25,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
     public async Task ReturnsOneRowPerDay()
     {
         using var host = new ClockedHost(factory, Now);
-        var client = await AdminClientAsync(host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var to = DateOnly.FromDateTime(Now.UtcDateTime);
         var from = to.AddDays(-2);
 
@@ -43,7 +42,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
     public async Task RefusesAnInvertedRange()
     {
         using var host = new ClockedHost(factory, Now);
-        var client = await AdminClientAsync(host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var today = DateOnly.FromDateTime(Now.UtcDateTime);
 
         var response = await client.GetAsync($"/api/reports/daily-performance?from={today:yyyy-MM-dd}&to={today.AddDays(-5):yyyy-MM-dd}");
@@ -82,7 +81,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
         using var host = new ClockedHost(factory, new DateTimeOffset(2053, 6, 15, 20, 0, 0, TimeSpan.Zero), zone);
         await SeedInvoiceAsync(host, new DateTimeOffset(2053, 6, 15, 18, 15, 0, TimeSpan.Zero));
         await SeedInvoiceAsync(host, new DateTimeOffset(2053, 6, 15, 18, 45, 0, TimeSpan.Zero));
-        var client = await AdminClientAsync(host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var rows = (await client.GetFromJsonAsync<List<JsonElement>>("/api/reports/daily-performance?from=2053-06-15&to=2053-06-16"))!;
         var byDefault = (await client.GetFromJsonAsync<List<JsonElement>>("/api/reports/daily-performance"))!;
@@ -132,16 +131,5 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
         var response = await client.GetAsync("/api/reports/daily-performance");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-    }
-
-    /// <summary>A client for the clocked host carrying the seeded admin's bearer token.</summary>
-    /// <param name="host">The host whose clock stands at <see cref="Now"/>.</param>
-    /// <returns>An authenticated client.</returns>
-    private async Task<HttpClient> AdminClientAsync(ClockedHost host)
-    {
-        var client = host.CreateClient();
-        var token = await factory.GetAdminTokenAsync();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
     }
 }

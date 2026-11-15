@@ -33,7 +33,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = NewInvoice(clientId, price, taxRate, now);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -53,7 +53,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = NewInvoice(clientId, price, 0m, now);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -72,7 +72,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = NewInvoice(clientId, 100m, 0m, DateTimeOffset.UtcNow);
+        var invoice = NewInvoice(clientId, 100m, 0m, TestMoments.Seeded);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
         return invoice.Id;
@@ -86,7 +86,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = Invoice.CreateCreditTopUp(clientId, 50m, "USD", now, now.AddDays(7));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -180,7 +180,7 @@ public static class CreditNoteTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
         var note = CreditNote.Create(
-            invoice, [CreditNoteItem.Create("Draft line", 5m, 1, invoice.Currency)], CreditNoteMethod.AccountCredit, Reason, DateTimeOffset.UtcNow);
+            invoice, [CreditNoteItem.Create("Draft line", 5m, 1, invoice.Currency)], CreditNoteMethod.AccountCredit, Reason, TestMoments.Seeded);
         context.CreditNotes.Add(note);
         await context.SaveChangesAsync(CancellationToken.None);
         return note.Id;

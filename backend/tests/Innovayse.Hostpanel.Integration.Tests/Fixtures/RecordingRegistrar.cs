@@ -15,7 +15,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 internal sealed class RecordingRegistrar : IRegistrarProvider
 {
     /// <summary>The stub every operation is answered by.</summary>
-    private readonly StubRegistrarProvider _inner = new();
+    private readonly StubRegistrarProvider _inner;
+
+    /// <summary>Initializes a new instance of the <see cref="RecordingRegistrar"/> class.</summary>
+    /// <param name="time">The clock the stub it delegates to reports its dates from.</param>
+    public RecordingRegistrar(TimeProvider time)
+    {
+        _inner = new StubRegistrarProvider(time);
+    }
 
     /// <summary>Every operation this registrar was asked for, as "Operation domain", in call order.</summary>
     private readonly ConcurrentQueue<string> _calls = new();

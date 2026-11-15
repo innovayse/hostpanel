@@ -22,7 +22,7 @@ public sealed class ListOverdueSuspensionsPastLimitTests(IntegrationTestFactory 
     public async Task HandleAsync_MixedSuspensions_ListsOnlyOverduePastTheCutOffAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var cutOff = DateTimeOffset.UtcNow.AddDays(-14);
+        var cutOff = TestMoments.Seeded.AddDays(-14);
         var pastLimit = await SeedSuspendedAsync(host, cutOff.AddDays(-1), SuspensionSource.Overdue, autoRenew: true);
         var recent = await SeedSuspendedAsync(host, cutOff.AddDays(1), SuspensionSource.Overdue, autoRenew: true);
         var manual = await SeedSuspendedAsync(host, cutOff.AddDays(-1), SuspensionSource.Manual, autoRenew: true);
@@ -48,7 +48,7 @@ public sealed class ListOverdueSuspensionsPastLimitTests(IntegrationTestFactory 
     private static async Task<int> SeedSuspendedAsync(
         WebApplicationFactory<Program> host, DateTimeOffset suspendedAt, SuspensionSource source, bool autoRenew)
     {
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, suspendedAt.AddDays(30));
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, suspendedAt.AddDays(30));
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var service = await context.ClientServices.SingleAsync(s => s.Id == seeded.ServiceId);

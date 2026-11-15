@@ -29,7 +29,7 @@ public sealed class ListInvoiceFulfilmentTests(IntegrationTestFactory factory) :
         var invoiceId = await scenario.SeedInvoiceAsync();
         await scenario.SeedRecordsAsync(invoiceId, FulfilmentKind.Paid);
         var failedId = await scenario.SeedFailedRecordAsync(invoiceId, FulfilmentKind.Refunded, "plugin said no");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.GetAsync($"/api/billing/{invoiceId}/fulfilment");
 
@@ -54,7 +54,7 @@ public sealed class ListInvoiceFulfilmentTests(IntegrationTestFactory factory) :
     {
         using var scenario = new FulfilmentScenario(factory);
         var invoiceId = await scenario.SeedInvoiceAsync();
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.GetAsync($"/api/billing/{invoiceId}/fulfilment");
 

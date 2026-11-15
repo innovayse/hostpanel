@@ -104,7 +104,7 @@ public sealed class RoundQuoteTotalsOnceMigrationTests
     private static async Task<int> SeedQuoteAsync(
         string connectionString, int clientId, string currency, decimal total, params (string Description, decimal UnitPrice, int Quantity, decimal Discount)[] lines)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var quoteId = await InsertAsync(
             connectionString,
             """

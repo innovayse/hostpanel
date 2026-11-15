@@ -95,7 +95,7 @@ public sealed class ListMySshKeysTests(IntegrationTestFactory factory) : IClassF
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var service = await context.ClientServices.SingleAsync(s => s.Id == serviceId);
-            service.Suspend(DateTimeOffset.UtcNow, "test", hostingAlreadyUpdated: true);
+            service.Suspend(TestMoments.Seeded, "test", hostingAlreadyUpdated: true);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

@@ -13,7 +13,7 @@ public static class ClaimedRenewalSeeds
     /// <summary>Seeds a paid domain renewal invoice whose line is claimed and unapplied, as a timed-out registrar call leaves it.</summary>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <param name="claim">Whether the line is claimed; <see langword="false"/> leaves it untouched.</param>
-    /// <param name="claimedAt">When the claim was taken, or <see langword="null"/> for two days ago.</param>
+    /// <param name="claimedAt">When the claim was taken, or <see langword="null"/> for two days before <see cref="TestMoments.Seeded"/>.</param>
     /// <returns>The ids.</returns>
     public static async Task<ClaimedRenewalLine> SeedAsync(IntegrationTestFactory factory, bool claim = true, DateTimeOffset? claimedAt = null)
     {
@@ -25,22 +25,22 @@ public static class ClaimedRenewalSeeds
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var expiry = DateTimeOffset.UtcNow.AddDays(5);
+        var expiry = TestMoments.Seeded.AddDays(5);
         var domain = RegisteredDomain.Register(
             client.Id, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiry, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var invoice = Invoice.Create(client.Id, expiry, "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, expiry, "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         if (claim)
         {
-            var at = claimedAt ?? DateTimeOffset.UtcNow.AddDays(-2);
+            var at = claimedAt ?? TestMoments.Seeded.AddDays(-2);
             await context.InvoiceItems.Where(l => l.InvoiceId == invoice.Id)
                 .ExecuteUpdateAsync(set => set.SetProperty(l => l.RenewalAttemptAt, (DateTimeOffset?)at), CancellationToken.None);
         }

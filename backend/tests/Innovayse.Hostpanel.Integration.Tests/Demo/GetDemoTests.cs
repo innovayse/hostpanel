@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 
@@ -43,7 +45,7 @@ public sealed class GetDemoTests(IntegrationTestFactory factory) : IClassFixture
 
         var nextResetAt = body.GetProperty("nextResetAt").GetDateTimeOffset();
         nextResetAt.Should().BeCloseTo(
-            DateTimeOffset.UtcNow.AddHours(DemoTestHost.ResetIntervalHours), TimeSpan.FromMinutes(5));
+            host.Services.GetRequiredService<IClock>().UtcNow.AddHours(DemoTestHost.ResetIntervalHours), TimeSpan.FromMinutes(5));
 
         var accounts = body.GetProperty("accounts").EnumerateArray().ToList();
         accounts.Should().HaveCount(2);

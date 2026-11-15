@@ -14,6 +14,7 @@ import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { CLIENT_INVOICES_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
+import { SitePage } from '~/tests/helpers/sitePaths'
 import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -35,7 +36,10 @@ const CurrencySwitcherStub = defineComponent({
   setup: () => () => h('div', { 'data-testid': 'currency-switcher-stub' }),
 })
 
-/** A plain link and a group. */
+/**
+ * A plain link and a group. The destinations are fixture data, not routes the drawer owns: the
+ * header hands the drawer its already localised menu, so the drawer must render whatever `to` it is given.
+ */
 const items: HeaderNavItem[] = [
   { key: 'domains', label: 'Domains', to: '/en/domains' },
   {
@@ -130,7 +134,7 @@ describe('LayoutHeaderDrawer', () => {
     const wrapper = mountDrawer()
 
     expect(wrapper.find('[data-testid="header-drawer-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
-    expect(wrapper.find('[data-testid="header-drawer-get-started"]').attributes('href')).toBe('/hosting')
+    expect(wrapper.find('[data-testid="header-drawer-get-started"]').attributes('href')).toBe(SitePage.Hosting)
     expect(wrapper.find('[data-testid="header-drawer-account"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="header-drawer-sign-out"]').exists()).toBe(false)
   })

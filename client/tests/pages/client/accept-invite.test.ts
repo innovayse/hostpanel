@@ -9,16 +9,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import AcceptInvitePage from '~/pages/client/accept-invite.vue'
+import { CLIENT_LOGIN_PATH, CLIENT_REDIRECT_QUERY, RETURN_TO_QUERY, SSO_AUTHORIZE_PATH } from '~/constants/clientRoutes'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The BFF path the page posts the invitation token to. */
-const ACCEPT_PATH = '/api/portal/auth/accept-invite'
+/** The invitation link the visitor opened, which the sign-in step must bring them back to. */
+const INVITE_LINK = '/client/accept-invite?token=tok'
 
 /** What the BFF answers when nobody is signed in: not a failure, the cue to offer the sign-in step. */
 const SIGN_IN_REQUIRED = { status: 403, body: { type: PortalErrorCode.InviteSignInRequired } }
@@ -65,7 +67,7 @@ describe('client accept-invite page', () => {
 
     expect(wrapper.find('[data-testid="invite-invalid"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invite-form"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="invite-invalid-back"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="invite-invalid-back"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('shows the accept form for a link with a token', async () => {
@@ -79,18 +81,18 @@ describe('client accept-invite page', () => {
 
   it('posts the token when the form is submitted', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    table[`POST ${ACCEPT_PATH}`] = { status: 400, body: { detail: 'This invitation has expired.' } }
+    table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 400, body: { detail: 'This invitation has expired.' } }
     const wrapper = await mountAuthPage(AcceptInvitePage)
 
     await submit(wrapper)
-    await waitUntil(() => expect(requestsTo(stub.requests, ACCEPT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.AcceptInvite)).toHaveLength(1))
 
-    expect(bodyOf(requestsTo(stub.requests, ACCEPT_PATH)[0])).toEqual({ token: 'tok' })
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.AcceptInvite)[0])).toEqual({ token: 'tok' })
   })
 
   it('shows the API sentence for a refused invitation', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    table[`POST ${ACCEPT_PATH}`] = { status: 400, body: { detail: 'This invitation has expired.' } }
+    table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 400, body: { detail: 'This invitation has expired.' } }
     const wrapper = await mountAuthPage(AcceptInvitePage)
 
     await submit(wrapper)
@@ -101,7 +103,7 @@ describe('client accept-invite page', () => {
 
   it('offers the sign-in step when the API says a session is needed', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    table[`POST ${ACCEPT_PATH}`] = { status: 403, body: { type: PortalErrorCode.InviteSignInRequired, detail: 'Sign in first.' } }
+    table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 403, body: { type: PortalErrorCode.InviteSignInRequired, detail: 'Sign in first.' } }
     const wrapper = await mountAuthPage(AcceptInvitePage)
 
     await submitUntilSignInRequired(wrapper)
@@ -112,7 +114,7 @@ describe('client accept-invite page', () => {
 
   it('shows the accept form again when the visitor returns to the link after a sign-in-required refusal', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    table[`POST ${ACCEPT_PATH}`] = SIGN_IN_REQUIRED
+    table[writeOf(AccountEndpoint.AcceptInvite)] = SIGN_IN_REQUIRED
     const first = await mountAuthPage(AcceptInvitePage)
     await submitUntilSignInRequired(first)
 
@@ -123,31 +125,31 @@ describe('client accept-invite page', () => {
   })
 
   it('sends the visitor to the local sign-in page and back to this exact link', async () => {
-    stubAuthRuntime({ query: { token: 'tok' }, fullPath: '/client/accept-invite?token=tok' })
-    table[`POST ${ACCEPT_PATH}`] = SIGN_IN_REQUIRED
+    stubAuthRuntime({ query: { token: 'tok' }, fullPath: INVITE_LINK })
+    table[writeOf(AccountEndpoint.AcceptInvite)] = SIGN_IN_REQUIRED
     const wrapper = await mountAuthPage(AcceptInvitePage)
     await submitUntilSignInRequired(wrapper)
 
     await wrapper.find('[data-testid="invite-sign-in"]').trigger('click')
 
-    expect(navigateTo).toHaveBeenCalledWith(`/client/login?redirect=${encodeURIComponent('/client/accept-invite?token=tok')}`)
+    expect(navigateTo).toHaveBeenCalledWith(`${CLIENT_LOGIN_PATH}?${CLIENT_REDIRECT_QUERY}=${encodeURIComponent(INVITE_LINK)}`)
   })
 
   it('sends the visitor to the identity provider under SSO, with the return address', async () => {
     stubAuthRuntime({
       query: { token: 'tok' },
-      fullPath: '/client/accept-invite?token=tok',
+      fullPath: INVITE_LINK,
       isSso: true,
       publicConfig: { baseUrl: 'https://portal.example.test' }
     })
-    table[`POST ${ACCEPT_PATH}`] = SIGN_IN_REQUIRED
+    table[writeOf(AccountEndpoint.AcceptInvite)] = SIGN_IN_REQUIRED
     const wrapper = await mountAuthPage(AcceptInvitePage)
     await submitUntilSignInRequired(wrapper)
 
     await wrapper.find('[data-testid="invite-sign-in"]').trigger('click')
 
     expect(navigateTo).toHaveBeenCalledWith(
-      `https://portal.example.test/api/portal/auth/sso/authorize?returnTo=${encodeURIComponent('/client/accept-invite?token=tok')}`,
+      `https://portal.example.test${SSO_AUTHORIZE_PATH}?${RETURN_TO_QUERY}=${encodeURIComponent(INVITE_LINK)}`,
       { external: true }
     )
   })

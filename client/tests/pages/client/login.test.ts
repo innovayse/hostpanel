@@ -15,7 +15,7 @@ import { mountPage } from '~/tests/helpers/mountClient'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { settle } from '~/tests/helpers/settle'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
-import { CLIENT_DASHBOARD_PATH, CLIENT_FORGOT_PASSWORD_PATH, CLIENT_REGISTER_PATH, SSO_AUTHORIZE_PATH } from '~/constants/clientRoutes'
+import { CLIENT_DASHBOARD_PATH, CLIENT_FORGOT_PASSWORD_PATH, clientInvoicePath, CLIENT_REGISTER_PATH, SSO_AUTHORIZE_PATH } from '~/constants/clientRoutes'
 import { heldReply, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
@@ -112,13 +112,13 @@ describe('client login page (local mode)', () => {
   })
 
   it('goes back to the page the visitor asked for', async () => {
-    const { push } = stubAuthRuntime({ query: { redirect: '/client/invoices/7' } })
+    const { push } = stubAuthRuntime({ query: { redirect: clientInvoicePath(7) } })
     table[writeOf(AccountEndpoint.Login)] = { body: makeClientUser({ email: 'ada@example.com' }) }
     const wrapper = await mountAuthPage(LoginPage)
 
     await signIn(wrapper)
 
-    await waitUntil(() => expect(push).toHaveBeenCalledWith('/client/invoices/7'))
+    await waitUntil(() => expect(push).toHaveBeenCalledWith(clientInvoicePath(7)))
   })
 
   it('ignores a redirect that leaves the app and goes to the dashboard', async () => {

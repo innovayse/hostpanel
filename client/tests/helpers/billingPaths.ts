@@ -1,6 +1,7 @@
 /**
- * The BFF paths of the billing endpoints a payment or checkout screen reaches (the invoice, its
- * PDF and credit, the credit balance, its bank transfer, placing an order, starting and settling a hosted-gateway payment), so a test that answers them
+ * The BFF paths of the billing endpoints a payment or checkout screen reaches: the invoice list
+ * and one invoice with its PDF, credit and bank transfer, the credit balance and its top-ups,
+ * placing an order, and starting and settling a hosted-gateway payment. A test that answers them
  * from a stub BFF route table names an endpoint instead of spelling out the URL.
  *
  * @module tests/helpers/billingPaths
@@ -9,9 +10,14 @@
 /** The BFF prefix of the order surface: placing an order, the gateways on offer and an order's hosted payment. */
 const ORDER_ROOT = '/api/portal/order'
 
+/** The BFF path of the credit balance and its history. */
+const CREDIT_ROOT = '/api/portal/client/credit'
+
 /** The billing endpoints that do not take an id. */
 export const BillingEndpoint = {
-  Credit: '/api/portal/client/credit',
+  Credit: CREDIT_ROOT,
+  CreditTopUps: `${CREDIT_ROOT}/top-ups`,
+  Invoices: '/api/portal/client/invoices',
   OrderCreate: `${ORDER_ROOT}/create`,
   OrderPaymentMethods: `${ORDER_ROOT}/payment-methods`,
 } as const
@@ -30,7 +36,7 @@ export const orderPath = (orderId: number | string): string => `${ORDER_ROOT}/${
  * @param invoiceId - The invoice id.
  * @returns The BFF path that reads it.
  */
-export const invoicePath = (invoiceId: number | string): string => `/api/portal/client/invoices/${invoiceId}`
+export const invoicePath = (invoiceId: number | string): string => `${BillingEndpoint.Invoices}/${invoiceId}`
 
 /**
  * The path of one invoice's PDF.

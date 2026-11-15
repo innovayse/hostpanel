@@ -2,7 +2,8 @@
  * Stand-ins for the Nuxt route auto-imports that every page-level test helper needs.
  *
  * The client, public-page and auth helpers each stood in for `useRoute` with the same object
- * literal; this module is the one definition they share.
+ * literal; this module is the one definition they share, and the locale prefix the localised
+ * path stand-in uses, so a test that expects a localised link names it once.
  *
  * @module tests/helpers/runtimeStubs
  */
@@ -42,3 +43,14 @@ export const stubRoute = (options: RouteStubOptions = {}): void => {
 export const stubLocalePath = (prefix: string = ''): void => {
   vi.stubGlobal('useLocalePath', () => (path: string) => `${prefix}${path}`)
 }
+
+/** The locale prefix a test's localised path carries, for the tests that expect what `useLocalePath` returns. */
+export const TEST_LOCALE_PREFIX = '/en'
+
+/**
+ * A path as the localised router returns it in a test.
+ *
+ * @param path The unlocalised path, e.g. a client route constant or the result of a route helper.
+ * @returns The path behind {@link TEST_LOCALE_PREFIX}.
+ */
+export const localized = (path: string): string => `${TEST_LOCALE_PREFIX}${path}`

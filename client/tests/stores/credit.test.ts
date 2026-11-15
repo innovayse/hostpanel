@@ -10,17 +10,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { startTransport } from '../helpers/stubTransport'
-import { queryOf, requestsTo, routeTable } from '../helpers/stubRoutes'
+import { queryOf, readOf, requestsTo, routeTable, writeOf } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
+import { BillingEndpoint, invoiceCreditPath } from '../helpers/billingPaths'
 import type { StubReply, StubServer } from '../helpers/stubServer'
 import { CREDIT_PAGE_SIZE, useCreditStore } from '~/stores/credit'
 import type { ClientCredit } from '~/types/clientcredit'
-
-/** The BFF path of the credit read. */
-const CREDIT_PATH = '/api/portal/client/credit'
-
-/** The BFF path of the top-up invoice creation. */
-const TOP_UP_PATH = '/api/portal/client/credit/top-ups'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -50,7 +45,7 @@ const credit = (balance: number): ClientCredit => ({
  *
  * @returns The `page` and `pageSize` queries of the credit reads, oldest first.
  */
-const creditReads = (): Record<string, string>[] => requestsTo(stub.requests, CREDIT_PATH).map(queryOf)
+const creditReads = (): Record<string, string>[] => requestsTo(stub.requests, BillingEndpoint.Credit).map(queryOf)
 
 beforeEach(async () => {
   setActivePinia(createPinia())
@@ -64,11 +59,11 @@ afterEach(async () => {
 
 describe('useCreditStore.load', () => {
   it('remembers the page a failed read asked for, so a retry asks for that one', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(5) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(5) }
     const store = useCreditStore()
     await store.load(1)
 
-    table[`GET ${CREDIT_PATH}`] = { status: 404, body: { detail: 'Gone.' } }
+    table[readOf(BillingEndpoint.Credit)] = { status: 404, body: { detail: 'Gone.' } }
     await store.load(3)
 
     expect(store.error).toBe('Gone.')
@@ -77,7 +72,7 @@ describe('useCreditStore.load', () => {
   })
 
   it('reads the credit page and exposes the balance', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(12.5) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(12.5) }
     const store = useCreditStore()
 
     const loaded = await store.load(1)
@@ -91,7 +86,7 @@ describe('useCreditStore.load', () => {
   })
 
   it('remembers the page it read and asks for it again when no page is given', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(0) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(0) }
     const store = useCreditStore()
 
     await store.load(3)
@@ -102,7 +97,7 @@ describe('useCreditStore.load', () => {
   })
 
   it('reads a zero balance as no credit to spend', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(0) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(0) }
     const store = useCreditStore()
 
     await store.load(1)
@@ -111,11 +106,11 @@ describe('useCreditStore.load', () => {
   })
 
   it('keeps the sentence, drops the stale credit and releases the flag when the read fails', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(9) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(9) }
     const store = useCreditStore()
     await store.load(1)
 
-    table[`GET ${CREDIT_PATH}`] = { status: 404, body: { detail: 'Gone.' } }
+    table[readOf(BillingEndpoint.Credit)] = { status: 404, body: { detail: 'Gone.' } }
     const loaded = await store.load(1)
 
     expect(loaded).toBeNull()
@@ -128,19 +123,19 @@ describe('useCreditStore.load', () => {
 
 describe('useCreditStore.createTopUp', () => {
   it('returns the id of the new invoice and releases the flag', async () => {
-    table[`POST ${TOP_UP_PATH}`] = { body: 88 }
+    table[writeOf(BillingEndpoint.CreditTopUps)] = { body: 88 }
     const store = useCreditStore()
 
     const invoiceId = await store.createTopUp(40)
 
     expect(invoiceId).toBe(88)
-    expect(JSON.parse(requestsTo(stub.requests, TOP_UP_PATH)[0]?.body ?? '')).toEqual({ amount: 40 })
+    expect(JSON.parse(requestsTo(stub.requests, BillingEndpoint.CreditTopUps)[0]?.body ?? '')).toEqual({ amount: 40 })
     expect(store.topUpBusy).toBe(false)
     expect(store.topUpError).toBe('')
   })
 
   it('returns null and keeps the sentence when the backend refuses the amount', async () => {
-    table[`POST ${TOP_UP_PATH}`] = refusal
+    table[writeOf(BillingEndpoint.CreditTopUps)] = refusal
     const store = useCreditStore()
 
     const invoiceId = await store.createTopUp(1)
@@ -151,11 +146,11 @@ describe('useCreditStore.createTopUp', () => {
   })
 
   it('clears the previous refusal when it tries again', async () => {
-    table[`POST ${TOP_UP_PATH}`] = refusal
+    table[writeOf(BillingEndpoint.CreditTopUps)] = refusal
     const store = useCreditStore()
     await store.createTopUp(1)
 
-    table[`POST ${TOP_UP_PATH}`] = { body: 9 }
+    table[writeOf(BillingEndpoint.CreditTopUps)] = { body: 9 }
     await store.createTopUp(50)
 
     expect(store.topUpError).toBe('')
@@ -164,21 +159,21 @@ describe('useCreditStore.createTopUp', () => {
 
 describe('useCreditStore.applyToInvoice', () => {
   it('applies the credit and reads the balance again from the first page', async () => {
-    table['POST /api/portal/client/invoices/7/credit'] = { status: 204 }
-    table[`GET ${CREDIT_PATH}`] = { body: credit(20) }
+    table[writeOf(invoiceCreditPath(7))] = { status: 204 }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(20) }
     const store = useCreditStore()
 
     const applied = await store.applyToInvoice('7', 30)
 
     expect(applied).toBe(true)
-    expect(JSON.parse(requestsTo(stub.requests, '/api/portal/client/invoices/7/credit')[0]?.body ?? '')).toEqual({ amount: 30 })
+    expect(JSON.parse(requestsTo(stub.requests, invoiceCreditPath(7))[0]?.body ?? '')).toEqual({ amount: 30 })
     expect(creditReads()).toEqual([{ page: '1', pageSize: String(CREDIT_PAGE_SIZE) }])
     expect(store.balance).toBe(20)
     expect(store.applyBusy).toBe(false)
   })
 
   it('returns false, keeps the sentence and does not read the balance when the backend refuses', async () => {
-    table['POST /api/portal/client/invoices/7/credit'] = refusal
+    table[writeOf(invoiceCreditPath(7))] = refusal
     const store = useCreditStore()
 
     const applied = await store.applyToInvoice(7, 500)

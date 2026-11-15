@@ -11,7 +11,10 @@ import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h, ref } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { localized } from '~/tests/helpers/runtimeStubs'
+import { SitePage } from '~/tests/helpers/sitePaths'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
@@ -19,9 +22,6 @@ import LayoutFooter from '~/components/layout/Footer.vue'
 import { useCatalogStore } from '~/stores/catalog'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** Path of the endpoint that lists the product groups. */
-const GROUPS_PATH = '/api/portal/public/product-groups'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -63,7 +63,7 @@ const mountFooter = async (groups: PortalProductGroup[] = []) => {
       SectionsDomainSearch: stubFor('SectionsDomainSearch', 'footer-domain-search'),
     },
   })
-  await waitUntil(() => expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, CatalogPath.ProductGroups)).toHaveLength(1))
   await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
   return wrapper
 }
@@ -79,7 +79,7 @@ describe('LayoutFooter', () => {
       phoneLink: ref(contact.phoneLink),
       address: ref(contact.address),
     }))
-    stub = await startTransport(routeTable({ [`GET ${GROUPS_PATH}`]: () => ({ body: groupsOnOffer }) }))
+    stub = await startTransport(routeTable({ [readOf(CatalogPath.ProductGroups)]: () => ({ body: groupsOnOffer }) }))
   })
 
   afterEach(async () => {
@@ -105,7 +105,7 @@ describe('LayoutFooter', () => {
     const wrapper = await mountFooter()
 
     expect(wrapper.find('[data-testid="footer-cta"] [data-testid="footer-domain-search"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="footer-cta-plans"]').attributes('href')).toBe('/en/products')
+    expect(wrapper.find('[data-testid="footer-cta-plans"]').attributes('href')).toBe(localized(SitePage.Products))
   })
 
   it('renders the five link columns in order', async () => {
@@ -133,7 +133,7 @@ describe('LayoutFooter', () => {
     expect(labels).toContain('Shared hosting')
     expect(labels).toContain('Cloud servers')
     expect(labels).not.toContain('Empty')
-    expect(column.find('[data-testid="footer-hosting-all"]').attributes('href')).toBe('/en/products')
+    expect(column.find('[data-testid="footer-hosting-all"]').attributes('href')).toBe(localized(SitePage.Products))
   })
 
   it('links the domain, company, support and legal pages', async () => {
@@ -146,15 +146,15 @@ describe('LayoutFooter', () => {
      * @returns Its `href`, or undefined when it has none.
      */
     const href = (testid: string): string | undefined => wrapper.find(`[data-testid="${testid}"]`).attributes('href')
-    expect(href('footer-domains-register')).toBe('/en/domains')
-    expect(href('footer-domains-transfer')).toBe('/en/domains/transfer')
-    expect(href('footer-company-about')).toBe('/en/about')
-    expect(href('footer-support-help')).toBe('/en/knowledgebase')
-    expect(href('footer-support-faq')).toBe('/en/faq')
-    expect(href('footer-legal-privacy')).toBe('/en/privacy')
-    expect(href('footer-legal-cookies')).toBe('/en/cookie-policy')
-    expect(href('footer-legal-terms')).toBe('/en/terms')
-    expect(href('footer-legal-refund')).toBe('/en/refund-policy')
+    expect(href('footer-domains-register')).toBe(localized(SitePage.Domains))
+    expect(href('footer-domains-transfer')).toBe(localized(SitePage.DomainsTransfer))
+    expect(href('footer-company-about')).toBe(localized(SitePage.About))
+    expect(href('footer-support-help')).toBe(localized(SitePage.Knowledgebase))
+    expect(href('footer-support-faq')).toBe(localized(SitePage.Faq))
+    expect(href('footer-legal-privacy')).toBe(localized(SitePage.Privacy))
+    expect(href('footer-legal-cookies')).toBe(localized(SitePage.CookiePolicy))
+    expect(href('footer-legal-terms')).toBe(localized(SitePage.Terms))
+    expect(href('footer-legal-refund')).toBe(localized(SitePage.RefundPolicy))
   })
 
   it('shows the logo lockup and the tagline in the brand block', async () => {

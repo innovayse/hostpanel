@@ -15,8 +15,12 @@ import { Permission } from '~/types/permission'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
 import { slotIndex, slotPath, slotWidgetPath, throwingView, workingView } from '~/tests/helpers/pluginSlotFixture'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { DomainEndpoint } from '~/tests/helpers/domainPanelPaths'
+import { ContentPath } from '~/tests/helpers/contentPaths'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { DomainStatus } from '~/types/domainstatus'
@@ -38,16 +42,6 @@ const mountDashboard = async (): Promise<Awaited<ReturnType<typeof mountAuthPage
   return wrapper
 }
 const { useDashboardSummary } = await import('~/composables/useDashboardSummary')
-
-/** The BFF paths the dashboard reads. */
-const PATHS = {
-  me: '/api/portal/client/me',
-  services: '/api/portal/client/services',
-  invoices: '/api/portal/client/invoices',
-  domains: '/api/portal/client/domains',
-  tickets: '/api/portal/client/tickets',
-  news: '/api/portal/public/announcements',
-} as const
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -81,12 +75,12 @@ beforeEach(async () => {
   stubAuthRuntime()
   vi.stubGlobal('useDashboardSummary', useDashboardSummary)
   table = {
-    [`GET ${PATHS.me}`]: { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.All }) },
-    [`GET ${PATHS.services}`]: { body: [makeClientService({ id: 1, productName: 'Starter', domain: 'a.test', username: 'ada', server: null })] },
-    [`GET ${PATHS.invoices}`]: { body: [{ id: 7, status: 'Unpaid', dueDate: '2026-11-01', total: 25, currency: 'USD' }] },
-    [`GET ${PATHS.domains}`]: { body: [{ id: 3, name: 'a.test', status: DomainStatus.Active, expiresAt: '2030-01-01', nextDueDate: '', registeredAt: '' }] },
-    [`GET ${PATHS.tickets}`]: { body: [{ id: 9, subject: 'Help', departmentName: 'Support', status: 'Open' }] },
-    [`GET ${PATHS.news}`]: { body: { items: [{ id: 5, title: 'Maintenance', content: '', publishedAt: '2026-10-01T00:00:00Z' }], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 } },
+    [readOf(AccountEndpoint.Me)]: { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.All }) },
+    [readOf(AccountEndpoint.Services)]: { body: [makeClientService({ id: 1, productName: 'Starter', domain: 'a.test', username: 'ada', server: null })] },
+    [readOf(BillingEndpoint.Invoices)]: { body: [{ id: 7, status: 'Unpaid', dueDate: '2026-11-01', total: 25, currency: 'USD' }] },
+    [readOf(DomainEndpoint.List)]: { body: [{ id: 3, name: 'a.test', status: DomainStatus.Active, expiresAt: '2030-01-01', nextDueDate: '', registeredAt: '' }] },
+    [readOf(AccountEndpoint.Tickets)]: { body: [{ id: 9, subject: 'Help', departmentName: 'Support', status: 'Open' }] },
+    [readOf(ContentPath.PublicAnnouncements)]: { body: { items: [{ id: 5, title: 'Maintenance', content: '', publishedAt: '2026-10-01T00:00:00Z' }], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 } },
     [`GET ${slotPath(PluginSlotId.DashboardCards)}`]: { body: slotIndex(PluginSlotId.DashboardCards, []) },
   }
   stub = await startTransport(routeTable(table))
@@ -109,10 +103,10 @@ describe('client dashboard page', () => {
     const wrapper = await mountDashboard()
     await settle()
 
-    expect(reads(PATHS.services)).toBe(1)
-    expect(reads(PATHS.invoices)).toBe(1)
-    expect(reads(PATHS.domains)).toBe(1)
-    expect(reads(PATHS.tickets)).toBe(1)
+    expect(reads(AccountEndpoint.Services)).toBe(1)
+    expect(reads(BillingEndpoint.Invoices)).toBe(1)
+    expect(reads(DomainEndpoint.List)).toBe(1)
+    expect(reads(AccountEndpoint.Tickets)).toBe(1)
     expect(wrapper.find('[data-testid="dashboard-service-1"]').text()).toContain('Starter')
     expect(wrapper.find('[data-testid="dashboard-invoice-7"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-domain-3"]').text()).toContain('a.test')
@@ -134,7 +128,7 @@ describe('client dashboard page', () => {
   })
 
   it('shows each failed section once as a load error', async () => {
-    refuse(503, { detail: 'The billing system is down.' }, [PATHS.services, PATHS.invoices])
+    refuse(503, { detail: 'The billing system is down.' }, [AccountEndpoint.Services, BillingEndpoint.Invoices])
 
     const wrapper = await mountDashboard()
 
@@ -143,7 +137,7 @@ describe('client dashboard page', () => {
   })
 
   it('shows the no-profile notice instead of load errors for a staff account', async () => {
-    refuse(404, { type: 'CLIENT_PROFILE_NOT_FOUND', detail: 'No client record.' }, [PATHS.me, PATHS.services, PATHS.invoices, PATHS.domains, PATHS.tickets])
+    refuse(404, { type: 'CLIENT_PROFILE_NOT_FOUND', detail: 'No client record.' }, [AccountEndpoint.Me, AccountEndpoint.Services, BillingEndpoint.Invoices, DomainEndpoint.List, AccountEndpoint.Tickets])
 
     const wrapper = await mountDashboard()
 
@@ -155,25 +149,25 @@ describe('client dashboard page', () => {
     const wrapper = await mountDashboard()
 
     await wrapper.find('[data-testid="dashboard-refresh"]').trigger('click')
-    await waitUntil(() => expect(reads(PATHS.tickets)).toBe(2))
+    await waitUntil(() => expect(reads(AccountEndpoint.Tickets)).toBe(2))
 
-    expect(reads(PATHS.services)).toBe(2)
-    expect(reads(PATHS.invoices)).toBe(2)
-    expect(reads(PATHS.domains)).toBe(2)
+    expect(reads(AccountEndpoint.Services)).toBe(2)
+    expect(reads(BillingEndpoint.Invoices)).toBe(2)
+    expect(reads(DomainEndpoint.List)).toBe(2)
   })
 })
 
 describe('client dashboard page permissions', () => {
   it('neither asks for nor shows the sections the person has no permission for', async () => {
-    table[`GET ${PATHS.me}`] = { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.ViewDomains }) }
+    table[readOf(AccountEndpoint.Me)] = { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.ViewDomains }) }
 
     const wrapper = await mountDashboard()
     await settle()
 
-    expect(reads(PATHS.domains)).toBe(1)
-    expect(reads(PATHS.services)).toBe(0)
-    expect(reads(PATHS.invoices)).toBe(0)
-    expect(reads(PATHS.tickets)).toBe(0)
+    expect(reads(DomainEndpoint.List)).toBe(1)
+    expect(reads(AccountEndpoint.Services)).toBe(0)
+    expect(reads(BillingEndpoint.Invoices)).toBe(0)
+    expect(reads(AccountEndpoint.Tickets)).toBe(0)
     expect(wrapper.find('[data-testid="dashboard-domain-3"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-service-1"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="dashboard-invoice-7"]').exists()).toBe(false)
@@ -183,7 +177,7 @@ describe('client dashboard page permissions', () => {
   })
 
   it('offers the domain search card to a person who may place orders', async () => {
-    table[`GET ${PATHS.me}`] = { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.PlaceNewOrders }) }
+    table[readOf(AccountEndpoint.Me)] = { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.PlaceNewOrders }) }
 
     const wrapper = await mountDashboard()
 

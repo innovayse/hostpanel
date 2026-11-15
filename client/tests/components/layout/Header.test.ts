@@ -9,11 +9,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 import LayoutHeader from '~/components/layout/Header.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCatalogStore } from '~/stores/catalog'
 import { makeClientUser } from '~/tests/helpers/clientUser'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { SitePage } from '~/tests/helpers/sitePaths'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { PortalProduct } from '~/types/portalproduct'
@@ -21,11 +24,8 @@ import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** Path of the endpoint that lists the product groups. */
-const GROUPS_PATH = '/api/portal/public/product-groups'
-
-/** Path of the endpoint that lists the products. */
-const PRODUCTS_PATH = '/api/portal/public/products'
+/** The page of the Cloud servers group, which the header builds from the group's name. */
+const CLOUD_SERVERS_PAGE = `${SitePage.Products}/cloud-servers`
 
 /** Groups the stubbed catalogue API returns: hosting and a VPS group. */
 const GROUPS: PortalProductGroup[] = [
@@ -70,7 +70,7 @@ const mountHeader = async () => {
     components: { UiLanguageSwitcher: LanguageSwitcherStub, UiCurrencySwitcher: CurrencySwitcherStub },
     attachToBody: true,
   })
-  await waitUntil(() => expect(requestsTo(stub.requests, GROUPS_PATH).length).toBeGreaterThan(0))
+  await waitUntil(() => expect(requestsTo(stub.requests, CatalogPath.ProductGroups).length).toBeGreaterThan(0))
   await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
   return wrapper
 }
@@ -90,8 +90,8 @@ describe('LayoutHeader', () => {
     vi.stubGlobal('useRuntimeConfig', () => ({ public: {} }))
     groupsReply = { body: GROUPS }
     stub = await startTransport(routeTable({
-      [`GET ${GROUPS_PATH}`]: () => groupsReply,
-      [`GET ${PRODUCTS_PATH}`]: { body: PRODUCTS },
+      [readOf(CatalogPath.ProductGroups)]: () => groupsReply,
+      [readOf(CatalogPath.Products)]: { body: PRODUCTS },
     }))
     window.localStorage.clear()
   })
@@ -132,7 +132,7 @@ describe('LayoutHeader', () => {
 
     await wrapper.find('[data-testid="header-nav-hosting-trigger"]').trigger('click')
 
-    expect(wrapper.find('[data-testid="header-nav-child-group-9"]').attributes('href')).toBe('/products/cloud-servers')
+    expect(wrapper.find('[data-testid="header-nav-child-group-9"]').attributes('href')).toBe(CLOUD_SERVERS_PAGE)
   })
 
   it('keeps Hosting a plain link when the catalogue read fails', async () => {
@@ -143,7 +143,7 @@ describe('LayoutHeader', () => {
   })
 
   it('marks the current page in the bar', async () => {
-    vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: '/domains', fullPath: '/domains', hash: '', meta: {} }))
+    vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: SitePage.Domains, fullPath: SitePage.Domains, hash: '', meta: {} }))
     const wrapper = await mountHeader()
 
     expect(wrapper.find('[data-testid="header-nav-domains"]').attributes('aria-current')).toBe('page')
@@ -151,7 +151,7 @@ describe('LayoutHeader', () => {
   })
 
   it('marks only Hosting, not Products, on a page of a Hosting dropdown group under /products', async () => {
-    vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: '/products/cloud-servers', fullPath: '/products/cloud-servers', hash: '', meta: {} }))
+    vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: CLOUD_SERVERS_PAGE, fullPath: CLOUD_SERVERS_PAGE, hash: '', meta: {} }))
     const wrapper = await mountHeader()
 
     expect(wrapper.find('[data-testid="header-nav-hosting-trigger"]').classes()).toContain('text-classic-on-brand')
@@ -185,8 +185,8 @@ describe('LayoutHeader', () => {
   it('offers sign in and get started to a visitor', async () => {
     const wrapper = await mountHeader()
 
-    expect(wrapper.find('[data-testid="layout-sign-in"]').attributes('href')).toBe('/client/login')
-    expect(wrapper.find('[data-testid="layout-get-started"]').attributes('href')).toBe('/hosting')
+    expect(wrapper.find('[data-testid="layout-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
+    expect(wrapper.find('[data-testid="layout-get-started"]').attributes('href')).toBe(SitePage.Hosting)
     expect(wrapper.find('[data-testid="header-account"]').exists()).toBe(false)
   })
 
@@ -218,7 +218,7 @@ describe('LayoutHeader', () => {
 
     const drawer = wrapper.find('[data-testid="header-drawer-nav"]')
     expect(drawer.find('[data-testid="header-drawer-hosting"]').exists()).toBe(true)
-    expect(drawer.find('[data-testid="header-drawer-child-group-9"]').attributes('href')).toBe('/products/cloud-servers')
+    expect(drawer.find('[data-testid="header-drawer-child-group-9"]').attributes('href')).toBe(CLOUD_SERVERS_PAGE)
     expect(drawer.find('[data-testid="header-drawer-child-faq"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="header-drawer-sign-in"]').exists()).toBe(true)
   })
@@ -226,7 +226,7 @@ describe('LayoutHeader', () => {
   it('loads the catalogue families once, during setup, not after mount', async () => {
     await mountHeader()
 
-    expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, CatalogPath.ProductGroups)).toHaveLength(1)
   })
 
   it('renders the widget mounts instead of the local account part when the widget is served', async () => {

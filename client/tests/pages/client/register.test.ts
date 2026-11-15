@@ -9,15 +9,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 import RegisterPage from '~/pages/client/register.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF path the page posts the registration to. */
-const REGISTER_PATH = '/api/portal/auth/register'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -58,17 +57,17 @@ describe('client register page', () => {
   })
 
   it('sends the typed fields to the API', async () => {
-    table[`POST ${REGISTER_PATH}`] = { body: {} }
+    table[writeOf(AccountEndpoint.Register)] = { body: {} }
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
-    await waitUntil(() => expect(requestsTo(stub.requests, REGISTER_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.Register)).toHaveLength(1))
 
-    expect(bodyOf(requestsTo(stub.requests, REGISTER_PATH)[0])).toEqual({ firstname: 'Ada', lastname: 'Lovelace', email: 'ada@example.com', password: 'long-enough-pw' })
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.Register)[0])).toEqual({ firstname: 'Ada', lastname: 'Lovelace', email: 'ada@example.com', password: 'long-enough-pw' })
   })
 
   it('shows the success banner and schedules the redirect to sign-in', async () => {
-    table[`POST ${REGISTER_PATH}`] = { body: {} }
+    table[writeOf(AccountEndpoint.Register)] = { body: {} }
     const timer = vi.spyOn(globalThis, 'setTimeout')
     const wrapper = await mountAuthPage(RegisterPage)
 
@@ -81,7 +80,7 @@ describe('client register page', () => {
   })
 
   it('shows the API sentence and no success banner when registration is refused', async () => {
-    table[`POST ${REGISTER_PATH}`] = { status: 409, body: { detail: 'That email is taken.' } }
+    table[writeOf(AccountEndpoint.Register)] = { status: 409, body: { detail: 'That email is taken.' } }
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
@@ -92,7 +91,7 @@ describe('client register page', () => {
   })
 
   it('shows a field message under its field', async () => {
-    table[`POST ${REGISTER_PATH}`] = { status: 400, body: { errors: { password: ['Too short.'] } } }
+    table[writeOf(AccountEndpoint.Register)] = { status: 400, body: { errors: { password: ['Too short.'] } } }
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
@@ -102,6 +101,6 @@ describe('client register page', () => {
   it('links back to sign-in', async () => {
     const wrapper = await mountAuthPage(RegisterPage)
 
-    expect(wrapper.find('[data-testid="register-signin"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="register-signin"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 })

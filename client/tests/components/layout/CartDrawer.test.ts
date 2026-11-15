@@ -10,6 +10,8 @@ import { nextTick } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { localized } from '~/tests/helpers/runtimeStubs'
+import { SitePage } from '~/tests/helpers/sitePaths'
 import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -96,7 +98,7 @@ describe('CartDrawer', () => {
 
     await wrapper.find('[data-testid="cart-drawer-browse"]').trigger('click')
 
-    expect(router.push).toHaveBeenCalledWith('/en/hosting')
+    expect(router.push).toHaveBeenCalledWith(localized(SitePage.Hosting))
     expect(useCartStore().isOpen).toBe(false)
   })
 
@@ -150,7 +152,7 @@ describe('CartDrawer', () => {
 
     await wrapper.find('[data-testid="cart-drawer-checkout"]').trigger('click')
 
-    expect(router.push).toHaveBeenCalledWith('/en/checkout')
+    expect(router.push).toHaveBeenCalledWith(localized(SitePage.Checkout))
     expect(useCartStore().isOpen).toBe(false)
   })
 

@@ -21,7 +21,9 @@ import { bodyOf } from '../helpers/requestBody'
 import { readOf, refusal, requestsTo, routeTable, writeOf } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
 import type { StubServer } from '../helpers/stubServer'
+import { localized } from '../helpers/runtimeStubs'
 import { startTransport } from '../helpers/stubTransport'
+import { CLIENT_INVOICES_PATH, clientInvoicePayPath, clientOrderSuccessPath } from '~/constants/clientRoutes'
 import { useOrderPaymentToken } from '~/composables/useOrderPaymentToken'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
@@ -63,17 +65,8 @@ const TRANSFER_ROUTE = writeOf(bankTransferPath(77))
 /** The guest's sign-in after the order. */
 const LOGIN_ROUTE = writeOf(AccountEndpoint.Login)
 
-/** The path of the guest's sign-in. */
-const LOGIN_PATH = AccountEndpoint.Login
-
-/** The path of the placing of an order. */
-const CREATE_PATH = BillingEndpoint.OrderCreate
-
 /** The read of the catalogue the price refresh makes. */
 const PRODUCTS_ROUTE = readOf(CatalogPath.Products)
-
-/** The path of the catalogue read. */
-const PRODUCTS_PATH = CatalogPath.Products
 
 /** The currencies the operator bills in: dollars are the base, so they are the payer's. */
 const CURRENCIES: BillingCurrency[] = [
@@ -125,7 +118,7 @@ const input = (
 ): PlaceOrderInput => ({
   guest,
   confirmTotalChange,
-  localizePath: path => `/en${path}`
+  localizePath: localized
 })
 
 /**
@@ -214,7 +207,7 @@ describe('useCheckoutStore.placeOrder', () => {
     const store = useCheckoutStore()
 
     expect(await store.placeOrder(input())).toBeNull()
-    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(0)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(0)
   })
 
   it('sends the cart in the payer currency with the guest details and signs the guest in', async () => {
@@ -222,10 +215,10 @@ describe('useCheckoutStore.placeOrder', () => {
 
     await store.placeOrder(input())
 
-    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    const body = bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0]) as Record<string, unknown>
     expect((body.items as unknown[]).length).toBe(1)
     expect(body).toMatchObject({ paymentmethod: 'bank_transfer', currency: 'USD', ...guest })
-    expect(bodyOf(requestsTo(stub.requests, LOGIN_PATH)[0])).toEqual({ email: 'ada@example.com', password: 'pw-123456' })
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.Login)[0])).toEqual({ email: 'ada@example.com', password: 'pw-123456' })
   })
 
   it('sends the bundle id with one line per component and the domain line with the years the bundle fixes', async () => {
@@ -245,7 +238,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     await store.placeOrder(input(() => true))
 
-    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    const body = bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0]) as Record<string, unknown>
     expect(body.bundleId).toBe(7)
     expect(body.items).toEqual([
       { productId: 5, billingcycle: PricingCycle.Monthly, domain: 'example.com' },
@@ -258,7 +251,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     await store.placeOrder(input())
 
-    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    const body = bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0]) as Record<string, unknown>
     expect(body.bundleId).toBeUndefined()
   })
 
@@ -268,9 +261,9 @@ describe('useCheckoutStore.placeOrder', () => {
 
     await store.placeOrder(input())
 
-    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    const body = bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0]) as Record<string, unknown>
     expect(body.email).toBeUndefined()
-    expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(0)
+    expect(requestsTo(stub.requests, AccountEndpoint.Login)).toHaveLength(0)
   })
 
   it('still reports the order as placed when the guest sign-in is refused', async () => {
@@ -279,7 +272,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     const destination = await store.placeOrder(input())
 
-    expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Login)).toHaveLength(1)
     expect(destination).toMatchObject({ kind: CheckoutDestinationKind.Route })
     expect(store.error).toBe('')
   })
@@ -293,7 +286,7 @@ describe('useCheckoutStore.placeOrder', () => {
     expect(useOrderPaymentToken().recall(42)).toBe('tok')
     expect(useOrderPaymentToken().recallInvoiceId(42)).toBe(77)
     const returnUrl = startBody().returnUrl as string
-    expect(new URL(returnUrl).pathname).toBe('/en/payment/result')
+    expect(new URL(returnUrl).pathname).toBe(localized('/payment/result'))
     expect(new URL(returnUrl).search).toBe('?order=42')
     expect(destination).toEqual({ kind: CheckoutDestinationKind.Gateway, start: { redirectUrl: BANK_URL } })
     // Kept until the result page sees the payment confirmed.
@@ -354,7 +347,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     const [first, second] = await Promise.all([store.placeOrder(input()), store.placeOrder(input())])
 
-    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(1)
     expect([first, second].filter(destination => destination !== null)).toHaveLength(1)
   })
 
@@ -362,7 +355,7 @@ describe('useCheckoutStore.placeOrder', () => {
     const store = arrange('bank_transfer', [])
 
     expect(await store.placeOrder(input())).toBeNull()
-    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(0)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(0)
     expect(store.submitting).toBe(false)
   })
 
@@ -378,13 +371,13 @@ describe('useCheckoutStore.placeOrder', () => {
 
   it('sends a bank transfer to the invoice, or to the invoice list when there is none', async () => {
     const withInvoice = await arrange('bank_transfer').placeOrder(input())
-    expect(withInvoice).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
+    expect(withInvoice).toEqual({ kind: CheckoutDestinationKind.Route, target: localized(clientInvoicePayPath(placed.invoiceId)) })
 
     setActivePinia(createPinia())
     loadCurrencies()
     table[CREATE_ROUTE] = { body: { ...placed, invoiceId: 0 } }
     const withoutInvoice = await arrange('bank_transfer').placeOrder(input())
-    expect(withoutInvoice).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices' })
+    expect(withoutInvoice).toEqual({ kind: CheckoutDestinationKind.Route, target: localized(CLIENT_INVOICES_PATH) })
   })
 
   it('moves the invoice to waiting for the transfer before sending the payer to it', async () => {
@@ -394,7 +387,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     expect(requestsTo(stub.requests, bankTransferPath(77))).toHaveLength(1)
     expect(bodyOf(requestsTo(stub.requests, bankTransferPath(77))[0])).toEqual({})
-    expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: localized(clientInvoicePayPath(placed.invoiceId)) })
   })
 
   it('still sends the payer to the invoice when choosing the transfer fails, where the page offers it again', async () => {
@@ -403,7 +396,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     const destination = await store.placeOrder(input())
 
-    expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: localized(clientInvoicePayPath(placed.invoiceId)) })
     expect(store.error).toBe('')
   })
 
@@ -424,7 +417,7 @@ describe('useCheckoutStore.placeOrder', () => {
     expect(requestsTo(stub.requests, START_PATH)).toHaveLength(0)
     expect(destination).toEqual({
       kind: CheckoutDestinationKind.Route,
-      target: '/en/client/order-success?order=A+42&invoice=77'
+      target: localized(clientOrderSuccessPath({ order: placed.orderNumber, invoice: placed.invoiceId }))
     })
     expect(useCartStore().items).toEqual([])
   })
@@ -438,7 +431,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     expect(destination).toEqual({
       kind: CheckoutDestinationKind.Route,
-      target: '/en/client/order-success?order=A+42&invoice=77&digital=1'
+      target: localized(clientOrderSuccessPath({ order: placed.orderNumber, invoice: placed.invoiceId, digital: true }))
     })
   })
 
@@ -451,7 +444,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     expect(destination).toEqual({
       kind: CheckoutDestinationKind.Route,
-      target: '/en/client/order-success?order=A+42&invoice=77'
+      target: localized(clientOrderSuccessPath({ order: placed.orderNumber, invoice: placed.invoiceId }))
     })
   })
 
@@ -492,8 +485,8 @@ describe('useCheckoutStore.placeOrder', () => {
     table[START_ROUTE] = { body: { redirectUrl: BANK_URL } }
     const destination = await store.placeOrder(input())
 
-    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(1)
-    expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Login)).toHaveLength(1)
     expect(destination).toMatchObject({ kind: CheckoutDestinationKind.Gateway })
   })
 
@@ -507,7 +500,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     expect(store.pendingOrder).toBeNull()
     await store.placeOrder(input())
-    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(2)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(2)
   })
 
   it('skips the payment and the total confirmation for an order the backend settled as free', async () => {
@@ -521,7 +514,7 @@ describe('useCheckoutStore.placeOrder', () => {
     expect(requestsTo(stub.requests, START_PATH)).toHaveLength(0)
     expect(destination).toEqual({
       kind: CheckoutDestinationKind.Route,
-      target: '/en/client/order-success?order=A+42&invoice=77'
+      target: localized(clientOrderSuccessPath({ order: placed.orderNumber, invoice: placed.invoiceId }))
     })
     expect(useCartStore().items).toEqual([])
   })
@@ -681,7 +674,7 @@ describe('useCheckoutStore billed total', () => {
     await store.placeOrder(input(confirmTotalChange))
 
     expect(confirmTotalChange).toHaveBeenCalledTimes(2)
-    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(1)
     expect(requestsTo(stub.requests, START_PATH)).toHaveLength(1)
   })
 
@@ -706,7 +699,7 @@ describe('useCheckoutStore.refreshCartPrices', () => {
     await store.refreshCartPrices()
 
     expect(useCartStore().items[0]?.amount).toBe(14)
-    expect(requestsTo(stub.requests, PRODUCTS_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(1)
   })
 
   it('reads nothing for an empty cart or an unknown payer currency', async () => {
@@ -714,7 +707,7 @@ describe('useCheckoutStore.refreshCartPrices', () => {
     useCurrencyStore().currencies = []
     await arrange('card_gateway').refreshCartPrices()
 
-    expect(requestsTo(stub.requests, PRODUCTS_PATH)).toHaveLength(0)
+    expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(0)
   })
 })
 

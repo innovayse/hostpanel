@@ -11,7 +11,7 @@ import { stubClientRuntime } from '~/tests/helpers/mountClient'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { BillingEndpoint } from '~/tests/helpers/billingPaths'
-import { TRANSFER_ORDER_PATH } from '~/tests/helpers/domainPanelPaths'
+import { DomainEndpoint } from '~/tests/helpers/domainPanelPaths'
 import { clientInvoicePath } from '~/constants/clientRoutes'
 import { readOf, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -19,12 +19,6 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import TransferPage from '~/pages/client/domains/transfer.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF paths the page uses. */
-const PATHS = {
-  gatewayMethods: BillingEndpoint.OrderPaymentMethods,
-  transferOrder: TRANSFER_ORDER_PATH,
-} as const
 
 /** The `data-testid` of an element the page always renders once its payment methods are read. */
 const PAGE_MARKER = 'transfer-back'
@@ -40,7 +34,7 @@ const card = { module: 'card_gateway', displayName: 'Card gateway', supportsStor
 
 beforeEach(async () => {
   stubClientRuntime({ query: { domain: 'moving.org', eppcode: 'AUTH-1' } })
-  table = { [readOf(PATHS.gatewayMethods)]: { body: [card] } }
+  table = { [readOf(BillingEndpoint.OrderPaymentMethods)]: { body: [card] } }
   stub = await startTransport(routeTable(table))
 })
 
@@ -70,7 +64,7 @@ describe('domain transfer page', () => {
   })
 
   it('says so, and cannot order, when there is no payment method', async () => {
-    table[readOf(PATHS.gatewayMethods)] = { body: [] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [] }
 
     const wrapper = await mountRenderedClientPage(TransferPage, PAGE_MARKER)
 
@@ -79,18 +73,18 @@ describe('domain transfer page', () => {
   })
 
   it('places the order and links to the invoice', async () => {
-    table[writeOf(PATHS.transferOrder)] = { body: { orderId: 3, invoiceId: 90 } }
+    table[writeOf(DomainEndpoint.TransferOrder)] = { body: { orderId: 3, invoiceId: 90 } }
     const wrapper = await mountRenderedClientPage(TransferPage, PAGE_MARKER)
 
     await wrapper.find('form').trigger('submit')
 
     await waitUntil(() => expect(wrapper.find('[data-testid="transfer-success"]').exists()).toBe(true))
-    expect(bodyOf(requestsTo(stub.requests, PATHS.transferOrder)[0])).toMatchObject({ domain: 'moving.org', eppcode: 'AUTH-1', years: 1, paymentmethod: 'card_gateway' })
+    expect(bodyOf(requestsTo(stub.requests, DomainEndpoint.TransferOrder)[0])).toMatchObject({ domain: 'moving.org', eppcode: 'AUTH-1', years: 1, paymentmethod: 'card_gateway' })
     expect(wrapper.find('[data-testid="transfer-pay-invoice"]').attributes('href')).toBe(clientInvoicePath(90))
   })
 
   it('shows the refusal and keeps the form when the order fails', async () => {
-    table[writeOf(PATHS.transferOrder)] = { status: 409, body: { detail: 'Domain is locked.' } }
+    table[writeOf(DomainEndpoint.TransferOrder)] = { status: 409, body: { detail: 'Domain is locked.' } }
     const wrapper = await mountRenderedClientPage(TransferPage, PAGE_MARKER)
 
     await wrapper.find('form').trigger('submit')

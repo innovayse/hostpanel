@@ -10,6 +10,7 @@ using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
@@ -113,27 +114,38 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
         return await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).WaitAsync(Patience);
     }
 
-    /// <summary>A stream that sends an event every interval, for a number of events, then ends.</summary>
+    /// <summary>
+    /// A stream that sends events with a gap of the test clock between them, then ends. The clock is moved by the stream itself,
+    /// at the moment the host has taken the previous event and is waiting for the next, so how long a gap is never depends on
+    /// how fast the runner is.
+    /// </summary>
     /// <param name="count">How many events.</param>
-    /// <param name="interval">The pause before each event.</param>
-    /// <param name="ct">Cancelled when the stream is ended early.</param>
+    /// <param name="clock">The clock the host measures the stream's silence on.</param>
+    /// <param name="gap">How far the clock moves before each event but the first.</param>
     /// <returns>The events.</returns>
-    private static async IAsyncEnumerable<PluginEvent> Steady(int count, TimeSpan interval, [EnumeratorCancellation] CancellationToken ct)
+    private static async IAsyncEnumerable<PluginEvent> Steady(int count, FakeTimeProvider clock, TimeSpan gap)
     {
         for (var i = 1; i <= count; i++)
         {
-            await Task.Delay(interval, ct);
+            if (i > 1)
+            {
+                clock.Advance(gap);
+            }
+
+            await Task.Yield();
             yield return new PluginEvent($"tick-{i}");
         }
     }
 
     /// <summary>A stream that sends one event, then says nothing until its token is cancelled.</summary>
     /// <param name="cancelled">Completed when the stream sees its token cancelled.</param>
+    /// <param name="onSilent">Run once the host has taken the first event and is waiting for the next, or <see langword="null"/> for none.</param>
     /// <param name="ct">Cancelled when the host ends the stream.</param>
     /// <returns>The events.</returns>
-    private static async IAsyncEnumerable<PluginEvent> GoesSilent(TaskCompletionSource cancelled, [EnumeratorCancellation] CancellationToken ct)
+    private static async IAsyncEnumerable<PluginEvent> GoesSilent(TaskCompletionSource cancelled, Action? onSilent, [EnumeratorCancellation] CancellationToken ct)
     {
         yield return new PluginEvent("first");
+        onSilent?.Invoke();
         try
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, ct);
@@ -299,44 +311,63 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
         (await response.Content.ReadAsStringAsync()).Should().Contain("true");
     }
 
-    /// <summary>A stream that keeps sending past the limit is not cut: its length is not the limit's concern.</summary>
+    /// <summary>
+    /// A stream that keeps sending past the limit is not cut: its length is not the limit's concern, only a silence as long
+    /// as the limit is. The host reads a test clock, and every gap between events is shorter than the limit while the
+    /// stream as a whole runs for twice the limit, so the result does not depend on how fast the runner is.
+    /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task AStreamThatKeepsSending_PastTheLimit_IsNotCut()
     {
-        using var http = await OwnerAsync(Timed(LongLimitSeconds), "timeout-stream-busy");
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        using var http = await OwnerAsync(Timed(LongLimitSeconds, configureServices: ClockOf(clock)), "timeout-stream-busy");
         _fixture.Probe.AsyncBehaviour = (_, _) => Task.FromResult(
-            PluginReply.Stream(Steady(3, TimeSpan.FromSeconds(1.5), CancellationToken.None)));
+            PluginReply.Stream(Steady(4, clock, TimeSpan.FromSeconds(LongLimitSeconds - 1))));
 
         using var response = await ClientCallAsync(http, HttpMethod.Get, "stream");
         var body = await response.Content.ReadAsStringAsync().WaitAsync(Patience);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body.Should().Contain("data: tick-1").And.Contain("data: tick-3");
+        body.Should().Contain("data: tick-1").And.Contain("data: tick-4");
         body.Should().NotContain(HostpanelErrorCodes.PLUGIN_TIMEOUT);
     }
 
     /// <summary>
-    /// A stream that goes silent past the limit is cancelled and ended with the timeout error and <c>done</c>, although the
-    /// host's heartbeat, set below the limit, kept writing: a heartbeat does not keep a silent producer alive.
+    /// A stream that goes silent for the limit is cancelled and ended with the timeout error and <c>done</c>. The host reads a
+    /// test clock the stream moves by the limit once the host waits for its next event, so the cut happens at once and on
+    /// every runner.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task AStreamThatGoesSilent_PastTheLimit_IsCut_EvenWithHeartbeats()
+    public async Task AStreamThatGoesSilent_ForTheLimit_IsCut()
     {
-        using var http = await OwnerAsync(Timed(LongLimitSeconds, options => options.StreamHeartbeatSeconds = 1), "timeout-stream-silent");
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        using var http = await OwnerAsync(Timed(LongLimitSeconds, configureServices: ClockOf(clock)), "timeout-stream-silent");
         var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _fixture.Probe.AsyncBehaviour = (_, _) => Task.FromResult(PluginReply.Stream(GoesSilent(cancelled, CancellationToken.None)));
+        _fixture.Probe.AsyncBehaviour = (_, _) => Task.FromResult(
+            PluginReply.Stream(GoesSilent(cancelled, () => clock.Advance(TimeSpan.FromSeconds(LongLimitSeconds)), CancellationToken.None)));
 
         using var response = await ClientCallAsync(http, HttpMethod.Get, "stream");
         var body = await response.Content.ReadAsStringAsync().WaitAsync(Patience);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Contain("data: first");
-        body.Should().Contain(ServerSentEvent.Heartbeat.TrimEnd());
         body.Should().Contain("event: error").And.Contain(HostpanelErrorCodes.PLUGIN_TIMEOUT).And.Contain("event: done");
         await cancelled.Task.WaitAsync(Patience);
         _fixture.LoggedWarning(_fixture.OtherPluginId, "stayed silent", _logMark).Should().BeTrue();
+    }
+
+    /// <summary>Replaces the host's clock with a test clock.</summary>
+    /// <param name="clock">The clock every timer, wait and reading of the host then goes through.</param>
+    /// <returns>The service replacement to pass to <see cref="Timed"/>.</returns>
+    private static Action<IServiceCollection> ClockOf(FakeTimeProvider clock)
+    {
+        return services =>
+        {
+            services.RemoveAll<TimeProvider>();
+            services.AddSingleton<TimeProvider>(clock);
+        };
     }
 
     /// <summary>The concurrent stream lease is released when a stream is ended by the timeout: the next call is not refused with 429.</summary>
@@ -359,7 +390,7 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
             });
         using var http = await OwnerAsync(host, "timeout-stream-lease");
         var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _fixture.Probe.AsyncBehaviour = (_, _) => Task.FromResult(PluginReply.Stream(GoesSilent(cancelled, CancellationToken.None)));
+        _fixture.Probe.AsyncBehaviour = (_, _) => Task.FromResult(PluginReply.Stream(GoesSilent(cancelled, null, CancellationToken.None)));
 
         using (var first = await ClientCallAsync(http, HttpMethod.Get, "stream"))
         {

@@ -1,8 +1,11 @@
+using System.Runtime.CompilerServices;
+using System.Text;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
@@ -185,5 +188,53 @@ public sealed class EventStreamResultTests
         {
             release.SetResult();
         }
+    }
+
+    /// <summary>A producer of one event that then says nothing until its token is cancelled.</summary>
+    /// <param name="ct">Cancelled when the response ends the stream.</param>
+    /// <returns>The event.</returns>
+    private static async IAsyncEnumerable<StreamedEvent> OneEventThenSilence([EnumeratorCancellation] CancellationToken ct)
+    {
+        yield return new StreamedEvent("first", null, null);
+        await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+    }
+
+    /// <summary>
+    /// A producer that stays silent is told by a heartbeat every heartbeat interval, but the heartbeats do not restart its
+    /// silence: once the idle limit has passed on the clock the stream is ended with the limit's events, and the producer is
+    /// cancelled. The clock is a test clock moved only once the response is waiting on it, so nothing here depends on speed.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ASilentProducer_IsCutAtTheIdleLimit_AndHeartbeatsDoNotRestartIt()
+    {
+        var clock = new TimerWatchingTimeProvider(DateTimeOffset.UtcNow);
+        var expired = false;
+        var idle = new StreamIdleLimit(TimeSpan.FromSeconds(3), [new StreamedEvent("too slow", "error", null)], () => expired = true);
+        var reply = new StreamedReply(OneEventThenSilence(CancellationToken.None), TimeSpan.FromSeconds(1), idle);
+        var http = new DefaultHttpContext
+        {
+            RequestServices = new ServiceCollection().AddSingleton<TimeProvider>(clock).BuildServiceProvider(),
+        };
+        var body = new MemoryStream();
+        http.Response.Body = body;
+
+        var run = new EventStreamResult(reply).ExecuteResultAsync(new ActionContext(http, new RouteData(), new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()));
+
+        // The first wait is made before the first event is taken, the second after it: only then is the silence running.
+        await clock.NextTimerAsync(Patience);
+        await clock.NextTimerAsync(Patience);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await clock.NextTimerAsync(Patience);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await clock.NextTimerAsync(Patience);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await run.WaitAsync(Patience);
+
+        var written = Encoding.UTF8.GetString(body.ToArray());
+        expired.Should().BeTrue();
+        written.Should().StartWith("data: first");
+        written.Split(ServerSentEvent.Heartbeat).Should().HaveCount(3, "two heartbeats fit before the limit");
+        written.Should().EndWith("event: error\ndata: too slow\n\n");
     }
 }

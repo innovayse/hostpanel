@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +10,8 @@ namespace Innovayse.Hostpanel.Shared.Infrastructure;
 /// Writes a <see cref="StreamedReply"/> as <c>text/event-stream</c>: the headers first, then every event as it is produced,
 /// flushed at once, with a comment line whenever the stream has been silent for the reply's heartbeat. The events are
 /// enumerated with a token linked to the request abort token and cancelled on every way out, so a client that goes away,
-/// a failed write and a normal end all cancel the producer. When the reply has an idle limit, a producer that sends nothing
+/// a failed write and a normal end all cancel the producer. Every wait and every reading of silence goes through the request's registered
+/// <see cref="TimeProvider"/>, so a test that replaces it decides when a silence is long enough. When the reply has an idle limit, a producer that sends nothing
 /// for that long is cancelled and the client is told with the limit's end events; heartbeats do not count as activity. The request always ends: waiting for a producer that ignores
 /// its token is bounded.
 /// </summary>
@@ -56,6 +56,7 @@ public sealed class EventStreamResult : IActionResult
 
         var http = context.HttpContext;
         var logger = http.RequestServices?.GetService<ILogger<EventStreamResult>>() ?? NullLogger<EventStreamResult>.Instance;
+        var time = http.RequestServices?.GetService<TimeProvider>() ?? TimeProvider.System;
 
         // The producer's token: it is cancelled by the client leaving and, in the finally, by every other way out.
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
@@ -79,7 +80,7 @@ public sealed class EventStreamResult : IActionResult
             await http.Response.Body.FlushAsync(ct);
 
             // The producer's own silence: restarted by each of its events, never by the host's heartbeat.
-            var idle = Stopwatch.StartNew();
+            var idleSince = time.GetTimestamp();
             var limit = _reply.IdleLimit;
 
             pending = events.MoveNextAsync().AsTask();
@@ -88,16 +89,16 @@ public sealed class EventStreamResult : IActionResult
                 var wait = _reply.Heartbeat;
                 if (limit is not null)
                 {
-                    wait = TimeSpan.FromTicks(Math.Min(wait.Ticks, Math.Max(0, (limit.Timeout - idle.Elapsed).Ticks)));
+                    wait = TimeSpan.FromTicks(Math.Min(wait.Ticks, Math.Max(0, (limit.Timeout - time.GetElapsedTime(idleSince)).Ticks)));
                 }
 
                 using var silence = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var finished = await Task.WhenAny(pending, Task.Delay(wait, silence.Token));
+                var finished = await Task.WhenAny(pending, Task.Delay(wait, time, silence.Token));
 
                 // The event may have arrived just as the wait ran out: it is then used, not cut.
                 if (finished != pending && !pending.IsCompleted)
                 {
-                    if (limit is not null && idle.Elapsed >= limit.Timeout)
+                    if (limit is not null && time.GetElapsedTime(idleSince) >= limit.Timeout)
                     {
                         // The producer is cancelled in the finally; the client is told why the stream ended.
                         limit.OnExpired();
@@ -120,7 +121,7 @@ public sealed class EventStreamResult : IActionResult
                 }
 
                 await WriteAsync(http, ServerSentEvent.Format(events.Current), ct);
-                idle.Restart();
+                idleSince = time.GetTimestamp();
                 pending = events.MoveNextAsync().AsTask();
             }
         }
@@ -131,7 +132,7 @@ public sealed class EventStreamResult : IActionResult
         finally
         {
             await lifetime.CancelAsync();
-            var settled = await SettleAsync(pending, logger);
+            var settled = await SettleAsync(pending, time, logger);
             await CloseAsync(events, settled, logger);
             await ReleaseOwnerAsync(pending, settled, logger);
         }
@@ -199,9 +200,10 @@ public sealed class EventStreamResult : IActionResult
     /// producer that ignores its token is abandoned after the timeout, so the request, and the lease it holds, can end.
     /// </summary>
     /// <param name="pending">The step in flight, or <see langword="null"/> when none was started.</param>
+    /// <param name="time">The clock the wait is measured on.</param>
     /// <param name="logger">Records an abandoned step.</param>
     /// <returns><see langword="true"/> when no step is running any more; <see langword="false"/> when one was abandoned.</returns>
-    private async Task<bool> SettleAsync(Task<bool>? pending, ILogger logger)
+    private async Task<bool> SettleAsync(Task<bool>? pending, TimeProvider time, ILogger logger)
     {
         if (pending is null)
         {
@@ -209,7 +211,7 @@ public sealed class EventStreamResult : IActionResult
         }
 
         using var timeout = new CancellationTokenSource();
-        var finished = await Task.WhenAny(pending, Task.Delay(_settleTimeout, timeout.Token));
+        var finished = await Task.WhenAny(pending, Task.Delay(_settleTimeout, time, timeout.Token));
         if (finished != pending)
         {
             logger.LogWarning(

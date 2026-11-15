@@ -2,24 +2,42 @@
  * Unit tests for SectionsApps: the fixed categories always show, the count line only when the
  * operator set a count.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings } from '~/tests/helpers/portalSettings'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsApps from '~/components/sections/SectionsApps.vue'
+import { useInstallerApps } from '~/composables/useInstallerApps'
 import { InstallerAppCategory } from '~/constants/installerAppCategory'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 
-/** The installer data the stubbed composable returns. */
-const installer = ref({ count: '', categories: [] as InstallerAppCategory[] })
+/** The stub playing the BFF; it answers the operator's settings read. */
+let stub: StubServer
 
-vi.stubGlobal('useInstallerApps', () => installer)
+/** What the stub answers, by route. */
+const replies: StubRouteTable = {}
+
+/** The operator's installer count setting, as written. */
+const COUNT_SET: Record<string, string> = { [PortalSettingKey.InstallerAppCount]: '150+' }
 
 describe('SectionsApps', () => {
-  beforeEach(() => {
-    installer.value = { count: '150+', categories: Object.values(InstallerAppCategory) }
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    vi.stubGlobal('useInstallerApps', useInstallerApps)
   })
 
-  it('shows one card per category', () => {
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
+  })
+
+  it('shows one card per category', async () => {
+    await loadPortalSettings(replies, COUNT_SET)
+
     const wrapper = mountWithKit(SectionsApps, { components: CLASSIC_COMPONENTS })
 
     for (const category of Object.values(InstallerAppCategory)) {
@@ -27,14 +45,16 @@ describe('SectionsApps', () => {
     }
   })
 
-  it('shows the count line when a count is set', () => {
+  it('shows the count line when a count is set', async () => {
+    await loadPortalSettings(replies, COUNT_SET)
+
     const wrapper = mountWithKit(SectionsApps, { components: CLASSIC_COMPONENTS })
 
     expect(wrapper.find('[data-testid="sections-apps-count"]').exists()).toBe(true)
   })
 
-  it('hides the count line when the count is empty but keeps the section', () => {
-    installer.value = { count: '', categories: Object.values(InstallerAppCategory) }
+  it('hides the count line when the count is empty but keeps the section', async () => {
+    await loadPortalSettings(replies)
 
     const wrapper = mountWithKit(SectionsApps, { components: CLASSIC_COMPONENTS })
 
@@ -42,7 +62,9 @@ describe('SectionsApps', () => {
     expect(wrapper.find('[data-testid="sections-apps"]').exists()).toBe(true)
   })
 
-  it('draws every icon on a flat brand tile with no accent glow', () => {
+  it('draws every icon on a flat brand tile with no accent glow', async () => {
+    await loadPortalSettings(replies, COUNT_SET)
+
     const wrapper = mountWithKit(SectionsApps, { components: CLASSIC_COMPONENTS })
 
     const tiles = wrapper.findAll('[data-testid="classic-icon-tile"]')

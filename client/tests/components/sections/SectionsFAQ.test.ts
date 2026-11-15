@@ -4,8 +4,8 @@
  * there are no questions.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings } from '~/tests/helpers/portalSettings'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
@@ -14,6 +14,8 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsFAQ from '~/components/sections/SectionsFAQ.vue'
+import { useTemplate } from '~/composables/useTemplate'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import MarketingSectionHeader from '~/components/marketing/MarketingSectionHeader.vue'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 import { TemplateName } from '~/types/templatename'
@@ -35,9 +37,6 @@ const replies: StubRouteTable = {}
 const serve = (faqs: FAQ[]): void => {
   replies[readOf(StorefrontPath.Faqs)] = { body: faqs }
 }
-
-/** The template the stubbed composable reports. */
-const activeTemplate = ref<TemplateName>(TemplateName.Aurora)
 
 /** Three general questions and two about products. */
 const FAQS = [
@@ -70,8 +69,9 @@ describe('SectionsFAQ', () => {
   beforeEach(async () => {
     stub = await startTransport(routeTable(replies))
     stubPublicPageRuntime()
-    vi.stubGlobal('useTemplate', () => ({ name: activeTemplate }))
+    vi.stubGlobal('useTemplate', useTemplate)
     serve(FAQS)
+    await loadPortalSettings(replies, { [PortalSettingKey.Template]: TemplateName.Aurora })
   })
 
   afterEach(async () => {
@@ -133,8 +133,6 @@ describe('SectionsFAQ', () => {
   })
 
   it('keeps the glow background and the gradient contact card on aurora', async () => {
-    activeTemplate.value = TemplateName.Aurora
-
     const wrapper = await mountFaq()
 
     expect(wrapper.find('[data-testid="section-header"]').exists()).toBe(true)
@@ -143,7 +141,7 @@ describe('SectionsFAQ', () => {
   })
 
   it('paints the classic template flat: no glow, no gradient, a plain contact card', async () => {
-    activeTemplate.value = TemplateName.Classic
+    await loadPortalSettings(replies, { [PortalSettingKey.Template]: TemplateName.Classic })
 
     const wrapper = await mountFaq()
 

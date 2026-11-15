@@ -296,7 +296,9 @@ variables:
     # images are built here from the synced checkout and tagged hostpanel/<svc>:stage
     # (prod.yml carries both `image:` and `build:`); only the infrastructure images are pulled.
     - export IMAGE_TAG=stage
-    - docker compose pull --ignore-buildable
+    # The pull stalls or ends half way on a slow registry link: scripts/pull-with-retry.sh limits each
+    # attempt and retries, with the numbers of the image push above. Worst case about 31 minutes.
+    - sh scripts/pull-with-retry.sh docker compose pull --ignore-buildable
     - docker compose build hostpanel-api hostpanel-client hostpanel-admin
     # Services named one by one to leave nginx out. It publishes 80 and 443, which
     # on this host belong to the shared reverse proxy, so it can never bind. The platform overlay parks it too.
@@ -394,6 +396,22 @@ installer:test:backup:
       changes:
         - install.sh
         - scripts/test-install-backup.sh
+
+# Runs the deploy helper tests: the bounded pull retry and the rollback guard of deploy:prod.
+deploy-scripts:test:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - sh scripts/test-pull-with-retry.sh
+    - sh scripts/test-deploy-rollback.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - .gitlab-ci.yml
+        - scripts/pull-with-retry.sh
+        - scripts/test-pull-with-retry.sh
+        - scripts/test-deploy-rollback.sh
 
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would
 # run nowhere), is in two, or when a shard names a folder that is gone. The same script checks the
@@ -700,7 +718,8 @@ deploy:demo:
     # except the demo ones, so a demo container cannot reach production through the proxy. If the subnet changes here,
     # change the `deny` rule of that edge proxy to the same value.
     - docker network inspect hostpanel_demo_edge >/dev/null 2>&1 || docker network create --subnet "$DEMO_EDGE_NETWORK_SUBNET" hostpanel_demo_edge
-    - docker compose pull --ignore-buildable
+    # Bounded pull, see the stage deploy: worst case about 31 minutes.
+    - sh scripts/pull-with-retry.sh docker compose pull --ignore-buildable
     - docker compose build hostpanel-demo-api hostpanel-demo-client hostpanel-demo-admin
     # Services named one by one: nginx is parked, and the demo's broker, redis and mailhog come with the api.
     - docker compose up -d hostpanel-db hostpanel-demo-api hostpanel-demo-client hostpanel-demo-admin
@@ -779,6 +798,10 @@ deploy:prod:
     # back when this deploy fails: the commit the stack was started from and the image each
     # service's container was created from.
     - mkdir -p "$DEPLOY_DIR/.deploy"
+    # The rollback in after_script runs only when this marker exists. It is written below, once the target
+    # commit is fetched, so a deploy that fails before that (nothing changed yet) leaves the running stack alone.
+    # A marker left by an earlier deploy must not count, so it is removed first.
+    - rm -f "$DEPLOY_DIR/.deploy/fetched"
     - git -C "$DEPLOY_DIR" rev-parse HEAD > "$DEPLOY_DIR/.deploy/previous-commit"
     - |
       : > "$DEPLOY_DIR/.deploy/previous-images"
@@ -792,6 +815,7 @@ deploy:prod:
       done
       cat "$DEPLOY_DIR/.deploy/previous-images"
     - !reference [.fetch-target-commit, script]
+    - touch "$DEPLOY_DIR/.deploy/fetched"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
     - git -C "$DEPLOY_DIR" submodule sync --recursive
@@ -816,7 +840,9 @@ deploy:prod:
     # the admin is deployed with the others so that its container is replaced too.
     # The images are the ones this pipeline built, pulled by IMAGE_TAG. --no-build makes it impossible for
     # compose to fall back to building on this host when a pull has failed to leave an image behind.
-    - docker compose pull hostpanel-api hostpanel-client hostpanel-admin
+    # The pull is limited per attempt and retried by scripts/pull-with-retry.sh with the numbers of the image push:
+    # two attempts of 900 s, so the worst case is about 31 minutes, inside the 60 minute job limit.
+    - sh scripts/pull-with-retry.sh docker compose pull hostpanel-api hostpanel-client hostpanel-admin
     - docker compose up -d --no-build hostpanel-api hostpanel-client hostpanel-admin
     # A deploy that reports success has not necessarily recreated a container. Compare the image
     # each container was created from against the one its tag points at now, and recreate only where
@@ -852,6 +878,9 @@ deploy:prod:
       docker logout "$CI_REGISTRY" || true
       [ "$CI_JOB_STATUS" = "failed" ] || exit 0
       state="$DEPLOY_DIR/.deploy"
+      # Without the marker the deploy never got past fetching the target commit: the checkout, the stack and the
+      # images are as they were, and a rollback would only recreate the running containers.
+      [ -e "$state/fetched" ] || { echo "The deploy failed before the target commit was fetched; nothing changed, the running stack is left alone."; exit 0; }
       [ -s "$state/previous-images" ] || { echo "Nothing recorded to roll back to."; exit 0; }
       cd "$DEPLOY_DIR"
       for svc in hostpanel-api hostpanel-client hostpanel-admin; do

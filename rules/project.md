@@ -2117,6 +2117,12 @@ backend on the shared network, and Docker's DNS round-robins between the two.
 
 ## Operational scripts at the repo root (`scripts/`)
 
+- `scripts/pull-with-retry.sh <pull command>` runs a pull with a per attempt `timeout -k` and a bounded number of
+  attempts (defaults 2, 900 s, 10 s pause, the same numbers as the image push loop in `.gitlab-ci.yml`, so change both
+  together; override with `PULL_ATTEMPTS`, `PULL_TIMEOUT_SECONDS`, `PULL_PAUSE_SECONDS`). Every `docker compose pull`
+  of the stage, demo and production deploys uses it, and `scripts/test-pull-with-retry.sh` tests it in the GitLab
+  `deploy-scripts:test` job, next to `scripts/test-deploy-rollback.sh`, which runs the real `after_script` of
+  `deploy:prod` against a fake docker and git.
 - `scripts/check-client-owner-ids.sh [container]`: read-only check of what `clients.UserId` points at
   (the local `AspNetUsers.Id` or the external identity provider's subject), run before and after switching
   `AUTH_MODE`. Defaults to the `hostpanel-db` container; on a remote host pipe it as
@@ -2188,7 +2194,9 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
 `admin:build:prod`, tagged with the commit id) and starts them with `--no-build`. It dumps the database with `pg_dump -Fc` into `backups/` **before**
 anything is rebuilt and fails the deploy if the dump fails: the API applies pending EF
 migrations on startup, so `up -d` is the moment the schema changes, and a deploy that cannot be
-undone should not start. The last ten dumps are kept.
+undone should not start. The last ten dumps are kept. The job removes `.deploy/fetched` at the start and writes it once the target
+commit is fetched; the failure handler rolls back only when that marker exists, because a deploy that failed before
+the fetch changed nothing and the running stack is left alone.
 
 **The host version is the release tag, never the Dockerfile placeholder.** The API image takes its version from the
 `VERSION` build argument (`HostVersion` in `backend/src/Directory.Build.props`), and the host reports it as its own

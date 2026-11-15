@@ -27,6 +27,7 @@ public sealed class ProductOptionConstraintTests(IntegrationTestFactory factory)
         await InsertOptionAsync(groupId, 0, 150m, 0m, nameof(ProductOptionPriceType.Fixed));
         await InsertOptionAsync(groupId, 1, 100m, 100m, nameof(ProductOptionPriceType.Percentage));
         await InsertGroupAsync(await SeedProductAsync(), 0, 1, 5);
+        await InsertGroupAsync(await SeedProductAsync(), 1, null, null);
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

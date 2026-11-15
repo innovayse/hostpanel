@@ -2196,12 +2196,34 @@ argument refuses every plugin that declares a range. The GitLab `.build-image` t
 once with `scripts/image-version.sh` (full clone, `GIT_DEPTH: "0"`) and passes it as `--build-arg VERSION` to the API
 image; the job fails when no release tag is reachable. The GitHub image publisher passes the tag it is run for.
 The mirror workflow pushes the `v*` tags with the branch, because GitLab can only see a tag that was mirrored; a
-tag push alone starts nothing, it travels with the next push to `main` or `develop`, and a release tag is never
-moved. **Releasing:** tag the release commit `vMAJOR.MINOR.PATCH` and push the tag (`git tag v0.6.0 <develop tip>`
-then `git push origin v0.6.0`) before the `develop` to `main` pull request is merged, and merge that pull request
-with a merge commit (never squash or rebase, which would leave the tag unreachable from `main`), so the
-production build already carries the new version. A tag made on `main` after the merge only reaches the next main
-build. Without a new tag the version stays at the last release plus the commit id.
+tag push alone starts nothing on GitLab, it travels with the next push to `main` or `develop`, and a release tag is
+never moved. Without a new tag the version stays at the last release plus the commit id.
+
+**Releasing, in this order:**
+
+1. **Tag the release commit** on the `develop` tip, `vMAJOR.MINOR.PATCH` with no pre-release suffix:
+   `git tag v0.6.0 <develop tip>`.
+2. **Push the tag:** `git push origin v0.6.0`. The tag must exist on GitHub before the merge, so the mirror carries
+   it to GitLab with the `main` push. The tag push also starts `publish-dockerhub.yml`, which refuses to publish
+   until the tagged commit is an ancestor of `main` and has a green CI run (see step 4).
+3. **Merge the `develop` to `main` pull request with a merge commit.** Never squash or rebase: both create new
+   commits, so the tagged commit would not be reachable from `main` and the image version would not see the tag.
+4. **The `main` build carries the version.** The mirror pushes `main` with the tags, and the GitLab API image job
+   (`backend:build:api:prod`) builds with `scripts/image-version.sh`, for example `0.6.0+1a2b3c4d`. When the `main` CI
+   is green, re-run the failed Docker Hub publish run of the tag: its commit is now on `main`, so it passes the
+   check and pushes `api-0.6.0`, `client-0.6.0` and `admin-0.6.0` with the moving `-latest` tags.
+5. **Deploy:** play `deploy:prod` (manual) once every test of the `main` pipeline is green. It pulls the images that
+   pipeline built.
+
+**When the tag is missing.** If step 1 or 2 was skipped, or the tag was made on `main` after the merge, the API image
+job fails with `image-version: no release tag vMAJOR.MINOR.PATCH is reachable from HEAD`, the production images are
+not built and `deploy:prod` has nothing to pull. Nothing is ever built with the `0.0.0-dev` placeholder. To recover:
+
+1. Tag the commit the release is built from (it must be reachable from `main`) and push the tag:
+   `git tag v0.6.0 <that commit>`, then `git push origin v0.6.0`.
+2. Re-run the failed `Mirror to GitLab` run of `main` on GitHub, so the tag reaches GitLab. The tag push alone does not.
+3. Retry the failed image job in the existing GitLab pipeline of `main`, then go on with the Docker Hub re-run and the
+   deploy from the list above. Never move or delete a pushed release tag to fix a mistake: cut the next patch version.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on
 these hosts belong to the host's shared reverse proxy; naming it would fail the whole deploy.

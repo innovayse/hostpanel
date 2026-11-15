@@ -20,13 +20,6 @@ public sealed class ManualTimeProvider : TimeProvider
         _zone = zone;
     }
 
-    /// <summary>
-    /// Creates a clock standing at the real present (<see cref="TestMoments.Present"/>, which says why), for a host that
-    /// runs a recurring job.
-    /// </summary>
-    /// <returns>A clock that starts at the system's current moment and is moved by hand from there.</returns>
-    public static ManualTimeProvider AtPresent() => new(TestMoments.Present());
-
     /// <inheritdoc/>
     public override TimeZoneInfo LocalTimeZone => _zone ?? base.LocalTimeZone;
 

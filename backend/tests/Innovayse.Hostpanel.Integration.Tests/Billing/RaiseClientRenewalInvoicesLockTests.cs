@@ -8,7 +8,6 @@ using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Shared.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -24,8 +23,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Builds a host whose domain-event gate is suppressed, so only what the command itself does is observed.</summary>
-    /// <returns>The isolated host.</returns>
-    private WebApplicationFactory<Program> Host() => EventHandlerTestHost.WithFakeRelay(factory, new FakeEmailSender());
+    /// <returns>The isolated host, on a clock standing at <see cref="TestMoments.Seeded"/>.</returns>
+    private ClockedHost Host() => new(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, new FakeEmailSender()));
 
     /// <summary>Seeds a client with one active, auto-renewing service due inside the lead time.</summary>
     /// <param name="context">The data context to seed through.</param>
@@ -53,12 +52,12 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     }
 
     /// <summary>Counts the client's renewal invoices.</summary>
-    /// <param name="host">The host to read through.</param>
+    /// <param name="services">The services of the host to read through.</param>
     /// <param name="clientId">The client.</param>
     /// <returns>How many invoices exist.</returns>
-    private static async Task<int> InvoiceCountAsync(WebApplicationFactory<Program> host, int clientId)
+    private static async Task<int> InvoiceCountAsync(IServiceProvider services, int clientId)
     {
-        using var scope = host.Services.CreateScope();
+        using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         return await context.Invoices.AsNoTracking().CountAsync(i => i.ClientId == clientId);
     }
@@ -68,8 +67,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     [Fact]
     public async Task ConcurrentCallers_RaiseOneInvoice()
     {
-        var host = Host();
-        using var clocked = new ClockedHost(host);
+        using var clocked = Host();
         int clientId;
         using (var seed = clocked.Services.CreateScope())
         {
@@ -86,7 +84,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
 
         results.Should().OnlyContain(r => r.IsSuccess);
         results.Sum(r => r.Value).Should().Be(1, "only the caller that held the lock first had anything to raise");
-        (await InvoiceCountAsync(host, clientId)).Should().Be(1);
+        (await InvoiceCountAsync(clocked.Services, clientId)).Should().Be(1);
     }
 
     /// <summary>
@@ -97,8 +95,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     [Fact]
     public async Task ACaller_WaitsWhileTheClientLockIsHeld()
     {
-        var host = Host();
-        using var clocked = new ClockedHost(host);
+        using var clocked = Host();
         using var holderScope = clocked.Services.CreateScope();
         var holder = holderScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await SeedDueClientAsync(holder, clocked.Clock.GetUtcNow());
@@ -117,7 +114,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
 
             var finishedEarly = await Task.WhenAny(waiting, Task.Delay(TimeSpan.FromSeconds(2))) == waiting;
             finishedEarly.Should().BeFalse("the lock is held, so the caller must wait for it");
-            (await InvoiceCountAsync(host, clientId)).Should().Be(0);
+            (await InvoiceCountAsync(clocked.Services, clientId)).Should().Be(0);
 
             await transaction.CommitAsync(CancellationToken.None);
         }
@@ -125,7 +122,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
         var result = await waiting.WaitAsync(TimeSpan.FromSeconds(30));
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(1);
-        (await InvoiceCountAsync(host, clientId)).Should().Be(1);
+        (await InvoiceCountAsync(clocked.Services, clientId)).Should().Be(1);
     }
 
     /// <summary>
@@ -136,12 +133,11 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     [Fact]
     public async Task TheBalance_IsReadAfterTheLock_NotBeforeTheWait()
     {
-        var host = Host();
-        using var clocked = new ClockedHost(host);
+        using var clocked = Host();
         using var holderScope = clocked.Services.CreateScope();
         var holder = holderScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await SeedDueClientAsync(holder, clocked.Clock.GetUtcNow());
-        await BillingTestSeeds.GiveCreditAsync(host, clientId, 5m);
+        await BillingTestSeeds.GiveCreditAsync(factory, clientId, 5m);
 
         Task<Result<int>> waiting;
         await using (var transaction = await holder.BeginTransactionAsync(CancellationToken.None))

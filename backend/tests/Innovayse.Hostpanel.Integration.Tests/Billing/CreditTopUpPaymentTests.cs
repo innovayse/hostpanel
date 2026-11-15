@@ -104,7 +104,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     {
         var sender = new FakeEmailSender();
         var host = BankTransferTestSeeds.HostWithMail(factory, sender);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BankTransferTestSeeds.EnableAsync(admin);
         var (owner, clientId, _, email) = await BillingTestSeeds.RegisterClientAsync(factory, host, "topup-bank");
         var invoiceId = await CreditTestSeeds.TopUpAsync(owner, 40m);
@@ -353,7 +353,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
         var resolver = new FakePaymentPluginResolver();
         PaidPlugin(4000, resolver);
         var host = GatewayHost(resolver);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "topup-gwrace");
         var invoiceId = await CreditTestSeeds.TopUpAsync(owner, 40m);
         await StartAsync(owner, invoiceId);

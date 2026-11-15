@@ -11,10 +11,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 /// A registrar that loses a renewal race on purpose: while it is asked to renew a domain set up with
 /// <see cref="Race"/>, another attempt of the same order line records its renewal first (saved through a scope of its
 /// own), and this call then answers with the expiry the race names. Top-level and public so Wolverine's generated handler
-/// code can name it; it takes no constructor dependency, because Wolverine refuses a handler whose services it would have to
-/// locate at run time, so the race carries the host the winner saves through.
+/// code can name it; its only constructor dependency is the host clock (a singleton, which Wolverine builds into its generated code), never a
+/// service it would have to locate at run time, which Wolverine refuses, so the race carries the host the winner saves through.
 /// </summary>
-public sealed class RacingRenewalRegistrar : TestRegistrar
+/// <param name="time">The clock of the host the registrar answers for.</param>
+public sealed class RacingRenewalRegistrar(TimeProvider time) : TestRegistrar(time)
 {
     /// <summary>The races set up per domain name: the host, the order line, the winner's stored expiry and this call's reported one.</summary>
     private static readonly ConcurrentDictionary<string, (IServiceProvider Services, int OrderItemId, DateTimeOffset WinnerExpiresAt, DateTimeOffset ReportedExpiresAt)> Races = new();

@@ -510,7 +510,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var fulfilment = Task.Run(() => handler.HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None));
         await gateway.RefundStarted.Task.WaitAsync(TimeSpan.FromSeconds(60));
         await OrdersTestReads.ReleaseDomainAsync(host.Services, line.Domain!);
-        var admin = await OrdersTestReads.AdminOfAsync(host, factory);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var retry = await admin.PostAsync($"/api/orders/{orderId}/items/{line.Id}/retry", content: null);
 
         retry.StatusCode.Should().Be(HttpStatusCode.Conflict);

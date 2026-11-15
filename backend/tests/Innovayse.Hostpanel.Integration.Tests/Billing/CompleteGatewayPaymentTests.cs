@@ -60,7 +60,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     private async Task<int> CreateInvoiceWithSessionAsync(
         WebApplicationFactory<Program> host, HttpClient client, int clientId, FakePaymentPlugin plugin)
     {
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         plugin.CreatePaymentResult = new("gw-1", "https://pg.example/pay?mdOrder=gw-1");
@@ -99,7 +99,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("state").GetString().Should().Be(nameof(GatewayCompletionState.Paid));
 
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var fetchedBody = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         fetchedBody.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Paid));
@@ -140,7 +140,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.GATEWAY_PAYMENT_MISMATCH);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var fetchedBody = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         fetchedBody.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Unpaid));
@@ -211,7 +211,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("state").GetString().Should().Be(nameof(GatewayCompletionState.Pending));
 
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var fetched = await admin.GetAsync($"/api/billing/{invoiceId}");
         using var fetchedBody = JsonDocument.Parse(await fetched.Content.ReadAsStringAsync());
         fetchedBody.RootElement.GetProperty("status").GetString().Should().Be(nameof(InvoiceStatus.Unpaid));
@@ -502,7 +502,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-admin-then-gateway");
         var invoiceId = await CreateInvoiceWithSessionAsync(host, client, clientId, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BillingTestSeeds.MarkPaidAsync(admin, invoiceId, 10m);
 
         var gatewayReference = $"ref-{Guid.NewGuid():N}";

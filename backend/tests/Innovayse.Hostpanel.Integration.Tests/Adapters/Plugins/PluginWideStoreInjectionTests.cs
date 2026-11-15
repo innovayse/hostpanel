@@ -165,8 +165,8 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
             await (await ActivateAsync(db, otherId)).Store.SetAsync("k", "kept", CancellationToken.None);
         }
 
-        // Real time: the purge removes what was written before this moment, and the rows above were stamped by the shared host on the system clock.
-        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, TestMoments.Present()));
+        // Real time: the purge removes what was written before this moment, and the rows above were stamped by the shared host on the system clock. The present is cut to whole seconds, so a second is added to land after them.
+        await factory.Services.PublishAndWaitAsync(new PluginDataPurgeRequestedEvent(pluginId, TestMoments.Present().AddSeconds(1)));
 
         using var check = factory.Services.CreateScope();
         var context = check.ServiceProvider.GetRequiredService<AppDbContext>();

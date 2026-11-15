@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -37,7 +36,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
     public async Task AnswersOneEntryPerDayOfThePeriodAsync(string period, int days)
     {
         using var host = new ClockedHost(factory, At(2040, 6, 15, 12));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period={period}");
 
@@ -59,7 +58,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
     public async Task DefaultsToThirtyDaysAsync()
     {
         using var host = new ClockedHost(factory, At(2040, 6, 15, 12));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>(Route);
 
@@ -100,7 +99,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         await SeedPaidInvoiceAsync(host, 100m, At(2041, 6, 10, 10));
         await SeedPaidInvoiceAsync(host, 50m, At(2041, 6, 10, 23));
         await SeedPaidInvoiceAsync(host, 100m, At(2041, 5, 1, 9));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var income = (await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30")).GetProperty("income");
 
@@ -121,7 +120,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
     {
         using var host = new ClockedHost(factory, At(2045, 6, 15, 12));
         await SeedPaidInvoiceAsync(host, 80m, At(2045, 5, 1, 9));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var short30 = (await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30")).GetProperty("income");
         var long90 = (await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days90")).GetProperty("income");
@@ -139,7 +138,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         var zone = TimeZoneInfo.CreateCustomTimeZone("Host", TimeSpan.FromHours(4), "Host", "Host");
         using var host = new ClockedHost(factory, At(2044, 6, 15, 22), zone);
         await SeedPaidInvoiceAsync(host, 100m, At(2044, 6, 15, 21));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var income = (await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30")).GetProperty("income");
 
@@ -163,7 +162,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         await SeedInvoiceAsync(host, 25m, At(2042, 6, 13, 9), invoice => invoice.MarkOverdue(At(2042, 6, 14, 9)));
         await SeedInvoiceAsync(host, 10m, At(2042, 6, 13, 9), invoice => invoice.Cancel(At(2042, 6, 14, 9)));
         await SeedInvoiceAsync(host, 999m, At(2042, 2, 1, 9), invoice => { });
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
 
@@ -185,7 +184,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         await SeedOrderAsync(host, oldClient, At(2043, 6, 14, 9));
         await SeedOrderAsync(host, oldClient, At(2043, 6, 14, 10), order => order.Cancel());
         await SeedOrderAsync(host, oldClient, At(2043, 5, 1, 9));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var short30 = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
         var long90 = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days90");
@@ -241,7 +240,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         using var host = new ClockedHost(factory, At(2046, 6, 15, 12));
         await SeedRefundedInvoiceAsync(host, 200m, At(2046, 6, 10, 10), 50m, At(2046, 6, 12, 10));
         await SeedRefundedInvoiceAsync(host, 100m, At(2046, 5, 2, 10), 100m, At(2046, 5, 3, 10));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
 
@@ -278,7 +277,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
             await SeedPaidInvoiceAsync(host, 1m, At(2047, 5, day, 10), IncomeTestSeeds.ForeignCurrency);
         }
 
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var income = (await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30")).GetProperty("income");
 
@@ -298,7 +297,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         using var host = new ClockedHost(factory, At(2051, 6, 15, 12));
         await SeedPaidInvoiceAsync(host, 100m, At(2051, 6, 10, 9));
         await SeedPaidInvoiceAsync(host, 40_000m, At(2051, 6, 10, 11), IncomeTestSeeds.ForeignCurrency);
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
 
@@ -320,7 +319,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         await SeedOrderAsync(host, client, At(2052, 6, 14, 9));
         await SeedOrderAsync(host, client, At(2052, 6, 14, 10), order => order.MarkFraud());
         await SeedOrderAsync(host, client, At(2052, 6, 14, 11), order => order.Cancel());
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
 
@@ -339,7 +338,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         await SeedClientAsync(host, At(2049, 6, 15, 21));
         await SeedOrderAsync(host, early, At(2049, 6, 15, 19));
         await SeedOrderAsync(host, early, At(2049, 6, 15, 21));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
 
@@ -359,7 +358,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         await SeedClientAsync(host, new DateTimeOffset(2048, 6, 15, 18, 15, 0, TimeSpan.Zero));
         await SeedClientAsync(host, new DateTimeOffset(2048, 6, 15, 18, 45, 0, TimeSpan.Zero));
         await SeedPaidInvoiceAsync(host, 70m, new DateTimeOffset(2048, 6, 15, 18, 45, 0, TimeSpan.Zero));
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
 
@@ -382,7 +381,7 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
         // The window starts at the local midnight of 18 May, 20:00 UTC the evening before.
         await SeedInvoiceAsync(host, 11m, new DateTimeOffset(2050, 5, 17, 19, 30, 0, TimeSpan.Zero), invoice => { });
         await SeedInvoiceAsync(host, 22m, new DateTimeOffset(2050, 5, 17, 20, 30, 0, TimeSpan.Zero), invoice => { });
-        var admin = await AdminClientAsync(host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var body = await admin.GetFromJsonAsync<JsonElement>($"{Route}?period=Days30");
 
@@ -440,16 +439,6 @@ public sealed class GetDashboardChartsTests(IntegrationTestFactory factory) : IC
     {
         var body = await admin.GetFromJsonAsync<JsonElement>(Route);
         return [.. body.GetProperty("openTickets").EnumerateArray().Select(p => (p.GetProperty("priority").GetString()!, p.GetProperty("count").GetInt32()))];
-    }
-
-    /// <summary>A client for the clocked host carrying the seeded admin's bearer token.</summary>
-    /// <param name="host">The clocked host.</param>
-    /// <returns>An authenticated client.</returns>
-    private async Task<HttpClient> AdminClientAsync(ClockedHost host)
-    {
-        var client = host.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
-        return client;
     }
 
     /// <summary>Creates a client created at a moment.</summary>

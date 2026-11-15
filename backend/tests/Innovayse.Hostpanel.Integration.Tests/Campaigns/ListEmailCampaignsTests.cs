@@ -37,7 +37,7 @@ public sealed class ListEmailCampaignsTests(IntegrationTestFactory factory) : IC
     public async Task List_RowCarriesItsOwnStats()
     {
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var token = Guid.NewGuid().ToString("N")[..10];
         var draft = await CampaignTestSeeds.CreateAsync(client, subject: $"{token} draft row");
         var sending = await CampaignTestSeeds.CreateAsync(client, subject: $"{token} sending row");

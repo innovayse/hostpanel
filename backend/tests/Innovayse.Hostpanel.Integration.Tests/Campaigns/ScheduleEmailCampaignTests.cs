@@ -18,7 +18,7 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     public async Task Schedule_AtAFutureMoment_QueuesTheCampaign()
     {
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
         var at = host.Clock.GetUtcNow().AddDays(2);
 
@@ -36,7 +36,7 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     public async Task Schedule_WithoutAMoment_IsDueNow()
     {
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
 
         var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = (DateTimeOffset?)null });
@@ -53,7 +53,7 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     public async Task Schedule_AtAPastMoment_RefusesWithSchedulePastCode()
     {
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
 
         var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = host.Clock.GetUtcNow().AddDays(-1) });
@@ -70,7 +70,7 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     public async Task Schedule_WithoutSegment_RefusesWithNoSegmentCode()
     {
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client, segments: []);
 
         var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = host.Clock.GetUtcNow().AddDays(1) });
@@ -98,7 +98,7 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     public async Task Schedule_AlreadyScheduled_RefusesWithNotDraftCode()
     {
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
         await CampaignTestSeeds.ScheduleAsync(client, id);
 

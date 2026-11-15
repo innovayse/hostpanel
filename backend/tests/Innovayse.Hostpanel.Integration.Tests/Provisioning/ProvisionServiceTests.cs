@@ -377,7 +377,8 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         var stored = await ReloadAsync(serviceId);
         stored.NextRenewalAt.Should().NotBeNull();
         stored.NextRenewalAt!.Value.Should().BeOnOrAfter(before.AddMonths(1).AddSeconds(-1));
-        stored.NextRenewalAt.Value.Should().BeOnOrBefore(TestMoments.Present().AddMonths(1));
+        // The present is cut to whole seconds, so the bound read after the call is up to a second behind the stamp.
+        stored.NextRenewalAt.Value.Should().BeOnOrBefore(TestMoments.Present().AddSeconds(1).AddMonths(1));
     }
 
     /// <summary>Reads a service back from the database in a fresh scope.</summary>

@@ -6,8 +6,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 /// <summary>
 /// An <see cref="IRegistrarProvider"/> standing in for a real registrar in the TLD import and
-/// sync tests: every member but <see cref="GetTldPricingAsync"/> answers a trivial success no
-/// test here reads, and the pricing catalogue a test sees is whatever it assigned to
+/// sync tests: every member but <see cref="GetTldPricingAsync"/> answers a trivial success that carries no
+/// date (no test here reads one, and a date would need a clock this fake has no host for), and the pricing catalogue a test sees is whatever it assigned to
 /// <see cref="PricingToReturn"/> beforehand. A fake port, not a mock of our own code: the real
 /// registrar is an upstream HTTP service this backend does not own.
 /// </summary>
@@ -21,16 +21,15 @@ public sealed class FakeTldPricingProvider : IRegistrarProvider
 
     /// <inheritdoc/>
     public Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct) =>
-        Task.FromResult(new RegistrarResult(true, "FAKE-REF", TestMoments.Seeded.AddYears(1), null));
+        Task.FromResult(new RegistrarResult(true, "FAKE-REF", null, null));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> TransferAsync(DomainTransferOrder request, CancellationToken ct) =>
-        Task.FromResult(new RegistrarResult(true, "FAKE-TRANSFER-REF", TestMoments.Seeded.AddYears(1), null));
+        Task.FromResult(new RegistrarResult(true, "FAKE-TRANSFER-REF", null, null));
 
     /// <inheritdoc/>
-    /// <remarks>The domains the tests seed expire a year after <see cref="TestMoments.Seeded"/>, so a renewal reports that year plus the years bought.</remarks>
     public Task<RegistrarResult> RenewAsync(DomainRenewalOrder request, CancellationToken ct) =>
-        Task.FromResult(new RegistrarResult(true, "FAKE-RENEW-REF", TestMoments.Seeded.AddYears(1 + request.Years), null));
+        Task.FromResult(new RegistrarResult(true, "FAKE-RENEW-REF", null, null));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> CancelTransferAsync(DomainRef domain, CancellationToken ct) =>
@@ -109,7 +108,7 @@ public sealed class FakeTldPricingProvider : IRegistrarProvider
 
     /// <inheritdoc/>
     public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct) =>
-        Task.FromResult(new RegistrarResult(true, domainName, TestMoments.Seeded.AddYears(1), null));
+        Task.FromResult(new RegistrarResult(true, domainName, null, null));
 
     /// <inheritdoc/>
     public Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct) => Task.FromResult<WhoisInfo?>(null);

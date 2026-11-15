@@ -54,7 +54,7 @@ public sealed class CompleteGatewayPaymentReturnTests(IntegrationTestFactory fac
         resolver.Register(Module, plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, label);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         var started = await client.PostAsJsonAsync(
             $"/api/me/invoices/{invoiceId}/gateway-payment/start",

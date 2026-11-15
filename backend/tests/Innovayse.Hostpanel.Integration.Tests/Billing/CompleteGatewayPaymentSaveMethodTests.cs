@@ -156,12 +156,14 @@ public sealed class CompleteGatewayPaymentSaveMethodTests(IntegrationTestFactory
     {
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, firstInvoiceId) = await scenario.SeedClientWithInvoiceAsync("save-older");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var secondInvoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, signedIn.ClientId, 15m);
         scenario.Plugin.MethodOnStatus = StoredMethod;
         var older = await StartSavingAsync(scenario, signedIn, firstInvoiceId);
         (await SavingGatewayScenario.CompleteAsync(signedIn.Client, firstInvoiceId)).StatusCode.Should().Be(HttpStatusCode.OK);
         await scenario.MakeDefaultAsync(older.Id);
+        // The scenario clock stands still: the newer consent has to be recorded later than the older one for the older to be the older.
+        scenario.Clock.Advance(TimeSpan.FromMinutes(1));
         var newer = await StartSavingAsync(scenario, signedIn, secondInvoiceId);
 
         var response = await SavingGatewayScenario.CompleteAsync(signedIn.Client, secondInvoiceId);
@@ -206,7 +208,7 @@ public sealed class CompleteGatewayPaymentSaveMethodTests(IntegrationTestFactory
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-reconcile");
         var started = await StartSavingAsync(scenario, signedIn, invoiceId);
-        await scenario.BackdateSessionAsync(invoiceId, TestMoments.Seeded);
+        await scenario.BackdateSessionAsync(invoiceId, scenario.Clock.GetUtcNow().AddHours(-1));
         scenario.Plugin.MethodOnStatus = StoredMethod;
 
         using var scope = scenario.Host.Services.CreateScope();

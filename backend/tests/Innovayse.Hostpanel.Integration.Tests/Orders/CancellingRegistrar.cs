@@ -8,7 +8,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 /// call runs, and the call throws the cancellation it observes. Top-level and public so Wolverine's generated handler code
 /// can name it; the source is static because the registrar is scoped and a fresh instance serves every handler.
 /// </summary>
-public sealed class CancellingRegistrar : TestRegistrar
+/// <param name="time">The clock of the host the registrar answers for.</param>
+public sealed class CancellingRegistrar(TimeProvider time) : TestRegistrar(time)
 {
     /// <summary>The source the running test cancels, from inside the registration call; set by the test before it dispatches.</summary>
     public static CancellationTokenSource? Source { get; set; }

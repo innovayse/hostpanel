@@ -18,7 +18,7 @@ public sealed class GetEmailCampaignTests(IntegrationTestFactory factory) : ICla
     public async Task Get_ReturnsTheCampaignWithZeroStats()
     {
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
 
         var campaign = await client.GetFromJsonAsync<JsonElement>($"{CampaignTestSeeds.Route}/{id}");

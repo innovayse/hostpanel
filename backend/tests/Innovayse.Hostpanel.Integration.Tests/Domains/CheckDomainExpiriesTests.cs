@@ -26,7 +26,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_MarksAnOverdueDomainExpiredAsync()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -51,7 +51,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_RecordsAWarningReminderForASoonExpiringDomainAsync()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -79,7 +79,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_RemindsAgainInTheNextExpiryCycleAsync()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -106,7 +106,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_SendsNoWarningWhileARenewalInvoiceIsOpenAsync()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -127,7 +127,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_WarnsAnAutoRenewDomainWithNoRenewalInvoiceAsync()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -144,7 +144,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_WarnsAnAutoRenewDomainWhoseRenewalInvoiceWasCancelledAsync()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -165,7 +165,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_WarnsDespiteAnOpenInvoiceWhenRemindersAreClearedAsync()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -246,7 +246,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_OneDomainThatCannotBeMarked_StopsNeitherTheOthersNorTheWarningsAsync()
     {
-        var now = TestMoments.Present();
+        var now = TestMoments.Seeded;
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(
             factory,
@@ -275,7 +275,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_OneWarningThatCannotBeSaved_DoesNotStopTheNextAsync()
     {
-        var now = TestMoments.Present();
+        var now = TestMoments.Seeded;
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(
             factory,

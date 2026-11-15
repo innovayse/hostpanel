@@ -41,7 +41,7 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
             invoiceId = invoice.Id;
         }
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/aging-invoices?pageSize=200");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);

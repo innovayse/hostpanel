@@ -102,7 +102,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(
             factory,
-            ManualTimeProvider.AtPresent(),
+            new ManualTimeProvider(TestMoments.Seeded),
             tracker => tracker.Entries<RegisteredDomain>().Any(e => e.State == EntityState.Modified && e.Entity.Id == poisonedId));
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

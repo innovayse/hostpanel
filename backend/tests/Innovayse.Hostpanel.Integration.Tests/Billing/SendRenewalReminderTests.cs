@@ -37,7 +37,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task DueInvoice_SendsOnceAndRecords()
     {
         var sender = new FakeEmailSender();
-        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var host = new ClockedHost(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender));
         using var scope = host.Services.CreateScope();
         var (email, invoiceId) = await SeedAsync(scope.ServiceProvider);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -62,7 +62,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task AlreadyRecorded_SucceedsWithoutMail()
     {
         var sender = new FakeEmailSender();
-        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var host = new ClockedHost(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender));
         using var scope = host.Services.CreateScope();
         var (email, invoiceId) = await SeedAsync(scope.ServiceProvider);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -82,7 +82,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task UnknownInvoice_IsSuccess()
     {
         var sender = new FakeEmailSender();
-        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var host = new ClockedHost(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender));
         using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
@@ -100,7 +100,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task OverdueNoticesOff_SendsNothingButRecordsTheThreshold()
     {
         var sender = new FakeEmailSender();
-        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var host = new ClockedHost(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender));
         using var scope = host.Services.CreateScope();
         var (email, invoiceId) = await SeedAsync(scope.ServiceProvider);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

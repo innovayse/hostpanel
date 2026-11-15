@@ -48,7 +48,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     {
         var sender = new FakeEmailSender();
         var host = BankTransferTestSeeds.HostWithMail(factory, sender);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BankTransferTestSeeds.EnableAsync(admin);
         var (owner, clientId, _, email) = await BillingTestSeeds.RegisterClientAsync(factory, host, "bt-confirm");
         var invoiceId = await BankTransferTestSeeds.PendingInvoiceAsync(admin, owner, clientId, 100m);

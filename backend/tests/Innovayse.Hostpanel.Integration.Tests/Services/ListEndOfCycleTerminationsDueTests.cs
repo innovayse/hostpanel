@@ -23,9 +23,9 @@ public sealed class ListEndOfCycleTerminationsDueTests(IntegrationTestFactory fa
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
         var dueBy = TestMoments.Seeded;
-        var ended = await RenewalTestSeeds.SeedActiveServiceAsync(host, dueBy.AddDays(-1));
-        var running = await RenewalTestSeeds.SeedActiveServiceAsync(host, dueBy.AddDays(10));
-        var renewing = await RenewalTestSeeds.SeedActiveServiceAsync(host, dueBy.AddDays(-1));
+        var ended = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, dueBy.AddDays(-1));
+        var running = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, dueBy.AddDays(10));
+        var renewing = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, dueBy.AddDays(-1));
         await SetToTerminateAsync(host, ended.ServiceId);
         await SetToTerminateAsync(host, running.ServiceId);
 

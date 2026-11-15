@@ -27,7 +27,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         await ReportsTestSeeds.CreatePaidInvoiceAsync(factory, clientId, 19m, 100m);
 
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/vat-moss");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -49,7 +49,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         await ReportsTestSeeds.CreatePaidInvoiceAsync(factory, clientId, 8m, 100m);
 
         using var host = new ClockedHost(factory);
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/vat-moss");
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -76,7 +76,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
             await db.SaveChangesAsync();
         }
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/vat-moss");
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();

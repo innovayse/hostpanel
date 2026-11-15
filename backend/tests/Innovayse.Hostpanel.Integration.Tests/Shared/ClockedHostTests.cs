@@ -1,7 +1,9 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Domains.Common;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Innovayse.Hostpanel.Integration.Tests.Time;
+namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
 /// <summary>
 /// The clocked test host stands at the shared fixed moment, answers it through <see cref="IClock"/> and follows the
@@ -34,6 +36,34 @@ public sealed class ClockedHostTests(IntegrationTestFactory factory) : IClassFix
 
         host.Clock.Advance(TimeSpan.FromHours(1));
         clock.UtcNow.Should().Be(moment.AddHours(1));
+    }
+
+    /// <summary>What the test configures on the host reaches it, and the clock is still the test's.</summary>
+    [Fact]
+    public void Configure_IsAppliedToTheHost()
+    {
+        using var host = new ClockedHost(factory, configure: builder => builder.UseSetting("Orders:InvoicePaymentTermDays", "45"));
+        using var scope = host.Services.CreateScope();
+
+        scope.ServiceProvider.GetRequiredService<IConfiguration>()["Orders:InvoicePaymentTermDays"].Should().Be("45");
+        scope.ServiceProvider.GetRequiredService<IClock>().UtcNow.Should().Be(TestMoments.Seeded);
+    }
+
+    /// <summary>The registrar stub reports its dates from its host's clock, so a clocked host and the shared host each get their own.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RegistrarStub_ReportsDatesFromTheClockOfItsHost()
+    {
+        var order = new DomainRenewalOrder("clock.test", "REF", Years: 2);
+        using var host = new ClockedHost(factory);
+        using var clocked = host.Services.CreateScope();
+        using var shared = factory.Services.CreateScope();
+
+        var onClockedHost = await clocked.ServiceProvider.GetRequiredService<IRegistrarProvider>().RenewAsync(order, CancellationToken.None);
+        var onSharedHost = await shared.ServiceProvider.GetRequiredService<IRegistrarProvider>().RenewAsync(order, CancellationToken.None);
+
+        onClockedHost.ExpiresAt.Should().Be(TestMoments.Seeded.AddYears(3));
+        onSharedHost.ExpiresAt.Should().BeCloseTo(TestMoments.Present().AddYears(3), TimeSpan.FromMinutes(1));
     }
 
     /// <summary>The shared host keeps the system clock, so tokens and cookies minted against the real time stay valid.</summary>

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -38,6 +39,7 @@ public sealed class SavingGatewayScenario : IDisposable
     {
         _factory = factory;
         Plugin = new SavingStoredCredentialPlugin();
+        Clock = new ManualTimeProvider(TestMoments.Seeded);
         var payments = new FakePaymentPluginResolver();
         payments.Register(Module, storedCredentials ? Plugin : new PaymentOnlyPlugin(Plugin));
         var stored = new FakeStoredCredentialPluginResolver();
@@ -51,6 +53,8 @@ public sealed class SavingGatewayScenario : IDisposable
             {
                 services.AddSingleton<IPaymentPluginResolver>(payments);
                 services.AddSingleton<IStoredCredentialPluginResolver>(stored);
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton<TimeProvider>(Clock);
                 if (saveInterceptor is not null)
                 {
                     services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(saveInterceptor));
@@ -64,6 +68,9 @@ public sealed class SavingGatewayScenario : IDisposable
     /// <summary>Gets the gateway the host serves, to read what the host asked of it and to script what it answers.</summary>
     public SavingStoredCredentialPlugin Plugin { get; }
 
+    /// <summary>Gets the clock the host reads, standing at <see cref="TestMoments.Seeded"/>: a session started now is open, one backdated is older.</summary>
+    public ManualTimeProvider Clock { get; }
+
     /// <summary>Gets the test host whose payment plugin resolvers serve <see cref="Plugin"/>.</summary>
     public WebApplicationFactory<Program> Host { get; }
 
@@ -74,7 +81,7 @@ public sealed class SavingGatewayScenario : IDisposable
     public async Task<(SignedInClient Client, int InvoiceId)> SeedClientWithInvoiceAsync(string label, decimal amount = 10m)
     {
         var signedIn = await BillingTestSeeds.RegisterClientAsync(_factory, Host, label);
-        var admin = await BillingTestSeeds.AdminClientAsync(_factory, Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(_factory, Host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, signedIn.ClientId, amount);
         return (signedIn, invoiceId);
     }

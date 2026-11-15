@@ -202,7 +202,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
         (await setupHttp.PostAsync($"/api/provisioning/{serviceId}/provision", null)).EnsureSuccessStatusCode();
         var provider = new FakeProvisioningProvider();
         var host = ProvisioningTestSeeds.HostWithFakeProvider(factory, provider);
-        var http = await ProvisioningTestSeeds.AdminClientOnAsync(factory, host);
+        var http = await AuthTestSeeds.AdminClientAsync(factory, host);
         HttpResponseMessage? response = null;
 
         await host.Services.GetRequiredService<IHost>().TrackActivity()

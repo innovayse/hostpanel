@@ -108,7 +108,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task OneInvoiceThatCannotBeMarked_DoesNotStopTheOthers()
     {
-        var clock = ManualTimeProvider.AtPresent();
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         var now = clock.GetUtcNow();
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(

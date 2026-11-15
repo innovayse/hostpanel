@@ -48,7 +48,7 @@ public sealed class ListOverdueSuspensionsPastLimitTests(IntegrationTestFactory 
     private static async Task<int> SeedSuspendedAsync(
         WebApplicationFactory<Program> host, DateTimeOffset suspendedAt, SuspensionSource source, bool autoRenew)
     {
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, suspendedAt.AddDays(30));
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, suspendedAt.AddDays(30));
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var service = await context.ClientServices.SingleAsync(s => s.Id == seeded.ServiceId);

@@ -92,7 +92,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     public async Task Pass_RecordsTheCheck_AndKeepsAHealthyComponentOperational()
     {
         var probe = new FakeStatusProbe();
-        var host = HostWith(probe, ManualTimeProvider.AtPresent());
+        var host = HostWith(probe, new ManualTimeProvider(TestMoments.Seeded));
         var url = $"https://{Guid.NewGuid():N}.example.test/health";
         var id = await SeedComponentAsync(host, url, 2, enabled: true);
 
@@ -112,7 +112,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     public async Task Pass_SkipsAComponentWhoseMonitoringIsOff()
     {
         var probe = new FakeStatusProbe();
-        var host = HostWith(probe, ManualTimeProvider.AtPresent());
+        var host = HostWith(probe, new ManualTimeProvider(TestMoments.Seeded));
         var url = $"https://{Guid.NewGuid():N}.example.test/health";
         await SeedComponentAsync(host, url, 2, enabled: false);
 
@@ -130,7 +130,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     public async Task Pass_OpensOneIncident_WhenFailuresReachTheThreshold()
     {
         var probe = new FakeStatusProbe();
-        var host = HostWith(probe, ManualTimeProvider.AtPresent());
+        var host = HostWith(probe, new ManualTimeProvider(TestMoments.Seeded));
         var url = $"https://{Guid.NewGuid():N}.example.test/health";
         var id = await SeedComponentAsync(host, url, 2, enabled: true);
         probe.Fail(url);
@@ -158,7 +158,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     public async Task Pass_ResolvesTheIncident_WhenTheComponentRecovers()
     {
         var probe = new FakeStatusProbe();
-        var host = HostWith(probe, ManualTimeProvider.AtPresent());
+        var host = HostWith(probe, new ManualTimeProvider(TestMoments.Seeded));
         var url = $"https://{Guid.NewGuid():N}.example.test/health";
         var id = await SeedComponentAsync(host, url, 1, enabled: true);
         probe.Fail(url);
@@ -184,7 +184,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     public async Task Pass_LeavesAnIncidentTheOperatorClosed_AndDropsTheLink()
     {
         var probe = new FakeStatusProbe();
-        var host = HostWith(probe, ManualTimeProvider.AtPresent());
+        var host = HostWith(probe, new ManualTimeProvider(TestMoments.Seeded));
         var url = $"https://{Guid.NewGuid():N}.example.test/health";
         var id = await SeedComponentAsync(host, url, 1, enabled: true);
         probe.Fail(url);
@@ -215,7 +215,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     public async Task Pass_KeepsAForcedState_WhileTheChecksFail()
     {
         var probe = new FakeStatusProbe();
-        var host = HostWith(probe, ManualTimeProvider.AtPresent());
+        var host = HostWith(probe, new ManualTimeProvider(TestMoments.Seeded));
         var url = $"https://{Guid.NewGuid():N}.example.test/health";
         var id = await SeedComponentAsync(host, url, 1, enabled: true);
         using (var scope = host.Services.CreateScope())
@@ -250,7 +250,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     public async Task Pass_ClosesTheIncident_OfAComponentWhoseMonitoringWasSwitchedOff()
     {
         var probe = new FakeStatusProbe();
-        var host = HostWith(probe, ManualTimeProvider.AtPresent());
+        var host = HostWith(probe, new ManualTimeProvider(TestMoments.Seeded));
         var url = $"https://{Guid.NewGuid():N}.example.test/health";
         var id = await SeedComponentAsync(host, url, 1, enabled: true);
         probe.Fail(url);
@@ -275,7 +275,7 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
     [Fact]
     public async Task Pass_DeletesTheRecordsOlderThanTheRetention()
     {
-        var clock = ManualTimeProvider.AtPresent();
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         var now = clock.GetUtcNow();
         var probe = new FakeStatusProbe();
         var host = HostWith(probe, clock);

@@ -25,9 +25,9 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     /// <summary>Builds a host with a suppressed event gate, optionally poisoning one service's save or racing a payment.</summary>
     /// <param name="poisoned">Names the service whose suspension save throws, or null for none.</param>
     /// <param name="race">Names the suspension whose save first pays another invoice, or null for none.</param>
-    /// <returns>The isolated host, on a clock standing at the real present (the job schedules its next run from the clock, see <see cref="TestMoments.Present"/>).</returns>
+    /// <returns>The isolated host, on a clock standing at <see cref="TestMoments.Seeded"/>.</returns>
     private ClockedHost Host(PoisonedService? poisoned = null, PaymentRace? race = null) =>
-        ClockedHost.AtPresent(factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+        new(factory, configure: b => b.ConfigureTestServices(services =>
         {
             services.AddScoped<IDomainEventGate, SuppressedDomainEventGate>();
             if (poisoned is not null)
@@ -39,7 +39,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
             {
                 services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new PayingSaveInterceptor(race)));
             }
-        })));
+        }));
 
     /// <summary>Seeds a client with a product to attach services to.</summary>
     /// <param name="context">The data context to seed through.</param>

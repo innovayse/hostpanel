@@ -39,7 +39,7 @@ public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory fact
     /// <returns>The service ids and the flag of each, by id.</returns>
     private async Task<Dictionary<int, bool>> ListAsync(ClockedHost host, string window)
     {
-        var admin = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await admin.GetAsync($"/api/services/renewals/upcoming?window={window}&pageSize=100");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());

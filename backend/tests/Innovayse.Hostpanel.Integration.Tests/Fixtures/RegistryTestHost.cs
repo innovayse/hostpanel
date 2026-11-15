@@ -106,7 +106,7 @@ internal sealed class RegistryTestHost : IDisposable
     /// <returns>The authenticated client.</returns>
     public Task<HttpClient> AdminClientAsync(IntegrationTestFactory factory)
     {
-        return PluginsTestSeeds.AdminClientAsync(factory, _host);
+        return AuthTestSeeds.AdminClientAsync(factory, _host);
     }
 
     /// <inheritdoc/>

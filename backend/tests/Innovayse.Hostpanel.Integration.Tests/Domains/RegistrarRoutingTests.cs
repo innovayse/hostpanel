@@ -19,10 +19,10 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The registrar the first TLD is configured for.</summary>
-    private readonly RecordingRegistrar _nameAm = new();
+    private readonly RecordingRegistrar _nameAm = new(new ManualTimeProvider(TestMoments.Seeded));
 
     /// <summary>The registrar the second TLD is configured for.</summary>
-    private readonly RecordingRegistrar _namecheap = new();
+    private readonly RecordingRegistrar _namecheap = new(new ManualTimeProvider(TestMoments.Seeded));
 
     /// <summary>
     /// Gets a TLD extension unique to this test instance, so configurations never collide in the shared

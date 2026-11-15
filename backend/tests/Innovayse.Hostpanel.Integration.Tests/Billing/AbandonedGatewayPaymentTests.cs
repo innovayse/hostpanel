@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -19,13 +20,21 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
     /// <summary>The plugin id every test registers its fake under.</summary>
     private const string Module = "bank-gateway";
 
-    /// <summary>Builds a host whose payment plugins come from <paramref name="resolver"/>.</summary>
+    /// <summary>The clock of the test's host; a session registered at its moment is open, one registered hours before it is expired.</summary>
+    private readonly ManualTimeProvider _clock = new(TestMoments.Seeded);
+
+    /// <summary>Builds a host on <see cref="_clock"/> whose payment plugins come from <paramref name="resolver"/>.</summary>
     /// <param name="resolver">The fake resolver the host should resolve plugins through.</param>
-    /// <returns>The test host.</returns>
+    /// <returns>The test host; the caller disposes it.</returns>
     private WebApplicationFactory<Program> BuildHost(FakePaymentPluginResolver resolver)
     {
         return factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IPaymentPluginResolver>(resolver);
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton<TimeProvider>(_clock);
+            }));
     }
 
     /// <summary>Gives an unpaid invoice a hosted session, as an earlier attempt would have left it.</summary>
@@ -51,10 +60,10 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var plugin = new FakeCancelPaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(Module, plugin);
-        var host = BuildHost(resolver);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        using var host = BuildHost(resolver);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, await BillingTestSeeds.SeedClientAsync(host), 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-open-1", TestMoments.Seeded);
+        await SeedSessionAsync(host, invoiceId, "gw-open-1", _clock.GetUtcNow());
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
 
@@ -70,10 +79,10 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(Module, plugin);
-        var host = BuildHost(resolver);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        using var host = BuildHost(resolver);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, await BillingTestSeeds.SeedClientAsync(host), 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-open-2", TestMoments.Seeded);
+        await SeedSessionAsync(host, invoiceId, "gw-open-2", _clock.GetUtcNow());
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
 
@@ -89,8 +98,8 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var plugin = new FakeCancelPaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(Module, plugin);
-        var host = BuildHost(resolver);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        using var host = BuildHost(resolver);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, await BillingTestSeeds.SeedClientAsync(host), 10m);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
@@ -107,10 +116,10 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var plugin = new FakeCancelPaymentPlugin { CancelThrows = new InvalidOperationException("gateway down") };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(Module, plugin);
-        var host = BuildHost(resolver);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        using var host = BuildHost(resolver);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, await BillingTestSeeds.SeedClientAsync(host), 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-open-3", TestMoments.Seeded);
+        await SeedSessionAsync(host, invoiceId, "gw-open-3", _clock.GetUtcNow());
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
 
@@ -126,12 +135,11 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var plugin = new FakeCancelPaymentPlugin { NextOrderId = "gw-new-1" };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(Module, plugin);
-        var host = BuildHost(resolver);
+        using var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-abandon-1");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
-        // Real time: the shared host judges the session's age against its own system clock.
-        await SeedSessionAsync(host, invoiceId, "gw-old-1", TestMoments.Present().AddHours(-2));
+        await SeedSessionAsync(host, invoiceId, "gw-old-1", _clock.GetUtcNow().AddHours(-2));
 
         var response = await client.PostAsJsonAsync(
             $"/api/me/invoices/{invoiceId}/gateway-payment/start", new { module = Module, returnUrl = BillingTestSeeds.AllowedReturnUrl });
@@ -151,9 +159,9 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var plugin = new FakeCancelPaymentPlugin { NextOrderId = "gw-first" };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(Module, plugin);
-        var host = BuildHost(resolver);
+        using var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-abandon-2");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         var response = await client.PostAsJsonAsync(
@@ -171,12 +179,11 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var plugin = new FakeCancelPaymentPlugin { NextOrderId = "gw-new-3", CancelThrows = new InvalidOperationException("gateway down") };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(Module, plugin);
-        var host = BuildHost(resolver);
+        using var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-abandon-3");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
-        // Real time: the shared host judges the session's age against its own system clock.
-        await SeedSessionAsync(host, invoiceId, "gw-old-3", TestMoments.Present().AddHours(-2));
+        await SeedSessionAsync(host, invoiceId, "gw-old-3", _clock.GetUtcNow().AddHours(-2));
 
         var response = await client.PostAsJsonAsync(
             $"/api/me/invoices/{invoiceId}/gateway-payment/start", new { module = Module, returnUrl = BillingTestSeeds.AllowedReturnUrl });

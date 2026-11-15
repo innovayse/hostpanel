@@ -174,7 +174,7 @@ public sealed class LocalSessionRenewalTests(IntegrationTestFactory factory) : I
     private SessionRenewalHost Host(int maxSessionMinutes)
     {
         // Real time: the account is registered and the token minted through the shared database, whose rows are stamped now.
-        var clock = ManualTimeProvider.AtPresent();
+        var clock = new ManualTimeProvider(TestMoments.Present());
         var host = factory.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("Session:AccessTokenMinutes", AccessMinutes.ToString());

@@ -41,7 +41,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// <param name="sender">The fake relay the host's mail goes to.</param>
     /// <returns>The isolated host, on a clock standing at <see cref="TestMoments.Seeded"/>, which every row is seeded relative to.</returns>
     private ClockedHost Host(FakeEmailSender sender) =>
-        new(EventHandlerTestHost.WithFakeRelay(factory, sender, adminEmail: AdminEmail));
+        new(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender, adminEmail: AdminEmail));
 
     /// <summary>Seeds a client with no credit and default settings.</summary>
     /// <param name="context">The data context to seed through.</param>

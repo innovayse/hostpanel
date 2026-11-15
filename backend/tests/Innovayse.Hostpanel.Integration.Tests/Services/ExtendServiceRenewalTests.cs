@@ -24,7 +24,7 @@ public sealed class ExtendServiceRenewalTests(IntegrationTestFactory factory) : 
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
         var start = TestMoments.Seeded.AddDays(5);
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, start);
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, start);
         var end = start.AddMonths(1);
 
         var first = await InvokeAsync(host, new ExtendServiceRenewalCommand(seeded.ServiceId, end));
@@ -42,7 +42,7 @@ public sealed class ExtendServiceRenewalTests(IntegrationTestFactory factory) : 
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
         var start = TestMoments.Seeded.AddDays(5);
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, start);
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, start);
 
         var result = await InvokeAsync(host, new ExtendServiceRenewalCommand(seeded.ServiceId, start.AddDays(-30)));
 

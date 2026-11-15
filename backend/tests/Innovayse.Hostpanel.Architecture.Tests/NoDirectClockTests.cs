@@ -75,4 +75,35 @@ public sealed class NoDirectClockTests
 
         DirectClockScan.Offenders([("Benign.cs", benign)]).Should().BeEmpty();
     }
+
+    /// <summary>
+    /// Text that only looks like a comment inside a string literal does not hide a read on the same line: the scan reads the
+    /// syntax, not the characters, so a <c>//</c> or <c>/*</c> inside a string is just text.
+    /// </summary>
+    [Fact]
+    public void Rule_FindsReadsBesideCommentLookalikesInStrings()
+    {
+        const string planted = """
+            var a = "//"; var b = DateTime.UtcNow;
+            var c = "/*"; var d = DateTimeOffset.Now; var e = "*/";
+            var f = @"http://example.test/*"; var g = DateTime.Today;
+            """;
+
+        DirectClockScan.Offenders([("Planted.cs", planted)]).Should().BeEquivalentTo(
+            "Planted.cs: DateTime.UtcNow",
+            "Planted.cs: DateTimeOffset.Now",
+            "Planted.cs: DateTime.Today");
+    }
+
+    /// <summary>A clock read named inside a string literal is text, not a read.</summary>
+    [Fact]
+    public void Rule_IgnoresReadsNamedInsideStrings()
+    {
+        const string benign = """
+            var a = "DateTime.Now";
+            var b = $"{time.GetUtcNow()} instead of DateTimeOffset.UtcNow";
+            """;
+
+        DirectClockScan.Offenders([("Benign.cs", benign)]).Should().BeEmpty();
+    }
 }

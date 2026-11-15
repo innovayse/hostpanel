@@ -45,15 +45,10 @@ public static class BillingTestSeeds
 
     /// <summary>Builds a client carrying the seeded admin's bearer token.</summary>
     /// <param name="factory">The factory whose admin credentials to mint a token from.</param>
-    /// <param name="host">The host to build the client against, or <paramref name="factory"/> itself when null.</param>
     /// <returns>An authenticated admin <see cref="HttpClient"/>.</returns>
-    public static async Task<HttpClient> AdminClientAsync(
-        IntegrationTestFactory factory, WebApplicationFactory<Program>? host = null)
+    public static async Task<HttpClient> AdminClientAsync(IntegrationTestFactory factory)
     {
-        var client = (host ?? factory).CreateClient();
-        var token = await factory.GetAdminTokenAsync();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
+        return await AuthTestSeeds.AdminClientAsync(factory, factory);
     }
 
     /// <summary>Seeds a client row directly against the host's database, bypassing HTTP.</summary>

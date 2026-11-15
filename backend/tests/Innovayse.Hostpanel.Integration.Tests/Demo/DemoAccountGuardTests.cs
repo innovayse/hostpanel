@@ -153,7 +153,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
         var host = DemoTestHost.Enabled(factory);
         await SeedDemoAsync(host);
         var clientId = await DemoClientIdAsync(host);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var response = await admin.PutAsJsonAsync(
             $"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(email: "someone-else@demo.example"));
@@ -173,7 +173,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
         var host = DemoTestHost.Enabled(factory);
         await SeedDemoAsync(host);
         var clientId = await DemoClientIdAsync(host);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var response = await admin.PutAsJsonAsync(
             $"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(firstName: "Renamed", email: DemoTestHost.ClientEmail));
@@ -219,7 +219,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
         var host = DisabledHostWithDemoEmails();
         await EnsureAccountAsync(host);
         var clientId = await DemoClientIdAsync(host);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         var response = await admin.PutAsJsonAsync(
             $"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(email: $"moved-{Guid.NewGuid():N}@example.test"));

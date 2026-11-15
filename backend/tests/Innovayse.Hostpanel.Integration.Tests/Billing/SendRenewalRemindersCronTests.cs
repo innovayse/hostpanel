@@ -24,9 +24,9 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
 {
     /// <summary>Builds a host with a suppressed event gate and a fake SMTP relay.</summary>
     /// <param name="sender">The fake relay the host's mail goes to.</param>
-    /// <returns>The isolated host, on a clock standing at the real present (the job schedules its next run from the clock, see <see cref="TestMoments.Present"/>).</returns>
+    /// <returns>The isolated host, on a clock standing at <see cref="TestMoments.Seeded"/>.</returns>
     private ClockedHost Host(FakeEmailSender sender) =>
-        ClockedHost.AtPresent(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        new(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender));
 
     /// <summary>Seeds an invoice for a fresh identity-backed client.</summary>
     /// <param name="services">The scoped service provider.</param>
@@ -132,12 +132,12 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     {
         var sender = new FakeEmailSender();
         var poisoned = new PoisonedInvoice();
-        using var host = ClockedHost.AtPresent(factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+        using var host = new ClockedHost(factory, configure: b => b.ConfigureTestServices(services =>
         {
             services.AddSingleton<IEmailSender>(sender);
             services.AddScoped<IDomainEventGate, SuppressedDomainEventGate>();
             services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new PoisonedInvoiceSaveInterceptor(poisoned)));
-        })));
+        }));
         using var scope = host.Services.CreateScope();
         var (badEmail, badId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3);
         var (goodEmail, goodId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3);

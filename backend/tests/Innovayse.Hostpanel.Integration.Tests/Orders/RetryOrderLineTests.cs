@@ -255,7 +255,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
         var held = await admin.PostAsync(url, content: null);
         using var shortLease = factory.WithWebHostBuilder(b => b.UseSetting(
             $"{OrderOptions.SectionName}:{nameof(OrderOptions.RetryLeaseMinutes)}", "1"));
-        var taken = await (await OrdersTestReads.AdminOfAsync(shortLease, factory)).PostAsync(url, content: null);
+        var taken = await (await AuthTestSeeds.AdminClientAsync(factory, shortLease)).PostAsync(url, content: null);
 
         held.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await OrdersTestSeeds.AssertCodeAsync(held, HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);

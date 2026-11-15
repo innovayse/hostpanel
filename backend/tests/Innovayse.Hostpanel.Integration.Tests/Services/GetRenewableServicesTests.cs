@@ -23,7 +23,7 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     public async Task HandleAsync_DueServiceWithOpenCancellation_IsListedFlaggedAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(5));
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(5));
         using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -46,8 +46,8 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     public async Task HandleAsync_ServiceOutsideWindowOrUndated_IsLeftOutAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var later = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(60));
-        var undated = await RenewalTestSeeds.SeedActiveServiceAsync(host, null);
+        var later = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(60));
+        var undated = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, null);
 
         var due = await InvokeAsync(host, new GetRenewableServicesQuery(null, TestMoments.Seeded.AddDays(14)));
 
@@ -60,8 +60,8 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     public async Task HandleAsync_ClientFilter_NarrowsToThatClientAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var first = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(3));
-        var second = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(3));
+        var first = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(3));
+        var second = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(3));
         var horizon = TestMoments.Seeded.AddDays(14);
 
         var everyone = await InvokeAsync(host, new GetRenewableServicesQuery(null, horizon));

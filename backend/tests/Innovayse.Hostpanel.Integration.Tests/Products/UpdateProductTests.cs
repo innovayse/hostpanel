@@ -485,7 +485,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         var sku = ProductsTestSeeds.UniqueSku();
         var race = new SkuRaceSaveInterceptor(sku.ToUpperInvariant());
         using var host = SkuRaceHost.Create(factory, race);
-        var client = await SkuRaceHost.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await ProductsTestSeeds.CreateProductAsync(client);
 
         var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, null, 3));

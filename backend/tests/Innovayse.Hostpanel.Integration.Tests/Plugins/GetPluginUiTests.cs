@@ -287,7 +287,7 @@ public sealed class GetPluginUiTests : IClassFixture<PluginUiFixture>, IClassFix
     [Fact]
     public async Task Admin_WithNoPlugins_ListsAreEmpty()
     {
-        using var admin = await PluginUiFixture.AdminClientOfAsync(_empty.Host, _empty.Factory);
+        using var admin = await AuthTestSeeds.AdminClientAsync(_empty.Factory, _empty.Host);
 
         var index = await IndexAsync(admin, AdminUrl);
 

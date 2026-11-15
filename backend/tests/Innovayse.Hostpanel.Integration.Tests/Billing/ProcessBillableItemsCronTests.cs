@@ -43,7 +43,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task DueOneTimeItem_IsInvoiced()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, item) = await SeedDueItemAsync(
@@ -69,7 +69,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task NotYetDueOneTimeItem_IsNotInvoiced()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, item) = await SeedDueItemAsync(
@@ -91,7 +91,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task DueRecurringItem_IsInvoicedAndAdvanced()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var due = host.Clock.GetUtcNow().AddDays(-1);
@@ -122,7 +122,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task FutureOneTimeItem_IsInvoicedOnceTheClockReachesItsDueDate()
     {
-        using var host = ClockedHost.AtPresent(factory);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, item) = await SeedDueItemAsync(
@@ -150,7 +150,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task OneFailingClient_DoesNotStopTheOthersAndLeavesNoInvoice()
     {
-        var clock = ManualTimeProvider.AtPresent();
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         var now = clock.GetUtcNow();
         var poisonedItemId = 0;
         using var host = FailingSaveHost.Create(

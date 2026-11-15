@@ -93,7 +93,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     private WebApplicationFactory<Program> CrashingHost(
         CapturingLogger<RequestMyServicePlanChangeHandler> logger, Func<ChangeTracker, bool> alsoRefuses) =>
         FailingSaveHost
-            .Create(factory, ManualTimeProvider.AtPresent(), tracker => LinksTheInvoice(tracker) || alsoRefuses(tracker))
+            .Create(factory, new ManualTimeProvider(TestMoments.Seeded), tracker => LinksTheInvoice(tracker) || alsoRefuses(tracker))
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
                 services.AddSingleton<ILogger<RequestMyServicePlanChangeHandler>>(logger)));
 
@@ -502,7 +502,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     {
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-crash");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
-        using var host = FailingSaveHost.Create(factory, ManualTimeProvider.AtPresent(), LinksTheInvoice);
+        using var host = FailingSaveHost.Create(factory, new ManualTimeProvider(TestMoments.Seeded), LinksTheInvoice);
         using var crashing = host.CreateClient();
         crashing.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
 
@@ -558,7 +558,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var logger = new CapturingLogger<RequestMyServicePlanChangeHandler>();
 
         using var host = FailingSaveHost
-            .Create(factory, ManualTimeProvider.AtPresent(), tracker => LinksAfterTheInvoiceIsGone(tracker, clientId))
+            .Create(factory, new ManualTimeProvider(TestMoments.Seeded), tracker => LinksAfterTheInvoiceIsGone(tracker, clientId))
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
                 services.AddSingleton<ILogger<RequestMyServicePlanChangeHandler>>(logger)));
         using var crashing = host.CreateClient();

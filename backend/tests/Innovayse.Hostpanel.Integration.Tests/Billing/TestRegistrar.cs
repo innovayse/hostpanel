@@ -19,7 +19,14 @@ public abstract class TestRegistrar : IRegistrarProvider
     private static readonly ConcurrentDictionary<string, int> RenewCalls = new();
 
     /// <summary>The stub every non-renewal call goes to.</summary>
-    private readonly StubRegistrarProvider _inner = new();
+    private readonly StubRegistrarProvider _inner;
+
+    /// <summary>Initializes a new instance of the <see cref="TestRegistrar"/> class.</summary>
+    /// <param name="time">The clock of the host the registrar answers for, which the stub it delegates to reports its dates from.</param>
+    protected TestRegistrar(TimeProvider time)
+    {
+        _inner = new StubRegistrarProvider(time);
+    }
 
     /// <summary>How many times any test registrar was asked to renew <paramref name="domainName"/>.</summary>
     /// <param name="domainName">The domain name.</param>

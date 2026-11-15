@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,11 +43,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>Builds a host whose payment plugins come from <paramref name="resolver"/>.</summary>
+    /// <summary>Builds a host on a clock standing at <see cref="TestMoments.Seeded"/> whose payment plugins come from <paramref name="resolver"/>.</summary>
     /// <param name="resolver">The fake resolver the host should resolve plugins through.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(FakePaymentPluginResolver resolver) =>
-        factory.WithWebHostBuilder(builder =>
+    private ClockedHost Host(FakePaymentPluginResolver resolver) =>
+        new(factory, configure: builder =>
             builder.ConfigureTestServices(services =>
                 services.AddSingleton<IPaymentPluginResolver>(resolver)));
 
@@ -59,7 +58,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     /// <param name="db">The data context to seed through.</param>
     /// <param name="module">This test's own plugin module id.</param>
     /// <param name="status">The invoice's status; <see cref="InvoiceStatus.Unpaid"/> or <see cref="InvoiceStatus.Overdue"/>.</param>
-    /// <param name="gatewayStartedAt">The backdated session start instant, on the clock of the host the job runs on (which stands at the real present).</param>
+    /// <param name="gatewayStartedAt">The backdated session start instant, on the clock of the host the job runs on (<see cref="TestMoments.Seeded"/>).</param>
     /// <returns>The seeded invoice's primary key.</returns>
     private static async Task<int> SeedPendingInvoiceAsync(
         AppDbContext db, string module, InvoiceStatus status, DateTimeOffset gatewayStartedAt)
@@ -93,7 +92,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        using var host = ClockedHost.AtPresent(BuildHost(resolver));
+        using var host = Host(resolver);
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -117,7 +116,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        using var host = ClockedHost.AtPresent(BuildHost(resolver));
+        using var host = Host(resolver);
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -141,7 +140,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        using var host = ClockedHost.AtPresent(BuildHost(resolver));
+        using var host = Host(resolver);
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -165,7 +164,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        using var host = ClockedHost.AtPresent(BuildHost(resolver));
+        using var host = Host(resolver);
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -186,7 +185,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        using var host = ClockedHost.AtPresent(BuildHost(resolver));
+        using var host = Host(resolver);
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -217,7 +216,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = ManualTimeProvider.AtPresent();
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         using var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
             {

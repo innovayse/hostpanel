@@ -95,7 +95,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     public async Task GetPdf_AnswersBusyWhenNoRenderSlotFrees()
     {
         using var host = BillingTestSeeds.RenderBusyHost(factory);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 12.50m);
         using var held = await host.Services.GetRequiredService<InvoicePdfRenderGate>().TryEnterAsync(CancellationToken.None);

@@ -246,7 +246,7 @@ public sealed class RecurringJobs
         {
             try
             {
-                await _bus.ScheduleAsync(new TCommand(), at);
+                await _bus.ScheduleAsync(new TCommand(), DelayUntil(at));
                 _logger.LogInformation("{JobName} scheduled for {ScheduledAt:u}.", jobName, at);
                 return at;
             }
@@ -267,6 +267,21 @@ public sealed class RecurringJobs
             jobName,
             options.ScheduleAttempts);
         return null;
+    }
+
+    /// <summary>
+    /// How long from now, on the application's clock, a run is due. The bus counts a scheduled run against the system clock, not
+    /// against <see cref="IClock"/>, so handing it the absolute moment would have a clock that differs from the system's (a test host
+    /// standing at a fixed moment in the past) make every run due at once and repeat the job without end. A delay measured on this
+    /// clock is due the same span from the real now, so the two clocks agree on how far away the run is. Where the clock is the system
+    /// clock, as in a deployment, this is the same moment.
+    /// </summary>
+    /// <param name="at">When the run is due, on the application's clock.</param>
+    /// <returns>The span from now until <paramref name="at"/>, zero when that moment has passed.</returns>
+    private TimeSpan DelayUntil(DateTimeOffset at)
+    {
+        var delay = at - _clock.UtcNow;
+        return delay > TimeSpan.Zero ? delay : TimeSpan.Zero;
     }
 
     /// <summary>Waits between two scheduling attempts, ending early when the host stops.</summary>

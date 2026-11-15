@@ -63,8 +63,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
     public async Task HandleAsync_ConfiguredPaymentTerm_DatesTheInvoiceByItAsync()
     {
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        using var host = new ClockedHost(factory.WithWebHostBuilder(builder =>
-            builder.UseSetting("Orders:InvoicePaymentTermDays", "30")));
+        using var host = new ClockedHost(factory, configure: builder => builder.UseSetting("Orders:InvoicePaymentTermDays", "30"));
 
         Result<int> result;
         using (var scope = host.Services.CreateScope())

@@ -55,7 +55,7 @@ public sealed class AgingInvoicesSummaryTests(IntegrationTestFactory factory) : 
             await db.SaveChangesAsync();
         }
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/aging-invoices-summary");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);

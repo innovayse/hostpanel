@@ -19,7 +19,7 @@ public sealed class GetServiceBillingStatesTests(IntegrationTestFactory factory)
     public async Task HandleAsync_SuspendedAndUnknown_AnswersOnlyTheKnownStateAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(10));
         using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

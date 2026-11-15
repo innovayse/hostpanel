@@ -9,6 +9,7 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -131,7 +132,7 @@ public static class ProvisioningTestSeeds
     public static Task<HttpClient> AdminClientWithFakeProviderAsync(
         IntegrationTestFactory factory, FakeProvisioningProvider provider)
     {
-        return AdminClientOnAsync(factory, HostWithFakeProvider(factory, provider));
+        return AuthTestSeeds.AdminClientAsync(factory, HostWithFakeProvider(factory, provider));
     }
 
     /// <summary>
@@ -149,19 +150,6 @@ public static class ProvisioningTestSeeds
             {
                 services.AddSingleton<IProvisioningProviderFactory>(new FakeProvisioningProviderFactory(provider));
             }));
-    }
-
-    /// <summary>Builds an admin client against <paramref name="host"/>.</summary>
-    /// <param name="factory">The shared API + PostgreSQL host, which issues the admin token.</param>
-    /// <param name="host">The host the client talks to.</param>
-    /// <returns>An authenticated admin client.</returns>
-    public static async Task<HttpClient> AdminClientOnAsync(
-        IntegrationTestFactory factory, WebApplicationFactory<Program> host)
-    {
-        var token = await factory.GetAdminTokenAsync();
-        var client = host.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
     }
 
     /// <summary>Clears a service's assigned server directly in the database.</summary>
@@ -203,9 +191,17 @@ public static class ProvisioningTestSeeds
     /// <returns>The isolated host.</returns>
     public static WebApplicationFactory<Program> WithRecordingProvider(
         IntegrationTestFactory factory, RecordingProvisioningProvider provider) =>
-        factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services =>
-                services.AddSingleton<IProvisioningProviderFactory>(new RecordingProvisioningProviderFactory(provider))));
+        factory.WithWebHostBuilder(builder => UseRecordingProvider(builder, provider));
+
+    /// <summary>
+    /// Makes a host being built hand out <paramref name="provider"/> for every server, for a host that is derived for more than
+    /// this (<see cref="ClockedHost"/> takes it as its <c>configure</c>), so the host is derived once.
+    /// </summary>
+    /// <param name="builder">The host builder to configure.</param>
+    /// <param name="provider">The recording provider the host's provider factory will hand out.</param>
+    public static void UseRecordingProvider(IWebHostBuilder builder, RecordingProvisioningProvider provider) =>
+        builder.ConfigureTestServices(services =>
+            services.AddSingleton<IProvisioningProviderFactory>(new RecordingProvisioningProviderFactory(provider)));
 
     /// <summary>Seeds a client, a server and an active hosting service assigned to that server.</summary>
     /// <param name="context">The data context to seed through.</param>

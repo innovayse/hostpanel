@@ -36,9 +36,9 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
 
     /// <summary>Builds a host with a suppressed event gate and a fake SMTP relay.</summary>
     /// <param name="sender">The fake relay the host's mail goes to.</param>
-    /// <returns>The isolated host, on a clock standing at the real present (the cron schedules its next run from the clock, see <see cref="TestMoments.Present"/>), which the rows are seeded relative to.</returns>
+    /// <returns>The isolated host, on a clock standing at <see cref="TestMoments.Seeded"/>, which the rows are seeded relative to.</returns>
     private ClockedHost Host(FakeEmailSender sender) =>
-        ClockedHost.AtPresent(EventHandlerTestHost.WithFakeRelay(factory, sender, adminEmail: AdminEmail));
+        new(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender, adminEmail: AdminEmail));
 
     /// <summary>Seeds a client, a product and one <see cref="ClientService"/> in the given state.</summary>
     /// <param name="context">The data context to seed through.</param>

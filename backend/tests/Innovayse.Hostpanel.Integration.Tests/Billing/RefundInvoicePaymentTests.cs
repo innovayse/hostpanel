@@ -336,7 +336,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 30m);
 
         var tooMuch = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
@@ -375,7 +375,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
@@ -416,7 +416,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
 
         var first = await GatewayRefundAsync(admin, invoiceId, 10m);
@@ -442,7 +442,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
 
         (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.BadGateway);
@@ -464,7 +464,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
 
         (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -485,7 +485,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
 
         (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -503,7 +503,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
 
         (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -525,7 +525,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         resolver.Register(HostedGateway, plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
 
         (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);

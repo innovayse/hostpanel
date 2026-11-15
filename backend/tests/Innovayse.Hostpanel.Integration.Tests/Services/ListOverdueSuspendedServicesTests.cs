@@ -19,9 +19,9 @@ public sealed class ListOverdueSuspendedServicesTests(IntegrationTestFactory fac
     public async Task HandleAsync_MixedSuspensions_ListsOnlyOverdueOnesAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var overdue = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
-        var manual = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
-        var active = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
+        var overdue = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(10));
+        var manual = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(10));
+        var active = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(10));
         await SuspendAsync(host, overdue.ServiceId, SuspensionSource.Overdue);
         await SuspendAsync(host, manual.ServiceId, SuspensionSource.Manual);
 

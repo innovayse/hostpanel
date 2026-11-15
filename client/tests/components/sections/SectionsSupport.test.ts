@@ -2,29 +2,45 @@
  * Unit tests for SectionsSupport: one card per channel, the reply time and link only when the
  * channel carries them.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings } from '~/tests/helpers/portalSettings'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsSupport from '~/components/sections/SectionsSupport.vue'
-import { SupportChannel } from '~/constants/supportChannel'
-import type { SupportChannelItem } from '~/types/supportchannelitem'
+import { useSupportChannels } from '~/composables/useSupportChannels'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 
-/** The channels the stubbed composable returns. */
-const channels = ref<SupportChannelItem[]>([])
+/** The stub playing the BFF; it answers the operator's settings read. */
+let stub: StubServer
 
-vi.stubGlobal('useSupportChannels', () => channels)
+/** What the stub answers, by route. */
+const replies: StubRouteTable = {}
+
+/** A chat provider, an e-mail address and a ticket reply time; no phone number. */
+const SET_CHANNELS: Record<string, string> = {
+  [PortalSettingKey.ChatProvider]: 'widget',
+  [PortalSettingKey.ContactEmail]: 'help@example.test',
+  [PortalSettingKey.SupportResponseTicket]: '15 min',
+}
 
 describe('SectionsSupport', () => {
-  beforeEach(() => {
-    channels.value = [
-      { channel: SupportChannel.Ticket, href: '/client/tickets/new', responseTime: '15 min' },
-      { channel: SupportChannel.Email, value: 'help@example.test', href: 'mailto:help@example.test' },
-      { channel: SupportChannel.Chat },
-    ]
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    vi.stubGlobal('useSupportChannels', useSupportChannels)
   })
 
-  it('shows a card for each channel', () => {
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
+  })
+
+  it('shows a card for each channel', async () => {
+    await loadPortalSettings(replies, SET_CHANNELS)
+
     const wrapper = mountWithKit(SectionsSupport, { components: CLASSIC_COMPONENTS })
 
     expect(wrapper.find('[data-testid="support-ticket"]').exists()).toBe(true)
@@ -32,14 +48,18 @@ describe('SectionsSupport', () => {
     expect(wrapper.find('[data-testid="support-phone"]').exists()).toBe(false)
   })
 
-  it('shows the reply time only when the channel has one', () => {
+  it('shows the reply time only when the channel has one', async () => {
+    await loadPortalSettings(replies, SET_CHANNELS)
+
     const wrapper = mountWithKit(SectionsSupport, { components: CLASSIC_COMPONENTS })
 
     expect(wrapper.find('[data-testid="support-response-ticket"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="support-response-email"]').exists()).toBe(false)
   })
 
-  it('links a channel that has a target and shows its value', () => {
+  it('links a channel that has a target and shows its value', async () => {
+    await loadPortalSettings(replies, SET_CHANNELS)
+
     const wrapper = mountWithKit(SectionsSupport, { components: CLASSIC_COMPONENTS })
 
     const link = wrapper.find('[data-testid="support-link-email"]')
@@ -48,7 +68,9 @@ describe('SectionsSupport', () => {
     expect(wrapper.find('[data-testid="support-link-chat"]').exists()).toBe(false)
   })
 
-  it('draws every icon on a flat brand tile with no accent glow', () => {
+  it('draws every icon on a flat brand tile with no accent glow', async () => {
+    await loadPortalSettings(replies, SET_CHANNELS)
+
     const wrapper = mountWithKit(SectionsSupport, { components: CLASSIC_COMPONENTS })
 
     const tiles = wrapper.findAll('[data-testid="classic-icon-tile"]')
@@ -56,9 +78,15 @@ describe('SectionsSupport', () => {
     expect(wrapper.html()).not.toContain('--accent')
   })
 
-  it('never caps the grid width: the shared container sets it for any number of cards', () => {
-    for (const count of [1, 2, 3]) {
-      channels.value = [SupportChannel.Ticket, SupportChannel.Email, SupportChannel.Chat].slice(0, count).map((channel) => ({ channel }))
+  it('never caps the grid width: the shared container sets it for any number of cards', async () => {
+    /** The settings that switch on one more card at a time: the ticket form is always there, then e-mail, then chat. */
+    const cardSettings: Record<string, string>[] = [
+      {},
+      { [PortalSettingKey.ContactEmail]: 'help@example.test' },
+      { [PortalSettingKey.ContactEmail]: 'help@example.test', [PortalSettingKey.ChatProvider]: 'widget' },
+    ]
+    for (const settings of cardSettings) {
+      await loadPortalSettings(replies, settings)
       const wrapper = mountWithKit(SectionsSupport, { components: CLASSIC_COMPONENTS })
       const classes = wrapper.find('[data-testid="sections-support-grid"]').classes()
 

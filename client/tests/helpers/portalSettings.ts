@@ -8,13 +8,21 @@
  * under its auto-import name, as Nuxt does) reads what arrived. Only the Nuxt globals that do not exist in a
  * unit test are stood in for: `defineNuxtPlugin`, which only returns its definition.
  *
+ * {@link usePortalSettingsServer} is the one setup a test file calls to get the stub, the reply table and the
+ * real composables it reads; {@link homeSectionSettings} builds the home-section switches.
+ *
  * @module tests/helpers/portalSettings
  */
 
-import { vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
 import { usePortalSettings } from '~/composables/usePortalSettings'
-import { readOf } from './stubRoutes'
+import { HOME_SECTION_SETTING } from '~/constants/homeSection'
+import type { HomeSection } from '~/constants/homeSection'
+import { stubLocalePath } from './runtimeStubs'
+import { readOf, routeTable } from './stubRoutes'
 import type { StubRouteTable } from './stubRoutes'
+import type { StubServer } from './stubServer'
+import { startTransport } from './stubTransport'
 
 /** The BFF path of the public settings read. */
 const SETTINGS_PATH = '/api/portal/public/settings'
@@ -45,3 +53,68 @@ export const loadPortalSettings = async (replies: StubRouteTable, settings: Reco
   const plugin = (await import('~/plugins/portal-settings')).default as unknown as PluginDefinition
   await plugin.setup()
 }
+
+/** What {@link usePortalSettingsServer} hands the test file. */
+export interface PortalSettingsServer {
+  /** What the stub answers, by route; pass it to {@link loadPortalSettings} or add the reads a test needs. */
+  replies: StubRouteTable
+  /**
+   * The stub of the running test, for the helpers that wait on its reads.
+   *
+   * @returns The stub started for the current test.
+   * @throws When it is called outside a test, before its hooks have started the stub.
+   */
+  stub: () => StubServer
+}
+
+/**
+ * Registers the hooks every test of a section that reads the operator's settings needs: a stub server under
+ * `$fetch` and a localised-path stand-in before each test, and the stub closed and the globals restored after it.
+ *
+ * Call it once at the top of the test file, then load the settings with {@link loadPortalSettings}.
+ *
+ * @param composables - The real composables the section calls, by the auto-import name Nuxt gives them. Registering
+ * the real composable under its own name replaces nothing (the `noOwnMocks` guard allows it), it only makes it
+ * reachable as the global it is in the app.
+ * @returns The reply table and the accessor of the stub the hooks start.
+ */
+export const usePortalSettingsServer = (composables: Record<string, unknown> = {}): PortalSettingsServer => {
+  /** The stub of the running test, undefined between tests. */
+  let running: StubServer | undefined
+  /** What the stub answers, by route. */
+  const replies: StubRouteTable = {}
+
+  beforeEach(async () => {
+    running = await startTransport(routeTable(replies))
+    stubLocalePath()
+    for (const [name, composable] of Object.entries(composables)) {
+      vi.stubGlobal(name, composable)
+    }
+  })
+
+  afterEach(async () => {
+    await running?.close()
+    running = undefined
+    vi.unstubAllGlobals()
+  })
+
+  return {
+    replies,
+    stub: () => {
+      if (!running) {
+        throw new Error('The portal settings stub runs only inside a test.')
+      }
+      return running
+    },
+  }
+}
+
+/**
+ * Maps home-page sections to one stored switch value, keyed by the setting that holds each switch.
+ *
+ * @param sections - The sections to write.
+ * @param value - The stored value to give each, `SETTING_ON` or `SETTING_OFF`.
+ * @returns The settings by their dotted key, ready for {@link loadPortalSettings}.
+ */
+export const homeSectionSettings = (sections: Iterable<HomeSection>, value: string): Record<string, string> =>
+  Object.fromEntries([...sections].map((section) => [HOME_SECTION_SETTING[section], value]))

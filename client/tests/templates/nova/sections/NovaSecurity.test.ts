@@ -4,38 +4,19 @@
  *
  * @module tests/templates/nova/sections/NovaSecurity.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import NovaSecurity from '~/templates/nova/sections/NovaSecurity.vue'
 import { SECURITY_FEATURES } from '~/templates/nova/content'
 import { useSecurityFeatures } from '~/composables/useSecurityFeatures'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SETTING_ON } from '~/constants/settingValue'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useSecurityFeatures })
 
 describe('NovaSecurity', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    stubLocalePath()
-    vi.stubGlobal('useSecurityFeatures', useSecurityFeatures)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('renders a card per switched-on claim plus the always-true statements', async () => {
     await loadPortalSettings(replies, {
       [PortalSettingKey.FeaturesSsl]: SETTING_ON,

@@ -2,17 +2,14 @@
  * Unit tests for ClassicHome: the hidden H1, the marketing sections in hosting-site order, and
  * the per-section visibility toggles.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { homeSectionSettings, loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { useHomeSections } from '~/composables/useHomeSections'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
-import { HOME_SECTION_DEFAULT, HOME_SECTION_SETTING, HomeSection } from '~/constants/homeSection'
+import { HOME_SECTION_DEFAULT, HomeSection } from '~/constants/homeSection'
+import { SETTING_OFF } from '~/constants/settingValue'
 import ClassicHome from '~/templates/classic/pages/ClassicHome.vue'
 
 /** Names of the section components the home page composes, in the order they appear. */
@@ -33,22 +30,17 @@ const SECTION_NAMES = [
   'SectionsCTA',
 ]
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
-
-/** What the operator writes into a section's switch to turn it off. */
-const SWITCHED_OFF = 'false'
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useHomeSections })
 
 /**
  * Loads the operator's settings with these sections switched off, the rest left at their defaults.
  *
  * @param off The sections the operator has switched off.
+ * @returns Resolves once the settings are loaded into the shared state.
  */
 const switchOff = (off: Iterable<HomeSection>): Promise<void> =>
-  loadPortalSettings(replies, Object.fromEntries([...off].map((section) => [HOME_SECTION_SETTING[section], SWITCHED_OFF])))
+  loadPortalSettings(replies, homeSectionSettings(off, SETTING_OFF))
 
 /**
  * Builds a stand-in section that renders its own name, so order can be read from the DOM.
@@ -66,14 +58,7 @@ describe('ClassicHome', () => {
   const components = Object.fromEntries(SECTION_NAMES.map((name) => [name, sectionStub(name)]))
 
   beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    vi.stubGlobal('useHomeSections', useHomeSections)
     await switchOff([])
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('renders the SEO heading visually hidden', () => {

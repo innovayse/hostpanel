@@ -4,27 +4,20 @@
  * hides itself when there are no questions. The list is cut to the home limit, and the link to the
  * full FAQ page shows only when questions were left out.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import { useContactDetails } from '~/composables/useContactDetails'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import type { FAQ } from '~/types/faq'
 import AuroraFaq from '~/templates/aurora/sections/AuroraFaq.vue'
 
-/** The stub playing the BFF; it answers the questions and the operator's settings. */
-let stub: StubServer
-
-/** What the stub answers, by route; the tests below change the questions it serves. */
-const replies: StubRouteTable = {}
+/** The stub playing the BFF and what it answers, by route; the hooks start it before each test and close it after. */
+const { replies, stub } = usePortalSettingsServer({ useContactDetails })
 
 /**
  * Makes the stub serve these questions.
@@ -40,23 +33,15 @@ const serve = (faqs: FAQ[]): void => {
  *
  * @returns The wrapper.
  */
-const mountSection = () => mountAfterReads(stub, [StorefrontPath.Faqs], () => mountWithKit(AuroraFaq))
+const mountSection = () => mountAfterReads(stub(), [StorefrontPath.Faqs], () => mountWithKit(AuroraFaq))
 
 describe('AuroraFaq', () => {
   beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    stubLocalePath()
-    vi.stubGlobal('useContactDetails', useContactDetails)
     await loadPortalSettings(replies)
     serve([
       faqFixture(1, { question: 'How fast?', answer: 'Very fast.' }),
       faqFixture(2, { question: 'Is it safe?', answer: 'Yes, safe.' }),
     ])
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('renders every question and keeps every answer in the markup', async () => {

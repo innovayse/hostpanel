@@ -3,41 +3,22 @@
  *
  * @module tests/templates/nova/sections/NovaApps.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import NovaApps from '~/templates/nova/sections/NovaApps.vue'
 import { useInstallerApps } from '~/composables/useInstallerApps'
 import { InstallerAppCategory } from '~/constants/installerAppCategory'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useInstallerApps })
 
 /** The operator's installer count setting, as written. */
 const COUNT_SET: Record<string, string> = { [PortalSettingKey.InstallerAppCount]: '150+' }
 
 describe('NovaApps', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    stubLocalePath()
-    vi.stubGlobal('useInstallerApps', useInstallerApps)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('renders a card per category in the balanced grid', async () => {
     await loadPortalSettings(replies, COUNT_SET)
     const wrapper = mountWithKit(NovaApps)

@@ -2,24 +2,17 @@
  * Unit tests for SectionsSecurity: one card per enabled protection and no section when none is
  * enabled.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import SectionsSecurity from '~/components/sections/SectionsSecurity.vue'
 import { useSecurityFeatures } from '~/composables/useSecurityFeatures'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SETTING_ON } from '~/constants/settingValue'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useSecurityFeatures })
 
 /** The SSL and firewall protections switched on; the others are left off. */
 const ON_FEATURES: Record<string, string> = {
@@ -28,16 +21,6 @@ const ON_FEATURES: Record<string, string> = {
 }
 
 describe('SectionsSecurity', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    vi.stubGlobal('useSecurityFeatures', useSecurityFeatures)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('shows a card with title and description for each enabled protection', async () => {
     await loadPortalSettings(replies, ON_FEATURES)
 

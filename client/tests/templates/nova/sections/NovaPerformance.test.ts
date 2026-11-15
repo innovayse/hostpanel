@@ -5,25 +5,17 @@
  *
  * @module tests/templates/nova/sections/NovaPerformance.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import NovaPerformance from '~/templates/nova/sections/NovaPerformance.vue'
 import { PERFORMANCE_FEATURES } from '~/templates/nova/content'
 import type { Feature } from '~/templates/nova/types/feature'
 import { usePerformanceStats } from '~/composables/usePerformanceStats'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ usePerformanceStats })
 
 /**
  * Counts the features that do not wait on an operator setting.
@@ -34,17 +26,6 @@ const replies: StubRouteTable = {}
 const ungated = (features: readonly Feature[]): number => features.filter(feature => !feature.requiresSetting).length
 
 describe('NovaPerformance', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    stubLocalePath()
-    vi.stubGlobal('usePerformanceStats', usePerformanceStats)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('hides storage, cache and CDN claims until their settings exist', async () => {
     await loadPortalSettings(replies)
 

@@ -8,6 +8,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HomeSection } from '~/constants/homeSection'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { SETTING_OFF, SETTING_ON } from '~/constants/settingValue'
 import { useHomeSections } from '~/composables/useHomeSections'
 
 /**
@@ -34,13 +35,13 @@ describe('useHomeSections', () => {
   })
 
   it('hides a section the operator switched off', () => {
-    stubSettings({ [PortalSettingKey.SectionFaq]: 'false' })
+    stubSettings({ [PortalSettingKey.SectionFaq]: SETTING_OFF })
 
     expect(useHomeSections().isVisible(HomeSection.Faq)).toBe(false)
   })
 
   it('shows projects once the operator switched them on', () => {
-    stubSettings({ [PortalSettingKey.SectionProjects]: 'true' })
+    stubSettings({ [PortalSettingKey.SectionProjects]: SETTING_ON })
 
     expect(useHomeSections().isVisible(HomeSection.Projects)).toBe(true)
   })

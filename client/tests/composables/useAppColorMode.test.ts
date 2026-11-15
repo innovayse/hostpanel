@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import type { Ref } from 'vue'
+import { SETTING_OFF } from '~/constants/settingValue'
 import { ColorMode } from '~/types/colormode'
 import { COLOR_MODE_COOKIE } from '~/utils/colorMode'
 import { useAppColorMode } from '~/composables/useAppColorMode'
@@ -101,7 +102,7 @@ describe('useAppColorMode', () => {
     stubRuntime()
     expect(useAppColorMode().userToggleEnabled.value).toBe(true)
 
-    stubRuntime({ 'portal.theme.user_toggle': 'false' })
+    stubRuntime({ 'portal.theme.user_toggle': SETTING_OFF })
     expect(useAppColorMode().userToggleEnabled.value).toBe(false)
   })
 
@@ -130,7 +131,7 @@ describe('useAppColorMode', () => {
   })
 
   it('toggle does nothing when the operator disabled the switch', () => {
-    stubRuntime({ 'portal.theme.user_toggle': 'false' })
+    stubRuntime({ 'portal.theme.user_toggle': SETTING_OFF })
     const { toggle, isDark } = useAppColorMode()
 
     toggle()

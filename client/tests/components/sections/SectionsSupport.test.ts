@@ -2,23 +2,16 @@
  * Unit tests for SectionsSupport: one card per channel, the reply time and link only when the
  * channel carries them.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import SectionsSupport from '~/components/sections/SectionsSupport.vue'
 import { useSupportChannels } from '~/composables/useSupportChannels'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useSupportChannels })
 
 /** A chat provider, an e-mail address and a ticket reply time; no phone number. */
 const SET_CHANNELS: Record<string, string> = {
@@ -28,16 +21,6 @@ const SET_CHANNELS: Record<string, string> = {
 }
 
 describe('SectionsSupport', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    vi.stubGlobal('useSupportChannels', useSupportChannels)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('shows a card for each channel', async () => {
     await loadPortalSettings(replies, SET_CHANNELS)
 

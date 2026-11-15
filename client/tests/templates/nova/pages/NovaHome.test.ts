@@ -1,16 +1,12 @@
 /**
  * Unit tests for NovaHome: the page root the header's skip link points at, and its sections.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { homeSectionSettings, loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { partnerFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import NovaHome from '~/templates/nova/pages/NovaHome.vue'
 import { useGuarantees } from '~/composables/useGuarantees'
 import { useHomeSections } from '~/composables/useHomeSections'
@@ -19,36 +15,35 @@ import { usePerformanceStats } from '~/composables/usePerformanceStats'
 import { useSecurityFeatures } from '~/composables/useSecurityFeatures'
 import { useSiteIdentity } from '~/composables/useSiteIdentity'
 import { useSupportChannels } from '~/composables/useSupportChannels'
-import { HOME_SECTION_SETTING, HomeSection } from '~/constants/homeSection'
+import { HomeSection } from '~/constants/homeSection'
 import { PLANS } from '~/tests/templates/aurora/auroraGlobals'
 import { PricingCycle } from '~/types/pricingcycle'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
-import { SETTING_ON } from '~/constants/settingValue'
+import { SETTING_OFF, SETTING_ON } from '~/constants/settingValue'
 
-/** The stub playing the BFF; it answers the storefront reads and the operator's settings. */
-let stub: StubServer
-
-/** What the stub answers, by route: every storefront read is empty except the partners. */
-const replies: StubRouteTable = {}
-
-/** The real composables the sections call, registered under the auto-import names Nuxt gives them. */
+/**
+ * The real composables the sections call, registered under the auto-import names Nuxt gives them. Registering the
+ * real composable under its own name replaces nothing, which is why the `noOwnMocks` guard allows it.
+ */
 const REAL_COMPOSABLES = { useGuarantees, useHomeSections, useInstallerApps, usePerformanceStats, useSecurityFeatures, useSiteIdentity, useSupportChannels }
 
-/** What the operator writes into a section's switch to turn it off. */
-const SWITCHED_OFF = 'false'
+/** The stub playing the BFF, answering the storefront reads and the operator's settings, and what it answers, by route. */
+const { replies, stub } = usePortalSettingsServer(REAL_COMPOSABLES)
 
 /**
  * Makes the operator's settings fill every data-gated section the page composes (a performance figure, a
  * security claim, a guarantee), with every home section on unless a test hides some.
  *
  * @param hidden The sections the operator has switched off.
+ * @returns Resolves once the settings are loaded into the shared state.
  */
 const serveSettings = (hidden: HomeSection[] = []): Promise<void> =>
   loadPortalSettings(replies, {
     [PortalSettingKey.StatsUptime]: '99.9%',
     [PortalSettingKey.FeaturesSsl]: SETTING_ON,
     [PortalSettingKey.GuaranteeNoHiddenFees]: SETTING_ON,
-    ...Object.fromEntries(Object.values(HomeSection).map((section) => [HOME_SECTION_SETTING[section], hidden.includes(section) ? SWITCHED_OFF : SETTING_ON])),
+    ...homeSectionSettings(Object.values(HomeSection), SETTING_ON),
+    ...homeSectionSettings(hidden, SETTING_OFF),
   })
 
 /** Test ids of the sections that render without any fetched data, by the section that gates them. */
@@ -63,21 +58,11 @@ const SECTION_TEST_IDS: Partial<Record<HomeSection, string>> = {
 
 describe('NovaHome', () => {
   beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
     for (const path of Object.values(StorefrontPath)) {
       replies[readOf(path)] = { body: [] }
     }
     replies[readOf(StorefrontPath.Partners)] = { body: [partnerFixture(1), partnerFixture(2)] }
-    stubLocalePath()
-    for (const [name, composable] of Object.entries(REAL_COMPOSABLES)) {
-      vi.stubGlobal(name, composable)
-    }
     await serveSettings()
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('is the skip-link target and carries the nova palette', () => {
@@ -136,7 +121,7 @@ describe('NovaHome', () => {
     for (const [hidden, count] of cases) {
       await serveSettings(hidden)
       // With both switches off the partners section is never mounted, so no partners read is started.
-      const wrapper = await mountAfterReads(stub, count > 0 ? [StorefrontPath.Partners] : [], () => mountWithKit(NovaHome))
+      const wrapper = await mountAfterReads(stub(), count > 0 ? [StorefrontPath.Partners] : [], () => mountWithKit(NovaHome))
 
       expect(wrapper.findAll('[data-testid="nova-partners"]')).toHaveLength(count)
       expect(wrapper.find('[data-testid="nova-trusted"]').exists()).toBe(false)

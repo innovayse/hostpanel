@@ -4,39 +4,20 @@
  *
  * @module tests/templates/nova/sections/NovaSupport.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import NovaSupport from '~/templates/nova/sections/NovaSupport.vue'
 import { useSupportChannels } from '~/composables/useSupportChannels'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useSupportChannels })
 
 /** The operator has named a live-chat provider, which is what puts the chat channel on the list. */
 const CHAT_PROVIDER: Record<string, string> = { [PortalSettingKey.ChatProvider]: 'tawk' }
 
 describe('NovaSupport', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    stubLocalePath()
-    vi.stubGlobal('useSupportChannels', useSupportChannels)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('renders a card per channel', async () => {
     await loadPortalSettings(replies, CHAT_PROVIDER)
 

@@ -1,33 +1,18 @@
 /**
  * Unit tests for AuroraHero: the single page headline, both calls to action and the operator-set badge and figures.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import AuroraHero from '~/templates/aurora/sections/AuroraHero.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('AuroraHero', () => {
   beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    stubLocalePath()
     await loadPortalSettings(replies)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('renders the page headline as the only h1, with the accented phrase', () => {

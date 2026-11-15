@@ -3,37 +3,18 @@
  *
  * @module tests/templates/nova/sections/NovaGuarantees.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import NovaGuarantees from '~/templates/nova/sections/NovaGuarantees.vue'
 import { useGuarantees } from '~/composables/useGuarantees'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SETTING_ON } from '~/constants/settingValue'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useGuarantees })
 
 describe('NovaGuarantees', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    stubLocalePath()
-    vi.stubGlobal('useGuarantees', useGuarantees)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('renders one card per guarantee', async () => {
     await loadPortalSettings(replies, { [PortalSettingKey.MigrationFree]: SETTING_ON, [PortalSettingKey.GuaranteeMoneyBackDays]: '30' })
     const wrapper = mountWithKit(NovaGuarantees)

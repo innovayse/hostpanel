@@ -4,7 +4,8 @@
  *
  * Under Nuxt, `useLocalePath`, `useSwitchLocalePath`, `useAppColorMode`, `usePortalSettings`, `useAuthMode`, `useBrandLogo`,
  * `useSiteIdentity` and `useSecurityFeatures` (no claim switched on) are auto-imported. Vitest has no such step, so each is defined here as a
- * global. The settings map is what an operator would have entered under Admin > Settings.
+ * global, except `useLocalePath`, which {@link stubLocalePath} from `runtimeStubs` defines (this module only calls it).
+ * The settings map is what an operator would have entered under Admin > Settings.
  * Template-specific stand-ins (the aurora auth store, say) build on {@link stubTemplateGlobals}.
  *
  * @module tests/helpers/templateGlobals

@@ -348,7 +348,16 @@ public abstract class BaseApiController : ControllerBase
     {
         ArgumentNullException.ThrowIfNull(result);
 
-        return result.IsFailure || result.Value is null ? MapFailure(result) : new EventStreamResult(result.Value);
+        if (result.IsFailure || result.Value is null)
+        {
+            return MapFailure(result);
+        }
+
+        var services = HttpContext.RequestServices;
+        return new EventStreamResult(
+            result.Value,
+            services.GetRequiredService<TimeProvider>(),
+            services.GetRequiredService<ILogger<EventStreamResult>>());
     }
 
     /// <summary>Maps a refusal to its status and localizes its sentence by code; a 503 also carries <c>Retry-After</c>.</summary>

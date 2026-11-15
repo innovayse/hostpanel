@@ -1,19 +1,18 @@
 using System.Text;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Shared.Infrastructure;
 
 /// <summary>
-/// Writes a <see cref="StreamedReply"/> as <c>text/event-stream</c>: the headers first, then every event as it is produced,
-/// flushed at once, with a comment line whenever the stream has been silent for the reply's heartbeat. The events are
-/// enumerated with a token linked to the request abort token and cancelled on every way out, so a client that goes away,
-/// a failed write and a normal end all cancel the producer. Every wait and every reading of silence goes through the request's registered
-/// <see cref="TimeProvider"/>, so a test that replaces it decides when a silence is long enough. When the reply has an idle limit, a producer that sends nothing
-/// for that long is cancelled and the client is told with the limit's end events; heartbeats do not count as activity. The request always ends: waiting for a producer that ignores
-/// its token is bounded.
+/// Writes a <see cref="StreamedReply"/> as <c>text/event-stream</c>: the headers first, then every event as it is
+/// produced, flushed at once, with a comment line whenever the stream has been silent for the reply's heartbeat. The
+/// events are enumerated with a token linked to the request abort token and cancelled on every way out, so a client
+/// that goes away, a failed write and a normal end all cancel the producer. Every wait and every reading of silence goes
+/// through the <see cref="TimeProvider"/> the result was given, so a test that replaces it decides when a silence is
+/// long enough. When the reply has an idle limit, a producer that sends nothing for that long is cancelled and the
+/// client is told with the limit's end events; heartbeats do not count as activity. The request always ends: waiting
+/// for a producer that ignores its token is bounded.
 /// </summary>
 public sealed class EventStreamResult : IActionResult
 {
@@ -26,24 +25,38 @@ public sealed class EventStreamResult : IActionResult
     /// <summary>The reply to write.</summary>
     private readonly StreamedReply _reply;
 
+    /// <summary>The clock every wait and every reading of silence goes through.</summary>
+    private readonly TimeProvider _time;
+
+    /// <summary>Records an abandoned step and a failed release.</summary>
+    private readonly ILogger<EventStreamResult> _logger;
+
     /// <summary>How long to wait for a step still in flight once the stream is over.</summary>
     private readonly TimeSpan _settleTimeout;
 
     /// <summary>Initializes the result with the default settle wait.</summary>
     /// <param name="reply">The reply to write.</param>
-    public EventStreamResult(StreamedReply reply)
-        : this(reply, DefaultSettleTimeout)
+    /// <param name="time">The clock every wait and every reading of silence goes through.</param>
+    /// <param name="logger">Records an abandoned step and a failed release.</param>
+    public EventStreamResult(StreamedReply reply, TimeProvider time, ILogger<EventStreamResult> logger)
+        : this(reply, time, logger, DefaultSettleTimeout)
     {
     }
 
     /// <summary>Initializes the result.</summary>
     /// <param name="reply">The reply to write.</param>
+    /// <param name="time">The clock every wait and every reading of silence goes through.</param>
+    /// <param name="logger">Records an abandoned step and a failed release.</param>
     /// <param name="settleTimeout">How long to wait for a producer step still in flight when the stream is over.</param>
-    public EventStreamResult(StreamedReply reply, TimeSpan settleTimeout)
+    public EventStreamResult(StreamedReply reply, TimeProvider time, ILogger<EventStreamResult> logger, TimeSpan settleTimeout)
     {
         ArgumentNullException.ThrowIfNull(reply);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(logger);
 
         _reply = reply;
+        _time = time;
+        _logger = logger;
         _settleTimeout = settleTimeout;
     }
 
@@ -55,8 +68,6 @@ public sealed class EventStreamResult : IActionResult
         ArgumentNullException.ThrowIfNull(context);
 
         var http = context.HttpContext;
-        var logger = http.RequestServices?.GetService<ILogger<EventStreamResult>>() ?? NullLogger<EventStreamResult>.Instance;
-        var time = http.RequestServices?.GetService<TimeProvider>() ?? TimeProvider.System;
 
         // The producer's token: it is cancelled by the client leaving and, in the finally, by every other way out.
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
@@ -80,7 +91,7 @@ public sealed class EventStreamResult : IActionResult
             await http.Response.Body.FlushAsync(ct);
 
             // The producer's own silence: restarted by each of its events, never by the host's heartbeat.
-            var idleSince = time.GetTimestamp();
+            var idleSince = _time.GetTimestamp();
             var limit = _reply.IdleLimit;
 
             pending = events.MoveNextAsync().AsTask();
@@ -89,16 +100,17 @@ public sealed class EventStreamResult : IActionResult
                 var wait = _reply.Heartbeat;
                 if (limit is not null)
                 {
-                    wait = TimeSpan.FromTicks(Math.Min(wait.Ticks, Math.Max(0, (limit.Timeout - time.GetElapsedTime(idleSince)).Ticks)));
+                    var left = Math.Max(0, (limit.Timeout - _time.GetElapsedTime(idleSince)).Ticks);
+                    wait = TimeSpan.FromTicks(Math.Min(wait.Ticks, left));
                 }
 
                 using var silence = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var finished = await Task.WhenAny(pending, Task.Delay(wait, time, silence.Token));
+                var finished = await Task.WhenAny(pending, Task.Delay(wait, _time, silence.Token));
 
                 // The event may have arrived just as the wait ran out: it is then used, not cut.
                 if (finished != pending && !pending.IsCompleted)
                 {
-                    if (limit is not null && time.GetElapsedTime(idleSince) >= limit.Timeout)
+                    if (limit is not null && _time.GetElapsedTime(idleSince) >= limit.Timeout)
                     {
                         // The producer is cancelled in the finally; the client is told why the stream ended.
                         limit.OnExpired();
@@ -121,7 +133,7 @@ public sealed class EventStreamResult : IActionResult
                 }
 
                 await WriteAsync(http, ServerSentEvent.Format(events.Current), ct);
-                idleSince = time.GetTimestamp();
+                idleSince = _time.GetTimestamp();
                 pending = events.MoveNextAsync().AsTask();
             }
         }
@@ -132,9 +144,9 @@ public sealed class EventStreamResult : IActionResult
         finally
         {
             await lifetime.CancelAsync();
-            var settled = await SettleAsync(pending, time, logger);
-            await CloseAsync(events, settled, logger);
-            await ReleaseOwnerAsync(pending, settled, logger);
+            var settled = await SettleAsync(pending);
+            await CloseAsync(events, settled);
+            await ReleaseOwnerAsync(pending, settled);
         }
     }
 
@@ -145,9 +157,8 @@ public sealed class EventStreamResult : IActionResult
     /// </summary>
     /// <param name="pending">The last step of the producer, or <see langword="null"/> when none was started.</param>
     /// <param name="settled">Whether no step is running any more.</param>
-    /// <param name="logger">Records a disposal that failed.</param>
     /// <returns>A task that completes when the owner has been disposed, or its disposal has been deferred to the step's end.</returns>
-    private async Task ReleaseOwnerAsync(Task<bool>? pending, bool settled, ILogger logger)
+    private async Task ReleaseOwnerAsync(Task<bool>? pending, bool settled)
     {
         if (_reply.Owner is not { } owner)
         {
@@ -156,12 +167,12 @@ public sealed class EventStreamResult : IActionResult
 
         if (settled || pending is null)
         {
-            await DisposeOwnerAsync(owner, logger);
+            await DisposeOwnerAsync(owner);
             return;
         }
 
         _ = pending.ContinueWith(
-            async _ => await DisposeOwnerAsync(owner, logger),
+            async _ => await DisposeOwnerAsync(owner),
             CancellationToken.None,
             TaskContinuationOptions.None,
             TaskScheduler.Default).Unwrap();
@@ -169,9 +180,8 @@ public sealed class EventStreamResult : IActionResult
 
     /// <summary>Disposes the owner of a stream, logging rather than throwing a failure: the stream is already over.</summary>
     /// <param name="owner">The owner to dispose.</param>
-    /// <param name="logger">Records a disposal that failed.</param>
     /// <returns>A task that completes when the owner has been disposed.</returns>
-    private static async Task DisposeOwnerAsync(IAsyncDisposable owner, ILogger logger)
+    private async Task DisposeOwnerAsync(IAsyncDisposable owner)
     {
         try
         {
@@ -179,7 +189,7 @@ public sealed class EventStreamResult : IActionResult
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "What a streamed reply's producer held failed while it was being released.");
+            _logger.LogWarning(ex, "What a streamed reply's producer held failed while it was being released.");
         }
     }
 
@@ -200,10 +210,8 @@ public sealed class EventStreamResult : IActionResult
     /// producer that ignores its token is abandoned after the timeout, so the request, and the lease it holds, can end.
     /// </summary>
     /// <param name="pending">The step in flight, or <see langword="null"/> when none was started.</param>
-    /// <param name="time">The clock the wait is measured on.</param>
-    /// <param name="logger">Records an abandoned step.</param>
     /// <returns><see langword="true"/> when no step is running any more; <see langword="false"/> when one was abandoned.</returns>
-    private async Task<bool> SettleAsync(Task<bool>? pending, TimeProvider time, ILogger logger)
+    private async Task<bool> SettleAsync(Task<bool>? pending)
     {
         if (pending is null)
         {
@@ -211,10 +219,10 @@ public sealed class EventStreamResult : IActionResult
         }
 
         using var timeout = new CancellationTokenSource();
-        var finished = await Task.WhenAny(pending, Task.Delay(_settleTimeout, time, timeout.Token));
+        var finished = await Task.WhenAny(pending, Task.Delay(_settleTimeout, _time, timeout.Token));
         if (finished != pending)
         {
-            logger.LogWarning(
+            _logger.LogWarning(
                 "A streamed reply's producer ignored its cancellation; the step was abandoned after {Timeout}.", _settleTimeout);
 
             // Observed, so the abandoned step's eventual failure is not reported as unobserved.
@@ -239,9 +247,8 @@ public sealed class EventStreamResult : IActionResult
     /// <summary>Disposes the enumerator unless a step of it is still running, which it must not be disposed under.</summary>
     /// <param name="events">The enumerator, or <see langword="null"/> when it could not be created.</param>
     /// <param name="settled">Whether no step is running.</param>
-    /// <param name="logger">Records a disposal that failed.</param>
     /// <returns>A task that completes when the enumerator has been disposed or left alone.</returns>
-    private static async Task CloseAsync(IAsyncEnumerator<StreamedEvent>? events, bool settled, ILogger logger)
+    private async Task CloseAsync(IAsyncEnumerator<StreamedEvent>? events, bool settled)
     {
         if (events is null || !settled)
         {
@@ -254,7 +261,7 @@ public sealed class EventStreamResult : IActionResult
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "A streamed reply's producer failed while it was being closed.");
+            _logger.LogWarning(ex, "A streamed reply's producer failed while it was being closed.");
         }
     }
 }

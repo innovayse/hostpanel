@@ -29,6 +29,9 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
     /// <summary>The limit of the cases that answer in time or keep streaming, in seconds; room for a slow runner.</summary>
     private const int LongLimitSeconds = 3;
 
+    /// <summary>The instant the test clock starts at: nothing here depends on the real date.</summary>
+    private static readonly DateTimeOffset ClockStart = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
     /// <summary>How long a test waits for something that should already be on its way before it calls it stuck.</summary>
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
 
@@ -116,8 +119,8 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
 
     /// <summary>
     /// A stream that sends events with a gap of the test clock between them, then ends. The clock is moved by the stream itself,
-    /// at the moment the host has taken the previous event and is waiting for the next, so how long a gap is never depends on
-    /// how fast the runner is.
+    /// inside the host's step that asks it for the next event, after the host has noted when it last heard from the stream
+    /// and before it works out how much of the limit is left, so how long a gap is never depends on how fast the runner is.
     /// </summary>
     /// <param name="count">How many events.</param>
     /// <param name="clock">The clock the host measures the stream's silence on.</param>
@@ -314,13 +317,15 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
     /// <summary>
     /// A stream that keeps sending past the limit is not cut: its length is not the limit's concern, only a silence as long
     /// as the limit is. The host reads a test clock, and every gap between events is shorter than the limit while the
-    /// stream as a whole runs for twice the limit, so the result does not depend on how fast the runner is.
+    /// stream as a whole runs for more than the limit on that clock, so the result does not depend on how fast the runner is.
+    /// A host that went back to the real clock would see no silence at all here and pass too, so only the premise is
+    /// checked: the stream really outlasted the limit on the test clock.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task AStreamThatKeepsSending_PastTheLimit_IsNotCut()
     {
-        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new FakeTimeProvider(ClockStart);
         using var http = await OwnerAsync(Timed(LongLimitSeconds, configureServices: ClockOf(clock)), "timeout-stream-busy");
         _fixture.Probe.AsyncBehaviour = (_, _) => Task.FromResult(
             PluginReply.Stream(Steady(4, clock, TimeSpan.FromSeconds(LongLimitSeconds - 1))));
@@ -331,27 +336,33 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Contain("data: tick-1").And.Contain("data: tick-4");
         body.Should().NotContain(HostpanelErrorCodes.PLUGIN_TIMEOUT);
+        (clock.GetUtcNow() - ClockStart).Should().BeGreaterThan(TimeSpan.FromSeconds(LongLimitSeconds));
     }
 
     /// <summary>
     /// A stream that goes silent for the limit is cancelled and ended with the timeout error and <c>done</c>. The host reads a
-    /// test clock the stream moves by the limit once the host waits for its next event, so the cut happens at once and on
-    /// every runner.
+    /// test clock the stream moves by the limit inside the step that asks it for the next event, after the host has noted when
+    /// it last heard from the stream and before it works out how long to wait, so the cut happens at once and on every runner.
+    /// The real time the call takes is checked against the limit: a host that went back to the real clock would need the whole
+    /// limit to cut the stream and fail here.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task AStreamThatGoesSilent_ForTheLimit_IsCut()
     {
-        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new FakeTimeProvider(ClockStart);
         using var http = await OwnerAsync(Timed(LongLimitSeconds, configureServices: ClockOf(clock)), "timeout-stream-silent");
         var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _fixture.Probe.AsyncBehaviour = (_, _) => Task.FromResult(
             PluginReply.Stream(GoesSilent(cancelled, () => clock.Advance(TimeSpan.FromSeconds(LongLimitSeconds)), CancellationToken.None)));
 
+        var elapsed = Stopwatch.StartNew();
         using var response = await ClientCallAsync(http, HttpMethod.Get, "stream");
         var body = await response.Content.ReadAsStringAsync().WaitAsync(Patience);
+        elapsed.Stop();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        elapsed.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(LongLimitSeconds), "the silence was measured on the test clock, not the real one");
         body.Should().Contain("data: first");
         body.Should().Contain("event: error").And.Contain(HostpanelErrorCodes.PLUGIN_TIMEOUT).And.Contain("event: done");
         await cancelled.Task.WaitAsync(Patience);

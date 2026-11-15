@@ -30,8 +30,12 @@ public sealed class TimerWatchingTimeProvider : FakeTimeProvider
     /// <summary>Waits until one more timer has been created than this has already waited for.</summary>
     /// <param name="patience">How long to wait before the test calls the code under test stuck.</param>
     /// <returns>A task that completes when that timer exists.</returns>
-    public Task NextTimerAsync(TimeSpan patience)
+    /// <exception cref="TimeoutException">No timer was created within <paramref name="patience"/>.</exception>
+    public async Task NextTimerAsync(TimeSpan patience)
     {
-        return _created.WaitAsync(patience);
+        if (!await _created.WaitAsync(patience))
+        {
+            throw new TimeoutException($"The code under test created no timer on the test clock within {patience}.");
+        }
     }
 }

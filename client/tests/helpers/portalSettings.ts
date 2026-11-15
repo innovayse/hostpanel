@@ -17,7 +17,7 @@ import { readOf } from './stubRoutes'
 import type { StubRouteTable } from './stubRoutes'
 
 /** The BFF path of the public settings read. */
-export const SETTINGS_PATH = '/api/portal/public/settings'
+const SETTINGS_PATH = '/api/portal/public/settings'
 
 /** What the plugin module exports once `defineNuxtPlugin` has returned its definition unchanged. */
 interface PluginDefinition {
@@ -28,6 +28,9 @@ interface PluginDefinition {
 /**
  * Makes the stub serve these settings and loads them through the real plugin, so the real
  * `usePortalSettings` reads them. Call it again with other settings to change what the next mount reads.
+ *
+ * The stub transport must already be running, because the plugin swallows a failed read and
+ * leaves the settings empty, which would let a test that expects empty settings pass for the wrong reason.
  *
  * @param replies - The reply table of the running stub; its settings route is set here.
  * @param settings - The operator's settings by their dotted key; a key that is absent reads as unset.

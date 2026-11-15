@@ -10,7 +10,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { makeClientUser } from '~/tests/helpers/clientUser'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { invoicePath } from '~/tests/helpers/billingPaths'
+import { CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH } from '~/constants/clientRoutes'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -18,12 +21,8 @@ import OrderSuccessPage from '~/pages/client/order-success.vue'
 import { Permission } from '~/types/permission'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The BFF paths the page reads. */
-const PATHS = {
-  me: '/api/portal/client/me',
-  services: '/api/portal/client/services',
-  invoice: '/api/portal/client/invoices/7',
-} as const
+/** The invoice the order summary is read from. */
+const INVOICE_PATH = invoicePath(7)
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -33,9 +32,9 @@ let table: StubRouteTable
 
 beforeEach(async () => {
   table = {
-    [`GET ${PATHS.me}`]: { body: makeClientUser({ permissions: Permission.All }) },
-    [`GET ${PATHS.services}`]: { body: [] },
-    [`GET ${PATHS.invoice}`]: { body: { id: 7, total: 25, currency: 'USD' } },
+    [readOf(AccountEndpoint.Me)]: { body: makeClientUser({ permissions: Permission.All }) },
+    [readOf(AccountEndpoint.Services)]: { body: [] },
+    [readOf(INVOICE_PATH)]: { body: { id: 7, total: 25, currency: 'USD' } },
   }
   stub = await startTransport(routeTable(table))
 })
@@ -51,7 +50,7 @@ describe('client order-success page', () => {
     const wrapper = await mountAuthPage(OrderSuccessPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('$25.00'))
 
-    expect(requestsTo(stub.requests, PATHS.invoice).map(request => request.method)).toEqual(['GET'])
+    expect(requestsTo(stub.requests, INVOICE_PATH).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="order-success-number"]').text()).toContain('A-1001')
   })
 
@@ -82,7 +81,7 @@ describe('client order-success page', () => {
 
     expect(wrapper.find('[data-testid="order-success-domain"]').text()).toContain('example.com')
     expect(wrapper.find('[data-testid="order-success-action"]').text()).toContain('checkout.success.transfer')
-    expect(wrapper.find('[data-testid="order-success-manage-domain"]').attributes('href')).toBe('/client/domains')
+    expect(wrapper.find('[data-testid="order-success-manage-domain"]').attributes('href')).toBe(CLIENT_DOMAINS_PATH)
   })
 
   it('names a registration as such', async () => {
@@ -98,7 +97,7 @@ describe('client order-success page', () => {
 
     const wrapper = await mountAuthPage(OrderSuccessPage)
 
-    expect(wrapper.find('[data-testid="order-success-invoices"]').attributes('href')).toBe('/client/invoices')
+    expect(wrapper.find('[data-testid="order-success-invoices"]').attributes('href')).toBe(CLIENT_INVOICES_PATH)
   })
 
   it('offers the hosting setup after an order that held a hosting service', async () => {
@@ -123,8 +122,8 @@ describe('client order-success page', () => {
     const wrapper = await mountAuthPage(OrderSuccessPage)
 
     await wrapper.find('[data-testid="order-success-setup-service"]').trigger('click')
-    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/client/services'))
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(CLIENT_SERVICES_PATH))
 
-    expect(requestsTo(stub.requests, PATHS.services).map(request => request.method)).toEqual(['GET'])
+    expect(requestsTo(stub.requests, AccountEndpoint.Services).map(request => request.method)).toEqual(['GET'])
   })
 })

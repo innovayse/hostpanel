@@ -5,9 +5,13 @@
  * @module tests/helpers/contentPaths
  */
 
+/** The BFF path of the published announcements, which a visitor reads without signing in. */
+const PUBLIC_ANNOUNCEMENTS = '/api/portal/public/announcements'
+
 /** The content reads that have one fixed path. */
 export const ContentPath = {
   Announcements: '/api/portal/client/announcements',
+  PublicAnnouncements: PUBLIC_ANNOUNCEMENTS,
   KbCategories: '/api/portal/knowledgebase/categories',
   KbArticles: '/api/portal/knowledgebase/articles',
 } as const
@@ -18,7 +22,7 @@ export const ContentPath = {
  * @param id - Announcement id, as it appears in the route.
  * @returns The detail path.
  */
-export const announcementPath = (id: string): string => `/api/portal/public/announcements/${id}`
+export const announcementPath = (id: string): string => `${PUBLIC_ANNOUNCEMENTS}/${id}`
 
 /**
  * The path of one knowledgebase article.

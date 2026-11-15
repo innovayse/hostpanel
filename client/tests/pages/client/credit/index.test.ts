@@ -9,17 +9,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { stubClientRuntime } from '~/tests/helpers/mountClient'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
-import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { queryOf, readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { CLIENT_CREDIT_ADD_PATH } from '~/constants/clientRoutes'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import CreditPage from '~/pages/client/credit/index.vue'
 import { CreditMovement } from '~/types/creditmovement'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF path the page reads. */
-const CREDIT_PATH = '/api/portal/client/credit'
 
 /** The `data-testid` of the page's root, on screen once its read has ended. */
 const PAGE_ROOT = 'client-credit'
@@ -63,7 +62,7 @@ const credit = (lines: number, totalPages = 1) => ({
  *
  * @returns The requests, oldest first.
  */
-const reads = () => requestsTo(stub.requests, CREDIT_PATH)
+const reads = () => requestsTo(stub.requests, BillingEndpoint.Credit)
 
 beforeEach(async () => {
   stubClientRuntime()
@@ -77,7 +76,7 @@ afterEach(async () => {
 
 describe('credit page', () => {
   it('reads the first page of the credit and shows the balance and the history', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(2) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(2) }
 
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
 
@@ -89,16 +88,16 @@ describe('credit page', () => {
   })
 
   it('offers the way to add funds', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(0) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(0) }
 
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
 
-    expect(wrapper.get('[data-testid="credit-add-funds"]').attributes('href')).toBe('/client/credit/add')
+    expect(wrapper.get('[data-testid="credit-add-funds"]').attributes('href')).toBe(CLIENT_CREDIT_ADD_PATH)
     expect(wrapper.find('[data-testid="credit-history-empty"]').exists()).toBe(true)
   })
 
   it('shows no pagination when the whole history fits one page', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(3, 1) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(3, 1) }
 
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
 
@@ -106,7 +105,7 @@ describe('credit page', () => {
   })
 
   it('reads the next page when the client asks for it', async () => {
-    table[`GET ${CREDIT_PATH}`] = { body: credit(10, 3) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(10, 3) }
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
 
     await wrapper.get('[data-testid="ui-pagination-next"]').trigger('click')
@@ -118,7 +117,7 @@ describe('credit page', () => {
   it('offers a retry on the failed read that asks for the same page again', async () => {
     /** Whether the stub refuses the read of the second page. */
     let refusePageTwo = false
-    table[`GET ${CREDIT_PATH}`] = (request) => refusePageTwo && queryOf(request).page === '2'
+    table[readOf(BillingEndpoint.Credit)] = (request) => refusePageTwo && queryOf(request).page === '2'
       ? { status: 404, body: { type: PortalErrorCode.ClientProfileNotFound, detail: 'No client profile.' } }
       : { body: credit(10, 3) }
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
@@ -137,7 +136,7 @@ describe('credit page', () => {
   })
 
   it('shows the sentence of a failed read instead of the balance', async () => {
-    table[`GET ${CREDIT_PATH}`] = { status: 404, body: { type: PortalErrorCode.ClientProfileNotFound, detail: 'No client profile.' } }
+    table[readOf(BillingEndpoint.Credit)] = { status: 404, body: { type: PortalErrorCode.ClientProfileNotFound, detail: 'No client profile.' } }
 
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
 

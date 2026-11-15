@@ -14,13 +14,15 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { heldReply, requestsTo, routeTable } from '../helpers/stubRoutes'
+import { heldReply, readOf, requestsTo, routeTable } from '../helpers/stubRoutes'
 import type { HeldReply, StubRouteTable } from '../helpers/stubRoutes'
+import { DomainEndpoint } from '../helpers/domainPanelPaths'
+import { BillingEndpoint } from '../helpers/billingPaths'
+import { AccountEndpoint } from '../helpers/accountPaths'
 import type { StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { useClientStore } from '~/stores/client'
-import { HttpMethod } from '~/types/httpmethod'
 import { Permission } from '~/types/permission'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { waitUntil } from '~/tests/helpers/waitUntil'
@@ -31,26 +33,11 @@ let stub: StubServer
 /** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
 let table: StubRouteTable
 
-/** The identity read. */
-const ME_PATH = '/api/portal/client/me'
-
 /** The identity read, as a table key. */
-const ME_ROUTE = `${HttpMethod.Get} ${ME_PATH}`
-
-/** The ticket list read. */
-const TICKETS_PATH = '/api/portal/client/tickets'
-
-/** The service list read. */
-const SERVICES_PATH = '/api/portal/client/services'
-
-/** The invoice list read. */
-const INVOICES_PATH = '/api/portal/client/invoices'
-
-/** The domain list read. */
-const DOMAINS_PATH = '/api/portal/client/domains'
+const ME_ROUTE = readOf(AccountEndpoint.Me)
 
 /** The paths of the customer-only lists. */
-const SECTION_PATHS = [TICKETS_PATH, SERVICES_PATH, INVOICES_PATH, DOMAINS_PATH]
+const SECTION_PATHS = [AccountEndpoint.Tickets, AccountEndpoint.Services, BillingEndpoint.Invoices, DomainEndpoint.List]
 
 /** A minimal profile: only the fields the assertions read. */
 const profile = makeClientUser({ email: 'ada@example.com', permissions: Permission.All })
@@ -91,7 +78,7 @@ describe('useClientStore.fetchUser', () => {
     held.release({ body: profile })
     await callers
 
-    expect(requestsTo(stub.requests, ME_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(1)
     expect(store.user).toEqual(profile)
     expect(store.userLoaded).toBe(true)
     expect(store.userLoading).toBe(false)
@@ -122,7 +109,7 @@ describe('useClientStore.fetchUser', () => {
     await store.fetchUser()
     await store.fetchUser()
 
-    expect(requestsTo(stub.requests, ME_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(1)
   })
 
   it('asks again when a caller forces a refresh after saving the profile', async () => {
@@ -132,7 +119,7 @@ describe('useClientStore.fetchUser', () => {
     await store.fetchUser()
     await store.fetchUser(true)
 
-    expect(requestsTo(stub.requests, ME_PATH)).toHaveLength(2)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(2)
   })
 
   it('asks once, not three times, for a staff identity with no client record', async () => {
@@ -146,7 +133,7 @@ describe('useClientStore.fetchUser', () => {
     held.release({ status: 404, body: { type: PortalErrorCode.ClientProfileNotFound } })
     await callers
 
-    expect(requestsTo(stub.requests, ME_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(1)
     expect(store.clientProfileMissing).toBe(true)
     // Not a fault, so nothing renders it in red.
     expect(store.userError).toBeNull()
@@ -198,7 +185,7 @@ describe('useClientStore.fetchUser', () => {
     first.release({ body: profile })
     await stale
 
-    expect(requestsTo(stub.requests, ME_PATH)).toHaveLength(2)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(2)
     expect(store.user).toEqual(next)
   })
 })
@@ -216,38 +203,38 @@ describe('useClientStore customer-only sections for an identity that is not a cu
       expect(requestsTo(stub.requests, path)).toHaveLength(0)
     }
     // One shared identity request served all four sections, and none is left spinning or red.
-    expect(requestsTo(stub.requests, ME_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(1)
     expect(store.ticketsLoading).toBe(false)
     expect(store.ticketsError).toBeNull()
   })
 
   it('loads the tickets of a customer account after the identity confirms it', async () => {
     table[ME_ROUTE] = { body: { ...profile, hasClientProfile: true } }
-    table[`${HttpMethod.Get} ${TICKETS_PATH}`] = { body: [{ id: 7 }] }
+    table[readOf(AccountEndpoint.Tickets)] = { body: [{ id: 7 }] }
     const store = useClientStore()
 
     await store.fetchTickets()
 
     expect(store.clientProfileMissing).toBe(false)
-    expect(requestsTo(stub.requests, TICKETS_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Tickets)).toHaveLength(1)
     expect(store.tickets).toEqual([{ id: 7 }])
   })
 
   it('still tries the section when the identity itself could not be read', async () => {
     table[ME_ROUTE] = { status: 500 }
-    table[`${HttpMethod.Get} ${TICKETS_PATH}`] = { body: [] }
+    table[readOf(AccountEndpoint.Tickets)] = { body: [] }
     const store = useClientStore()
 
     await store.fetchTickets()
 
-    expect(requestsTo(stub.requests, TICKETS_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Tickets)).toHaveLength(1)
     expect(store.ticketsLoaded).toBe(true)
   })
 })
 
 describe('useClientStore.loadEmail', () => {
   it('keeps the message', async () => {
-    table[`${HttpMethod.Get} /api/portal/client/emails/5`] = { body: { id: 5, to: 'a@b.test', subject: 'Hello', body: '<p>x</p>', sentAt: '2026-01-01T00:00:00Z', success: true } }
+    table[readOf(`${AccountEndpoint.Emails}/5`)] = { body: { id: 5, to: 'a@b.test', subject: 'Hello', body: '<p>x</p>', sentAt: '2026-01-01T00:00:00Z', success: true } }
     const store = useClientStore()
 
     expect(await store.loadEmail('5')).toMatchObject({ subject: 'Hello' })
@@ -257,7 +244,7 @@ describe('useClientStore.loadEmail', () => {
   })
 
   it('keeps the API sentence and no message when the read is refused', async () => {
-    table[`${HttpMethod.Get} /api/portal/client/emails/5`] = { status: 404, body: { detail: 'No such message.' } }
+    table[readOf(`${AccountEndpoint.Emails}/5`)] = { status: 404, body: { detail: 'No such message.' } }
     const store = useClientStore()
 
     expect(await store.loadEmail('5')).toBeNull()
@@ -266,7 +253,7 @@ describe('useClientStore.loadEmail', () => {
   })
 
   it('stays quiet when the session is over, because the reader is already on the way out', async () => {
-    table[`${HttpMethod.Get} /api/portal/client/emails/5`] = { status: 401 }
+    table[readOf(`${AccountEndpoint.Emails}/5`)] = { status: 401 }
     const store = useClientStore()
 
     await store.loadEmail('5')
@@ -275,7 +262,7 @@ describe('useClientStore.loadEmail', () => {
   })
 
   it('forgets the message on reset', async () => {
-    table[`${HttpMethod.Get} /api/portal/client/emails/5`] = { body: { id: '5' } }
+    table[readOf(`${AccountEndpoint.Emails}/5`)] = { body: { id: '5' } }
     const store = useClientStore()
     await store.loadEmail('5')
 
@@ -288,15 +275,15 @@ describe('useClientStore.loadEmail', () => {
 describe('useClientStore sections the person has no permission for', () => {
   it('never sends the request of a section the permissions do not cover', async () => {
     table[ME_ROUTE] = { body: { ...profile, permissions: Permission.ViewDomains } }
-    table[`${HttpMethod.Get} ${DOMAINS_PATH}`] = { body: [{ id: 3 }] }
+    table[readOf(DomainEndpoint.List)] = { body: [{ id: 3 }] }
     const store = useClientStore()
 
     await store.fetchAll()
 
-    expect(requestsTo(stub.requests, DOMAINS_PATH)).toHaveLength(1)
-    expect(requestsTo(stub.requests, SERVICES_PATH)).toHaveLength(0)
-    expect(requestsTo(stub.requests, INVOICES_PATH)).toHaveLength(0)
-    expect(requestsTo(stub.requests, TICKETS_PATH)).toHaveLength(0)
+    expect(requestsTo(stub.requests, DomainEndpoint.List)).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Services)).toHaveLength(0)
+    expect(requestsTo(stub.requests, BillingEndpoint.Invoices)).toHaveLength(0)
+    expect(requestsTo(stub.requests, AccountEndpoint.Tickets)).toHaveLength(0)
     expect(store.servicesError).toBeNull()
     expect(store.invoicesError).toBeNull()
     expect(store.ticketsError).toBeNull()
@@ -327,7 +314,7 @@ describe('useClientStore sections the person has no permission for', () => {
   it('keeps the API sentence when the server refuses a section anyway, for instance after a grant was withdrawn', async () => {
     table[ME_ROUTE] = { body: profile }
     // The shape the browser gets through the BFF: the sentence in statusMessage, the code under data.
-    table[`${HttpMethod.Get} ${SERVICES_PATH}`] = {
+    table[readOf(AccountEndpoint.Services)] = {
       status: 403,
       body: { statusMessage: 'Your account does not have permission to do this.', data: { code: 'CLIENT_PERMISSION_DENIED' } }
     }

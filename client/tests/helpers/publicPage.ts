@@ -17,7 +17,7 @@ import type { Component } from 'vue'
 import { vi } from 'vitest'
 import { mountAsyncPage } from '~/tests/helpers/mountWithKit'
 import type { MountWithKitOptions } from '~/tests/helpers/mountWithKit'
-import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
+import { stubLocalePath, stubRoute, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 
 /** The spies a test reads after mounting a page. */
 export interface PublicPageSpies {
@@ -60,7 +60,7 @@ export const stubPublicPageRuntime = (options: PublicPageOptions = {}): PublicPa
 
   vi.stubGlobal('watchEffect', watchEffect)
   vi.stubGlobal('storeToRefs', storeToRefs)
-  stubLocalePath('/en')
+  stubLocalePath(TEST_LOCALE_PREFIX)
   vi.stubGlobal('useSeo', spies.useSeo)
   vi.stubGlobal('useSeoMeta', spies.useSeoMeta)
   vi.stubGlobal('useHead', vi.fn())

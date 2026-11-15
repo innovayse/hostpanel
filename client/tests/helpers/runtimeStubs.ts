@@ -23,7 +23,7 @@ export interface RouteStubOptions {
 /**
  * Defines `useRoute` as a global returning a fixed route.
  *
- * @param options Parameters, query and full path of the route.
+ * @param options - Parameters, query and full path of the route.
  */
 export const stubRoute = (options: RouteStubOptions = {}): void => {
   vi.stubGlobal('useRoute', () => ({
@@ -38,7 +38,7 @@ export const stubRoute = (options: RouteStubOptions = {}): void => {
 /**
  * Defines `useLocalePath` as a global that prefixes every path.
  *
- * @param prefix What to put before the path; empty keeps the path as given.
+ * @param prefix - What to put before the path; empty keeps the path as given.
  */
 export const stubLocalePath = (prefix: string = ''): void => {
   vi.stubGlobal('useLocalePath', () => (path: string) => `${prefix}${path}`)
@@ -50,7 +50,7 @@ export const TEST_LOCALE_PREFIX = '/en'
 /**
  * A path as the localised router returns it in a test.
  *
- * @param path The unlocalised path, e.g. a client route constant or the result of a route helper.
+ * @param path - The unlocalised path, e.g. a client route constant or the result of a route helper.
  * @returns The path behind {@link TEST_LOCALE_PREFIX}.
  */
 export const localized = (path: string): string => `${TEST_LOCALE_PREFIX}${path}`

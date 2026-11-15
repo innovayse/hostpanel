@@ -35,15 +35,11 @@ import { PaymentModule } from '~/types/paymentmodule'
 import { Permission } from '~/types/permission'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The BFF paths the checkout page reads and writes. */
-const PATHS = {
-  currencies: CatalogPath.BillingCurrencies,
-  products: CatalogPath.Products,
-  methods: BillingEndpoint.OrderPaymentMethods,
-  create: BillingEndpoint.OrderCreate,
-  gatewayStart: orderPaymentStartPath(42),
-  bankTransfer: bankTransferPath(77),
-} as const
+/** The hosted gateway start path of order 42. */
+const GATEWAY_START_PATH = orderPaymentStartPath(42)
+
+/** The bank-transfer path of invoice 77. */
+const BANK_TRANSFER_PATH = bankTransferPath(77)
 
 /** The hosted gateway module the stub offers. */
 const HOSTED_GATEWAY = 'card_gateway'
@@ -85,7 +81,7 @@ const placedOrder = (total: number): { body: Record<string, unknown> } => ({
  * @param modules - The gateway modules, in the order they are offered.
  */
 const offer = (modules: string[]): void => {
-  table[readOf(PATHS.methods)] = { body: modules.map(module => ({ module, displayName: module })) }
+  table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: modules.map(module => ({ module, displayName: module })) }
 }
 
 /**
@@ -133,7 +129,7 @@ const runInPage = async (): Promise<CheckoutPage> => {
   await mountAsyncPage(Host, { pinia })
   await waitUntil(() => expect(page).toBeDefined())
   if (readsCatalogue) {
-    await waitUntil(() => expect(requestsTo(stub.requests, PATHS.products)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(1))
   }
   await settle(5)
   if (!page) {
@@ -150,13 +146,13 @@ beforeEach(async () => {
   vi.stubGlobal('useHead', vi.fn())
   stubLocalePath()
   table = {
-    [readOf(PATHS.currencies)]: { body: [
+    [readOf(CatalogPath.BillingCurrencies)]: { body: [
       { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true },
       { code: 'EUR', numeric: '978', prefix: '', suffix: ' EUR', decimals: 2, isBase: false },
     ] },
-    [readOf(PATHS.products)]: { body: [] },
-    [writeOf(PATHS.create)]: placedOrder(12),
-    [writeOf(PATHS.bankTransfer)]: { body: { invoiceId: 77, reference: 'INV-77' } },
+    [readOf(CatalogPath.Products)]: { body: [] },
+    [writeOf(BillingEndpoint.OrderCreate)]: placedOrder(12),
+    [writeOf(BANK_TRANSFER_PATH)]: { body: { invoiceId: 77, reference: 'INV-77' } },
   }
   offer([HOSTED_GATEWAY, PaymentModule.BankTransfer])
   stub = await startTransport(routeTable(table))
@@ -178,14 +174,14 @@ describe('useCheckoutPage', () => {
     await waitUntil(() => expect(page.currencyOptions.value).toEqual([{ value: 'USD', label: 'USD' }, { value: 'EUR', label: 'EUR' }]))
     expect(page.userEmail.value).toBe('ann@acme.test')
     expect(page.cart.items).toEqual([HOSTING])
-    expect(requestsTo(stub.requests, PATHS.currencies)).toHaveLength(1)
+    expect(requestsTo(stub.requests, CatalogPath.BillingCurrencies)).toHaveLength(1)
   })
 
   it('releases the submit button and re-prices the cart from the catalogue when the page opens', async () => {
     await preloadCurrencies()
     useCartStore().items = [{ ...HOSTING }]
     useCheckoutStore().submitting = true
-    table[readOf(PATHS.products)] = { body: [{ id: 5, groupId: 1, name: 'Pro', pricing: { monthly: 15 } }] }
+    table[readOf(CatalogPath.Products)] = { body: [{ id: 5, groupId: 1, name: 'Pro', pricing: { monthly: 15 } }] }
 
     const page = await runInPage()
 
@@ -195,7 +191,7 @@ describe('useCheckoutPage', () => {
 
   it('hands the templates the renewal-save choice, off by default, and whether to offer it', async () => {
     signIn(makeClientUser())
-    table[readOf(PATHS.methods)] = { body: [{ module: HOSTED_GATEWAY, displayName: HOSTED_GATEWAY, supportsStoredCredentials: true }] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [{ module: HOSTED_GATEWAY, displayName: HOSTED_GATEWAY, supportsStoredCredentials: true }] }
 
     const page = await runInPage()
 
@@ -232,7 +228,7 @@ describe('useCheckoutPage', () => {
 
     await page.submitOrder()
 
-    const [sent] = requestsTo(stub.requests, PATHS.create)
+    const [sent] = requestsTo(stub.requests, BillingEndpoint.OrderCreate)
     expect(JSON.parse(sent?.body ?? '')).toEqual(expect.objectContaining({ email: 'guest@acme.test' }))
     expect(navigateTo).toHaveBeenCalledWith(INVOICE_PAYMENT_PATH)
   })
@@ -241,7 +237,7 @@ describe('useCheckoutPage', () => {
     await preloadCurrencies()
     offer([PaymentModule.BankTransfer])
     useCartStore().items = [{ ...HOSTING }]
-    table[writeOf(PATHS.create)] = placedOrder(14)
+    table[writeOf(BillingEndpoint.OrderCreate)] = placedOrder(14)
     const confirmSpy = vi.fn(() => true)
     vi.stubGlobal('confirm', confirmSpy)
     const page = await runInPage()
@@ -255,13 +251,13 @@ describe('useCheckoutPage', () => {
   it('does not follow an external destination that is not a secure address', async () => {
     await preloadCurrencies()
     useCartStore().items = [{ ...HOSTING }]
-    table[writeOf(PATHS.gatewayStart)] = { body: { redirectUrl: 'javascript:alert(1)' } }
+    table[writeOf(GATEWAY_START_PATH)] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const before = window.location.href
     const page = await runInPage()
 
     await page.submitOrder()
 
-    expect(requestsTo(stub.requests, PATHS.gatewayStart)).toHaveLength(1)
+    expect(requestsTo(stub.requests, GATEWAY_START_PATH)).toHaveLength(1)
     expect(window.location.href).toBe(before)
     expect(navigateTo).not.toHaveBeenCalled()
   })
@@ -269,7 +265,7 @@ describe('useCheckoutPage', () => {
   it('stays put when the store refuses the order', async () => {
     await preloadCurrencies()
     useCartStore().items = [{ ...HOSTING }]
-    table[writeOf(PATHS.create)] = { status: 400, body: { type: 'ORDER_REFUSED', detail: 'Refused.' } }
+    table[writeOf(BillingEndpoint.OrderCreate)] = { status: 400, body: { type: 'ORDER_REFUSED', detail: 'Refused.' } }
     const page = await runInPage()
 
     await page.submitOrder()
@@ -293,7 +289,7 @@ describe('useCheckoutPage permissions', () => {
     await page.submitOrder()
 
     expect(page.mayPlaceOrders.value).toBe(true)
-    expect(requestsTo(stub.requests, PATHS.create)).toHaveLength(1)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(1)
   })
 
   it('sends nothing when a member of the account lacks the permission to place orders', async () => {
@@ -303,7 +299,7 @@ describe('useCheckoutPage permissions', () => {
     await page.submitOrder()
 
     expect(page.mayPlaceOrders.value).toBe(false)
-    expect(requestsTo(stub.requests, PATHS.create)).toHaveLength(0)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(0)
     expect(navigateTo).not.toHaveBeenCalled()
   })
 
@@ -314,6 +310,6 @@ describe('useCheckoutPage permissions', () => {
     await page.submitOrder()
 
     expect(page.mayPlaceOrders.value).toBe(true)
-    expect(requestsTo(stub.requests, PATHS.create)).toHaveLength(1)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderCreate)).toHaveLength(1)
   })
 })

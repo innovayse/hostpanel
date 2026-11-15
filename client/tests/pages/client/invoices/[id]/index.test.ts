@@ -30,7 +30,6 @@ const PATHS = {
   bankTransfer: bankTransferPath(41),
   pdf: invoicePdfPath(41),
   applyCredit: invoiceCreditPath(41),
-  credit: BillingEndpoint.Credit,
 } as const
 
 /** The stub playing the BFF. */
@@ -68,12 +67,12 @@ const credit = (balance: number) => ({
  *
  * @returns The count.
  */
-const creditReads = (): number => requestsTo(stub.requests, PATHS.credit).length
+const creditReads = (): number => requestsTo(stub.requests, BillingEndpoint.Credit).length
 
 beforeEach(async () => {
   stubClientRuntime({ params: { id: '41' } })
   table = {
-    [readOf(PATHS.credit)]: { body: credit(0) },
+    [readOf(BillingEndpoint.Credit)]: { body: credit(0) },
   }
   stub = await startTransport(routeTable(table))
 })
@@ -161,7 +160,7 @@ describe('invoice page', () => {
   })
 
   it('offers to pay with credit when the client has some, and reads the invoice again once it is applied', async () => {
-    table[readOf(PATHS.credit)] = { body: credit(30) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(30) }
     table[writeOf(PATHS.applyCredit)] = { body: {} }
     // The first read is the invoice as it was; every read after the credit was applied is the invoice as it is now.
     table[readOf(PATHS.invoice)] = () => ({
@@ -189,7 +188,7 @@ describe('invoice page', () => {
   })
 
   it('marks a credit top-up invoice and offers no credit for it', async () => {
-    table[readOf(PATHS.credit)] = { body: credit(30) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(30) }
     table[readOf(PATHS.invoice)] = { body: invoice({ isCreditTopUp: true }) }
 
     const wrapper = await mountPage(InvoicePage)

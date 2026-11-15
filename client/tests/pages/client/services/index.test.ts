@@ -13,6 +13,7 @@ import { makeClientUser } from '~/tests/helpers/clientUser'
 import { readOf, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { SitePage } from '~/tests/helpers/sitePaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { Permission } from '~/types/permission'
@@ -84,7 +85,7 @@ describe('service list page', () => {
     const wrapper = await mountPage(ServicesPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="services-browse-hosting"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="services-browse-hosting"]').attributes('href')).toBe('/hosting')
+    expect(wrapper.find('[data-testid="services-browse-hosting"]').attributes('href')).toBe(SitePage.Hosting)
   })
 
   it('shows the failure, not the empty state, when the read failed', async () => {

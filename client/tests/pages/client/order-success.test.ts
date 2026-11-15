@@ -21,12 +21,8 @@ import OrderSuccessPage from '~/pages/client/order-success.vue'
 import { Permission } from '~/types/permission'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The BFF paths the page reads. */
-const PATHS = {
-  me: AccountEndpoint.Me,
-  services: AccountEndpoint.Services,
-  invoice: invoicePath(7),
-} as const
+/** The invoice the order summary is read from. */
+const INVOICE_PATH = invoicePath(7)
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -36,9 +32,9 @@ let table: StubRouteTable
 
 beforeEach(async () => {
   table = {
-    [readOf(PATHS.me)]: { body: makeClientUser({ permissions: Permission.All }) },
-    [readOf(PATHS.services)]: { body: [] },
-    [readOf(PATHS.invoice)]: { body: { id: 7, total: 25, currency: 'USD' } },
+    [readOf(AccountEndpoint.Me)]: { body: makeClientUser({ permissions: Permission.All }) },
+    [readOf(AccountEndpoint.Services)]: { body: [] },
+    [readOf(INVOICE_PATH)]: { body: { id: 7, total: 25, currency: 'USD' } },
   }
   stub = await startTransport(routeTable(table))
 })
@@ -54,7 +50,7 @@ describe('client order-success page', () => {
     const wrapper = await mountAuthPage(OrderSuccessPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('$25.00'))
 
-    expect(requestsTo(stub.requests, PATHS.invoice).map(request => request.method)).toEqual(['GET'])
+    expect(requestsTo(stub.requests, INVOICE_PATH).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="order-success-number"]').text()).toContain('A-1001')
   })
 
@@ -128,6 +124,6 @@ describe('client order-success page', () => {
     await wrapper.find('[data-testid="order-success-setup-service"]').trigger('click')
     await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(CLIENT_SERVICES_PATH))
 
-    expect(requestsTo(stub.requests, PATHS.services).map(request => request.method)).toEqual(['GET'])
+    expect(requestsTo(stub.requests, AccountEndpoint.Services).map(request => request.method)).toEqual(['GET'])
   })
 })

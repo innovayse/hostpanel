@@ -16,6 +16,7 @@ import {
   SITE_DOMAINS_PATH,
   SITE_DOMAINS_TRANSFER_PATH,
   SITE_FAQ_PATH,
+  SITE_HOME_PATH,
   SITE_HOSTING_PATH,
   SITE_HOSTING_PLANS_PATH,
   SITE_KNOWLEDGEBASE_PATH,
@@ -36,6 +37,10 @@ import {
 } from '~/constants/siteRoutes'
 
 describe('site routes', () => {
+  it('serves the home page at /', () => {
+    expect(SITE_HOME_PATH).toBe('/')
+  })
+
   it('serves the hosting page at /hosting and its plan list at /hosting#plans', () => {
     expect(SITE_HOSTING_PATH).toBe('/hosting')
     expect(SITE_HOSTING_PLANS_PATH).toBe('/hosting#plans')

@@ -2,7 +2,7 @@
   <header class="relative border-b border-line font-aurora">
     <UiContainer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 py-[18px]">
       <UiLink
-        :to="localePath('/')"
+        :to="localePath(SITE_HOME_PATH)"
         tone="inherit"
         :underline="false"
         testid="site-home"
@@ -203,6 +203,7 @@ import {
   SITE_CART_PATH,
   SITE_DOMAINS_PATH,
   SITE_FAQ_PATH,
+  SITE_HOME_PATH,
   SITE_HOSTING_PATH,
 } from '~/constants/siteRoutes'
 

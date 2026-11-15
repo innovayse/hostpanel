@@ -6,6 +6,9 @@
  * @module constants/siteRoutes
  */
 
+/** The home page. */
+export const SITE_HOME_PATH = '/'
+
 /** The hosting family's page. */
 export const SITE_HOSTING_PATH = '/hosting'
 

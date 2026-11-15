@@ -1,5 +1,5 @@
 <template>
-  <UiLink to="/" tone="inherit" :underline="false" testid="auth-logo" class="mb-6 inline-block">
+  <UiLink :to="SITE_HOME_PATH" tone="inherit" :underline="false" testid="auth-logo" class="mb-6 inline-block">
     <!-- Logo image cap: intrinsically small UI, not page layout. -->
     <Logo
       :surface="LogoSurface.Auto"
@@ -20,4 +20,5 @@
  * component rather than five copies of the same markup, which is what the pages had.
  */
 import { LogoSurface } from '~/utils/appLogo'
+import { SITE_HOME_PATH } from '~/constants/siteRoutes'
 </script>

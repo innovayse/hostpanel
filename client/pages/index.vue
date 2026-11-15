@@ -30,7 +30,7 @@ import { useDomainsStore } from '~/stores/domains'
 import { PricingCycle } from '~/types/pricingcycle'
 import { SeoPageType } from '~/types/seopagetype'
 import { TemplateSlot } from '~/types/templateslot'
-import { siteConfigurePath } from '~/constants/siteRoutes'
+import { SITE_HOME_PATH, siteConfigurePath } from '~/constants/siteRoutes'
 
 /** Translates a key in the active language; `locale` is that language. */
 const { t, locale } = useI18n()
@@ -52,7 +52,7 @@ useSeo({
   description: t('seo.home.description', { site: siteName.value }),
   keywords: t('seo.home.keywords', { site: siteName.value }),
   type: SeoPageType.Website,
-  path: '/'
+  path: SITE_HOME_PATH
 })
 
 // Schema.org structured data

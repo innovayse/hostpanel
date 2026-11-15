@@ -32,7 +32,7 @@
           :description="t('announcements.signInRequiredDesc')"
           data-testid="announcements-sign-in"
         >
-          <UiButton :to="localePath(`${CLIENT_LOGIN_PATH}?${CLIENT_REDIRECT_QUERY}=/announcements`)" data-testid="announcements-sign-in-link">
+          <UiButton :to="localePath(`${CLIENT_LOGIN_PATH}?${CLIENT_REDIRECT_QUERY}=${SITE_ANNOUNCEMENTS_PATH}`)" data-testid="announcements-sign-in-link">
             {{ t('announcements.signIn') }}
           </UiButton>
         </UiEmptyState>
@@ -104,7 +104,7 @@ import { useContentStore } from '~/stores/content'
 import { formatDate } from '~/utils/formatDate'
 import type { PublishedAnnouncement } from '~/types/publishedannouncement'
 import type { ChipTab } from '~/types/chiptab'
-import { siteAnnouncementPath } from '~/constants/siteRoutes'
+import { SITE_ANNOUNCEMENTS_PATH, siteAnnouncementPath } from '~/constants/siteRoutes'
 
 /** Month-filter value that shows every announcement. */
 const ALL_MONTHS = 'all'

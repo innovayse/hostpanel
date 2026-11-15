@@ -9,27 +9,49 @@
 
 /** The account endpoints that do not take an id. */
 export enum AccountEndpoint {
+  /** The signed-in account. */
   Me = '/api/portal/client/me',
+  /** The service list. */
   Services = '/api/portal/client/services',
+  /** The support tickets. */
   Tickets = '/api/portal/client/tickets',
+  /** The sign-in address change. */
   EmailChange = '/api/portal/client/email-change',
+  /** The sub-contacts. */
   Contacts = '/api/portal/client/contacts',
+  /** The account emails. */
   Emails = '/api/portal/client/emails',
+  /** The team members. */
   Users = '/api/portal/client/users',
+  /** The team invitation. */
   InviteUser = '/api/portal/client/users/invite',
+  /** Starts two-factor setup. */
   TwoFactorSetup = '/api/portal/auth/2fa-setup',
+  /** Turns two-factor on. */
   TwoFactorEnable = '/api/portal/auth/2fa-enable',
+  /** Turns two-factor off. */
   TwoFactorDisable = '/api/portal/auth/2fa-disable',
+  /** Signs in. */
   Login = '/api/portal/auth/login',
+  /** Completes a two-factor sign-in. */
   TwoFactorLogin = '/api/portal/auth/2fa-login',
+  /** Signs out. */
   Logout = '/api/portal/auth/logout',
+  /** Registers an account. */
   Register = '/api/portal/auth/register',
+  /** Confirms an email address. */
   ConfirmEmail = '/api/portal/auth/confirm-email',
+  /** Tells whether the email is verified. */
   EmailVerified = '/api/portal/auth/email-verified',
+  /** Resends the verification email. */
   ResendVerification = '/api/portal/auth/resend-verification',
+  /** Asks for a password reset. */
   ForgotPassword = '/api/portal/auth/forgot-password',
+  /** Sets a new password from a reset link. */
   ResetPassword = '/api/portal/auth/reset-password',
+  /** Accepts a team invitation. */
   AcceptInvite = '/api/portal/auth/accept-invite',
+  /** The stored payment methods. */
   StoredMethods = '/api/portal/client/stored-payment-methods',
 }
 
@@ -76,14 +98,23 @@ export const completeSessionPath = (sessionId: string): string =>
 
 /** The actions on one service, each the path below the service itself. */
 export enum ServiceAction {
+  /** Cancels the service. */
   Cancel = 'cancel',
+  /** Changes the service password. */
   ChangePassword = 'change-password',
+  /** Opens the control panel without a password. */
   CpanelSso = 'cpanel-sso',
+  /** The service invoices. */
   Invoices = 'invoices',
+  /** Changes the plan. */
   PlanChange = 'plan-change',
+  /** The plans it can change to. */
   PlanChangeOptions = 'plan-change-options',
+  /** The service setup. */
   Setup = 'setup',
+  /** The SSH access. */
   Ssh = 'ssh',
+  /** The SSH keys. */
   SshKeys = 'ssh/keys',
 }
 

@@ -20,7 +20,7 @@
 
     <UiContainer class="flex items-center gap-4 py-3">
       <UiLink
-        :to="localePath('/')"
+        :to="localePath(SITE_HOME_PATH)"
         tone="inherit"
         :underline="false"
         testid="nova-nav-logo"
@@ -222,7 +222,7 @@ import LogoLockup from '~/components/LogoLockup.vue'
 import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import { NAV_ITEMS } from '~/templates/nova/content'
 import { useCartStore } from '~/stores/cart'
-import { SITE_CART_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
+import { SITE_CART_PATH, SITE_HOME_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Props of NovaHeader. */
 const props = withDefaults(defineProps<{

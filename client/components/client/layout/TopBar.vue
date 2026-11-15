@@ -6,7 +6,7 @@
   >
     <!-- Left: the brand, the same lockup the storefront header draws, at every width -->
     <div class="mr-3 min-w-0">
-      <UiLink to="/" tone="inherit" :underline="false" testid="client-topbar-brand" class="flex items-center gap-2">
+      <UiLink :to="SITE_HOME_PATH" tone="inherit" :underline="false" testid="client-topbar-brand" class="flex items-center gap-2">
         <LogoLockup img-class="h-8 w-auto object-contain" mark-class="h-8 w-8" name-class="text-lg font-bold" />
       </UiLink>
     </div>
@@ -58,6 +58,7 @@
  * controls, the platform widget mounts and the mobile menu button on the right.
  */
 import { Menu, X } from 'lucide-vue-next'
+import { SITE_HOME_PATH } from '~/constants/siteRoutes'
 import type { ClientNavItem } from '~/types/clientnavitem'
 import LogoLockup from '~/components/LogoLockup.vue'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'

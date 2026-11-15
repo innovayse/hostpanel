@@ -1,7 +1,8 @@
 /**
- * The BFF paths of the account page's endpoints (identity, sign-in address, contacts, team, two-factor,
- * stored payment methods, sign-in, sign-out), so a test that answers them from a stub BFF route table names an
- * endpoint instead of spelling out the URL.
+ * The BFF paths of the account page's endpoints (identity, the service list, sign-in address, contacts, team, two-factor,
+ * stored payment methods) and of the sign-in surface (sign-in, sign-out, registration, email
+ * confirmation, password reset, invitations), so a test that answers them from a stub BFF route table
+ * names an endpoint instead of spelling out the URL.
  *
  * @module tests/helpers/accountPaths
  */
@@ -9,6 +10,7 @@
 /** The account endpoints that do not take an id. */
 export const AccountEndpoint = {
   Me: '/api/portal/client/me',
+  Services: '/api/portal/client/services',
   EmailChange: '/api/portal/client/email-change',
   Contacts: '/api/portal/client/contacts',
   Emails: '/api/portal/client/emails',
@@ -18,7 +20,15 @@ export const AccountEndpoint = {
   TwoFactorEnable: '/api/portal/auth/2fa-enable',
   TwoFactorDisable: '/api/portal/auth/2fa-disable',
   Login: '/api/portal/auth/login',
+  TwoFactorLogin: '/api/portal/auth/2fa-login',
   Logout: '/api/portal/auth/logout',
+  Register: '/api/portal/auth/register',
+  ConfirmEmail: '/api/portal/auth/confirm-email',
+  EmailVerified: '/api/portal/auth/email-verified',
+  ResendVerification: '/api/portal/auth/resend-verification',
+  ForgotPassword: '/api/portal/auth/forgot-password',
+  ResetPassword: '/api/portal/auth/reset-password',
+  AcceptInvite: '/api/portal/auth/accept-invite',
   StoredMethods: '/api/portal/client/stored-payment-methods',
 } as const
 

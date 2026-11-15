@@ -11,13 +11,12 @@ import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderAccount from '~/components/layout/HeaderAccount.vue'
 import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
+import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** Path of the endpoint that ends the session. */
-const LOGOUT_PATH = '/api/portal/auth/logout'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -41,7 +40,7 @@ const mountAccount = () => {
 describe('LayoutHeaderAccount', () => {
   beforeEach(async () => {
     stubTemplateGlobals()
-    stub = await startTransport(routeTable({ [`POST ${LOGOUT_PATH}`]: { body: {} } }))
+    stub = await startTransport(routeTable({ [writeOf(AccountEndpoint.Logout)]: { body: {} } }))
   })
 
   afterEach(async () => {
@@ -67,12 +66,12 @@ describe('LayoutHeaderAccount', () => {
     const hrefs = ['dashboard', 'services', 'domains', 'invoices', 'tickets', 'account']
       .map((key) => wrapper.find(`[data-testid="header-account-${key}"]`).attributes('href'))
     expect(hrefs).toEqual([
-      '/client/dashboard',
-      '/client/services',
-      '/client/domains',
-      '/client/invoices',
-      '/client/tickets',
-      '/client/account',
+      CLIENT_DASHBOARD_PATH,
+      CLIENT_SERVICES_PATH,
+      CLIENT_DOMAINS_PATH,
+      CLIENT_INVOICES_PATH,
+      CLIENT_TICKETS_PATH,
+      CLIENT_ACCOUNT_PATH,
     ])
   })
 
@@ -102,7 +101,7 @@ describe('LayoutHeaderAccount', () => {
 
     await wrapper.find('[data-testid="header-account-sign-out"]').trigger('click')
 
-    await waitUntil(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1))
     await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.find('[data-testid="header-account-panel"]').exists()).toBe(false)
   })

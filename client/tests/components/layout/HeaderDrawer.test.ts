@@ -12,14 +12,13 @@ import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderDrawer from '~/components/layout/HeaderDrawer.vue'
 import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { CLIENT_INVOICES_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
+import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { HeaderNavItem } from '~/types/headernavitem'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** Path of the endpoint that ends the session. */
-const LOGOUT_PATH = '/api/portal/auth/logout'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -67,7 +66,7 @@ const mountDrawer = (path = '/en/') => mountWithKit(LayoutHeaderDrawer, {
 describe('LayoutHeaderDrawer', () => {
   beforeEach(async () => {
     stubTemplateGlobals()
-    stub = await startTransport(routeTable({ [`POST ${LOGOUT_PATH}`]: { body: {} } }))
+    stub = await startTransport(routeTable({ [writeOf(AccountEndpoint.Logout)]: { body: {} } }))
   })
 
   afterEach(async () => {
@@ -130,7 +129,7 @@ describe('LayoutHeaderDrawer', () => {
   it('offers sign in and get started to a visitor', () => {
     const wrapper = mountDrawer()
 
-    expect(wrapper.find('[data-testid="header-drawer-sign-in"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="header-drawer-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
     expect(wrapper.find('[data-testid="header-drawer-get-started"]').attributes('href')).toBe('/hosting')
     expect(wrapper.find('[data-testid="header-drawer-account"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="header-drawer-sign-out"]').exists()).toBe(false)
@@ -143,7 +142,7 @@ describe('LayoutHeaderDrawer', () => {
 
     const account = wrapper.find('[data-testid="header-drawer-account"]')
     expect(account.text()).toContain('Ada Lovelace')
-    expect(wrapper.find('[data-testid="header-drawer-account-invoices"]').attributes('href')).toBe('/client/invoices')
+    expect(wrapper.find('[data-testid="header-drawer-account-invoices"]').attributes('href')).toBe(CLIENT_INVOICES_PATH)
     expect(wrapper.find('[data-testid="header-drawer-sign-out"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="header-drawer-sign-in"]').exists()).toBe(false)
   })
@@ -164,7 +163,7 @@ describe('LayoutHeaderDrawer', () => {
 
     await wrapper.find('[data-testid="header-drawer-sign-out"]').trigger('click')
 
-    await waitUntil(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1))
     await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
   })

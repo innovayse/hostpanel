@@ -11,17 +11,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import type { Pinia } from 'pinia'
-import { orderPaymentStartPath } from '~/tests/helpers/billingPaths'
+import { bankTransferPath, BillingEndpoint, orderPaymentStartPath } from '~/tests/helpers/billingPaths'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { cartLine } from '~/tests/helpers/checkoutFlow'
 import { mountAsyncPage } from '~/tests/helpers/mountWithKit'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { settle } from '~/tests/helpers/settle'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
+import { clientInvoicePayPath } from '~/constants/clientRoutes'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
@@ -35,19 +37,19 @@ import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the checkout page reads and writes. */
 const PATHS = {
-  currencies: '/api/portal/public/billing-currencies',
-  products: '/api/portal/public/products',
-  methods: '/api/portal/order/payment-methods',
-  create: '/api/portal/order/create',
+  currencies: CatalogPath.BillingCurrencies,
+  products: CatalogPath.Products,
+  methods: BillingEndpoint.OrderPaymentMethods,
+  create: BillingEndpoint.OrderCreate,
   gatewayStart: orderPaymentStartPath(42),
-  bankTransfer: '/api/portal/client/invoices/77/bank-transfer',
+  bankTransfer: bankTransferPath(77),
 } as const
 
 /** The hosted gateway module the stub offers. */
 const HOSTED_GATEWAY = 'card_gateway'
 
 /** Where the payer lands after a bank-transfer order: the invoice's payment page. */
-const INVOICE_PAYMENT_PATH = '/client/invoices/77/pay'
+const INVOICE_PAYMENT_PATH = clientInvoicePayPath(77)
 
 /** localStorage key the cart persists under, which the page restores when it opens. */
 const CART_STORAGE_KEY = 'innovayse_cart'
@@ -83,7 +85,7 @@ const placedOrder = (total: number): { body: Record<string, unknown> } => ({
  * @param modules - The gateway modules, in the order they are offered.
  */
 const offer = (modules: string[]): void => {
-  table[`GET ${PATHS.methods}`] = { body: modules.map(module => ({ module, displayName: module })) }
+  table[readOf(PATHS.methods)] = { body: modules.map(module => ({ module, displayName: module })) }
 }
 
 /**
@@ -148,13 +150,13 @@ beforeEach(async () => {
   vi.stubGlobal('useHead', vi.fn())
   stubLocalePath()
   table = {
-    [`GET ${PATHS.currencies}`]: { body: [
+    [readOf(PATHS.currencies)]: { body: [
       { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true },
       { code: 'EUR', numeric: '978', prefix: '', suffix: ' EUR', decimals: 2, isBase: false },
     ] },
-    [`GET ${PATHS.products}`]: { body: [] },
-    [`POST ${PATHS.create}`]: placedOrder(12),
-    [`POST ${PATHS.bankTransfer}`]: { body: { invoiceId: 77, reference: 'INV-77' } },
+    [readOf(PATHS.products)]: { body: [] },
+    [writeOf(PATHS.create)]: placedOrder(12),
+    [writeOf(PATHS.bankTransfer)]: { body: { invoiceId: 77, reference: 'INV-77' } },
   }
   offer([HOSTED_GATEWAY, PaymentModule.BankTransfer])
   stub = await startTransport(routeTable(table))
@@ -183,7 +185,7 @@ describe('useCheckoutPage', () => {
     await preloadCurrencies()
     useCartStore().items = [{ ...HOSTING }]
     useCheckoutStore().submitting = true
-    table[`GET ${PATHS.products}`] = { body: [{ id: 5, groupId: 1, name: 'Pro', pricing: { monthly: 15 } }] }
+    table[readOf(PATHS.products)] = { body: [{ id: 5, groupId: 1, name: 'Pro', pricing: { monthly: 15 } }] }
 
     const page = await runInPage()
 
@@ -193,7 +195,7 @@ describe('useCheckoutPage', () => {
 
   it('hands the templates the renewal-save choice, off by default, and whether to offer it', async () => {
     signIn(makeClientUser())
-    table[`GET ${PATHS.methods}`] = { body: [{ module: HOSTED_GATEWAY, displayName: HOSTED_GATEWAY, supportsStoredCredentials: true }] }
+    table[readOf(PATHS.methods)] = { body: [{ module: HOSTED_GATEWAY, displayName: HOSTED_GATEWAY, supportsStoredCredentials: true }] }
 
     const page = await runInPage()
 
@@ -239,7 +241,7 @@ describe('useCheckoutPage', () => {
     await preloadCurrencies()
     offer([PaymentModule.BankTransfer])
     useCartStore().items = [{ ...HOSTING }]
-    table[`POST ${PATHS.create}`] = placedOrder(14)
+    table[writeOf(PATHS.create)] = placedOrder(14)
     const confirmSpy = vi.fn(() => true)
     vi.stubGlobal('confirm', confirmSpy)
     const page = await runInPage()
@@ -253,7 +255,7 @@ describe('useCheckoutPage', () => {
   it('does not follow an external destination that is not a secure address', async () => {
     await preloadCurrencies()
     useCartStore().items = [{ ...HOSTING }]
-    table[`POST ${PATHS.gatewayStart}`] = { body: { redirectUrl: 'javascript:alert(1)' } }
+    table[writeOf(PATHS.gatewayStart)] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const before = window.location.href
     const page = await runInPage()
 
@@ -267,7 +269,7 @@ describe('useCheckoutPage', () => {
   it('stays put when the store refuses the order', async () => {
     await preloadCurrencies()
     useCartStore().items = [{ ...HOSTING }]
-    table[`POST ${PATHS.create}`] = { status: 400, body: { type: 'ORDER_REFUSED', detail: 'Refused.' } }
+    table[writeOf(PATHS.create)] = { status: 400, body: { type: 'ORDER_REFUSED', detail: 'Refused.' } }
     const page = await runInPage()
 
     await page.submitOrder()

@@ -12,10 +12,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
+import { AccountEndpoint } from '../helpers/accountPaths'
+import { bankTransferPath, BillingEndpoint, orderPaymentStartPath } from '../helpers/billingPaths'
+import { CatalogPath } from '../helpers/catalogPaths'
 import { cartLine } from '../helpers/checkoutFlow'
 import { makeClientUser } from '../helpers/clientUser'
 import { bodyOf } from '../helpers/requestBody'
-import { refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable, writeOf } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
 import type { StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
@@ -43,34 +46,34 @@ let stub: StubServer
 let table: StubRouteTable
 
 /** The read of the gateways an order may be paid through. */
-const METHODS_ROUTE = 'GET /api/portal/order/payment-methods'
+const METHODS_ROUTE = readOf(BillingEndpoint.OrderPaymentMethods)
 
 /** The placing of an order. */
-const CREATE_ROUTE = 'POST /api/portal/order/create'
+const CREATE_ROUTE = writeOf(BillingEndpoint.OrderCreate)
 
 /** The path of the start of a hosted-gateway payment for the placed order. */
-const START_PATH = '/api/portal/order/42/gateway-payment/start'
+const START_PATH = orderPaymentStartPath(42)
 
 /** The start of a hosted-gateway payment for the placed order. */
-const START_ROUTE = `POST ${START_PATH}`
+const START_ROUTE = writeOf(START_PATH)
 
 /** The choice of a bank transfer on the placed order's invoice. */
-const TRANSFER_ROUTE = 'POST /api/portal/client/invoices/77/bank-transfer'
+const TRANSFER_ROUTE = writeOf(bankTransferPath(77))
 
 /** The guest's sign-in after the order. */
-const LOGIN_ROUTE = 'POST /api/portal/auth/login'
+const LOGIN_ROUTE = writeOf(AccountEndpoint.Login)
 
 /** The path of the guest's sign-in. */
-const LOGIN_PATH = '/api/portal/auth/login'
+const LOGIN_PATH = AccountEndpoint.Login
 
 /** The path of the placing of an order. */
-const CREATE_PATH = '/api/portal/order/create'
+const CREATE_PATH = BillingEndpoint.OrderCreate
 
 /** The read of the catalogue the price refresh makes. */
-const PRODUCTS_ROUTE = 'GET /api/portal/public/products'
+const PRODUCTS_ROUTE = readOf(CatalogPath.Products)
 
 /** The path of the catalogue read. */
-const PRODUCTS_PATH = '/api/portal/public/products'
+const PRODUCTS_PATH = CatalogPath.Products
 
 /** The currencies the operator bills in: dollars are the base, so they are the payer's. */
 const CURRENCIES: BillingCurrency[] = [
@@ -389,8 +392,8 @@ describe('useCheckoutStore.placeOrder', () => {
 
     const destination = await store.placeOrder(input())
 
-    expect(requestsTo(stub.requests, '/api/portal/client/invoices/77/bank-transfer')).toHaveLength(1)
-    expect(bodyOf(requestsTo(stub.requests, '/api/portal/client/invoices/77/bank-transfer')[0])).toEqual({})
+    expect(requestsTo(stub.requests, bankTransferPath(77))).toHaveLength(1)
+    expect(bodyOf(requestsTo(stub.requests, bankTransferPath(77))[0])).toEqual({})
     expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
   })
 

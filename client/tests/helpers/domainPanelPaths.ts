@@ -6,6 +6,9 @@
  * @module tests/helpers/domainPanelPaths
  */
 
+/** The endpoint that places a domain transfer order, which no single domain owns. */
+export const TRANSFER_ORDER_PATH = '/api/portal/client/domains/transfer-order'
+
 /** The id of the domain every panel test opens. */
 export const DOMAIN_ID = '7'
 

@@ -13,31 +13,33 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class ListUpcomingDomainRenewalsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Seeds an active domain expiring in the given number of days.</summary>
-    /// <param name="inDays">Days from now to its expiry.</param>
+    /// <param name="host">The clocked host whose moment the days count from.</param>
+    /// <param name="inDays">Days from the host clock to its expiry.</param>
     /// <param name="autoRenew">Whether it renews automatically.</param>
     /// <returns>The domain id.</returns>
-    private async Task<int> SeedAsync(int inDays, bool autoRenew)
+    private async Task<int> SeedAsync(ClockedHost host, int inDays, bool autoRenew)
     {
-        using var scope = factory.Services.CreateScope();
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var domain = RegisteredDomain.Register(
-            client.Id, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(inDays),
+            client.Id, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, host.Clock.GetUtcNow().AddDays(inDays),
             autoRenew: autoRenew, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, host.Clock.GetUtcNow());
         await context.SaveChangesAsync(CancellationToken.None);
         return domain.Id;
     }
 
     /// <summary>Reads the ids of the domains on a page of the endpoint, with each auto-renew flag.</summary>
+    /// <param name="host">The clocked host the endpoint runs on.</param>
     /// <param name="window">The window name on the wire.</param>
     /// <returns>The flag of each listed domain, by id.</returns>
-    private async Task<Dictionary<int, bool>> ListAsync(string window)
+    private async Task<Dictionary<int, bool>> ListAsync(ClockedHost host, string window)
     {
-        var admin = await ServicesTestSeeds.AdminClientAsync(factory);
+        var admin = await ReportsTestSeeds.AdminClientAsync(factory, host);
         var response = await admin.GetAsync($"/api/domains/renewals/upcoming?window={window}&pageSize=100");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -50,13 +52,14 @@ public sealed class ListUpcomingDomainRenewalsTests(IntegrationTestFactory facto
     [Fact]
     public async Task Windows_BringInLaterExpiries_AndKeepAutoRenewOffVisible()
     {
-        var soon = await SeedAsync(10, autoRenew: true);
-        var later = await SeedAsync(45, autoRenew: false);
-        var farOff = await SeedAsync(75, autoRenew: true);
+        using var host = new ClockedHost(factory);
+        var soon = await SeedAsync(host, 10, autoRenew: true);
+        var later = await SeedAsync(host, 45, autoRenew: false);
+        var farOff = await SeedAsync(host, 75, autoRenew: true);
 
-        var in30 = await ListAsync("Next30Days");
-        var in60 = await ListAsync("Next60Days");
-        var in90 = await ListAsync("Next90Days");
+        var in30 = await ListAsync(host, "Next30Days");
+        var in60 = await ListAsync(host, "Next60Days");
+        var in90 = await ListAsync(host, "Next90Days");
 
         in30.Keys.Should().Contain(soon).And.NotContain(later).And.NotContain(farOff);
         in60.Keys.Should().Contain([soon, later]).And.NotContain(farOff);

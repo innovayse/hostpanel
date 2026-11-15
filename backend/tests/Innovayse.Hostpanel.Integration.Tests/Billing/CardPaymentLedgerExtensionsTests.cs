@@ -48,7 +48,7 @@ public sealed class CardPaymentLedgerExtensionsTests(IntegrationTestFactory fact
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.Transactions.Add(Transaction.Create(
-            clientId, DateTimeOffset.UtcNow, "Payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
+            clientId, TestMoments.Seeded, "Payment", reference, null, "bank-gateway", 10m, 0m, 0m, false, "USD",
             TransactionSource.GatewayPayment));
         await context.SaveChangesAsync(CancellationToken.None);
 

@@ -54,7 +54,7 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var host = BuildHost(resolver);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, await BillingTestSeeds.SeedClientAsync(host), 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-open-1", DateTimeOffset.UtcNow);
+        await SeedSessionAsync(host, invoiceId, "gw-open-1", TestMoments.Seeded);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
 
@@ -73,7 +73,7 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var host = BuildHost(resolver);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, await BillingTestSeeds.SeedClientAsync(host), 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-open-2", DateTimeOffset.UtcNow);
+        await SeedSessionAsync(host, invoiceId, "gw-open-2", TestMoments.Seeded);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
 
@@ -110,7 +110,7 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var host = BuildHost(resolver);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, await BillingTestSeeds.SeedClientAsync(host), 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-open-3", DateTimeOffset.UtcNow);
+        await SeedSessionAsync(host, invoiceId, "gw-open-3", TestMoments.Seeded);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
 
@@ -130,7 +130,8 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-abandon-1");
         var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-old-1", DateTimeOffset.UtcNow.AddHours(-2));
+        // Real time: the shared host judges the session's age against its own system clock.
+        await SeedSessionAsync(host, invoiceId, "gw-old-1", TestMoments.Present().AddHours(-2));
 
         var response = await client.PostAsJsonAsync(
             $"/api/me/invoices/{invoiceId}/gateway-payment/start", new { module = Module, returnUrl = BillingTestSeeds.AllowedReturnUrl });
@@ -174,7 +175,8 @@ public sealed class AbandonedGatewayPaymentTests(IntegrationTestFactory factory)
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-abandon-3");
         var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
-        await SeedSessionAsync(host, invoiceId, "gw-old-3", DateTimeOffset.UtcNow.AddHours(-2));
+        // Real time: the shared host judges the session's age against its own system clock.
+        await SeedSessionAsync(host, invoiceId, "gw-old-3", TestMoments.Present().AddHours(-2));
 
         var response = await client.PostAsJsonAsync(
             $"/api/me/invoices/{invoiceId}/gateway-payment/start", new { module = Module, returnUrl = BillingTestSeeds.AllowedReturnUrl });

@@ -226,11 +226,11 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Hosting", 10m, 1);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
-            context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, $"ch_{Guid.NewGuid():N}", DateTimeOffset.UtcNow, TransactionSource.Manual)!);
+            context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, $"ch_{Guid.NewGuid():N}", TestMoments.Seeded, TransactionSource.Manual)!);
             await context.SaveChangesAsync(CancellationToken.None);
             invoiceId = invoice.Id;
         }
@@ -308,7 +308,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         var secondContext = secondScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var first = await firstContext.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
         var second = await secondContext.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
 
         firstContext.Transactions.Add(first.AddRefund(now, PaymentMethodNames.Manual, $"r-{Guid.NewGuid():N}", 60m, 0m, null, false, TransactionSource.Manual));
         secondContext.Transactions.Add(second.AddRefund(now.AddMilliseconds(1), PaymentMethodNames.Manual, $"r-{Guid.NewGuid():N}", 60m, 0m, null, false, TransactionSource.Manual));
@@ -561,7 +561,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     {
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var past = DateTimeOffset.UtcNow.AddHours(-1);
+        var past = TestMoments.Seeded;
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"""UPDATE "Invoices" SET "RefundStartedAt" = {past} WHERE "Id" = {invoiceId}""");
     }
@@ -576,7 +576,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     private static async Task<int> HostedGatewayPaidInvoiceAsync(WebApplicationFactory<Program> host, decimal manualPart)
     {
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
 
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

@@ -115,7 +115,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, new FakeEmailSender(), clock);
         await SeedSessionAsync(host, module, clock.GetUtcNow().AddMinutes(-30));
 
@@ -137,7 +137,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, new FakeEmailSender(), clock);
         await SeedSessionAsync(host, module, clock.GetUtcNow().AddMinutes(-30), checks: 12);
 
@@ -163,7 +163,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
         var sender = new FakeEmailSender();
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, sender, clock);
         var invoiceId = await SeedSessionAsync(host, module, clock.GetUtcNow().AddHours(-25));
 
@@ -185,7 +185,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, new FakePaymentPlugin());
         var sender = new FakeEmailSender();
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, sender, clock);
         var invoiceId = await SeedSessionAsync(host, module, clock.GetUtcNow().AddHours(-1));
 
@@ -204,7 +204,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Declined, null, "orderStatus:6") };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, new FakeEmailSender(), clock);
         var invoiceId = await SeedSessionAsync(host, module, clock.GetUtcNow().AddMinutes(-30));
 
@@ -226,7 +226,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var plugin = new FakePaymentPlugin { StatusResult = new(GatewayPaymentState.Paid, reference, "orderStatus:2", AmountMinor: 1000) };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, new FakeEmailSender(), clock);
         var invoiceId = await SeedSessionAsync(host, module, clock.GetUtcNow().AddMinutes(-30));
 
@@ -253,7 +253,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(failingModule, failing);
         resolver.Register(healthyModule, healthy);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, new FakeEmailSender(), clock);
         var failingId = await SeedSessionAsync(host, failingModule, clock.GetUtcNow().AddMinutes(-30));
         await SeedSessionAsync(host, healthyModule, clock.GetUtcNow().AddMinutes(-30));
@@ -274,7 +274,7 @@ public sealed class ReconcileGatewayPaymentsBackoffTests(IntegrationTestFactory 
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = BuildHost(resolver, new FakeEmailSender(), clock);
         await SeedSessionAsync(host, module, clock.GetUtcNow().AddHours(-25), settled: true);
 

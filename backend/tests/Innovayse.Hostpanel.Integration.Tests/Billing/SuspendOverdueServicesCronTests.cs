@@ -7,7 +7,6 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,9 +25,9 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     /// <summary>Builds a host with a suppressed event gate, optionally poisoning one service's save or racing a payment.</summary>
     /// <param name="poisoned">Names the service whose suspension save throws, or null for none.</param>
     /// <param name="race">Names the suspension whose save first pays another invoice, or null for none.</param>
-    /// <returns>The isolated host.</returns>
-    private WebApplicationFactory<Program> Host(PoisonedService? poisoned = null, PaymentRace? race = null) =>
-        factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+    /// <returns>The isolated host, on a clock standing at the real present (the job schedules its next run from the clock, see <see cref="TestMoments.Present"/>).</returns>
+    private ClockedHost Host(PoisonedService? poisoned = null, PaymentRace? race = null) =>
+        ClockedHost.AtPresent(factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
         {
             services.AddScoped<IDomainEventGate, SuppressedDomainEventGate>();
             if (poisoned is not null)
@@ -40,7 +39,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
             {
                 services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new PayingSaveInterceptor(race)));
             }
-        }));
+        })));
 
     /// <summary>Seeds a client with a product to attach services to.</summary>
     /// <param name="context">The data context to seed through.</param>
@@ -71,8 +70,8 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
         IHostpanelDbContext context, int clientId, int productId, bool overrideAutoSuspend = false, DateTimeOffset? suspendUntil = null,
         bool autoRenew = true)
     {
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", TestMoments.Seeded);
         if (overrideAutoSuspend || suspendUntil is not null || !autoRenew)
         {
             service.ChangeBillingTerms(new ServiceBillingTerms(
@@ -90,12 +89,12 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     /// <param name="context">The data context to seed through.</param>
     /// <param name="clientId">The invoiced client.</param>
     /// <param name="serviceIds">Services to put on lines; empty yields a plain, service-less line.</param>
-    /// <param name="dueDaysAgo">How many days ago the invoice fell due.</param>
+    /// <param name="dueDaysAgo">How many days before <paramref name="now"/> the invoice fell due.</param>
+    /// <param name="now">The moment the host the cron runs on reads as the present.</param>
     /// <returns>The invoice id.</returns>
     private static async Task<int> SeedOverdueInvoiceAsync(
-        IHostpanelDbContext context, int clientId, IReadOnlyList<int> serviceIds, int dueDaysAgo)
+        IHostpanelDbContext context, int clientId, IReadOnlyList<int> serviceIds, int dueDaysAgo, DateTimeOffset now)
     {
-        var now = DateTimeOffset.UtcNow;
         var due = now.AddDays(-dueDaysAgo);
         var invoice = Invoice.Create(clientId, due, "USD", now);
         if (serviceIds.Count == 0)
@@ -135,12 +134,13 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task PastGrace_SuspendsOnlyItsServices()
     {
-        using var scope = Host().Services.CreateScope();
+        using var host = Host();
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAsync(context);
         var onInvoice = await SeedServiceAsync(context, clientId, productId);
         var notOnInvoice = await SeedServiceAsync(context, clientId, productId);
-        await SeedOverdueInvoiceAsync(context, clientId, [onInvoice], dueDaysAgo: 4);
+        await SeedOverdueInvoiceAsync(context, clientId, [onInvoice], dueDaysAgo: 4, host.Clock.GetUtcNow());
 
         await RunAsync(scope.ServiceProvider);
 
@@ -160,11 +160,12 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task InsideGrace_Nothing()
     {
-        using var scope = Host().Services.CreateScope();
+        using var host = Host();
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAsync(context);
         var service = await SeedServiceAsync(context, clientId, productId);
-        await SeedOverdueInvoiceAsync(context, clientId, [service], dueDaysAgo: 1);
+        await SeedOverdueInvoiceAsync(context, clientId, [service], dueDaysAgo: 1, host.Clock.GetUtcNow());
 
         await RunAsync(scope.ServiceProvider);
 
@@ -179,15 +180,16 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task Overrides_Protect()
     {
-        using var scope = Host().Services.CreateScope();
+        using var host = Host();
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAsync(context);
         var overridden = await SeedServiceAsync(context, clientId, productId, overrideAutoSuspend: true);
         var held = await SeedServiceAsync(
-            context, clientId, productId, overrideAutoSuspend: true, suspendUntil: DateTimeOffset.UtcNow.AddDays(5));
+            context, clientId, productId, overrideAutoSuspend: true, suspendUntil: host.Clock.GetUtcNow().AddDays(5));
         var elapsed = await SeedServiceAsync(
-            context, clientId, productId, overrideAutoSuspend: true, suspendUntil: DateTimeOffset.UtcNow.AddDays(-1));
-        await SeedOverdueInvoiceAsync(context, clientId, [overridden, held, elapsed], dueDaysAgo: 4);
+            context, clientId, productId, overrideAutoSuspend: true, suspendUntil: host.Clock.GetUtcNow().AddDays(-1));
+        await SeedOverdueInvoiceAsync(context, clientId, [overridden, held, elapsed], dueDaysAgo: 4, host.Clock.GetUtcNow());
 
         await RunAsync(scope.ServiceProvider);
 
@@ -201,12 +203,13 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task ManualBilling_IsNotSuspended()
     {
-        using var scope = Host().Services.CreateScope();
+        using var host = Host();
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAsync(context);
         var manual = await SeedServiceAsync(context, clientId, productId, autoRenew: false);
         var automatic = await SeedServiceAsync(context, clientId, productId);
-        await SeedOverdueInvoiceAsync(context, clientId, [manual, automatic], dueDaysAgo: 4);
+        await SeedOverdueInvoiceAsync(context, clientId, [manual, automatic], dueDaysAgo: 4, host.Clock.GetUtcNow());
 
         await RunAsync(scope.ServiceProvider);
 
@@ -219,11 +222,12 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task NoServiceLines_Nothing()
     {
-        using var scope = Host().Services.CreateScope();
+        using var host = Host();
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAsync(context);
         var service = await SeedServiceAsync(context, clientId, productId);
-        await SeedOverdueInvoiceAsync(context, clientId, [], dueDaysAgo: 10);
+        await SeedOverdueInvoiceAsync(context, clientId, [], dueDaysAgo: 10, host.Clock.GetUtcNow());
 
         await RunAsync(scope.ServiceProvider);
 
@@ -236,12 +240,13 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     public async Task OneFailingSuspension_DoesNotStopTheOthers()
     {
         var poisoned = new PoisonedService();
-        using var scope = Host(poisoned).Services.CreateScope();
+        using var host = Host(poisoned);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAsync(context);
         var bad = await SeedServiceAsync(context, clientId, productId);
         var good = await SeedServiceAsync(context, clientId, productId);
-        await SeedOverdueInvoiceAsync(context, clientId, [bad, good], dueDaysAgo: 4);
+        await SeedOverdueInvoiceAsync(context, clientId, [bad, good], dueDaysAgo: 4, host.Clock.GetUtcNow());
         poisoned.ServiceId = bad;
 
         await RunAsync(scope.ServiceProvider);
@@ -260,15 +265,16 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     public async Task PaymentDuringTheRun_IsNotAnsweredWithASuspension()
     {
         var race = new PaymentRace();
-        using var scope = Host(race: race).Services.CreateScope();
+        using var host = Host(race: race);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAsync(context);
 
         // Ids ascend, and the run suspends in id order: first is handled before second.
         var first = await SeedServiceAsync(context, clientId, productId);
         var second = await SeedServiceAsync(context, clientId, productId);
-        await SeedOverdueInvoiceAsync(context, clientId, [first], dueDaysAgo: 4);
-        var secondInvoice = await SeedOverdueInvoiceAsync(context, clientId, [second], dueDaysAgo: 4);
+        await SeedOverdueInvoiceAsync(context, clientId, [first], dueDaysAgo: 4, host.Clock.GetUtcNow());
+        var secondInvoice = await SeedOverdueInvoiceAsync(context, clientId, [second], dueDaysAgo: 4, host.Clock.GetUtcNow());
         race.TriggerServiceId = first;
         race.InvoiceToPay = secondInvoice;
 

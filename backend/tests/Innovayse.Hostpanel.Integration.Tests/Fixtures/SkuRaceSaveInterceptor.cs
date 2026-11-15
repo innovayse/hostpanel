@@ -52,7 +52,7 @@ internal sealed class SkuRaceSaveInterceptor(string sku) : SaveChangesIntercepto
         insert.Parameters.AddWithValue("name", CompetitorName);
         insert.Parameters.AddWithValue("type", ProductType.Digital.ToString());
         insert.Parameters.AddWithValue("status", ProductStatus.Active.ToString());
-        insert.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+        insert.Parameters.AddWithValue("createdAt", TestMoments.Seeded);
         insert.Parameters.AddWithValue("sku", sku);
         await insert.ExecuteNonQueryAsync(cancellationToken);
         Fired = true;

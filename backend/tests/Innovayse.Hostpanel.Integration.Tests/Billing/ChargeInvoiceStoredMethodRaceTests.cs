@@ -176,8 +176,8 @@ public sealed class ChargeInvoiceStoredMethodRaceTests(IntegrationTestFactory fa
     {
         using var scope = scenario.Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var start = DateTimeOffset.UtcNow.AddDays(10);
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var start = TestMoments.Seeded.AddDays(10);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal("Renewal: example.test", amount, 1, start, start.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);

@@ -29,7 +29,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
         Assert.Equal(DomainStatus.PendingRegistration, domain.Status);
@@ -54,15 +54,15 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync(new SyncPendingDomainStatusesCommand(), CancellationToken.None);
 
-        // The stub registrar reports the domain live until a year from now.
+        // The stub registrar reports the domain live for a year after the shared seed moment.
         var reloaded = await context.Domains.AsNoTracking().FirstAsync(d => d.Id == domain.Id, CancellationToken.None);
-        Assert.True(reloaded.ExpiresAt > DateTimeOffset.UtcNow.AddDays(300));
+        Assert.True(reloaded.ExpiresAt > TestMoments.Seeded.AddDays(300));
         Assert.Equal(reloaded.ExpiresAt, reloaded.NextDueDate);
     }
 
@@ -80,8 +80,8 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-5", domain.ExpiresAt, DateTimeOffset.UtcNow);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-5", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync(new SyncPendingDomainStatusesCommand(), CancellationToken.None);
@@ -102,7 +102,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            ManualTimeProvider.AtPresent(),
             tracker => tracker.Entries<RegisteredDomain>().Any(e => e.State == EntityState.Modified && e.Entity.Id == poisonedId));
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -126,7 +126,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
     {
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain;

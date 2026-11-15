@@ -512,8 +512,8 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
         var invoiceId = await CreditTestSeeds.TopUpAsync(owner, 40m);
         var backDated = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow.AddDays(-30),
-            dueDate = DateTimeOffset.UtcNow.AddDays(-1),
+            invoiceDate = TestMoments.Seeded.AddDays(-30),
+            dueDate = TestMoments.Seeded.AddDays(-1),
             paymentMethod = (string?)null,
             taxRate = 0m,
         });

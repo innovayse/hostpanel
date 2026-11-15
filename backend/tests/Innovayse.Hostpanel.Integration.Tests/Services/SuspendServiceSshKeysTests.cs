@@ -27,7 +27,7 @@ public sealed class SuspendServiceSshKeysTests(IntegrationTestFactory factory) :
         await SshTestSeeds.AddKeyAsync(http, serviceId, 1);
         await SshTestSeeds.AddKeyAsync(http, serviceId, 2);
         await SshTestSeeds.AddKeyAsync(http, other, 3);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         var agent = SshTestSeeds.Agents(factory).AgentFor(serverId);
 
         var outcome = await InvokeAsync(new SuspendServiceSshKeysCommand(serviceId));
@@ -45,7 +45,7 @@ public sealed class SuspendServiceSshKeysTests(IntegrationTestFactory factory) :
     {
         var (http, _, serverId, serviceId) = await SshTestSeeds.OwnerWithServiceAsync(factory, "ssh-susp-down");
         await SshTestSeeds.AddKeyAsync(http, serviceId, 1);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         SshTestSeeds.Agents(factory).AgentFor(serverId).FailWith = SshProviderFailure.Unreachable;
 
         var outcome = await InvokeAsync(new SuspendServiceSshKeysCommand(serviceId));

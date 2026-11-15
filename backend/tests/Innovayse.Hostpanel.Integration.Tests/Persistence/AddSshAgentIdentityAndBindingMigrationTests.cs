@@ -99,7 +99,7 @@ public sealed class AddSshAgentIdentityAndBindingMigrationTests
     /// <returns>The ids of the seeded server and service.</returns>
     private static async Task<(int ServerId, int ServiceId)> SeedExistingStateAsync(string connectionString)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 

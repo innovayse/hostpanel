@@ -15,15 +15,16 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
 
     /// <inheritdoc/>
     public Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, "STUB-REF-123", DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, "STUB-REF-123", TestMoments.Seeded.AddYears(1), null));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> TransferAsync(DomainTransferOrder request, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, "STUB-TRANSFER-456", DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, "STUB-TRANSFER-456", TestMoments.Seeded.AddYears(1), null));
 
     /// <inheritdoc/>
+    /// <remarks>The domains the tests seed expire a year after <see cref="TestMoments.Seeded"/>, so a renewal reports that year plus the years bought.</remarks>
     public Task<RegistrarResult> RenewAsync(DomainRenewalOrder request, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, "STUB-RENEW-789", DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, "STUB-RENEW-789", TestMoments.Seeded.AddYears(1 + request.Years), null));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> CancelTransferAsync(DomainRef domain, CancellationToken ct)
@@ -119,7 +120,7 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
 
     /// <inheritdoc/>
     public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, domainName, DateTimeOffset.UtcNow.AddYears(1), null));
+        => Task.FromResult(new RegistrarResult(true, domainName, TestMoments.Seeded.AddYears(1), null));
 
     /// <inheritdoc/>
     public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)

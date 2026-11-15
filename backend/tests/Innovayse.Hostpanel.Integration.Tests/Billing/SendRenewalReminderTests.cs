@@ -15,14 +15,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>Seeds an unpaid renewal invoice, raised eleven days ago and due in three, for a fresh client.</summary>
+    /// <summary>Seeds an unpaid renewal invoice, raised eleven days before <see cref="TestMoments.Seeded"/>, where the hosts stand, and due in three, for a fresh client.</summary>
     /// <param name="services">The scoped service provider.</param>
     /// <returns>The client's email and the invoice id.</returns>
     private static async Task<RenewalReminderTarget> SeedAsync(IServiceProvider services)
     {
         var context = services.GetRequiredService<IHostpanelDbContext>();
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(services, context, "single-reminder");
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = Invoice.Create(client.Id, now.AddDays(3), "USD", now);
         invoice.AddServiceRenewal("Hosting renewal", 25m, 1, now.AddDays(3), now.AddDays(33));
         invoice.UpdateOptions(now.AddDays(-11), now.AddDays(3), null, 0m);
@@ -37,7 +37,8 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task DueInvoice_SendsOnceAndRecords()
     {
         var sender = new FakeEmailSender();
-        using var scope = EventHandlerTestHost.WithFakeRelay(factory, sender).Services.CreateScope();
+        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var scope = host.Services.CreateScope();
         var (email, invoiceId) = await SeedAsync(scope.ServiceProvider);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -61,10 +62,11 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task AlreadyRecorded_SucceedsWithoutMail()
     {
         var sender = new FakeEmailSender();
-        using var scope = EventHandlerTestHost.WithFakeRelay(factory, sender).Services.CreateScope();
+        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var scope = host.Services.CreateScope();
         var (email, invoiceId) = await SeedAsync(scope.ServiceProvider);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        context.InvoiceReminders.Add(InvoiceReminder.Create(invoiceId, 3, DateTimeOffset.UtcNow));
+        context.InvoiceReminders.Add(InvoiceReminder.Create(invoiceId, 3, TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
@@ -80,7 +82,8 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task UnknownInvoice_IsSuccess()
     {
         var sender = new FakeEmailSender();
-        using var scope = EventHandlerTestHost.WithFakeRelay(factory, sender).Services.CreateScope();
+        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var result = await bus.InvokeAsync<Result>(new SendRenewalReminderCommand(int.MaxValue), CancellationToken.None);
@@ -97,7 +100,8 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     public async Task OverdueNoticesOff_SendsNothingButRecordsTheThreshold()
     {
         var sender = new FakeEmailSender();
-        using var scope = EventHandlerTestHost.WithFakeRelay(factory, sender).Services.CreateScope();
+        using var host = new ClockedHost(EventHandlerTestHost.WithFakeRelay(factory, sender));
+        using var scope = host.Services.CreateScope();
         var (email, invoiceId) = await SeedAsync(scope.ServiceProvider);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await context.Invoices.AsNoTracking().Where(i => i.Id == invoiceId).Select(i => i.ClientId).FirstAsync();

@@ -139,7 +139,7 @@ public sealed class StoreOrderItemDomainActionByNameMigrationTests
             VALUES (@group, 'Domain', 'Domain', 'Active', 0, 0, false, 0, 0, @now) RETURNING "Id"
             """,
             ("group", groupId),
-            ("now", DateTimeOffset.UtcNow));
+            ("now", TestMoments.Seeded));
 
         return await InsertAsync(
             connectionString,
@@ -149,7 +149,7 @@ public sealed class StoreOrderItemDomainActionByNameMigrationTests
             """,
             ("number", $"DA-{Guid.NewGuid():N}"[..20]),
             ("client", clientId),
-            ("now", DateTimeOffset.UtcNow),
+            ("now", TestMoments.Seeded),
             ("token", Guid.NewGuid().ToString("N")));
     }
 

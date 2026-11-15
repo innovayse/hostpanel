@@ -25,7 +25,7 @@ public sealed class RestoreServiceSshKeysTests(IntegrationTestFactory factory) :
     {
         var (_, _, serverId, serviceId) = await SuspendedWithKeysAsync("ssh-restore", 2);
         var agent = SshTestSeeds.Agents(factory).AgentFor(serverId);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
 
         var outcome = await InvokeAsync(new RestoreServiceSshKeysCommand(serviceId));
 
@@ -41,7 +41,7 @@ public sealed class RestoreServiceSshKeysTests(IntegrationTestFactory factory) :
     public async Task Unsuspension_WithTheServerDown_LeavesTheKeyAsAFailedInstallAsync()
     {
         var (_, _, serverId, serviceId) = await SuspendedWithKeysAsync("ssh-restore-down", 1);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         SshTestSeeds.Agents(factory).AgentFor(serverId).FailWith = SshProviderFailure.Unreachable;
 
         await InvokeAsync(new RestoreServiceSshKeysCommand(serviceId));
@@ -60,7 +60,7 @@ public sealed class RestoreServiceSshKeysTests(IntegrationTestFactory factory) :
     public async Task StillLockedAccount_KeepsTheKeySuspended_AndTheSecondPassRestoresItAsync()
     {
         var (_, _, serverId, serviceId) = await SuspendedWithKeysAsync("ssh-restore-race", 1);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         var agent = SshTestSeeds.Agents(factory).AgentFor(serverId);
         agent.FailWith = SshProviderFailure.AccountSuspended;
 
@@ -111,7 +111,7 @@ public sealed class RestoreServiceSshKeysTests(IntegrationTestFactory factory) :
         }
 
         await SshTestSeeds.ChangeServiceQuietlyAsync(
-            factory, scenario.ServiceId, s => s.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+            factory, scenario.ServiceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         (await InvokeAsync(new SuspendServiceSshKeysCommand(scenario.ServiceId))).IsSuccess.Should().BeTrue();
         return scenario;
     }

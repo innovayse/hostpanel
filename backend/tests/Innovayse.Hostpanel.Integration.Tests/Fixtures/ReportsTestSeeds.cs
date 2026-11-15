@@ -28,6 +28,19 @@ public static class ReportsTestSeeds
         return client;
     }
 
+    /// <summary>Builds a client of a clocked host carrying the seeded admin's bearer token.</summary>
+    /// <param name="factory">The factory whose admin credentials to mint a token from.</param>
+    /// <param name="host">The clocked host the client talks to.</param>
+    /// <returns>An authenticated admin <see cref="HttpClient"/> of the clocked host.</returns>
+    internal static async Task<HttpClient> AdminClientAsync(IntegrationTestFactory factory, ClockedHost host)
+    {
+        var client = host.CreateClient();
+        // The token is minted by the shared host: it is signed and checked against the real time, which a clocked host does not follow.
+        var token = await factory.GetAdminTokenAsync();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
     /// <summary>
     /// Registers a new client user over HTTP and logs them in: the "wrong role" caller every
     /// Reports use case refuses with 403, since the module's routes are admin only.
@@ -86,10 +99,10 @@ public static class ReportsTestSeeds
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Hosting", itemAmount, 1);
         invoice.UpdateOptions(invoice.InvoiceDate, invoice.DueDate, null, taxRate);
-        invoice.RecordPaidHistory($"tx-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory($"tx-{Guid.NewGuid():N}", TestMoments.Seeded);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();
         return invoice.Id;

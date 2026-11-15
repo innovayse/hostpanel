@@ -36,7 +36,7 @@ internal sealed class InvoiceRaceSaveInterceptor(Func<int> targetInvoiceId) : Sa
         await competitor.OpenAsync(cancellationToken);
         await using var update = new NpgsqlCommand(
             """UPDATE "Invoices" SET "GatewayUnreferencedNotifiedAt" = @at WHERE "Id" = @id""", competitor);
-        update.Parameters.AddWithValue("at", DateTimeOffset.UtcNow);
+        update.Parameters.AddWithValue("at", TestMoments.Seeded);
         update.Parameters.AddWithValue("id", id);
         await update.ExecuteNonQueryAsync(cancellationToken);
         Fired = true;

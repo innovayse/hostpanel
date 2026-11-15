@@ -25,7 +25,9 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
     public async Task ShowsThePartPaidAmountDueInTheInvoiceCurrency()
     {
         var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"Aging{Guid.NewGuid():N}");
-        var due = DateTimeOffset.UtcNow.AddDays(-45);
+        using var host = new ClockedHost(factory);
+        var now = host.Clock.GetUtcNow();
+        var due = now.AddDays(-45);
         int invoiceId;
         using (var scope = factory.Services.CreateScope())
         {
@@ -34,12 +36,12 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
             invoice.AddItem("Hosting", 42m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 12m, 0m, null, TransactionSource.Manual));
+            db.Transactions.Add(invoice.AddPayment(now, "Manual", $"tx-{Guid.NewGuid():N}", 12m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
             invoiceId = invoice.Id;
         }
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory);
+        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/aging-invoices?pageSize=200");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -63,7 +65,7 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             for (var i = 0; i < 2; i++)
             {
-                var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(-i), "USD", DateTimeOffset.UtcNow);
+                var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(-i), "USD", TestMoments.Seeded);
                 invoice.AddItem("Hosting", 5m, 1);
                 db.Invoices.Add(invoice);
             }

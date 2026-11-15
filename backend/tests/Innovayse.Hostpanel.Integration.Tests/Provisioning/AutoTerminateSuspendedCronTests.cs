@@ -23,10 +23,24 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory factory)
-    : IClassFixture<IntegrationTestFactory>
+    : IClassFixture<IntegrationTestFactory>, IAsyncLifetime
 {
-    /// <summary>The fixed moment the end-of-cycle tests run at.</summary>
-    private static readonly DateTimeOffset FixedNow = new(2026, 3, 15, 9, 0, 0, TimeSpan.Zero);
+    /// <summary>Forgets the job's record before each test, so a pass a test ran on another clock does not keep this one's pass closed.</summary>
+    /// <returns>A task.</returns>
+    public async Task InitializeAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<AppDbContext>().JobRuns
+            .Where(r => r.JobName == nameof(AutoTerminateSuspendedCronCommand))
+            .ExecuteDeleteAsync();
+    }
+
+    /// <summary>Nothing to release after a test.</summary>
+    /// <returns>A completed task.</returns>
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
+    }
 
     /// <summary>Seeds a client, a product and one suspended <see cref="ClientService"/>.</summary>
     /// <param name="db">The concrete data context.</param>
@@ -39,7 +53,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
         var clientId = await SeedClientAsync(db);
         var productId = await SeedProductAsync(db);
 
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         await ServicesTestSeeds.AddActivatedAsync(db, service, "panel-ref", suspendedAt);
         service.Suspend(suspendedAt, "test", source: source);
         await db.SaveChangesAsync(CancellationToken.None);
@@ -80,9 +94,10 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task ManualSuspensionPastTheLimit_IsNotTerminated()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var service = await SeedSuspendedServiceAsync(db, DateTimeOffset.UtcNow.AddDays(-30), SuspensionSource.Manual);
+        var service = await SeedSuspendedServiceAsync(db, host.Clock.GetUtcNow().AddDays(-30), SuspensionSource.Manual);
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new AutoTerminateSuspendedCronCommand(), CancellationToken.None);
@@ -96,11 +111,12 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task ImportedSuspensionPastTheLimit_IsNotTerminated()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var clientId = await SeedClientAsync(db);
         var productId = await SeedProductAsync(db);
-        var longAgo = DateTimeOffset.UtcNow.AddDays(-30);
+        var longAgo = host.Clock.GetUtcNow().AddDays(-30);
         var service = ClientService.Import(new ServiceImport(
             clientId, productId, BillingCycle.Monthly, ServiceStatus.Suspended, longAgo, longAgo, SuspensionSource.Other,
             new ServiceHostingAccount(null, "imported.example.test", "imported", null, "imported", null)));
@@ -119,9 +135,10 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task ServiceSuspendedPastTheLimit_IsTerminated()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var service = await SeedSuspendedServiceAsync(db, DateTimeOffset.UtcNow.AddDays(-15));
+        var service = await SeedSuspendedServiceAsync(db, host.Clock.GetUtcNow().AddDays(-15));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new AutoTerminateSuspendedCronCommand(), CancellationToken.None);
@@ -146,7 +163,8 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             serviceId = (await ProvisioningTestSeeds.SeedActiveServiceAsync(context)).ServiceId;
             var service = await context.ClientServices.SingleAsync(s => s.Id == serviceId, CancellationToken.None);
-            service.Suspend(DateTimeOffset.UtcNow.AddDays(-15), hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+            // Real time: this host runs on the system clock, so the suspension has to be past the limit against it.
+            service.Suspend(TestMoments.Present().AddDays(-15), hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -170,9 +188,10 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task ServiceSuspendedRecently_IsNotTerminated()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var service = await SeedSuspendedServiceAsync(db, DateTimeOffset.UtcNow.AddDays(-1));
+        var service = await SeedSuspendedServiceAsync(db, host.Clock.GetUtcNow().AddDays(-1));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new AutoTerminateSuspendedCronCommand(), CancellationToken.None);
@@ -196,8 +215,8 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
         var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
         db.Products.Add(product);
         await db.SaveChangesAsync(CancellationToken.None);
-        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(db, service, "panel-ref", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(db, service, "panel-ref", TestMoments.Seeded);
         await db.SaveChangesAsync(CancellationToken.None);
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -215,7 +234,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task ServiceSuspendedRecently_IsTerminatedOnceTheClockPassesTheLimit()
     {
-        using var host = new ClockedHost(factory);
+        using var host = ClockedHost.AtPresent(factory);
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var service = await SeedSuspendedServiceAsync(db, host.Clock.GetUtcNow().AddDays(-1));
@@ -240,12 +259,12 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task EndOfCycleServicePastItsRenewalDate_IsTerminatedAndItsRequestClosed()
     {
-        using var host = new ClockedHost(factory, FixedNow);
+        using var host = ClockedHost.AtPresent(factory);
         int serviceId;
         using (var scope = host.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            serviceId = await SeedEndOfCycleServiceAsync(db, FixedNow.AddMonths(-2));
+            serviceId = await SeedEndOfCycleServiceAsync(db, host.Clock.GetUtcNow().AddMonths(-2));
             db.CancellationRequests.Add(CancellationRequest.Create(serviceId, CancellationType.EndOfBillingPeriod, "Moving on"));
             await db.SaveChangesAsync(CancellationToken.None);
         }
@@ -267,10 +286,10 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task EndOfCycleServiceBeforeItsRenewalDate_IsNotTerminated()
     {
-        using var host = new ClockedHost(factory, FixedNow);
+        using var host = ClockedHost.AtPresent(factory);
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var serviceId = await SeedEndOfCycleServiceAsync(db, FixedNow.AddDays(-1));
+        var serviceId = await SeedEndOfCycleServiceAsync(db, host.Clock.GetUtcNow().AddDays(-1));
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         await bus.InvokeAsync(new AutoTerminateSuspendedCronCommand(), CancellationToken.None);
@@ -287,10 +306,11 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task EndOfCycleServiceAlreadyTerminated_IsSkippedOnTheNextPass()
     {
-        using var host = new ClockedHost(factory, FixedNow);
+        using var host = ClockedHost.AtPresent(factory);
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var serviceId = await SeedEndOfCycleServiceAsync(db, FixedNow.AddMonths(-2));
+        var start = host.Clock.GetUtcNow();
+        var serviceId = await SeedEndOfCycleServiceAsync(db, start.AddMonths(-2));
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         await bus.InvokeAsync(new AutoTerminateSuspendedCronCommand(), CancellationToken.None);
@@ -302,8 +322,8 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
 
         first.Status.Should().Be(ServiceStatus.Terminated);
         second.Status.Should().Be(ServiceStatus.Terminated);
-        first.TerminatedAt.Should().Be(FixedNow);
-        second.TerminatedAt.Should().Be(FixedNow);
+        first.TerminatedAt.Should().BeCloseTo(start, TimeSpan.FromMilliseconds(1));
+        second.TerminatedAt.Should().Be(first.TerminatedAt);
     }
 
     /// <summary>
@@ -314,9 +334,10 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     [Fact]
     public async Task TheDelayIsReadFromTheBillingSetting()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var service = await SeedSuspendedServiceAsync(db, DateTimeOffset.UtcNow.AddDays(-15));
+        var service = await SeedSuspendedServiceAsync(db, host.Clock.GetUtcNow().AddDays(-15));
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var setting = await db.Settings.FirstAsync(s => s.Key == BillingSettingKeys.TerminateAfterSuspendedDays, CancellationToken.None);
 
@@ -327,6 +348,8 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
             await bus.InvokeAsync(new AutoTerminateSuspendedCronCommand(), CancellationToken.None);
             var withLongDelay = await db.ClientServices.AsNoTracking().FirstAsync(s => s.Id == service.Id, CancellationToken.None);
 
+            // The job does not repeat within its rest after a pass; the clock moves a day on.
+            host.Clock.Advance(TimeSpan.FromDays(1));
             setting.UpdateValue("10");
             await db.SaveChangesAsync(CancellationToken.None);
             await bus.InvokeAsync(new AutoTerminateSuspendedCronCommand(), CancellationToken.None);
@@ -365,7 +388,8 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             serviceId = (await ProvisioningTestSeeds.SeedActiveServiceAsync(context)).ServiceId;
             var service = await context.ClientServices.SingleAsync(s => s.Id == serviceId, CancellationToken.None);
-            service.Suspend(DateTimeOffset.UtcNow.AddDays(-15), hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+            // Real time: a fixed moment would leave this suspension (the refused one stays retryable) due for every later test that moves a clocked host past it.
+            service.Suspend(TestMoments.Present().AddDays(-15), hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

@@ -76,7 +76,7 @@ public sealed class FindServiceIdsByDomainNameTests(IntegrationTestFactory facto
     private static void AddDomain(IHostpanelDbContext context, int clientId, string name, int? serviceId)
     {
         var domain = RegisteredDomain.Register(
-            clientId, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, name, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         if (serviceId is { } id)
         {
             domain.LinkService(id);

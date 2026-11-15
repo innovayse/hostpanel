@@ -87,7 +87,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 5m);
-            var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+            var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
             service.ChangeBillingTerms(new ServiceBillingTerms(
                 BillingCycle: BillingCycle.Monthly, Quantity: 1, FirstPaymentAmount: 5m,
                 RecurringAmount: 5m, NextRenewalAt: null, PaymentMethod: null,
@@ -122,7 +122,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var ids = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 7.25m);
             productId = ids.ProductId;
-            var service = ClientService.Create(ids.ClientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+            var service = ClientService.Create(ids.ClientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
             context.ClientServices.Add(service);
             await context.SaveChangesAsync(CancellationToken.None);
             serviceId = service.Id;
@@ -182,7 +182,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var second = RegisteredDomain.Import(
-                mix.ClientId, $"second-{mix.Token}.com", DomainStatus.Active, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+                mix.ClientId, $"second-{mix.Token}.com", DomainStatus.Active, TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
                 autoRenew: false, TestCurrencies.Base, registrar: null, registrarModule: null);
             second.LinkService(mix.Suspended);
             context.Domains.Add(second);

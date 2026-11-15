@@ -206,7 +206,8 @@ public static class BillingTestSeeds
         var created = await admin.PostAsJsonAsync("/api/billing", new
         {
             clientId,
-            dueDate = DateTimeOffset.UtcNow.AddDays(14),
+            // Real time on purpose: the shared host refuses a due date before today by its own system clock.
+            dueDate = TestMoments.Present().AddDays(14),
             isDraft,
             items = new[] { new { description = "Hosting", unitPrice, quantity = 1 } },
         });
@@ -223,7 +224,7 @@ public static class BillingTestSeeds
     {
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"manual-{Guid.NewGuid():N}",
             amount,
@@ -243,7 +244,8 @@ public static class BillingTestSeeds
         {
             clientId,
             subject = "Website redesign",
-            expiryDate = DateTimeOffset.UtcNow.AddDays(30),
+            // Real time on purpose: the shared host judges a quote expiry against its own system clock.
+            expiryDate = TestMoments.Present().AddDays(30),
             notes = (string?)null,
             items = new[] { new { description = "Design", unitPrice, quantity = 1 } },
         });
@@ -263,7 +265,7 @@ public static class BillingTestSeeds
         var created = await admin.PostAsJsonAsync("/api/transactions", new
         {
             clientId,
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             description = "Manual top-up",
             transactionId = $"txn-{Guid.NewGuid():N}",
             invoiceId = (int?)null,
@@ -292,7 +294,7 @@ public static class BillingTestSeeds
         var client = await context.Clients.FirstAsync(c => c.Id == clientId, CancellationToken.None);
         client.AddCredit(amount);
         var entry = Transaction.Create(
-            clientId, DateTimeOffset.UtcNow, "Manual top-up", $"txn-{Guid.NewGuid():N}", null, PaymentMethodNames.Manual,
+            clientId, TestMoments.Seeded, "Manual top-up", $"txn-{Guid.NewGuid():N}", null, PaymentMethodNames.Manual,
             amount, 0m, 0m, addedToCredit: true, "USD", TransactionSource.Manual);
         context.Transactions.Add(entry);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -326,7 +328,8 @@ public static class BillingTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        // An unresolved claim goes stale by the host clock, so it is stamped from that clock and stays fresh whichever clock the host runs on.
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
         var claim = InvoicePaymentClaim.Open(invoiceId, clientId, "seed-gateway", "seed-method", $"seed-{Guid.NewGuid():N}", 1000, "USD", now);
         if (pending)
         {
@@ -350,7 +353,7 @@ public static class BillingTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var claim = InvoicePaymentClaim.Open(invoiceId, clientId, "seed-gateway", "seed-method", $"seed-{Guid.NewGuid():N}", 1000, "USD", now);
         claim.MarkHeld("held-tx", now);
         context.InvoicePaymentClaims.Add(claim);

@@ -41,8 +41,8 @@ public sealed class UnsuspendServiceTests(IntegrationTestFactory factory) : ICla
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var service = await context.ClientServices.FirstOrDefaultAsync(
                 s => s.Id == serviceId, CancellationToken.None);
-            service!.Activate("panel-ref-unsuspend", service.CreatedAt, DateTimeOffset.UtcNow);
-            service.Suspend(DateTimeOffset.UtcNow, "test");
+            service!.Activate("panel-ref-unsuspend", service.CreatedAt, TestMoments.Seeded);
+            service.Suspend(TestMoments.Seeded, "test");
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

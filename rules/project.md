@@ -1416,6 +1416,29 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   the entity set it itself. Factories do not write `CreatedAt`; a domain method that needs a
   moment takes it from the caller (`ClientService.Activate` gets its billing anchor that way: the
   activation moment, when provisioning succeeds, not the order date; it never lowers a later renewal date).
+  **Read time through the clock, in production and in tests (issue 1208).** `NoDirectClockTests` fails on any
+  `DateTimeOffset.UtcNow`, `DateTimeOffset.Now`, `DateTime.UtcNow`, `DateTime.Now` or `DateTime.Today` under
+  `backend/src` outside the `Hostpanel.Sdk` submodule (a separate repository; no file is exempt, `SystemClock` asks the
+  `TimeProvider`), proved on a planted source. In a test, "now" is one of two things. A test that depends on a time
+  window (renewal, expiry, cron pass, reminder period, month or day boundary) runs on `ClockedHost`: it stands at
+  `TestMoments.Seeded` unless the test names a moment, the test sets it with `host.Clock.Set(...)` or moves it with
+  `host.Clock.Advance(...)`, and it reads the moment as `host.Clock.GetUtcNow()` or derives it from `TestMoments.Seeded`;
+  rows are seeded relative to that moment, never to the real clock. Any other test that only needs a label or a
+  timestamp for a seeded row uses `TestMoments.Seeded`. The shared `IntegrationTestFactory` host keeps the system clock
+  on purpose: the sign-in tokens, cookies and their expiry the tests mint and validate run against the real time and
+  would be born expired or never expire on a fixed one, so a test about a token lifetime moves a clocked host it
+  derives (see `SessionRenewalHost`, `TwoFactorHost`), not the shared one. The real present has one source in the
+  tests, `TestMoments.Present()` (the only read of the system clock; `ManualTimeProvider.AtPresent()` and
+  `ClockedHost.AtPresent(factory)` stand on it), and a test uses it for anything that must agree with the shared host's own
+  clock; no test reads `DateTimeOffset.UtcNow` itself. A derived host that
+  must accept tokens minted by the shared host (`TwoFactorHost`, `SessionRenewalHost`) starts its clock at the real
+  moment, not at `TestMoments.Seeded`: the token's issue time and its check then read one clock, and a token issued
+  "later" than the host's clock is refused with 401. Only the test that moves the clock past a token lifetime leaves it.
+  **A host that runs a recurring job starts at the present, not at `TestMoments.Seeded`.** `RecurringJobs.RunAsync` schedules
+  the job's next run from the host clock; a clock standing at the past `Seeded` moment makes that run due at once, so the
+  job repeats on the host and its passes meet the lease of their own repeats. Every cron host in the tests
+  (`ClockedHost.AtPresent`, `ManualTimeProvider.AtPresent()` for a `FailingSaveHost` or a derived host, `FulfilmentScenario`)
+  therefore starts at `TestMoments.Present()`, seeds its rows relative to `host.Clock.GetUtcNow()` and moves from there.
 - **A module owns its tables** (`ModuleTableOwnershipTests`, allow-list in `CrossModuleReadModels`). Another
   module's rows are reached through its query on `IMessageBus` or a port, never its `DbSet`. The shared
   blocks: `GetClientBriefsQuery` (id, owner subject, name, company, currency, status, invoicing preference, credit balance and, on request, the

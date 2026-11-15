@@ -26,14 +26,15 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_MarksAnOverdueDomainExpiredAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(-1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-3", domain.ExpiresAt, DateTimeOffset.UtcNow);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, host.Clock.GetUtcNow().AddDays(-1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-3", domain.ExpiresAt, host.Clock.GetUtcNow());
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync(new CheckDomainExpiriesCommand(), CancellationToken.None);
@@ -50,14 +51,15 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_RecordsAWarningReminderForASoonExpiringDomainAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddHours(20), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-4", domain.ExpiresAt, DateTimeOffset.UtcNow);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, host.Clock.GetUtcNow().AddHours(20), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-4", domain.ExpiresAt, host.Clock.GetUtcNow());
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync(new CheckDomainExpiriesCommand(), CancellationToken.None);
@@ -77,15 +79,16 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_RemindsAgainInTheNextExpiryCycleAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-9", domain.ExpiresAt, DateTimeOffset.UtcNow);
-        domain.AddReminder(DomainReminderType.FourteenDaysBeforeExpiry, $"client-{clientId}", DateTimeOffset.UtcNow.AddYears(-1));
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, host.Clock.GetUtcNow().AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-9", domain.ExpiresAt, host.Clock.GetUtcNow());
+        domain.AddReminder(DomainReminderType.FourteenDaysBeforeExpiry, $"client-{clientId}", host.Clock.GetUtcNow().AddYears(-1));
         await context.SaveChangesAsync(CancellationToken.None);
 
         await bus.InvokeAsync(new CheckDomainExpiriesCommand(), CancellationToken.None);
@@ -103,12 +106,13 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_SendsNoWarningWhileARenewalInvoiceIsOpenAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        var domain = await SeedAutoRenewDomainAsync(context, "REF-5");
-        await SeedRenewalInvoiceAsync(context, domain, cancel: false);
+        var domain = await SeedAutoRenewDomainAsync(context, host.Clock.GetUtcNow(), "REF-5");
+        await SeedRenewalInvoiceAsync(context, domain, host.Clock.GetUtcNow(), cancel: false);
 
         await bus.InvokeAsync(new CheckDomainExpiriesCommand(), CancellationToken.None);
 
@@ -123,11 +127,12 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_WarnsAnAutoRenewDomainWithNoRenewalInvoiceAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        var domain = await SeedAutoRenewDomainAsync(context, "REF-6");
+        var domain = await SeedAutoRenewDomainAsync(context, host.Clock.GetUtcNow(), "REF-6");
 
         await bus.InvokeAsync(new CheckDomainExpiriesCommand(), CancellationToken.None);
 
@@ -139,12 +144,13 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_WarnsAnAutoRenewDomainWhoseRenewalInvoiceWasCancelledAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        var domain = await SeedAutoRenewDomainAsync(context, "REF-7");
-        await SeedRenewalInvoiceAsync(context, domain, cancel: true);
+        var domain = await SeedAutoRenewDomainAsync(context, host.Clock.GetUtcNow(), "REF-7");
+        await SeedRenewalInvoiceAsync(context, domain, host.Clock.GetUtcNow(), cancel: true);
 
         await bus.InvokeAsync(new CheckDomainExpiriesCommand(), CancellationToken.None);
 
@@ -159,12 +165,13 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_WarnsDespiteAnOpenInvoiceWhenRemindersAreClearedAsync()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        var domain = await SeedAutoRenewDomainAsync(context, "REF-8");
-        await SeedRenewalInvoiceAsync(context, domain, cancel: false);
+        var domain = await SeedAutoRenewDomainAsync(context, host.Clock.GetUtcNow(), "REF-8");
+        await SeedRenewalInvoiceAsync(context, domain, host.Clock.GetUtcNow(), cancel: false);
 
         var row = await context.Settings.FirstAsync(s => s.Key == BillingSettingKeys.ReminderDays, CancellationToken.None);
         var original = row.Value;
@@ -185,14 +192,15 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
 
     /// <summary>Seeds an active, auto-renewing domain expiring in five days.</summary>
     /// <param name="context">Data context.</param>
+    /// <param name="now">The moment the host clock stands at.</param>
     /// <param name="registrarRef">The registrar reference to activate it with.</param>
     /// <returns>The saved domain.</returns>
-    private static async Task<RegisteredDomain> SeedAutoRenewDomainAsync(IHostpanelDbContext context, string registrarRef)
+    private static async Task<RegisteredDomain> SeedAutoRenewDomainAsync(IHostpanelDbContext context, DateTimeOffset now, string registrarRef)
     {
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(5), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, registrarRef, domain.ExpiresAt, DateTimeOffset.UtcNow);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, now.AddDays(5), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, registrarRef, domain.ExpiresAt, now);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain;
     }
@@ -200,15 +208,16 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// <summary>Seeds an Unpaid renewal invoice for the domain's next year, optionally cancelled.</summary>
     /// <param name="context">Data context.</param>
     /// <param name="domain">The domain.</param>
+    /// <param name="now">The moment the host clock stands at.</param>
     /// <param name="cancel">Whether the invoice is cancelled after it is raised.</param>
     /// <returns>A task.</returns>
-    private static async Task SeedRenewalInvoiceAsync(IHostpanelDbContext context, RegisteredDomain domain, bool cancel)
+    private static async Task SeedRenewalInvoiceAsync(IHostpanelDbContext context, RegisteredDomain domain, DateTimeOffset now, bool cancel)
     {
-        var invoice = Invoice.Create(domain.ClientId, domain.ExpiresAt, "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(domain.ClientId, domain.ExpiresAt, "USD", now);
         invoice.AddDomainRenewal($"Domain renewal: {domain.Name} (1y)", 12m, domain.Id, domain.ExpiresAt, domain.ExpiresAt.AddYears(1));
         if (cancel)
         {
-            invoice.Cancel(DateTimeOffset.UtcNow);
+            invoice.Cancel(now);
         }
 
         context.Invoices.Add(invoice);
@@ -237,7 +246,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_OneDomainThatCannotBeMarked_StopsNeitherTheOthersNorTheWarningsAsync()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Present();
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(
             factory,
@@ -266,7 +275,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task CheckDomainExpiries_OneWarningThatCannotBeSaved_DoesNotStopTheNextAsync()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Present();
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(
             factory,

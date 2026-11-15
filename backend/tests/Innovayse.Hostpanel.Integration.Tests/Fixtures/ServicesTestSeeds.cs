@@ -162,15 +162,15 @@ public static class ServicesTestSeeds
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", productType, 2m, 20m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", productType, 2m, 20m, TestMoments.Seeded);
         product.SetSku(sku);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var service = domain is null
-            ? Domain.Services.ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow)
+            ? Domain.Services.ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded)
             : Domain.Services.ClientService.CreateOrdered(
-                clientId, product.Id, BillingCycle.Monthly, domain, 0m, 0m, null, null, DateTimeOffset.UtcNow);
+                clientId, product.Id, BillingCycle.Monthly, domain, 0m, 0m, null, null, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -192,7 +192,7 @@ public static class ServicesTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         var created = new List<Domain.Services.CancellationRequest>();
-        var moment = DateTimeOffset.UtcNow.AddHours(-1);
+        var moment = TestMoments.Seeded.AddHours(-1);
         foreach (var (type, reason, closed) in requests)
         {
             var request = Domain.Services.CancellationRequest.Create(serviceId, type, reason);
@@ -224,24 +224,24 @@ public static class ServicesTestSeeds
         var (clientId, productId) = await SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
-        var service = Domain.Services.ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = Domain.Services.ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         if (status is ServiceStatus.Pending)
         {
             context.ClientServices.Add(service);
         }
         else
         {
-            await AddActivatedAsync(context, service, "acct1", DateTimeOffset.UtcNow);
+            await AddActivatedAsync(context, service, "acct1", TestMoments.Seeded);
         }
 
         if (status is ServiceStatus.Suspended)
         {
-            service.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true);
         }
 
         if (status is ServiceStatus.Terminated)
         {
-            service.Terminate(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service.Terminate(TestMoments.Seeded, hostingAlreadyUpdated: true);
         }
 
         await context.SaveChangesAsync(CancellationToken.None);
@@ -326,7 +326,7 @@ public static class ServicesTestSeeds
 
         // The suspended service shows the registered domain linked to it, the way a service ordered with a domain does.
         var linked = RegisteredDomain.Import(
-            clientId, $"linked-{token}.com", DomainStatus.Active, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+            clientId, $"linked-{token}.com", DomainStatus.Active, TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
             autoRenew: false, TestCurrencies.Base, registrar: null, registrarModule: null);
         linked.LinkService(suspended.Id);
         context.Domains.Add(linked);

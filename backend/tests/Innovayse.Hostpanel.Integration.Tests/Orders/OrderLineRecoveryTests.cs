@@ -44,7 +44,8 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
         using (var failing = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            // Real time: the lines stamped here are read later by the shared host on the system clock, which a fixed moment would put out of step.
+            ManualTimeProvider.AtPresent(),
             tracker => tracker.Entries<ClientService>().Any(e => e.State == EntityState.Modified && e.Entity.Status == ServiceStatus.Active)))
         {
             var accept = await (await OrdersTestReads.AdminOfAsync(failing, factory)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
@@ -257,7 +258,8 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
         using var host = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            // Real time: the lines stamped here are read later by the shared host on the system clock, which a fixed moment would put out of step.
+            ManualTimeProvider.AtPresent(),
             tracker => tracker.Entries<OrderItem>().Any(
                 e => e.State == EntityState.Modified && e.Entity.FulfilmentState == OrderItemFulfilmentState.Failed && e.Entity.Domain != null));
 
@@ -375,7 +377,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Domains.Add(RegisteredDomain.Register(
-            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
+            clientId, domain, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
             orderId: orderId));
         await db.SaveChangesAsync();
     }
@@ -389,7 +391,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var held = RegisteredDomain.Register(
-            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD");
+            clientId, domain, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD");
         held.Cancel();
         db.Domains.Add(held);
         await db.SaveChangesAsync();

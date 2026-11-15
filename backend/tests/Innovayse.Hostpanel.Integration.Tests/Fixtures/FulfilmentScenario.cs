@@ -33,7 +33,7 @@ internal sealed class FulfilmentScenario : IDisposable
     {
         PluginId = $"stub-{Guid.NewGuid():N}";
         Plugin = new StubFulfilmentPlugin();
-        Clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        Clock = ManualTimeProvider.AtPresent();
         var resolver = new FakeFulfilmentPluginResolver();
         resolver.Register(PluginId, Plugin);
         _resolver = resolver;

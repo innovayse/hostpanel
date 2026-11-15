@@ -109,7 +109,7 @@ public static class OrdersTestSeeds
             }
             else if (status == OrderStatus.Active)
             {
-                order.Accept(DateTimeOffset.UtcNow);
+                order.Accept(TestMoments.Seeded);
             }
             else if (status == OrderStatus.UnderReview)
             {
@@ -166,7 +166,7 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var order = await db.Orders.Include(o => o.Items).FirstAsync(o => o.Id == orderId);
-        order.Accept(DateTimeOffset.UtcNow);
+        order.Accept(TestMoments.Seeded);
         await db.SaveChangesAsync();
     }
 
@@ -190,7 +190,7 @@ public static class OrdersTestSeeds
         db.Clients.Add(holder);
         await db.SaveChangesAsync();
         db.Domains.Add(RegisteredDomain.Register(
-            holder.Id, domainName, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
+            holder.Id, domainName, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
         await db.SaveChangesAsync();
 
         var product = Product.Create(
@@ -232,7 +232,7 @@ public static class OrdersTestSeeds
         foreach (var name in new[] { first, second })
         {
             db.Domains.Add(RegisteredDomain.Register(
-                holder.Id, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
+                holder.Id, name, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
         }
 
         var product = Product.Create(
@@ -321,7 +321,7 @@ public static class OrdersTestSeeds
         order.AddItem(await DomainsTestSeeds.SeedHostingProductAsync(db), "Starter Hosting", BillingCycle.Monthly, 25m, 25m, domain: null, hostname: null);
         db.Orders.Add(order);
 
-        var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), currency, DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), currency, TestMoments.Seeded);
         invoice.AddItem("Starter Hosting", 25m, 1);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();

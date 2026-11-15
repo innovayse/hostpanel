@@ -244,7 +244,8 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var claimedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+            // Real time: the lease is judged by the shared host on the system clock.
+            var claimedAt = TestMoments.Present().AddMinutes(-2);
             await db.OrderItems.Where(i => i.Id == domainLine.Id).ExecuteUpdateAsync(s => s
                 .SetProperty(i => i.FulfilmentState, OrderItemFulfilmentState.InProgress)
                 .SetProperty(i => i.LastFulfilmentAttemptAt, claimedAt));
@@ -344,7 +345,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var held = RegisteredDomain.Register(
-            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
+            clientId, domain, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
             orderId: orderId);
         db.Domains.Add(held);
         await db.SaveChangesAsync();

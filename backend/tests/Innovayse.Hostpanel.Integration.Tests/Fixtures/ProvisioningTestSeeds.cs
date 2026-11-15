@@ -216,8 +216,8 @@ public static class ProvisioningTestSeeds
 
         var server = await SeedServerAsync(context);
 
-        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref-1", DateTimeOffset.UtcNow, server.Id);
+        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref-1", TestMoments.Seeded, server.Id);
         await context.SaveChangesAsync(CancellationToken.None);
 
         return new SeededActiveService(client.Id, server.Id, service.Id);
@@ -256,7 +256,7 @@ public static class ProvisioningTestSeeds
     public static async Task<SeededUnassignedService> SeedUnassignedServiceAsync(IHostpanelDbContext context)
     {
         var (client, product) = await SeedClientAndProductAsync(context);
-        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
         return new SeededUnassignedService(client.Id, service.Id);

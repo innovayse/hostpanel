@@ -139,7 +139,7 @@ public sealed class SavingGatewayScenario : IDisposable
         using var scope = Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var consent = await context.CardChargeConsents.SingleAsync(c => c.Id == consentId, CancellationToken.None);
-        consent.Revoke(DateTimeOffset.UtcNow);
+        consent.Revoke(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

@@ -44,7 +44,7 @@ public sealed class AutoRenewPersistenceTests(IntegrationTestFactory factory)
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        var service = ClientService.Create(clientId, productId, billingCycle: BillingCycle.Monthly, now: DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, billingCycle: BillingCycle.Monthly, now: TestMoments.Seeded);
         configure(service);
         context.Set<ClientService>().Add(service);
         await context.SaveChangesAsync();

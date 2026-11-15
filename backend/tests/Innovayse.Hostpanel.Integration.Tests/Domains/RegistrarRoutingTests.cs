@@ -72,9 +72,9 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}"[..12] + $".{tld}", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+            clientId, $"{Guid.NewGuid():N}"[..12] + $".{tld}", TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
             autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-ROUTING", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-ROUTING", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         return (domain.Name, domain.Id);
     }

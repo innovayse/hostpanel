@@ -65,7 +65,7 @@ public sealed class ClientServiceOrderItemIndexTests(IntegrationTestFactory fact
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.ClientServices.Add(ClientService.CreateOrdered(
-            clientId, productId, BillingCycle.Monthly, domain: null, 5m, 5m, "Card", firstInvoiceId: null, DateTimeOffset.UtcNow, orderItemId));
+            clientId, productId, BillingCycle.Monthly, domain: null, 5m, 5m, "Card", firstInvoiceId: null, TestMoments.Seeded, orderItemId));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 }

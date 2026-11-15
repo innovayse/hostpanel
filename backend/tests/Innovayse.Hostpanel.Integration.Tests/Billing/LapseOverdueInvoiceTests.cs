@@ -192,11 +192,11 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
         (await LoadAsync(host, invoiceId)).LapsedAt.Should().BeNull();
     }
 
-    /// <summary>The current moment cut to whole microseconds, so a date written to Postgres reads back equal.</summary>
-    /// <returns>The moment.</returns>
+    /// <summary>The present cut to whole microseconds, so a date written to Postgres reads back equal.</summary>
+    /// <returns>The moment; it is the real present because the cron schedules its next run from the clock (see <see cref="TestMoments.Present"/>).</returns>
     private static DateTimeOffset WholeMicroseconds()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Present();
         return new DateTimeOffset(now.Ticks - (now.Ticks % 10), TimeSpan.Zero);
     }
 

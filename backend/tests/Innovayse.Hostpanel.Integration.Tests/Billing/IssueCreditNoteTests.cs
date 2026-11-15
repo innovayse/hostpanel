@@ -434,7 +434,8 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            invoice.BeginGatewayRefund(DateTimeOffset.UtcNow, 40m);
+            // Real time: the refund claim is held for a lease that the shared host judges by its own system clock.
+            invoice.BeginGatewayRefund(TestMoments.Present(), 40m);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

@@ -145,7 +145,7 @@ internal sealed class SeededDatabase : IAsyncDisposable
     /// <returns>A task that completes when the rows are saved.</returns>
     private async Task SeedAsync()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var withCurrency = await InsertClientAsync("Ada", BackfillOrderQuoteTransactionCurrencyMigrationTests.ClientCurrency, now);
         var bare = await InsertClientAsync("Bob", null, now);
         var invoice = await InsertAsync(

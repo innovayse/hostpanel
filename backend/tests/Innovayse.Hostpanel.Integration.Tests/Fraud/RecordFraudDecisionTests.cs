@@ -33,7 +33,8 @@ public sealed class RecordFraudDecisionTests(IntegrationTestFactory factory) : I
         entry.Email.Should().Be("buyer@example.com");
         entry.Score.Should().Be(64);
         entry.Reasons.Should().Equal(FraudReasonCode.DisposableEmail, FraudReasonCode.CountryMismatch);
-        entry.CreatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
+        // Real time: the shared host stamps the row on save with the system clock.
+        entry.CreatedAt.Should().BeCloseTo(TestMoments.Present(), TimeSpan.FromMinutes(1));
     }
 
     /// <summary>A score outside 0 to 100 is refused on the bus, and nothing is written.</summary>

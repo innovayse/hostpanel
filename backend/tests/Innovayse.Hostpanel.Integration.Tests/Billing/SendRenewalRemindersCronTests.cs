@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,20 +24,21 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
 {
     /// <summary>Builds a host with a suppressed event gate and a fake SMTP relay.</summary>
     /// <param name="sender">The fake relay the host's mail goes to.</param>
-    /// <returns>The isolated host.</returns>
-    private WebApplicationFactory<Program> Host(FakeEmailSender sender) =>
-        EventHandlerTestHost.WithFakeRelay(factory, sender);
+    /// <returns>The isolated host, on a clock standing at the real present (the job schedules its next run from the clock, see <see cref="TestMoments.Present"/>).</returns>
+    private ClockedHost Host(FakeEmailSender sender) =>
+        ClockedHost.AtPresent(EventHandlerTestHost.WithFakeRelay(factory, sender));
 
     /// <summary>Seeds an invoice for a fresh identity-backed client.</summary>
     /// <param name="services">The scoped service provider.</param>
-    /// <param name="raisedDaysAgo">How many days ago the invoice was raised.</param>
-    /// <param name="dueInDays">How many days from now the invoice is due.</param>
+    /// <param name="now">The moment the host the cron runs on reads as the present.</param>
+    /// <param name="raisedDaysAgo">How many days before <paramref name="now"/> the invoice was raised.</param>
+    /// <param name="dueInDays">How many days after <paramref name="now"/> the invoice is due.</param>
     /// <param name="renewal">Whether the invoice carries a renewal line (else a plain line).</param>
     /// <param name="paid">Whether the invoice is marked paid.</param>
     /// <param name="optOut">Whether the client has opted out of invoice mail.</param>
     /// <returns>The client's email address and the invoice id.</returns>
     private static async Task<RenewalReminderTarget> SeedAsync(
-        IServiceProvider services, int raisedDaysAgo, int dueInDays, bool renewal = true, bool paid = false, bool optOut = false)
+        IServiceProvider services, DateTimeOffset now, int raisedDaysAgo, int dueInDays, bool renewal = true, bool paid = false, bool optOut = false)
     {
         var context = services.GetRequiredService<IHostpanelDbContext>();
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(services, context, "reminder");
@@ -47,7 +47,6 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
             client.UpdateNotifications(general: true, invoice: false, support: true, product: true, domain: true, affiliate: true);
         }
 
-        var now = DateTimeOffset.UtcNow;
         var invoice = Invoice.Create(client.Id, now.AddDays(dueInDays), "USD", now);
         if (renewal)
         {
@@ -76,16 +75,17 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     private static async Task RunAsync(IServiceProvider services) =>
         await services.GetRequiredService<IMessageBus>().InvokeAsync(new SendRenewalRemindersCronCommand(), CancellationToken.None);
 
-    /// <summary>Sets an invoice's due date relative to now, keeping a fourteen-day lead.</summary>
+    /// <summary>Sets an invoice's due date relative to <paramref name="now"/>, keeping a fourteen-day lead.</summary>
     /// <param name="services">The scoped service provider.</param>
+    /// <param name="now">The moment the host the cron runs on reads as the present.</param>
     /// <param name="invoiceId">The invoice.</param>
-    /// <param name="dueInDays">Days from now until due.</param>
+    /// <param name="dueInDays">Days after <paramref name="now"/> until due.</param>
     /// <returns>A task.</returns>
-    private static async Task SetDueAsync(IServiceProvider services, int invoiceId, int dueInDays)
+    private static async Task SetDueAsync(IServiceProvider services, DateTimeOffset now, int invoiceId, int dueInDays)
     {
         var context = services.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.FirstAsync(i => i.Id == invoiceId);
-        var due = DateTimeOffset.UtcNow.AddDays(dueInDays);
+        var due = now.AddDays(dueInDays);
         invoice.UpdateOptions(due.AddDays(-14), due, null, 0m);
         await context.SaveChangesAsync(CancellationToken.None);
     }
@@ -99,13 +99,14 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task OneInvoice_ProgressesThroughTheThresholds()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
-        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 0, dueInDays: 7);
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
+        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 0, dueInDays: 7);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         async Task<int> StepAsync(int dueInDays)
         {
-            await SetDueAsync(scope.ServiceProvider, invoiceId, dueInDays);
+            await SetDueAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), invoiceId, dueInDays);
             await RunAsync(scope.ServiceProvider);
             return sender.Sent.Count(m => m.To == email);
         }
@@ -131,15 +132,15 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     {
         var sender = new FakeEmailSender();
         var poisoned = new PoisonedInvoice();
-        var host = factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+        using var host = ClockedHost.AtPresent(factory.WithWebHostBuilder(b => b.ConfigureTestServices(services =>
         {
             services.AddSingleton<IEmailSender>(sender);
             services.AddScoped<IDomainEventGate, SuppressedDomainEventGate>();
             services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new PoisonedInvoiceSaveInterceptor(poisoned)));
-        }));
+        })));
         using var scope = host.Services.CreateScope();
-        var (badEmail, badId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3);
-        var (goodEmail, goodId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3);
+        var (badEmail, badId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3);
+        var (goodEmail, goodId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3);
         poisoned.InvoiceId = badId;
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
@@ -157,8 +158,9 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task ThreeDaysBefore_SendsOnce()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
-        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3);
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
+        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         await RunAsync(scope.ServiceProvider);
@@ -175,8 +177,9 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task Reminder_RendersInvoiceIdAndUrl()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
-        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3);
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
+        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3);
 
         await RunAsync(scope.ServiceProvider);
 
@@ -193,8 +196,9 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task RaisedLate_NoStaleReminder()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
-        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 0, dueInDays: 2);
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
+        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 0, dueInDays: 2);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         await RunAsync(scope.ServiceProvider);
@@ -209,8 +213,9 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task Paid_NotReminded()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
-        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3, paid: true);
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
+        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3, paid: true);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         await RunAsync(scope.ServiceProvider);
@@ -225,8 +230,9 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task OptedOut_NotReminded()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
-        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3, optOut: true);
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
+        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3, optOut: true);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         await RunAsync(scope.ServiceProvider);
@@ -241,8 +247,9 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task PlainInvoice_NotReminded()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
-        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3, renewal: false);
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
+        var (email, invoiceId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3, renewal: false);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         await RunAsync(scope.ServiceProvider);
@@ -260,11 +267,11 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     public async Task LongOverdueInvoice_IsNotDispatchedAgain()
     {
         var sender = new FakeEmailSender();
-        var host = Host(sender);
+        using var host = Host(sender);
         using var scope = host.Services.CreateScope();
-        var (_, longOverdueId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 20, dueInDays: -5);
-        var (_, justOverdueId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 14, dueInDays: 0);
-        var (_, dueSoonId) = await SeedAsync(scope.ServiceProvider, raisedDaysAgo: 11, dueInDays: 3);
+        var (_, longOverdueId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 20, dueInDays: -5);
+        var (_, justOverdueId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 14, dueInDays: 0);
+        var (_, dueSoonId) = await SeedAsync(scope.ServiceProvider, host.Clock.GetUtcNow(), raisedDaysAgo: 11, dueInDays: 3);
 
         var session = await host.Services.GetRequiredService<IHost>()
             .TrackActivity()

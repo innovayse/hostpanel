@@ -195,7 +195,7 @@ internal static class DomainsTestSeeds
         IHostpanelDbContext context, int clientId, string name, DomainStatus status, RegistrarModule? registrarModule)
     {
         var domain = RegisteredDomain.Import(
-            clientId, name, status, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+            clientId, name, status, TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
             autoRenew: false, TestCurrencies.Base, registrar: null, registrarModule);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -225,9 +225,9 @@ internal static class DomainsTestSeeds
     {
         var clientId = await SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
             autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        await AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain.Id;
     }
@@ -300,7 +300,7 @@ internal static class DomainsTestSeeds
     public static async Task<int> SeedServiceAsync(IHostpanelDbContext context, int clientId)
     {
         var productId = await SeedHostingProductAsync(context);
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
         return service.Id;

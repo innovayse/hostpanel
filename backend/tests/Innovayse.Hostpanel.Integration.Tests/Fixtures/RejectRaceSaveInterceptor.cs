@@ -41,7 +41,7 @@ internal sealed class RejectRaceSaveInterceptor : SaveChangesInterceptor
             """,
             competitor);
         update.Parameters.AddWithValue("status", nameof(ServiceChangeStatus.Rejected));
-        update.Parameters.AddWithValue("resolvedAt", DateTimeOffset.UtcNow);
+        update.Parameters.AddWithValue("resolvedAt", TestMoments.Seeded);
         update.Parameters.AddWithValue("id", rejecting.Entity.Id);
         await update.ExecuteNonQueryAsync(cancellationToken);
         Fired = true;

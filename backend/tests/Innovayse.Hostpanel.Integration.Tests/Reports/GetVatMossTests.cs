@@ -26,14 +26,15 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         var clientId = await ReportsTestSeeds.CreateClientAsync(factory, marker, country: "DE");
         await ReportsTestSeeds.CreatePaidInvoiceAsync(factory, clientId, 19m, 100m);
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/vat-moss");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("rows").EnumerateArray().Should().Contain(
             r => r.GetProperty("countryCode").GetString() == "DE" && r.GetProperty("currency").GetString() == "USD");
-        var now = DateTime.UtcNow;
+        var now = host.Clock.GetUtcNow();
         var quarterStart = new DateOnly(now.Year, (((now.Month - 1) / 3) * 3) + 1, 1);
         body.GetProperty("periodStart").GetString().Should().Be(quarterStart.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         body.GetProperty("periodEnd").GetString().Should().Be(quarterStart.AddMonths(3).AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
@@ -47,7 +48,8 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatUs{Guid.NewGuid():N}", country: "US");
         await ReportsTestSeeds.CreatePaidInvoiceAsync(factory, clientId, 8m, 100m);
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/vat-moss");
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -65,15 +67,16 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         // Only this test bills a Luxembourg client at 17%, so the row is this invoice alone.
         var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatLu{Guid.NewGuid():N}", country: "LU");
         var invoiceId = await ReportsTestSeeds.CreatePaidInvoiceAsync(factory, clientId, 17m, 200m);
+        using var host = new ClockedHost(factory);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var invoice = await db.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            db.Transactions.Add(invoice.AddRefund(DateTimeOffset.UtcNow, "Manual", $"rf-{Guid.NewGuid():N}", 117m, 0m, null, false, TransactionSource.Manual));
+            db.Transactions.Add(invoice.AddRefund(host.Clock.GetUtcNow(), "Manual", $"rf-{Guid.NewGuid():N}", 117m, 0m, null, false, TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory);
+        var client = await ReportsTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/vat-moss");
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();

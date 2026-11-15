@@ -126,7 +126,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
         var poisonedId = 0;
         using var failingHost = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(TestMoments.Seeded),
+            ManualTimeProvider.AtPresent(),
             tracker => tracker.Entries<Server>().Any(e => e.State == EntityState.Modified && e.Entity.Id == poisonedId));
         using var host = failingHost.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IServerConnectionTester>(tester)));

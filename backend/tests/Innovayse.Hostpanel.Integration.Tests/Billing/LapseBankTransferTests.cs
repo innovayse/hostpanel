@@ -26,14 +26,14 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
 
     /// <summary>Seeds an invoice whose client chose a bank transfer <paramref name="waitedDays"/> days ago.</summary>
     /// <param name="waitedDays">How many days ago the transfer was chosen.</param>
-    /// <param name="dueInDays">When the invoice falls due, counted from now (negative for already past).</param>
+    /// <param name="dueInDays">When the invoice falls due, counted from the present the job runs at (negative for already past).</param>
     /// <returns>The invoice id.</returns>
     private async Task<int> SeedWaitingTransferAsync(int waitedDays, int dueInDays)
     {
         var clientId = await BillingTestSeeds.SeedClientAsync(_host);
         using var scope = _host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Present();
         var invoice = Invoice.Create(clientId, now.AddDays(dueInDays), "USD", now.AddDays(-40));
         invoice.AddItem("Hosting", 25m, 1);
         context.Invoices.Add(invoice);
@@ -43,11 +43,12 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
         return invoice.Id;
     }
 
-    /// <summary>Runs one pass of the overdue job.</summary>
+    /// <summary>Runs one pass of the overdue job on a clock standing at the real present (the job schedules its next run from it).</summary>
     /// <returns>A task that completes once the pass has ended.</returns>
     private async Task RunOverdueJobAsync()
     {
-        using var scope = _host.Services.CreateScope();
+        using var clocked = ClockedHost.AtPresent(_host);
+        using var scope = clocked.Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<IMessageBus>()
             .InvokeAsync(new CheckOverdueInvoicesCronCommand(), CancellationToken.None);
     }
@@ -147,7 +148,8 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     {
         var waiting = await SeedWaitingTransferAsync(waitedDays: 1, dueInDays: 10);
         var plain = await SeedWaitingTransferAsync(waitedDays: 1, dueInDays: 10);
-        using (var scope = _host.Services.CreateScope())
+        using var clocked = ClockedHost.AtPresent(_host);
+        using (var scope = clocked.Services.CreateScope())
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             (await bus.InvokeAsync<Result>(new LapseBankTransferCommand(waiting), CancellationToken.None)).IsSuccess.Should().BeTrue();

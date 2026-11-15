@@ -43,10 +43,11 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task DueOneTimeItem_IsInvoiced()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, item) = await SeedDueItemAsync(
-            context, BillableItemType.OneTime, DateTimeOffset.UtcNow.AddDays(-1));
+            context, BillableItemType.OneTime, host.Clock.GetUtcNow().AddDays(-1));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new ProcessBillableItemsCronCommand(), CancellationToken.None);
@@ -68,10 +69,11 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task NotYetDueOneTimeItem_IsNotInvoiced()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, item) = await SeedDueItemAsync(
-            context, BillableItemType.OneTime, DateTimeOffset.UtcNow.AddDays(5));
+            context, BillableItemType.OneTime, host.Clock.GetUtcNow().AddDays(5));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new ProcessBillableItemsCronCommand(), CancellationToken.None);
@@ -89,9 +91,10 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task DueRecurringItem_IsInvoicedAndAdvanced()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = ClockedHost.AtPresent(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var due = DateTimeOffset.UtcNow.AddDays(-1);
+        var due = host.Clock.GetUtcNow().AddDays(-1);
         var (clientId, item) = await SeedDueItemAsync(context, BillableItemType.Recurring, due);
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -119,7 +122,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task FutureOneTimeItem_IsInvoicedOnceTheClockReachesItsDueDate()
     {
-        using var host = new ClockedHost(factory);
+        using var host = ClockedHost.AtPresent(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, item) = await SeedDueItemAsync(
@@ -147,11 +150,12 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task OneFailingClient_DoesNotStopTheOthersAndLeavesNoInvoice()
     {
-        var now = DateTimeOffset.UtcNow;
+        var clock = ManualTimeProvider.AtPresent();
+        var now = clock.GetUtcNow();
         var poisonedItemId = 0;
         using var host = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(now),
+            clock,
             tracker => tracker.Entries<BillableItem>().Any(e => e.State == EntityState.Modified && e.Entity.Id == poisonedItemId));
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

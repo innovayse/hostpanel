@@ -27,7 +27,7 @@ public static class InvoiceListTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var created = createdAt ?? DateTimeOffset.UtcNow;
+        var created = createdAt ?? TestMoments.Seeded;
         var invoice = Invoice.Create(clientId, created.AddDays(14), "USD", isDraft, created);
         invoice.AddItem("Hosting", 10m, 1, null);
         invoice.UpdateOptions(created, created.AddDays(14), paymentMethod, 0m);

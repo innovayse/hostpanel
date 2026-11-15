@@ -34,7 +34,7 @@ public sealed class GetMyInvoiceSkuTests(IntegrationTestFactory factory) : IClas
     public async Task GetById_RenewalLine_CarriesTheSnapshotSku()
     {
         var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, null, "sku-renewal");
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoiceId = await SeedAsync(clientId, invoice =>
             invoice.AddServiceRenewal(
                 "Hosting renewal", 20m, 5, now, now.AddYears(1), new ProductSnapshot(8, BillingCycle.Annual, false, "hosting-basic", null)));
@@ -50,7 +50,7 @@ public sealed class GetMyInvoiceSkuTests(IntegrationTestFactory factory) : IClas
     public async Task GetById_LinesWithoutSnapshot_CarryNullSku()
     {
         var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, null, "sku-manual");
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoiceId = await SeedAsync(clientId, invoice =>
         {
             invoice.AddItem("Setup fee", 5m, 1);
@@ -73,7 +73,7 @@ public sealed class GetMyInvoiceSkuTests(IntegrationTestFactory factory) : IClas
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         fill(invoice);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);

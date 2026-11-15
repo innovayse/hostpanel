@@ -23,7 +23,7 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     public async Task HandleAsync_DueServiceWithOpenCancellation_IsListedFlaggedAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(5));
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(5));
         using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -31,7 +31,7 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
-        var due = await InvokeAsync(host, new GetRenewableServicesQuery(seeded.ClientId, DateTimeOffset.UtcNow.AddDays(14)));
+        var due = await InvokeAsync(host, new GetRenewableServicesQuery(seeded.ClientId, TestMoments.Seeded.AddDays(14)));
 
         var service = due.Should().ContainSingle().Subject;
         service.Id.Should().Be(seeded.ServiceId);
@@ -46,10 +46,10 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     public async Task HandleAsync_ServiceOutsideWindowOrUndated_IsLeftOutAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var later = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(60));
+        var later = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(60));
         var undated = await RenewalTestSeeds.SeedActiveServiceAsync(host, null);
 
-        var due = await InvokeAsync(host, new GetRenewableServicesQuery(null, DateTimeOffset.UtcNow.AddDays(14)));
+        var due = await InvokeAsync(host, new GetRenewableServicesQuery(null, TestMoments.Seeded.AddDays(14)));
 
         due.Select(s => s.Id).Should().NotContain([later.ServiceId, undated.ServiceId]);
     }
@@ -60,9 +60,9 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     public async Task HandleAsync_ClientFilter_NarrowsToThatClientAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var first = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(3));
-        var second = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(3));
-        var horizon = DateTimeOffset.UtcNow.AddDays(14);
+        var first = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(3));
+        var second = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(3));
+        var horizon = TestMoments.Seeded.AddDays(14);
 
         var everyone = await InvokeAsync(host, new GetRenewableServicesQuery(null, horizon));
         var one = await InvokeAsync(host, new GetRenewableServicesQuery(first.ClientId, horizon));

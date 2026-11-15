@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using Hostpanel.Sdk.Plugins.Endpoints;
@@ -75,11 +76,11 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
     /// <returns>The first answer that is not a 429, or the last 429 once the wait is spent.</returns>
     private async Task<HttpResponseMessage> CallOnceReleasedAsync(HttpClient http, string path)
     {
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        var waited = Stopwatch.StartNew();
         while (true)
         {
             var response = await ClientCallAsync(http, path);
-            if (response.StatusCode != HttpStatusCode.TooManyRequests || DateTime.UtcNow >= deadline)
+            if (response.StatusCode != HttpStatusCode.TooManyRequests || waited.Elapsed >= TimeSpan.FromSeconds(15))
             {
                 return response;
             }
@@ -150,7 +151,8 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
         // Reset is the moment of the refusal plus Retry-After, so taking Retry-After off gives back a moment within seconds of now.
         var reset = long.Parse(response.Headers.GetValues("X-RateLimit-Reset").Single(), CultureInfo.InvariantCulture);
         var retryAfterSeconds = (long)response.Headers.RetryAfter!.Delta!.Value.TotalSeconds;
-        (reset - retryAfterSeconds).Should().BeCloseTo(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), 30);
+        // Real time: the limiter stamps the reset from the system clock of the shared host.
+        (reset - retryAfterSeconds).Should().BeCloseTo(TestMoments.Present().ToUnixTimeSeconds(), 30);
         _fixture.LoggedRateLimitRefusal(policy, _fixture.PluginId, _logMark).Should().BeTrue();
         await ClientsTestSeeds.AssertCodeAsync(response, SharedErrorCodes.RateLimited);
     }

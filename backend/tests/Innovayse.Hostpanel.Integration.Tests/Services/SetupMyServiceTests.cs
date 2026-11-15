@@ -148,7 +148,7 @@ public sealed class SetupMyServiceTests(IntegrationTestFactory factory) : IClass
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
 
         var group = ProductGroup.Create($"setup-paid-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);

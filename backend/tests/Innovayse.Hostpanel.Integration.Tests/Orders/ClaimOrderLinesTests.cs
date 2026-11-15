@@ -166,7 +166,7 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var order = await db.Orders.Include(o => o.Items).FirstAsync(o => o.Id == orderId);
-        order.Accept(DateTimeOffset.UtcNow);
+        order.Accept(TestMoments.Seeded);
         await db.SaveChangesAsync();
     }
 

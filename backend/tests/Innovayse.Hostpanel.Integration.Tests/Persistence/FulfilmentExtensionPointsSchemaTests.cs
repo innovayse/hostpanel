@@ -178,7 +178,7 @@ public sealed class FulfilmentExtensionPointsSchemaTests(IntegrationTestFactory 
     public async Task Invoice_ProductSnapshotDigitalFlagAndLapse_RoundTripAsync()
     {
         var snapshot = new ProductSnapshot(42, BillingCycle.Annual, true, UniqueSku(), """{"seats":5}""");
-        var lapsedAt = DateTimeOffset.UtcNow;
+        var lapsedAt = TestMoments.Seeded;
         int invoiceId;
         using (var scope = factory.Services.CreateScope())
         {
@@ -222,7 +222,7 @@ public sealed class FulfilmentExtensionPointsSchemaTests(IntegrationTestFactory 
     [Fact]
     public async Task FulfilmentRecord_RoundTripsAsync()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         int recordId;
         using (var scope = factory.Services.CreateScope())
         {
@@ -258,11 +258,11 @@ public sealed class FulfilmentExtensionPointsSchemaTests(IntegrationTestFactory 
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var invoice = await AddInvoiceAsync(db);
         await db.SaveChangesAsync();
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Paid, DateTimeOffset.UtcNow));
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Refunded, DateTimeOffset.UtcNow));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Paid, TestMoments.Seeded));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Refunded, TestMoments.Seeded));
         await db.SaveChangesAsync();
 
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Paid, DateTimeOffset.UtcNow));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Paid, TestMoments.Seeded));
         var act = () => db.SaveChangesAsync();
 
         (await act.Should().ThrowAsync<DbUpdateException>())
@@ -279,7 +279,7 @@ public sealed class FulfilmentExtensionPointsSchemaTests(IntegrationTestFactory 
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var invoice = await AddInvoiceAsync(db);
         await db.SaveChangesAsync();
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Paid, DateTimeOffset.UtcNow));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, PluginId, FulfilmentKind.Paid, TestMoments.Seeded));
         await db.SaveChangesAsync();
 
         // The record is forgotten so the delete reaches the database, whose key is what is proven here;
@@ -325,7 +325,7 @@ public sealed class FulfilmentExtensionPointsSchemaTests(IntegrationTestFactory 
         db.Clients.Add(client);
         await db.SaveChangesAsync();
 
-        var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(-1), TestCurrencies.Base, DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(-1), TestCurrencies.Base, TestMoments.Seeded);
         db.Invoices.Add(invoice);
         return invoice;
     }

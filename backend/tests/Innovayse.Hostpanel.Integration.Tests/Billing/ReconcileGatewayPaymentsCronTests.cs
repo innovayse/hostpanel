@@ -59,7 +59,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     /// <param name="db">The data context to seed through.</param>
     /// <param name="module">This test's own plugin module id.</param>
     /// <param name="status">The invoice's status; <see cref="InvoiceStatus.Unpaid"/> or <see cref="InvoiceStatus.Overdue"/>.</param>
-    /// <param name="gatewayStartedAt">The backdated session start instant.</param>
+    /// <param name="gatewayStartedAt">The backdated session start instant, on the clock of the host the job runs on (which stands at the real present).</param>
     /// <returns>The seeded invoice's primary key.</returns>
     private static async Task<int> SeedPendingInvoiceAsync(
         AppDbContext db, string module, InvoiceStatus status, DateTimeOffset gatewayStartedAt)
@@ -68,10 +68,10 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         if (status == InvoiceStatus.Overdue)
         {
-            invoice.MarkOverdue(DateTimeOffset.UtcNow);
+            invoice.MarkOverdue(TestMoments.Seeded);
         }
 
         invoice.SetGatewaySession(module, $"gw-{Guid.NewGuid():N}", gatewayStartedAt);
@@ -93,11 +93,11 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var host = BuildHost(resolver);
+        using var host = ClockedHost.AtPresent(BuildHost(resolver));
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Unpaid, DateTimeOffset.UtcNow.AddHours(-1));
+        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Unpaid, host.Clock.GetUtcNow().AddHours(-1));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
@@ -117,11 +117,11 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var host = BuildHost(resolver);
+        using var host = ClockedHost.AtPresent(BuildHost(resolver));
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Overdue, DateTimeOffset.UtcNow.AddHours(-1));
+        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Overdue, host.Clock.GetUtcNow().AddHours(-1));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
@@ -141,11 +141,11 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var host = BuildHost(resolver);
+        using var host = ClockedHost.AtPresent(BuildHost(resolver));
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Unpaid, DateTimeOffset.UtcNow.AddMinutes(-10));
+        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Unpaid, host.Clock.GetUtcNow().AddMinutes(-10));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
@@ -165,11 +165,11 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var host = BuildHost(resolver);
+        using var host = ClockedHost.AtPresent(BuildHost(resolver));
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Unpaid, DateTimeOffset.UtcNow.AddHours(-25));
+        await SeedPendingInvoiceAsync(db, module, InvoiceStatus.Unpaid, host.Clock.GetUtcNow().AddHours(-25));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
@@ -186,14 +186,14 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var host = BuildHost(resolver);
+        using var host = ClockedHost.AtPresent(BuildHost(resolver));
 
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var client = Client.Create($"subject-{Guid.NewGuid():N}", "No", "Session", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
-        var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync(CancellationToken.None);
 
@@ -217,7 +217,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
         var plugin = new FakePaymentPlugin();
         var resolver = new FakePaymentPluginResolver();
         resolver.Register(module, plugin);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = ManualTimeProvider.AtPresent();
         using var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
             {

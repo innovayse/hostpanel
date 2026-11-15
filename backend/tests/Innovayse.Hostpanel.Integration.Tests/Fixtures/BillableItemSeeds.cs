@@ -30,7 +30,7 @@ public static class BillableItemSeeds
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var item = BillableItem.Create(
-                clientId, "Consulting", 40m, "USD", BillableItemType.OneTime, nextDueDate: DateTimeOffset.UtcNow.AddDays(-1));
+                clientId, "Consulting", 40m, "USD", BillableItemType.OneTime, nextDueDate: TestMoments.Seeded.AddDays(-1));
             context.BillableItems.Add(item);
             await context.SaveChangesAsync(CancellationToken.None);
             itemId = item.Id;

@@ -16,7 +16,7 @@ public sealed class ListUndatedRenewingServicesTests(IntegrationTestFactory fact
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
         var undated = await RenewalTestSeeds.SeedActiveServiceAsync(host, null);
-        var dated = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(10));
+        var dated = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
 
         using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

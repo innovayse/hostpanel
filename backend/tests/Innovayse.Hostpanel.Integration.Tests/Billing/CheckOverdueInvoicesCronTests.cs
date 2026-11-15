@@ -30,7 +30,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     {
         var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow.AddDays(-30),
+            invoiceDate = TestMoments.Seeded.AddDays(-30),
             dueDate,
             paymentMethod = (string?)null,
             taxRate = 0m,
@@ -46,7 +46,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 9.99m);
-        await BackDateAsync(admin, invoiceId, DateTimeOffset.UtcNow.AddDays(-1));
+        await BackDateAsync(admin, invoiceId, TestMoments.Seeded.AddDays(-1));
 
         using var scope = factory.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -87,7 +87,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 9.99m, isDraft: true);
-        await BackDateAsync(admin, invoiceId, DateTimeOffset.UtcNow.AddDays(-1));
+        await BackDateAsync(admin, invoiceId, TestMoments.Seeded.AddDays(-1));
 
         using var scope = factory.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -108,11 +108,12 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     [Fact]
     public async Task OneInvoiceThatCannotBeMarked_DoesNotStopTheOthers()
     {
-        var now = DateTimeOffset.UtcNow;
+        var clock = ManualTimeProvider.AtPresent();
+        var now = clock.GetUtcNow();
         var poisonedId = 0;
         using var host = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(now),
+            clock,
             tracker => tracker.Entries<Invoice>().Any(e => e.State == EntityState.Modified && e.Entity.Id == poisonedId));
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

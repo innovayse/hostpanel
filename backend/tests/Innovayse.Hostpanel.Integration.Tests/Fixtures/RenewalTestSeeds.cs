@@ -35,8 +35,8 @@ internal static class RenewalTestSeeds
         var ids = await ServicesTestSeeds.SeedClientAndProductAsync(scope, 5m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
-        var service = ClientService.Create(ids.ClientId, ids.ProductId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(ids.ClientId, ids.ProductId, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", TestMoments.Seeded);
         service.ChangeBillingTerms(new ServiceBillingTerms(BillingCycle.Monthly, 1, 5m, 5m, nextRenewalAt, null, null, null));
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -56,7 +56,7 @@ internal static class RenewalTestSeeds
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
 
         var domain = RegisteredDomain.Register(clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiresAt, autoRenew, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain;
     }

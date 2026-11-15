@@ -33,9 +33,9 @@ public sealed class GetProductSuspensionsTests(IntegrationTestFactory factory) :
             db.Products.Add(product);
             await db.SaveChangesAsync();
 
-            var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-            await ServicesTestSeeds.AddActivatedAsync(db, service, "provisioning-ref", DateTimeOffset.UtcNow);
-            service.Suspend(DateTimeOffset.UtcNow, "non-payment");
+            var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+            await ServicesTestSeeds.AddActivatedAsync(db, service, "provisioning-ref", TestMoments.Seeded);
+            service.Suspend(TestMoments.Seeded, "non-payment");
             await db.SaveChangesAsync();
         }
 

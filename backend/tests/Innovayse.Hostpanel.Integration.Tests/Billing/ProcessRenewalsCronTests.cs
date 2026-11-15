@@ -11,11 +11,8 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -39,9 +36,9 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
 
     /// <summary>Builds a host with a suppressed event gate and a fake SMTP relay.</summary>
     /// <param name="sender">The fake relay the host's mail goes to.</param>
-    /// <returns>The isolated host.</returns>
-    private WebApplicationFactory<Program> Host(FakeEmailSender sender) =>
-        EventHandlerTestHost.WithFakeRelay(factory, sender, adminEmail: AdminEmail);
+    /// <returns>The isolated host, on a clock standing at the real present (the cron schedules its next run from the clock, see <see cref="TestMoments.Present"/>), which the rows are seeded relative to.</returns>
+    private ClockedHost Host(FakeEmailSender sender) =>
+        ClockedHost.AtPresent(EventHandlerTestHost.WithFakeRelay(factory, sender, adminEmail: AdminEmail));
 
     /// <summary>Seeds a client, a product and one <see cref="ClientService"/> in the given state.</summary>
     /// <param name="context">The data context to seed through.</param>
@@ -66,8 +63,8 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", TestMoments.Seeded);
         service.ChangeBillingTerms(new ServiceBillingTerms(
             BillingCycle: BillingCycle.Monthly, Quantity: 1, FirstPaymentAmount: 5m,
             RecurringAmount: 5m, NextRenewalAt: nextRenewalAt, PaymentMethod: null,
@@ -75,7 +72,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
 
         if (status == ServiceStatus.Suspended)
         {
-            service.Suspend(DateTimeOffset.UtcNow);
+            service.Suspend(TestMoments.Seeded);
         }
 
         await context.SaveChangesAsync(CancellationToken.None);
@@ -94,26 +91,27 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     /// <paramref name="claimedAt"/> and never confirmed.
     /// </summary>
     /// <param name="context">The data context to seed through.</param>
+    /// <param name="now">The moment the host the cron runs on reads as the present.</param>
     /// <param name="claimedAt">When the line was claimed.</param>
     /// <returns>The domain and the invoice id.</returns>
     private static async Task<ClaimedDomainLine> SeedClaimedDomainLineAsync(
-        IHostpanelDbContext context, DateTimeOffset claimedAt)
+        IHostpanelDbContext context, DateTimeOffset now, DateTimeOffset claimedAt)
     {
         var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
         // Not auto-renewing, so the cron's raising half leaves this client alone.
-        var expiry = DateTimeOffset.UtcNow.AddDays(5);
+        var expiry = now.AddDays(5);
         var domain = RegisteredDomain.Register(client.Id, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, expiry, autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var invoice = Invoice.Create(client.Id, expiry, "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, expiry, "USD", TestMoments.Seeded);
         invoice.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         // The claim ApplyPaidRenewals sets before the registrar call; written the way it writes it.
@@ -136,12 +134,13 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task Cron_RaisesForDueClient_WithoutAdvancing()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var (firstClient, firstService, firstDue) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(10));
-        var (secondClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(3));
-        var (notDueClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(30));
-        var (suspendedClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Suspended, DateTimeOffset.UtcNow.AddDays(3));
+        var (firstClient, firstService, firstDue) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(10));
+        var (secondClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(3));
+        var (notDueClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(30));
+        var (suspendedClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Suspended, host.Clock.GetUtcNow().AddDays(3));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         await bus.InvokeAsync(new ProcessRenewalsCronCommand(), CancellationToken.None);
@@ -170,10 +169,11 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task Cron_CandidateHorizon_FollowsTheConfiguredLeadTime()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var (insideClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(20));
-        var (outsideClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(40));
+        var (insideClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(20));
+        var (outsideClient, _, _) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(40));
 
         var row = await context.Settings.FirstAsync(r => r.Key == BillingSettingKeys.InvoiceDaysBefore, CancellationToken.None);
         var original = row.Value;
@@ -199,19 +199,20 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task Cron_SweepsPaidUnappliedLines()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         // Outside the lead time, so the raising half has nothing to do for this client.
-        var (clientId, service, storedDue) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(40));
+        var (clientId, service, storedDue) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(40));
         var start = storedDue!.Value;
-        var invoice = Invoice.Create(clientId, start, "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, start, "USD", TestMoments.Seeded);
         invoice.AddServiceRenewal("Starter renewal", 5m, service.Id, start, start.AddMonths(1));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
 
         // Paid with the event gate suppressed: the PaymentReceivedEvent is "lost", as after a crash.
-        invoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -233,7 +234,8 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task Cron_OneClientFailing_DoesNotStopOthers()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var failing = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(failing);
@@ -242,10 +244,10 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         config.UpdateSellPrices([], [], new() { [1] = 10_000_000_000_000_000m });
         context.TldConfigs.Add(config);
         await context.SaveChangesAsync(CancellationToken.None);
-        var domain = RegisteredDomain.Register(failing.Id, $"example.{tld}", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(10), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+        var domain = RegisteredDomain.Register(failing.Id, $"example.{tld}", TestMoments.Seeded, host.Clock.GetUtcNow().AddDays(10), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
-        var (healthyClient, healthyService, _) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(10));
+        var (healthyClient, healthyService, _) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(10));
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var run = () => bus.InvokeAsync(new ProcessRenewalsCronCommand(), CancellationToken.None);
@@ -266,11 +268,12 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task Cron_PaysZeroTotalOpenRenewalInvoice()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var (clientId, service, storedDue) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(40));
+        var (clientId, service, storedDue) = await SeedServiceAsync(context, ServiceStatus.Active, host.Clock.GetUtcNow().AddDays(40));
         var start = storedDue!.Value;
-        var invoice = Invoice.Create(clientId, start, "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, start, "USD", TestMoments.Seeded);
         invoice.AddServiceRenewal("Starter renewal", 5m, service.Id, start, start.AddMonths(1));
         invoice.ApplyCredit(5m);
         context.Invoices.Add(invoice);
@@ -294,10 +297,11 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task Cron_OneFailingZeroTotalInvoiceDoesNotStopTheOthers()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var failing = await SeedZeroTotalRenewalInvoiceAsync(context);
-        var healthy = await SeedZeroTotalRenewalInvoiceAsync(context);
+        var failing = await SeedZeroTotalRenewalInvoiceAsync(context, host.Clock.GetUtcNow());
+        var healthy = await SeedZeroTotalRenewalInvoiceAsync(context, host.Clock.GetUtcNow());
         var database = ((DbContext)context).Database;
         var suffix = Guid.NewGuid().ToString("N");
         var function = $"RefuseInvoiceUpdate{suffix}";
@@ -333,12 +337,13 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
 
     /// <summary>Seeds an open renewal invoice for a new service that credit fully covers, so it owes nothing.</summary>
     /// <param name="context">The data context to seed through.</param>
+    /// <param name="now">The moment the host the cron runs on reads as the present.</param>
     /// <returns>The invoice id.</returns>
-    private static async Task<int> SeedZeroTotalRenewalInvoiceAsync(IHostpanelDbContext context)
+    private static async Task<int> SeedZeroTotalRenewalInvoiceAsync(IHostpanelDbContext context, DateTimeOffset now)
     {
-        var (clientId, service, storedDue) = await SeedServiceAsync(context, ServiceStatus.Active, DateTimeOffset.UtcNow.AddDays(40));
+        var (clientId, service, storedDue) = await SeedServiceAsync(context, ServiceStatus.Active, now.AddDays(40));
         var start = storedDue!.Value;
-        var invoice = Invoice.Create(clientId, start, "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, start, "USD", TestMoments.Seeded);
         invoice.AddServiceRenewal("Starter renewal", 5m, service.Id, start, start.AddMonths(1));
         invoice.ApplyCredit(5m);
         context.Invoices.Add(invoice);
@@ -356,18 +361,13 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     public async Task Cron_AlertsStaleClaimEveryDayUntilResolved()
     {
         var sender = new FakeEmailSender();
-        var start = DateTimeOffset.UtcNow;
-        var clock = new ManualTimeProvider(start);
-        var host = Host(sender).WithWebHostBuilder(b => b.ConfigureTestServices(s =>
-        {
-            s.RemoveAll<TimeProvider>();
-            s.AddSingleton<TimeProvider>(clock);
-        }));
+        using var host = Host(sender);
+        var start = host.Clock.GetUtcNow();
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (stale, staleInvoice) = await SeedClaimedDomainLineAsync(context, start.AddDays(-3));
-        var (recent, _) = await SeedClaimedDomainLineAsync(context, start.AddHours(-2));
+        var (stale, staleInvoice) = await SeedClaimedDomainLineAsync(context, start, start.AddDays(-3));
+        var (recent, _) = await SeedClaimedDomainLineAsync(context, start, start.AddHours(-2));
 
         // Day one: the three-day-old claim is reported, the two-hour-old one is not yet.
         await bus.InvokeAsync(new ProcessRenewalsCronCommand(), CancellationToken.None);
@@ -377,7 +377,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         (await WaitForAlertAsync(sender, recent.Name, attempts: 5)).Should().BeEmpty();
 
         // Day two: both claims are a day old or more and unresolved, so each is reported once more.
-        clock.Advance(TimeSpan.FromDays(1));
+        host.Clock.Advance(TimeSpan.FromDays(1));
         await bus.InvokeAsync(new ProcessRenewalsCronCommand(), CancellationToken.None);
         (await WaitForAlertCountAsync(sender, stale.Name, 2)).Should().HaveCount(2);
         (await WaitForAlertCountAsync(sender, recent.Name, 1)).Should().ContainSingle();
@@ -389,8 +389,8 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
 
         // A person resolves the stale line; day three reports only the one still open.
         await context.InvoiceItems.Where(l => l.InvoiceId == staleInvoice)
-            .ExecuteUpdateAsync(set => set.SetProperty(l => l.RenewalAppliedAt, (DateTimeOffset?)clock.GetUtcNow()), CancellationToken.None);
-        clock.Advance(TimeSpan.FromDays(1));
+            .ExecuteUpdateAsync(set => set.SetProperty(l => l.RenewalAppliedAt, (DateTimeOffset?)host.Clock.GetUtcNow()), CancellationToken.None);
+        host.Clock.Advance(TimeSpan.FromDays(1));
         await bus.InvokeAsync(new ProcessRenewalsCronCommand(), CancellationToken.None);
         (await WaitForAlertCountAsync(sender, recent.Name, 2)).Should().HaveCount(2);
         (await WaitForAlertCountAsync(sender, stale.Name, 3, attempts: 5)).Should().HaveCount(2);
@@ -424,31 +424,32 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task Cron_LiftsOverdueSuspensionWhoseInvoiceIsNoLongerOverdue()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
         // No renewal date, so the raising half leaves these clients alone.
         var (paidClient, paidService, _) = await SeedServiceAsync(context, ServiceStatus.Active, null);
         var (overdueClient, overdueService, _) = await SeedServiceAsync(context, ServiceStatus.Active, null);
         var (_, manualService, _) = await SeedServiceAsync(context, ServiceStatus.Active, null);
-        paidService.Suspend(DateTimeOffset.UtcNow, "Overdue invoice", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
-        overdueService.Suspend(DateTimeOffset.UtcNow, "Overdue invoice", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
-        manualService.Suspend(DateTimeOffset.UtcNow, "Abuse", hostingAlreadyUpdated: true);
+        paidService.Suspend(TestMoments.Seeded, "Overdue invoice", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+        overdueService.Suspend(TestMoments.Seeded, "Overdue invoice", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+        manualService.Suspend(TestMoments.Seeded, "Abuse", hostingAlreadyUpdated: true);
         await context.SaveChangesAsync(CancellationToken.None);
 
         // Legacy lines: a service link, no renewal period.
-        var paid = Invoice.Create(paidClient, DateTimeOffset.UtcNow.AddDays(-10), "USD", DateTimeOffset.UtcNow);
+        var paid = Invoice.Create(paidClient, TestMoments.Seeded.AddDays(-10), "USD", TestMoments.Seeded);
         paid.AddItem("Hosting", 5m, 1, paidService.Id);
-        var overdue = Invoice.Create(overdueClient, DateTimeOffset.UtcNow.AddDays(-10), "USD", DateTimeOffset.UtcNow);
+        var overdue = Invoice.Create(overdueClient, TestMoments.Seeded.AddDays(-10), "USD", TestMoments.Seeded);
         overdue.AddItem("Hosting", 5m, 1, overdueService.Id);
         context.Invoices.AddRange(paid, overdue);
         await context.SaveChangesAsync(CancellationToken.None);
-        paid.MarkOverdue(DateTimeOffset.UtcNow);
-        overdue.MarkOverdue(DateTimeOffset.UtcNow);
+        paid.MarkOverdue(TestMoments.Seeded);
+        overdue.MarkOverdue(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         // Paid with the event gate suppressed: the payment path's unsuspend never ran.
-        paid.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        paid.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -471,7 +472,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task OpenInvoiceCoveredByConcurrentPayments_IsSettled()
     {
-        var host = Host(new FakeEmailSender());
+        using var host = Host(new FakeEmailSender());
         int invoiceId;
         using (var seed = host.Services.CreateScope())
         {
@@ -479,7 +480,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
             var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             context.Clients.Add(client);
             await context.SaveChangesAsync(CancellationToken.None);
-            var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Hosting", 10m, 1);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
@@ -493,8 +494,8 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         var secondContext = second.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var a = await firstContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId, CancellationToken.None);
         var b = await secondContext.Invoices.Include(i => i.Transactions).FirstAsync(i => i.Id == invoiceId, CancellationToken.None);
-        a.AddPayment(DateTimeOffset.UtcNow, "Manual", "half-1", 5m, 0m, null, TransactionSource.Manual);
-        b.AddPayment(DateTimeOffset.UtcNow, "Manual", "half-2", 5m, 0m, null, TransactionSource.Manual);
+        a.AddPayment(TestMoments.Seeded, "Manual", "half-1", 5m, 0m, null, TransactionSource.Manual);
+        b.AddPayment(TestMoments.Seeded, "Manual", "half-2", 5m, 0m, null, TransactionSource.Manual);
         await firstContext.SaveChangesAsync(CancellationToken.None);
         await secondContext.SaveChangesAsync(CancellationToken.None);
 

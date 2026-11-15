@@ -105,7 +105,7 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         using (services.GetRequiredService<IDomainEventGate>().Suppress())
         {
             var service = await context.ClientServices.FindAsync([serviceId], CancellationToken.None);
-            service!.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service!.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true);
             await context.SaveChangesAsync(CancellationToken.None);
         }
     }

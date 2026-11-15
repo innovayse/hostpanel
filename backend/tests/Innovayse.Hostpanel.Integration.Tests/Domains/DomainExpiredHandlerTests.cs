@@ -142,20 +142,20 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
     {
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(services, context, "domain-event");
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        var service = ClientService.Create(client.Id, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(client.Id, productId, BillingCycle.Monthly, TestMoments.Seeded);
         var domain = RegisteredDomain.Register(
-            client.Id, $"expired-{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow.AddYears(-1), DateTimeOffset.UtcNow,
+            client.Id, $"expired-{Guid.NewGuid():N}.test", TestMoments.Seeded.AddYears(-1), TestMoments.Seeded,
             autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         using (services.GetRequiredService<IDomainEventGate>().Suppress())
         {
-            await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref", DateTimeOffset.UtcNow);
+            await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref", TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
 
-            await DomainsTestSeeds.AddActivatedAsync(context, domain, "registrar-ref", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+            await DomainsTestSeeds.AddActivatedAsync(context, domain, "registrar-ref", TestMoments.Seeded, TestMoments.Seeded);
             domain.LinkService(service.Id);
             if (expire)
             {
-                domain.MarkExpired(DateTimeOffset.UtcNow);
+                domain.MarkExpired(TestMoments.Seeded);
             }
 
             await context.SaveChangesAsync(CancellationToken.None);

@@ -23,7 +23,8 @@ public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassF
         var created = await admin.PostAsJsonAsync("/api/billing", new
         {
             clientId,
-            dueDate = DateTimeOffset.UtcNow.AddDays(14),
+            // Real time: the shared host rejects a due date before its own system date.
+            dueDate = TestMoments.Present().AddDays(14),
             items = new[] { new { description = "Hosting", unitPrice = 9.99m, quantity = 1 } },
         });
 
@@ -48,7 +49,8 @@ public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassF
         var (_, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, null, "create-invoice");
 
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
-        var dueDate = DateTimeOffset.UtcNow.AddDays(30);
+        // Real time: the shared host rejects a due date before its own system date.
+        var dueDate = TestMoments.Present().AddDays(30);
         var createResponse = await admin.PostAsJsonAsync("/api/billing", new
         {
             clientId,
@@ -69,7 +71,8 @@ public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassF
         var response = await factory.CreateClient().PostAsJsonAsync("/api/billing", new
         {
             clientId = 1,
-            dueDate = DateTimeOffset.UtcNow.AddDays(14),
+            // Real time: the shared host rejects a due date before its own system date.
+            dueDate = TestMoments.Present().AddDays(14),
             items = new[] { new { description = "Hosting", unitPrice = 9.99m, quantity = 1 } },
         });
 
@@ -86,7 +89,8 @@ public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassF
         var response = await admin.PostAsJsonAsync("/api/billing", new
         {
             clientId = BillingTestSeeds.NoSuchId,
-            dueDate = DateTimeOffset.UtcNow.AddDays(14),
+            // Real time: the shared host rejects a due date before its own system date.
+            dueDate = TestMoments.Present().AddDays(14),
             items = new[] { new { description = "Hosting", unitPrice = 9.99m, quantity = 1 } },
         });
 

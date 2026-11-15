@@ -27,8 +27,11 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
     /// <summary>The job these cases run: a marker command with a real handler that is never dispatched here.</summary>
     private const string JobName = nameof(CheckOverdueInvoicesCronCommand);
 
-    /// <summary>Midnight UTC, ten days from now: the day every case happens on.</summary>
-    private static readonly DateTimeOffset Midnight = new(DateTimeOffset.UtcNow.AddDays(10).UtcDateTime.Date, TimeSpan.Zero);
+    /// <summary>
+    /// Midnight UTC, ten days from the present: the day every case happens on. Ahead of the real present on purpose, so the
+    /// host's own start-up run of the job is not overdue on this clock and only the pass the case runs is scheduled.
+    /// </summary>
+    private static readonly DateTimeOffset Midnight = new(TestMoments.Present().AddDays(10).UtcDateTime.Date, TimeSpan.Zero);
 
     /// <summary>The fixed moment of every case: half an hour after the 05:00 run hour.</summary>
     private static readonly DateTimeOffset Now = Midnight.AddHours(5).AddMinutes(30);

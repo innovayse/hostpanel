@@ -129,7 +129,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         using var scope = factory.Services.CreateScope();
         var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -158,7 +158,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
         service.AssignHostingAccount("example.com", "jdoe", "Passw0rd!");
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -358,7 +358,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     {
         var setupHttp = factory.CreateClient();
         var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
-        var orderedAt = DateTimeOffset.UtcNow.AddMonths(-3);
+        var orderedAt = TestMoments.Seeded.AddMonths(-3);
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -368,7 +368,8 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         }
 
         var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, new FakeProvisioningProvider());
-        var before = DateTimeOffset.UtcNow;
+        // The shared host stamps the renewal from the system clock, so the bound is read from it too.
+        var before = TestMoments.Present();
 
         var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
 
@@ -376,7 +377,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         var stored = await ReloadAsync(serviceId);
         stored.NextRenewalAt.Should().NotBeNull();
         stored.NextRenewalAt!.Value.Should().BeOnOrAfter(before.AddMonths(1).AddSeconds(-1));
-        stored.NextRenewalAt.Value.Should().BeOnOrBefore(DateTimeOffset.UtcNow.AddMonths(1));
+        stored.NextRenewalAt.Value.Should().BeOnOrBefore(TestMoments.Present().AddMonths(1));
     }
 
     /// <summary>Reads a service back from the database in a fresh scope.</summary>

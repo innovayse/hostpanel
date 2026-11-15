@@ -19,9 +19,9 @@ public sealed class ListOverdueSuspendedServicesTests(IntegrationTestFactory fac
     public async Task HandleAsync_MixedSuspensions_ListsOnlyOverdueOnesAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var overdue = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(10));
-        var manual = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(10));
-        var active = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(10));
+        var overdue = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
+        var manual = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
+        var active = await RenewalTestSeeds.SeedActiveServiceAsync(host, TestMoments.Seeded.AddDays(10));
         await SuspendAsync(host, overdue.ServiceId, SuspensionSource.Overdue);
         await SuspendAsync(host, manual.ServiceId, SuspensionSource.Manual);
 
@@ -46,7 +46,7 @@ public sealed class ListOverdueSuspendedServicesTests(IntegrationTestFactory fac
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var service = await context.ClientServices.SingleAsync(s => s.Id == serviceId);
-        service.Suspend(DateTimeOffset.UtcNow, "test", hostingAlreadyUpdated: true, source: source);
+        service.Suspend(TestMoments.Seeded, "test", hostingAlreadyUpdated: true, source: source);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 }

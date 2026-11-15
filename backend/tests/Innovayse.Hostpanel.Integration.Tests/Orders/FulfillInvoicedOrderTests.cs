@@ -26,7 +26,7 @@ public sealed class FulfillInvoicedOrderTests(IntegrationTestFactory factory) : 
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Manual", 10m, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -57,7 +57,7 @@ public sealed class FulfillInvoicedOrderTests(IntegrationTestFactory factory) : 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await SeedInvoiceAsync(context);
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], invoice.ClientId, "bank-gateway", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], invoice.ClientId, "bank-gateway", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         context.Orders.Add(order);
         await context.SaveChangesAsync(CancellationToken.None);
         order.LinkInvoice(invoice.Id);

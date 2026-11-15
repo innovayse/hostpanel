@@ -206,7 +206,7 @@ public sealed class CompleteGatewayPaymentSaveMethodTests(IntegrationTestFactory
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-reconcile");
         var started = await StartSavingAsync(scenario, signedIn, invoiceId);
-        await scenario.BackdateSessionAsync(invoiceId, DateTimeOffset.UtcNow.AddHours(-1));
+        await scenario.BackdateSessionAsync(invoiceId, TestMoments.Seeded);
         scenario.Plugin.MethodOnStatus = StoredMethod;
 
         using var scope = scenario.Host.Services.CreateScope();

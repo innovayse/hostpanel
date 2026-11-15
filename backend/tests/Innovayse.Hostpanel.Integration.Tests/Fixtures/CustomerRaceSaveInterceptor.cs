@@ -43,7 +43,7 @@ internal sealed class CustomerRaceSaveInterceptor : SaveChangesInterceptor
         insert.Parameters.AddWithValue("clientId", pending.Entity.ClientId);
         insert.Parameters.AddWithValue("module", pending.Entity.GatewayModuleId);
         insert.Parameters.AddWithValue("customerRef", pending.Entity.CustomerRef);
-        insert.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+        insert.Parameters.AddWithValue("createdAt", TestMoments.Seeded);
         await insert.ExecuteNonQueryAsync(cancellationToken);
         Fired = true;
         return result;

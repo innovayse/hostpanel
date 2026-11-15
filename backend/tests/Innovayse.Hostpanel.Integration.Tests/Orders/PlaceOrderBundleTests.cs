@@ -310,7 +310,7 @@ public sealed class PlaceOrderBundleTests(IntegrationTestFactory factory) : ICla
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, "AMD Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "AMD Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         product.SetPrice("AMD", BillingCycle.Monthly, amdMonthly);
         db.Products.Add(product);
         await db.SaveChangesAsync();

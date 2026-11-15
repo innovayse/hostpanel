@@ -43,7 +43,7 @@ public sealed class RacingRenewalRegistrar : TestRegistrar
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var domain = await context.Domains.Include(d => d.LineRenewals).SingleAsync(d => d.Name == request.DomainName, ct);
-            domain.Renew(race.WinnerExpiresAt, DateTimeOffset.UtcNow, race.OrderItemId);
+            domain.Renew(race.WinnerExpiresAt, TestMoments.Seeded, race.OrderItemId);
             await context.SaveChangesAsync(ct);
         }
 

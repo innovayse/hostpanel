@@ -12,6 +12,7 @@
 
 import { computed, ref } from 'vue'
 import { vi } from 'vitest'
+import { stubLocalePath } from './runtimeStubs'
 
 /** Site name the identity composable reports unless a test says otherwise. */
 export const DEFAULT_SITE_NAME = 'Acme Host'
@@ -37,7 +38,7 @@ export interface TemplateGlobalsOptions {
  */
 export const stubTemplateGlobals = (options: TemplateGlobalsOptions = {}): void => {
   const settings = options.settings ?? {}
-  vi.stubGlobal('useLocalePath', () => (path: string) => path)
+  stubLocalePath()
   vi.stubGlobal('useSwitchLocalePath', () => (code: string) => `/${code}`)
   vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
   vi.stubGlobal('useAppColorMode', () => ({ isDark: ref(true), applied: ref('dark'), userToggleEnabled: ref(true), toggle: vi.fn() }))

@@ -94,15 +94,6 @@ const KNOWN_REMAINDER: readonly string[] = [
   'plugins/live-chat.test.ts',
   'plugins/tracking.client.test.ts',
   'templates/aurora/auroraGlobals.ts',
-  'templates/aurora/sections/AuroraFaq.test.ts',
-  'templates/aurora/sections/AuroraHero.test.ts',
-  'templates/classic/pages/ClassicHome.test.ts',
-  'templates/nova/pages/NovaHome.test.ts',
-  'templates/nova/sections/NovaApps.test.ts',
-  'templates/nova/sections/NovaGuarantees.test.ts',
-  'templates/nova/sections/NovaPerformance.test.ts',
-  'templates/nova/sections/NovaSecurity.test.ts',
-  'templates/nova/sections/NovaSupport.test.ts',
 ]
 
 /**

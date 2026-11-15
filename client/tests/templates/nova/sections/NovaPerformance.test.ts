@@ -5,15 +5,25 @@
  *
  * @module tests/templates/nova/sections/NovaPerformance.test
  */
-import { computed } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings } from '~/tests/helpers/portalSettings'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import NovaPerformance from '~/templates/nova/sections/NovaPerformance.vue'
 import { PERFORMANCE_FEATURES } from '~/templates/nova/content'
 import type { Feature } from '~/templates/nova/types/feature'
-import { PerformanceStatKey } from '~/constants/performanceStatKey'
-import type { PerformanceStat } from '~/types/performancestat'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { usePerformanceStats } from '~/composables/usePerformanceStats'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+
+/** The stub playing the BFF; it answers the operator's settings read. */
+let stub: StubServer
+
+/** What the stub answers, by route. */
+const replies: StubRouteTable = {}
 
 /**
  * Counts the features that do not wait on an operator setting.
@@ -23,29 +33,26 @@ import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
  */
 const ungated = (features: readonly Feature[]): number => features.filter(feature => !feature.requiresSetting).length
 
-/**
- * Stands in for `usePerformanceStats` with the given figures.
- *
- * @param stats The figures the operator has filled in.
- */
-const stubStats = (stats: PerformanceStat[]): void => {
-  vi.stubGlobal('usePerformanceStats', () => computed(() => stats))
-}
-
 describe('NovaPerformance', () => {
-  it('hides storage, cache and CDN claims until their settings exist', () => {
-    stubTemplateGlobals()
-    stubStats([])
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    stubLocalePath()
+    vi.stubGlobal('usePerformanceStats', usePerformanceStats)
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
+  })
+
+  it('hides storage, cache and CDN claims until their settings exist', async () => {
+    await loadPortalSettings(replies)
 
     expect(mountWithKit(NovaPerformance).findAll('ul > li')).toHaveLength(ungated(PERFORMANCE_FEATURES))
   })
 
-  it('shows a tile per figure the operator has set', () => {
-    stubTemplateGlobals()
-    stubStats([
-      { key: PerformanceStatKey.Uptime, value: '99.9%' },
-      { key: PerformanceStatKey.ResponseTime, value: '180 ms' },
-    ])
+  it('shows a tile per figure the operator has set', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.StatsUptime]: '99.9%', [PortalSettingKey.StatsResponseTime]: '180 ms' })
     const wrapper = mountWithKit(NovaPerformance)
 
     expect(wrapper.find('[data-testid="nova-performance-stat-uptime"]').text()).toContain('99.9%')
@@ -53,9 +60,8 @@ describe('NovaPerformance', () => {
     expect(wrapper.find('[data-testid="nova-performance-stat-sites_hosted"]').exists()).toBe(false)
   })
 
-  it('omits the figures grid when no figure is set', () => {
-    stubTemplateGlobals()
-    stubStats([])
+  it('omits the figures grid when no figure is set', async () => {
+    await loadPortalSettings(replies)
 
     expect(mountWithKit(NovaPerformance).find('[data-testid="nova-performance-stats"]').exists()).toBe(false)
   })

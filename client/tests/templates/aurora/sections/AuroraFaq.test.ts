@@ -5,20 +5,22 @@
  * full FAQ page shows only when questions were left out.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings } from '~/tests/helpers/portalSettings'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
 import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { useContactDetails } from '~/composables/useContactDetails'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import type { FAQ } from '~/types/faq'
 import AuroraFaq from '~/templates/aurora/sections/AuroraFaq.vue'
-import { stubAuroraGlobals } from '../auroraGlobals'
 
-/** The stub playing the BFF. */
+/** The stub playing the BFF; it answers the questions and the operator's settings. */
 let stub: StubServer
 
 /** What the stub answers, by route; the tests below change the questions it serves. */
@@ -38,15 +40,14 @@ const serve = (faqs: FAQ[]): void => {
  *
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  stubAuroraGlobals()
-  return mountAfterReads(stub, [StorefrontPath.Faqs], () => mountWithKit(AuroraFaq))
-}
+const mountSection = () => mountAfterReads(stub, [StorefrontPath.Faqs], () => mountWithKit(AuroraFaq))
 
 describe('AuroraFaq', () => {
   beforeEach(async () => {
     stub = await startTransport(routeTable(replies))
-    vi.stubGlobal('useContactDetails', () => ({ email: ref(''), phone: ref(''), phoneLink: ref('') }))
+    stubLocalePath()
+    vi.stubGlobal('useContactDetails', useContactDetails)
+    await loadPortalSettings(replies)
     serve([
       faqFixture(1, { question: 'How fast?', answer: 'Very fast.' }),
       faqFixture(2, { question: 'Is it safe?', answer: 'Yes, safe.' }),
@@ -121,11 +122,7 @@ describe('AuroraFaq', () => {
   })
 
   it('shows the support email and phone when the operator configured them', async () => {
-    vi.stubGlobal('useContactDetails', () => ({
-      email: ref('help@example.com'),
-      phone: ref('+1 555 0100'),
-      phoneLink: ref('+15550100'),
-    }))
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactEmail]: 'help@example.com', [PortalSettingKey.ContactPhone]: '+1 555 0100' })
 
     const wrapper = await mountSection()
 

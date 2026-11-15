@@ -13,7 +13,6 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { localized } from '~/tests/helpers/runtimeStubs'
-import { SitePage } from '~/tests/helpers/sitePaths'
 import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -22,6 +21,7 @@ import LayoutFooter from '~/components/layout/Footer.vue'
 import { useCatalogStore } from '~/stores/catalog'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { SITE_ABOUT_PATH, SITE_COOKIE_POLICY_PATH, SITE_DOMAINS_PATH, SITE_DOMAINS_TRANSFER_PATH, SITE_FAQ_PATH, SITE_KNOWLEDGEBASE_PATH, SITE_PRIVACY_PATH, SITE_PRODUCTS_PATH, SITE_REFUND_POLICY_PATH, SITE_TERMS_PATH } from '~/constants/siteRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -105,7 +105,7 @@ describe('LayoutFooter', () => {
     const wrapper = await mountFooter()
 
     expect(wrapper.find('[data-testid="footer-cta"] [data-testid="footer-domain-search"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="footer-cta-plans"]').attributes('href')).toBe(localized(SitePage.Products))
+    expect(wrapper.find('[data-testid="footer-cta-plans"]').attributes('href')).toBe(localized(SITE_PRODUCTS_PATH))
   })
 
   it('renders the five link columns in order', async () => {
@@ -133,7 +133,7 @@ describe('LayoutFooter', () => {
     expect(labels).toContain('Shared hosting')
     expect(labels).toContain('Cloud servers')
     expect(labels).not.toContain('Empty')
-    expect(column.find('[data-testid="footer-hosting-all"]').attributes('href')).toBe(localized(SitePage.Products))
+    expect(column.find('[data-testid="footer-hosting-all"]').attributes('href')).toBe(localized(SITE_PRODUCTS_PATH))
   })
 
   it('links the domain, company, support and legal pages', async () => {
@@ -146,15 +146,15 @@ describe('LayoutFooter', () => {
      * @returns Its `href`, or undefined when it has none.
      */
     const href = (testid: string): string | undefined => wrapper.find(`[data-testid="${testid}"]`).attributes('href')
-    expect(href('footer-domains-register')).toBe(localized(SitePage.Domains))
-    expect(href('footer-domains-transfer')).toBe(localized(SitePage.DomainsTransfer))
-    expect(href('footer-company-about')).toBe(localized(SitePage.About))
-    expect(href('footer-support-help')).toBe(localized(SitePage.Knowledgebase))
-    expect(href('footer-support-faq')).toBe(localized(SitePage.Faq))
-    expect(href('footer-legal-privacy')).toBe(localized(SitePage.Privacy))
-    expect(href('footer-legal-cookies')).toBe(localized(SitePage.CookiePolicy))
-    expect(href('footer-legal-terms')).toBe(localized(SitePage.Terms))
-    expect(href('footer-legal-refund')).toBe(localized(SitePage.RefundPolicy))
+    expect(href('footer-domains-register')).toBe(localized(SITE_DOMAINS_PATH))
+    expect(href('footer-domains-transfer')).toBe(localized(SITE_DOMAINS_TRANSFER_PATH))
+    expect(href('footer-company-about')).toBe(localized(SITE_ABOUT_PATH))
+    expect(href('footer-support-help')).toBe(localized(SITE_KNOWLEDGEBASE_PATH))
+    expect(href('footer-support-faq')).toBe(localized(SITE_FAQ_PATH))
+    expect(href('footer-legal-privacy')).toBe(localized(SITE_PRIVACY_PATH))
+    expect(href('footer-legal-cookies')).toBe(localized(SITE_COOKIE_POLICY_PATH))
+    expect(href('footer-legal-terms')).toBe(localized(SITE_TERMS_PATH))
+    expect(href('footer-legal-refund')).toBe(localized(SITE_REFUND_POLICY_PATH))
   })
 
   it('shows the logo lockup and the tagline in the brand block', async () => {

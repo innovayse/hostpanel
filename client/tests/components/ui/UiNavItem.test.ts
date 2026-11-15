@@ -7,6 +7,7 @@ import { Zap } from 'lucide-vue-next'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiNavItem from '~/components/ui/UiNavItem.vue'
 import { UiNavTone } from '~/utils/ui/enums'
+import { CLIENT_TICKET_NEW_PATH } from '~/constants/clientRoutes'
 
 describe('UiNavItem', () => {
   it('renders a button by default and emits click', async () => {
@@ -18,10 +19,10 @@ describe('UiNavItem', () => {
   })
 
   it('renders a route link for `to`', () => {
-    const wrapper = mountWithKit(UiNavItem, { props: { to: '/client/tickets/new' }, slots: { default: 'Ticket' } })
+    const wrapper = mountWithKit(UiNavItem, { props: { to: CLIENT_TICKET_NEW_PATH }, slots: { default: 'Ticket' } })
 
     expect(wrapper.element.tagName).toBe('A')
-    expect(wrapper.attributes('href')).toBe('/client/tickets/new')
+    expect(wrapper.attributes('href')).toBe(CLIENT_TICKET_NEW_PATH)
   })
 
   it('renders an anchor that opens a new tab for `href`', () => {

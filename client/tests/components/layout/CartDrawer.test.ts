@@ -11,7 +11,6 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { localized } from '~/tests/helpers/runtimeStubs'
-import { SitePage } from '~/tests/helpers/sitePaths'
 import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -24,6 +23,7 @@ import type { CartItem } from '~/types/cartitem'
 import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { SITE_CHECKOUT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -98,7 +98,7 @@ describe('CartDrawer', () => {
 
     await wrapper.find('[data-testid="cart-drawer-browse"]').trigger('click')
 
-    expect(router.push).toHaveBeenCalledWith(localized(SitePage.Hosting))
+    expect(router.push).toHaveBeenCalledWith(localized(SITE_HOSTING_PATH))
     expect(useCartStore().isOpen).toBe(false)
   })
 
@@ -152,7 +152,7 @@ describe('CartDrawer', () => {
 
     await wrapper.find('[data-testid="cart-drawer-checkout"]').trigger('click')
 
-    expect(router.push).toHaveBeenCalledWith(localized(SitePage.Checkout))
+    expect(router.push).toHaveBeenCalledWith(localized(SITE_CHECKOUT_PATH))
     expect(useCartStore().isOpen).toBe(false)
   })
 

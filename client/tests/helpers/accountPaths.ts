@@ -73,3 +73,29 @@ export const defaultConsentPath = (consentId: number): string => `${consentPath(
  */
 export const completeSessionPath = (sessionId: string): string =>
   `${AccountEndpoint.StoredMethods}/sessions/${encodeURIComponent(sessionId)}/complete`
+
+/** The actions on one service, each the path below the service itself. */
+export const ServiceAction = {
+  Cancel: 'cancel',
+  ChangePassword: 'change-password',
+  CpanelSso: 'cpanel-sso',
+  Invoices: 'invoices',
+  PlanChange: 'plan-change',
+  PlanChangeOptions: 'plan-change-options',
+  Setup: 'setup',
+  Ssh: 'ssh',
+  SshKeys: 'ssh/keys',
+} as const
+
+/** One of the {@link ServiceAction} values. */
+type ServiceActionPath = typeof ServiceAction[keyof typeof ServiceAction]
+
+/**
+ * The path of one service, or of an action on it.
+ *
+ * @param serviceId - The service id.
+ * @param action - The action below the service; omit for the service itself.
+ * @returns The BFF path.
+ */
+export const servicePath = (serviceId: number | string, action?: ServiceActionPath): string =>
+  action ? `${AccountEndpoint.Services}/${serviceId}/${action}` : `${AccountEndpoint.Services}/${serviceId}`

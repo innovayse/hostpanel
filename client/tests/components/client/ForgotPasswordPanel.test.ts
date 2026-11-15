@@ -15,9 +15,11 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ForgotPasswordPanel from '~/components/client/ForgotPasswordPanel.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /** The BFF path the reset mail is requested from. */
-const FORGOT_PATH = '/api/portal/auth/forgot-password'
+const FORGOT_PATH = AccountEndpoint.ForgotPassword
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -61,7 +63,7 @@ describe('ClientForgotPasswordPanel', () => {
 
     expect(bodyOf(requestsTo(stub.requests, FORGOT_PATH)[0])).toEqual({ email: 'ada@example.com' })
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="forgot-sent-back"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="forgot-sent-back"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('keeps the form and shows the API sentence when the request is refused', async () => {
@@ -78,6 +80,6 @@ describe('ClientForgotPasswordPanel', () => {
   it('links back to sign-in from the form', () => {
     const wrapper = mountWithLogo(ForgotPasswordPanel)
 
-    expect(wrapper.find('[data-testid="forgot-back"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="forgot-back"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 })

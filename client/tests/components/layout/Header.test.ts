@@ -15,7 +15,6 @@ import { useAuthStore } from '~/stores/auth'
 import { useCatalogStore } from '~/stores/catalog'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
-import { SitePage } from '~/tests/helpers/sitePaths'
 import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -23,9 +22,10 @@ import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { SITE_DOMAINS_PATH, SITE_HOSTING_PATH, siteProductFamilyPath } from '~/constants/siteRoutes'
 
 /** The page of the Cloud servers group, which the header builds from the group's name. */
-const CLOUD_SERVERS_PAGE = `${SitePage.Products}/cloud-servers`
+const CLOUD_SERVERS_PAGE = siteProductFamilyPath('cloud-servers')
 
 /** Groups the stubbed catalogue API returns: hosting and a VPS group. */
 const GROUPS: PortalProductGroup[] = [
@@ -143,7 +143,7 @@ describe('LayoutHeader', () => {
   })
 
   it('marks the current page in the bar', async () => {
-    vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: SitePage.Domains, fullPath: SitePage.Domains, hash: '', meta: {} }))
+    vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: SITE_DOMAINS_PATH, fullPath: SITE_DOMAINS_PATH, hash: '', meta: {} }))
     const wrapper = await mountHeader()
 
     expect(wrapper.find('[data-testid="header-nav-domains"]').attributes('aria-current')).toBe('page')
@@ -186,7 +186,7 @@ describe('LayoutHeader', () => {
     const wrapper = await mountHeader()
 
     expect(wrapper.find('[data-testid="layout-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
-    expect(wrapper.find('[data-testid="layout-get-started"]').attributes('href')).toBe(SitePage.Hosting)
+    expect(wrapper.find('[data-testid="layout-get-started"]').attributes('href')).toBe(SITE_HOSTING_PATH)
     expect(wrapper.find('[data-testid="header-account"]').exists()).toBe(false)
   })
 

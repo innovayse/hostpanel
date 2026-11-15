@@ -8,16 +8,17 @@ import { describe, expect, it } from 'vitest'
 import { Server } from 'lucide-vue-next'
 import { mountClient } from '~/tests/helpers/mountClient'
 import NavItem from '~/components/client/layout/NavItem.vue'
+import { CLIENT_SERVICES_PATH } from '~/constants/clientRoutes'
 
 /** A link to the services section. */
-const ITEM = { to: '/client/services', label: 'My Services', icon: Server }
+const ITEM = { to: CLIENT_SERVICES_PATH, label: 'My Services', icon: Server }
 
 describe('ClientLayoutNavItem', () => {
   it('links to the target with its label', () => {
     const wrapper = mountClient(NavItem, { props: { item: ITEM, active: false } })
 
     const link = wrapper.find('a')
-    expect(link.attributes('href')).toBe('/client/services')
+    expect(link.attributes('href')).toBe(CLIENT_SERVICES_PATH)
     expect(link.text()).toBe('My Services')
   })
 

@@ -8,6 +8,7 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraHeader from '~/templates/aurora/layout/AuroraHeader.vue'
 import { HomeSectionId } from '~/types/homesectionid'
 import { stubAuroraGlobals } from '../auroraGlobals'
+import { CLIENT_DASHBOARD_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /**
  * Stands in for the auto-imported `useRoute`.
@@ -123,7 +124,7 @@ describe('AuroraHeader', () => {
     stubAuroraGlobals()
     const wrapper = mountWithKit(AuroraHeader, { stubs: STUBS })
 
-    expect(wrapper.find('[data-testid="nav-sign-in"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="nav-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
     expect(wrapper.find('[data-testid="nav-start"]').attributes('href')).toBe('/hosting')
     expect(wrapper.find('[data-testid="account-menu-trigger"]').exists()).toBe(false)
   })
@@ -161,7 +162,7 @@ describe('AuroraHeader', () => {
     const wrapper = mountWithKit(AuroraHeader, { stubs: STUBS })
     await wrapper.find('[data-testid="nav-menu-toggle"]').trigger('click')
 
-    expect(wrapper.find('[data-testid="nav-mobile-sign-in"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="nav-mobile-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
     expect(wrapper.find('[data-testid="nav-mobile-start"]').attributes('href')).toBe('/hosting')
     expect(wrapper.find('[data-testid="nav-mobile-account"]').exists()).toBe(false)
   })
@@ -171,7 +172,7 @@ describe('AuroraHeader', () => {
     const wrapper = mountWithKit(AuroraHeader, { stubs: STUBS })
     await wrapper.find('[data-testid="nav-menu-toggle"]').trigger('click')
 
-    expect(wrapper.find('[data-testid="nav-mobile-account"]').attributes('href')).toBe('/client/dashboard')
+    expect(wrapper.find('[data-testid="nav-mobile-account"]').attributes('href')).toBe(CLIENT_DASHBOARD_PATH)
     expect(wrapper.find('[data-testid="nav-mobile-sign-in"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="nav-mobile-start"]').exists()).toBe(false)
   })

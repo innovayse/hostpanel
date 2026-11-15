@@ -18,6 +18,8 @@ import { routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { localized } from '~/tests/helpers/runtimeStubs'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /** Two announcements in different months. */
 const TWO_MONTHS = {
@@ -125,7 +127,7 @@ describe('pages/announcements/index', () => {
     const wrapper = await mountRenderedPage(Page, ROOT)
 
     expect(wrapper.find('[data-testid="announcements-sign-in"]').text()).toContain('announcements.signInRequired')
-    expect(wrapper.find('[data-testid="announcements-sign-in-link"]').attributes('href')).toBe('/en/client/login?redirect=/announcements')
+    expect(wrapper.find('[data-testid="announcements-sign-in-link"]').attributes('href')).toBe(`${localized(CLIENT_LOGIN_PATH)}?redirect=/announcements`)
     expect(wrapper.find('[data-testid="announcements-error"]').exists()).toBe(false)
   })
 

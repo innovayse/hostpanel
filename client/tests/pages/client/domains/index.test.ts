@@ -18,6 +18,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import DomainsPage from '~/pages/client/domains/index.vue'
 import { DomainStatus } from '~/types/domainstatus'
 import { Permission } from '~/types/permission'
+import { clientDomainPath } from '~/constants/clientRoutes'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -71,7 +72,7 @@ describe('domain list page', () => {
     const wrapper = await mountRenderedClientPage(DomainsPage, PAGE_MARKER)
 
     expect(names(wrapper)).toEqual(['site1.com', 'site2.com'])
-    expect(wrapper.find('[data-testid="domain-manage-2"]').attributes('href')).toBe('/client/domains/2')
+    expect(wrapper.find('[data-testid="domain-manage-2"]').attributes('href')).toBe(clientDomainPath(2))
   })
 
   it('filters to the active and to the expired domains', async () => {

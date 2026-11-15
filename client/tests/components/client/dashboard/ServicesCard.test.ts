@@ -21,9 +21,11 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { ServiceStatus } from '~/types/servicestatus'
 import { controlPanelUrl } from '~/utils/controlPanel'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
+import { clientServicePath, clientServiceSetupPath } from '~/constants/clientRoutes'
 
 /** The BFF path that answers the single sign-on address of the control panel of service 1. */
-const SSO_PATH = '/api/portal/client/services/1/cpanel-sso'
+const SSO_PATH = servicePath(1, ServiceAction.CpanelSso)
 
 /** The single sign-on address the BFF hands out. */
 const SSO_URL = 'https://srv.test:2083/sso-session'
@@ -71,8 +73,8 @@ describe('ClientDashboardServicesCard', () => {
     useClientStore().services = [ACTIVE, PENDING]
     await nextTick()
 
-    expect(wrapper.find('[data-testid="dashboard-service-1"]').attributes('href')).toBe('/client/services/1')
-    expect(wrapper.find('[data-testid="dashboard-service-2"]').attributes('href')).toBe('/client/services/2/setup')
+    expect(wrapper.find('[data-testid="dashboard-service-1"]').attributes('href')).toBe(clientServicePath(1))
+    expect(wrapper.find('[data-testid="dashboard-service-2"]').attributes('href')).toBe(clientServiceSetupPath(2))
   })
 
   it('links a digital service to its page and shows its status, not the setup badge', async () => {
@@ -81,7 +83,7 @@ describe('ClientDashboardServicesCard', () => {
     await nextTick()
 
     const row = wrapper.find('[data-testid="dashboard-service-5"]')
-    expect(row.attributes('href')).toBe('/client/services/5')
+    expect(row.attributes('href')).toBe(clientServicePath(5))
     expect(row.text()).not.toContain('client.dashboard.needsSetup')
     expect(row.find('[data-testid="status-badge"]').exists()).toBe(true)
   })

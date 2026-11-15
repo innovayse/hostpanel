@@ -4,7 +4,7 @@
  * script never fires.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { stubLocalePath, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import ProductsBenefits from '~/components/catalog/ProductsBenefits.vue'
 import MarketingSectionHeader from '~/components/marketing/MarketingSectionHeader.vue'
@@ -25,7 +25,7 @@ const SLIDING = {
 
 describe('entrance reveal markup', () => {
   beforeEach(() => {
-    stubLocalePath('/en')
+    stubLocalePath(TEST_LOCALE_PREFIX)
   })
 
   for (const [name, mount] of Object.entries(REVEALING)) {

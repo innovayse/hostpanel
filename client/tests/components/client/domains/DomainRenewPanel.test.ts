@@ -17,6 +17,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { clientInvoicePath } from '~/constants/clientRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -92,7 +93,7 @@ describe('DomainRenewPanel', () => {
     const orders = requestsTo(stub.requests, domainPath(DomainAction.RenewOrder))
     expect(orders.map(order => order.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(orders[0])).toEqual({ years: 1, paymentmethod: 'card_gateway' })
-    expect(wrapper.find('[data-testid="domain-renew-pay"]').attributes('href')).toBe('/client/invoices/90')
+    expect(wrapper.find('[data-testid="domain-renew-pay"]').attributes('href')).toBe(clientInvoicePath(90))
   })
 
   it('keeps the form and shows the refusal when the order fails', async () => {

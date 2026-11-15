@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import BalanceCard from '~/components/client/credit/BalanceCard.vue'
 import type { ClientCredit } from '~/types/clientcredit'
+import { CLIENT_CREDIT_ADD_PATH, CLIENT_CREDIT_PATH } from '~/constants/clientRoutes'
 
 /**
  * Builds a credit with an empty history.
@@ -47,7 +48,7 @@ describe('ClientCreditBalanceCard', () => {
   it('links the add funds button to the add funds page', () => {
     const wrapper = mountClient(BalanceCard, { props: { credit: credit(0) } })
 
-    expect(wrapper.get('[data-testid="credit-add-funds"]').attributes('href')).toBe('/client/credit/add')
+    expect(wrapper.get('[data-testid="credit-add-funds"]').attributes('href')).toBe(CLIENT_CREDIT_ADD_PATH)
   })
 
   it('explains how credit works on the credit page and leaves the explanation out of the dashboard widget', () => {
@@ -57,6 +58,6 @@ describe('ClientCreditBalanceCard', () => {
     expect(full.find('[data-testid="credit-balance-note"]').exists()).toBe(true)
     expect(full.find('[data-testid="credit-view"]').exists()).toBe(false)
     expect(compact.find('[data-testid="credit-balance-note"]').exists()).toBe(false)
-    expect(compact.get('[data-testid="credit-view"]').attributes('href')).toBe('/client/credit')
+    expect(compact.get('[data-testid="credit-view"]').attributes('href')).toBe(CLIENT_CREDIT_PATH)
   })
 })

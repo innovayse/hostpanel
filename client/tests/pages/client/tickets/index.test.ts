@@ -21,6 +21,7 @@ import { TicketPriority } from '~/types/ticketpriority'
 import { TicketStatus } from '~/types/ticketstatus'
 import type { Pinia } from 'pinia'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { CLIENT_TICKET_NEW_PATH } from '~/constants/clientRoutes'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -105,7 +106,7 @@ describe('tickets list page', () => {
     const wrapper = await mountTickets()
 
     expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="tickets-open-cta"]').attributes('href')).toBe('/client/tickets/new')
+    expect(wrapper.find('[data-testid="tickets-open-cta"]').attributes('href')).toBe(CLIENT_TICKET_NEW_PATH)
   })
 
   it('shows the failure, not the empty state, when the read failed', async () => {

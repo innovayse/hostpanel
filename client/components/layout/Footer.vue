@@ -17,7 +17,7 @@
           </UiStack>
           <UiStack gap="sm" align="start" class="w-full sm:flex-row sm:items-center md:w-auto">
             <SectionsDomainSearch size="md" class="w-full sm:min-w-[24rem] sm:flex-1 md:w-[28rem] md:flex-none" />
-            <UiButton :to="localePath('/products')" :variant="UiButtonVariant.Outline" size="md" data-testid="footer-cta-plans">
+            <UiButton :to="localePath(SITE_PRODUCTS_PATH)" :variant="UiButtonVariant.Outline" size="md" data-testid="footer-cta-plans">
               {{ $t('footer.cta.plans') }}
             </UiButton>
           </UiStack>
@@ -100,6 +100,20 @@ import { CreditCard, Lock, ShieldCheck } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import LogoLockup from '~/components/LogoLockup.vue'
 import LayoutFooterColumn from '~/components/layout/FooterColumn.vue'
+import {
+  SITE_ABOUT_PATH,
+  SITE_CONTACT_PATH,
+  SITE_COOKIE_POLICY_PATH,
+  SITE_DOMAINS_PATH,
+  SITE_DOMAINS_TRANSFER_PATH,
+  SITE_FAQ_PATH,
+  SITE_KNOWLEDGEBASE_PATH,
+  SITE_PRIVACY_PATH,
+  SITE_PRODUCTS_PATH,
+  SITE_REFUND_POLICY_PATH,
+  SITE_TERMS_PATH,
+  siteProductFamilyPath,
+} from '~/constants/siteRoutes'
 import { useCatalogStore } from '~/stores/catalog'
 import type { FooterLink } from '~/types/footerlink'
 import { familyKey } from '~/utils/catalogGroups'
@@ -149,11 +163,11 @@ const trustMarks = computed<TrustMark[]>(() => [
 
 /** Hosting column: the all-plans entry, then every plan group the storefront shows. */
 const hostingLinks = computed<FooterLink[]>(() => [
-  { key: 'all', label: t('footer.hosting.all'), to: localePath('/products') },
+  { key: 'all', label: t('footer.hosting.all'), to: localePath(SITE_PRODUCTS_PATH) },
   ...catalog.familyGroups.map((group) => ({
     key: `group-${group.id}`,
     label: group.name,
-    to: localePath(`/products/${familyKey(group)}`),
+    to: localePath(siteProductFamilyPath(familyKey(group))),
   })),
 ])
 
@@ -164,17 +178,17 @@ const columns = computed<FooterColumn[]>(() => [
     key: 'domains',
     title: t('footer.columns.domains'),
     links: [
-      { key: 'register', label: t('footer.domains.register'), to: localePath('/domains') },
-      { key: 'transfer', label: t('footer.domains.transfer'), to: localePath('/domains/transfer') },
-      { key: 'pricing', label: t('footer.domains.pricing'), to: localePath('/domains') },
+      { key: 'register', label: t('footer.domains.register'), to: localePath(SITE_DOMAINS_PATH) },
+      { key: 'transfer', label: t('footer.domains.transfer'), to: localePath(SITE_DOMAINS_TRANSFER_PATH) },
+      { key: 'pricing', label: t('footer.domains.pricing'), to: localePath(SITE_DOMAINS_PATH) },
     ],
   },
   {
     key: 'company',
     title: t('footer.columns.company'),
     links: [
-      { key: 'about', label: t('footer.company.about'), to: localePath('/about') },
-      { key: 'contact', label: t('footer.company.contact'), to: localePath('/contact') },
+      { key: 'about', label: t('footer.company.about'), to: localePath(SITE_ABOUT_PATH) },
+      { key: 'contact', label: t('footer.company.contact'), to: localePath(SITE_CONTACT_PATH) },
       { key: 'announcements', label: t('footer.company.announcements'), to: localePath('/announcements') },
     ],
   },
@@ -182,19 +196,19 @@ const columns = computed<FooterColumn[]>(() => [
     key: 'support',
     title: t('footer.columns.support'),
     links: [
-      { key: 'help', label: t('footer.support.help'), to: localePath('/knowledgebase') },
-      { key: 'faq', label: t('footer.support.faq'), to: localePath('/faq') },
-      { key: 'ticket', label: t('footer.support.ticket'), to: localePath('/contact') },
+      { key: 'help', label: t('footer.support.help'), to: localePath(SITE_KNOWLEDGEBASE_PATH) },
+      { key: 'faq', label: t('footer.support.faq'), to: localePath(SITE_FAQ_PATH) },
+      { key: 'ticket', label: t('footer.support.ticket'), to: localePath(SITE_CONTACT_PATH) },
     ],
   },
   {
     key: 'legal',
     title: t('footer.columns.legal'),
     links: [
-      { key: 'privacy', label: t('footer.bottom.privacy'), to: localePath('/privacy') },
-      { key: 'cookies', label: t('footer.bottom.cookies'), to: localePath('/cookie-policy') },
-      { key: 'terms', label: t('footer.bottom.terms'), to: localePath('/terms') },
-      { key: 'refund', label: t('footer.bottom.refund'), to: localePath('/refund-policy') },
+      { key: 'privacy', label: t('footer.bottom.privacy'), to: localePath(SITE_PRIVACY_PATH) },
+      { key: 'cookies', label: t('footer.bottom.cookies'), to: localePath(SITE_COOKIE_POLICY_PATH) },
+      { key: 'terms', label: t('footer.bottom.terms'), to: localePath(SITE_TERMS_PATH) },
+      { key: 'refund', label: t('footer.bottom.refund'), to: localePath(SITE_REFUND_POLICY_PATH) },
     ],
   },
 ])

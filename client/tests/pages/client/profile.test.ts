@@ -4,6 +4,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage } from '~/tests/helpers/mountClient'
 import ProfilePage from '~/pages/client/profile.vue'
+import { clientAccountTabPath } from '~/constants/clientRoutes'
+import { AccountTab } from '~/types/accounttab'
 
 /** Stands in for Nuxt's `navigateTo`. */
 const navigate = vi.fn()
@@ -17,6 +19,6 @@ describe('profile entry page', () => {
   it('forwards to the details tab of the account page', async () => {
     await mountPage(ProfilePage)
 
-    expect(navigate).toHaveBeenCalledWith('/client/account?tab=details', { replace: true })
+    expect(navigate).toHaveBeenCalledWith(clientAccountTabPath(AccountTab.Details), { replace: true })
   })
 })

@@ -19,9 +19,11 @@ import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { ServiceInvoice } from '~/types/serviceinvoice'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
+import { clientInvoicePath } from '~/constants/clientRoutes'
 
 /** The BFF path that lists the invoices raised against service 4. */
-const INVOICES_PATH = '/api/portal/client/services/4/invoices'
+const INVOICES_PATH = servicePath(4, ServiceAction.Invoices)
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -103,7 +105,7 @@ describe('ServiceInvoicesCard', () => {
     const wrapper = await mountLoaded({ body: { invoices: [invoice(5), invoice(6)], unattributedInvoiceCount: 0 } })
 
     expect(wrapper.findAll('tbody tr')).toHaveLength(2)
-    expect(wrapper.find('[data-testid="service-invoice-5"] a').attributes('href')).toBe('/client/invoices/5')
+    expect(wrapper.find('[data-testid="service-invoice-5"] a').attributes('href')).toBe(clientInvoicePath(5))
   })
 
   it('notes the invoices that no service owns, but not when the read failed', async () => {

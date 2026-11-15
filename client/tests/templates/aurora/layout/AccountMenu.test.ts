@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AccountMenu from '~/templates/aurora/layout/AccountMenu.vue'
 import { stubAuroraGlobals } from '../auroraGlobals'
+import { CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH } from '~/constants/clientRoutes'
 
 /** The customer the session reports. */
 const USER = { firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' }
@@ -34,8 +35,8 @@ describe('AccountMenu', () => {
 
     expect(wrapper.find('[data-testid="account-menu-name"]').text()).toBe('Ann Lee')
     expect(wrapper.text()).toContain('ann@acme.test')
-    expect(wrapper.find('[data-testid="account-menu-dashboard"]').attributes('href')).toBe('/client/dashboard')
-    expect(wrapper.find('[data-testid="account-menu-account"]').attributes('href')).toBe('/client/account')
+    expect(wrapper.find('[data-testid="account-menu-dashboard"]').attributes('href')).toBe(CLIENT_DASHBOARD_PATH)
+    expect(wrapper.find('[data-testid="account-menu-account"]').attributes('href')).toBe(CLIENT_ACCOUNT_PATH)
     expect(wrapper.findAll('[role="menuitem"]')).toHaveLength(6)
   })
 

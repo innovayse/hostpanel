@@ -8,12 +8,13 @@ import ServiceCard from '~/components/client/services/ServiceCard.vue'
 import { ServiceStatus } from '~/types/servicestatus'
 import { EMPTY_DATE } from '~/utils/formatDate'
 import { makeClientService as service } from '~/tests/helpers/clientServiceFixture'
+import { clientServicePath, clientServiceSetupPath } from '~/constants/clientRoutes'
 
 describe('ServiceCard', () => {
   it('links a set-up service to its page', () => {
     const wrapper = mountClient(ServiceCard, { props: { service: service(), currency: { code: 'USD' } } })
 
-    expect(wrapper.attributes('href')).toBe('/client/services/4')
+    expect(wrapper.attributes('href')).toBe(clientServicePath(4))
     expect(wrapper.text()).toContain('Starter')
     expect(wrapper.text()).toContain('example.com')
   })
@@ -21,21 +22,21 @@ describe('ServiceCard', () => {
   it('links a service without a control-panel account to its setup wizard and flags it', () => {
     const wrapper = mountClient(ServiceCard, { props: { service: service({ status: ServiceStatus.Pending }), currency: {} } })
 
-    expect(wrapper.attributes('href')).toBe('/client/services/4/setup')
+    expect(wrapper.attributes('href')).toBe(clientServiceSetupPath(4))
     expect(wrapper.find('[data-testid="service-needs-setup"]').exists()).toBe(true)
   })
 
   it('does not send an active service without a control-panel account to the wizard, which the backend would refuse', () => {
     const wrapper = mountClient(ServiceCard, { props: { service: service({ status: ServiceStatus.Active, username: null }), currency: {} } })
 
-    expect(wrapper.attributes('href')).toBe('/client/services/4')
+    expect(wrapper.attributes('href')).toBe(clientServicePath(4))
     expect(wrapper.find('[data-testid="service-needs-setup"]').exists()).toBe(false)
   })
 
   it('links a digital service to its page, with its status and no setup flag', () => {
     const wrapper = mountClient(ServiceCard, { props: { service: service({ isDigital: true, username: null }), currency: {} } })
 
-    expect(wrapper.attributes('href')).toBe('/client/services/4')
+    expect(wrapper.attributes('href')).toBe(clientServicePath(4))
     expect(wrapper.find('[data-testid="service-needs-setup"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Active')
   })

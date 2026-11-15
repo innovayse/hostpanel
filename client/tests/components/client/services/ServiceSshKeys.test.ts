@@ -20,12 +20,13 @@ import { HttpMethod } from '~/types/httpmethod'
 import { SshAccessState } from '~/types/sshaccessstate'
 import { SshKeySyncState } from '~/types/sshkeysyncstate'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
 
 /** The BFF path of the SSH access of service 6. */
-const ACCESS_PATH = '/api/portal/client/services/6/ssh'
+const ACCESS_PATH = servicePath(6, ServiceAction.Ssh)
 
 /** The BFF path of the SSH keys of service 6. */
-const KEYS_PATH = '/api/portal/client/services/6/ssh/keys'
+const KEYS_PATH = servicePath(6, ServiceAction.SshKeys)
 
 /** The BFF path of the key `k1` of service 6. */
 const KEY_PATH = `${KEYS_PATH}/k1`

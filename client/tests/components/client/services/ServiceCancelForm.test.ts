@@ -16,9 +16,10 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
 
 /** The BFF path that takes the cancellation of service 4. */
-const CANCEL_PATH = '/api/portal/client/services/4/cancel'
+const CANCEL_PATH = servicePath(4, ServiceAction.Cancel)
 
 /** The stub playing the BFF. */
 let stub: StubServer

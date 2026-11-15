@@ -13,12 +13,20 @@
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
 import { SUPPORT_LINK_ICON, SupportLinkKey } from '~/constants/headerNavIcon'
 import { productTypeIcon } from '~/constants/productTypeIcon'
+import {
+  SITE_CONTACT_PATH,
+  SITE_DOMAINS_PATH,
+  SITE_FAQ_PATH,
+  SITE_HOSTING_PATH,
+  SITE_KNOWLEDGEBASE_PATH,
+  SITE_PRODUCTS_PATH,
+} from '~/constants/siteRoutes'
 import type { HeaderNavChild } from '~/types/headernavchild'
 import type { HeaderNavItem } from '~/types/headernavitem'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
-import { dominantProductType, familyConfig, HOSTING_FAMILY_URL, isFamilyGroup, parseDescription } from '~/utils/catalogGroups'
+import { dominantProductType, familyConfig, isFamilyGroup, parseDescription } from '~/utils/catalogGroups'
 
 /** Translates a message key. */
 export type HeaderTranslate = (key: string) => string
@@ -62,21 +70,6 @@ const HOSTING_MENU_DESC_KEYS: Readonly<Partial<Record<ProductType, string>>> = {
  */
 export const hostingEntryDescription = (group: PortalProductGroup, fallbackKey: string, t: HeaderTranslate): string =>
   parseDescription(group.description ?? '').summary || t(fallbackKey)
-
-/** Route of the domain search page. */
-const DOMAINS_PATH = '/domains'
-
-/** Route of the all-products page. */
-const PRODUCTS_PATH = '/products'
-
-/** Route of the knowledge base. */
-const HELP_PATH = '/knowledgebase'
-
-/** Route of the FAQ. */
-const FAQ_PATH = '/faq'
-
-/** Route of the contact page. */
-const CONTACT_PATH = '/contact'
 
 /**
  * Whether a navigation target is the page being viewed: its own path or a page below it.
@@ -163,7 +156,7 @@ export const buildHeaderNav = ({ t, localePath, groups, products }: HeaderNavInp
       label: t('nav.allHosting'),
       icon: productTypeIcon(ProductType.SharedHosting),
       desc: t('nav.hostingDesc'),
-      to: localePath(HOSTING_FAMILY_URL),
+      to: localePath(SITE_HOSTING_PATH),
     },
     ...families
       .flatMap((group) => {
@@ -185,20 +178,20 @@ export const buildHeaderNav = ({ t, localePath, groups, products }: HeaderNavInp
   const items: HeaderNavItem[] = [
     hostingChildren.length > 1
       ? { key: 'hosting', label: t('nav.hosting'), children: hostingChildren }
-      : { key: 'hosting', label: t('nav.hosting'), to: localePath(HOSTING_FAMILY_URL) },
-    { key: 'domains', label: t('nav.domains'), to: localePath(DOMAINS_PATH) },
+      : { key: 'hosting', label: t('nav.hosting'), to: localePath(SITE_HOSTING_PATH) },
+    { key: 'domains', label: t('nav.domains'), to: localePath(SITE_DOMAINS_PATH) },
   ]
 
 
   items.push(
-    { key: 'products', label: t('nav.products'), to: localePath(PRODUCTS_PATH) },
+    { key: 'products', label: t('nav.products'), to: localePath(SITE_PRODUCTS_PATH) },
     {
       key: 'support',
       label: t('nav.support'),
       children: [
-        { key: SupportLinkKey.Help, label: t('nav.help'), icon: SUPPORT_LINK_ICON[SupportLinkKey.Help], desc: t('nav.helpDesc'), to: localePath(HELP_PATH) },
-        { key: SupportLinkKey.Faq, label: t('nav.faq'), icon: SUPPORT_LINK_ICON[SupportLinkKey.Faq], desc: t('nav.faqDesc'), to: localePath(FAQ_PATH) },
-        { key: SupportLinkKey.Contact, label: t('nav.contact'), icon: SUPPORT_LINK_ICON[SupportLinkKey.Contact], desc: t('nav.contactDesc'), to: localePath(CONTACT_PATH) },
+        { key: SupportLinkKey.Help, label: t('nav.help'), icon: SUPPORT_LINK_ICON[SupportLinkKey.Help], desc: t('nav.helpDesc'), to: localePath(SITE_KNOWLEDGEBASE_PATH) },
+        { key: SupportLinkKey.Faq, label: t('nav.faq'), icon: SUPPORT_LINK_ICON[SupportLinkKey.Faq], desc: t('nav.faqDesc'), to: localePath(SITE_FAQ_PATH) },
+        { key: SupportLinkKey.Contact, label: t('nav.contact'), icon: SUPPORT_LINK_ICON[SupportLinkKey.Contact], desc: t('nav.contactDesc'), to: localePath(SITE_CONTACT_PATH) },
       ],
     },
   )

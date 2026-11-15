@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProductOptions;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProducts;
 using Innovayse.Hostpanel.Application.Products.Queries.ListCatalogProducts;
+using Innovayse.Hostpanel.Application.Products.Queries.ListProducts;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -44,6 +45,26 @@ public sealed class ProductsController : BaseApiController
     public async Task<IActionResult> ListAsync([FromQuery] GetProductsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ProductDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// One page of the staff view of the products in the operator's order, narrowed by a search text, a group, a type and a
+    /// status, priced in the caller's currency. Every product is listed, the unsellable ones included. Carries the
+    /// provisioning fields, so it is for staff only.
+    /// </summary>
+    /// <param name="query">The page, page size, search and filters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the page; 400 when a value is refused; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
+    [HttpGet("/api/admin/products")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(PaginatedList<ProductDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListPageAsync([FromQuery] ListProductsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<ProductDto>>>(query, ct);
         return HandleResult(outcome);
     }
 

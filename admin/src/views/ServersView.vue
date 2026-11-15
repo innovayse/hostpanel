@@ -2,8 +2,8 @@
 /**
  * Main Servers management page.
  *
- * Lists the provisioning servers as cards grouped by module, with a search box, module and status
- * filters (kept in the address, shown as chips) and a pager, then shows server groups.
+ * Lists one page of the provisioning servers as cards, with a search box, module and state filters (kept in the
+ * address with the page, shown as chips) that the API applies before it pages, then shows server groups.
  * Provides Add/Edit/Delete actions for both servers and groups. Every refusal sentence belongs to
  * the servers store and is shown as the API returned it: a refused load with a retry, a refused save
  * inside its dialog, a delete (confirmed first in a danger prompt) or a saved dialog in the outcome
@@ -14,7 +14,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServersStore } from '@/stores/servers'
 import { FILL_TYPE_LABELS, MODULE_LABELS, ServerModule, ServerState } from '@/types/server'
-import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerPayload, ServerTestOutcome } from '@/types/server'
+import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerListFilters, ServerPayload, ServerTestOutcome } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
 import ServerCard from '@/components/servers/ServerCard.vue'
 import GroupFormModal from '@/components/servers/GroupFormModal.vue'
@@ -44,11 +44,8 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTableDensity } from '@/utils/ui/injection'
 import type { UiSelectOption } from '@/utils/ui/select'
-import type { UiFilterChip } from '@/utils/ui/filter'
-import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
-import { pageSlice } from '@/lib/paging'
-import { filterServers, SERVER_STATE_KEYS } from '@/lib/servers'
-import { useFilterQuery } from '@/composables/useFilterQuery'
+import { SERVER_STATE_KEYS } from '@/lib/servers'
+import { useListQuery } from '@/composables/useListQuery'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -116,14 +113,47 @@ const reportDelete = (ok: boolean): void => {
   }
 }
 
+/** The filter fields the dialog edits; each is one query key and one `ServerListFilters` member. */
+const FilterKey = {
+  Module: 'module',
+  State: 'state',
+} as const
+
+/** The module and state filters, the search text and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
+
+/** The module in the address as a module, undefined when none is set or the value is not one. */
+const moduleOfAddress = enumOf(FilterKey.Module, ServerModule)
+
+/** The state in the address as a state, undefined when none is set or the value is not one. */
+const stateOfAddress = enumOf(FilterKey.State, ServerState)
+
+/** What the address narrows the list by, as the store sends it to the API. */
+const filters = computed<ServerListFilters>(() => ({
+  search: appliedSearch.value,
+  module: moduleOfAddress.value,
+  state: stateOfAddress.value,
+}))
+
 /**
- * Loads the servers and the groups.
+ * Loads the page the address names with the filters and search it holds.
+ *
+ * @returns True when loaded; false when refused (see the store's `error`).
+ */
+const loadServers = (): Promise<boolean> => store.fetchServers(page.value, filters.value)
+
+/**
+ * Loads the page the address names and the groups, which show the names of their servers.
  *
  * @returns Resolves when both loads have settled.
  */
 const loadAll = async (): Promise<void> => {
-  await Promise.all([store.fetchServers(), store.fetchGroups()])
+  await Promise.all([loadServers(), store.fetchGroups()])
 }
+
+// Every change of a filter, the search or the page loads the list the address names.
+loadOnChange(loadServers)
 
 /** True while the staged server is being deleted. */
 const deletingServer = ref(false)
@@ -134,43 +164,31 @@ const deleteGroupTarget = ref<ServerGroupDto | null>(null)
 /** True while the staged group is being deleted. */
 const deletingGroup = ref(false)
 
-/** The filters, the search text and the page of the list, kept in the address. */
-const query = useFilterQuery(['module', 'state'] as const)
-
 /** The module choices of the filter, "any" first. */
 const moduleOptions = computed<UiSelectOption<string>[]>(() => [
-  { value: '', label: t('servers.servers.anyModule') },
+  { value: '', label: t('shared.any') },
   ...Object.values(ServerModule).map(module => ({ value: module, label: MODULE_LABELS[module] })),
 ])
 
 /** The state choices of the filter, "any" first. */
 const stateOptions = computed<UiSelectOption<string>[]>(() => [
-  { value: '', label: t('servers.servers.anyState') },
+  { value: '', label: t('shared.any') },
   ...Object.values(ServerState).map(state => ({ value: state, label: t(SERVER_STATE_KEYS[state]) })),
 ])
 
-/** The servers that match the applied filters and the search text. */
-const matchingServers = computed<ServerDto[]>(() =>
-  filterServers(store.servers, { ...query.applied.value, search: query.appliedSearch.value }),
-)
-
-/** The servers of the current page. */
-const pagedServers = computed<ServerDto[]>(() =>
-  pageSlice(matchingServers.value, query.page.value, DEFAULT_PAGE_SIZE),
-)
-
-/** The active filters as removable chips. */
-const filterChips = computed<UiFilterChip<'module' | 'state'>[]>(() => {
-  const chips: UiFilterChip<'module' | 'state'>[] = []
-  const { module, state } = query.applied.value
-  if (module !== '') {
-    chips.push({ key: 'module', label: t('servers.servers.filterModule'), value: MODULE_LABELS[module as ServerModule] ?? module })
-  }
-  if (state !== '') {
-    chips.push({ key: 'state', label: t('servers.servers.filterState'), value: t(SERVER_STATE_KEYS[state as ServerState]) })
-  }
-  return chips
-})
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Module,
+    label: t('servers.servers.filterModule'),
+    value: moduleOfAddress.value === undefined ? undefined : MODULE_LABELS[moduleOfAddress.value],
+  },
+  {
+    key: FilterKey.State,
+    label: t('servers.servers.filterState'),
+    value: stateOfAddress.value === undefined ? undefined : t(SERVER_STATE_KEYS[stateOfAddress.value]),
+  },
+])
 
 /**
  * Tests connectivity to a server and shows the result in its row.
@@ -183,6 +201,10 @@ const handleTestConnection = async (id: number): Promise<void> => {
     Object.entries(testResults.value).filter(([key]) => Number(key) !== id),
   )
   const result = await store.testConnection(id)
+  if (result !== null) {
+    // The test recorded the server's state and account count, so the page is read again to show them.
+    await loadServers()
+  }
   let outcome: ServerTestOutcome
   if (result === null) {
     outcome = { ok: false, message: store.actionError ?? '' }
@@ -219,20 +241,22 @@ const openEditServer = (server: ServerDto): void => {
   showServerModal.value = true
 }
 
-/** Opens the group create dialog. */
+/** Opens the group create dialog and reads every server, which the dialog offers for the group. */
 const openAddGroup = (): void => {
   store.actionError = null
+  void store.fetchServerOptions()
   editingGroup.value = null
   showGroupModal.value = true
 }
 
 /**
- * Opens the group edit dialog.
+ * Opens the group edit dialog and reads every server, which the dialog offers for the group.
  *
  * @param group - The group to edit.
  */
 const openEditGroup = (group: ServerGroupDto): void => {
   store.actionError = null
+  void store.fetchServerOptions()
   editingGroup.value = group
   showGroupModal.value = true
 }
@@ -251,6 +275,7 @@ const handleSaveServer = async (payload: ServerPayload): Promise<void> => {
   if (saved) {
     showServerModal.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
+    await loadAll()
   }
 }
 
@@ -266,6 +291,10 @@ const confirmDeleteServer = async (): Promise<void> => {
   deletingServer.value = false
   deleteServerTarget.value = null
   reportDelete(deleted)
+  if (deleted) {
+    await loadAll()
+    await stepBackWhenEmpty(store.servers.length === 0)
+  }
 }
 
 /** Closes the server delete confirmation; ignored while the delete runs. */
@@ -289,6 +318,7 @@ const handleSaveGroup = async (payload: ServerGroupPayload): Promise<void> => {
   if (saved) {
     showGroupModal.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
+    await loadAll()
   }
 }
 
@@ -304,6 +334,9 @@ const confirmDeleteGroup = async (): Promise<void> => {
   deletingGroup.value = false
   deleteGroupTarget.value = null
   reportDelete(deleted)
+  if (deleted) {
+    await loadAll()
+  }
 }
 
 /** Closes the group delete confirmation; ignored while the delete runs. */
@@ -372,7 +405,10 @@ const serverGroupActions = (group: ServerGroupDto): UiMenuAction[] => {
   ]
 }
 
-onMounted(loadAll)
+// The page of servers loads with the address (loadOnChange); the groups are read once.
+onMounted(() => {
+  void store.fetchGroups()
+})
 </script>
 
 <template>
@@ -402,29 +438,29 @@ onMounted(loadAll)
       @retry="loadAll"
     />
 
-    <template v-else-if="store.loading || store.servers.length > 0">
+    <template v-else-if="store.loading || store.servers.length > 0 || narrowed">
       <!-- Search, filters and the chips of the applied ones -->
       <UiListToolbar
-        v-model:search="query.search.value"
+        v-model:search="search"
         search-testid="servers-search"
         :search-placeholder="t('servers.servers.searchPlaceholder')"
-        :active-count="query.activeCount.value"
-        :chips="filterChips"
+        :active-count="activeCount"
+        :chips="chips"
         :loading="store.loading"
-        @apply="query.apply"
-        @reset="query.reset"
-        @cancel="query.cancel"
-        @remove="query.remove"
-        @clear="query.clearAll"
+        @apply="apply"
+        @reset="reset"
+        @cancel="cancel"
+        @remove="remove"
+        @clear="clearAll"
       >
         <UiGrid :columns="1" gap="md">
           <UiField :label="t('servers.servers.filterModule')">
             <template #default="{ id }">
               <UiSelect
                 :id="id"
-                v-model="query.draft.value.module"
+                v-model="draft.module"
                 :options="moduleOptions"
-                :placeholder="t('servers.servers.anyModule')"
+                :placeholder="t('shared.any')"
                 data-testid="servers-filter-module"
               />
             </template>
@@ -433,9 +469,9 @@ onMounted(loadAll)
             <template #default="{ id }">
               <UiSelect
                 :id="id"
-                v-model="query.draft.value.state"
+                v-model="draft.state"
                 :options="stateOptions"
-                :placeholder="t('servers.servers.anyState')"
+                :placeholder="t('shared.any')"
                 data-testid="servers-filter-state"
               />
             </template>
@@ -444,7 +480,7 @@ onMounted(loadAll)
       </UiListToolbar>
 
       <!-- Servers, every module in one grid; while the list loads the same grid holds placeholder cards -->
-      <UiStack v-if="store.loading || matchingServers.length > 0" gap="md" data-testid="servers-list">
+      <UiStack v-if="store.loading || store.servers.length > 0" gap="md" data-testid="servers-list">
         <!-- One grid for every module, so a module with a single server never leaves half the row empty -->
         <UiGrid min-item-width="md" gap="md">
           <template v-if="store.loading">
@@ -452,7 +488,7 @@ onMounted(loadAll)
           </template>
           <template v-else>
             <ServerCard
-              v-for="server in pagedServers"
+              v-for="server in store.servers"
               :key="server.id"
               :server="server"
               :actions="serverActions(server)"
@@ -462,12 +498,12 @@ onMounted(loadAll)
           </template>
         </UiGrid>
         <UiPagination
-          :page="query.page.value"
-          :total="matchingServers.length"
-          :page-size="DEFAULT_PAGE_SIZE"
+          :page="page"
+          :total="store.totalCount"
+          :page-size="store.pageSize"
           :loading="store.loading"
           testid="servers-pagination"
-          @update:page="query.setPage"
+          @update:page="setPage"
         />
       </UiStack>
 
@@ -545,7 +581,7 @@ onMounted(loadAll)
     <GroupFormModal
       v-if="showGroupModal"
       :group="editingGroup"
-      :available-servers="store.servers"
+      :available-servers="store.serverOptions"
       :saving="savingGroup"
       :error="store.actionError"
       :field-errors="store.fieldErrors"

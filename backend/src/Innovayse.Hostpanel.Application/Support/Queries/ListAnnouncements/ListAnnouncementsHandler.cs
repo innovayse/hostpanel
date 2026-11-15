@@ -1,4 +1,4 @@
-using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Application.Support.Extensions;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListAnnouncements;
 
-/// <summary>Returns a paged list of announcements ordered by creation date descending.</summary>
+/// <summary>Returns a page of the announcements, narrowed by the search text and the published state, newest first.</summary>
 public sealed class ListAnnouncementsHandler
 {
     /// <summary>The module's data context.</summary>
@@ -22,24 +22,30 @@ public sealed class ListAnnouncementsHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The paging window.</param>
+    /// <param name="query">The search, the published state and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with the page. This use case answers no refusal code.</returns>
     public async Task<Result<PaginatedList<AnnouncementDto>>> HandleAsync(ListAnnouncementsQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
+        var announcements = _context.Announcements
+            .AsNoTracking()
+            .Search(query.Search, a => a.Title, a => a.Content);
 
-        var baseQuery = _context.Announcements.AsNoTracking().OrderByDescending(a => a.CreatedAt);
+        if (query.IsPublished is { } isPublished)
+        {
+            announcements = announcements.Where(a => a.IsPublished == isPublished);
+        }
 
-        var totalCount = await baseQuery.CountAsync(ct);
-        var items = await baseQuery
-            .Paginate(page, pageSize)
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = announcements.OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id);
+        var totalCount = await ordered.CountAsync(ct);
+        var items = await ordered
+            .Paginate(query.Page, query.PageSize)
             .SelectDto()
             .ToListAsync(ct);
 
-        return Result.Success(new PaginatedList<AnnouncementDto>(items, totalCount, page, pageSize));
+        return Result.Success(new PaginatedList<AnnouncementDto>(items, totalCount, query.Page, query.PageSize));
     }
 }

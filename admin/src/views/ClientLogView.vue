@@ -1,22 +1,25 @@
 <script setup lang="ts">
 /**
- * Displays a paginated, filterable activity log for the current client.
- *
- * Read-only audit trail: shows admin actions with date, description, user, and IP.
+ * Activity log of the current client: a read-only audit trail of the admin actions on the profile, with date,
+ * description, user and IP address. A search box (admin name or email, description, IP address) and the filter dialog
+ * (the period) with its removable chip narrow it. The search text, the period and the page live in the address
+ * (`useListQuery`), so a reload, a shared link and the back button restore the same log, and the API narrows the
+ * entries before it pages. A refused load shows the sentence with a Retry.
  */
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientLogStore } from '@/stores/clientLog'
+import { useFilterDateRange } from '@/composables/useFilterDateRange'
+import { useListQuery } from '@/composables/useListQuery'
+import { usePeriodFilter } from '@/composables/usePeriodFilter'
 import { formatDateTimeCompact, EMPTY_VALUE } from '@/lib/format'
-import UiButton from '@/components/ui/UiButton.vue'
+import type { ActivityLogFilters } from '@/types/activitylog'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCollapse from '@/components/ui/UiCollapse.vue'
-import UiDatePicker from '@/components/ui/UiDatePicker.vue'
+import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiInput from '@/components/ui/UiInput.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
@@ -28,13 +31,17 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
-import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
+
+/** The filter fields kept in the address: the first and the last day of the period. */
+const FilterKey = {
+  From: 'from',
+  To: 'to',
+} as const
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -42,170 +49,70 @@ const route = useRoute()
 /** Client log store, the only caller of the activity-log endpoint. */
 const store = useClientLogStore()
 
+/** The period, the search text and the page of the log, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, loadOnChange, dateOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
+
+/** The applied period and its chips. */
+const period = usePeriodFilter({ dateOf }, { from: FilterKey.From, to: FilterKey.To })
+
+/** What the address narrows the log by, as the store sends it to the API. */
+const filters = computed<ActivityLogFilters>(() => ({
+  search: appliedSearch.value,
+  from: period.from.value,
+  to: period.to.value,
+}))
+
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(period.chipSources)
+
+/** The period of the filter draft; the picker edits the pair, the address keeps its two ends. */
+const draftRange = useFilterDateRange(draft, FilterKey.From, FilterKey.To)
+
 /** True while the first load is in flight and there are no entries yet; the table then draws its placeholder rows. */
 const initialLoading = computed<boolean>(() => store.loading && store.logs.length === 0)
 
 /** Client ID from route params. */
 const clientId = computed(() => Number(route.params.id))
 
-/** Current 1-based page. */
-const page = ref(1)
-
-/** Items per page. */
-const pageSize = LEDGER_PAGE_SIZE
-
-/** Whether the filter panel is visible. */
-const showFilters = ref(false)
-
-/** Filter: date string (ISO date, e.g. "2026-05-23"). */
-const filterDate = ref('')
-
-/** Filter: admin name/email partial match. */
-const filterAdmin = ref('')
-
-/** Filter: description partial match. */
-const filterDescription = ref('')
-
-/** Filter: IP address partial match. */
-const filterIp = ref('')
-
 /**
- * Builds the filter object from current filter inputs.
- *
- * @returns Filter params object.
- */
-const buildFilters = () => ({
-  date: filterDate.value || undefined,
-  adminSearch: filterAdmin.value || undefined,
-  description: filterDescription.value || undefined,
-  ipAddress: filterIp.value || undefined,
-})
-
-/**
- * Loads logs for the current page and filters.
+ * Loads the page of the log the address names with the search and the period it holds.
  *
  * @returns Promise that resolves when data is loaded.
  */
-const load = async (): Promise<void> => {
-  await store.fetchLogs(clientId.value, page.value, pageSize, buildFilters())
-}
+const load = (): Promise<void> => store.fetchLogs(clientId.value, page.value, filters.value)
 
-/**
- * Navigates to a specific page.
- *
- * @param p - Target page number.
- * @returns Nothing.
- */
-const goToPage = (p: number): void => {
-  page.value = p
-  load()
-}
-
-/**
- * Applies current filters and resets to page 1.
- *
- * @returns Nothing.
- */
-const applyFilters = (): void => {
-  page.value = 1
-  load()
-}
-
-/**
- * Clears all filters and reloads.
- *
- * @returns Nothing.
- */
-const clearFilters = (): void => {
-  filterDate.value = ''
-  filterAdmin.value = ''
-  filterDescription.value = ''
-  filterIp.value = ''
-  page.value = 1
-  load()
-}
-
-onMounted(load)
+// Every change of the search, the period or the page loads the log the address names.
+loadOnChange(load)
 </script>
 
 <template>
   <UiStack>
     <UiSectionHeader :level="1" variant="card">
       {{ t('clients.clientLog.activityLog') }}
-      <template #actions>
-        <UiButton
-          type="button"
-          :variant="UiButtonVariant.Secondary"
-          data-testid="client-log-toggle-filters"
-          @click="showFilters = !showFilters"
-        >
-          {{ showFilters ? t('shared.hideFilters') : t('clients.clientLog.filterLog') }}
-        </UiButton>
-      </template>
     </UiSectionHeader>
 
-    <UiCollapse :open="showFilters">
-      <UiCard padding="md" data-testid="client-log-filters">
-        <UiStack>
-          <UiGrid :columns="2">
-            <UiField :label="t('shared.date')">
-              <UiDatePicker v-model="filterDate" :placeholder="t('clients.clientLog.selectDate')" />
-            </UiField>
-            <UiField :label="t('shared.username')">
-              <template #default="{ id }">
-                <UiInput
-                  :id="id"
-                  v-model="filterAdmin"
-                  type="text"
-                  :placeholder="t('shared.any')"
-                  data-testid="client-log-filter-admin"
-                />
-              </template>
-            </UiField>
-            <UiField :label="t('shared.description')">
-              <template #default="{ id }">
-                <UiInput
-                  :id="id"
-                  v-model="filterDescription"
-                  type="text"
-                  :placeholder="t('shared.description')"
-                  data-testid="client-log-filter-description"
-                />
-              </template>
-            </UiField>
-            <UiField :label="t('shared.ipAddress')">
-              <template #default="{ id }">
-                <UiInput
-                  :id="id"
-                  v-model="filterIp"
-                  type="text"
-                  :placeholder="t('shared.ipAddress')"
-                  data-testid="client-log-filter-ip"
-                />
-              </template>
-            </UiField>
-          </UiGrid>
-          <UiStack direction="row" :justify="UiJustify.End" gap="sm">
-            <UiButton
-              type="button"
-              :variant="UiButtonVariant.Secondary"
-              data-testid="client-log-clear"
-              @click="clearFilters"
-            >
-              {{ t('shared.clear') }}
-            </UiButton>
-            <UiButton
-              type="button"
-              :variant="UiButtonVariant.Primary"
-              data-testid="client-log-apply"
-              @click="applyFilters"
-            >
-              {{ t('shared.apply') }}
-            </UiButton>
-          </UiStack>
-        </UiStack>
-      </UiCard>
-    </UiCollapse>
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="client-log-search"
+      :search-placeholder="t('clients.clientLog.searchLog')"
+      filter-testid="client-log-filter"
+      :active-count="activeCount"
+      :chips="chips"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <UiField :label="t('shared.dateRange')">
+        <UiDateRangePicker
+          v-model="draftRange"
+          :placeholder="t('shared.selectDateRange')"
+          data-testid="client-log-filter-period"
+        />
+      </UiField>
+    </UiListToolbar>
 
     <UiErrorState
       v-if="store.error"
@@ -248,21 +155,21 @@ onMounted(load)
         </template>
       </UiTable>
       <UiStack
-        v-if="initialLoading || store.totalCount > pageSize"
+        v-if="initialLoading || store.totalCount > 0"
         direction="row"
         :justify="UiJustify.Between"
         :align="UiAlignItems.Center"
       >
-        <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
+        <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm" data-testid="client-log-count">
           {{ t('clients.clientLog.totalcountEntrValue', { totalCount: store.totalCount }) }}
         </UiResultCount>
         <UiPagination
           :page="page"
           :total="store.totalCount"
-          :page-size="pageSize"
+          :page-size="store.pageSize"
           :loading="initialLoading"
           testid="client-log-pagination"
-          @update:page="goToPage"
+          @update:page="setPage"
         />
       </UiStack>
     </UiCard>

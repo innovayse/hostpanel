@@ -3,8 +3,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -76,6 +79,7 @@ internal static class ServersTestSeeds
     /// <param name="isDefault">Whether the server is the default for its module.</param>
     /// <param name="monthlyCost">The monthly cost.</param>
     /// <param name="clearAccessHash">Whether to ask for the stored access hash to be removed.</param>
+    /// <param name="ipAddress">The server's IP address, or null to record none.</param>
     /// <returns>The body.</returns>
     public static object ServerBody(
         string name,
@@ -84,10 +88,11 @@ internal static class ServersTestSeeds
         string? accessHash = null,
         bool isDefault = false,
         decimal monthlyCost = 0m,
-        bool clearAccessHash = false) => new
+        bool clearAccessHash = false,
+        string? ipAddress = null) => new
     {
         name,
-        endpoint = new ServerEndpointDto(hostname ?? $"{name}.example.com", null, null, true),
+        endpoint = new ServerEndpointDto(hostname ?? $"{name}.example.com", ipAddress, null, true),
         module,
         username = "root",
         credentials = new ServerCredentials(null, null, accessHash),
@@ -100,15 +105,48 @@ internal static class ServersTestSeeds
     /// <summary>Creates a server with a fresh name and returns its assigned id.</summary>
     /// <param name="client">Authenticated admin client.</param>
     /// <param name="name">The server's display name.</param>
+    /// <param name="module">The control panel module.</param>
+    /// <param name="hostname">The API hostname; defaults to one derived from <paramref name="name"/>.</param>
+    /// <param name="ipAddress">The server's IP address, or null to record none.</param>
     /// <returns>The new server's id.</returns>
-    public static async Task<int> CreateServerAsync(HttpClient client, string name)
+    public static async Task<int> CreateServerAsync(
+        HttpClient client,
+        string name,
+        ServerModule module = ServerModule.Cwp7,
+        string? hostname = null,
+        string? ipAddress = null)
     {
         var response = await client.PostAsJsonAsync(
             "/api/admin/servers",
-            ServerBody(name, accessHash: "top-secret-access-hash", monthlyCost: 12.5m));
+            ServerBody(name, hostname, module, accessHash: "top-secret-access-hash", monthlyCost: 12.5m, ipAddress: ipAddress));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return await response.Content.ReadFromJsonAsync<int>();
+    }
+
+    /// <summary>Reads, from the paged admin list, the servers whose name, host name or address contains the text.</summary>
+    /// <param name="client">Authenticated admin client.</param>
+    /// <param name="search">The text to look for; a server's unique name finds that server alone.</param>
+    /// <returns>The rows of the first page, which holds every match a test makes.</returns>
+    public static async Task<List<JsonElement>> SearchServersAsync(HttpClient client, string search)
+    {
+        var page = await PagedListReads.PageAsync(client, $"/api/admin/servers?page=1&pageSize=100&search={Uri.EscapeDataString(search)}");
+        return page.GetProperty("items").EnumerateArray().ToList();
+    }
+
+    /// <summary>Records the outcome of a connection test on a server, as a test of the connection would, without calling a provider.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="serverId">The server the test is recorded on.</param>
+    /// <param name="isOnline">Whether the recorded connection succeeded.</param>
+    /// <param name="accountsCount">The account count the test reported, or null.</param>
+    /// <returns>A task that completes once the outcome is saved.</returns>
+    public static async Task RecordConnectionTestAsync(IntegrationTestFactory factory, int serverId, bool isOnline, int? accountsCount)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var server = await context.Servers.SingleAsync(s => s.Id == serverId);
+        server.RecordConnectionTest(isOnline, accountsCount, TestMoments.Seeded);
+        await context.SaveChangesAsync(CancellationToken.None);
     }
 
     /// <summary>Creates a group with the given name and server membership.</summary>

@@ -26,8 +26,7 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
             $"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(newName, hostname: $"{name}.example.com", monthlyCost: 20m));
         update.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/servers");
-        list!.Should().Contain(r => r.GetProperty("name").GetString() == newName);
+        (await ServersTestSeeds.SearchServersAsync(client, newName)).Should().Contain(r => r.GetProperty("name").GetString() == newName);
     }
 
     /// <summary>
@@ -42,18 +41,18 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
         var name = $"Server-{Guid.NewGuid():N}";
         var id = await ServersTestSeeds.CreateServerAsync(client, name);
 
-        var created = await ReadServerAsync(client, id);
+        var created = await ReadServerAsync(client, id, name);
         created.GetProperty("credentials").GetProperty("hasAccessHash").GetBoolean().Should().BeTrue();
         created.GetProperty("credentials").GetProperty("hasPassword").GetBoolean().Should().BeFalse();
         created.GetRawText().Should().NotContain("top-secret-access-hash");
 
         var blank = await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, accessHash: string.Empty, monthlyCost: 12.5m, clearAccessHash: false));
         blank.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await ReadServerAsync(client, id)).GetProperty("credentials").GetProperty("hasAccessHash").GetBoolean().Should().BeTrue();
+        (await ReadServerAsync(client, id, name)).GetProperty("credentials").GetProperty("hasAccessHash").GetBoolean().Should().BeTrue();
 
         var cleared = await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, accessHash: null, monthlyCost: 12.5m, clearAccessHash: true));
         cleared.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await ReadServerAsync(client, id)).GetProperty("credentials").GetProperty("hasAccessHash").GetBoolean().Should().BeFalse();
+        (await ReadServerAsync(client, id, name)).GetProperty("credentials").GetProperty("hasAccessHash").GetBoolean().Should().BeFalse();
     }
 
     /// <summary>Updating an unknown server id answers 404 with <c>SERVER_NOT_FOUND</c>.</summary>
@@ -98,10 +97,11 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
     /// <summary>Reads one server from the admin list.</summary>
     /// <param name="client">Authenticated admin client.</param>
     /// <param name="id">The server's id.</param>
+    /// <param name="name">The server's unique name, which finds it on the first page.</param>
     /// <returns>The server's row.</returns>
-    private static async Task<System.Text.Json.JsonElement> ReadServerAsync(HttpClient client, int id)
+    private static async Task<System.Text.Json.JsonElement> ReadServerAsync(HttpClient client, int id, string name)
     {
-        var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/servers");
-        return list!.Single(r => r.GetProperty("id").GetInt32() == id);
+        var list = await ServersTestSeeds.SearchServersAsync(client, name);
+        return list.Single(r => r.GetProperty("id").GetInt32() == id);
     }
 }

@@ -7,6 +7,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useGatewayLogApi } from '@/composables/apis/useGatewayLogApi'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
 import type { GatewayLogEntry, GatewayLogFilters } from '@/types/gatewaylog'
 
@@ -20,6 +21,9 @@ export const useGatewayLogStore = defineStore('gateway-log', () => {
   /** Total number of entries matching the filters, across all pages. */
   const totalCount = ref(0)
 
+  /** Items per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
+
   /** True while a request is in flight. */
   const loading = ref(false)
 
@@ -27,16 +31,18 @@ export const useGatewayLogStore = defineStore('gateway-log', () => {
   const error = ref<string | null>(null)
 
   /**
-   * Loads one filtered page of the log.
+   * Loads one page of the log, narrowed by the server. The page, the search, the period and the result come from the
+   * list's address, so the store keeps no copy of them.
    *
-   * @param filters - Date range, gateway, debug text and result.
    * @param page - Page number (1-based).
-   * @param pageSize - Entries per page.
+   * @param filters - The search text, the period and the result; a member left out does not narrow.
    * @returns Promise that resolves when the page is loaded.
    */
-  const fetchPage = async (filters: GatewayLogFilters, page: number, pageSize: number): Promise<void> => {
+  const fetchPage = async (page: number, filters: GatewayLogFilters = {}): Promise<void> => {
     loading.value = true
-    const result = await runAction(error, () => api.list(filters, page, pageSize))
+    const result = await runAction(error, () =>
+      api.list({ ...filters, search: filters.search?.trim() }, page, pageSize.value),
+    )
     loading.value = false
     if (result.ok) {
       entries.value = result.value.items
@@ -44,5 +50,5 @@ export const useGatewayLogStore = defineStore('gateway-log', () => {
     }
   }
 
-  return { entries, totalCount, loading, error, fetchPage }
+  return { entries, totalCount, pageSize, loading, error, fetchPage }
 })

@@ -5,7 +5,7 @@
  */
 
 import { buildQuery, useApi } from '@/composables/useApi'
-import type { Announcement, AnnouncementPayload } from '@/types/announcement'
+import type { Announcement, AnnouncementFilter, AnnouncementPayload } from '@/types/announcement'
 import type { PaginatedList } from '@/types/paginatedlist'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
@@ -21,12 +21,18 @@ export const useAnnouncementsApi = () => {
   /**
    * Lists announcements, one page.
    *
-   * @param page - Page, 1-based.
-   * @param pageSize - Items per page.
+   * @param filter - Page, page size, search and published state.
    * @returns The page and the total count.
    */
-  const listAnnouncements = (page: number, pageSize: number): Promise<PaginatedList<Announcement>> =>
-    request<PaginatedList<Announcement>>(`${ApiPath.Announcements}${buildQuery({ page, pageSize })}`)
+  const listAnnouncements = (filter: AnnouncementFilter): Promise<PaginatedList<Announcement>> =>
+    request<PaginatedList<Announcement>>(
+      `${ApiPath.Announcements}${buildQuery({
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        isPublished: filter.isPublished,
+      })}`,
+    )
 
   /**
    * Reads one announcement.

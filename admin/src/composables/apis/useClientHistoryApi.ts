@@ -8,7 +8,7 @@
 
 import { buildQuery, useApi } from '@/composables/useApi'
 import type { ActivityLog, ActivityLogFilters } from '@/types/activitylog'
-import type { EmailLog } from '@/types/emaillog'
+import type { EmailLog, EmailLogFilters } from '@/types/emaillog'
 import type { PaginatedList } from '@/types/paginatedlist'
 import { ApiPath } from '@/lib/apiPaths'
 
@@ -21,12 +21,12 @@ export const useClientHistoryApi = () => {
   const { request } = useApi()
 
   /**
-   * Lists the activity log of a client.
+   * Lists the activity log of a client, one page.
    *
    * @param clientId - The client id.
    * @param page - Page number (1-based).
    * @param pageSize - Entries per page.
-   * @param filters - Optional date, admin, description and IP filters.
+   * @param filters - The search text and the period; a member left out does not narrow.
    * @returns One page of entries.
    */
   const activityLogs = (
@@ -35,18 +35,35 @@ export const useClientHistoryApi = () => {
     pageSize: number,
     filters: ActivityLogFilters = {},
   ): Promise<PaginatedList<ActivityLog>> =>
-    request<PaginatedList<ActivityLog>>(`${ApiPath.Clients}/${clientId}/activity-logs${buildQuery({ page, pageSize, ...filters })}`)
+    request<PaginatedList<ActivityLog>>(
+      `${ApiPath.Clients}/${clientId}/activity-logs${buildQuery({ page, pageSize, search: filters.search, from: filters.from, to: filters.to })}`,
+    )
 
   /**
-   * Lists the e-mails sent to a client.
+   * Lists the e-mails sent to a client, one page.
    *
    * @param clientId - The client id.
    * @param page - Page number (1-based).
    * @param pageSize - Entries per page.
+   * @param filters - The search text, the outcome and the period; a member left out does not narrow.
    * @returns One page of entries.
    */
-  const emailLogs = (clientId: number, page: number, pageSize: number): Promise<PaginatedList<EmailLog>> =>
-    request<PaginatedList<EmailLog>>(`${ApiPath.AdminEmailLogs}/client/${clientId}${buildQuery({ page, pageSize })}`)
+  const emailLogs = (
+    clientId: number,
+    page: number,
+    pageSize: number,
+    filters: EmailLogFilters = {},
+  ): Promise<PaginatedList<EmailLog>> =>
+    request<PaginatedList<EmailLog>>(
+      `${ApiPath.AdminEmailLogs}/client/${clientId}${buildQuery({
+        page,
+        pageSize,
+        search: filters.search,
+        success: filters.success,
+        from: filters.from,
+        to: filters.to,
+      })}`,
+    )
 
   return { activityLogs, emailLogs }
 }

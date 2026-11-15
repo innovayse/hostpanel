@@ -172,7 +172,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
         (value) => { overview.value.urgentTickets = value.items.filter((ticket) => ticket.priority === TicketPriority.High) },
       ),
       loadSection(
-        () => serversApi.listServers(),
+        () => serversApi.listServerOptions(),
         (value) => { overview.value.servers = value },
       ),
     ])

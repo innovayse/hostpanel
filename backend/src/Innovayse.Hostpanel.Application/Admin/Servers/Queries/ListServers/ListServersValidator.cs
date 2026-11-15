@@ -1,3 +1,4 @@
+using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
@@ -5,18 +6,18 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServers;
 
 /// <summary>
-///     Validator for <see cref="ListServersQuery"/>.
-///     Its one input is an optional module filter: every value, including its absence, is a valid
-///     filter, so no rule is declared; decided, not forgotten.
+/// Validates <see cref="ListServersQuery"/> before it reaches the handler. The page, page size and search are the shared
+/// list rules (<see cref="ListQueryValidator{T}"/>); this adds the rules of the module and state filters.
 /// </summary>
-public sealed class ListServersValidator : LocalizedValidator<ListServersQuery>
+public sealed class ListServersValidator : ListQueryValidator<ListServersQuery>
 {
-    /// <summary>
-    ///     Initializes validator with localization service.
-    /// </summary>
+    /// <summary>Initializes the validator.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
     public ListServersValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
+        // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
+        RuleFor(x => x.Module).IsInEnum().WithMessage(L["ServerListModuleInvalid"]);
+        RuleFor(x => x.State).IsInEnum().WithMessage(L["ServerListStateInvalid"]);
     }
 }

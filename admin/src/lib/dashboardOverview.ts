@@ -1,12 +1,7 @@
 /**
- * Pure helpers behind the dashboard panels: the greeting's part of the day, the signed change text, the
- * caption of a chart day and the load share of a server.
+ * Pure helpers behind the dashboard panels: the greeting's part of the day, the signed change text and the
+ * caption of a chart day.
  */
-
-import type { ServerDto } from '@/types/server'
-
-/** The full bar, in percent. */
-const FULL_PERCENT = 100
 
 /** Closed set of parts of the day the dashboard greets for; the value is also the locale key suffix. */
 export const DayPart = {
@@ -60,17 +55,3 @@ export const formatChange = (change: number): string => {
  */
 export const formatDayCaption = (date: string, locale: string): string =>
   new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
-
-/**
- * Share of a server's account capacity in use.
- *
- * @param server - The server.
- * @returns The share in percent, or null for a server with unlimited capacity or no test result yet.
- */
-export const serverLoadPercent = (server: ServerDto): number | null => {
-  const { maxAccounts } = server.limits
-  if (server.accountsCount === null || maxAccounts === null || maxAccounts <= 0) {
-    return null
-  }
-  return (server.accountsCount / maxAccounts) * FULL_PERCENT
-}

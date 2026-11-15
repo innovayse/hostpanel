@@ -18,8 +18,15 @@ describe('useAnnouncementsApi', () => {
   it('listAnnouncements sends the page and size', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
 
-    await useAnnouncementsApi().listAnnouncements(3, 10)
+    await useAnnouncementsApi().listAnnouncements({ page: 3, pageSize: 10 })
     expect(callOf(mock)).toMatchObject({ url: '/api/announcements?page=3&pageSize=10', method: 'GET' })
+  })
+
+  it('listAnnouncements sends the search and the published state that are set', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+
+    await useAnnouncementsApi().listAnnouncements({ page: 1, pageSize: 10, search: 'window', isPublished: true })
+    expect(callOf(mock).url).toBe('/api/announcements?page=1&pageSize=10&search=window&isPublished=true')
   })
 
   it('getAnnouncement reads one announcement', async () => {

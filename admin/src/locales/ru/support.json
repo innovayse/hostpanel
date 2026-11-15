@@ -17,7 +17,8 @@
     "createYourFirstAnnouncementTo": "Создайте первое объявление, чтобы начать.",
     "deleteAnnouncement": "Удалить объявление",
     "areYouSureYouWant": "Вы уверены, что хотите удалить это объявление? Это действие нельзя отменить.",
-    "announcementDeleted": "Объявление удалено."
+    "announcementDeleted": "Объявление удалено.",
+    "searchAnnouncements": "Поиск по объявлениям"
   },
   "downloads": {
     "downloads": "Загрузки",
@@ -80,7 +81,8 @@
     "noArticlesFound": "Статьи не найдены",
     "createYourFirstArticleAbove": "Создайте первую статью выше.",
     "englishRequired": "Английский обязателен; остальные языки по желанию.",
-    "draft": "Черновик"
+    "draft": "Черновик",
+    "searchArticles": "Поиск по статьям"
   },
   "networkIssueForm": {
     "updateTheNetworkIssueDetails": "Обновите данные сетевой проблемы ниже",
@@ -114,15 +116,9 @@
     "createNew": "(+) Создать",
     "startDate": "Дата начала",
     "endDate": "Дата окончания",
-    "noTolowercaseAtTheMoment": "Сейчас ничего нет в разделе «{heading}».",
     "deleteNetworkIssue": "Удалить сетевую проблему",
     "areYouSureYouWant": "Вы уверены, что хотите удалить эту сетевую проблему? Это действие нельзя отменить.",
-    "open": "Открыто",
-    "openIssues": "Открытые проблемы",
-    "scheduled": "Запланировано",
-    "scheduledIssues": "Запланированные проблемы",
-    "resolved": "Решено",
-    "resolvedIssues": "Решённые проблемы"
+    "searchNetworkIssues": "Поиск по сетевым проблемам"
   },
   "predefinedReplies": {
     "predefinedReplies": "Готовые ответы",

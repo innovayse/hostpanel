@@ -1,5 +1,4 @@
 using System.Globalization;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Support.Common;
@@ -65,17 +64,7 @@ public sealed class ListPublishedKbArticlesHandler
             articles = articles.Where(a => inCategory.Contains(a.CategoryId));
         }
 
-        // EF.Functions.Like rather than the Npgsql-only ILike: Application does not reference the
-        // Npgsql provider package, and lower-casing both sides gives the case-insensitive match.
-        // The term is escaped so a typed %, _ or backslash matches itself instead of widening the search.
-        var search = query.Search?.Trim();
-        if (!string.IsNullOrEmpty(search))
-        {
-            var term = LikePattern.Contains(search);
-            articles = articles.Where(a => a.Translations.Any(t =>
-                EF.Functions.Like(t.Title.ToLower(), term, LikePattern.EscapeCharacter)
-                || EF.Functions.Like(t.Content.ToLower(), term, LikePattern.EscapeCharacter)));
-        }
+        articles = articles.MatchingText(query.Search);
 
         var totalCount = await articles.CountAsync(ct);
         var rows = await articles

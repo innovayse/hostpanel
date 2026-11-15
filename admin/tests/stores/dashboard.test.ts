@@ -137,11 +137,14 @@ describe('dashboardStore', () => {
 
   it('fetchOverview fills every section from its list', async () => {
     const page = { items: [{ id: 1, priority: 'High' }, { id: 2, priority: 'Low' }], pageNumber: 1, pageSize: 5, totalCount: 2, totalPages: 1 }
-    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(url.includes('/admin/servers') ? json([{ id: 1 }]) : json(page))))
+    const fetchMock = vi.fn((url: string) => Promise.resolve(url.includes('/admin/servers') ? json([{ id: 1 }]) : json(page)))
+    vi.stubGlobal('fetch', fetchMock)
     const store = useDashboardStore()
 
     await store.fetchOverview()
     expect(store.overview.servers).toEqual([{ id: 1 }])
+    // The capacity card needs every server, so it reads the unpaged lookup and not a page of the list.
+    expect(fetchMock.mock.calls.map(call => String(call[0]))).toContain('/api/admin/servers/options')
     expect(store.overview.pendingOrders).toBe(2)
     expect(store.overview.urgentTickets).toEqual([{ id: 1, priority: 'High' }])
     expect(store.overviewError).toBeNull()

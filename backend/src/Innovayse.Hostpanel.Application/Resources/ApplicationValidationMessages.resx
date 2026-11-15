@@ -391,14 +391,11 @@
   <data name="EmailLogPageSizeRange" xml:space="preserve">
     <value>Page size must be between 1 and 100.</value>
   </data>
-  <data name="GatewayLogPageRequired" xml:space="preserve">
-    <value>Page must be 1 or greater.</value>
-  </data>
-  <data name="GatewayLogPageSizeRange" xml:space="preserve">
-    <value>Page size must be between 1 and 100.</value>
-  </data>
   <data name="TicketPeriodInvalid" xml:space="preserve">
     <value>The period is not a recognised reporting period.</value>
+  </data>
+  <data name="GatewayLogResultInvalid" xml:space="preserve">
+    <value>Result must be one of: Payment, Refund, Credit, Pending.</value>
   </data>
   <data name="KbArticleIdInvalid" xml:space="preserve">
     <value>The article id must be a positive number.</value>
@@ -417,15 +414,6 @@
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>The category can be at most {0} characters.</value>
-  </data>
-  <data name="KbArticleSearchTooLong" xml:space="preserve">
-    <value>The search text can be at most {0} characters.</value>
-  </data>
-  <data name="KbArticlePageRequired" xml:space="preserve">
-    <value>Page must be 1 or greater.</value>
-  </data>
-  <data name="KbArticlePageSizeRange" xml:space="preserve">
-    <value>Page size must be between 1 and 100.</value>
   </data>
   <data name="KbCategoryIdInvalid" xml:space="preserve">
     <value>The category id must be a positive number.</value>
@@ -1171,9 +1159,6 @@
   <data name="ActivityLogClientIdInvalid" xml:space="preserve">
     <value>Provide a valid client id.</value>
   </data>
-  <data name="ActivityLogFilterTooLong" xml:space="preserve">
-    <value>A search filter can be at most 200 characters.</value>
-  </data>
   <data name="DateRangeInvalid" xml:space="preserve">
     <value>The end date cannot be before the start date.</value>
   </data>
@@ -1749,5 +1734,17 @@
   </data>
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Status must be one of: Draft, Scheduled, Sending, Sent.</value>
+  </data>
+  <data name="ServerListModuleInvalid" xml:space="preserve">
+    <value>Module must be one of: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  </data>
+  <data name="ServerListStateInvalid" xml:space="preserve">
+    <value>State must be one of: Online, Offline, Untested.</value>
+  </data>
+  <data name="ProductListTypeInvalid" xml:space="preserve">
+    <value>Type must be one of: SharedHosting, Vps, Dedicated, Domain, Ssl, Other, Email, Addon, Backup, Digital.</value>
+  </data>
+  <data name="ProductListStatusInvalid" xml:space="preserve">
+    <value>Status must be one of: Active, Inactive.</value>
   </data>
 </root>

@@ -5,11 +5,10 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Notifications.Queries.ListEmailLogs;
 
 /// <summary>
-/// Validates <see cref="ListEmailLogsQuery"/> before it reaches the handler. The handler itself
-/// clamps page and page size, so this exists only to document that the absence of stricter rules
-/// was decided, not overlooked.
+/// Validates <see cref="ListEmailLogsQuery"/>: the page, page size, search and period every list shares
+/// (<see cref="PeriodListQueryValidator{T}"/>); the query has no member of its own that needs a rule.
 /// </summary>
-public sealed class ListEmailLogsValidator : LocalizedValidator<ListEmailLogsQuery>
+public sealed class ListEmailLogsValidator : PeriodListQueryValidator<ListEmailLogsQuery>
 {
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>

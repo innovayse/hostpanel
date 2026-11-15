@@ -8,7 +8,7 @@ namespace Innovayse.Hostpanel.Application.Common.Extensions;
 /// <summary>
 /// The one way a list applies the text a person typed into its search box: a case-insensitive "contains" match
 /// over the columns the list names, ahead of ordering and paging. The term is data, not a pattern: its <c>%</c>,
-/// <c>_</c> and escape characters match themselves (<see cref="LikePattern"/>). A blank term leaves the query as it is.
+/// <c>_</c> and escape characters match themselves (<see cref="LikePattern"/>). A blank term leaves the query as it is. A row that has text per language (a child collection) is searched by the overload that takes the children.
 /// </summary>
 public static class TextSearchExtensions
 {
@@ -51,6 +51,48 @@ public static class TextSearchExtensions
         return source.SearchCore(term, idColumn, columns);
     }
 
+    /// <summary>
+    /// Keeps the rows that have at least one child whose columns contain the search text, in any letter case: a row with
+    /// text per language is found by what it says in any of them. The match is an <c>EXISTS</c> over the children, so a
+    /// row that matches in several of them is still listed once.
+    /// </summary>
+    /// <typeparam name="T">The row type.</typeparam>
+    /// <typeparam name="TChild">The type of the rows' children (for example a translation).</typeparam>
+    /// <param name="source">The query to narrow.</param>
+    /// <param name="term">What the person typed; blank means no search.</param>
+    /// <param name="children">Selects the children of a row.</param>
+    /// <param name="columns">The text to look in on a child, one selector each.</param>
+    /// <returns>The query narrowed by the search, or <paramref name="source"/> when the term is blank.</returns>
+    public static IQueryable<T> SearchChildren<T, TChild>(
+        this IQueryable<T> source,
+        string? term,
+        Expression<Func<T, IEnumerable<TChild>>> children,
+        params Expression<Func<TChild, string?>>[] columns)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(children);
+        ArgumentNullException.ThrowIfNull(columns);
+
+        if (string.IsNullOrWhiteSpace(term))
+        {
+            return source;
+        }
+
+        var holder = Expression.Constant(new TextSearchTerm(LikePattern.Contains(term.Trim()), null));
+        var child = Expression.Parameter(typeof(TChild), "child");
+        var matchesChild = LikeAnyOf(child, holder, columns) ?? Expression.Constant(false);
+        var row = Expression.Parameter(typeof(T), "row");
+        var childrenOfRow = new ParameterReplacer(children.Parameters[0], row).Visit(children.Body);
+        var any = Expression.Call(
+            typeof(Enumerable),
+            nameof(Enumerable.Any),
+            [typeof(TChild)],
+            childrenOfRow,
+            Expression.Lambda<Func<TChild, bool>>(matchesChild, child));
+
+        return source.Where(Expression.Lambda<Func<T, bool>>(any, row));
+    }
+
     /// <summary>Builds and applies the search predicate shared by both entry points.</summary>
     /// <typeparam name="T">The row type.</typeparam>
     /// <param name="source">The query to narrow.</param>
@@ -75,6 +117,28 @@ public static class TextSearchExtensions
         int? id = idColumn is not null && int.TryParse(trimmed, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
         var holder = Expression.Constant(new TextSearchTerm(LikePattern.Contains(trimmed), id));
         var row = Expression.Parameter(typeof(T), "row");
+        var predicate = LikeAnyOf(row, holder, columns);
+
+        if (idColumn is not null)
+        {
+            var rowId = new ParameterReplacer(idColumn.Parameters[0], row).Visit(idColumn.Body);
+            var sameId = Expression.Equal(Expression.Convert(rowId, typeof(int?)), Expression.Property(holder, nameof(TextSearchTerm.Id)));
+            predicate = predicate is null ? sameId : Expression.OrElse(sameId, predicate);
+        }
+
+        // No column and no id column: there is nothing to look in, so the search cannot match anything.
+        return source.Where(Expression.Lambda<Func<T, bool>>(predicate ?? Expression.Constant(false), row));
+    }
+
+    /// <summary>Builds "any of the columns of the row contains the term": one case-insensitive <c>LIKE</c> per column, joined by <c>OR</c>.</summary>
+    /// <typeparam name="TRow">The row type the column selectors read.</typeparam>
+    /// <param name="row">The parameter of the lambda the predicate becomes the body of; every selector is rewritten to read it.</param>
+    /// <param name="holder">The prepared search term, whose pattern the <c>LIKE</c> compares with.</param>
+    /// <param name="columns">The text to look in, one selector each.</param>
+    /// <returns>The joined predicate, or <see langword="null"/> when no column is given.</returns>
+    private static Expression? LikeAnyOf<TRow>(
+        ParameterExpression row, ConstantExpression holder, Expression<Func<TRow, string?>>[] columns)
+    {
         var functions = Expression.Property(null, typeof(EF), nameof(EF.Functions));
 
         Expression? predicate = null;
@@ -90,14 +154,6 @@ public static class TextSearchExtensions
             predicate = predicate is null ? like : Expression.OrElse(predicate, like);
         }
 
-        if (idColumn is not null)
-        {
-            var rowId = new ParameterReplacer(idColumn.Parameters[0], row).Visit(idColumn.Body);
-            var sameId = Expression.Equal(Expression.Convert(rowId, typeof(int?)), Expression.Property(holder, nameof(TextSearchTerm.Id)));
-            predicate = predicate is null ? sameId : Expression.OrElse(sameId, predicate);
-        }
-
-        // No column and no id column: there is nothing to look in, so the search cannot match anything.
-        return source.Where(Expression.Lambda<Func<T, bool>>(predicate ?? Expression.Constant(false), row));
+        return predicate;
     }
 }

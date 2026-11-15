@@ -12,6 +12,8 @@ Go to **Support → Announcements**. Subtitle: "Manage client-facing announcemen
 
 **Columns:** Date, Title, Published.
 
+The search box looks in the title and the content, in any letter case. The **Filters** button opens the **Published** filter (Any, Published or Draft). The applied filter shows as a chip that you can remove. The search, the filter and the page stay in the address, so a link opens the same list. The list is paged and shows the newest announcement first.
+
 Click **Add New Announcement** and fill in the form:
 
 | Field | Notes |
@@ -50,7 +52,7 @@ Click **Add Article** and fill in:
 
 The article gets a short address (its **slug**) from its title in the default language, for example `getting-started`. The slug is fixed once the article exists, even when the title is changed, so links to the article keep working. Clients can open an article by its slug or by its number.
 
-Below the form, **Articles** lists every article with its title, slug, category and status (Published or Draft). Use **Edit** on a row to change its category or add and change its languages; the **Published** box is not part of editing.
+Below the form, **Articles** lists every article with its title, slug, category and status (Published or Draft), one page at a time. The search box looks in the title and the text of the article in every language, in any letter case; the **Filters** button opens the **Category** and **Status** (Published or Draft) filters, and each applied filter shows as a chip that you can remove. The search, the filters and the page stay in the address. Use **Edit** on a row to change its category or add and change its languages; the **Published** box is not part of editing.
 
 An article that does not exist returns `KBARTICLE_NOT_FOUND`.
 

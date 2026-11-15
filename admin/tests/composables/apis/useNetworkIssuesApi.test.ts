@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useNetworkIssuesApi } from '@/composables/apis/useNetworkIssuesApi'
 import { json, stubFetch, callOf } from '../../helpers/fetch'
-import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueTab, NetworkIssueType } from '@/types/networkissue'
+import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -25,18 +25,27 @@ const payload = {
 }
 
 describe('useNetworkIssuesApi', () => {
-  it('listNetworkIssues sends paging and the tab statuses, dropping an empty tab', async () => {
+  it('listNetworkIssues sends paging alone when no filter is set', async () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
-    const api = useNetworkIssuesApi()
 
-    await api.listNetworkIssues({ page: 1, pageSize: 20, status: NetworkIssueTab.Open })
-    await api.listNetworkIssues({ page: 1, pageSize: 20, status: NetworkIssueTab.Resolved })
-    await api.listNetworkIssues({ page: 1, pageSize: 20, status: null })
-    expect(callOf(mock, 0).url).toBe(
-      `/api/network-issues?page=1&pageSize=20&statuses=${NetworkIssueStatus.Reported}&statuses=${NetworkIssueStatus.Investigating}`,
-    )
-    expect(callOf(mock, 1).url).toBe(`/api/network-issues?page=1&pageSize=20&statuses=${NetworkIssueStatus.Resolved}`)
-    expect(callOf(mock, 2).url).toBe('/api/network-issues?page=1&pageSize=20')
+    await useNetworkIssuesApi().listNetworkIssues({ page: 1, pageSize: 20 })
+
+    expect(callOf(mock).url).toBe('/api/network-issues?page=1&pageSize=20')
+  })
+
+  it('listNetworkIssues sends the search and one status, type and priority', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+
+    await useNetworkIssuesApi().listNetworkIssues({
+      page: 2,
+      pageSize: 20,
+      search: 'loss',
+      status: NetworkIssueStatus.Resolved,
+      type: NetworkIssueType.Other,
+      priority: NetworkIssuePriority.High,
+    })
+
+    expect(callOf(mock).url).toBe('/api/network-issues?page=2&pageSize=20&search=loss&status=Resolved&type=Other&priority=High')
   })
 
   it('getNetworkIssue reads one issue', async () => {

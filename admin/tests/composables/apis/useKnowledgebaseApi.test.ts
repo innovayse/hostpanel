@@ -20,9 +20,16 @@ describe('useKnowledgebaseApi', () => {
     const api = useKnowledgebaseApi()
 
     await api.listCategories()
-    await api.listArticles()
+    await api.listArticles({ page: 1, pageSize: 20 })
     expect(callOf(mock, 0).url).toBe('/api/admin/knowledgebase/categories')
-    expect(callOf(mock, 1).url).toBe('/api/admin/knowledgebase')
+    expect(callOf(mock, 1).url).toBe('/api/admin/knowledgebase?page=1&pageSize=20')
+  })
+
+  it('listArticles sends the search, the category and the published state that are set', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+
+    await useKnowledgebaseApi().listArticles({ page: 2, pageSize: 20, search: 'invoice', categoryId: 3, isPublished: true })
+    expect(callOf(mock).url).toBe('/api/admin/knowledgebase?page=2&pageSize=20&search=invoice&categoryId=3&isPublished=true')
   })
 
   it('createCategory POSTs the payload and returns the id', async () => {

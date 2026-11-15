@@ -12,9 +12,11 @@ Go to **Servers** to manage provisioning servers and load-balancing groups. Subt
 
 ## The server list
 
-Servers are grouped by module in one table per module. Each row shows **Server Name**, **IP Address**, **Accounts**, **Status**, and **Actions**. Click **Edit** on a row to open its settings. When the connection is healthy the status reads "Online · _n_ accounts · _version_".
+Servers are listed by name as cards, 20 to a page. Each card shows **Server Name**, **IP Address**, **Accounts**, **Status**, and **Actions**. Click **Edit** on a row to open its settings. When the connection is healthy the status reads "Online · _n_ accounts · _version_".
 
 **Status badges:** Online, Offline, Not tested.
+
+Type part of a name, host name or IP address in the search box to find a server. The **Filters** button narrows the list by module and by status (Online, Offline or Not tested); applied filters show as chips you can remove. The search, the filters and the page stay in the address, so a link or a reload opens the same list. Search treats `%` and `_` as ordinary characters. Screens that need to choose a server (the group form, adding an existing service, a service's server and the CWP7 page) and the dashboard's capacity card read every server regardless of the page.
 
 **Row actions:** Test Connection, SSH (opens the SSH key management dialog), Edit, Delete.
 

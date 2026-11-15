@@ -1,5 +1,5 @@
 import type { Invoice } from '@/types/invoice'
-import type { ServerDto } from '@/types/server'
+import type { ServerOptionDto } from '@/types/server'
 import type { TicketListItem } from '@/types/ticket'
 
 /** The lists the dashboard panels read besides the headline statistics; each is empty until loaded. */
@@ -15,5 +15,5 @@ export interface DashboardOverview {
   /** Open tickets of high priority. */
   urgentTickets: TicketListItem[]
   /** Servers with their capacity and last test result. */
-  servers: ServerDto[]
+  servers: ServerOptionDto[]
 }

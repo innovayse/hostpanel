@@ -62,5 +62,9 @@
     "cidr": "Диапазон IP (CIDR)",
     "emailDomain": "Домен e-mail",
     "country": "Страна"
+  },
+  "emailLogOutcomeOptions": {
+    "delivered": "Доставлено",
+    "failed": "Не доставлено"
   }
 }

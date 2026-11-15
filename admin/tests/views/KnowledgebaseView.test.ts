@@ -11,6 +11,14 @@ import { mountView } from '../helpers/mount'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { pickOption } from '../helpers/select'
 
+/**
+ * Builds the page of the article list the API answers.
+ *
+ * @param items - The articles of the page.
+ * @returns The response.
+ */
+const pageOf = (items: unknown[]) => json({ items, pageNumber: 1, pageSize: 20, totalCount: items.length, totalPages: 1 })
+
 /** One category as the endpoint returns it. */
 const category = { id: 1, name: 'Billing', description: 'Invoices and payments', isHidden: true, parentCategoryId: null, articleCount: 3, slug: 'billing' }
 
@@ -140,7 +148,7 @@ describe('KnowledgebaseView', () => {
     let refuse = true
     stubRoutes({
       'GET /api/admin/knowledgebase/categories': () => (refuse ? problem('Not allowed.', 403) : json([category])),
-      'GET /api/admin/knowledgebase': () => json([]),
+      'GET /api/admin/knowledgebase': () => pageOf([]),
     })
     const wrapper = await mountView(KnowledgebaseView)
 
@@ -175,12 +183,14 @@ const STORED_ARTICLE = {
 const mountArticles = async (articles: unknown[] = []) => {
   const mock = stubRoutes({
     'GET /api/admin/knowledgebase/categories': () => json(CATEGORIES),
-    'GET /api/admin/knowledgebase': () => json(articles),
+    'GET /api/admin/knowledgebase': () => pageOf(articles),
     'POST /api/admin/knowledgebase': () => json(11, 201),
     'PUT /api/admin/knowledgebase/11': () => new Response(null, { status: 204 }),
   })
   const wrapper = await mountView(KnowledgebaseView)
   await wrapper.get('[data-testid="knowledgebase-tab-article"]').trigger('click')
+  // The article list loads itself when its tab appears.
+  await flushPromises()
   return { wrapper, mock }
 }
 
@@ -254,7 +264,7 @@ describe('KnowledgebaseView article form', () => {
   it('shows the sentence of a refused save and keeps the form', async () => {
     const mock = stubRoutes({
       'GET /api/admin/knowledgebase/categories': () => json(CATEGORIES),
-      'GET /api/admin/knowledgebase': () => json([]),
+      'GET /api/admin/knowledgebase': () => pageOf([]),
       'POST /api/admin/knowledgebase': () => problem('Check the form.', 400),
     })
     const wrapper = await mountView(KnowledgebaseView)
@@ -275,10 +285,11 @@ describe('KnowledgebaseView article list loading', () => {
     let refuse = true
     stubRoutes({
       'GET /api/admin/knowledgebase/categories': () => json(CATEGORIES),
-      'GET /api/admin/knowledgebase': () => (refuse ? problem('Not allowed.', 403) : json([STORED_ARTICLE])),
+      'GET /api/admin/knowledgebase': () => (refuse ? problem('Not allowed.', 403) : pageOf([STORED_ARTICLE])),
     })
     const wrapper = await mountView(KnowledgebaseView)
     await wrapper.get('[data-testid="knowledgebase-tab-article"]').trigger('click')
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="knowledgebase-articles-error"]').text()).toContain('Not allowed.')
     expect(wrapper.find('[data-testid="knowledgebase-articles-empty"]').exists()).toBe(false)
@@ -301,6 +312,12 @@ describe('KnowledgebaseView article list loading', () => {
 
     expect(wrapper.find('[data-testid="knowledgebase-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="knowledgebase-category-3"]').exists()).toBe(true)
+
+    await wrapper.get('[data-testid="knowledgebase-tab-article"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="knowledgebase-error"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="knowledgebase-articles-error"]').text()).toContain('Not allowed.')
   })
 
   it('labels the save button Save Article for a new article and Save Changes while editing', async () => {
@@ -370,6 +387,20 @@ describe('KnowledgebaseView article list and editing', () => {
     })
     expect(wrapper.get('[data-testid="knowledgebase-feedback"]').text()).toBe('Article saved.')
     expect(wrapper.find('[data-testid="knowledgebase-article-cancel"]').exists()).toBe(false)
+    // The store no longer re-reads the list itself: the screen asks the article list to read its page again.
+    const listReads = mock.mock.calls.filter(([url, init]) => (init as RequestInit | undefined)?.method === undefined && String(url).startsWith('/api/admin/knowledgebase?'))
+    expect(listReads).toHaveLength(2)
+  })
+
+  it('reads the article list again after a new article is created', async () => {
+    const { wrapper, mock } = await mountArticles()
+    await fillEnglish(wrapper)
+
+    await wrapper.get('[data-testid="knowledgebase-article-save"]').trigger('click')
+    await flushPromises()
+
+    const listReads = mock.mock.calls.filter(([url, init]) => (init as RequestInit | undefined)?.method === undefined && String(url).startsWith('/api/admin/knowledgebase?'))
+    expect(listReads).toHaveLength(2)
   })
 
   it('cancel leaves edit mode and empties the form', async () => {

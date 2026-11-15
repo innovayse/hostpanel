@@ -1,13 +1,12 @@
 using System.Linq.Expressions;
-using Innovayse.Hostpanel.Application.Common.Extensions;
 
-namespace Innovayse.Hostpanel.Application.Billing.Extensions;
+namespace Innovayse.Hostpanel.Application.Common.Extensions;
 
 /// <summary>
-/// The one way a billing list narrows its rows to the calendar days typed into its filter. The days are bare dates, turned
+/// The one way a list narrows its rows to the calendar days typed into its filter. The days are bare dates, turned
 /// into UTC instants by <see cref="DateOnlyExtensions"/> exactly as the reports do, so the range is the half-open window
-/// <c>[from 00:00, to + 1 day 00:00)</c> whatever zone the host runs in, and a range of one day lists that whole day. The
-/// invoice and transaction lists, the two that offer a "from" and a "to", agree on what "to" means because they both use this.
+/// <c>[from 00:00, to + 1 day 00:00)</c> whatever zone the host runs in, and a range of one day lists that whole day. Every
+/// list that offers a "from" and a "to" (invoices, transactions, the activity, gateway and email logs) agrees on what "to" means because they all use this.
 /// </summary>
 public static class DateRangeExtensions
 {

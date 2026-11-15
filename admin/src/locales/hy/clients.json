@@ -236,7 +236,8 @@
       "recipientRejected": "Ստացողի հասցեն մերժվեց",
       "senderRejected": "Ուղարկողի հասցեն մերժվեց",
       "messageRejected": "Նամակը մերժվեց"
-    }
+    },
+    "searchEmails": "Որոնել նամակներում"
   },
   "clientInvoices": {
     "createInvoice": "+ Ստեղծել հաշիվ",
@@ -260,11 +261,10 @@
   },
   "clientLog": {
     "activityLog": "Գործունեության մատյան",
-    "filterLog": "Մատյանի ֆիլտր",
-    "selectDate": "Ընտրեք ամսաթիվը",
     "logEntry": "Մատյանի գրառում",
     "user": "Օգտատեր",
-    "totalcountEntrValue": "Գրառումներ՝ {totalCount}"
+    "totalcountEntrValue": "Գրառումներ՝ {totalCount}",
+    "searchLog": "Որոնել գործունեության մատյանում"
   },
   "clientOpenTicket": {
     "ticketSubject": "Տոմսի թեմա",

@@ -31,8 +31,8 @@ public sealed class NetworkIssuesController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a paginated, optionally filtered list of network issues.</summary>
-    /// <param name="query">The paging window and optional status filter.</param>
+    /// <summary>Returns a paginated, searchable list of network issues, narrowed by status, type and priority.</summary>
+    /// <param name="query">The page, page size, search, status, type and priority to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 400 with <c>VALIDATION_ERROR</c> for a bad paging window or filter; 401 without a session

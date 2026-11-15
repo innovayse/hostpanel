@@ -236,7 +236,8 @@
       "recipientRejected": "Адрес получателя отклонён",
       "senderRejected": "Адрес отправителя отклонён",
       "messageRejected": "Письмо отклонено"
-    }
+    },
+    "searchEmails": "Поиск по письмам"
   },
   "clientInvoices": {
     "createInvoice": "+ Создать счёт",
@@ -260,11 +261,10 @@
   },
   "clientLog": {
     "activityLog": "Журнал активности",
-    "filterLog": "Фильтр журнала",
-    "selectDate": "Выберите дату",
     "logEntry": "Запись журнала",
     "user": "Пользователь",
-    "totalcountEntrValue": "Записей: {totalCount}"
+    "totalcountEntrValue": "Записей: {totalCount}",
+    "searchLog": "Поиск по журналу активности"
   },
   "clientOpenTicket": {
     "ticketSubject": "Тема тикета",

@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import DashboardServerLoad from '@/components/dashboard/DashboardServerLoad.vue'
-import type { ServerDto } from '@/types/server'
+import type { ServerOptionDto } from '@/types/server'
 import { mountWithApp } from '../../helpers/mount'
 
 /**
@@ -15,8 +15,8 @@ import { mountWithApp } from '../../helpers/mount'
  * @param maxAccounts - Capacity limit.
  * @returns The server.
  */
-const server = (id: number, name: string, accountsCount: number | null, maxAccounts: number | null): ServerDto =>
-  ({ id, name, accountsCount, limits: { maxAccounts, isDefault: false, isDisabled: false } }) as ServerDto
+const server = (id: number, name: string, accountsCount: number | null, maxAccounts: number | null): ServerOptionDto =>
+  ({ id, name, accountsCount, limits: { maxAccounts, isDefault: false, isDisabled: false } }) as ServerOptionDto
 
 describe('DashboardServerLoad', () => {
   it('shows a bar per measurable server, most loaded first', () => {

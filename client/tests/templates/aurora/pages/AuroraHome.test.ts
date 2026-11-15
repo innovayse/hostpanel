@@ -12,6 +12,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import AuroraHome from '~/templates/aurora/pages/AuroraHome.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { SETTING_OFF, SETTING_ON } from '~/constants/settingValue'
 import { PricingCycle } from '~/types/pricingcycle'
 import { stubAuroraGlobals, PLANS } from '../auroraGlobals'
 
@@ -73,7 +74,7 @@ describe('AuroraHome', () => {
   })
 
   it('hides a section whose homepage switch is off and keeps the others', async () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionStats]: 'false', [PortalSettingKey.SectionFaq]: 'false', [PortalSettingKey.SectionCta]: 'false' } })
+    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionStats]: SETTING_OFF, [PortalSettingKey.SectionFaq]: SETTING_OFF, [PortalSettingKey.SectionCta]: SETTING_OFF } })
     const wrapper = await mountAfterReads(
       stub,
       [StorefrontPath.Partners, StorefrontPath.Locations, StorefrontPath.Testimonials],
@@ -90,9 +91,9 @@ describe('AuroraHome', () => {
   it('shows one partners section while either the Partners or the Trusted switch is on', async () => {
     const cases: Array<[Record<string, string>, number]> = [
       [{}, 1],
-      [{ [PortalSettingKey.SectionPartners]: 'false' }, 1],
-      [{ [PortalSettingKey.SectionTrusted]: 'false' }, 1],
-      [{ [PortalSettingKey.SectionPartners]: 'false', [PortalSettingKey.SectionTrusted]: 'false' }, 0],
+      [{ [PortalSettingKey.SectionPartners]: SETTING_OFF }, 1],
+      [{ [PortalSettingKey.SectionTrusted]: SETTING_OFF }, 1],
+      [{ [PortalSettingKey.SectionPartners]: SETTING_OFF, [PortalSettingKey.SectionTrusted]: SETTING_OFF }, 0],
     ]
 
     replies[readOf(StorefrontPath.Partners)] = { body: [partnerFixture(1), partnerFixture(2)] }
@@ -109,7 +110,7 @@ describe('AuroraHome', () => {
   })
 
   it('needs both the prop and the switch for the process section', async () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionProcess]: 'false' } })
+    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionProcess]: SETTING_OFF } })
     const switchedOff = mountWithKit(AuroraHome)
     expect(switchedOff.find('#process').exists()).toBe(false)
 
@@ -122,7 +123,7 @@ describe('AuroraHome', () => {
   })
 
   it('shows the portfolio projects only when their switch is on', async () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionProjects]: 'true' } })
+    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionProjects]: SETTING_ON } })
     const wrapper = await mountAfterReads(stub, [StorefrontPath.Projects], () => mountWithKit(AuroraHome))
 
     expect(wrapper.exists()).toBe(true)

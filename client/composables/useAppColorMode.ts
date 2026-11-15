@@ -5,6 +5,7 @@
  */
 
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { SETTING_ON } from '~/constants/settingValue'
 import {
   COLOR_MODE_COOKIE,
   COLOR_MODE_COOKIE_MAX_AGE,
@@ -47,7 +48,7 @@ export const useAppColorMode = () => {
 
   /** Whether the sun/moon switch is rendered at all. */
   const userToggleEnabled = computed(() =>
-    isUserToggleEnabled(get(PortalSettingKey.ThemeUserToggle, 'portalThemeUserToggle', 'true')))
+    isUserToggleEnabled(get(PortalSettingKey.ThemeUserToggle, 'portalThemeUserToggle', SETTING_ON)))
 
   /**
    * Whether the visitor has made a choice of their own. Shared state rather than the

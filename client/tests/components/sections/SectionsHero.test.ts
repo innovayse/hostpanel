@@ -2,23 +2,16 @@
  * Unit tests for SectionsHero: the hosting headline, the domain search as the main action, the
  * secondary plans action, the operator badge and the operator-set figures (hidden while empty).
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsHero from '~/components/sections/SectionsHero.vue'
 import SectionsDomainSearch from '~/components/sections/SectionsDomainSearch.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 /** All three figures set. */
 const ALL_FIGURES: Record<string, string> = {
@@ -32,14 +25,8 @@ const mountHero = () => mountWithKit(SectionsHero, { components: { SectionsDomai
 
 describe('SectionsHero', () => {
   beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
     stubPublicPageRuntime()
     await loadPortalSettings(replies, ALL_FIGURES)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('shows the headline as the page heading, with the badge and subtitle', () => {

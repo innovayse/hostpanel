@@ -14,6 +14,7 @@ import {
   parseColorModeSetting,
   resolveColorMode,
 } from '~/utils/colorMode'
+import { SETTING_OFF, SETTING_ON } from '~/constants/settingValue'
 import { ColorMode } from '~/types/colormode'
 import { ColorModeSystem } from '~/types/colormodesystem'
 
@@ -63,8 +64,8 @@ describe('resolveColorMode', () => {
 
 describe('isUserToggleEnabled', () => {
   it('hides the switch only on the literal false', () => {
-    expect(isUserToggleEnabled('false')).toBe(false)
-    expect(isUserToggleEnabled('true')).toBe(true)
+    expect(isUserToggleEnabled(SETTING_OFF)).toBe(false)
+    expect(isUserToggleEnabled(SETTING_ON)).toBe(true)
     expect(isUserToggleEnabled('')).toBe(true)
     expect(isUserToggleEnabled(undefined)).toBe(true)
   })

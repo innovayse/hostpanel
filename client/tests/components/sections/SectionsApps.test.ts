@@ -2,39 +2,22 @@
  * Unit tests for SectionsApps: the fixed categories always show, the count line only when the
  * operator set a count.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import SectionsApps from '~/components/sections/SectionsApps.vue'
 import { useInstallerApps } from '~/composables/useInstallerApps'
 import { InstallerAppCategory } from '~/constants/installerAppCategory'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useInstallerApps })
 
 /** The operator's installer count setting, as written. */
 const COUNT_SET: Record<string, string> = { [PortalSettingKey.InstallerAppCount]: '150+' }
 
 describe('SectionsApps', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    vi.stubGlobal('useInstallerApps', useInstallerApps)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('shows one card per category', async () => {
     await loadPortalSettings(replies, COUNT_SET)
 

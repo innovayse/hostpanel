@@ -3,16 +3,13 @@
  * filtering, the preview limit, the header, the contact card, and the section hiding itself when
  * there are no questions.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import SectionsFAQ from '~/components/sections/SectionsFAQ.vue'
 import { useTemplate } from '~/composables/useTemplate'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
@@ -23,11 +20,8 @@ import { FaqCategory } from '~/types/faqcategory'
 import type { FAQ } from '~/types/faq'
 import { faqCategorySlug } from '~/utils/faqCategory'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** What the stub answers, by route; the tests below change the questions it serves. */
-const replies: StubRouteTable = {}
+/** The stub playing the BFF and what it answers, by route; the hooks start it before each test and close it after. */
+const { replies, stub } = usePortalSettingsServer({ useTemplate })
 
 /**
  * Makes the stub serve these questions.
@@ -54,7 +48,7 @@ const FAQS = [
  * @returns The wrapper.
  */
 const mountFaq = (props: Record<string, unknown> = {}) =>
-  mountAfterReads(stub, [StorefrontPath.Faqs], () =>
+  mountAfterReads(stub(), [StorefrontPath.Faqs], () =>
     mountWithKit(SectionsFAQ, { props, components: { MarketingSectionHeader, ...CLASSIC_COMPONENTS } }))
 
 /**
@@ -67,16 +61,9 @@ const questionCount = (wrapper: Awaited<ReturnType<typeof mountFaq>>): number =>
 
 describe('SectionsFAQ', () => {
   beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
     stubPublicPageRuntime()
-    vi.stubGlobal('useTemplate', useTemplate)
     serve(FAQS)
     await loadPortalSettings(replies, { [PortalSettingKey.Template]: TemplateName.Aurora })
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('shows every question under the "all" tab at first, with every answer closed', async () => {

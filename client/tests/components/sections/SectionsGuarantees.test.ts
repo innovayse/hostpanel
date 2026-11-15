@@ -1,24 +1,17 @@
 /**
  * Unit tests for SectionsGuarantees: one card per guarantee that is set and no section when none is.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { loadPortalSettings } from '~/tests/helpers/portalSettings'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import SectionsGuarantees from '~/components/sections/SectionsGuarantees.vue'
 import { useGuarantees } from '~/composables/useGuarantees'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SETTING_ON } from '~/constants/settingValue'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 
-/** The stub playing the BFF; it answers the operator's settings read. */
-let stub: StubServer
-
-/** What the stub answers, by route. */
-const replies: StubRouteTable = {}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useGuarantees })
 
 /** Free migration on and a 30 day money-back period; the no-hidden-fees promise is left unset. */
 const SET_GUARANTEES: Record<string, string> = {
@@ -27,16 +20,6 @@ const SET_GUARANTEES: Record<string, string> = {
 }
 
 describe('SectionsGuarantees', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
-    vi.stubGlobal('useGuarantees', useGuarantees)
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('shows a card for each guarantee that is set', async () => {
     await loadPortalSettings(replies, SET_GUARANTEES)
 

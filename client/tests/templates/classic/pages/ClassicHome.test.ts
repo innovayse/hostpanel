@@ -2,11 +2,14 @@
  * Unit tests for ClassicHome: the hidden H1, the marketing sections in hosting-site order, and
  * the per-section visibility toggles.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, ref } from 'vue'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { homeSectionSettings, loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { useHomeSections } from '~/composables/useHomeSections'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
 import { HOME_SECTION_DEFAULT, HomeSection } from '~/constants/homeSection'
+import { SETTING_OFF } from '~/constants/settingValue'
 import ClassicHome from '~/templates/classic/pages/ClassicHome.vue'
 
 /** Names of the section components the home page composes, in the order they appear. */
@@ -27,19 +30,17 @@ const SECTION_NAMES = [
   'SectionsCTA',
 ]
 
-/** The sections the test has switched off; empty means the defaults apply. */
-const switchedOff = ref<Set<HomeSection>>(new Set())
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useHomeSections })
 
-/** The visibility composable, answering from the section defaults and the test's overrides. */
-vi.stubGlobal('useHomeSections', () => ({
-  /**
-   * Stands in for the visibility composable: the defaults, minus whatever the test switched off.
-   *
-   * @param section The section asked about.
-   * @returns Whether it is shown.
-   */
-  isVisible: (section: HomeSection): boolean => HOME_SECTION_DEFAULT[section] && !switchedOff.value.has(section),
-}))
+/**
+ * Loads the operator's settings with these sections switched off, the rest left at their defaults.
+ *
+ * @param off The sections the operator has switched off.
+ * @returns Resolves once the settings are loaded into the shared state.
+ */
+const switchOff = (off: Iterable<HomeSection>): Promise<void> =>
+  loadPortalSettings(replies, homeSectionSettings(off, SETTING_OFF))
 
 /**
  * Builds a stand-in section that renders its own name, so order can be read from the DOM.
@@ -56,8 +57,8 @@ const sectionStub = (name: string) => defineComponent({
 describe('ClassicHome', () => {
   const components = Object.fromEntries(SECTION_NAMES.map((name) => [name, sectionStub(name)]))
 
-  beforeEach(() => {
-    switchedOff.value = new Set()
+  beforeEach(async () => {
+    await switchOff([])
   })
 
   it('renders the SEO heading visually hidden', () => {
@@ -82,8 +83,8 @@ describe('ClassicHome', () => {
     expect(order).toEqual(SECTION_NAMES)
   })
 
-  it('hides a section whose toggle is off and keeps the rest', () => {
-    switchedOff.value = new Set([HomeSection.Security])
+  it('hides a section whose toggle is off and keeps the rest', async () => {
+    await switchOff([HomeSection.Security])
 
     const wrapper = mountWithKit(ClassicHome, { components })
 
@@ -92,7 +93,7 @@ describe('ClassicHome', () => {
     expect(order).toEqual(SECTION_NAMES.filter((name) => name !== 'SectionsSecurity'))
   })
 
-  it('hides each toggleable section when its toggle is off', () => {
+  it('hides each toggleable section when its toggle is off', async () => {
     const toggled: Array<[HomeSection, string]> = [
       [HomeSection.Performance, 'SectionsPerformance'],
       [HomeSection.Plans, 'SectionsProducts'],
@@ -108,7 +109,7 @@ describe('ClassicHome', () => {
     ]
 
     for (const [section, name] of toggled) {
-      switchedOff.value = new Set([section])
+      await switchOff([section])
 
       const wrapper = mountWithKit(ClassicHome, { components })
 
@@ -116,7 +117,7 @@ describe('ClassicHome', () => {
     }
   })
 
-  it('shows the partners once, and hides them only when both the Partners and Trusted switches are off', () => {
+  it('shows the partners once, and hides them only when both the Partners and Trusted switches are off', async () => {
     const cases: Array<[HomeSection[], boolean]> = [
       [[], true],
       [[HomeSection.Partners], true],
@@ -125,7 +126,7 @@ describe('ClassicHome', () => {
     ]
 
     for (const [off, shown] of cases) {
-      switchedOff.value = new Set(off)
+      await switchOff(off)
 
       const wrapper = mountWithKit(ClassicHome, { components })
 
@@ -134,8 +135,8 @@ describe('ClassicHome', () => {
     }
   })
 
-  it('always shows the hero, which has no toggle', () => {
-    switchedOff.value = new Set(Object.values(HomeSection))
+  it('always shows the hero, which has no toggle', async () => {
+    await switchOff(Object.values(HomeSection))
 
     const wrapper = mountWithKit(ClassicHome, { components })
 

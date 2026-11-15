@@ -2205,7 +2205,7 @@ never moved. Without a new tag the version stays at the last release plus the co
    `git tag v0.6.0 <develop tip>`.
 2. **Push the tag:** `git push origin v0.6.0`. The tag must exist on GitHub before the merge, so the mirror carries
    it to GitLab with the `main` push. The tag push also starts `publish-dockerhub.yml`, which refuses to publish
-   until the tagged commit is an ancestor of `main` and has a green CI run (see step 4).
+   until the tagged commit is an ancestor of `main` and has a green CI run (see step 4), so a red run here is expected.
 3. **Merge the `develop` to `main` pull request with a merge commit.** Never squash or rebase: both create new
    commits, so the tagged commit would not be reachable from `main` and the image version would not see the tag.
 4. **The `main` build carries the version.** The mirror pushes `main` with the tags, and the GitLab API image job
@@ -2215,14 +2215,18 @@ never moved. Without a new tag the version stays at the last release plus the co
 5. **Deploy:** play `deploy:prod` (manual) once every test of the `main` pipeline is green. It pulls the images that
    pipeline built.
 
-**When the tag is missing.** If step 1 or 2 was skipped, or the tag was made on `main` after the merge, the API image
-job fails with `image-version: no release tag vMAJOR.MINOR.PATCH is reachable from HEAD`, the production images are
-not built and `deploy:prod` has nothing to pull. Nothing is ever built with the `0.0.0-dev` placeholder. To recover:
+**When the tag is missing.** What happens depends on whether any release tag is reachable. With no release tag at
+all (the first release), the API image job fails with `image-version: no release tag vMAJOR.MINOR.PATCH is reachable
+from HEAD`, the production images are not built and `deploy:prod` has nothing to pull; nothing is ever built with the
+`0.0.0-dev` placeholder. With an older release tag reachable, a skipped step 1 or 2 does not fail anything: the images
+build green but carry the previous version plus the commit id, which is wrong. A tag made on `main` after the merge
+starts the Docker Hub publisher on its own and passes its check, but the GitLab images of that main build already
+carry the old version. To recover:
 
 1. Tag the commit the release is built from (it must be reachable from `main`) and push the tag:
    `git tag v0.6.0 <that commit>`, then `git push origin v0.6.0`.
 2. Re-run the failed `Mirror to GitLab` run of `main` on GitHub, so the tag reaches GitLab. The tag push alone does not.
-3. Retry the failed image job in the existing GitLab pipeline of `main`, then go on with the Docker Hub re-run and the
+3. Re-run the image jobs in the existing GitLab pipeline of `main`, then go on with the Docker Hub re-run and the
    deploy from the list above. Never move or delete a pushed release tag to fix a mistake: cut the next patch version.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on

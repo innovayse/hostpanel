@@ -37,45 +37,39 @@ public sealed class InstallRegistryPluginHandler
     /// <summary>Stages the audit line.</summary>
     private readonly IActivityLogger _activityLogger;
 
-    /// <summary>Reads the trust setting and the licence key, and saves the audit line.</summary>
+    /// <summary>Reads the trust setting and saves the audit line.</summary>
     private readonly IHostpanelDbContext _db;
-
-    /// <summary>Decrypts the stored licence key.</summary>
-    private readonly ISecretSettingCipher _cipher;
 
     /// <summary>The version of the running Hostpanel build.</summary>
     private readonly IInstalledVersionProvider _hostVersion;
 
-    /// <summary>Makes sure this installation is verified by the registry before a restricted plugin is asked for.</summary>
-    private readonly RegistryInstanceEnrollment _enrollment;
+    /// <summary>Reads what this host is shown of the plugin: its page, its licence key and its versions.</summary>
+    private readonly RegistryPluginReader _reader;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="inspector">Reads what an archive claims about itself and which keys the operator added.</param>
     /// <param name="store">Checks and unpacks the package.</param>
     /// <param name="activityLogger">Stages the audit line.</param>
-    /// <param name="db">Reads the trust setting and the licence key, and saves the audit line.</param>
-    /// <param name="cipher">Decrypts the stored licence key.</param>
+    /// <param name="db">Reads the trust setting and saves the audit line.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build.</param>
-    /// <param name="enrollment">Makes sure this installation is verified by the registry before a restricted plugin is asked for.</param>
+    /// <param name="reader">Reads what this host is shown of the plugin: its page, its licence key and its versions.</param>
     public InstallRegistryPluginHandler(
         IPluginRegistryClient registry,
         IPluginPackageInspector inspector,
         IPluginPackageStore store,
         IActivityLogger activityLogger,
         IHostpanelDbContext db,
-        ISecretSettingCipher cipher,
         IInstalledVersionProvider hostVersion,
-        RegistryInstanceEnrollment enrollment)
+        RegistryPluginReader reader)
     {
         _registry = registry;
         _inspector = inspector;
         _store = store;
         _activityLogger = activityLogger;
         _db = db;
-        _cipher = cipher;
         _hostVersion = hostVersion;
-        _enrollment = enrollment;
+        _reader = reader;
     }
 
     /// <summary>Installs or stages the requested registry version and records it.</summary>
@@ -84,7 +78,7 @@ public sealed class InstallRegistryPluginHandler
     /// <returns>
     /// A result requiring a restart (carrying the staged version for an upgrade); <c>PLUGIN_REGISTRY_DISABLED</c>,
     /// <c>PLUGIN_REGISTRY_UNAVAILABLE</c>, <c>PLUGIN_REGISTRY_TIMED_OUT</c> or <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c> when the
-    /// registry cannot be used; <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> when it lists no such version (or has not published it yet);
+    /// registry cannot be used; <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> when it lists no such plugin or version (or has not published it yet);
     /// <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c> when the registry wants a good licence key;
     /// for a host only plugin <c>PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED</c>, <c>PLUGIN_REGISTRY_INSTANCE_REVOKED</c> or another
     /// <c>PLUGIN_REGISTRY_INSTANCE_*</c> or <c>PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED</c> failure of the registration or of a signed call;
@@ -103,29 +97,17 @@ public sealed class InstallRegistryPluginHandler
             .Select(s => s.Value)
             .FirstOrDefaultAsync(ct));
 
-        // Read once and sent with every registry call of this install; it is never logged or put in a refusal.
-        var licence = await _db.GetRegistryLicenceAsync(_cipher, command.PluginId, ct);
-
-        // How the plugin is distributed decides how it is asked for, so the registry page is read first. A plugin the
-        // registry does not list reads as a public one: the release lookup below then answers not found as it always did.
-        var page = await _registry.GetPluginAsync(command.PluginId, licence, ct);
-        if (page.IsFailure)
+        // The plugin is read the way the details page reads it (page, verification of this installation for a host only plugin,
+        // versions), once. A plugin the registry does not list is refused as not found, and the licence key it was read with is
+        // carried to the calls below, where it is never logged or put in a refusal.
+        var read = await _reader.ReadAsync(command.PluginId, ct);
+        if (read.IsFailure)
         {
-            return Result<PluginActionResultDto>.FailureCode(page.ErrorCode!);
+            return Result<PluginActionResultDto>.FailureCode(read.ErrorCode!);
         }
 
-        var distribution = page.Value?.Summary.Distribution ?? PluginRegistryDistribution.Download;
-        if (distribution == PluginRegistryDistribution.HostOnly)
-        {
-            // A restricted plugin is given only to a verified installation, and a licence key has no part in it: neither is sent.
-            var enrolled = await _enrollment.EnsureVerifiedAsync(force: false, ct);
-            if (enrolled.IsFailure)
-            {
-                return Result<PluginActionResultDto>.FailureCode(enrolled.ErrorCode!);
-            }
-
-            licence = null;
-        }
+        var (details, licence, versions) = read.Value!;
+        var distribution = details.Summary.Distribution;
 
         var found = await _registry.GetReleaseAsync(new RegistryPluginVersionRef(command.PluginId, command.Version, distribution), ct, licence);
         if (found.IsFailure)
@@ -141,15 +123,9 @@ public sealed class InstallRegistryPluginHandler
             return Result<PluginActionResultDto>.FailureCode(HostpanelErrorCodes.PLUGIN_REGISTRY_RESPONSE_INVALID);
         }
 
-        var listed = await _registry.ListVersionsAsync(command.PluginId, licence, ct, distribution);
-        if (listed.IsFailure)
-        {
-            return Result<PluginActionResultDto>.FailureCode(listed.ErrorCode!);
-        }
-
         // A release the registry serves but does not describe cannot be checked, so it is not installed.
         // A version listed more than once is judged by its strictest row.
-        var described = listed.Value!
+        var described = versions
             .Where(v => string.Equals(v.Version, command.Version, StringComparison.Ordinal))
             .OrderByDescending(v => v.Status.Strictness())
             .FirstOrDefault();

@@ -207,10 +207,11 @@ public sealed partial class ResourceCoverageTests
 
     /// <summary>
     /// Matches a localizer lookup by a literal key, <c>L["Key"]</c> or <c>L["Key", arg]</c> as a validator writes it,
-    /// or <c>_localizer["Key"]</c> as a handler holding the localizer in a field writes it.
+    /// or <c>_localizer["Key"]</c> as a handler holding the localizer in a field writes it, or
+    /// <c>localizer["Key"]</c> as a shared rule that is handed the localizer writes it.
     /// </summary>
     /// <returns>The compiled expression; group <c>key</c> is the resource key.</returns>
-    [GeneratedRegex("""\b(?:L|_localizer)\["(?<key>\w+)"\s*[,\]]""")]
+    [GeneratedRegex("""\b(?:L|_localizer|localizer)\["(?<key>\w+)"\s*[,\]]""")]
     private static partial Regex LocalizerLookup();
 
     /// <summary>Matches an XML documentation line, whose examples are not lookups.</summary>

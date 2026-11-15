@@ -37,7 +37,4 @@ public static class HttpBackstopTimeouts
 
     /// <summary>Domain registrar clients (Name.am and Namecheap).</summary>
     public static readonly TimeSpan Registrar = TimeSpan.FromSeconds(30);
-
-    /// <summary>Per-server WHM client used for disk-usage reporting.</summary>
-    public static readonly TimeSpan Whm = TimeSpan.FromSeconds(30);
 }

@@ -16,7 +16,8 @@ public static class PaymentReturnParameterExtensions
     /// </summary>
     /// <param name="returned">The names and values of the return request, in the order they arrived.</param>
     /// <returns>The parameters, empty when the return carried none.</returns>
-    public static IReadOnlyDictionary<string, string> ToPluginParameters(this IReadOnlyList<PaymentReturnParameterDto> returned)
+    public static IReadOnlyDictionary<string, string> ToPluginParameters(
+        this IReadOnlyList<PaymentReturnParameterDto> returned)
     {
         ArgumentNullException.ThrowIfNull(returned);
 

@@ -1750,8 +1750,8 @@
   <data name="PaymentReturnParametersTooMany" xml:space="preserve">
     <value>There are too many return parameters.</value>
   </data>
-  <data name="PaymentReturnParameterNameInvalid" xml:space="preserve">
-    <value>A return parameter needs a name of up to 64 characters.</value>
+  <data name="PaymentReturnParameterNameTooLong" xml:space="preserve">
+    <value>A return parameter name is limited to 64 characters.</value>
   </data>
   <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
     <value>A return parameter value is too long.</value>

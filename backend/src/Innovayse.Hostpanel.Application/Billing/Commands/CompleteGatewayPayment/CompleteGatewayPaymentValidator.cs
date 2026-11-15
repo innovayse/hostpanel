@@ -19,7 +19,6 @@ public sealed class CompleteGatewayPaymentValidator : LocalizedValidator<Complet
         : base(localizer)
     {
         RuleFor(x => x.InvoiceId).GreaterThan(0).WithMessage(L["InvoiceIdInvalid"]);
-        RuleFor(x => x.ReturnParameters).MustBePaymentReturnParameters(
-            L["PaymentReturnParametersTooMany"], L["PaymentReturnParameterNameInvalid"], L["PaymentReturnParameterValueTooLong"]);
+        RuleFor(x => x.ReturnParameters).MustBePaymentReturnParameters(L);
     }
 }

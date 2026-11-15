@@ -18,7 +18,6 @@ public sealed class CompleteOrderGatewayPaymentValidator : LocalizedValidator<Co
         : base(localizer)
     {
         RuleFor(x => x.OrderId).MustBePositiveId(L["OrderIdInvalid"]);
-        RuleFor(x => x.ReturnParameters).MustBePaymentReturnParameters(
-            L["PaymentReturnParametersTooMany"], L["PaymentReturnParameterNameInvalid"], L["PaymentReturnParameterValueTooLong"]);
+        RuleFor(x => x.ReturnParameters).MustBePaymentReturnParameters(L);
     }
 }

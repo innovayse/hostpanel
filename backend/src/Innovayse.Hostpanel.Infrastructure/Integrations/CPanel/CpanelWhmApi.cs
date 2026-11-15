@@ -96,13 +96,13 @@ public sealed class CpanelWhmApi
     /// <returns>A client bound to that server.</returns>
     private static CpanelWhmApi Connect(string hostname, string authorization, IHttpClientFactory factory)
     {
-        // The named client: no redirects (the request holds the token), the outbound address guard and a profile with no retry.
+        // The named client: no redirects (the request holds the token), the outbound address guard and a profile
+        // with no retry. Its timeouts, the disk usage listing included, are the ones of that profile.
         var http = factory.CreateClient(HttpClientNames.CPanelWhm);
 #pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         http.BaseAddress = new Uri(HostingPanelAddress.BaseUrl(hostname, WhmPort));
 #pragma warning restore CS0618
         http.DefaultRequestHeaders.Add("Authorization", authorization);
-        http.Timeout = HttpBackstopTimeouts.Whm;
         return new CpanelWhmApi(http);
     }
 

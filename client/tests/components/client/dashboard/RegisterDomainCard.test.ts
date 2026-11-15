@@ -7,6 +7,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
+import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
 import RegisterDomainCard from '~/components/client/dashboard/RegisterDomainCard.vue'
 
 beforeEach(() => {
@@ -31,7 +32,7 @@ describe('ClientDashboardRegisterDomainCard', () => {
     await wrapper.find('[data-testid="dashboard-domain-query"]').setValue('  my site.com ')
     await wrapper.find('[data-testid="dashboard-domain-register"]').trigger('click')
 
-    expect(navigateTo).toHaveBeenCalledWith('/domains?search=my%20site.com')
+    expect(navigateTo).toHaveBeenCalledWith(`/domains?${DOMAIN_SEARCH_QUERY_PARAM}=my%20site.com`)
   })
 
   it('opens the bare domain search when nothing was typed', async () => {
@@ -48,7 +49,7 @@ describe('ClientDashboardRegisterDomainCard', () => {
     await wrapper.find('[data-testid="dashboard-domain-query"]').setValue('a.com')
     await wrapper.find('[data-testid="dashboard-domain-query"]').trigger('keydown', { key: 'Enter' })
 
-    expect(navigateTo).toHaveBeenCalledWith('/domains?search=a.com')
+    expect(navigateTo).toHaveBeenCalledWith(`/domains?${DOMAIN_SEARCH_QUERY_PARAM}=a.com`)
   })
 
   it('sends a transfer to the billing portal when one is configured', async () => {

@@ -24,6 +24,7 @@
  * that carry the typed name on to the domain search or the billing portal's transfer form.
  */
 
+import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
 import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 /** Runtime configuration: carries the billing portal's address. */
@@ -42,7 +43,7 @@ const domainQuery = ref('')
  */
 const registerDomain = (): void => {
   const query = domainQuery.value.trim()
-  navigateTo(query ? `${SITE_DOMAINS_PATH}?search=${encodeURIComponent(query)}` : SITE_DOMAINS_PATH)
+  navigateTo(query ? `${SITE_DOMAINS_PATH}?${DOMAIN_SEARCH_QUERY_PARAM}=${encodeURIComponent(query)}` : SITE_DOMAINS_PATH)
 }
 
 /**

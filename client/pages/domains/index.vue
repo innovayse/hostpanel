@@ -38,6 +38,7 @@ import { DOMAIN_BILLING_CYCLE } from '~/constants/pricingCycle'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import { tldOf } from '~/utils/domainTld'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 /** Translation helpers and the active language. */
 const { t, locale } = useI18n()
@@ -66,7 +67,7 @@ const { baseUrl } = useSeo({
   description: t('seo.domains.description', { site: siteName.value }),
   keywords: t('seo.domains.keywords', { site: siteName.value }),
   type: SeoPageType.Website,
-  path: '/domains',
+  path: SITE_DOMAINS_PATH,
 })
 
 /** Schema.org builders and the head injector. */

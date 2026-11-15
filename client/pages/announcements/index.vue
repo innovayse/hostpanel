@@ -55,7 +55,7 @@
           <UiLinkCard
             v-for="item in filtered"
             :key="item.id"
-            :to="localePath(`/announcements/${item.id}`)"
+            :to="localePath(siteAnnouncementPath(item.id))"
             :testid="`announcement-${item.id}`"
           >
             <UiText
@@ -104,6 +104,7 @@ import { useContentStore } from '~/stores/content'
 import { formatDate } from '~/utils/formatDate'
 import type { PublishedAnnouncement } from '~/types/publishedannouncement'
 import type { ChipTab } from '~/types/chiptab'
+import { siteAnnouncementPath } from '~/constants/siteRoutes'
 
 /** Month-filter value that shows every announcement. */
 const ALL_MONTHS = 'all'

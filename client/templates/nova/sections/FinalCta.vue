@@ -20,11 +20,11 @@
       </UiText>
 
       <UiStack direction="row" wrap justify="center" gap="sm" class="mt-9">
-        <NovaCta :to="localePath('/hosting')" size="lg" lift class="px-8" data-testid="nova-final-cta-primary">
+        <NovaCta :to="localePath(SITE_HOSTING_PATH)" size="lg" lift class="px-8" data-testid="nova-final-cta-primary">
           {{ t('nova.finalCta.primary') }}
         </NovaCta>
         <NovaCta
-          :to="localePath('/hosting#plans')"
+          :to="localePath(SITE_HOSTING_PLANS_PATH)"
           tone="outline"
           size="lg"
           class="px-8 bg-nova-bg"
@@ -43,6 +43,7 @@
  * element on purpose: it is the one thing the section is asking for.
  */
 import NovaCta from '~/templates/nova/sections/NovaCta.vue'
+import { SITE_HOSTING_PATH, SITE_HOSTING_PLANS_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the copy. */
 const { t } = useI18n()

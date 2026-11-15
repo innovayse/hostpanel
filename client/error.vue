@@ -79,7 +79,7 @@
           :class="revealDelay(400)"
         >
           {{ t('error.helpText') }}
-          <UiLink :to="localePath('/contact')" testid="error-contact">
+          <UiLink :to="localePath(SITE_CONTACT_PATH)" testid="error-contact">
             {{ t('error.contactUs') }}
           </UiLink>
         </UiText>
@@ -110,6 +110,7 @@ import { revealDelay } from '~/utils/reveal'
 import type { Component } from 'vue'
 import { ArrowLeft, Home, Search, AlertTriangle, Lock, XCircle } from 'lucide-vue-next'
 import { ErrorStatus } from '~/types/errorstatus'
+import { SITE_CONTACT_PATH } from '~/constants/siteRoutes'
 
 /** The error Nuxt hands the page. */
 interface ErrorDetails {

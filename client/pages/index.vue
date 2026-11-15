@@ -30,6 +30,7 @@ import { useDomainsStore } from '~/stores/domains'
 import { PricingCycle } from '~/types/pricingcycle'
 import { SeoPageType } from '~/types/seopagetype'
 import { TemplateSlot } from '~/types/templateslot'
+import { siteConfigurePath } from '~/constants/siteRoutes'
 
 /** Translates a key in the active language; `locale` is that language. */
 const { t, locale } = useI18n()
@@ -96,7 +97,7 @@ const { lookupResults: domainResults, lookupPending: domainPending, offeredTlds 
 const search = domainsStore.searchOfferedTlds
 
 /** The hosting plans as cards, each linking to its configure page. */
-const plans = computed(() => catalogStore.planCards(id => localePath(`/configure/${id}`), catalogStore.featuresFor(HOSTING_GROUP_ID)))
+const plans = computed(() => catalogStore.planCards(id => localePath(siteConfigurePath(id)), catalogStore.featuresFor(HOSTING_GROUP_ID)))
 
 onMounted(() => {
   currencyStore.init()

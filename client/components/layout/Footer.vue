@@ -102,6 +102,7 @@ import LogoLockup from '~/components/LogoLockup.vue'
 import LayoutFooterColumn from '~/components/layout/FooterColumn.vue'
 import {
   SITE_ABOUT_PATH,
+  SITE_ANNOUNCEMENTS_PATH,
   SITE_CONTACT_PATH,
   SITE_COOKIE_POLICY_PATH,
   SITE_DOMAINS_PATH,
@@ -189,7 +190,7 @@ const columns = computed<FooterColumn[]>(() => [
     links: [
       { key: 'about', label: t('footer.company.about'), to: localePath(SITE_ABOUT_PATH) },
       { key: 'contact', label: t('footer.company.contact'), to: localePath(SITE_CONTACT_PATH) },
-      { key: 'announcements', label: t('footer.company.announcements'), to: localePath('/announcements') },
+      { key: 'announcements', label: t('footer.company.announcements'), to: localePath(SITE_ANNOUNCEMENTS_PATH) },
     ],
   },
   {

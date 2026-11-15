@@ -18,7 +18,7 @@
     <UiStack direction="row" wrap justify="center" class="relative mt-8">
       <UiButton
         variant="bare"
-        :to="localePath('/contact')"
+        :to="localePath(SITE_CONTACT_PATH)"
         data-testid="cta-primary"
         :class="[BRAND_BUTTON, 'px-7 py-[15px] text-base']"
       >
@@ -26,7 +26,7 @@
       </UiButton>
       <UiButton
         variant="bare"
-        :to="localePath('/hosting')"
+        :to="localePath(SITE_HOSTING_PATH)"
         data-testid="cta-secondary"
         :class="[LINE_BUTTON, 'bg-panel px-7 py-[15px] text-base']"
       >
@@ -39,6 +39,7 @@
 <script setup lang="ts">
 /** aurora closing call to action. */
 import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
+import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

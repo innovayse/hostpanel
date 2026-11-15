@@ -8,30 +8,30 @@
  */
 
 /** The account endpoints that do not take an id. */
-export const AccountEndpoint = {
-  Me: '/api/portal/client/me',
-  Services: '/api/portal/client/services',
-  Tickets: '/api/portal/client/tickets',
-  EmailChange: '/api/portal/client/email-change',
-  Contacts: '/api/portal/client/contacts',
-  Emails: '/api/portal/client/emails',
-  Users: '/api/portal/client/users',
-  InviteUser: '/api/portal/client/users/invite',
-  TwoFactorSetup: '/api/portal/auth/2fa-setup',
-  TwoFactorEnable: '/api/portal/auth/2fa-enable',
-  TwoFactorDisable: '/api/portal/auth/2fa-disable',
-  Login: '/api/portal/auth/login',
-  TwoFactorLogin: '/api/portal/auth/2fa-login',
-  Logout: '/api/portal/auth/logout',
-  Register: '/api/portal/auth/register',
-  ConfirmEmail: '/api/portal/auth/confirm-email',
-  EmailVerified: '/api/portal/auth/email-verified',
-  ResendVerification: '/api/portal/auth/resend-verification',
-  ForgotPassword: '/api/portal/auth/forgot-password',
-  ResetPassword: '/api/portal/auth/reset-password',
-  AcceptInvite: '/api/portal/auth/accept-invite',
-  StoredMethods: '/api/portal/client/stored-payment-methods',
-} as const
+export enum AccountEndpoint {
+  Me = '/api/portal/client/me',
+  Services = '/api/portal/client/services',
+  Tickets = '/api/portal/client/tickets',
+  EmailChange = '/api/portal/client/email-change',
+  Contacts = '/api/portal/client/contacts',
+  Emails = '/api/portal/client/emails',
+  Users = '/api/portal/client/users',
+  InviteUser = '/api/portal/client/users/invite',
+  TwoFactorSetup = '/api/portal/auth/2fa-setup',
+  TwoFactorEnable = '/api/portal/auth/2fa-enable',
+  TwoFactorDisable = '/api/portal/auth/2fa-disable',
+  Login = '/api/portal/auth/login',
+  TwoFactorLogin = '/api/portal/auth/2fa-login',
+  Logout = '/api/portal/auth/logout',
+  Register = '/api/portal/auth/register',
+  ConfirmEmail = '/api/portal/auth/confirm-email',
+  EmailVerified = '/api/portal/auth/email-verified',
+  ResendVerification = '/api/portal/auth/resend-verification',
+  ForgotPassword = '/api/portal/auth/forgot-password',
+  ResetPassword = '/api/portal/auth/reset-password',
+  AcceptInvite = '/api/portal/auth/accept-invite',
+  StoredMethods = '/api/portal/client/stored-payment-methods',
+}
 
 /**
  * The path of one sub-contact.
@@ -75,20 +75,17 @@ export const completeSessionPath = (sessionId: string): string =>
   `${AccountEndpoint.StoredMethods}/sessions/${encodeURIComponent(sessionId)}/complete`
 
 /** The actions on one service, each the path below the service itself. */
-export const ServiceAction = {
-  Cancel: 'cancel',
-  ChangePassword: 'change-password',
-  CpanelSso: 'cpanel-sso',
-  Invoices: 'invoices',
-  PlanChange: 'plan-change',
-  PlanChangeOptions: 'plan-change-options',
-  Setup: 'setup',
-  Ssh: 'ssh',
-  SshKeys: 'ssh/keys',
-} as const
-
-/** One of the {@link ServiceAction} values. */
-type ServiceActionPath = typeof ServiceAction[keyof typeof ServiceAction]
+export enum ServiceAction {
+  Cancel = 'cancel',
+  ChangePassword = 'change-password',
+  CpanelSso = 'cpanel-sso',
+  Invoices = 'invoices',
+  PlanChange = 'plan-change',
+  PlanChangeOptions = 'plan-change-options',
+  Setup = 'setup',
+  Ssh = 'ssh',
+  SshKeys = 'ssh/keys',
+}
 
 /**
  * The path of one service, or of an action on it.
@@ -97,5 +94,5 @@ type ServiceActionPath = typeof ServiceAction[keyof typeof ServiceAction]
  * @param action - The action below the service; omit for the service itself.
  * @returns The BFF path.
  */
-export const servicePath = (serviceId: number | string, action?: ServiceActionPath): string =>
+export const servicePath = (serviceId: number | string, action?: ServiceAction): string =>
   action ? `${AccountEndpoint.Services}/${serviceId}/${action}` : `${AccountEndpoint.Services}/${serviceId}`

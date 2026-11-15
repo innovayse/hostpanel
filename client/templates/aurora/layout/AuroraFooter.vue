@@ -128,6 +128,18 @@ import LogoLockup from '~/components/LogoLockup.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useContactDetails } from '~/composables/useContactDetails'
 import { UiFooterLinkVariant } from '~/utils/ui/enums'
+import {
+  SITE_ABOUT_PATH,
+  SITE_CONTACT_PATH,
+  SITE_COOKIE_POLICY_PATH,
+  SITE_DOMAINS_TRANSFER_PATH,
+  SITE_FAQ_PATH,
+  SITE_KNOWLEDGEBASE_PATH,
+  SITE_PRIVACY_PATH,
+  SITE_PRODUCTS_PATH,
+  SITE_REFUND_POLICY_PATH,
+  SITE_TERMS_PATH,
+} from '~/constants/siteRoutes'
 
 const { t } = useI18n()
 /** Prefixes a path with the active locale. */
@@ -179,27 +191,27 @@ const columns = computed(() => [
     title: t('aurora.footer.company'),
     // /about tells the operator's story, or sends the visitor on to contact when none is set.
     links: [
-      { label: t('aurora.footer.about'), to: localePath('/about') },
-      { label: t('aurora.footer.services'), to: localePath('/products') },
-      { label: t('aurora.footer.knowledgebase'), to: localePath('/knowledgebase') },
-      { label: t('aurora.footer.contact'), to: localePath('/contact') },
+      { label: t('aurora.footer.about'), to: localePath(SITE_ABOUT_PATH) },
+      { label: t('aurora.footer.services'), to: localePath(SITE_PRODUCTS_PATH) },
+      { label: t('aurora.footer.knowledgebase'), to: localePath(SITE_KNOWLEDGEBASE_PATH) },
+      { label: t('aurora.footer.contact'), to: localePath(SITE_CONTACT_PATH) },
     ],
   },
   {
     title: t('aurora.footer.support'),
     links: [
-      { label: t('aurora.footer.helpCenter'), to: localePath('/knowledgebase') },
-      { label: t('aurora.footer.faq'), to: localePath('/faq') },
-      { label: t('aurora.footer.domainTransfer'), to: localePath('/domains/transfer') },
+      { label: t('aurora.footer.helpCenter'), to: localePath(SITE_KNOWLEDGEBASE_PATH) },
+      { label: t('aurora.footer.faq'), to: localePath(SITE_FAQ_PATH) },
+      { label: t('aurora.footer.domainTransfer'), to: localePath(SITE_DOMAINS_TRANSFER_PATH) },
     ],
   },
   {
     title: t('aurora.footer.legal'),
     links: [
-      { label: t('aurora.footer.terms'), to: localePath('/terms') },
-      { label: t('aurora.footer.privacy'), to: localePath('/privacy') },
-      { label: t('aurora.footer.cookies'), to: localePath('/cookie-policy') },
-      { label: t('aurora.footer.refund'), to: localePath('/refund-policy') },
+      { label: t('aurora.footer.terms'), to: localePath(SITE_TERMS_PATH) },
+      { label: t('aurora.footer.privacy'), to: localePath(SITE_PRIVACY_PATH) },
+      { label: t('aurora.footer.cookies'), to: localePath(SITE_COOKIE_POLICY_PATH) },
+      { label: t('aurora.footer.refund'), to: localePath(SITE_REFUND_POLICY_PATH) },
     ],
   },
 ])

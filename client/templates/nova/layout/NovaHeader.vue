@@ -74,7 +74,7 @@
         </UiStack>
 
         <UiLink
-          :to="localePath('/cart')"
+          :to="localePath(SITE_CART_PATH)"
           tone="inherit"
           :underline="false"
           testid="nova-nav-cart"
@@ -105,7 +105,7 @@
         </NovaCta>
 
         <NovaCta
-          :to="localePath('/hosting')"
+          :to="localePath(SITE_HOSTING_PATH)"
           size="bar"
           class="hidden whitespace-nowrap px-5 sm:inline-flex"
           data-testid="nova-nav-get-started"
@@ -192,7 +192,7 @@
           {{ t('nova.nav.login') }}
         </NovaCta>
         <NovaCta
-          :to="localePath('/hosting')"
+          :to="localePath(SITE_HOSTING_PATH)"
           size="bar"
           data-testid="nova-mobile-get-started"
           @click="closeMenu"
@@ -222,6 +222,7 @@ import LogoLockup from '~/components/LogoLockup.vue'
 import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import { NAV_ITEMS } from '~/templates/nova/content'
 import { useCartStore } from '~/stores/cart'
+import { SITE_CART_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Props of NovaHeader. */
 const props = withDefaults(defineProps<{

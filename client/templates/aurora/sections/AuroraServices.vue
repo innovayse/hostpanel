@@ -26,7 +26,7 @@
     <UiStack direction="row" class="mt-8">
       <UiButton
         variant="bare"
-        :to="localePath('/products')"
+        :to="localePath(SITE_PRODUCTS_PATH)"
         data-testid="services-view-all"
         :class="[LINE_BUTTON, 'px-6 py-3 text-[15px]']"
       >
@@ -43,6 +43,7 @@ import { HOME_SECTION_SCROLL_MARGIN_CLASS } from '~/constants/homeSections'
 import { HomeSectionId } from '~/types/homesectionid'
 import { LINE_BUTTON } from '~/templates/aurora/buttons'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
+import { SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

@@ -86,7 +86,7 @@
                       <ShoppingCart :size="18" class="mr-2" />
                       {{ cart.hasItem(freePlan.id, selectedCycle) ? $t('hosting.inCart') : $t('hosting.getStarted') }}
                     </UiButton>
-                    <UiLink data-testid="classic-hosting-free-plan" :to="localePath(`/hosting/${planSlug(freePlan)}`)" tone="inherit" :underline="false" class="flex items-center justify-center gap-2 text-sm font-medium text-classic-brand hover:text-classic-brand-hover group">
+                    <UiLink data-testid="classic-hosting-free-plan" :to="localePath(siteHostingPlanPath(planSlug(freePlan)))" tone="inherit" :underline="false" class="flex items-center justify-center gap-2 text-sm font-medium text-classic-brand hover:text-classic-brand-hover group">
                       {{ $t('hosting.viewAllFeatures') }}
                       <ArrowRight :size="14" class="group-hover:translate-x-0.5 transition-transform" />
                     </UiLink>
@@ -123,7 +123,7 @@
                 :class="{ 'border-classic-brand ring-1 ring-classic-brand': isFeatured(plan) }"
               >
                 <UiStack gap="none" class="mb-5">
-                  <UiLink data-testid="classic-hosting-plan-link" :to="localePath(`/hosting/${planSlug(plan)}`)" tone="inherit" :underline="false" class="block mb-2">
+                  <UiLink data-testid="classic-hosting-plan-link" :to="localePath(siteHostingPlanPath(planSlug(plan)))" tone="inherit" :underline="false" class="block mb-2">
                     <UiHeading :level="UiHeadingLevel.H2" size="title" class="text-xl font-semibold text-classic-ink hover:text-classic-brand transition-colors md:text-2xl">
                       {{ formatPlanName(plan.name) }}
                     </UiHeading>
@@ -191,7 +191,7 @@
                   </UiButton>
                   <UiButton
                     data-testid="classic-hosting-plan-select"
-                    :to="localePath(`/hosting/${planSlug(plan)}`)"
+                    :to="localePath(siteHostingPlanPath(planSlug(plan)))"
                     variant="outline"
                     full-width
                   >
@@ -251,7 +251,7 @@
                     <UiButton variant="primary" size="lg" full-width data-testid="classic-hosting-agency-add" @click="addToCart(agencyPlan)">
                       {{ cart.hasItem(agencyPlan.id, selectedCycle) ? $t('hosting.inCart') : $t('hosting.addToCart') }}
                     </UiButton>
-                    <UiLink data-testid="classic-hosting-agency-plan" :to="localePath(`/hosting/${planSlug(agencyPlan)}`)" tone="inherit" :underline="false" class="flex items-center justify-center gap-2 text-sm font-medium text-classic-brand hover:text-classic-brand-hover group">
+                    <UiLink data-testid="classic-hosting-agency-plan" :to="localePath(siteHostingPlanPath(planSlug(agencyPlan)))" tone="inherit" :underline="false" class="flex items-center justify-center gap-2 text-sm font-medium text-classic-brand hover:text-classic-brand-hover group">
                       {{ $t('hosting.viewAllFeatures') }}
                       <ArrowRight :size="14" class="group-hover:translate-x-0.5 transition-transform" />
                     </UiLink>
@@ -366,6 +366,7 @@ import { PricingCycle } from '~/types/pricingcycle'
 import type { PlanCard } from '~/types/plancard'
 import type { ComparisonRow } from '~/types/comparisonrow'
 import { isComparable } from '~/utils/comparisonRows'
+import { siteHostingPlanPath } from '~/constants/siteRoutes'
 
 /** Component props: the page's plan cards and the comparison rows aligned to them. */
 const props = withDefaults(defineProps<{

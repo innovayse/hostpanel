@@ -15,7 +15,7 @@
 
       <!-- View all -->
       <div class="mt-12 text-center">
-        <UiButton variant="primary" :to="localePath('/products')" data-testid="home-products-all">
+        <UiButton variant="primary" :to="localePath(SITE_PRODUCTS_PATH)" data-testid="home-products-all">
           <span>{{ $t('hostingSections.plans.viewAll') }}</span>
           <ArrowRight :size="20" :stroke-width="2" class="ml-2" />
         </UiButton>
@@ -44,7 +44,7 @@ import { ArrowRight } from 'lucide-vue-next'
 import { HOME_PRODUCT_FAMILY_LIMIT } from '~/constants/homeProducts'
 import { FAMILY_BULLET_LIMIT } from '~/constants/planFeatureLimit'
 import { productTypeIcon } from '~/constants/productTypeIcon'
-import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
+import { SITE_DOMAINS_PATH, SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import type { ProductFamily } from '~/types/productfamily'

@@ -20,7 +20,7 @@
     <UiStack direction="row" wrap gap="md" class="mt-[34px]">
       <UiButton
         variant="bare"
-        :to="localePath('/domains')"
+        :to="localePath(SITE_DOMAINS_PATH)"
         data-testid="hero-cta-primary"
         :class="[BRAND_BUTTON, 'px-[26px] py-[15px] text-base font-semibold']"
       >
@@ -28,7 +28,7 @@
       </UiButton>
       <UiButton
         variant="bare"
-        :to="localePath('/contact')"
+        :to="localePath(SITE_CONTACT_PATH)"
         data-testid="hero-cta-secondary"
         :class="[LINE_BUTTON, 'px-[26px] py-[15px] text-base']"
       >
@@ -56,6 +56,7 @@
  */
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
+import { SITE_CONTACT_PATH, SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

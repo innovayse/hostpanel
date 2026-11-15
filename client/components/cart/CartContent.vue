@@ -14,7 +14,7 @@
           :description="$t('cart.emptyHint')"
           data-testid="cart-empty"
         >
-          <UiButton :to="localePath('/hosting')" data-testid="cart-browse">
+          <UiButton :to="localePath(SITE_HOSTING_PATH)" data-testid="cart-browse">
             <Server :size="18" :stroke-width="2" class="mr-2" />
             {{ $t('cart.browseHosting') }}
           </UiButton>
@@ -93,7 +93,7 @@
             </UiButton>
 
             <UiButton
-              :to="localePath('/checkout')"
+              :to="localePath(SITE_CHECKOUT_PATH)"
               size="lg"
               class="order-1 sm:order-2 flex-1 py-4 font-bold bg-gradient-to-r from-cyan-600 to-primary-600 hover:from-cyan-500 hover:to-primary-500 hover:scale-[1.02] shadow-lg shadow-cyan-500/20 [.tpl-classic_&]:bg-none [.tpl-classic_&]:shadow-none hover:[.tpl-classic_&]:scale-100"
               data-testid="cart-checkout"
@@ -125,6 +125,7 @@
  */
 import { CreditCard, Lock, Server, ShoppingCart, Trash2 } from 'lucide-vue-next'
 import type { CartItem } from '~/types/cartitem'
+import { SITE_CHECKOUT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Props of CartContent. */
 interface Props {

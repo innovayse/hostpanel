@@ -3,7 +3,7 @@
     <UiStack class="w-full" gap="lg">
       <!-- Back link -->
       <UiLink
-        :to="localePath('/knowledgebase')"
+        :to="localePath(SITE_KNOWLEDGEBASE_PATH)"
         tone="muted"
         :underline="false"
         class="inline-flex items-center gap-2 self-start text-sm"
@@ -105,6 +105,7 @@ import { KbVote } from '~/types/kbvote'
 import { SeoPageType } from '~/types/seopagetype'
 import { pageLoadError } from '~/utils/pageLoadError'
 import { detailTitle } from '~/utils/seoTitle'
+import { SITE_KNOWLEDGEBASE_PATH } from '~/constants/siteRoutes'
 
 /** The current route. */
 const route = useRoute()

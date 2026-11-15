@@ -95,6 +95,24 @@ public sealed class NoDirectClockTests
             "Planted.cs: DateTime.Today");
     }
 
+    /// <summary>
+    /// The scan checks the <c>Type.Member</c> form only: a bare member brought in by <c>using static</c> and a read through an alias
+    /// of the type are out of scope, while the same source's written-out read is still found.
+    /// </summary>
+    [Fact]
+    public void Rule_ChecksTheTypeMemberFormOnly()
+    {
+        const string planted = """
+            using static System.DateTime;
+            using Clock = System.DateTimeOffset;
+            var a = UtcNow;
+            var b = Clock.UtcNow;
+            var c = DateTime.Now;
+            """;
+
+        DirectClockScan.Offenders([("Planted.cs", planted)]).Should().BeEquivalentTo("Planted.cs: DateTime.Now");
+    }
+
     /// <summary>A clock read named inside a string literal is text, not a read.</summary>
     [Fact]
     public void Rule_IgnoresReadsNamedInsideStrings()

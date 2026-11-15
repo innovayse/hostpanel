@@ -7,7 +7,9 @@ namespace Innovayse.Hostpanel.Architecture.Tests;
 /// Finds the places that read the system clock directly: <c>DateTimeOffset.UtcNow</c>, <c>DateTimeOffset.Now</c>,
 /// <c>DateTime.UtcNow</c>, <c>DateTime.Now</c> and <c>DateTime.Today</c>. The rule is a plain function of named sources, so a test
 /// can run it on an in-memory planted source and on the real files. It reads the syntax tree, so a comment never counts as a read and
-/// text that only looks like a comment or a read inside a string literal neither hides nor invents one.
+/// text that only looks like a comment or a read inside a string literal neither hides nor invents one. It checks the
+/// <c>Type.Member</c> form only: a bare <c>UtcNow</c> brought in by <c>using static</c> and a read through an alias of the type
+/// are out of scope, and <c>NoDirectClockTests</c> plants both to say so.
 /// </summary>
 internal static class DirectClockScan
 {

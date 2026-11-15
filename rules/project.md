@@ -1420,7 +1420,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   `DateTimeOffset.UtcNow`, `DateTimeOffset.Now`, `DateTime.UtcNow`, `DateTime.Now` or `DateTime.Today` under
   `backend/src` outside the `Hostpanel.Sdk` submodule (a separate repository; no file is exempt, `SystemClock` asks the
   `TimeProvider`). The scan (`DirectClockScan`) reads the syntax tree, so a comment never counts as a read and a `//` or
-  `/*` inside a string literal hides nothing on its line; both are proved on planted sources.
+  `/*` inside a string literal hides nothing on its line; both are proved on planted sources. It checks the `Type.Member`
+  form only: a bare `UtcNow` from `using static` and a read through an alias of the type are out of scope, and a planted case says so.
 - **Time in the tests has five sources, and a test takes the one that matches what judges the time (issue 1208).**
   - *The host clock.* A test that depends on a time window (renewal, expiry, cron pass, reminder period, month or day
     boundary) runs on `ClockedHost`, which derives a host of its own on a `ManualTimeProvider`. It stands at

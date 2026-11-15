@@ -18,8 +18,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 /// Pins <see cref="RecurringJobs"/> on a clock the test holds still: one instance runs a job, a pass
 /// that fails or is cancelled is handled, the next run is scheduled from the end of the pass, a
 /// missed day is caught up on startup, and a host that is stopping ends the chain cleanly. The
-/// clock stands ten days ahead of the real one, so a run scheduled in the cases below is never
-/// delivered while the test runs.
+/// clock stands at a fixed moment in the past, so the cases also prove that a run is handed to the bus as a delay measured on
+/// that clock: due about a real day away, never at once and never repeated while the test runs.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>, IAsyncLifetime
@@ -27,11 +27,8 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
     /// <summary>The job these cases run: a marker command with a real handler that is never dispatched here.</summary>
     private const string JobName = nameof(CheckOverdueInvoicesCronCommand);
 
-    /// <summary>
-    /// Midnight UTC, ten days from the present: the day every case happens on. Ahead of the real present on purpose, so the
-    /// host's own start-up run of the job is not overdue on this clock and only the pass the case runs is scheduled.
-    /// </summary>
-    private static readonly DateTimeOffset Midnight = new(TestMoments.Present().AddDays(10).UtcDateTime.Date, TimeSpan.Zero);
+    /// <summary>Midnight UTC of the day every case happens on: the day of <see cref="TestMoments.Seeded"/>, far behind the real present.</summary>
+    private static readonly DateTimeOffset Midnight = new(TestMoments.Seeded.UtcDateTime.Date, TimeSpan.Zero);
 
     /// <summary>The fixed moment of every case: half an hour after the 05:00 run hour.</summary>
     private static readonly DateTimeOffset Now = Midnight.AddHours(5).AddMinutes(30);
@@ -65,7 +62,11 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
         return Task.CompletedTask;
     }
 
-    /// <summary>A pass that succeeds is recorded, and the next run is scheduled from the moment it ended.</summary>
+    /// <summary>
+    /// A pass that succeeds is recorded, and the next run is scheduled from the moment it ended. The clock stands in the past, so
+    /// the run reaches the bus as a delay measured on it: due the span of the schedule from the real present, not at once, and
+    /// the job is not repeated behind the test.
+    /// </summary>
     /// <returns>A task.</returns>
     [Fact]
     public async Task SuccessfulPass_IsRecordedAndSchedulesTheNextRun()
@@ -84,6 +85,8 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
         ran.Should().Be(1);
         next.Should().Be(NextRegularRun);
         ScheduledRuns(session).Should().Be(1);
+        ShouldBeDueAfter(session, NextRegularRun - Now);
+        session.Executed.MessagesOf<CheckOverdueInvoicesCronCommand>().Should().BeEmpty("the run is a day away on the real clock too");
         (await scope.ServiceProvider.GetRequiredService<IJobLease>().GetLastSucceededAtAsync(JobName, CancellationToken.None))
             .Should().Be(Now);
     }
@@ -276,6 +279,25 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
 
         first.Should().Be(Now);
         ScheduledRuns(session).Should().Be(1);
+        ShouldBeDueAfter(session, TimeSpan.Zero);
+    }
+
+    /// <summary>A run due at or before the clock's now is scheduled with no delay, never with a negative one.</summary>
+    /// <param name="hoursBefore">How long before the clock's now the run was due.</param>
+    /// <returns>A task.</returns>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    public async Task RunDueAtOrBeforeNow_IsScheduledWithNoDelay(int hoursBefore)
+    {
+        using var scope = _host.Services.CreateScope();
+        var jobs = JobsIn(scope, new StoppableLifetime());
+        var due = Now.AddHours(-hoursBefore);
+
+        var (scheduled, session) = await TrackedAsync(() => jobs.ScheduleAsync<CheckOverdueInvoicesCronCommand>(due));
+
+        scheduled.Should().Be(due);
+        ShouldBeDueAfter(session, TimeSpan.Zero);
     }
 
     /// <summary>A restart after the day's run succeeded does not run it again; the first run is the next regular one.</summary>
@@ -291,6 +313,7 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
 
         first.Should().Be(NextRegularRun);
         ScheduledRuns(session).Should().Be(1);
+        ShouldBeDueAfter(session, NextRegularRun - Now);
     }
 
     /// <summary>A job that has never run is caught up at once on its first startup.</summary>
@@ -304,39 +327,6 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
         var (first, _) = await TrackedAsync(() => jobs.StartAsync<CheckOverdueInvoicesCronCommand>(Daily, CancellationToken.None));
 
         first.Should().Be(Now);
-    }
-
-    /// <summary>
-    /// A host whose clock stands at a fixed moment in the past schedules its next run a real day away, not at once: the bus counts
-    /// a run against the system clock, so the run is handed over as a delay on the host's clock, and the job is not repeated
-    /// without end on the host the way an absolute moment in the past would repeat it.
-    /// </summary>
-    /// <returns>A task.</returns>
-    [Fact]
-    public async Task ClockInThePast_SchedulesTheNextRunADayAwayAndDoesNotRepeatTheJob()
-    {
-        using (var shared = factory.Services.CreateScope())
-        {
-            // A job that succeeded on the past clock is not overdue there, so the host's own start-up run of it is not scheduled now.
-            await RecordSuccessAsync(shared, TestMoments.Seeded);
-        }
-
-        using var past = new ClockedHost(factory);
-        using var scope = past.Services.CreateScope();
-        var jobs = JobsIn(scope, new StoppableLifetime());
-        var ran = 0;
-
-        var (next, session) = await TrackedAsync(() => jobs.RunAsync<CheckOverdueInvoicesCronCommand>(
-            Daily, () =>
-            {
-                ran++;
-                return Task.CompletedTask;
-            }, CancellationToken.None), past);
-
-        ran.Should().Be(1);
-        next.Should().Be(Daily.NextAfter(TestMoments.Seeded));
-        ScheduledRuns(session).Should().Be(1);
-        session.Executed.MessagesOf<CheckOverdueInvoicesCronCommand>().Should().BeEmpty("the run is a day away on the real clock too");
     }
 
     /// <summary>
@@ -358,6 +348,23 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
             NullLogger<RecurringJobs>.Instance);
     }
 
+    /// <summary>
+    /// Checks that the single run scheduled during a tracked session reached the bus as the given delay: what the bus counts
+    /// against the real clock, read from the envelope, not the moment the runner reports on the host's clock. The envelope the
+    /// session records carries the delay; the delivery moment is only worked out when the bus sends it on.
+    /// </summary>
+    /// <param name="session">The tracked session.</param>
+    /// <param name="delay">How far from now the run must be due.</param>
+    private static void ShouldBeDueAfter(ITrackedSession session, TimeSpan delay)
+    {
+        var scheduled = session.Sent.Envelopes()
+            .Single(e => e.Message is CheckOverdueInvoicesCronCommand && e.Status == EnvelopeStatus.Scheduled)
+            .ScheduleDelay;
+
+        scheduled.Should().NotBeNull();
+        scheduled!.Value.Should().BeCloseTo(delay, TimeSpan.FromSeconds(1));
+    }
+
     /// <summary>Records a successful pass of the job at a given moment.</summary>
     /// <param name="scope">The scope to take the lease from.</param>
     /// <param name="at">When the pass succeeded.</param>
@@ -371,13 +378,12 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>Runs an action on the clocked host while Wolverine records what it sends.</summary>
     /// <param name="action">What to run; its result is returned.</param>
-    /// <param name="on">The host the action runs on; the case's own host when omitted.</param>
     /// <returns>The action's result and the tracked session.</returns>
     private async Task<(DateTimeOffset? Result, ITrackedSession Session)> TrackedAsync(
-        Func<Task<DateTimeOffset?>> action, ClockedHost? on = null)
+        Func<Task<DateTimeOffset?>> action)
     {
         DateTimeOffset? result = null;
-        var session = await (on ?? _host).Services.GetRequiredService<IHost>().TrackActivity()
+        var session = await _host.Services.GetRequiredService<IHost>().TrackActivity()
             .DoNotAssertOnExceptionsDetected()
             .Timeout(TimeSpan.FromSeconds(60))
             .ExecuteAndWaitAsync(async Task (IMessageContext _) => result = await action());
@@ -387,8 +393,8 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>
     /// How many runs of the job were scheduled during a tracked session. Wolverine records a message
-    /// sent to a local queue for later as sent with the scheduled status; the record does not keep the
-    /// moment, which the runner returns and each case checks on its own.
+    /// sent to a local queue for later as sent with the scheduled status; the runner returns the moment on the
+    /// host's clock and <see cref="ShouldBeDueAfter"/> checks the one the bus will deliver at.
     /// </summary>
     /// <param name="session">The tracked session.</param>
     /// <returns>The number of scheduled runs.</returns>

@@ -993,7 +993,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     and `EventStreamResult` ends the stream when the producer has sent no event for that long, counted from the start or from
     its last event. The host's own `: keepalive` heartbeat does not count as an event, so a heartbeat below the limit never keeps
     a silent plugin alive. The plugin is cancelled through its token, the client gets `error` with `PLUGIN_TIMEOUT` and `done`,
-    and the `plugin-stream` lease is released with the response. A first event that arrives as the wait runs out is used, not cut.
+    and the `plugin-stream` lease is released with the response. A first event that arrives as the wait runs out is used, not cut. Every silence, heartbeat and settle wait of the stream is measured through the `TimeProvider` registered in the container, which `BaseApiController.HandleStream` hands to `EventStreamResult` with its logger (no service locator and no fallback to the system clock inside the result), and tests swap it (`FakeTimeProvider`, or `TimerWatchingTimeProvider` when the test must know that a wait has started before it moves the clock). On a fake clock the settle limit, like the silence limit, passes only when the clock moves.
     **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
     body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
     plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem

@@ -89,7 +89,7 @@ public sealed class ProductOptionConstraintTests(IntegrationTestFactory factory)
         await AssertRefusedAsync(act, "CK_ProductOptionGroups_DisplayOrderNotNegative");
     }
 
-    /// <summary>A minimum below zero, a maximum below one or a maximum under the minimum is refused. A range with one end missing is the aggregate's to refuse: SQL reads its comparison as unknown, which a check lets through.</summary>
+    /// <summary>A minimum below zero, a maximum below one or a maximum under the minimum is refused. A range with only one end set is refused too.</summary>
     /// <param name="min">Least amount to write, or null for none.</param>
     /// <param name="max">Most amount to write, or null for none.</param>
     /// <returns>A task that completes when the test has run.</returns>
@@ -97,6 +97,9 @@ public sealed class ProductOptionConstraintTests(IntegrationTestFactory factory)
     [InlineData(-1, 5)]
     [InlineData(0, 0)]
     [InlineData(5, 4)]
+    [InlineData(null, 5)]
+    [InlineData(0, null)]
+    [InlineData(3, null)]
     public async Task GroupWithBrokenQuantityRange_IsRefused(int? min, int? max)
     {
         var productId = await SeedProductAsync();

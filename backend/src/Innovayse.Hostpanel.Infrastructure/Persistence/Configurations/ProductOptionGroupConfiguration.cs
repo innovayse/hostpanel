@@ -24,14 +24,15 @@ public sealed class ProductOptionGroupConfiguration : IEntityTypeConfiguration<P
         builder.Property(x => x.MaxQuantity);
 
         // The database backs up the two rules the aggregate already enforces, so a row written
-        // around it is still refused: a negative position, and a range that is not a range.
+        // around it is still refused: a negative position, and a range that is not a range, including one with only one end set (a comparison with NULL
+        // is unknown, which a check lets through, so both ends are tested for NULL explicitly).
         builder.ToTable(table =>
         {
             table.HasCheckConstraint("CK_ProductOptionGroups_DisplayOrderNotNegative", "\"DisplayOrder\" >= 0");
             table.HasCheckConstraint(
                 "CK_ProductOptionGroups_QuantityRange",
                 "(\"MinQuantity\" IS NULL AND \"MaxQuantity\" IS NULL) OR "
-                + "(\"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
+                + "(\"MinQuantity\" IS NOT NULL AND \"MaxQuantity\" IS NOT NULL AND \"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
         });
 
         // Deleting a product takes its option groups with it: they configure that product and

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The database now refuses a product option group whose quantity range has only one of its minimum and maximum set. The check let such a row through, because a comparison with NULL does not fail a check; the aggregate already refused it. The migration only replaces the check and removes no data, and it stops with an error if a row with one end set exists, so that row can be fixed by hand.
 - SSH key agent 1.4.0: a new `remove-jail` operation removes the SSH jail and its home mount unit of an account the hosting panel has already deleted (it refuses while the account exists and while anything is still mounted inside the jail, and removes the tree on its own filesystem only). HostPanel asks for it after it terminated a service's hosting account. Before, every terminated jailed account left its jail and an enabled systemd mount unit on the server, because the agent keeps a jail for cheap re-enrolment.
 
 ### Fixed

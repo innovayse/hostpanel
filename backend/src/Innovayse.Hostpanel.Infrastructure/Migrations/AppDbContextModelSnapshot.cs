@@ -3570,7 +3570,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_ProductOptionGroups_DisplayOrderNotNegative", "\"DisplayOrder\" >= 0");
 
-                            t.HasCheckConstraint("CK_ProductOptionGroups_QuantityRange", "(\"MinQuantity\" IS NULL AND \"MaxQuantity\" IS NULL) OR (\"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
+                            t.HasCheckConstraint("CK_ProductOptionGroups_QuantityRange", "(\"MinQuantity\" IS NULL AND \"MaxQuantity\" IS NULL) OR (\"MinQuantity\" IS NOT NULL AND \"MaxQuantity\" IS NOT NULL AND \"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
                         });
                 });
 

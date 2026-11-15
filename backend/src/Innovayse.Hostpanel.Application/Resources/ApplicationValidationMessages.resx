@@ -1747,4 +1747,13 @@
   <data name="ProductListStatusInvalid" xml:space="preserve">
     <value>Status must be one of: Active, Inactive.</value>
   </data>
+  <data name="PaymentReturnParametersTooMany" xml:space="preserve">
+    <value>There are too many return parameters.</value>
+  </data>
+  <data name="PaymentReturnParameterNameInvalid" xml:space="preserve">
+    <value>A return parameter needs a name of up to 64 characters.</value>
+  </data>
+  <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
+    <value>A return parameter value is too long.</value>
+  </data>
 </root>

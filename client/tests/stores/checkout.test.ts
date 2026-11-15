@@ -300,7 +300,7 @@ describe('useCheckoutStore.placeOrder', () => {
       start: {
         redirectUrl: 'https://bank.example/hosted',
         kind: GatewaySessionKind.FormPost,
-        formPost: { action: 'https://bank.example/hosted', fields: [{ name: 'token', value: 't1' }] }
+        formPost: { fields: [{ name: 'token', value: 't1' }] }
       }
     },
     { name: 'a browser step', start: { redirectUrl: BANK_URL, kind: GatewaySessionKind.BrowserStep, formPost: null } }
@@ -313,12 +313,12 @@ describe('useCheckoutStore.placeOrder', () => {
     expect(destination).toEqual({ kind: CheckoutDestinationKind.Gateway, start })
   })
 
-  it('refuses a form post whose action is not secure and lets the payer try again', async () => {
+  it('refuses a form post whose address is not secure and lets the payer try again', async () => {
     table[START_ROUTE] = {
       body: {
-        redirectUrl: BANK_URL,
+        redirectUrl: 'javascript:alert(1)',
         kind: GatewaySessionKind.FormPost,
-        formPost: { action: 'javascript:alert(1)', fields: [] }
+        formPost: { fields: [] }
       }
     }
     const store = arrange('hosted_gateway')

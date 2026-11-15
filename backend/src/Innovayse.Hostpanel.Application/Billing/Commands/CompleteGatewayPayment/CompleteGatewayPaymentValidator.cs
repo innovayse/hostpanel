@@ -6,8 +6,8 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
 
 /// <summary>
-///     Validator for <see cref="CompleteGatewayPaymentCommand"/>. Checks only the shape of the id;
-///     whether the invoice carries a session to verify is the handler's answer.
+///     Validator for <see cref="CompleteGatewayPaymentCommand"/>. Checks only the shape of the id and of the return
+///     parameters; whether the invoice carries a session to verify is the handler's answer.
 /// </summary>
 public sealed class CompleteGatewayPaymentValidator : LocalizedValidator<CompleteGatewayPaymentCommand>
 {
@@ -19,5 +19,7 @@ public sealed class CompleteGatewayPaymentValidator : LocalizedValidator<Complet
         : base(localizer)
     {
         RuleFor(x => x.InvoiceId).GreaterThan(0).WithMessage(L["InvoiceIdInvalid"]);
+        RuleFor(x => x.ReturnParameters).MustBePaymentReturnParameters(
+            L["PaymentReturnParametersTooMany"], L["PaymentReturnParameterNameInvalid"], L["PaymentReturnParameterValueTooLong"]);
     }
 }

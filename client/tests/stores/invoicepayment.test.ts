@@ -107,21 +107,21 @@ describe('useInvoicePaymentStore.startGatewayPayment', () => {
   })
 
   it('returns a form post and a browser step as the backend described them', async () => {
-    const formPost = { action: 'https://bank.example/hosted', fields: [{ name: 'token', value: 't1' }] }
+    const formPost = { fields: [{ name: 'token', value: 't1' }] }
     const store = useInvoicePaymentStore()
 
-    table[START_ROUTE] = { body: { redirectUrl: formPost.action, kind: GatewaySessionKind.FormPost, formPost } }
+    table[START_ROUTE] = { body: { redirectUrl: 'https://bank.example/hosted', kind: GatewaySessionKind.FormPost, formPost } }
     const posted = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
     table[START_ROUTE] = { body: { redirectUrl: 'https://bank.example/step', kind: GatewaySessionKind.BrowserStep, formPost: null } }
     const step = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
 
-    expect(posted).toEqual({ redirectUrl: formPost.action, kind: GatewaySessionKind.FormPost, formPost })
+    expect(posted).toEqual({ redirectUrl: 'https://bank.example/hosted', kind: GatewaySessionKind.FormPost, formPost })
     expect(step).toMatchObject({ kind: GatewaySessionKind.BrowserStep, redirectUrl: 'https://bank.example/step' })
   })
 
-  it('refuses a form post whose action the browser must not follow', async () => {
-    const formPost = { action: 'javascript:alert(1)', fields: [] }
-    table[START_ROUTE] = { body: { redirectUrl: 'https://bank.example/pay', kind: GatewaySessionKind.FormPost, formPost } }
+  it('refuses a form post whose address the browser must not follow', async () => {
+    const formPost = { fields: [] }
+    table[START_ROUTE] = { body: { redirectUrl: 'javascript:alert(1)', kind: GatewaySessionKind.FormPost, formPost } }
     const store = useInvoicePaymentStore()
 
     const start = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')

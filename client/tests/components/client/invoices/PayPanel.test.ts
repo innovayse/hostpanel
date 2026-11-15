@@ -92,7 +92,7 @@ describe('PayPanel', () => {
       body: {
         redirectUrl: 'https://bank.example/hosted',
         kind: GatewaySessionKind.FormPost,
-        formPost: { action: 'https://bank.example/hosted', fields: [{ name: 'token', value: 't1' }] }
+        formPost: { fields: [{ name: 'token', value: 't1' }] }
       }
     }
     const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }] })

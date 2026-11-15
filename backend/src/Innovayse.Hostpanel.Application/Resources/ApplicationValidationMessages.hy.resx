@@ -1747,4 +1747,13 @@
   <data name="ProductListStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Active, Inactive։</value>
   </data>
+  <data name="PaymentReturnParametersTooMany" xml:space="preserve">
+    <value>Վերադարձի պարամետրերը չափազանց շատ են։</value>
+  </data>
+  <data name="PaymentReturnParameterNameInvalid" xml:space="preserve">
+    <value>Վերադարձի պարամետրը պետք է ունենա մինչև 64 նիշ երկարությամբ անուն։</value>
+  </data>
+  <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
+    <value>Վերադարձի պարամետրի արժեքը չափազանց երկար է։</value>
+  </data>
 </root>

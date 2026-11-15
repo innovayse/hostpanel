@@ -5,8 +5,8 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Orders.Commands.CompleteOrderGatewayPayment;
 
 /// <summary>
-///     Validator for CompleteOrderGatewayPaymentCommand. Checks only the shape of the id; whether
-///     it names an order and whether the payment token matches are the handler's answers.
+///     Validator for CompleteOrderGatewayPaymentCommand. Checks only the shape of the id and of the return
+///     parameters; whether it names an order and whether the payment token matches are the handler's answers.
 /// </summary>
 public sealed class CompleteOrderGatewayPaymentValidator : LocalizedValidator<CompleteOrderGatewayPaymentCommand>
 {
@@ -18,5 +18,7 @@ public sealed class CompleteOrderGatewayPaymentValidator : LocalizedValidator<Co
         : base(localizer)
     {
         RuleFor(x => x.OrderId).MustBePositiveId(L["OrderIdInvalid"]);
+        RuleFor(x => x.ReturnParameters).MustBePaymentReturnParameters(
+            L["PaymentReturnParametersTooMany"], L["PaymentReturnParameterNameInvalid"], L["PaymentReturnParameterValueTooLong"]);
     }
 }

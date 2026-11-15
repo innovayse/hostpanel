@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using Hostpanel.Sdk.Plugins.Payment;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -174,6 +176,32 @@ public static class ValidationRuleExtensions
 
         return rule.NotEmpty().WithMessage(requiredMessage)
             .MaximumLength(maxLength).WithMessage(tooLongMessage);
+    }
+
+    /// <summary>
+    /// Requires the return request a payer came back from a gateway with to keep the limits a payment plugin is promised
+    /// (<see cref="PaymentReturnLimits"/>): at most the allowed number of parameters, each with a name no longer than the name
+    /// limit and a value no longer than the value limit. An absent set passes: a check that is not a return carries none.
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="rule">The rule builder for the return parameters property.</param>
+    /// <param name="tooManyMessage">The localized sentence reported when the set holds too many parameters.</param>
+    /// <param name="nameInvalidMessage">The localized sentence reported when a parameter has no name or a name over the limit.</param>
+    /// <param name="valueTooLongMessage">The localized sentence reported when a value is over the limit.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, IReadOnlyList<PaymentReturnParameterDto>?> MustBePaymentReturnParameters<T>(
+        this IRuleBuilder<T, IReadOnlyList<PaymentReturnParameterDto>?> rule,
+        string tooManyMessage,
+        string nameInvalidMessage,
+        string valueTooLongMessage)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(set => set is null || set.Count <= PaymentReturnLimits.MaxParameters).WithMessage(tooManyMessage)
+            .Must(set => set is null || set.All(p => p?.Name is { Length: > 0 and <= PaymentReturnLimits.MaxNameLength }))
+            .WithMessage(nameInvalidMessage)
+            .Must(set => set is null || set.All(p => p?.Value is null or { Length: <= PaymentReturnLimits.MaxValueLength }))
+            .WithMessage(valueTooLongMessage);
     }
 
     /// <summary>Requires a whole number that is zero or more: a position in a list, a count.</summary>

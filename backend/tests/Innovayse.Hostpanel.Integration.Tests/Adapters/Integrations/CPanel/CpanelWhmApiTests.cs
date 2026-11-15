@@ -1,5 +1,6 @@
 using System.Globalization;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
+using Innovayse.Hostpanel.Infrastructure.Resilience;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.CPanel;
 
@@ -110,6 +111,18 @@ public sealed class CpanelWhmApiTests : IAsyncLifetime
         await api.ListAccountsAsync(CancellationToken.None);
 
         whm.Requests.Should().ContainSingle().Which.Authorization.Should().Be("WHM root:abcdef");
+    }
+
+    /// <summary>Both ways in take the named WHM client, never the factory's unnamed one.</summary>
+    [Fact]
+    public void Create_AsksForTheNamedWhmClient()
+    {
+        var factory = new StubHttpClientFactory(whm);
+
+        CpanelWhmApi.Create("whm.test", "root", "token", factory);
+        CpanelWhmApi.CreateWithHash("whm.test", "root", "hash", factory);
+
+        factory.ClientNames.Should().Equal(HttpClientNames.CPanelWhm, HttpClientNames.CPanelWhm);
     }
 
     /// <summary>A failing status is raised, not parsed as an empty listing.</summary>

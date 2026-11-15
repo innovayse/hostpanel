@@ -74,13 +74,13 @@ Open the client portal, order the product and check out with **Pay by bank trans
 
 A paid order creates a service in **Pending** status. Hostpanel does not create the hosting account at that moment. Do one of these:
 
-- In the client portal, the customer opens the service and completes the setup. It is available after the first invoice is paid in full.
-- In the admin panel, open the service and click **Create** in the **Module Commands** card.
+- Main path: in the client portal, the customer clicks **Set Up My Service** after payment, or **Complete Setup** on the service later, and chooses the domain and credentials in the setup wizard, see [Ordering](/customers/ordering) and [Services](/customers/services). It is available after the first invoice is paid in full.
+- In the admin panel, open the service and click **Create** in the **Module Commands** card. This works only once the service has a domain and a username. Without them the request is refused with `SERVICE_HOSTING_DETAILS_MISSING` (409), see [What happens on provisioning](/servers/provisioning#what-happens-on-provisioning).
 
 When the panel confirms, the service becomes **Active** and the customer receives the `service-provisioned` email. If something fails, the error code shown is explained in [Provisioning](/servers/provisioning).
 
 ## Where to go next
 
-- Moving existing customers over: [Migration in fifteen minutes](/migration/fifteen-minutes).
+- Moving existing customers over: [Migration checklist](/migration/fifteen-minutes).
 - Back up the database and `.env` before you take real customers: [Back up and restore](/operators/backup).
 - Day-to-day work: the [Staff guide](/staff/).

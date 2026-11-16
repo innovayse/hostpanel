@@ -68,6 +68,7 @@
     "/servers/ssh-key-agent": "SSH key agent",
     "/servers/provisioning": "Provisioning",
     "/migration/": "Overview",
+    "/migration/fifteen-minutes": "Migration checklist",
     "/migration/from-another-system": "Moving from WHMCS",
     "/migration/import-report": "Import report and skip reasons",
     "/developers/": "Overview",

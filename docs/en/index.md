@@ -75,7 +75,7 @@ features:
 
 ## Popular guides
 
-- [Quick start](/get-started/quick-start): up and running in under 10 minutes
+- [Quick start](/get-started/quick-start): from a bare server to a first order in a short session
 - [Installation](/operators/install): full production setup with Docker
 - [Storefront & branding](/operators/storefront): customise the client portal look
 - [Payment gateways](/payments/gateways): connect card and bank payment gateways

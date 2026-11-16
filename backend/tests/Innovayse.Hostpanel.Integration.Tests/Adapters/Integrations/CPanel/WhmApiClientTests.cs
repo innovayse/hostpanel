@@ -314,8 +314,15 @@ public sealed class WhmApiClientTests : IAsyncLifetime
         using var cts = new CancellationTokenSource();
 
         var call = Client().UnsuspendAccountAsync(Connection(), "testuser", cts.Token);
-        await whm.FirstRequestReceived.WaitAsync(TimeSpan.FromSeconds(30));
-        await cts.CancelAsync();
+        try
+        {
+            await whm.FirstRequestReceived.WaitAsync(TimeSpan.FromSeconds(30));
+        }
+        finally
+        {
+            // Cancel even when the request never arrived, so the held call does not outlive a failed test.
+            await cts.CancelAsync();
+        }
 
         var act = () => call;
         await act.Should().ThrowAsync<OperationCanceledException>();

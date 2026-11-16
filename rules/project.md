@@ -2133,7 +2133,7 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   worst) and a call overrides them for itself with `RETRY_ATTEMPTS`, `RETRY_TIMEOUT_SECONDS` (at least 1) and
   `RETRY_PAUSE_SECONDS`. The image pushes of `.build-image` and every `docker compose pull` of the stage, demo and
   production deploys go through it; the fetch of the target commit in `.fetch-target-commit` keeps its own small
-  loop, because that job has no checkout of the repository yet (and `$DEPLOY_DIR` is empty on the first deploy);
+  loop, because that job has no checkout of the repository yet (and the deploy directory is empty on the first deploy);
   each of its attempts is wrapped in `timeout -k 10 600`, so a hung fetch cannot hold the job. Before the first attempt
   and after a killed one (status 124 or 137) it removes the lock files git leaves in `.git`, only by name
   (`shallow.lock`, `index.lock`, `HEAD.lock`), never every `*.lock`, so the lock of a background `git gc` stays. The

@@ -298,7 +298,7 @@ expect "a successful job removes the recreating marker" "no" "$(exists "$WORK/de
 # ── .fetch-target-commit: the bounded fetch loop ──────────────────────────────────────────────────
 # A fake timeout stands in for `timeout ... git fetch`: it answers with the next status of $WORK/fetch-statuses
 # (one per line, 0 when the list is used up), records whether the shallow lock existed when it was called, and
-# leaves the shallow and index locks behind when it fails, the way a killed or failed git does. A fake sleep keeps
+# leaves the shallow, index and HEAD locks behind when it fails, the way a killed or failed git does. A fake sleep keeps
 # the pauses out of the test.
 if block script .fetch-target-commit > "$WORK/fetch.sh"; then found=yes; else found=no; fi
 expect ".fetch-target-commit script is exactly one block in .gitlab-ci.yml" "yes" "$found"
@@ -311,6 +311,7 @@ status=\$(sed -n "\${count}p" "$WORK/fetch-statuses")
 if [ "\${status:-0}" -ne 0 ]; then
   : > "$WORK/deploy/.git/shallow.lock"
   : > "$WORK/deploy/.git/index.lock"
+  : > "$WORK/deploy/.git/HEAD.lock"
 fi
 exit "\${status:-0}"
 FAKE
@@ -347,6 +348,7 @@ expect "a fetch killed once is retried and ends cleanly" "0" "$(run_fetch "124 0
 expect "a fetch killed once runs twice" "2" "$(calls_matching '^fetch ')"
 expect "the second attempt after a kill starts without the stale lock" "1" "$(calls_matching '^fetch 2 lock=no')"
 expect "the stale index lock is removed after a kill" "no" "$(exists "$WORK/deploy/.git/index.lock")"
+expect "the stale HEAD lock is removed after a kill" "no" "$(exists "$WORK/deploy/.git/HEAD.lock")"
 expect "a file of .git that is not a lock stays" "yes" "$(exists "$WORK/deploy/.git/config")"
 expect "a lock with another name stays after a kill" "yes" "$(exists "$WORK/deploy/.git/packed-refs.lock")"
 

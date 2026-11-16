@@ -6,8 +6,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
 import type { Ref } from 'vue'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { useAppColorMode } from '~/composables/useAppColorMode'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { TemplateName } from '~/types/templatename'
 import { ColorMode } from '~/types/colormode'
 import { ColorModeSystem } from '~/types/colormodesystem'
 
@@ -29,19 +32,16 @@ interface PluginDefinition {
   setup: () => void
 }
 
-/** The mode on `<html>`. */
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useAppColorMode })
+
+/** The mode on `<html>`: the real composable's shared state, which the plugin reads and writes. */
 let applied: Ref<ColorMode | null>
-
-/** The effective setting. */
-let mode: Ref<string>
-
-/** The stubbed `choose`. */
-const choose = vi.fn()
 
 /** The captured `useHead` call. */
 const useHeadMock = vi.fn()
 
-/** Operator settings the stubbed store answers with. */
+/** The operator's settings the stub answers with, by their dotted key. */
 let settings: Record<string, string> = {}
 
 /**
@@ -50,9 +50,9 @@ let settings: Record<string, string> = {}
  * @returns The plugin definition.
  */
 const loadPlugin = async (): Promise<PluginDefinition> => {
+  await loadPortalSettings(replies, settings)
+  applied = useAppColorMode().applied
   vi.stubGlobal('defineNuxtPlugin', (definition: PluginDefinition) => definition)
-  vi.stubGlobal('useAppColorMode', () => ({ applied, mode, choose }))
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
   vi.stubGlobal('useHead', useHeadMock)
   vi.stubGlobal('matchMedia', () => ({ addEventListener: vi.fn() }))
   const plugin = (await import('~/plugins/color-mode')).default as unknown as PluginDefinition
@@ -61,10 +61,7 @@ const loadPlugin = async (): Promise<PluginDefinition> => {
 }
 
 beforeEach(() => {
-  applied = ref<ColorMode | null>(ColorMode.Dark)
-  mode = ref<string>(ColorMode.Dark)
   settings = {}
-  choose.mockReset()
   useHeadMock.mockClear()
   localStorage.clear()
   vi.resetModules()
@@ -86,8 +83,8 @@ describe('color-mode plugin', () => {
   })
 
   it('writes the template page colour into theme-color', async () => {
-    applied.value = ColorMode.Light
-    settings['portal.template'] = 'nova'
+    settings[PortalSettingKey.ThemeDefault] = ColorMode.Light
+    settings[PortalSettingKey.Template] = TemplateName.Nova
     await loadPlugin()
 
     const head = useHeadMock.mock.calls[0]![0] as HeadInput
@@ -99,7 +96,7 @@ describe('color-mode plugin', () => {
 
   it('gives classic a light page colour of its own, so the toggle reaches the browser chrome', async () => {
     // Classic is the default template: no `portal.template` setting resolves to it.
-    applied.value = ColorMode.Light
+    settings[PortalSettingKey.ThemeDefault] = ColorMode.Light
     await loadPlugin()
 
     const light = (useHeadMock.mock.calls[0]![0] as HeadInput).meta.filter(tag => tag.name === 'theme-color')
@@ -110,7 +107,7 @@ describe('color-mode plugin', () => {
   })
 
   it('gives each device scheme its own theme-color while no mode is chosen', async () => {
-    settings['portal.template'] = 'nova'
+    settings[PortalSettingKey.Template] = TemplateName.Nova
     await loadPlugin()
     // The browser half reads a mode back from <html>; clear it to stand for the server render.
     applied.value = null
@@ -127,13 +124,12 @@ describe('color-mode plugin', () => {
 
     await loadPlugin()
 
-    expect(choose).toHaveBeenCalledWith(ColorMode.Light)
+    expect(applied.value).toBe(ColorMode.Light)
     expect(localStorage.getItem('color-mode')).toBeNull()
   })
 
   it('reads the class the bootstrap script set when nothing was applied yet', async () => {
-    applied.value = null
-    mode.value = ColorModeSystem.System
+    settings[PortalSettingKey.ThemeDefault] = ColorModeSystem.System
     document.documentElement.classList.add('light')
 
     await loadPlugin()

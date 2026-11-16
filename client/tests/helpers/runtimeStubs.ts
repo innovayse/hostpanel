@@ -9,6 +9,7 @@
  */
 
 import { vi } from 'vitest'
+import { ref } from 'vue'
 
 /** What a test can change about the stood-in route. */
 export interface RouteStubOptions {
@@ -42,6 +43,15 @@ export const stubRoute = (options: RouteStubOptions = {}): void => {
  */
 export const stubLocalePath = (prefix: string = ''): void => {
   vi.stubGlobal('useLocalePath', () => (path: string) => `${prefix}${path}`)
+}
+
+/**
+ * Defines `useI18n` as a global that reports one active language, for a composable that reads only the locale.
+ *
+ * @param locale - The visitor's language code.
+ */
+export const stubLocale = (locale: string): void => {
+  vi.stubGlobal('useI18n', () => ({ locale: ref(locale) }))
 }
 
 /** The locale prefix a test's localised path carries, for the tests that expect what `useLocalePath` returns. */

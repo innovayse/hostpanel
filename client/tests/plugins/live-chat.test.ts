@@ -8,6 +8,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import type { Ref } from 'vue'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { ChatProvider } from '~/types/chatprovider'
+
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 /** One script tag as handed to `useHead`. */
 interface ScriptTag {
@@ -33,7 +39,7 @@ interface PluginDefinition {
   setup: (app: { $i18n: { locale: Ref<string> } }) => void
 }
 
-/** The settings the stubbed store answers with. */
+/** The operator's settings the stub answers with, by their dotted key. */
 let settings: Record<string, string> = {}
 
 /** The captured `useHead` call. */
@@ -48,8 +54,8 @@ let locale: Ref<string>
  * @returns The plugin definition.
  */
 const loadPlugin = async (): Promise<PluginDefinition> => {
+  await loadPortalSettings(replies, settings)
   vi.stubGlobal('defineNuxtPlugin', (definition: PluginDefinition) => definition)
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
   vi.stubGlobal('useHead', useHeadMock)
   vi.stubGlobal('watch', vi.fn())
   const plugin = (await import('~/plugins/live-chat')).default as unknown as PluginDefinition
@@ -70,9 +76,9 @@ const scripts = (): ScriptTag[] => {
  * Fills the settings a fully configured chat needs.
  */
 const configureChat = (): void => {
-  settings['portal.chat.provider'] = 'innochat'
-  settings['portal.chat.base_url'] = 'https://chat.example'
-  settings['portal.chat.website_token'] = 'tok-default'
+  settings[PortalSettingKey.ChatProvider] = ChatProvider.Innochat
+  settings[PortalSettingKey.ChatBaseUrl] = 'https://chat.example'
+  settings[PortalSettingKey.ChatWebsiteToken] = 'tok-default'
 }
 
 beforeEach(() => {
@@ -98,7 +104,7 @@ describe('live-chat plugin', () => {
 
   it('emits no script when the token is missing', async () => {
     configureChat()
-    delete settings['portal.chat.website_token']
+    settings[PortalSettingKey.ChatWebsiteToken] = ''
     await loadPlugin()
 
     expect(scripts()).toEqual([])
@@ -117,7 +123,7 @@ describe('live-chat plugin', () => {
 
   it('prefers the per-locale token over the default one', async () => {
     configureChat()
-    settings['portal.chat.website_token.ru'] = 'tok-ru'
+    settings[PortalSettingKey.ChatWebsiteTokenRu] = 'tok-ru'
     locale.value = 'ru'
     await loadPlugin()
 
@@ -126,7 +132,7 @@ describe('live-chat plugin', () => {
 
   it('ignores an unsupported provider', async () => {
     configureChat()
-    settings['portal.chat.provider'] = 'other'
+    settings[PortalSettingKey.ChatProvider] = 'other'
     await loadPlugin()
 
     expect(scripts()).toEqual([])

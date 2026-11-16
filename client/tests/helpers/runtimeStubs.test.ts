@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { localized, stubLocalePath, stubRoute, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
+import { localized, stubLocale, stubLocalePath, stubRoute, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 
 describe('stubRoute', () => {
   it('answers with the given parameters, query and path', () => {
@@ -32,6 +32,14 @@ describe('stubLocalePath', () => {
 
     stubLocalePath('/en')
     expect(useLocalePath()('/hosting')).toBe('/en/hosting')
+  })
+})
+
+describe('stubLocale', () => {
+  it('reports the language it was given as the active one', () => {
+    stubLocale('ru')
+
+    expect(useI18n().locale.value).toBe('ru')
   })
 })
 

@@ -2,24 +2,29 @@
  * Unit tests for the classic LayoutHeader: the logo lockup, the catalogue-driven navigation, the
  * shared controls, the signed-out and signed-in states, the drawer and the scroll shadow.
  *
- * The real catalogue and auth stores, API composables and transport run against a stub server
- * playing the BFF; only the two pickers are stood in for.
+ * The real catalogue and auth stores, API composables, transport and the operator's settings composables run
+ * against a stub server playing the BFF; only the two pickers are stood in for.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 import LayoutHeader from '~/components/layout/Header.vue'
+import { useAppColorMode } from '~/composables/useAppColorMode'
+import { useAuthMode } from '~/composables/useAuthMode'
+import { useBrandLogo } from '~/composables/useBrandLogo'
+import { useSiteIdentity } from '~/composables/useSiteIdentity'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useAuthStore } from '~/stores/auth'
 import { useCatalogStore } from '~/stores/catalog'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
-import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf, requestsTo } from '~/tests/helpers/stubRoutes'
+import type { StubReply } from '~/tests/helpers/stubServer'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
+import { AuthMode } from '~/types/authmode'
 import { ProductType } from '~/types/producttype'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 import { SITE_DOMAINS_PATH, SITE_HOSTING_PATH, siteProductFamilyPath } from '~/constants/siteRoutes'
@@ -39,8 +44,11 @@ const PRODUCTS = [
   { id: 90, groupId: 9, type: ProductType.Vps },
 ] as PortalProduct[]
 
-/** The stub playing the BFF. */
-let stub: StubServer
+/** What the stub answers, by route, and the accessor of the stub the hooks start and close around each test. */
+const { replies, stub } = usePortalSettingsServer({ useAppColorMode, useAuthMode, useBrandLogo, useSiteIdentity })
+
+/** The settings of an operator who has named the site and uploaded no logo. */
+const NAMED_SITE: Record<string, string> = { [PortalSettingKey.SiteName]: 'Acme Host' }
 
 /** What the stub answers the product groups read with; a test changes it before it mounts. */
 let groupsReply: StubReply = { body: GROUPS }
@@ -63,14 +71,16 @@ const client = makeClientUser()
 /**
  * Mounts the header with the pickers stood in for and waits until the catalogue read has settled.
  *
+ * @param settings The operator's settings by their dotted key.
  * @returns The wrapper.
  */
-const mountHeader = async () => {
+const mountHeader = async (settings: Record<string, string> = NAMED_SITE) => {
+  await loadPortalSettings(replies, settings)
   const wrapper = mountWithKit(LayoutHeader, {
     components: { UiLanguageSwitcher: LanguageSwitcherStub, UiCurrencySwitcher: CurrencySwitcherStub },
     attachToBody: true,
   })
-  await waitUntil(() => expect(requestsTo(stub.requests, CatalogPath.ProductGroups).length).toBeGreaterThan(0))
+  await waitUntil(() => expect(requestsTo(stub().requests, CatalogPath.ProductGroups).length).toBeGreaterThan(0))
   await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
   return wrapper
 }
@@ -85,21 +95,15 @@ const desktopLinkKeys = (wrapper: Awaited<ReturnType<typeof mountHeader>>): (str
   wrapper.find('[data-testid="layout-desktop-nav"]').findAll('a').map((link) => link.attributes('data-testid'))
 
 describe('LayoutHeader', () => {
-  beforeEach(async () => {
-    stubTemplateGlobals()
-    vi.stubGlobal('useRuntimeConfig', () => ({ public: {} }))
+  beforeEach(() => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: AuthMode.Local } }))
     groupsReply = { body: GROUPS }
-    stub = await startTransport(routeTable({
-      [readOf(CatalogPath.ProductGroups)]: () => groupsReply,
-      [readOf(CatalogPath.Products)]: { body: PRODUCTS },
-    }))
+    replies[readOf(CatalogPath.ProductGroups)] = () => groupsReply
+    replies[readOf(CatalogPath.Products)] = { body: PRODUCTS }
     window.localStorage.clear()
   })
 
-  afterEach(async () => {
-    await stub.close()
-    // Put back the setup's empty route, which the active-state tests replace.
-    vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: '/', fullPath: '/', meta: {} }))
+  afterEach(() => {
     document.body.classList.remove('overflow-hidden')
   })
 
@@ -113,8 +117,7 @@ describe('LayoutHeader', () => {
   })
 
   it('draws the uploaded logo instead of the mark', async () => {
-    stubTemplateGlobals({ logo: '/api/uploads/logo.png' })
-    const wrapper = await mountHeader()
+    const wrapper = await mountHeader({ ...NAMED_SITE, [PortalSettingKey.Logo]: '/api/uploads/logo.png' })
 
     const logo = wrapper.find('[data-testid="layout-logo"]')
     expect(logo.find('[data-testid="app-logo-light"]').attributes('src')).toBe('/api/uploads/logo.png')
@@ -160,8 +163,6 @@ describe('LayoutHeader', () => {
   })
 
   it('offers the light/dark switch and the cart in both the desktop and the small-screen bar', async () => {
-    // The shared stub only knows `isDark`; the switch also reads the operator's toggle setting.
-    vi.stubGlobal('useAppColorMode', () => ({ isDark: ref(false), applied: ref('light'), userToggleEnabled: ref(true), toggle: vi.fn() }))
     const wrapper = await mountHeader()
 
     expect(wrapper.findAll('[data-testid="theme-toggle"]')).toHaveLength(2)
@@ -169,7 +170,6 @@ describe('LayoutHeader', () => {
   })
 
   it('gives the theme toggle, cart and pickers the same control frame', async () => {
-    vi.stubGlobal('useAppColorMode', () => ({ isDark: ref(false), applied: ref('light'), userToggleEnabled: ref(true), toggle: vi.fn() }))
     const wrapper = await mountHeader()
 
     for (const testid of ['theme-toggle', 'layout-cart-button']) {
@@ -226,12 +226,12 @@ describe('LayoutHeader', () => {
   it('loads the catalogue families once, during setup, not after mount', async () => {
     await mountHeader()
 
-    expect(requestsTo(stub.requests, CatalogPath.ProductGroups)).toHaveLength(1)
+    expect(requestsTo(stub().requests, CatalogPath.ProductGroups)).toHaveLength(1)
   })
 
   it('renders the widget mounts instead of the local account part when the widget is served', async () => {
     // The header imports the composable directly, so the deployment is described through the runtime config it reads.
-    vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: 'sso', mainUrl: 'https://portal.example.com' } }))
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: AuthMode.Sso, mainUrl: 'https://portal.example.com' } }))
     const wrapper = await mountHeader()
 
     expect(wrapper.find('#inno-launcher-mount').exists()).toBe(true)

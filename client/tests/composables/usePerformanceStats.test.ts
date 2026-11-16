@@ -4,33 +4,24 @@
  * @module tests/composables/usePerformanceStats.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { PerformanceStatKey } from '~/constants/performanceStatKey'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { usePerformanceStats } from '~/composables/usePerformanceStats'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 
-/**
- * Stubs the settings reader with a fixed set of values.
- *
- * @param values Setting key to value.
- */
-const stubSettings = (values: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('usePerformanceStats', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('is empty when no figure is set, which hides the section', () => {
-    stubSettings({})
+  it('is empty when no figure is set, which hides the section', async () => {
+    await loadPortalSettings(replies)
 
     expect(usePerformanceStats().value).toEqual([])
   })
 
-  it('returns the set figures in enum order', () => {
-    stubSettings({
+  it('returns the set figures in enum order', async () => {
+    await loadPortalSettings(replies, {
       [PortalSettingKey.StatsSupportResponse]: '15 min',
       [PortalSettingKey.StatsUptime]: '99.9%',
       [PortalSettingKey.StatsSitesHosted]: '12,000+',

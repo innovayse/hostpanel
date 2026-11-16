@@ -102,6 +102,25 @@ public sealed class CheckClientVatTests(IntegrationTestFactory factory) : IClass
         stored.Name.Should().Be("Seeded Name");
     }
 
+    /// <summary>
+    /// A country whose register is not set up on the installation (the United Kingdom's without credentials) is refused with its
+    /// own code, not as a busy service, without asking, and the client keeps the status it had.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RegisterNotConfigured_Is503WithItsOwnCodeAndAsksNothing()
+    {
+        var clientId = await VatTestSeeds.SeedClientAsync(factory, "GB", "GB123456789", VatCheckOutcome.Valid);
+        var checker = new FakeVatNumberChecker(configured: country => country != "GB");
+
+        var response = await CheckAsync(checker, clientId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.VAT_CHECK_NOT_CONFIGURED);
+        checker.Lookups.Should().BeEmpty();
+        (await VatTestSeeds.ReadAsync(factory, clientId)).Status.Should().Be(VatCheckOutcome.Valid);
+    }
+
     /// <summary>An unavailable answer for a number never judged leaves it unjudged, not invalid.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

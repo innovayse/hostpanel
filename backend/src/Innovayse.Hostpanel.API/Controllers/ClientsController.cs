@@ -147,7 +147,7 @@ public sealed class ClientsController : BaseApiController
     /// <param name="id">The client primary key.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 when the answer was recorded; 404 with <c>CLIENT_NOT_FOUND</c>; 400 with <c>CLIENT_VAT_NUMBER_MISSING</c> or <c>CLIENT_VAT_COUNTRY_NOT_SUPPORTED</c>, or when the route fails validation; 409 with <c>CONFLICT</c> when another writer changed the client first; 503 with <c>VAT_SERVICE_UNAVAILABLE</c> when the service gave no verdict; 401 without a session; 403 for a caller who is not staff;
+    /// 204 when the answer was recorded; 404 with <c>CLIENT_NOT_FOUND</c>; 400 with <c>CLIENT_VAT_NUMBER_MISSING</c> or <c>CLIENT_VAT_COUNTRY_NOT_SUPPORTED</c>, or when the route fails validation; 409 with <c>CONFLICT</c> when another writer changed the client first; 503 with <c>VAT_SERVICE_UNAVAILABLE</c> when the service gave no verdict, or with <c>VAT_CHECK_NOT_CONFIGURED</c> when the register of the client's country is not set up on the installation; 401 without a session; 403 for a caller who is not staff;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/vat-check")]

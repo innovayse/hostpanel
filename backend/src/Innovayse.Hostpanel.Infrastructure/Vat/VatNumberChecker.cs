@@ -25,6 +25,10 @@ public sealed class VatNumberChecker : IVatNumberChecker
     }
 
     /// <inheritdoc/>
+    public bool IsConfiguredFor(string country) =>
+        country != VatRegisters.UnitedKingdom || _hmrc.IsConfigured;
+
+    /// <inheritdoc/>
     public Task<VatNumberCheck> CheckAsync(VatNumberLookup lookup, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(lookup);

@@ -40,7 +40,8 @@ public sealed class CheckClientVatHandler
     /// <returns>
     /// Success when a verdict was recorded; <c>CLIENT_NOT_FOUND</c> when the id names no client; <c>CLIENT_VAT_NUMBER_MISSING</c>
     /// when the client holds no number; <c>CLIENT_VAT_COUNTRY_NOT_SUPPORTED</c> when the client's country has no register to ask;
-    /// or <c>VAT_SERVICE_UNAVAILABLE</c> when the service gave no verdict, in which case nothing was changed. A client
+    /// <c>VAT_CHECK_NOT_CONFIGURED</c> when the register of the client's country is not set up on this installation (the United
+    /// Kingdom's without its credentials); or <c>VAT_SERVICE_UNAVAILABLE</c> when the service gave no verdict, in which case nothing was changed. A client
     /// changed by another writer during the call answers <c>CONFLICT</c> from the save.
     /// </returns>
     public async Task<Result> HandleAsync(CheckClientVatCommand cmd, CancellationToken ct)
@@ -64,6 +65,10 @@ public sealed class CheckClientVatHandler
         }
 
         var lookup = VatRegisters.LookupFor(client.Country!, client.TaxId);
+        if (!_checker.IsConfiguredFor(lookup.Country))
+        {
+            return Result.FailureCode(HostpanelErrorCodes.VAT_CHECK_NOT_CONFIGURED);
+        }
 
         // A prefix and nothing after it is not a number any register holds: no call is made for it.
         var answer = lookup.Number.Length == 0

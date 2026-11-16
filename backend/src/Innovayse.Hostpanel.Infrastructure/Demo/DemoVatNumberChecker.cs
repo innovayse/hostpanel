@@ -17,6 +17,9 @@ public sealed class DemoVatNumberChecker : IVatNumberChecker
     private const string DemoAddress = "1 Demo Street, Demo City";
 
     /// <inheritdoc/>
+    public bool IsConfiguredFor(string country) => true;
+
+    /// <inheritdoc/>
     public Task<VatNumberCheck> CheckAsync(VatNumberLookup lookup, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(lookup);

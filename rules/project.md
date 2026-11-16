@@ -202,9 +202,11 @@ docker/                              compose set (shared·dev·prod·platform), 
   `AdminCreateClient`) publish `ClientVatCheckRequestedEvent` after the save, which `ClientVatCheckRequestedHandler` runs as
   `CheckClientVat` in the background. `VatRegisters` (Application) is the one list of the countries that have a register (the EU
   member states and `GB`) and the one place a number is put in lookup shape. `RecheckVatNumbersCron` re-checks never judged
-  numbers first, then those older than `ScheduledJobs:VatRecheckAfterDays`. `ClientTaxRateResolver` is still the one place a new
+  numbers first, then those older than `ScheduledJobs:VatRecheckAfterDays`; it leaves out the countries whose register is not set
+  up (`IVatNumberChecker.IsConfiguredFor`, the UK without credentials) and stops asking about a country after
+  `VatRecheckStopAfterUnavailable` answers in a row without a verdict, so one register never starves the others. `ClientTaxRateResolver` is still the one place a new
   invoice's tax is decided: it answers a `ClientTaxTreatment` (rate, or the VAT number of a reverse charge), `Tax Exempt` wins, and
-  a reverse charge needs a valid verdict, a country with a register other than `billing.tax.seller_country`; the invoice stores
+  a reverse charge needs a valid verdict no older than `ScheduledJobs:VatCheckValidForDays` (it fails closed when the re-check stops), a country with a register other than `billing.tax.seller_country`; the invoice stores
   `ReverseCharge` and `ClientVatNumber` (`Invoice.ApplyReverseCharge`) so a later change of the client never rewrites it, and
   `UpdateInvoiceOptions` asks the resolver (`EnsureMayBeTaxedAsync`) instead of deciding. The UK lookup needs `Vat:Hmrc` credentials
   (`HmrcVatOptions`, both or neither); the demo replaces the port with `DemoVatNumberChecker`.

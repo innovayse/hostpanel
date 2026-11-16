@@ -16,7 +16,9 @@ namespace Innovayse.Hostpanel.Application.Clients.Commands.RecheckVatNumbersCron
 /// <summary>
 /// Handles <see cref="RecheckVatNumbersCronCommand"/> by running the same check as the client page's button
 /// (<see cref="CheckClientVatCommand"/>) for the clients whose number is due: never judged first, then the longest
-/// unchecked. A check the service could not complete changes nothing and the client is tried again on the next run.
+/// unchecked. A check the service could not complete changes nothing and the client is tried again on the next run. Each country
+/// is judged on its own: one whose register keeps answering without a verdict is left out for the rest of the pass, and a country
+/// whose register is not set up on this installation is left out altogether, so neither can keep the others from being checked.
 /// </summary>
 public sealed class RecheckVatNumbersCronHandler
 {
@@ -28,6 +30,9 @@ public sealed class RecheckVatNumbersCronHandler
 
     /// <summary>Message bus, to run the check command per client.</summary>
     private readonly IMessageBus _bus;
+
+    /// <summary>The port to the registers, asked which countries can be checked at all.</summary>
+    private readonly IVatNumberChecker _checker;
 
     /// <summary>The clock the cut-off date is read from.</summary>
     private readonly IClock _clock;
@@ -42,6 +47,7 @@ public sealed class RecheckVatNumbersCronHandler
     /// <param name="jobs">Runs the pass under its lease and schedules the next run.</param>
     /// <param name="context">The module's data context, for the clients that are due.</param>
     /// <param name="bus">Message bus, to run the check command per client.</param>
+    /// <param name="checker">The port to the registers, asked which countries can be checked at all.</param>
     /// <param name="clock">The clock the cut-off date is read from.</param>
     /// <param name="options">The scheduled jobs settings.</param>
     /// <param name="logger">Structured logger.</param>
@@ -49,6 +55,7 @@ public sealed class RecheckVatNumbersCronHandler
         RecurringJobs jobs,
         IHostpanelDbContext context,
         IMessageBus bus,
+        IVatNumberChecker checker,
         IClock clock,
         IOptions<ScheduledJobsOptions> options,
         ILogger<RecheckVatNumbersCronHandler> logger)
@@ -56,6 +63,7 @@ public sealed class RecheckVatNumbersCronHandler
         _jobs = jobs;
         _context = context;
         _bus = bus;
+        _checker = checker;
         _clock = clock;
         _options = options;
         _logger = logger;
@@ -84,53 +92,77 @@ public sealed class RecheckVatNumbersCronHandler
         }
 
         var staleBefore = _clock.UtcNow - options.VatRecheckAfter;
-        var countries = VatRegisters.Countries.ToArray();
 
-        // Never judged first (false sorts before true), then the oldest check; a closed account is no longer invoiced.
-        var due = await _context.Clients
-            .AsNoTracking()
-            .Where(c => c.TaxId != null && c.Status != ClientStatus.Closed && countries.Contains(c.Country!)
-                && (c.VatStatus == null || c.VatCheckedAt < staleBefore))
-            .OrderBy(c => c.VatCheckedAt != null)
-            .ThenBy(c => c.VatCheckedAt)
-            .ThenBy(c => c.Id)
-            .Select(c => c.Id)
-            .Take(options.VatRecheckBatchSize)
-            .ToListAsync(ct);
+        // A register that is not set up here (the United Kingdom's without credentials) can never answer; its clients are left
+        // out, or the same never-judged ones would head the queue every day and take the whole pass for nothing.
+        var countries = VatRegisters.Countries.Where(_checker.IsConfiguredFor).ToArray();
 
+        // A country whose register stopped answering is left alone for the rest of the pass, so it never blocks the others.
+        var stoppedCountries = new HashSet<string>(StringComparer.Ordinal);
+        var unavailableInARow = new Dictionary<string, int>(StringComparer.Ordinal);
+        var attemptedIds = new HashSet<int>();
         var checkedCount = 0;
         var unavailable = 0;
-        var consecutiveUnavailable = 0;
-        foreach (var clientId in due)
+        while (attemptedIds.Count < options.VatRecheckBatchSize)
         {
-            var outcome = await _bus.InvokeAsync<Result>(new CheckClientVatCommand(clientId), ct);
-            if (outcome.IsSuccess)
-            {
-                checkedCount++;
-                consecutiveUnavailable = 0;
-                continue;
-            }
+            var openCountries = countries.Where(c => !stoppedCountries.Contains(c)).ToArray();
+            var triedIds = attemptedIds.ToArray();
 
-            if (outcome.ErrorCode != HostpanelErrorCodes.VAT_SERVICE_UNAVAILABLE)
+            // Never judged first (false sorts before true), then the oldest check; a closed account is no longer invoiced.
+            var due = await _context.Clients
+                .AsNoTracking()
+                .Where(c => c.TaxId != null && c.Status != ClientStatus.Closed && openCountries.Contains(c.Country!)
+                    && !triedIds.Contains(c.Id)
+                    && (c.VatStatus == null || c.VatCheckedAt < staleBefore))
+                .OrderBy(c => c.VatCheckedAt != null)
+                .ThenBy(c => c.VatCheckedAt)
+                .ThenBy(c => c.Id)
+                .Select(c => new { c.Id, Country = c.Country! })
+                .Take(options.VatRecheckBatchSize - attemptedIds.Count)
+                .ToListAsync(ct);
+            if (due.Count == 0)
             {
-                // A client that changed since the query (number removed, country moved) is simply not due any more.
-                consecutiveUnavailable = 0;
-                continue;
-            }
-
-            unavailable++;
-            consecutiveUnavailable++;
-            if (consecutiveUnavailable >= options.VatRecheckStopAfterUnavailable)
-            {
-                _logger.LogWarning(
-                    "RecheckVatNumbersCron: the VAT number service gave no verdict {Count} times in a row; stopping the pass.",
-                    consecutiveUnavailable);
                 break;
+            }
+
+            foreach (var client in due)
+            {
+                // The country stopped answering earlier in this round: no call, and no place in the batch is used up.
+                if (stoppedCountries.Contains(client.Country))
+                {
+                    continue;
+                }
+
+                attemptedIds.Add(client.Id);
+                var outcome = await _bus.InvokeAsync<Result>(new CheckClientVatCommand(client.Id), ct);
+                if (outcome.IsSuccess)
+                {
+                    checkedCount++;
+                    unavailableInARow.Remove(client.Country);
+                    continue;
+                }
+
+                if (outcome.ErrorCode != HostpanelErrorCodes.VAT_SERVICE_UNAVAILABLE)
+                {
+                    // A client that changed since the query (number removed, country moved) is simply not due any more.
+                    continue;
+                }
+
+                unavailable++;
+                var count = unavailableInARow.GetValueOrDefault(client.Country) + 1;
+                unavailableInARow[client.Country] = count;
+                if (count >= options.VatRecheckStopAfterUnavailable)
+                {
+                    stoppedCountries.Add(client.Country);
+                    _logger.LogWarning(
+                        "RecheckVatNumbersCron: the VAT number service gave no verdict {Count} times in a row for {Country}; leaving that country out of the pass.",
+                        count, client.Country);
+                }
             }
         }
 
         _logger.LogInformation(
-            "RecheckVatNumbersCron: {DueCount} numbers due, {CheckedCount} checked, {UnavailableCount} without a verdict.",
-            due.Count, checkedCount, unavailable);
+            "RecheckVatNumbersCron: {AttemptedCount} numbers tried, {CheckedCount} checked, {UnavailableCount} without a verdict.",
+            attemptedIds.Count, checkedCount, unavailable);
     }
 }

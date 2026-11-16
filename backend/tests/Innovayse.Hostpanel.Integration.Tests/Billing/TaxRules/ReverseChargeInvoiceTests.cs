@@ -96,6 +96,42 @@ public sealed class ReverseChargeInvoiceTests(IntegrationTestFactory factory) : 
         amounts.GetProperty("total").GetDecimal().Should().Be(Price + (Price * taxRate / 100m));
     }
 
+    /// <summary>
+    /// A valid verdict keeps the reverse charge for 30 days and no longer: a verdict nobody renewed (the re-check stopped
+    /// running) fails closed and the client is taxed, so a number that went invalid cannot keep it forever.
+    /// </summary>
+    /// <param name="ageDays">How many days ago the valid verdict was recorded.</param>
+    /// <param name="reverseCharge">Whether the invoice is under the reverse charge.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData(20, true)]
+    [InlineData(40, false)]
+    public async Task AValidVerdict_KeepsTheReverseChargeOnlyWhileItIsCurrent(int ageDays, bool reverseCharge)
+    {
+        var clientId = await VatTestSeeds.SeedClientAsync(
+            factory, "CY", "CY10259033P", VatCheckOutcome.Valid, checkedAt: TestMoments.Present().AddDays(-ageDays));
+
+        var invoice = await CreateInvoiceAsync(clientId);
+
+        invoice.GetProperty("reverseCharge").GetBoolean().Should().Be(reverseCharge);
+        invoice.GetProperty("amounts").GetProperty("taxRate").GetDecimal().Should().Be(reverseCharge ? 0m : 19m);
+    }
+
+    /// <summary>A hand typed rate is allowed again on the invoice of a client whose verdict lapsed, since nothing is under the reverse charge.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateOptions_AcceptsAHandTypedRateOnceTheVerdictHasLapsed()
+    {
+        var clientId = await VatTestSeeds.SeedClientAsync(
+            factory, "CY", "CY10259033P", VatCheckOutcome.Valid, checkedAt: TestMoments.Present().AddDays(-40));
+        var invoiceId = (await CreateInvoiceAsync(clientId)).GetProperty("id").GetInt32();
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", Options(10m));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
     /// <summary>The manual tax exemption keeps working and wins: no tax, and no reverse charge statement either.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

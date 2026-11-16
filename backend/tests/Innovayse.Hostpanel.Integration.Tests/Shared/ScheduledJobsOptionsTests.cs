@@ -100,6 +100,22 @@ public sealed class ScheduledJobsOptionsTests
         Validate(options).Should().BeEmpty();
     }
 
+    /// <summary>A VAT number check that lapses no later than the re-check asks again would drop the reverse charge of a healthy installation, so it is refused.</summary>
+    /// <param name="validForDays">How long a valid check keeps the reverse charge.</param>
+    /// <param name="recheckAfterDays">The age that makes a check due again.</param>
+    /// <param name="valid">Whether the pair is accepted.</param>
+    [Theory]
+    [InlineData(30, 7, true)]
+    [InlineData(8, 7, true)]
+    [InlineData(7, 7, false)]
+    [InlineData(3, 7, false)]
+    public void VatCheckValidForDays_MustOutlastTheRecheckAge(int validForDays, int recheckAfterDays, bool valid)
+    {
+        var options = new ScheduledJobsOptions { VatCheckValidForDays = validForDays, VatRecheckAfterDays = recheckAfterDays };
+
+        Validate(options).Should().HaveCount(valid ? 0 : 1);
+    }
+
     /// <summary>Runs the full options validation, annotations and relations alike.</summary>
     /// <param name="options">The options to check.</param>
     /// <returns>The failures found.</returns>

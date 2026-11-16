@@ -5,8 +5,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Vat.Settings;
 /// Bound from the <c>Vat:Hmrc</c> section in appsettings.
 /// </summary>
 /// <remarks>
-/// Optional: a deployment that serves no UK clients sets none of it, and a UK number then simply answers unavailable, which
-/// keeps the client's status as it was. EU numbers are checked without any credentials.
+/// Optional: a deployment that serves no UK clients sets none of it. A UK number is then refused as not configurable
+/// (<c>VAT_CHECK_NOT_CONFIGURED</c>) and the daily re-check leaves UK clients out, so the client's status stays as it was.
+/// EU numbers are checked without any credentials.
 /// </remarks>
 public sealed class HmrcVatOptions
 {

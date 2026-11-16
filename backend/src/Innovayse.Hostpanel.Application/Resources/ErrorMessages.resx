@@ -1195,6 +1195,9 @@
   <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>The VAT number service is not answering right now. The earlier result is kept. Try again later.</value>
   </data>
+  <data name="VAT_CHECK_NOT_CONFIGURED" xml:space="preserve">
+    <value>VAT numbers of this country cannot be checked yet: the register is not set up on this server. Ask the administrator to configure it (United Kingdom numbers need the HMRC credentials).</value>
+  </data>
   <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
     <value>Another product already uses this SKU. Choose a different one.</value>
   </data>

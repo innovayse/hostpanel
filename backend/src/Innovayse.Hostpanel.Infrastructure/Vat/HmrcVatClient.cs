@@ -66,6 +66,9 @@ public sealed class HmrcVatClient
         _logger = logger;
     }
 
+    /// <summary>Gets a value indicating whether the credentials of the registered application are set, so a lookup can be made.</summary>
+    public bool IsConfigured => _options.Value.IsConfigured;
+
     /// <summary>Checks one number.</summary>
     /// <param name="lookup">The United Kingdom and the number without its prefix.</param>
     /// <param name="ct">Cancellation token.</param>

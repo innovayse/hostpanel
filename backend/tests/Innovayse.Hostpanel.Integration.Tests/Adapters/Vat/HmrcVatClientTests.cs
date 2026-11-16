@@ -152,6 +152,14 @@ public sealed class HmrcVatClientTests : IAsyncLifetime
         http.Requests.Should().BeEmpty();
     }
 
+    /// <summary>The adapter reports whether the application's credentials are set, so a caller can tell a missing set-up from a busy service.</summary>
+    [Fact]
+    public void IsConfigured_FollowsTheCredentials()
+    {
+        Client(configured: true).IsConfigured.Should().BeTrue();
+        Client(configured: false).IsConfigured.Should().BeFalse();
+    }
+
     /// <summary>A body that is not the published object is unavailable.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

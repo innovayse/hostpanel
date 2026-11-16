@@ -90,7 +90,7 @@ const handleCheck = (): void => {
           <UiBadge v-if="status" :tone="clientVatStatusTone(status)" dot data-testid="client-vat-status">
             {{ t(`clients.vat.status.${status}`) }}
           </UiBadge>
-          <UiBadge v-else tone="neutral" data-testid="client-vat-status">{{ t('clients.vat.status.none') }}</UiBadge>
+          <UiBadge v-else :tone="UiTone.Neutral" data-testid="client-vat-status">{{ t('clients.vat.status.none') }}</UiBadge>
           <UiText v-if="vat?.checkedAt" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="client-vat-date">
             {{ t('clients.vat.checkedAt', { date: formatDateTime(vat.checkedAt) }) }}
           </UiText>

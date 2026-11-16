@@ -71,13 +71,23 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     [Range(1, 365)]
     public int VatRecheckAfterDays { get; init; } = 7;
 
+    /// <summary>
+    /// Days a valid VAT number check keeps the reverse charge on new invoices. A check older than this no longer counts, so the
+    /// invoice is taxed again until the number is checked once more: the reverse charge fails closed when the daily re-check
+    /// stops running (switched off, a register that never answers) instead of holding on to a verdict nobody renewed. Longer
+    /// than <see cref="VatRecheckAfterDays"/>, so a healthy re-check always renews a check before it lapses.
+    /// </summary>
+    [Range(2, 730)]
+    public int VatCheckValidForDays { get; init; } = 30;
+
     /// <summary>How many clients one daily re-check pass checks at most; the clients left over are first in line the next day.</summary>
     [Range(1, 5000)]
     public int VatRecheckBatchSize { get; init; } = 500;
 
     /// <summary>
-    /// How many answers in a row may come back without a verdict before a re-check pass stops. The VAT number service is then
-    /// down, and asking for every remaining client would only wait out a timeout each; the next daily run starts again.
+    /// How many answers in a row may come back without a verdict for one country before a re-check pass stops asking about that
+    /// country. Its register is then down, and asking for every remaining client of it would only wait out a timeout each; the
+    /// other countries are still checked, and the next daily run starts again.
     /// </summary>
     [Range(1, 1000)]
     public int VatRecheckStopAfterUnavailable { get; init; } = 5;
@@ -264,6 +274,9 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Gets how old a VAT number check must be before the re-check asks again, as a span.</summary>
     public TimeSpan VatRecheckAfter => TimeSpan.FromDays(VatRecheckAfterDays);
 
+    /// <summary>Gets how long a valid VAT number check keeps the reverse charge, as a span.</summary>
+    public TimeSpan VatCheckValidFor => TimeSpan.FromDays(VatCheckValidForDays);
+
     /// <summary>Gets the schedule of the gateway payment reconciliation.</summary>
     public JobSchedule ReconcileGatewayPayments =>
         JobSchedule.Every(TimeSpan.FromMinutes(ReconcileGatewayPaymentsIntervalMinutes));
@@ -349,6 +362,14 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <returns>One failure per relation that does not hold, none otherwise.</returns>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        // A check that lapses before the re-check looks at it again would drop the reverse charge of a healthy installation.
+        if (VatCheckValidForDays <= VatRecheckAfterDays)
+        {
+            yield return new ValidationResult(
+                "VatCheckValidForDays must be longer than VatRecheckAfterDays.",
+                [nameof(VatCheckValidForDays), nameof(VatRecheckAfterDays)]);
+        }
+
         // A cap below the start would make the first wait longer than the cap allows.
         if (GatewayCheckMaxIntervalMinutes < GatewayCheckBackoffStartMinutes)
         {

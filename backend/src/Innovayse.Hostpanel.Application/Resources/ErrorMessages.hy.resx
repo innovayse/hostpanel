@@ -1195,6 +1195,9 @@
   <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>ԱԱՀ համարների ստուգման ծառայությունը այս պահին չի պատասխանում։ Նախորդ արդյունքը պահպանվել է։ Փորձեք ավելի ուշ։</value>
   </data>
+  <data name="VAT_CHECK_NOT_CONFIGURED" xml:space="preserve">
+    <value>Այս երկրի ԱԱՀ համարները դեռ հնարավոր չէ ստուգել․ ռեեստրը կարգավորված չէ այս սերվերում։ Խնդրեք ադմինիստրատորին կարգավորել այն (Մեծ Բրիտանիայի համարների համար պետք են HMRC-ի հավատարմագրերը)։</value>
+  </data>
   <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
     <value>Այս SKU-ն արդեն օգտագործվում է մեկ այլ ապրանքում։ Ընտրեք այլ SKU։</value>
   </data>

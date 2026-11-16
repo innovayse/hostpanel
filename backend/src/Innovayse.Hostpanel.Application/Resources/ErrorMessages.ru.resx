@@ -1195,6 +1195,9 @@
   <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>Сервис проверки номеров плательщиков НДС сейчас не отвечает. Прежний результат сохранён. Повторите попытку позже.</value>
   </data>
+  <data name="VAT_CHECK_NOT_CONFIGURED" xml:space="preserve">
+    <value>Номера НДС этой страны пока нельзя проверить: реестр не настроен на этом сервере. Попросите администратора настроить его (для номеров Великобритании нужны учётные данные HMRC).</value>
+  </data>
   <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
     <value>Этот SKU уже используется другим продуктом. Выберите другой.</value>
   </data>

@@ -9,7 +9,9 @@ using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Common;
@@ -23,7 +25,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <remarks>
 /// The rate is 0 when tax is switched off (<see cref="BillingSettingKeys.TaxEnabled"/>), when the client is tax exempt (the manual
 /// override, which wins over everything below), or when the client has no country. A business client whose VAT number last
-/// checked valid, in an EU country other than the seller's (<see cref="BillingSettingKeys.SellerCountry"/>) or in the United
+/// checked valid, no longer ago than <see cref="ScheduledJobsOptions.VatCheckValidForDays"/> (an older verdict nobody renewed no
+/// longer counts, so the reverse charge fails closed), in an EU country other than the seller's (<see cref="BillingSettingKeys.SellerCountry"/>) or in the United
 /// Kingdom, is invoiced under the reverse charge: rate 0, and the invoice states it and shows their number. A client in the
 /// seller's own country is taxed, and so is one whose number is invalid, never checked or missing. For a consumer (no tax
 /// identification number) in an EU member state other than the seller's, an invoice whose every line is a digital service is
@@ -42,15 +45,30 @@ public sealed class ClientTaxRateResolver
     /// <summary>Wolverine bus the client's brief is read through.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>The clock a VAT number check's age is judged against.</summary>
+    private readonly IClock _clock;
+
+    /// <summary>The scheduled jobs settings, for how long a valid VAT number check keeps the reverse charge.</summary>
+    private readonly IOptions<ScheduledJobsOptions> _options;
+
     /// <summary>Initializes the resolver.</summary>
     /// <param name="context">The module's data context, for the tax rules and the VAT rates.</param>
     /// <param name="settings">Reads the global tax switch and the seller's country.</param>
     /// <param name="bus">Wolverine bus the client's brief is read through.</param>
-    public ClientTaxRateResolver(IHostpanelDbContext context, SettingSource settings, IMessageBus bus)
+    /// <param name="clock">The clock a VAT number check's age is judged against.</param>
+    /// <param name="options">The scheduled jobs settings, for how long a valid VAT number check keeps the reverse charge.</param>
+    public ClientTaxRateResolver(
+        IHostpanelDbContext context,
+        SettingSource settings,
+        IMessageBus bus,
+        IClock clock,
+        IOptions<ScheduledJobsOptions> options)
     {
         _context = context;
         _settings = settings;
         _bus = bus;
+        _clock = clock;
+        _options = options;
     }
 
     /// <summary>Fixes the tax of a freshly raised invoice, after its lines are added and before any credit is applied to it.</summary>
@@ -227,14 +245,17 @@ public sealed class ClientTaxRateResolver
     }
 
     /// <summary>
-    /// Whether the reverse charge applies: the client holds a VAT number that last checked valid, in a country with a VAT
-    /// register (an EU member state or the United Kingdom) other than the seller's own. With no seller country set it never applies.
+    /// Whether the reverse charge applies: the client holds a VAT number that last checked valid, no longer ago than
+    /// <see cref="ScheduledJobsOptions.VatCheckValidForDays"/>, in a country with a VAT register (an EU member state or the
+    /// United Kingdom) other than the seller's own. With no seller country set it never applies. A verdict nobody renewed
+    /// within that time stops counting, so a number that went invalid while the re-check was not running cannot keep the reverse charge.
     /// </summary>
     /// <param name="client">The client's brief.</param>
     /// <param name="sellerCountry">The seller's country as stored; empty when the operator has set none.</param>
     /// <returns><see langword="true"/> when the invoice is raised under the reverse charge.</returns>
-    private static bool IsReverseCharge(ClientBriefDto client, string sellerCountry) =>
-        client.Vat.Status == VatCheckOutcome.Valid
+    private bool IsReverseCharge(ClientBriefDto client, string sellerCountry) =>
+        client.Vat is { Status: VatCheckOutcome.Valid, CheckedAt: { } checkedAt }
+            && checkedAt > _clock.UtcNow - _options.Value.VatCheckValidFor
             && !string.IsNullOrWhiteSpace(client.Settings.TaxId)
             && VatRegisters.Covers(client.Address.Country)
             && IsOtherCountry(client.Address.Country!, sellerCountry);

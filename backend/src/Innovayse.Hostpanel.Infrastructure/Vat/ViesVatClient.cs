@@ -21,6 +21,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Vat;
 /// not the published object, no answer in time. Those are never reported as invalid, because a number must not lose its
 /// reverse charge because a register was busy.
 /// </para>
+/// <para>
+/// <b>A 400 is not a verdict.</b> The published contract (the service's swagger file) answers 200 with the object above and
+/// 400 or 500 with <c>{ "actionSucceed": false, "errorWrappers": [{ "error": "..." }] }</c>, and it gives a 400 no meaning
+/// about the number: the same status carries a malformed request and the service's own refusals. It is therefore read as
+/// unavailable, never as invalid; only the 200 answer's <c>userError</c> says a number is not registered.
+/// </para>
 /// </remarks>
 public sealed class ViesVatClient
 {

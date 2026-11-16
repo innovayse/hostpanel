@@ -60,6 +60,7 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.CAMPAIGN_SEGMENT_VALUE_INVALID, 400)]
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE, 503)]
     [InlineData(HostpanelErrorCodes.VAT_SERVICE_UNAVAILABLE, 503)]
+    [InlineData(HostpanelErrorCodes.VAT_CHECK_NOT_CONFIGURED, 503)]
     [InlineData(HostpanelErrorCodes.CLIENT_REVERSE_CHARGE_APPLIES, 409)]
     [InlineData(HostpanelErrorCodes.CLIENT_VAT_NUMBER_MISSING, 400)]
     [InlineData(HostpanelErrorCodes.CLIENT_VAT_COUNTRY_NOT_SUPPORTED, 400)]

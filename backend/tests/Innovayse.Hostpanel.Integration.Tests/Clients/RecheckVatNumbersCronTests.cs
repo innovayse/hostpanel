@@ -91,7 +91,7 @@ public sealed class RecheckVatNumbersCronTests(IntegrationTestFactory factory) :
         NextRunsOf(session).Should().Be(1);
     }
 
-    /// <summary>After enough answers in a row with no verdict the pass stops asking and still schedules its next run.</summary>
+    /// <summary>After enough answers in a row with no verdict for a country the pass stops asking about it and still schedules its next run.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceDownForAWhile_StopsThePass()
@@ -104,8 +104,57 @@ public sealed class RecheckVatNumbersCronTests(IntegrationTestFactory factory) :
 
         var session = await RunAsync(HostWith(checker, stopAfterUnavailable: 2));
 
-        checker.Lookups.Should().HaveCount(2);
+        checker.Lookups.Count(l => l.Country == "DE").Should().Be(2);
         NextRunsOf(session).Should().Be(1);
+    }
+
+    /// <summary>
+    /// Clients of a country whose register never answers, at the head of the queue, do not starve the others: after the
+    /// threshold of answers in a row without a verdict that country is left out of the pass and a client of another country
+    /// behind them is still checked.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CountryThatNeverAnswers_DoesNotBlockTheClientsBehindIt()
+    {
+        var german = UniqueDigits();
+        for (var i = 0; i < 3; i++)
+        {
+            await VatTestSeeds.SeedClientAsync(factory, "GB", "GB" + UniqueDigits());
+        }
+
+        var germanId = await VatTestSeeds.SeedClientAsync(factory, "DE", "DE" + german);
+        var checker = new FakeVatNumberChecker(lookup => lookup.Country == "GB"
+            ? new VatNumberCheck(VatCheckOutcome.Unavailable)
+            : new VatNumberCheck(VatCheckOutcome.Valid, "Reached Name", null));
+
+        await RunAsync(HostWith(checker, stopAfterUnavailable: 2));
+
+        checker.Lookups.Count(l => l.Country == "GB").Should().Be(2);
+        checker.Lookups.Select(l => l.Number).Should().Contain(german);
+        (await VatTestSeeds.ReadAsync(factory, germanId)).Status.Should().Be(VatCheckOutcome.Valid);
+    }
+
+    /// <summary>
+    /// Clients of a country whose register is not set up are never asked about, so they cannot take the queue, and the other
+    /// countries are checked as usual.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CountryWhoseRegisterIsNotConfigured_IsLeftOutAndTheOthersAreChecked()
+    {
+        var german = UniqueDigits();
+        var british = UniqueDigits();
+        await VatTestSeeds.SeedClientAsync(factory, "GB", "GB" + british);
+        var germanId = await VatTestSeeds.SeedClientAsync(factory, "DE", "DE" + german);
+        var checker = new FakeVatNumberChecker(
+            lookup => new VatNumberCheck(VatCheckOutcome.Valid, "Reached Name", null),
+            configured: country => country != "GB");
+
+        await RunAsync(HostWith(checker));
+
+        checker.Lookups.Select(l => l.Number).Should().Contain(german).And.NotContain(british);
+        (await VatTestSeeds.ReadAsync(factory, germanId)).Status.Should().Be(VatCheckOutcome.Valid);
     }
 
     /// <summary>The switch turns the outbound calls off, and the job still schedules its next run.</summary>
@@ -138,6 +187,7 @@ public sealed class RecheckVatNumbersCronTests(IntegrationTestFactory factory) :
         {
             nameof(ScheduledJobsOptions.RecheckVatNumbersHour),
             nameof(ScheduledJobsOptions.VatRecheckAfterDays),
+            nameof(ScheduledJobsOptions.VatCheckValidForDays),
             nameof(ScheduledJobsOptions.VatRecheckBatchSize),
             nameof(ScheduledJobsOptions.VatRecheckStopAfterUnavailable),
         })

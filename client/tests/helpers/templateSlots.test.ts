@@ -29,6 +29,12 @@ describe('stubTemplateSlots', () => {
     vi.unstubAllGlobals()
   })
 
+  it('has no two slots, in any template, that share a loader', () => {
+    const loaders = Object.values(templates).flatMap((slots) => Object.values(TemplateSlot).map((slot) => slots[slot]))
+
+    expect(new Set(loaders).size).toBe(loaders.length)
+  })
+
   it('resolves the loader of a slot in every template to the stand-in and records the request', () => {
     const requested = stubTemplateSlots({ [TemplateSlot.Checkout]: CheckoutStandIn })
 

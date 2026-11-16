@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import Page from '~/pages/announcements/[id].vue'
 import { ContentPath, announcementPath } from '~/tests/helpers/contentPaths'
+import { SCHEMA_ORG_CONTEXT } from '~/constants/schemaOrg'
 import { PUBLIC_PAGE_BASE_URL, mountPage, publishedSchemas, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
@@ -31,6 +32,9 @@ const ANNOUNCEMENT = {
 /** The root element of the page. */
 const ROOT = 'announcement-page'
 
+/** The route path of the announcement, which the canonical URL is built from. */
+const PAGE_PATH = '/announcements/11'
+
 /** The key of the announcement read in a route table. */
 const ANNOUNCEMENT_READ = `GET ${announcementPath('11')}`
 
@@ -45,7 +49,7 @@ let table: StubRouteTable
 
 describe('pages/announcements/[id]', () => {
   beforeEach(async () => {
-    spies = stubPublicPageRuntime({ params: { id: '11' } })
+    spies = stubPublicPageRuntime({ params: { id: '11' }, path: PAGE_PATH })
     table = { [ANNOUNCEMENT_READ]: { body: ANNOUNCEMENT } }
     stub = await startTransport(routeTable(table))
   })
@@ -83,23 +87,30 @@ describe('pages/announcements/[id]', () => {
     await mountRenderedPage(Page, ROOT)
 
     const tags = seoTags(spies)
-    expect(tags).toMatchObject({
+    expect({ title: tags.title, description: tags.description, ogType: tags.ogType }).toEqual({
       title: 'Maintenance window | announcements.title',
       description: 'We will restart servers.',
       ogType: SeoPageType.Article,
     })
+    expect(tags.ogUrl).toBe(`${PUBLIC_PAGE_BASE_URL}${PAGE_PATH}`)
     expect(String(tags.title)).not.toMatch(/[–—]/)
+    // The page sets its tags only through the one SEO composable, never with a `useSeoMeta` call of its own.
+    expect(spies.useSeoMeta).toHaveBeenCalledTimes(1)
   })
 
   it('publishes Article structured data with the publication date', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    expect(publishedSchemas(spies)).toMatchObject([
+    const url = `${PUBLIC_PAGE_BASE_URL}${PAGE_PATH}`
+    expect(publishedSchemas(spies)).toEqual([
       {
+        '@context': SCHEMA_ORG_CONTEXT,
         '@type': 'Article',
         headline: 'Maintenance window',
+        mainEntityOfPage: url,
+        url,
+        publisher: { '@id': `${PUBLIC_PAGE_BASE_URL}/#organization` },
         description: 'We will restart servers.',
-        url: `${PUBLIC_PAGE_BASE_URL}/`,
         datePublished: '2026-03-15T12:00:00Z',
       },
     ])

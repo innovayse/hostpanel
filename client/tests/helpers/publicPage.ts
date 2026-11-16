@@ -49,6 +49,8 @@ export interface PublicPageOptions {
   params?: Record<string, string>
   /** The route query (`route.query`). */
   query?: Record<string, string | string[]>
+  /** The route path (`route.path`), which the real `useSeo` builds canonical URLs from; the root unless given. */
+  path?: string
   /** `tm` of vue-i18n: returns the raw message tree a page reads arrays from. */
   tm?: (key: string) => unknown
   /** Whether the visitor chose the dark colour mode; the light one otherwise. */

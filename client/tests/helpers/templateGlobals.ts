@@ -27,7 +27,7 @@ import { loadPortalSettings, usePortalSettingsServer } from './portalSettings'
 import type { PortalSettingsServer } from './portalSettings'
 
 /** Site name the identity composable reports unless a test says otherwise. */
-export const DEFAULT_SITE_NAME = 'Acme Host'
+const DEFAULT_SITE_NAME = 'Acme Host'
 
 /** The real composables every template component reads, by their auto-import name. */
 const TEMPLATE_COMPOSABLES = { usePortalSettings, useAppColorMode, useAuthMode, useBrandLogo, useContactDetails, useContactHours, useSecurityFeatures, useSiteIdentity }

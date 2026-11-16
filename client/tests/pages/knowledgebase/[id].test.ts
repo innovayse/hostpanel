@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import Page from '~/pages/knowledgebase/[id].vue'
 import { kbArticlePath } from '~/tests/helpers/contentPaths'
+import { SCHEMA_ORG_CONTEXT } from '~/constants/schemaOrg'
 import { PUBLIC_PAGE_BASE_URL, mountPage, publishedSchemas, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
@@ -31,6 +32,9 @@ const ARTICLE = {
   body: '<h2>Steps</h2><p>Open the <a href="javascript:alert(1)">panel</a>.</p><script>window.hacked = true</script>',
 }
 
+/** The route path of the article, which the canonical URL is built from. */
+const PAGE_PATH = '/knowledgebase/5'
+
 /** The key of the article read in a route table. */
 const ARTICLE_READ = `GET ${kbArticlePath('5')}`
 
@@ -48,7 +52,7 @@ let table: StubRouteTable
 
 describe('pages/knowledgebase/[id]', () => {
   beforeEach(async () => {
-    spies = stubPublicPageRuntime({ params: { id: '5' } })
+    spies = stubPublicPageRuntime({ params: { id: '5' }, path: PAGE_PATH })
     table = { [ARTICLE_READ]: { body: ARTICLE } }
     stub = await startTransport(routeTable(table))
   })
@@ -85,19 +89,31 @@ describe('pages/knowledgebase/[id]', () => {
     await mountRenderedPage(Page, ROOT)
 
     const tags = seoTags(spies)
-    expect(tags).toMatchObject({
+    expect({ title: tags.title, description: tags.description, ogType: tags.ogType }).toEqual({
       title: 'Point a domain at your server | kb.title',
       description: 'Change the DNS records',
       ogType: SeoPageType.Article,
     })
+    expect(tags.ogUrl).toBe(`${PUBLIC_PAGE_BASE_URL}${PAGE_PATH}`)
     expect(String(tags.title)).not.toMatch(/[–—]/)
+    // The page sets its tags only through the one SEO composable, never with a `useSeoMeta` call of its own.
+    expect(spies.useSeoMeta).toHaveBeenCalledTimes(1)
   })
 
   it('publishes Article structured data for the article at its canonical URL', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    expect(publishedSchemas(spies)).toMatchObject([
-      { '@type': 'Article', headline: 'Point a domain at your server', description: 'Change the DNS records', url: `${PUBLIC_PAGE_BASE_URL}/` },
+    const url = `${PUBLIC_PAGE_BASE_URL}${PAGE_PATH}`
+    expect(publishedSchemas(spies)).toEqual([
+      {
+        '@context': SCHEMA_ORG_CONTEXT,
+        '@type': 'Article',
+        headline: 'Point a domain at your server',
+        mainEntityOfPage: url,
+        url,
+        publisher: { '@id': `${PUBLIC_PAGE_BASE_URL}/#organization` },
+        description: 'Change the DNS records',
+      },
     ])
   })
 

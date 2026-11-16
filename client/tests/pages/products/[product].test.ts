@@ -155,10 +155,17 @@ describe('product detail page', () => {
     const family = publishedSchemas(spies).find((document) => document['@type'] === 'Product')
 
     expect(family).toMatchObject({ name: 'Alpha Suite', url: `${SITE_URL}/products/alpha-suite` })
-    expect(family?.offers).toMatchObject([
-      { name: 'Starter', price: 10, priceCurrency: 'USD', priceSpecification: { billingDuration: 'P1M' }, url: `${SITE_URL}/products/alpha-suite` },
-      { name: 'Pro', price: 20, priceCurrency: 'USD', priceSpecification: { billingDuration: 'P1M' }, url: `${SITE_URL}/products/alpha-suite` },
-    ])
+    expect(family?.offers).toEqual([
+      { name: 'Starter', price: 10 },
+      { name: 'Pro', price: 20 },
+    ].map(({ name, price }) => ({
+      '@type': 'Offer',
+      name,
+      url: `${SITE_URL}/products/alpha-suite`,
+      price,
+      priceCurrency: 'USD',
+      priceSpecification: { '@type': 'UnitPriceSpecification', price, priceCurrency: 'USD', billingDuration: 'P1M' },
+    })))
   })
 
   it('adds a plan to the cart with the selected cycle and the payer currency', async () => {

@@ -22,6 +22,7 @@ using Innovayse.Hostpanel.Application.Fraud.Extensions;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Extensions;
+using Innovayse.Hostpanel.Application.Orders.Queries.CountProductCommitments;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProducts;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductBundle;
@@ -154,7 +155,8 @@ public sealed class PlaceOrderHandler
     /// <c>ORDER_GUEST_DETAILS_REQUIRED</c> when a guest checkout reached the handler without its
     /// registration fields, <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already has an
     /// account, <c>PRODUCT_NOT_FOUND</c> or <c>PRODUCT_NOT_AVAILABLE</c> when a line item names a
-    /// product that does not exist or is not active, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c> when a
+    /// product that does not exist or is not active, <c>ORDER_PRODUCT_SOLD_OUT</c> when a product's cap on live
+    /// services is reached, <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the client already holds a one-per-client product, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c> when a
     /// product has no price for the requested currency and cycle, <c>ORDER_DOMAIN_PRICING_INVALID</c>
     /// when a domain line cannot be priced (see the private pricing helpers below for the causes
     /// that one code covers), <c>PRODUCT_BUNDLE_NOT_FOUND</c> or <c>PRODUCT_BUNDLE_NOT_AVAILABLE</c> when the bundle does
@@ -245,7 +247,7 @@ public sealed class PlaceOrderHandler
             items = bundleItems.Value!;
         }
 
-        var priced = await PriceLinesAsync(items, currency.Value!, ct);
+        var priced = await PriceLinesAsync(items, currency.Value!, existingClient?.Id, ct);
         if (priced.IsFailure)
         {
             return Result<PlaceOrderResultDto>.FailureCode(priced.ErrorCode!);
@@ -408,13 +410,15 @@ public sealed class PlaceOrderHandler
     /// </summary>
     /// <param name="items">The checkout's lines.</param>
     /// <param name="currencyCode">ISO 4217 alpha code the order bills in.</param>
+    /// <param name="clientId">The ordering client, or null for a guest whose client does not exist yet.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The priced lines, or <c>PRODUCT_NOT_FOUND</c>, <c>PRODUCT_NOT_AVAILABLE</c>,
+    /// <c>ORDER_PRODUCT_SOLD_OUT</c>, <c>ORDER_PRODUCT_ONE_PER_CLIENT</c>,
     /// <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c> or <c>ORDER_DOMAIN_PRICING_INVALID</c>.
     /// </returns>
     private async Task<Result<IReadOnlyList<PricedOrderLine>>> PriceLinesAsync(
-        IReadOnlyList<PlaceOrderItemDto> items, string currencyCode, CancellationToken ct)
+        IReadOnlyList<PlaceOrderItemDto> items, string currencyCode, int? clientId, CancellationToken ct)
     {
         var productIds = items.Select(i => i.ProductId).Distinct().ToList();
         var products = await _bus.InvokeAsync<Result<IReadOnlyList<OrderableProductDto>>>(
@@ -425,6 +429,12 @@ public sealed class PlaceOrderHandler
         }
 
         var productMap = products.Value!.ToDictionary(p => p.Id);
+
+        var limited = await EnsureProductLimitsAsync(items, productMap, clientId, ct);
+        if (limited.IsFailure)
+        {
+            return Result<IReadOnlyList<PricedOrderLine>>.FailureCode(limited.ErrorCode!);
+        }
 
         // The handler answers with a Result, so that is the type the bus is asked for; asking for
         // the bare DTO makes Wolverine look for a handler that returns one and fail the order.
@@ -468,6 +478,79 @@ public sealed class PlaceOrderHandler
         }
 
         return Result<IReadOnlyList<PricedOrderLine>>.Success(lines);
+    }
+
+    /// <summary>
+    /// Applies each product's cap on live services and its one-per-client rule to the order's product lines. The
+    /// count includes open orders not yet fulfilled, so two unpaid orders cannot both take the last place; two
+    /// orders placed at the same instant can still both pass, so a cap is a limit for the storefront, not a lock.
+    /// </summary>
+    /// <param name="items">The checkout's lines.</param>
+    /// <param name="productMap">The orderable products on the order, by id.</param>
+    /// <param name="clientId">The ordering client, or null for a guest, who holds nothing yet.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// Success, <c>ORDER_PRODUCT_SOLD_OUT</c> when a product's cap would be passed, or <c>ORDER_PRODUCT_ONE_PER_CLIENT</c>
+    /// when the client already holds or has ordered a one-per-client product, or the order names it twice.
+    /// </returns>
+    private async Task<Result> EnsureProductLimitsAsync(
+        IReadOnlyList<PlaceOrderItemDto> items,
+        IReadOnlyDictionary<int, OrderableProductDto> productMap,
+        int? clientId,
+        CancellationToken ct)
+    {
+        // Domain lines charge for a domain, not for the catalogue product, so only product lines take a place.
+        var wanted = items
+            .Where(i => i.DomainAction is null && productMap.ContainsKey(i.ProductId))
+            .GroupBy(i => i.ProductId)
+            .Select(g => (Product: productMap[g.Key], Count: g.Count()))
+            .Where(w => w.Product.MaxActiveServices is not null || w.Product.OnePerClient)
+            .ToList();
+        if (wanted.Count == 0)
+        {
+            return Result.Success();
+        }
+
+        var ids = wanted.Select(w => w.Product.Id).ToList();
+        if (wanted.Any(w => w.Product.OnePerClient))
+        {
+            if (wanted.Any(w => w.Product.OnePerClient && w.Count > 1))
+            {
+                return Result.FailureCode(HostpanelErrorCodes.ORDER_PRODUCT_ONE_PER_CLIENT);
+            }
+
+            if (clientId is not null)
+            {
+                var held = await _bus.InvokeAsync<Result<IReadOnlyDictionary<int, int>>>(
+                    new CountProductCommitmentsQuery(ids, clientId), ct);
+                if (held.IsFailure)
+                {
+                    return Result.FailureCode(held.ErrorCode!);
+                }
+
+                if (wanted.Any(w => w.Product.OnePerClient && held.Value!.GetValueOrDefault(w.Product.Id) > 0))
+                {
+                    return Result.FailureCode(HostpanelErrorCodes.ORDER_PRODUCT_ONE_PER_CLIENT);
+                }
+            }
+        }
+
+        if (wanted.Any(w => w.Product.MaxActiveServices is not null))
+        {
+            var taken = await _bus.InvokeAsync<Result<IReadOnlyDictionary<int, int>>>(
+                new CountProductCommitmentsQuery(ids), ct);
+            if (taken.IsFailure)
+            {
+                return Result.FailureCode(taken.ErrorCode!);
+            }
+
+            if (wanted.Any(w => w.Product.MaxActiveServices is { } max && taken.Value!.GetValueOrDefault(w.Product.Id) + w.Count > max))
+            {
+                return Result.FailureCode(HostpanelErrorCodes.ORDER_PRODUCT_SOLD_OUT);
+            }
+        }
+
+        return Result.Success();
     }
 
     /// <summary>

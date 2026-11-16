@@ -33,6 +33,11 @@ public static class ProductsErrors
     public const string ProductGracePeriodOutOfRange = "PRODUCT_GRACE_PERIOD_OUT_OF_RANGE";
 
     /// <summary>
+    /// The cap on live services is zero or negative (400): <see cref="Product.SetMaxActiveServices"/>.
+    /// </summary>
+    public const string ProductMaxActiveServicesInvalid = "PRODUCT_MAX_ACTIVE_SERVICES_INVALID";
+
+    /// <summary>
     /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):
     /// <see cref="ProductBundle.Update"/>.
     /// </summary>

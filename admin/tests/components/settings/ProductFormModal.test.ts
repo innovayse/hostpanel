@@ -44,6 +44,8 @@ const stored: Product = {
   metadata: '{"tier":"pro"}',
   gracePeriodDays: 30,
   isDigitalService: false,
+  maxActiveServices: 50,
+  onePerClient: true,
 }
 
 /** Answers for the two lists the dialog loads on mount. */
@@ -142,6 +144,8 @@ describe('ProductFormModal', () => {
       gracePeriodDays: 7,
       isHidden: false,
       isDigitalService: false,
+      maxActiveServices: 0,
+      onePerClient: false,
     }]])
   })
 
@@ -212,6 +216,32 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
     expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: true })
+  })
+
+  it('emits the order limits the operator sets for a new product', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-name"]').setValue('AI Hosting Beta')
+    await wrapper.get('[data-testid="product-form-max-active-services"] input').setValue('50')
+    await wrapper.get('[data-testid="product-form-one-per-client"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ maxActiveServices: 50, onePerClient: true })
+  })
+
+  it('opens a product with its order limits and emits 0 once the operator clears the cap', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    expect((wrapper.get('[data-testid="product-form-max-active-services"] input').element as HTMLInputElement).value).toBe('50')
+    expect(wrapper.get('[data-testid="product-form-one-per-client"]').attributes('aria-checked')).toBe('true')
+
+    await wrapper.get('[data-testid="product-form-max-active-services"] input').setValue('')
+    await wrapper.get('[data-testid="product-form-one-per-client"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ maxActiveServices: 0, onePerClient: false })
   })
 
   it('opens an inactive product as hidden and emits isHidden false once the operator turns it off', async () => {

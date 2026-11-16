@@ -24,6 +24,8 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="Metadata">The metadata bag as JSON object text, or null when none is set.</param>
 /// <param name="GracePeriodDays">Days a service stays usable after its due date before it is suspended.</param>
 /// <param name="IsDigitalService">Whether the product is an electronic service for VAT, taxed at the rate of the client's country when sold to a consumer in another EU member state.</param>
+/// <param name="MaxActiveServices">How many services of the product may be live at once, or null when unlimited.</param>
+/// <param name="OnePerClient">Whether a client may hold only one live service of the product.</param>
 public sealed record ProductDto(
     int Id,
     int GroupId,
@@ -42,4 +44,6 @@ public sealed record ProductDto(
     string? Sku,
     string? Metadata,
     int GracePeriodDays,
-    bool IsDigitalService);
+    bool IsDigitalService,
+    int? MaxActiveServices,
+    bool OnePerClient);

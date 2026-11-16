@@ -58,6 +58,13 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 /// Whether the product is an electronic service for VAT (see <see cref="Product.IsDigitalService"/>). Null keeps the stored
 /// value, so a caller that does not know the field never changes it.
 /// </param>
+/// <param name="MaxActiveServices">
+/// How many services of the product may be live at once, counting orders not yet fulfilled. 0 makes it unlimited,
+/// and null keeps the stored cap.
+/// </param>
+/// <param name="OnePerClient">
+/// Whether a client may hold only one live service of the product; null keeps the stored setting.
+/// </param>
 public sealed record UpdateProductCommand(
     int Id,
     string Name,
@@ -75,4 +82,6 @@ public sealed record UpdateProductCommand(
     string? Metadata = null,
     int? GracePeriodDays = null,
     bool? IsHidden = null,
-    bool? IsDigitalService = null);
+    bool? IsDigitalService = null,
+    int? MaxActiveServices = null,
+    bool? OnePerClient = null);

@@ -11,4 +11,13 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="Status">The product's status; only an active product may be ordered.</param>
 /// <param name="Price">The product's stored prices in the requested currency; a null cycle is not sold in it.</param>
 /// <param name="Fulfilment">What the invoice line charging for the product keeps a copy of.</param>
-public sealed record OrderableProductDto(int Id, string Name, ProductStatus Status, ProductPriceDto Price, ProductFulfilmentDto Fulfilment);
+/// <param name="MaxActiveServices">How many services of the product may be live at once, or null when unlimited.</param>
+/// <param name="OnePerClient">Whether a client may hold only one live service of the product.</param>
+public sealed record OrderableProductDto(
+    int Id,
+    string Name,
+    ProductStatus Status,
+    ProductPriceDto Price,
+    ProductFulfilmentDto Fulfilment,
+    int? MaxActiveServices = null,
+    bool OnePerClient = false);

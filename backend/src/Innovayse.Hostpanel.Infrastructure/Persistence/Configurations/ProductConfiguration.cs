@@ -51,6 +51,15 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             "CK_Products_GracePeriodDays",
             $"\"GracePeriodDays\" BETWEEN {Product.MinGracePeriodDays} AND {Product.MaxGracePeriodDays}"));
 
+        // Null is unlimited; a stored cap is at least one, as Product.SetMaxActiveServices requires.
+        builder.Property(x => x.MaxActiveServices);
+        builder.ToTable(table => table.HasCheckConstraint(
+            "CK_Products_MaxActiveServices",
+            "\"MaxActiveServices\" IS NULL OR \"MaxActiveServices\" >= 1"));
+
+        // Existing rows take false: no product limited a client to one service before the column existed.
+        builder.Property(x => x.OnePerClient).IsRequired();
+
         // Per-currency prices. ProductPrice.ProductId is never set in memory, SetPrice leaves it 0,
         // so this foreign key is what stamps it when the product is saved.
         builder.HasMany(x => x.Prices)

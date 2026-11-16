@@ -418,4 +418,40 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
         (await ProductsTestSeeds.GetProductAsync(client, await plain.Content.ReadFromJsonAsync<int>()))
             .GetProperty("isDigitalService").GetBoolean().Should().BeFalse();
     }
+
+    /// <summary>
+    /// <c>maxActiveServices</c> and <c>onePerClient</c> are stored on create and read back by the admin list; a product
+    /// created without them is unlimited, and a negative cap is refused with 400.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_OrderLimits_AreStoredAndReadBack()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var limited = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Beta", type = ProductType.SharedHosting, monthlyPrice = 0m, annualPrice = 0m,
+            maxActiveServices = 50, onePerClient = true,
+        });
+        var plain = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Plain", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m,
+        });
+        var invalid = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Bad", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m, maxActiveServices = -1,
+        });
+        limited.StatusCode.Should().Be(HttpStatusCode.Created, await limited.Content.ReadAsStringAsync());
+        invalid.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var limitedDto = await ProductsTestSeeds.GetProductAsync(client, await limited.Content.ReadFromJsonAsync<int>());
+        limitedDto.GetProperty("maxActiveServices").GetInt32().Should().Be(50);
+        limitedDto.GetProperty("onePerClient").GetBoolean().Should().BeTrue();
+
+        var plainDto = await ProductsTestSeeds.GetProductAsync(client, await plain.Content.ReadFromJsonAsync<int>());
+        plainDto.GetProperty("maxActiveServices").ValueKind.Should().Be(JsonValueKind.Null);
+        plainDto.GetProperty("onePerClient").GetBoolean().Should().BeFalse();
+    }
 }

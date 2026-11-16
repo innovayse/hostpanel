@@ -35,7 +35,9 @@ public static class ProductExtensions
             product.Sku,
             product.Metadata,
             product.GracePeriodDays,
-            product.IsDigitalService);
+            product.IsDigitalService,
+            product.MaxActiveServices,
+            product.OnePerClient);
     }
 
     /// <summary>Maps a product to the facts a billed line keeps a copy of.</summary>

@@ -1534,4 +1534,13 @@
   <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
     <value>Արգելված ցուցակի գրառումը չի գտնվել։</value>
   </data>
+  <data name="ORDER_PRODUCT_SOLD_OUT" xml:space="preserve">
+    <value>Ցավոք, այս ապրանքն սպառված է։</value>
+  </data>
+  <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
+    <value>Դուք արդեն ունեք այս ապրանքը․ այն կարելի է պատվիրել մեկ անգամ յուրաքանչյուր հաճախորդի համար։</value>
+  </data>
+  <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
+    <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
+  </data>
 </root>

@@ -679,6 +679,17 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PRODUCT_NOT_AVAILABLE = "PRODUCT_NOT_AVAILABLE";
 
+    /// <summary>
+    /// The product's cap on live services is reached, counting orders not yet fulfilled, so it takes no new order (409).
+    /// </summary>
+    public const string ORDER_PRODUCT_SOLD_OUT = "ORDER_PRODUCT_SOLD_OUT";
+
+    /// <summary>
+    /// The product allows one live service per client and the client already holds or has ordered one, or the order
+    /// names it more than once (409).
+    /// </summary>
+    public const string ORDER_PRODUCT_ONE_PER_CLIENT = "ORDER_PRODUCT_ONE_PER_CLIENT";
+
     /// <summary>The service is not Pending, so it cannot be set up (400).</summary>
     public const string SERVICE_NOT_PENDING = "SERVICE_NOT_PENDING";
 
@@ -1666,6 +1677,12 @@ public static class HostpanelErrorCodes
     /// <see cref="Domain.Products.Product.SetGracePeriodDays"/>.
     /// </summary>
     public const string PRODUCT_GRACE_PERIOD_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductGracePeriodOutOfRange;
+
+    /// <summary>
+    /// The cap on live services is zero or negative (400):
+    /// <see cref="Domain.Products.Product.SetMaxActiveServices"/>.
+    /// </summary>
+    public const string PRODUCT_MAX_ACTIVE_SERVICES_INVALID = Domain.Products.ProductsErrors.ProductMaxActiveServicesInvalid;
 
     /// <summary>
     /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):

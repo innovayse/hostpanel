@@ -90,6 +90,17 @@ public sealed class UpdateProductHandler
             product.SetDigitalService(isDigitalService);
         }
 
+        // Null keeps the stored cap; 0 clears it to unlimited.
+        if (cmd.MaxActiveServices is { } maxActiveServices)
+        {
+            product.SetMaxActiveServices(maxActiveServices == 0 ? null : maxActiveServices);
+        }
+
+        if (cmd.OnePerClient is { } onePerClient)
+        {
+            product.SetOnePerClient(onePerClient);
+        }
+
         // Hidden is the Inactive status; null leaves the status as stored.
         if (cmd.IsHidden == true)
         {

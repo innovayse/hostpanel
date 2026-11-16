@@ -61,6 +61,9 @@ public static class StatusMapping
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
             // Exact row: the order is not in the review state the action needs, a state conflict whose name carries no CONFLICT token.
             "ORDER_NOT_UNDER_REVIEW" => new(409, "Conflict"),
+            // Exact rows: the product's live-service cap or its one-per-client rule refuses the order, a state conflict
+            // whose names carry no CONFLICT / ALREADY token.
+            "ORDER_PRODUCT_SOLD_OUT" or "ORDER_PRODUCT_ONE_PER_CLIENT" => new(409, "Conflict"),
             // Exact rows: fraud detection refused the request, a policy refusal and not a malformed request.
             "ORDER_FRAUD_REJECTED" or "REGISTRATION_FRAUD_REJECTED" => new(403, "Forbidden"),
             // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was

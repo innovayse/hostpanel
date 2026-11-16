@@ -50,6 +50,10 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 /// <param name="IsDigitalService">
 /// Whether the product is an electronic service for VAT (see <see cref="Product.IsDigitalService"/>). <c>false</c> by default.
 /// </param>
+/// <param name="MaxActiveServices">
+/// How many services of the product may be live at once, counting orders not yet fulfilled; null or 0 is unlimited.
+/// </param>
+/// <param name="OnePerClient">Whether a client may hold only one live service of the product.</param>
 public sealed record CreateProductCommand(
     int GroupId,
     string Name,
@@ -68,4 +72,6 @@ public sealed record CreateProductCommand(
     string? Metadata = null,
     int? GracePeriodDays = null,
     bool IsHidden = false,
-    bool IsDigitalService = false);
+    bool IsDigitalService = false,
+    int? MaxActiveServices = null,
+    bool OnePerClient = false);

@@ -41,6 +41,10 @@ export interface Product {
   gracePeriodDays: number
   /** Whether the product is an electronic service for VAT, taxed at the client's country rate when sold to a consumer in another EU member state. */
   isDigitalService: boolean
+  /** How many services of the product may be live at once, counting orders not yet fulfilled; null when unlimited. */
+  maxActiveServices: number | null
+  /** Whether a client may hold only one live service of the product. */
+  onePerClient: boolean
 }
 
 /** What narrows the product list: the search text, the group, the type and the status; each member left out means no narrowing. */
@@ -129,6 +133,10 @@ export interface CreateProductPayload {
   isHidden?: boolean
   /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
   isDigitalService?: boolean
+  /** Cap on live services; 0 means unlimited, omitted keeps the stored cap on update. */
+  maxActiveServices?: number
+  /** Allows one live service per client; omitted keeps the stored setting on update. */
+  onePerClient?: boolean
 }
 
 /** Payload for updating an existing product. */
@@ -161,4 +169,8 @@ export interface UpdateProductPayload {
   isHidden?: boolean
   /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
   isDigitalService?: boolean
+  /** Cap on live services; 0 means unlimited, omitted keeps the stored cap on update. */
+  maxActiveServices?: number
+  /** Allows one live service per client; omitted keeps the stored setting on update. */
+  onePerClient?: boolean
 }

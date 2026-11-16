@@ -66,3 +66,11 @@ export const TEST_LOCALE_PREFIX = '/en'
  * @returns The path behind {@link TEST_LOCALE_PREFIX}.
  */
 export const localized = (path: string): string => `${TEST_LOCALE_PREFIX}${path}`
+
+/**
+ * Defines `useSwitchLocalePath` as a global that turns a language code into that language's path, as the i18n router
+ * does for the language switcher.
+ */
+export const stubSwitchLocalePath = (): void => {
+  vi.stubGlobal('useSwitchLocalePath', () => (code: string) => `/${code}`)
+}

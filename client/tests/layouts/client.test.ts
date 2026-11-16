@@ -33,15 +33,12 @@ const LOGOUT_URL = '/api/portal/auth/logout'
 const PLUGIN_INDEX_URL = '/api/portal/client/plugins/ui'
 
 const { default: ClientLayout } = await import('~/layouts/client.vue')
-const { default: LayoutDemoBanner } = await import('~/components/layout/DemoBanner.vue')
 const { Permission } = await import('~/types/permission')
 const { useAuthStore } = await import('~/stores/auth')
 const { useClientStore } = await import('~/stores/client')
+const { useCookieConsent } = await import('~/composables/useCookieConsent')
 const { usePluginsStore } = await import('~/stores/plugins')
 const { default: ClientLayoutSidebar } = await import('~/components/client/layout/Sidebar.vue')
-
-/** The theme and language controls need runtime services this test does not provide. */
-const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, LogoLockup: true, UiCookieBanner: { template: '<div data-testid="cookie-banner" />' } }
 
 /** The signed-in person the identity call answers with. */
 const ME = makeClientUser({ email: 'ada@example.com', permissions: Permission.All })
@@ -81,6 +78,7 @@ beforeEach(async () => {
   stubAuthRuntime({ publicConfig: SHELL_CONFIG })
   vi.stubGlobal('useAuthStore', useAuthStore)
   vi.stubGlobal('useClientStore', useClientStore)
+  vi.stubGlobal('useCookieConsent', useCookieConsent)
   vi.stubGlobal('storeToRefs', storeToRefs)
 })
 
@@ -100,7 +98,7 @@ const callsTo = (method: string, url: string): number =>
  * @returns The wrapper.
  */
 const mountLayout = async () => {
-  const wrapper = mountClient(ClientLayout, { slots: { default: 'page content' }, stubs: STUBS, components: { LayoutDemoBanner } })
+  const wrapper = mountClient(ClientLayout, { slots: { default: 'page content' } })
   await settle()
   return wrapper
 }
@@ -255,7 +253,8 @@ describe('client layout', () => {
   it('reads the plugin index again when the reader switches language, so the plugin labels follow', async () => {
     /** The reader language; switched to prove the plugin index is read again. */
     const locale = ref('en')
-    vi.stubGlobal('useI18n', () => ({ t: (key: string) => key, locale }))
+    const stoodInI18n = useI18n()
+    vi.stubGlobal('useI18n', () => ({ ...stoodInI18n, locale }))
     await mountLayout()
     expect(callsTo('GET', PLUGIN_INDEX_URL)).toBe(1)
 
@@ -349,7 +348,7 @@ describe('client layout', () => {
   })
 
   it('closes the drawer on Escape, locks the page scroll while open and returns focus to the menu button', async () => {
-    const wrapper = mountClient(ClientLayout, { slots: { default: 'page content' }, stubs: STUBS, components: { LayoutDemoBanner }, attachToBody: true })
+    const wrapper = mountClient(ClientLayout, { slots: { default: 'page content' }, attachToBody: true })
     await settle()
     const toggle = wrapper.find('[data-testid="client-menu-toggle"]')
     ;(toggle.element as HTMLElement).focus()
@@ -442,7 +441,7 @@ describe('client layout', () => {
     await new Promise<void>(resolve => held.listen(0, '127.0.0.1', resolve))
     vi.stubGlobal('$fetch', ofetch.create({ baseURL: `http://127.0.0.1:${(held.address() as AddressInfo).port}` }))
     try {
-      const wrapper = mountClient(ClientLayout, { slots: { default: 'page content' }, stubs: STUBS, components: { LayoutDemoBanner } })
+      const wrapper = mountClient(ClientLayout, { slots: { default: 'page content' } })
       await waitUntil(() => expect(asked).toBe(true))
       wrapper.unmount()
       vi.useFakeTimers()

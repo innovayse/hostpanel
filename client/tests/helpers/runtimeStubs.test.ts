@@ -5,7 +5,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { localized, stubLocale, stubLocalePath, stubRoute, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
+import { localized, stubLocale, stubLocalePath, stubRoute, stubSwitchLocalePath, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -64,5 +64,13 @@ describe('TEST_LOCALE_PREFIX and localized', () => {
     stubLocalePath(TEST_LOCALE_PREFIX)
 
     expect(useLocalePath()('/hosting')).toBe(localized('/hosting'))
+  })
+})
+
+describe('stubSwitchLocalePath', () => {
+  it('turns a language code into that language path', () => {
+    stubSwitchLocalePath()
+
+    expect(useSwitchLocalePath()('ru')).toBe('/ru')
   })
 })

@@ -5,17 +5,20 @@
  *
  * @module tests/pages/faq/index.test
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PUBLIC_PAGE_BASE_URL, canonicalOf, publishedSchemas, registerPageComponents, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import { StorefrontPath } from '~/tests/helpers/storefrontSection'
 import { routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import FaqCategoryNav from '~/components/faq/FaqCategoryNav.vue'
+import SectionsFAQ from '~/components/sections/SectionsFAQ.vue'
+import { useTemplate } from '~/composables/useTemplate'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
 import Page from '~/pages/faq/index.vue'
 
@@ -27,22 +30,6 @@ const FAQS_READ = `GET ${StorefrontPath.Faqs}`
 
 /** Two questions the API serves. */
 const FAQS = [faqFixture(1), faqFixture(2)]
-
-/** Stands in for the FAQ list section, recording the props it was given. */
-const SectionsFaqStub = defineComponent({
-  name: 'SectionsFAQ',
-  props: {
-    showHeader: { type: Boolean, default: true },
-    showCategories: { type: Boolean, default: true },
-    limit: { type: Number, default: undefined },
-  },
-  setup: props => () => h('div', {
-    'data-testid': 'sections-faq',
-    'data-header': String(props.showHeader),
-    'data-categories': String(props.showCategories),
-    'data-limit': String(props.limit),
-  }),
-})
 
 /** Spies of the stood-in runtime, renewed before each test. */
 let spies: PublicPageSpies
@@ -56,7 +43,8 @@ let table: StubRouteTable
 describe('pages/faq/index', () => {
   beforeEach(async () => {
     spies = stubPublicPageRuntime()
-    registerPageComponents({ FaqCategoryNav, SectionsFAQ: SectionsFaqStub })
+    vi.stubGlobal('useTemplate', useTemplate)
+    registerPageComponents({ ...CLASSIC_COMPONENTS, FaqCategoryNav, SectionsFAQ })
     table = { [FAQS_READ]: { body: FAQS } }
     stub = await startTransport(routeTable(table))
   })
@@ -85,11 +73,12 @@ describe('pages/faq/index', () => {
   it('lists every question without its own header or tabs', async () => {
     const wrapper = await mountRenderedPage(Page, ROOT)
 
-    const list = wrapper.find('[data-testid="sections-faq"]')
-    expect(list.attributes('data-header')).toBe('false')
-    expect(list.attributes('data-categories')).toBe('false')
+    await waitUntil(() => expect(wrapper.find('[data-testid="sections-faq"]').exists()).toBe(true))
+    const list = wrapper.get('[data-testid="sections-faq"]')
     // The full page never gets the home preview limit.
-    expect(list.attributes('data-limit')).toBe('undefined')
+    expect(list.findAll('[data-testid^="ui-accordion-toggle-"]')).toHaveLength(FAQS.length)
+    expect(list.text()).not.toContain('faq.title')
+    expect(list.find('[data-testid^="faq-category-"]').exists()).toBe(false)
   })
 
   it('publishes one structured-data question per FAQ item', async () => {

@@ -11,6 +11,8 @@ import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import SectionsDomainSearch from '~/components/sections/SectionsDomainSearch.vue'
+import SectionsHero from '~/components/sections/SectionsHero.vue'
 import SectionsProductsSlide from '~/components/sections/SectionsProductsSlide.vue'
 import ProductsFullSlider from '~/components/sections/SectionsProductsFullSlider.vue'
 import type { SlidePublic } from '~/types/slidepublic'
@@ -80,8 +82,7 @@ const slide = (id: number, overrides: Partial<SlidePublic> = {}): SlidePublic =>
  * @returns The wrapper.
  */
 const mountSlider = async () => {
-  // The hero is auto-imported by Nuxt, so the test registers a stand-in that keeps its test id.
-  const wrapper = await mountPage(ProductsFullSlider, { stubs: { SectionsHero: { template: '<div data-testid="sections-hero" />' } } })
+  const wrapper = await mountPage(ProductsFullSlider)
   // The slides cross a real socket, and nothing renders until they arrive: the slider, or the hero in its place.
   await waitUntil(() => expect(wrapper.find('[data-testid="products-slider"], [data-testid="sections-hero"]').exists()).toBe(true))
   await flushPromises()
@@ -93,7 +94,7 @@ describe('ProductsFullSlider', () => {
     stub = await startTransport(routeTable(replies))
     stubPublicPageRuntime()
     slideToLoop.mockReset()
-    registerPageComponents({ SectionsProductsSlide })
+    registerPageComponents({ SectionsDomainSearch, SectionsHero, SectionsProductsSlide })
     serve([slide(1), slide(2, { links: { demoUrl: 'https://demo.test', learnMoreUrl: '/products/slide-2' }, brandColor: '#10b981' })])
   })
 
@@ -153,6 +154,7 @@ describe('ProductsFullSlider', () => {
 
     expect(wrapper.find('[data-testid="products-slider"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="sections-hero"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="sections-hero"] [data-testid="sections-domain-search"]').exists()).toBe(true)
   })
 
   it('follows the colour mode itself: the panel is never forced into the dark palette', async () => {

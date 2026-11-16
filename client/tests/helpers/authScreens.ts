@@ -1,31 +1,22 @@
 /**
- * Helpers for the client auth, layout and dashboard screens: the `Logo` stand-in, the Nuxt
- * auto-imports those screens use, and a page mount that includes both.
+ * Helper for the client auth, layout and dashboard screens: the Nuxt auto-imports those screens use, and the real
+ * composables the brand logo they draw reads.
  *
- * `mountClient` and `mountPage` (see `mountClient.ts`) register the kit and every
- * `components/client` component; `Logo` lives outside that folder and reads the brand
- * settings, so it is replaced by a plain image here.
+ * `mountClient` and `mountPage` (see `mountClient.ts`) register the kit, the real `Logo` and every
+ * `components/client` component; the logo reads the operator's brand settings through the real composables this
+ * module registers, so it renders the bundled wordmark (or an upload the test loads through the settings stub).
  *
  * @module tests/helpers/authScreens
  */
 
-import type { VueWrapper } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
-import type { Component } from 'vue'
 import { vi } from 'vitest'
+import { useAppColorMode } from '~/composables/useAppColorMode'
 import { useAuthMode } from '~/composables/useAuthMode'
+import { useBrandLogo } from '~/composables/useBrandLogo'
+import { usePortalSettings } from '~/composables/usePortalSettings'
+import { useSiteIdentity } from '~/composables/useSiteIdentity'
 import { AuthMode } from '~/types/authmode'
-import { mountClient, mountPage } from '~/tests/helpers/mountClient'
-import type { MountWithKitOptions } from '~/tests/helpers/mountWithKit'
-import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
-
-/** `Logo` stand-in: an image carrying a test id. */
-export const APP_LOGO_STUB = defineComponent({
-  name: 'Logo',
-  setup() {
-    return () => h('img', { 'data-testid': 'app-logo' })
-  },
-})
+import { stubLocalePath, stubRoute, stubSwitchLocalePath } from '~/tests/helpers/runtimeStubs'
 
 /** What a test can change about the stood-in runtime. */
 export interface AuthRuntimeOptions {
@@ -47,7 +38,8 @@ export interface AuthRuntimeSpies {
 
 /**
  * Stands in for the auto-imports the auth screens use that `vitest.setup.ts` does not cover, and registers the real
- * `useAuthMode`, which reads the authentication mode from the stood-in runtime config.
+ * `useAuthMode`, which reads the authentication mode from the stood-in runtime config, and the settings, identity,
+ * colour-mode and brand-logo composables the real `Logo` calls.
  *
  * @param options - Route, SSO flag and public config for this test.
  * @returns The router spy.
@@ -57,28 +49,14 @@ export const stubAuthRuntime = (options: AuthRuntimeOptions = {}): AuthRuntimeSp
   stubRoute(options)
   vi.stubGlobal('useRouter', () => ({ push, replace: vi.fn(), back: vi.fn() }))
   stubLocalePath()
+  stubSwitchLocalePath()
   vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: options.isSso ? AuthMode.Sso : AuthMode.Local, ...options.publicConfig } }))
   vi.stubGlobal('useAuthMode', useAuthMode)
+  vi.stubGlobal('usePortalSettings', usePortalSettings)
+  vi.stubGlobal('useSiteIdentity', useSiteIdentity)
+  vi.stubGlobal('useAppColorMode', useAppColorMode)
+  vi.stubGlobal('useBrandLogo', useBrandLogo)
   vi.mocked(navigateTo).mockClear()
   return { push }
 }
 
-/**
- * Mounts a component with the `Logo` stand-in registered.
- *
- * @param component The component under test.
- * @param options Props, slots, attributes and stubs, as for {@link mountClient}.
- * @returns The Vue Test Utils wrapper.
- */
-export const mountWithLogo = (component: Component, options: MountWithKitOptions = {}): VueWrapper =>
-  mountClient(component, { ...options, components: { Logo: APP_LOGO_STUB, ...options.components } })
-
-/**
- * Mounts a page inside `Suspense` with the `Logo` stand-in registered.
- *
- * @param page The page under test.
- * @param components Further components the page uses, e.g. the plugin slot of a client page.
- * @returns The wrapper, after the page has settled.
- */
-export const mountAuthPage = (page: Component, components: Record<string, Component> = {}): Promise<VueWrapper> =>
-  mountPage(page, { components: { Logo: APP_LOGO_STUB, ...components } })

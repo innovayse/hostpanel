@@ -25,6 +25,7 @@ import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { AuthMode } from '~/types/authmode'
 import { loadPortalSettings, usePortalSettingsServer } from './portalSettings'
 import type { PortalSettingsServer } from './portalSettings'
+import { stubSwitchLocalePath } from './runtimeStubs'
 
 /** Site name the identity composable reports unless a test says otherwise. */
 const DEFAULT_SITE_NAME = 'Acme Host'
@@ -74,7 +75,7 @@ export const useTemplateGlobals = (): TemplateGlobals => {
    * @returns Resolves once the settings are in the shared state.
    */
   const loadGlobals = async (options: TemplateGlobalsOptions = {}): Promise<void> => {
-    vi.stubGlobal('useSwitchLocalePath', () => (code: string) => `/${code}`)
+    stubSwitchLocalePath()
     vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: options.authMode ?? AuthMode.Local } }))
     await loadPortalSettings(server.replies, {
       [PortalSettingKey.SiteName]: options.siteName ?? DEFAULT_SITE_NAME,

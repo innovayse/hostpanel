@@ -2807,7 +2807,18 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   is allowed only when `useX` is imported (or destructured from `await import`) from a composable, store or
   util of the client, never a local value. The guard also reads the argument of `usePortalSettingsServer`
   with the same check: each entry must be a bare name bound that way, never renamed on import and never from
-  a test helper.
+  a test helper. The client guard also fails on a stub of a component of ours: every component under
+  `client/components` runs for real in every client test (its data comes from the stub server, the real
+  composables registered under their auto-import names), so an entry of a `stubs` or `components` option or of
+  `registerPageComponents` that is named after one of them (by the name Nuxt gives its file, kebab-case read
+  as the same name) must be that very component, the default import of its `.vue` file, never `true`, a marker
+  component or a component from another file, and `shallowMount` (which stubs every child) and `shallow: true`
+  are refused. Framework and third-party components (`NuxtLink`, `i18n-t`, `Swiper`) are not ours and may be
+  stood in for, and the template slot stand-ins of the page tests (`stubTemplateSlots`) replace a template
+  page, not a component under `client/components`. The scan reads object literals (or a `const` one in the same
+  file) after those options, so a registry spread from a helper (`...CLASSIC_COMPONENTS`) is not read; the
+  helpers register only real components. `tests/helpers/nuxtComponentName.ts` is the one place the Nuxt naming
+  rule lives, for the mount helpers and for the guard.
   On this laptop vitest needs `--maxWorkers=2`.
 - **e2e.** `admin/e2e/`: Playwright, one spec per flow, `data-testid` selectors only (`fieldOf` for
   inputs), against `vite preview` of a production build with the API replaced by `page.route`

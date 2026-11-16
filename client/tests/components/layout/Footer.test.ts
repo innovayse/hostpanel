@@ -4,24 +4,24 @@
  * the bottom row with the pickers and theme toggle.
  *
  * The real catalogue store, API composable, transport, logo lockup and the operator's settings composables run
- * against a stub server playing the BFF; only the pickers, the theme toggle and the domain search are stood in for.
+ * against a stub server playing the BFF; the pickers, the theme toggle and the domain search run for real too.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
-import { TEST_LOCALE_PREFIX, localized, stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { TEST_LOCALE_PREFIX, localized, stubLocalePath, stubSwitchLocalePath } from '~/tests/helpers/runtimeStubs'
+import { AMD_CURRENCY, USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
 import { readOf, requestsTo } from '~/tests/helpers/stubRoutes'
 import LayoutFooter from '~/components/layout/Footer.vue'
+import SectionsDomainSearch from '~/components/sections/SectionsDomainSearch.vue'
 import { useAppColorMode } from '~/composables/useAppColorMode'
 import { useBrandLogo } from '~/composables/useBrandLogo'
 import { useContactDetails } from '~/composables/useContactDetails'
 import { useLocalizedSetting } from '~/composables/useLocalizedSetting'
 import { useSiteIdentity } from '~/composables/useSiteIdentity'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
-import { useCatalogStore } from '~/stores/catalog'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 import { SITE_ABOUT_PATH, SITE_COOKIE_POLICY_PATH, SITE_DOMAINS_PATH, SITE_DOMAINS_TRANSFER_PATH, SITE_FAQ_PATH, SITE_KNOWLEDGEBASE_PATH, SITE_PRIVACY_PATH, SITE_PRODUCTS_PATH, SITE_REFUND_POLICY_PATH, SITE_TERMS_PATH } from '~/constants/siteRoutes'
@@ -31,18 +31,6 @@ const { replies, stub } = usePortalSettingsServer({ useAppColorMode, useBrandLog
 
 /** The plan groups the stub answers the catalogue read with; a test sets them before it mounts. */
 let groupsOnOffer: PortalProductGroup[] = []
-
-/**
- * Builds a stand-in for a picker the footer owns no behaviour of.
- *
- * @param name Component name the stand-in registers under.
- * @param testid Test id of the element it renders.
- * @returns The stand-in component.
- */
-const stubFor = (name: string, testid: string) => defineComponent({
-  name,
-  setup: () => () => h('div', { 'data-testid': testid }),
-})
 
 /** The contact settings the operator has entered, by their dotted key; a test replaces them before it mounts. */
 let contact: Record<string, string> = {}
@@ -62,26 +50,23 @@ const CONTACT_SET: Record<string, string> = {
 const mountFooter = async (groups: PortalProductGroup[] = []) => {
   groupsOnOffer = groups
   replies[readOf(CatalogPath.ProductGroups)] = () => ({ body: groupsOnOffer })
+  replies[readOf(CatalogPath.BillingCurrencies)] = { body: [USD_CURRENCY, AMD_CURRENCY] }
   await loadPortalSettings(replies, contact)
   const pinia = createPinia()
   setActivePinia(pinia)
   const wrapper = mountWithKit(LayoutFooter, {
     pinia,
-    components: {
-      UiLanguageSwitcher: stubFor('UiLanguageSwitcher', 'footer-language'),
-      UiCurrencySwitcher: stubFor('UiCurrencySwitcher', 'footer-currency'),
-      UiThemeToggle: stubFor('UiThemeToggle', 'footer-theme'),
-      SectionsDomainSearch: stubFor('SectionsDomainSearch', 'footer-domain-search'),
-    },
+    components: { SectionsDomainSearch },
   })
   await waitUntil(() => expect(requestsTo(stub().requests, CatalogPath.ProductGroups)).toHaveLength(1))
-  await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('LayoutFooter', () => {
   beforeEach(() => {
     stubLocalePath(TEST_LOCALE_PREFIX)
+    stubSwitchLocalePath()
     contact = CONTACT_SET
   })
 
@@ -103,7 +88,7 @@ describe('LayoutFooter', () => {
   it('puts the shared domain search beside a get started link in the call to action', async () => {
     const wrapper = await mountFooter()
 
-    expect(wrapper.find('[data-testid="footer-cta"] [data-testid="footer-domain-search"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="footer-cta"] [data-testid="sections-domain-search"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="footer-cta-plans"]').attributes('href')).toBe(localized(SITE_PRODUCTS_PATH))
   })
 
@@ -198,9 +183,9 @@ describe('LayoutFooter', () => {
 
     expect(bottom.text()).toContain(String(new Date().getFullYear()))
     expect(bottom.text()).toContain('footer.bottom.rights')
-    expect(bottom.find('[data-testid="footer-language"]').exists()).toBe(true)
-    expect(bottom.find('[data-testid="footer-currency"]').exists()).toBe(true)
-    expect(bottom.find('[data-testid="footer-theme"]').exists()).toBe(true)
+    expect(bottom.find('[data-testid="language-switcher"]').exists()).toBe(true)
+    expect(bottom.find('[data-testid="currency-switcher"]').exists()).toBe(true)
+    expect(bottom.find('[data-testid="theme-toggle"]').exists()).toBe(true)
   })
 
   it('stacks the columns on a phone and spreads them from the small breakpoint', async () => {

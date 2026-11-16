@@ -7,7 +7,8 @@
 
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -56,7 +57,7 @@ enum OutcomePanel {
  * @returns The wrapper once the one confirm request has reached the stub, its panel is shown and the event loop has settled, so a late extra request would already be counted.
  */
 const mountAndConfirm = async (panel: OutcomePanel) => {
-  const wrapper = await mountAuthPage(UnsubscribePage)
+  const wrapper = await mountPage(UnsubscribePage)
   await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
   await waitUntil(() => expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(1))
   await waitUntil(() => expect(wrapper.find(`[data-testid="${panel}"]`).exists()).toBe(true))
@@ -68,7 +69,7 @@ describe('unsubscribe page', () => {
   it('sends nothing when it opens, only asks for confirmation', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
 
-    const wrapper = await mountAuthPage(UnsubscribePage)
+    const wrapper = await mountPage(UnsubscribePage)
     await flushPromises()
 
     expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(0)
@@ -115,7 +116,7 @@ describe('unsubscribe page', () => {
     stubAuthRuntime({ query: { token: 'tok' } })
     table[`POST ${UNSUBSCRIBE_PATH}`] = { hold: true }
 
-    const wrapper = await mountAuthPage(UnsubscribePage)
+    const wrapper = await mountPage(UnsubscribePage)
     await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
     await waitUntil(() => expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(1))
 
@@ -127,7 +128,7 @@ describe('unsubscribe page', () => {
   it('keeps itself out of search results', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
 
-    await mountAuthPage(UnsubscribePage)
+    await mountPage(UnsubscribePage)
 
     expect(useSeoMeta).toHaveBeenCalledWith({ robots: 'noindex, nofollow' })
   })

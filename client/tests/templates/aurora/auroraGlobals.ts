@@ -69,7 +69,9 @@ export const useAuroraGlobals = (): AuroraGlobals => {
     if (user) {
       template.replies[readOf(AccountEndpoint.Me)] = { body: makeClientUser(user) }
     }
+    const stoodInI18n = useI18n()
     vi.stubGlobal('useI18n', () => ({
+      ...stoodInI18n,
       t: (key: string) => key,
       te: () => false,
       tm: (key: string) => messages[key] ?? [],

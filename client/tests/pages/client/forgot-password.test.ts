@@ -6,14 +6,15 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import ForgotPasswordPage from '~/pages/client/forgot-password.vue'
 
 describe('client forgot-password page', () => {
   it('renders the reset-request form in local mode and does not navigate away', async () => {
     stubAuthRuntime({ isSso: false })
 
-    const wrapper = await mountAuthPage(ForgotPasswordPage)
+    const wrapper = await mountPage(ForgotPasswordPage)
 
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(true)
     expect(navigateTo).not.toHaveBeenCalled()
@@ -22,7 +23,7 @@ describe('client forgot-password page', () => {
   it('sends the visitor to the identity provider reset page under SSO', async () => {
     stubAuthRuntime({ isSso: true, publicConfig: { ssoPublicUrl: 'https://sso.example.test' } })
 
-    await mountAuthPage(ForgotPasswordPage)
+    await mountPage(ForgotPasswordPage)
 
     expect(navigateTo).toHaveBeenCalledWith('https://sso.example.test/forgot-password', { external: true })
   })
@@ -30,7 +31,7 @@ describe('client forgot-password page', () => {
   it('renders the local form under SSO when no SSO address is configured', async () => {
     stubAuthRuntime({ isSso: true, publicConfig: { ssoPublicUrl: '' } })
 
-    const wrapper = await mountAuthPage(ForgotPasswordPage)
+    const wrapper = await mountPage(ForgotPasswordPage)
 
     expect(navigateTo).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(true)

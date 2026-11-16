@@ -1,68 +1,210 @@
 /**
  * Unit tests for ClassicHome: the hidden H1, the marketing sections in hosting-site order, and
  * the per-section visibility toggles.
+ *
+ * Every section runs for real, with the real catalogue, currency and storefront stores, the real composables and the
+ * real transport against a stub server that answers each public read; only the carousel library is stood in for.
  */
-import { beforeEach, describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
-import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { VueWrapper } from '@vue/test-utils'
+import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { mountAsyncPage } from '~/tests/helpers/mountWithKit'
+import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
 import { homeSectionSettings, loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { until, untilStable } from '~/tests/helpers/settle'
+import { faqFixture, locationFixture, partnerFixture, testimonialFixture } from '~/tests/helpers/storefrontFixtures'
+import { StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { readOf, requestsTo } from '~/tests/helpers/stubRoutes'
+import ProductFamilyCard from '~/components/catalog/ProductFamilyCard.vue'
+import MarketingSectionHeader from '~/components/marketing/MarketingSectionHeader.vue'
+import SectionsApps from '~/components/sections/SectionsApps.vue'
+import SectionsCTA from '~/components/sections/SectionsCTA.vue'
+import SectionsDomainSearch from '~/components/sections/SectionsDomainSearch.vue'
+import SectionsFAQ from '~/components/sections/SectionsFAQ.vue'
+import SectionsGuarantees from '~/components/sections/SectionsGuarantees.vue'
+import SectionsHero from '~/components/sections/SectionsHero.vue'
+import SectionsLocations from '~/components/sections/SectionsLocations.vue'
+import SectionsPartners from '~/components/sections/SectionsPartners.vue'
+import SectionsPerformance from '~/components/sections/SectionsPerformance.vue'
+import SectionsProcess from '~/components/sections/SectionsProcess.vue'
+import SectionsProducts from '~/components/sections/SectionsProducts.vue'
+import SectionsProductsFullSlider from '~/components/sections/SectionsProductsFullSlider.vue'
+import SectionsProductsSlide from '~/components/sections/SectionsProductsSlide.vue'
+import SectionsSecurity from '~/components/sections/SectionsSecurity.vue'
+import SectionsSupport from '~/components/sections/SectionsSupport.vue'
+import SectionsTestimonials from '~/components/sections/SectionsTestimonials.vue'
+import SectionsWhyChooseUs from '~/components/sections/SectionsWhyChooseUs.vue'
+import { useGuarantees } from '~/composables/useGuarantees'
 import { useHomeSections } from '~/composables/useHomeSections'
+import { useInstallerApps } from '~/composables/useInstallerApps'
+import { usePerformanceStats } from '~/composables/usePerformanceStats'
+import { useSecurityFeatures } from '~/composables/useSecurityFeatures'
+import { useSupportChannels } from '~/composables/useSupportChannels'
+import { useTemplate } from '~/composables/useTemplate'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
 import { HOME_SECTION_DEFAULT, HomeSection } from '~/constants/homeSection'
-import { SETTING_OFF } from '~/constants/settingValue'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { SETTING_OFF, SETTING_ON } from '~/constants/settingValue'
 import ClassicHome from '~/templates/classic/pages/ClassicHome.vue'
 
-/** Names of the section components the home page composes, in the order they appear. */
-const SECTION_NAMES = [
-  'SectionsProductsFullSlider',
-  'SectionsPerformance',
-  'SectionsProducts',
-  'SectionsWhyChooseUs',
-  'SectionsLocations',
-  'SectionsSecurity',
-  'SectionsApps',
-  'SectionsGuarantees',
-  'SectionsProcess',
-  'SectionsTestimonials',
-  'SectionsSupport',
-  'SectionsPartners',
-  'SectionsFAQ',
-  'SectionsCTA',
-]
+vi.mock('swiper/vue', async () => {
+  const { defineComponent, h } = await import('vue')
+  return {
+    /** Stand-in carousel: renders its slides in a plain element. */
+    Swiper: defineComponent({ name: 'Swiper', setup: (_props, { slots }) => () => h('div', slots.default?.()) }),
+    /** Stand-in slide. */
+    SwiperSlide: defineComponent({ name: 'SwiperSlide', setup: (_props, { slots }) => () => h('div', slots.default?.()) }),
+  }
+})
+vi.mock('swiper/modules', () => ({ Autoplay: {}, Navigation: {} }))
+vi.mock('swiper/css', () => ({}))
+vi.mock('swiper/css/navigation', () => ({}))
+
+/** The test id of the root element of each section the page composes. */
+enum SectionTestId {
+  /** The text hero, which stands in for the slider while the catalogue has no slides. */
+  Hero = 'sections-hero',
+  /** Performance figures. */
+  Performance = 'sections-performance',
+  /** Plans and product families. */
+  Products = 'sections-products',
+  /** Why choose us. */
+  WhyChooseUs = 'sections-why-choose-us',
+  /** Server locations. */
+  Locations = 'sections-locations',
+  /** Security protections. */
+  Security = 'sections-security',
+  /** One-click apps. */
+  Apps = 'sections-apps',
+  /** Guarantees. */
+  Guarantees = 'sections-guarantees',
+  /** Process. */
+  Process = 'sections-process',
+  /** Testimonials. */
+  Testimonials = 'sections-testimonials',
+  /** Support channels. */
+  Support = 'sections-support',
+  /** Partner logos. */
+  Partners = 'sections-partners',
+  /** Questions and answers. */
+  Faq = 'sections-faq',
+  /** Closing call to action. */
+  Cta = 'sections-cta',
+}
+
+/** The sections in landing order. */
+const LANDING_ORDER: readonly SectionTestId[] = Object.values(SectionTestId)
+
+/** The sections the page composes and the header they share, by the name the template uses for each, so they resolve as Nuxt would auto-import them. */
+const SECTIONS = {
+  MarketingSectionHeader,
+  SectionsApps,
+  SectionsCTA,
+  SectionsDomainSearch,
+  SectionsFAQ,
+  SectionsGuarantees,
+  SectionsHero,
+  SectionsLocations,
+  SectionsPartners,
+  SectionsPerformance,
+  SectionsProcess,
+  SectionsProducts,
+  SectionsProductsFullSlider,
+  SectionsProductsSlide,
+  SectionsSecurity,
+  SectionsSupport,
+  SectionsTestimonials,
+  SectionsWhyChooseUs,
+}
 
 /** What the stub answers, by route; the hooks start the stub before each test and close it after. */
-const { replies } = usePortalSettingsServer({ useHomeSections })
-
-/**
- * Loads the operator's settings with these sections switched off, the rest left at their defaults.
- *
- * @param off The sections the operator has switched off.
- * @returns Resolves once the settings are loaded into the shared state.
- */
-const switchOff = (off: Iterable<HomeSection>): Promise<void> =>
-  loadPortalSettings(replies, homeSectionSettings(off, SETTING_OFF))
-
-/**
- * Builds a stand-in section that renders its own name, so order can be read from the DOM.
- *
- * @param name The section component's registered name.
- * @returns The stub component.
- */
-const sectionStub = (name: string) => defineComponent({
-  name,
-  props: { limit: { type: Number, default: undefined } },
-  setup: (props) => () => h('section', { 'data-section': name, 'data-limit': props.limit === undefined ? undefined : String(props.limit) }),
+const { replies, stub } = usePortalSettingsServer({
+  useGuarantees,
+  useHomeSections,
+  useInstallerApps,
+  usePerformanceStats,
+  useSecurityFeatures,
+  useSupportChannels,
+  useTemplate,
 })
 
-describe('ClassicHome', () => {
-  const components = Object.fromEntries(SECTION_NAMES.map((name) => [name, sectionStub(name)]))
+/** The settings that give the sections which hide themselves while the operator has entered nothing something to show. */
+const CONTENT_SETTINGS: Record<string, string> = {
+  [PortalSettingKey.StatsUptime]: '99.9%',
+  [PortalSettingKey.FeaturesSsl]: SETTING_ON,
+  [PortalSettingKey.MigrationFree]: SETTING_ON,
+}
 
-  beforeEach(async () => {
-    await switchOff([])
+/** More questions than the home preview shows. */
+const FAQS = Array.from({ length: HOME_FAQ_LIMIT + 2 }, (_unused, index) => faqFixture(index + 1))
+
+/**
+ * The public reads the sections that stay on start on mount, which the mount waits for so no read is still on its way
+ * when the stub closes.
+ *
+ * @param off - The sections the operator has switched off.
+ * @returns The paths of the reads.
+ */
+const readsOf = (off: HomeSection[]): string[] => [
+  CatalogPath.Slides,
+  ...(off.includes(HomeSection.Testimonials) ? [] : [StorefrontPath.Testimonials]),
+  ...(off.includes(HomeSection.Partners) && off.includes(HomeSection.Trusted) ? [] : [StorefrontPath.Partners]),
+  ...(off.includes(HomeSection.Locations) ? [] : [StorefrontPath.Locations]),
+  ...(off.includes(HomeSection.Faq) ? [] : [StorefrontPath.Faqs]),
+]
+
+/**
+ * Mounts the page with these sections switched off, the rest left at their defaults, and waits until every section
+ * that stays on has rendered.
+ *
+ * @param off - The sections the operator has switched off.
+ * @returns The wrapper around the page.
+ */
+const mountHome = async (off: HomeSection[] = []): Promise<VueWrapper> => {
+  await loadPortalSettings(replies, { ...CONTENT_SETTINGS, ...homeSectionSettings(off, SETTING_OFF) })
+  const wrapper = await mountAsyncPage(ClassicHome, { components: { ...CLASSIC_COMPONENTS, ...SECTIONS, CatalogProductFamilyCard: ProductFamilyCard } })
+  // Only the plans section reads the currencies and the catalogue, so only with it on is there a read to wait for.
+  if (!off.includes(HomeSection.Plans)) {
+    await awaitCatalogue()
+  }
+  for (const path of readsOf(off)) {
+    await until(() => requestsTo(stub().requests, path).length > 0, `a read of ${path}`)
+  }
+  await until(() => wrapper.find('[data-testid="classic-home"]').exists(), 'the home page to render')
+  await untilStable(() => wrapper.html(), 'the home sections to finish rendering their data')
+  return wrapper
+}
+
+/**
+ * Lists the sections on screen, in page order.
+ *
+ * @param wrapper - The mounted page.
+ * @returns The test ids of the section roots, the SEO heading left out.
+ */
+const sectionsOn = (wrapper: VueWrapper): string[] =>
+  [...wrapper.get('[data-testid="classic-home"]').element.children]
+    .map((child) => child.getAttribute('data-testid') ?? '')
+    .filter((testid) => (Object.values(SectionTestId) as string[]).includes(testid))
+
+describe('ClassicHome', () => {
+  beforeEach(() => {
+    stubPublicPageRuntime()
+    window.localStorage.clear()
+    replies[readOf(CatalogPath.Slides)] = { body: [] }
+    replies[readOf(CatalogPath.BillingCurrencies)] = { body: [USD_CURRENCY] }
+    replies[readOf(CatalogPath.ProductGroups)] = { body: [] }
+    replies[readOf(CatalogPath.Products)] = { body: [] }
+    replies[readOf(CatalogPath.ProductFeatures)] = { body: [] }
+    replies[readOf(StorefrontPath.Testimonials)] = { body: [testimonialFixture(1)] }
+    replies[readOf(StorefrontPath.Partners)] = { body: [partnerFixture(1)] }
+    replies[readOf(StorefrontPath.Locations)] = { body: [locationFixture(1)] }
+    replies[readOf(StorefrontPath.Faqs)] = { body: FAQS }
   })
 
-  it('renders the SEO heading visually hidden', () => {
-    const wrapper = mountWithKit(ClassicHome, { components })
+  it('renders the SEO heading visually hidden', async () => {
+    const wrapper = await mountHome()
 
     const title = wrapper.find('[data-testid="classic-home-title"]')
     expect(title.element.tagName).toBe('H1')
@@ -70,77 +212,59 @@ describe('ClassicHome', () => {
     expect(title.text()).toBe('seo.home.h1')
   })
 
-  it('previews only the home limit of FAQ questions', () => {
-    const wrapper = mountWithKit(ClassicHome, { components })
+  it('previews only the home limit of FAQ questions', async () => {
+    const wrapper = await mountHome()
 
-    expect(wrapper.find('[data-section="SectionsFAQ"]').attributes('data-limit')).toBe(String(HOME_FAQ_LIMIT))
+    expect(FAQS.length).toBeGreaterThan(HOME_FAQ_LIMIT)
+    expect(wrapper.get(`[data-testid="${SectionTestId.Faq}"]`).findAll('[data-testid^="ui-accordion-toggle-"]')).toHaveLength(HOME_FAQ_LIMIT)
   })
 
-  it('renders every section in landing order', () => {
-    const wrapper = mountWithKit(ClassicHome, { components })
+  it('renders every section in landing order', async () => {
+    const wrapper = await mountHome()
 
-    const order = wrapper.findAll('[data-section]').map((node) => node.attributes('data-section'))
-    expect(order).toEqual(SECTION_NAMES)
+    expect(sectionsOn(wrapper)).toEqual(LANDING_ORDER)
   })
 
   it('hides a section whose toggle is off and keeps the rest', async () => {
-    await switchOff([HomeSection.Security])
+    const wrapper = await mountHome([HomeSection.Security])
 
-    const wrapper = mountWithKit(ClassicHome, { components })
-
-    const order = wrapper.findAll('[data-section]').map((node) => node.attributes('data-section'))
-    expect(order).not.toContain('SectionsSecurity')
-    expect(order).toEqual(SECTION_NAMES.filter((name) => name !== 'SectionsSecurity'))
+    expect(sectionsOn(wrapper)).not.toContain(SectionTestId.Security)
+    expect(sectionsOn(wrapper)).toEqual(LANDING_ORDER.filter((testid) => testid !== SectionTestId.Security))
   })
 
-  it('hides each toggleable section when its toggle is off', async () => {
-    const toggled: Array<[HomeSection, string]> = [
-      [HomeSection.Performance, 'SectionsPerformance'],
-      [HomeSection.Plans, 'SectionsProducts'],
-      [HomeSection.Services, 'SectionsWhyChooseUs'],
-      [HomeSection.Locations, 'SectionsLocations'],
-      [HomeSection.Apps, 'SectionsApps'],
-      [HomeSection.Guarantees, 'SectionsGuarantees'],
-      [HomeSection.Process, 'SectionsProcess'],
-      [HomeSection.Testimonials, 'SectionsTestimonials'],
-      [HomeSection.Support, 'SectionsSupport'],
-      [HomeSection.Faq, 'SectionsFAQ'],
-      [HomeSection.Cta, 'SectionsCTA'],
-    ]
+  it.each<[HomeSection, SectionTestId]>([
+    [HomeSection.Performance, SectionTestId.Performance],
+    [HomeSection.Plans, SectionTestId.Products],
+    [HomeSection.Services, SectionTestId.WhyChooseUs],
+    [HomeSection.Locations, SectionTestId.Locations],
+    [HomeSection.Apps, SectionTestId.Apps],
+    [HomeSection.Guarantees, SectionTestId.Guarantees],
+    [HomeSection.Process, SectionTestId.Process],
+    [HomeSection.Testimonials, SectionTestId.Testimonials],
+    [HomeSection.Support, SectionTestId.Support],
+    [HomeSection.Faq, SectionTestId.Faq],
+    [HomeSection.Cta, SectionTestId.Cta],
+  ])('hides the %s section when its toggle is off', async (section, testid) => {
+    const wrapper = await mountHome([section])
 
-    for (const [section, name] of toggled) {
-      await switchOff([section])
-
-      const wrapper = mountWithKit(ClassicHome, { components })
-
-      expect(wrapper.find(`[data-section="${name}"]`).exists()).toBe(false)
-    }
+    expect(wrapper.find(`[data-testid="${testid}"]`).exists()).toBe(false)
   })
 
-  it('shows the partners once, and hides them only when both the Partners and Trusted switches are off', async () => {
-    const cases: Array<[HomeSection[], boolean]> = [
-      [[], true],
-      [[HomeSection.Partners], true],
-      [[HomeSection.Trusted], true],
-      [[HomeSection.Partners, HomeSection.Trusted], false],
-    ]
+  it.each<[HomeSection[], boolean]>([
+    [[], true],
+    [[HomeSection.Partners], true],
+    [[HomeSection.Trusted], true],
+    [[HomeSection.Partners, HomeSection.Trusted], false],
+  ])('shows the partners once, and hides them only when both the Partners and Trusted switches are off (%j)', async (off, shown) => {
+    const wrapper = await mountHome(off)
 
-    for (const [off, shown] of cases) {
-      await switchOff(off)
-
-      const wrapper = mountWithKit(ClassicHome, { components })
-
-      expect(wrapper.findAll('[data-section="SectionsPartners"]')).toHaveLength(shown ? 1 : 0)
-      expect(wrapper.find('[data-section="SectionsTrusted"]').exists()).toBe(false)
-    }
+    expect(wrapper.findAll(`[data-testid="${SectionTestId.Partners}"]`)).toHaveLength(shown ? 1 : 0)
   })
 
   it('always shows the hero, which has no toggle', async () => {
-    await switchOff(Object.values(HomeSection))
+    const wrapper = await mountHome(Object.values(HomeSection))
 
-    const wrapper = mountWithKit(ClassicHome, { components })
-
-    expect(wrapper.find('[data-section="SectionsProductsFullSlider"]').exists()).toBe(true)
+    expect(wrapper.find(`[data-testid="${SectionTestId.Hero}"]`).exists()).toBe(true)
   })
 
   it('keeps the projects section off by default', () => {

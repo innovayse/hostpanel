@@ -814,7 +814,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     (`GET .../registry/updates`) and `InstallRegistryPluginCommand` (`POST .../registry/{id}/install`, body `{version}`,
     demo restricted). One type each for a plugin (`RegistryPluginDto`) and a page (`RegistryPluginPageDto`): the client fills
     the registry's members, `PluginUpdateOffer` (shared by the browser and the update check, reading through `RegistryPluginReader`) sets `installed`,
-    `installedVersion` and `updateAvailable`. The offer is `PluginUpdateRule.NewestOffer`: the newest published version
+    `installedVersion` and `updateAvailable`. The install reads the plugin through the same reader and keeps no
+    sequence of its own, so a plugin the registry does not list is refused with `PLUGIN_REGISTRY_PLUGIN_NOT_FOUND` and
+    is never read as a public download. The offer is `PluginUpdateRule.NewestOffer`: the newest published version
     that is newer than the installed one and than any staged upload and whose host range admits the running host
     (`PluginHostCompatibility`). `latestVersion` of a row with an update is that version, which is the one an update
     installs, so it can be older than the registry's newest; a newer version the host cannot run is not offered, and

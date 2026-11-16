@@ -2,7 +2,15 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Integration.Tests.Shared;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
@@ -135,6 +143,78 @@ public sealed class PlaceOrderProductLimitsTests(IntegrationTestFactory factory)
         var refused = responses.Single(r => r.StatusCode != HttpStatusCode.Created);
         refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await OrdersTestSeeds.AssertCodeAsync(refused, HostpanelErrorCodes.ORDER_PRODUCT_ONE_PER_CLIENT);
+    }
+
+    /// <summary>
+    /// When the order's own save fails inside the product places transaction, no order is left and the invoice raised
+    /// for it is cancelled, so the client holds nothing payable; the failure the caller sees is the database's own
+    /// refusal, not an error from the clean-up.
+    /// </summary>
+    /// <remarks>
+    /// The failure is a real database refusal: a trigger on the order lines table refuses the one line naming this
+    /// test's product, and is dropped again afterwards.
+    /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task PlaceOrder_OrderSaveFailsInThePlacesTransaction_LeavesNoInvoiceAndSurfacesTheOriginalErrorAsync()
+    {
+        var productId = await OrdersTestSeeds.SeedLimitedProductAsync(factory, max: 5, onePerClient: false);
+        var (client, clientId, _) = await ClientsTestSeeds.RegisterClientAsync(factory, "save-fails");
+        var logs = new RecordingLoggerProvider();
+        using var host = factory.WithWebHostBuilder(
+            builder => builder.ConfigureTestServices(services => services.AddSingleton<ILoggerProvider>(logs)));
+        using var http = host.CreateClient();
+        http.DefaultRequestHeaders.Authorization = client.DefaultRequestHeaders.Authorization;
+        await ExecuteAsync(
+            "CREATE OR REPLACE FUNCTION \"RefuseLimitedOrderItem\"() RETURNS trigger AS $$ BEGIN " +
+            $"IF NEW.\"ProductId\" = {productId} THEN RAISE EXCEPTION 'refused by test'; END IF; RETURN NEW; END $$ LANGUAGE plpgsql;");
+        await ExecuteAsync(
+            "CREATE TRIGGER \"RefuseLimitedOrderItem\" BEFORE INSERT ON \"OrderItems\" " +
+            "FOR EACH ROW EXECUTE FUNCTION \"RefuseLimitedOrderItem\"();");
+
+        try
+        {
+            (await OrderAsync(http, productId)).StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        }
+        finally
+        {
+            await ExecuteAsync("DROP TRIGGER IF EXISTS \"RefuseLimitedOrderItem\" ON \"OrderItems\";");
+            await ExecuteAsync("DROP FUNCTION IF EXISTS \"RefuseLimitedOrderItem\"();");
+        }
+
+        var refusals = logs.Entries
+            .Where(e => e.Level == LogLevel.Error && e.Exception is not null)
+            .SelectMany(e => Chain(e.Exception!))
+            .OfType<PostgresException>()
+            .ToList();
+        refusals.Should().Contain(e => e.MessageText == "refused by test");
+        refusals.Should().NotContain(e => e.SqlState == PostgresErrorCodes.InFailedSqlTransaction);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.Orders.AsNoTracking().AnyAsync(o => o.ClientId == clientId)).Should().BeFalse();
+        (await db.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).Select(i => i.Status).ToListAsync())
+            .Should().ContainSingle().Which.Should().Be(InvoiceStatus.Cancelled);
+    }
+
+    /// <summary>Runs one statement against the test database.</summary>
+    /// <param name="sql">The statement to run.</param>
+    /// <returns>A task that completes when the statement has run.</returns>
+    private async Task ExecuteAsync(string sql)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.ExecuteSqlRawAsync(sql);
+    }
+
+    /// <summary>Walks an exception and everything it wraps.</summary>
+    /// <param name="exception">The outermost exception.</param>
+    /// <returns>The exception, then each inner exception in turn.</returns>
+    private static IEnumerable<Exception> Chain(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            yield return current;
+        }
     }
 
     /// <summary>Places an order for the product through the API.</summary>

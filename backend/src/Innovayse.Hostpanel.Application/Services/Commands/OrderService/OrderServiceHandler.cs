@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Application.Products.Queries.CheckProductLimits;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductCyclePrices;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
+using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Shared.Infrastructure;
@@ -119,7 +120,7 @@ public sealed class OrderServiceHandler
         // A line of an order already took its place when the order was placed, so only a service ordered with no line is
         // checked, and a refusal there would never strand a paid order. The count and the save that takes the place
         // run under the product's lock, so a parallel order waits for this one and counts it.
-        var placeLimited = cmd.OrderItemId is null && (product.MaxActiveServices is not null || product.OnePerClient);
+        var placeLimited = cmd.OrderItemId is null && Product.IsPlaceLimited(product.MaxActiveServices, product.OnePerClient);
         await using var placesTransaction = placeLimited ? await _context.BeginTransactionAsync(ct) : null;
         if (placesTransaction is not null)
         {

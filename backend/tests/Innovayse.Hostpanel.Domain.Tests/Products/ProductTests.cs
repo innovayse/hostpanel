@@ -505,6 +505,20 @@ public class ProductTests
         Assert.False(product.OnePerClient);
     }
 
+    /// <summary>A product takes a place to count when it has a cap or is one-per-client, and not otherwise.</summary>
+    /// <param name="max">The cap, or null.</param>
+    /// <param name="onePerClient">Whether the product is one-per-client.</param>
+    /// <param name="expected">Whether the product is place limited.</param>
+    [Theory]
+    [InlineData(null, false, false)]
+    [InlineData(5, false, true)]
+    [InlineData(null, true, true)]
+    [InlineData(5, true, true)]
+    public void IsPlaceLimited_IsTrueForACapOrOnePerClient(int? max, bool onePerClient, bool expected)
+    {
+        Assert.Equal(expected, Product.IsPlaceLimited(max, onePerClient));
+    }
+
     /// <summary>Creates a product of the given type with fixed, irrelevant values.</summary>
     /// <param name="type">The product type.</param>
     /// <returns>A new active product.</returns>

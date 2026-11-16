@@ -34,6 +34,7 @@ using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
+using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
@@ -484,7 +485,7 @@ public sealed class PlaceOrderHandler
 
             // A domain line charges for a domain, not for the catalogue product it names, so it keeps no snapshot.
             var snapshot = item.DomainAction is null ? product.Fulfilment.ToSnapshot(item.BillingCycle) : null;
-            var placeLimited = item.DomainAction is null && (product.MaxActiveServices is not null || product.OnePerClient);
+            var placeLimited = item.DomainAction is null && Product.IsPlaceLimited(product.MaxActiveServices, product.OnePerClient);
             lines.Add(new PricedOrderLine(item, product.Name, priceOutcome.Value, snapshot, PlaceLimited: placeLimited));
         }
 

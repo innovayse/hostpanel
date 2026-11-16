@@ -157,6 +157,7 @@ describe('useSeo', () => {
 
   it('follows a getter, so tags written after the content arrives are current', async () => {
     await stubRuntime('en', '/knowledgebase/5')
+    /** The title the getter reads; the test changes it after the first call. */
     const title = ref('Before')
 
     useSeo(() => ({ title: title.value, description: 'D', type: SeoPageType.Article }))

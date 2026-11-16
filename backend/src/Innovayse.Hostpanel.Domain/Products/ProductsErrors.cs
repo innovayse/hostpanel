@@ -33,7 +33,8 @@ public static class ProductsErrors
     public const string ProductGracePeriodOutOfRange = "PRODUCT_GRACE_PERIOD_OUT_OF_RANGE";
 
     /// <summary>
-    /// The cap on live services is zero or negative (400): <see cref="Product.SetMaxActiveServices"/>.
+    /// The cap on live services is negative (400): <see cref="Product.SetMaxActiveServices"/>. Zero is the unlimited
+    /// cap on the command and never reaches the aggregate.
     /// </summary>
     public const string ProductMaxActiveServicesInvalid = "PRODUCT_MAX_ACTIVE_SERVICES_INVALID";
 

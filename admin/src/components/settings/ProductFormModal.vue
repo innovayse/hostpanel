@@ -227,8 +227,8 @@ watch(() => props.product, (p) => {
     sku.value = p.sku ?? ''
     metadata.value = p.metadata ?? ''
     gracePeriodDays.value = p.gracePeriodDays
-    maxActiveServices.value = p.maxActiveServices ?? null
-    onePerClient.value = p.onePerClient ?? false
+    maxActiveServices.value = p.maxActiveServices
+    onePerClient.value = p.onePerClient
     resetPriceRows(p.prices)
   } else {
     type.value = ProductType.SharedHosting

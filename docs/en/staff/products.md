@@ -113,6 +113,16 @@ Go to **Settings → Products → Create Product** and fill in the form.
 </li>
 <li>
 
+**Max active services**: how many services of the product may be live at once (not terminated). An order that is placed but not yet fulfilled holds a place too, and an unpaid order keeps holding it until it is cancelled, so cancel an order that will not be paid to give its place back. When every place is taken the product is sold out: it is left off the storefront and a new order is refused (`ORDER_PRODUCT_SOLD_OUT`). Leave the field empty or 0 for no limit. Lowering the cap below the number already taken leaves the existing services alone and only stops new orders until places are free.
+
+</li>
+<li>
+
+**One per client**: a client who already has a live service of the product, or an open order for it, cannot order it again, and one order cannot name it twice (`ORDER_PRODUCT_ONE_PER_CLIENT`).
+
+</li>
+<li>
+
 **Hidden**: tick to set the product Inactive and hide it from the order form. An inactive product cannot be ordered (`PRODUCT_NOT_AVAILABLE`).
 
 </li>

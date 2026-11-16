@@ -55,7 +55,7 @@ public sealed class ListCatalogProductsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The active products the caller can buy in the resolved currency, in the operator's order, leaving out a
-    /// product whose cap on live services is reached (sold out). Never refuses.
+    /// product whose cap on live services is reached (sold out), or the failure of the count that tells which are.
     /// </returns>
     /// <remarks>
     /// A signed-in client is always billed in their own recorded currency, so
@@ -99,12 +99,15 @@ public sealed class ListCatalogProductsHandler
         {
             var taken = await _bus.InvokeAsync<Result<IReadOnlyDictionary<int, int>>>(
                 new CountProductCommitmentsQuery(capped), ct);
-            if (taken.IsSuccess)
+            if (taken.IsFailure)
             {
-                products = products
-                    .Where(p => p.MaxActiveServices is not { } max || taken.Value!.GetValueOrDefault(p.Id) < max)
-                    .ToList();
+                // A catalogue that cannot tell what is sold out would list a product the order flow then refuses.
+                return Result<IReadOnlyList<CatalogProductDto>>.FailureCode(taken.ErrorCode!);
             }
+
+            products = products
+                .Where(p => p.MaxActiveServices is not { } max || taken.Value!.GetValueOrDefault(p.Id) < max)
+                .ToList();
         }
 
         IReadOnlyList<CatalogProductDto> dtos = products

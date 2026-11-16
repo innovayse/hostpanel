@@ -7,7 +7,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 /// A registrar whose registration call times out the way an HTTP client does: it throws a cancellation the caller never
 /// asked for, so the outcome at the registrar is unknown. Top-level and public so Wolverine's generated handler code can name it.
 /// </summary>
-public sealed class TimingOutRegistrar : TestRegistrar
+/// <param name="time">The clock of the host the registrar answers for.</param>
+public sealed class TimingOutRegistrar(TimeProvider time) : TestRegistrar(time)
 {
     /// <inheritdoc/>
     public override Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct)

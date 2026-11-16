@@ -31,7 +31,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
         {
             (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(installedId))).StatusCode.Should().Be(HttpStatusCode.OK);
 
-            var page = await client.GetFromJsonAsync<JsonElement>("/api/admin/plugins/registry?pageSize=100");
+            var page = await client.GetFromJsonAsync<JsonElement>("/api/admin/plugins/registry?page=1&pageSize=100");
 
             page.GetProperty("page").GetInt32().Should().Be(1);
             page.GetProperty("pageSize").GetInt32().Should().Be(100);
@@ -72,7 +72,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
         {
             await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(pluginId));
 
-            var page = await client.GetFromJsonAsync<JsonElement>("/api/admin/plugins/registry");
+            var page = await client.GetFromJsonAsync<JsonElement>("/api/admin/plugins/registry?page=1&pageSize=20");
 
             var item = page.GetProperty("items").EnumerateArray().Single(i => i.GetProperty("id").GetString() == pluginId);
             item.GetProperty("installed").GetBoolean().Should().BeTrue();
@@ -92,25 +92,52 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
         var registry = new FakePluginRegistryClient();
         var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
 
-        var response = await client.GetAsync("/api/admin/plugins/registry?q=stripe&category=Registrar&page=3&pageSize=5");
+        var response = await client.GetAsync("/api/admin/plugins/registry?search=stripe&category=Registrar&page=3&pageSize=5");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         registry.LastSearch.Should().Be(new RegistryPluginSearch("stripe", PluginRegistryCategory.Registrar, 3, 5));
-        (await client.GetAsync("/api/admin/plugins/registry?q=%20%20")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await client.GetAsync("/api/admin/plugins/registry?page=1&pageSize=20&search=%20%20")).StatusCode.Should().Be(HttpStatusCode.OK);
         registry.LastSearch!.Search.Should().BeNull();
     }
 
-    /// <summary>A search over 100 characters and an undefined category are refused before the registry is asked.</summary>
+    /// <summary>
+    /// A missing page or page size, a page below 1, a page size outside 1 to 100 and a category that is not a member are refused before the registry is
+    /// asked; an unknown category name or number is refused by the model binder, so the field is named in the answer.
+    /// </summary>
+    /// <param name="query">The query string that must be refused.</param>
+    /// <param name="field">The field the 400 names.</param>
     /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task InvalidFilters_AreRefusedAsync()
+    [Theory]
+    [InlineData("pageSize=20", "page")]
+    [InlineData("page=1", "pageSize")]
+    [InlineData("page=0&pageSize=20", "page")]
+    [InlineData("page=1&pageSize=0", "pageSize")]
+    [InlineData("page=1&pageSize=101", "pageSize")]
+    [InlineData("page=1&pageSize=20&category=Unknown", "category")]
+    [InlineData("page=1&pageSize=20&category=99", "category")]
+    public async Task InvalidQuery_IsRefusedAsync(string query, string field)
     {
         var registry = new FakePluginRegistryClient();
         var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
 
-        (await client.GetAsync($"/api/admin/plugins/registry?q={new string('a', 101)}")).StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await client.GetAsync("/api/admin/plugins/registry?category=99")).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var response = await client.GetAsync($"/api/admin/plugins/registry?{query}");
 
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain(field, because: "the 400 names the offending field");
+        registry.LastSearch.Should().BeNull();
+    }
+
+    /// <summary>A search over 100 characters is refused before the registry is asked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ASearchOver100Characters_IsRefusedAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        var response = await client.GetAsync($"/api/admin/plugins/registry?page=1&pageSize=20&search={new string('a', 101)}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         registry.LastSearch.Should().BeNull();
     }
 
@@ -122,7 +149,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
         var registry = new FakePluginRegistryClient { FailureCode = HostpanelErrorCodes.PLUGIN_REGISTRY_UNAVAILABLE };
         var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
 
-        var response = await client.GetAsync("/api/admin/plugins/registry");
+        var response = await client.GetAsync("/api/admin/plugins/registry?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_UNAVAILABLE);
@@ -136,7 +163,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         client.DefaultRequestHeaders.Add("X-Language", "ru");
 
-        var response = await client.GetAsync("/api/admin/plugins/registry");
+        var response = await client.GetAsync("/api/admin/plugins/registry?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_DISABLED);
@@ -180,7 +207,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
                 (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id))).StatusCode.Should().Be(HttpStatusCode.OK);
             }
 
-            var page = await client.GetFromJsonAsync<JsonElement>("/api/admin/plugins/registry?pageSize=100");
+            var page = await client.GetFromJsonAsync<JsonElement>("/api/admin/plugins/registry?page=1&pageSize=100");
 
             var items = page.GetProperty("items").EnumerateArray().ToDictionary(i => i.GetProperty("id").GetString()!);
             items[tooNew].GetProperty("updateAvailable").GetBoolean().Should().BeFalse();

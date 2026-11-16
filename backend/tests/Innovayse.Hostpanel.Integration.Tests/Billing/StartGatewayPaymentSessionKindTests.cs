@@ -44,7 +44,7 @@ public sealed class StartGatewayPaymentSessionKindTests(IntegrationTestFactory f
         resolver.Register(Module, plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, label);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         var response = await client.PostAsJsonAsync(
@@ -96,7 +96,7 @@ public sealed class StartGatewayPaymentSessionKindTests(IntegrationTestFactory f
         body.GetProperty("kind").GetString().Should().Be(nameof(GatewaySessionKind.FormPost));
         body.GetProperty("redirectUrl").GetString().Should().Be(form.Action);
         var sent = body.GetProperty("formPost");
-        sent.GetProperty("action").GetString().Should().Be(form.Action);
+        sent.TryGetProperty("action", out _).Should().BeFalse("the address of a form post is carried once, as redirectUrl");
         sent.GetProperty("fields").EnumerateArray()
             .Select(f => (f.GetProperty("name").GetString(), f.GetProperty("value").GetString()))
             .Should().Equal(("token", "t1"), ("token", "t2"), ("lang", "hy"));

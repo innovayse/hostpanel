@@ -3,7 +3,7 @@
     <UiStack class="w-full" gap="lg">
       <!-- Back link -->
       <UiLink
-        :to="localePath('/knowledgebase')"
+        :to="localePath(SITE_KNOWLEDGEBASE_PATH)"
         tone="muted"
         :underline="false"
         class="inline-flex items-center gap-2 self-start text-sm"
@@ -82,6 +82,7 @@ import type { KbArticleSummary } from '~/types/kbarticlesummary'
 import type { KbCategory } from '~/types/kbcategory'
 import { SeoPageType } from '~/types/seopagetype'
 import { kbCategorySlug } from '~/utils/kbCategory'
+import { SITE_KNOWLEDGEBASE_PATH, siteKnowledgebaseCategoryPath } from '~/constants/siteRoutes'
 
 /** The current route. */
 const route = useRoute()
@@ -168,7 +169,7 @@ const retry = async (): Promise<void> => {
 const articles = computed<KbArticleSummary[]>(() => content.articlesFor(categoryName.value))
 
 /** The page path in the default language, built on the canonical slug of the category. */
-const pagePath = computed(() => `/knowledgebase/category/${kbCategorySlug(categoryName.value)}`)
+const pagePath = computed(() => siteKnowledgebaseCategoryPath(kbCategorySlug(categoryName.value)))
 
 /** Page title: the category inside the knowledgebase. */
 const seoTitle = computed(() => t('kb.categorySeoTitle', { category: categoryName.value }))
@@ -187,7 +188,7 @@ useSeo({
 /** Builder and publisher of the breadcrumb structured data. */
 const { breadcrumbSchema, injectSchema } = useSchemaOrg()
 injectSchema(breadcrumbSchema([
-  { name: t('kb.title'), url: localePath('/knowledgebase') },
+  { name: t('kb.title'), url: localePath(SITE_KNOWLEDGEBASE_PATH) },
   { name: categoryName.value, url: localePath(pagePath.value) }
 ]))
 </script>

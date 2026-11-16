@@ -6,6 +6,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 /** One style tag as handed to `useHead`. */
 interface StyleTag {
@@ -33,7 +38,7 @@ interface PluginDefinition {
   setup: () => void
 }
 
-/** The settings the stubbed store answers with. */
+/** The operator's settings the stub answers with, by their dotted key. */
 let settings: Record<string, string> = {}
 
 /** The captured `useHead` call. */
@@ -45,8 +50,8 @@ const useHeadMock = vi.fn()
  * @returns The plugin definition.
  */
 const loadPlugin = async (): Promise<PluginDefinition> => {
+  await loadPortalSettings(replies, settings)
   vi.stubGlobal('defineNuxtPlugin', (definition: PluginDefinition) => definition)
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
   vi.stubGlobal('useHead', useHeadMock)
   const plugin = (await import('~/plugins/brand-tokens')).default as unknown as PluginDefinition
   plugin.setup()
@@ -75,7 +80,7 @@ describe('brand-tokens plugin', () => {
   })
 
   it('emits one critical style tag carrying the brand variables', async () => {
-    settings['portal.brand.primary'] = '#336699'
+    settings[PortalSettingKey.BrandPrimary] = '#336699'
     await loadPlugin()
 
     const head = useHeadMock.mock.calls[0]![0] as HeadInput

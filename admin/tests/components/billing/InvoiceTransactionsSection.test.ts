@@ -49,4 +49,12 @@ describe('InvoiceTransactionsSection', () => {
     expect(wrapper.get('[data-testid="billing-invoice-payments-table"]').text()).toContain('No Records Found')
     expect(wrapper.get('[data-testid="billing-invoice-history-table"]').text()).toContain('No Records Found')
   })
+
+  it('keeps both ledgers with their headers and placeholder rows while the invoice is being read', () => {
+    const wrapper = mountWithApp(InvoiceTransactionsSection, { props: { invoice: null } })
+
+    expect(wrapper.get('[data-testid="billing-invoice-payments-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="billing-invoice-history-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="billing-invoice-history-table"]').text()).not.toContain('No Records Found')
+  })
 })

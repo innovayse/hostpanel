@@ -21,7 +21,7 @@ public sealed class ListInvoicePaymentClaimsTests(IntegrationTestFactory factory
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var claim = InvoicePaymentClaim.Open(
             invoiceId, clientId, "claims-gateway", "pm-1", Guid.NewGuid().ToString("N"), 1250, "USD", now);
         if (held)

@@ -46,8 +46,8 @@ public sealed class InvoicesController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a paginated, optionally filtered list of all invoices.</summary>
-    /// <param name="query">The page, filters and page size to list by.</param>
+    /// <summary>Returns a paginated list of all invoices, narrowed by a search over the id and payment method, a client, a status and a creation period.</summary>
+    /// <param name="query">The paging window, the optional search and the optional client, status and period filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 401 without a session; 403 for a caller who is not staff; 400 when the request is refused;
@@ -65,9 +65,9 @@ public sealed class InvoicesController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Returns a paginated, filtered list of invoices for a specific client.</summary>
+    /// <summary>Returns a paginated list of invoices for a specific client, narrowed by a search, a status and a creation period.</summary>
     /// <param name="clientId">The client's primary key; wins over any client id in the query.</param>
-    /// <param name="query">The page and filters to list by.</param>
+    /// <param name="query">The paging window, the optional search and the optional status and period filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 401 without a session; 403 for a caller who is not staff; 400 when the request is refused;

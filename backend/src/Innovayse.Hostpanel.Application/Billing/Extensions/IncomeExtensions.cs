@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -86,6 +87,32 @@ public static class IncomeExtensions
         ArgumentNullException.ThrowIfNull(entries);
 
         return entries.Where(e => e.At >= from && e.At < to);
+    }
+
+    /// <summary>Sums the income inside a window per calendar day and currency, as the database groups it.</summary>
+    /// <param name="entries">The income rows.</param>
+    /// <param name="window">The days to sum on; rows outside it are left out.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>One amount per day and currency that moved, in the invoice currency; a caller converts each sum once.</returns>
+    public static async Task<IReadOnlyList<IncomeDay>> SumPerDayAsync(
+        this IQueryable<IncomeEntry> entries,
+        DayWindow window,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        ArgumentNullException.ThrowIfNull(window);
+
+        // The database groups by currency and UTC bucket, so only a few rows come back; the days of the host
+        // zone are cut from the buckets here (see TimeBucket).
+        var buckets = await entries
+            .Within(window.From, window.To)
+            .GroupBy(e => new { e.Currency, e.At.Year, e.At.Month, e.At.Day, e.At.Hour, Quarter = e.At.Minute / TimeBucket.Minutes })
+            .Select(g => new { g.Key.Currency, g.Key.Year, g.Key.Month, g.Key.Day, g.Key.Hour, g.Key.Quarter, Amount = g.Sum(e => e.Amount) })
+            .ToListAsync(ct);
+
+        return [.. buckets
+            .GroupBy(b => (Day: window.DayOf(TimeBucket.StartOf(b.Year, b.Month, b.Day, b.Hour, b.Quarter)), b.Currency))
+            .Select(g => new IncomeDay(g.Key.Day, g.Key.Currency, g.Sum(b => b.Amount)))];
     }
 
     /// <summary>Reads the base currency and the rate of every currency to it.</summary>

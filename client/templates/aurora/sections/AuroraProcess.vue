@@ -11,7 +11,7 @@
           <UiStack direction="row" wrap class="mt-8">
             <UiButton
               variant="bare"
-              :to="localePath('/hosting')"
+              :to="localePath(SITE_HOSTING_PATH)"
               data-testid="process-start"
               :class="[BRAND_BUTTON, 'px-6 py-3 text-[15px]']"
             >
@@ -19,7 +19,7 @@
             </UiButton>
             <UiButton
               variant="bare"
-              :to="localePath('/contact')"
+              :to="localePath(SITE_CONTACT_PATH)"
               data-testid="process-talk"
               :class="[LINE_BUTTON, 'px-6 py-3 text-[15px]']"
             >
@@ -70,6 +70,7 @@ import { HomeSectionId } from '~/types/homesectionid'
 import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
 import { STICKY_COLUMN_CLASS } from '~/templates/aurora/layoutClasses'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
+import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

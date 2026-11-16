@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 
 describe('UiTooltip', () => {
   it('renders the trigger and the hint', () => {
@@ -11,6 +12,13 @@ describe('UiTooltip', () => {
 
     expect(wrapper.find('button').exists()).toBe(true)
     expect(wrapper.get('[role="tooltip"]').text()).toBe('Delete')
+  })
+
+  it('draws the hint on the opaque floating surface, never glass', () => {
+    const classes = mount(UiTooltip, { props: { text: 'Delete' } }).get('[role="tooltip"]').classes()
+
+    expect(classes).toEqual(expect.arrayContaining(FLOATING_PANEL_CLASSES.split(' ')))
+    expect(classes.some((name) => name.includes('glass'))).toBe(false)
   })
 
   it('links the hint to the trigger wrapper', () => {

@@ -58,7 +58,10 @@ internal static class MethodBodyReader
         }
     }
 
-    /// <summary>Walks a method body's IL and resolves the target of every call, callvirt and ldftn.</summary>
+    /// <summary>
+    /// Walks a method body's IL and resolves the target of every call, callvirt and ldftn, and every method named by
+    /// ldtoken: a lambda that becomes an expression tree never calls the members it mentions, it loads their handles.
+    /// </summary>
     /// <param name="method">The method to read.</param>
     /// <returns>The methods it references.</returns>
     private static IEnumerable<MethodBase> CalledMethods(MethodBase method)
@@ -82,7 +85,7 @@ internal static class MethodBodyReader
             }
 
             var code = OpCodesByValue[value];
-            if (code.OperandType == OperandType.InlineMethod)
+            if (code.OperandType is OperandType.InlineMethod or OperandType.InlineTok)
             {
                 var token = BitConverter.ToInt32(il, position);
                 var target = Resolve(method.Module, token, typeArguments, methodArguments);
@@ -96,7 +99,10 @@ internal static class MethodBodyReader
         }
     }
 
-    /// <summary>Resolves a method token, or nothing when the token cannot be bound in this context.</summary>
+    /// <summary>
+    /// Resolves a method token, or nothing when the token cannot be bound in this context or names a type or a field
+    /// (an ldtoken operand can be any of them).
+    /// </summary>
     /// <param name="module">The module declaring the token.</param>
     /// <param name="token">The metadata token.</param>
     /// <param name="typeArguments">The declaring type's generic arguments, if any.</param>
@@ -106,7 +112,7 @@ internal static class MethodBodyReader
     {
         try
         {
-            return module.ResolveMethod(token, typeArguments, methodArguments);
+            return module.ResolveMember(token, typeArguments, methodArguments) as MethodBase;
         }
         catch (ArgumentException)
         {

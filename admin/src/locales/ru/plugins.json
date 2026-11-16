@@ -7,19 +7,11 @@
       "storedCredentials": "Сохранённые способы оплаты"
     },
     "pendingRestart": "Ожидает перезапуска",
-    "categoryByAuthor": "{category} · автор: {author}",
     "remove": "Удалить",
-    "details": "Подробнее",
     "refused": "Отклонён",
     "staged": "Версия {version} подготовлена, применится после перезапуска",
     "brokenRule": "{id} · нарушенное правило: {rule}",
-    "updateAvailable": "Доступно обновление: {version}",
-    "showNotes": "Что нового в {version}",
-    "hideNotes": "Скрыть список изменений",
-    "noNotes": "У этой версии нет списка изменений.",
-    "whatChanged": "Что изменится в {to}",
-    "showUpdateNotes": "Что нового в {version}",
-    "hideUpdateNotes": "Скрыть, что нового"
+    "updateAvailable": "Доступно обновление: {version}"
   },
   "pluginUploader": {
     "valueKbReadyToInstall": "{value} КБ · готово к установке",
@@ -65,13 +57,7 @@
     "installAndManageProviderPlugins": "Установка плагинов провайдеров и управление ими",
     "lengthInstalled": "· установлено: {length}",
     "noPluginsInstalledYet": "Плагины пока не установлены",
-    "uploadA": "Загрузите",
-    "fileAboveToGetStarted": "файл выше, чтобы начать",
-    "zip": ".zip",
-    "installedPlugins": "Установленные плагины",
     "noPluginsMatch": "Нет установленных плагинов по этим фильтрам",
-    "pluginInstalled": "Плагин установлен.",
-    "pluginRemoved": "Плагин удалён.",
     "confirmRemoveTitle": "Удалить этот плагин?",
     "confirmRemoveMessage": "Плагин {id} будет удалён с сервера. Его настройки и сохранённые данные останутся, при повторной установке они вернутся. Данные можно удалить позже.",
     "dataPurged": "Данные плагина удалены.",
@@ -83,10 +69,24 @@
     "pluginStaged": "Версия {version} загружена и подготовлена. Она заменит установленную после перезапуска сервера.",
     "tabInstalled": "Установленные",
     "tabBrowse": "Каталог",
-    "registryInstalled": "Плагин установлен из каталога.",
     "confirmUpdateTitle": "Обновить плагин?",
     "confirmUpdateMessage": "Обновить {id} до версии {version}? Изменение вступит в силу после перезапуска сервера.",
-    "confirmUpdate": "Обновить"
+    "confirmUpdate": "Обновить",
+    "tabSettings": "Настройки",
+    "uploadPlugin": "Загрузить плагин",
+    "uploadTitle": "Загрузка пакета плагина",
+    "noPluginsInstalledHint": "Загрузите пакет плагина или установите его из реестра.",
+    "searchInstalled": "Поиск по установленным плагинам",
+    "tabsLabel": "Разделы плагинов"
+  },
+  "processing": {
+    "installing": "Установка {name}",
+    "updating": "Обновление {name}",
+    "removing": "Удаление {name}",
+    "uploading": "Загрузка {name}",
+    "done": "Готово.",
+    "restartNeeded": "Перезапустите сервер, чтобы изменение вступило в силу.",
+    "close": "Закрыть"
   },
   "pluginSlotWidgets": {
     "title": "Виджеты слотов: {plugin}",
@@ -109,13 +109,10 @@
     "allCategories": "Все категории",
     "byAuthor": "автор: {author}",
     "version": "v{version}",
-    "sdkVersion": "SDK {version}",
     "verified": "Проверен",
     "install": "Установить",
     "update": "Обновить до {version}",
     "details": "Подробнее",
-    "uninstall": "Удалить",
-    "installed": "Установлен {version}",
     "emptyTitle": "Плагины не найдены",
     "emptyDescription": "Попробуйте другой запрос или категорию.",
     "total": "Плагинов: {total}",
@@ -131,17 +128,9 @@
       "Paid": "Платный",
       "Private": "Приватный"
     },
-    "publisherKind": {
-      "Personal": "Частный",
-      "Organization": "Организация"
-    },
     "tag": "#{tag}",
-    "moreTags": "+{count}",
     "downloads": "Загрузок: {count}",
-    "whatChanged": "Что изменилось",
-    "showNotes": "Что нового в {version}",
-    "hideNotes": "Скрыть, что нового",
-    "noNotes": "У этой версии нет списка изменений."
+    "settings": "Настройки"
   },
   "registryTrust": {
     "title": "Доверие к каталогу",

@@ -133,6 +133,9 @@
     "deleteRequest": "Удалить запрос",
     "totalcountRequestValue": "Запросов: {totalCount}",
     "noCancellationRequestsFound": "Запросы на отмену не найдены",
+    "searchRequests": "Поиск по причине или номеру",
+    "noRequestsMatchYourFilters": "Нет запросов на отмену, подходящих под фильтры",
+    "clearFilters": "Сбросить фильтры",
     "deleteCancellationRequest": "Удалить запрос на отмену",
     "areYouSureYouWant": "Вы уверены, что хотите удалить этот запрос на отмену?",
     "requestDeleted": "Запрос на отмену удалён."
@@ -148,6 +151,9 @@
     "invoicedItems": "Выставленные позиции",
     "invoicedtotalcountItemValue": "Позиций: {invoicedTotalCount}",
     "noInvoicedBillableItems": "Нет выставленных оплачиваемых позиций.",
+    "searchItems": "Поиск по описанию или номеру",
+    "noUninvoicedItemsMatchYourFilters": "Нет невыставленных оплачиваемых позиций, подходящих под фильтры.",
+    "noInvoicedItemsMatchYourFilters": "Нет выставленных оплачиваемых позиций, подходящих под фильтры.",
     "confirmInvoice": "Подтвердите выставление счёта",
     "areYouSureYouWant": "Вы уверены, что хотите немедленно выставить счёт по выбранным позициям?",
     "confirmDelete": "Подтвердите удаление",
@@ -230,7 +236,8 @@
       "recipientRejected": "Адрес получателя отклонён",
       "senderRejected": "Адрес отправителя отклонён",
       "messageRejected": "Письмо отклонено"
-    }
+    },
+    "searchEmails": "Поиск по письмам"
   },
   "clientInvoices": {
     "createInvoice": "+ Создать счёт",
@@ -240,8 +247,6 @@
     "addItem": "+ Добавить позицию",
     "createInvoice2": "Создать счёт",
     "allStatuses": "Все статусы",
-    "from": "От",
-    "filter": "Фильтр",
     "clientinvoicestotalInvoiceValue": "Счетов: {clientInvoicesTotal}",
     "deleteInvoice": "Удалить счёт",
     "confirmDeleteInvoice": "Вы уверены, что хотите удалить счёт #{id}?",
@@ -256,11 +261,10 @@
   },
   "clientLog": {
     "activityLog": "Журнал активности",
-    "filterLog": "Фильтр журнала",
-    "selectDate": "Выберите дату",
     "logEntry": "Запись журнала",
     "user": "Пользователь",
-    "totalcountEntrValue": "Записей: {totalCount}"
+    "totalcountEntrValue": "Записей: {totalCount}",
+    "searchLog": "Поиск по журналу активности"
   },
   "clientOpenTicket": {
     "ticketSubject": "Тема тикета",
@@ -301,7 +305,9 @@
     "clientquotestotalQuoteValue": "Предложений: {clientQuotesTotal}",
     "deleteQuote": "Удалить предложение",
     "confirmDeleteQuote": "Вы уверены, что хотите удалить предложение #{id}?",
-    "quoteDeleted": "Предложение удалено."
+    "quoteDeleted": "Предложение удалено.",
+    "noQuotesMatchYourFilters": "Предложения по вашим фильтрам не найдены",
+    "clearFilters": "Сбросить фильтры"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Услуга №{id}: {productName}",
@@ -362,7 +368,10 @@
   "clientServicesList": {
     "nextDue": "Следующая оплата",
     "totalcountServiceValue": "Услуг: {totalCount}",
-    "noServicesFoundForThis": "Для этого клиента услуги не найдены"
+    "noServicesFoundForThis": "Для этого клиента услуги не найдены",
+    "searchServices": "Поиск по домену, продукту или ID",
+    "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам",
+    "clearFilters": "Сбросить фильтры"
   },
   "clientsList": {
     "manageYourClientAccounts": "Управление аккаунтами клиентов",
@@ -452,9 +461,10 @@
     "openedLastMonth": "Открыто в прошлом месяце",
     "openedThisYear": "Открыто в этом году",
     "openedLastYear": "Открыто в прошлом году",
-    "searchSubject": "Поиск по теме:",
     "dateOpened": "Дата открытия",
     "noDataAvailableInTable": "В таблице нет данных",
+    "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам",
+    "clearFilters": "Сбросить фильтры",
     "totalcountTicketValue": "Тикетов: {totalCount}"
   },
   "clientTransactions": {
@@ -466,7 +476,9 @@
     "deleteTransaction": "Удалить транзакцию",
     "confirmDeleteTransaction": "Вы уверены, что хотите удалить транзакцию #{id}?",
     "transactionAdded": "Транзакция добавлена.",
-    "transactionDeleted": "Транзакция удалена."
+    "transactionDeleted": "Транзакция удалена.",
+    "noTransactionsMatchYourFilters": "Транзакции по вашим фильтрам не найдены",
+    "clearFilters": "Сбросить фильтры"
   },
   "clientUsers": {
     "usersLength": "Пользователи ({length})",
@@ -498,12 +510,6 @@
     "invitationSentTo": "Приглашение отправлено на {email}",
     "never": "Никогда"
   },
-  "domainRegistrations": {
-    "domainRegistrations": "Регистрации доменов",
-    "viewAndManageClientDomain": "Просмотр регистраций доменов клиентов и управление ими",
-    "regPeriod": "Срок регистрации",
-    "noDomainRegistrationsFound": "Регистрации доменов не найдены"
-  },
   "manageAffiliates": {
     "manageAffiliates": "Управление партнёрами",
     "viewAndManageTheAffiliate": "Просмотр партнёрской программы и управление ею",
@@ -520,6 +526,7 @@
     "sendPasswordResetEmail": "Отправить письмо для сброса пароля",
     "totalcountUserValue": "Пользователей: {totalCount}",
     "noUsersFound": "Пользователи не найдены",
+    "noUsersMatchYourSearch": "Нет пользователей, подходящих под поиск",
     "passwordResetEmailSent": "Письмо для сброса пароля отправлено.",
     "never": "Никогда",
     "userSaved": "Пользователь сохранён.",
@@ -545,6 +552,18 @@
     "startedAt": "Начало текущего периода",
     "today": "Сегодня",
     "add": "Добавить услугу"
+  },
+  "vat": {
+    "title": "Номер плательщика НДС",
+    "none": "Номер плательщика НДС не указан. Укажите его как налоговый номер в профиле клиента.",
+    "check": "Проверить снова",
+    "checked": "Номер плательщика НДС проверен.",
+    "checkedAt": "Проверено {date}",
+    "status": {
+      "Valid": "Действителен",
+      "Invalid": "Недействителен",
+      "none": "Не проверялся"
+    }
   },
   "externalAccount": {
     "title": "Внешний аккаунт",

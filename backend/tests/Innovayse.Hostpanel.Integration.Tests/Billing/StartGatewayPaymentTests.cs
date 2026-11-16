@@ -69,7 +69,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
 
         var response = await StartAsync(client, invoiceId);
@@ -94,7 +94,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-amd");
         await SetClientCurrencyAsync(host, clientId, "AMD");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         var response = await StartAsync(client, invoiceId);
@@ -117,7 +117,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-usd"); // base currency is USD
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25m);
 
         var response = await StartAsync(client, invoiceId);
@@ -134,7 +134,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     {
         var host = BuildHost(new FakePaymentPluginResolver());
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-unavailable");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         var response = await StartAsync(client, invoiceId);
@@ -152,7 +152,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-paid");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         await BillingTestSeeds.MarkPaidAsync(admin, invoiceId, 10m);
 
@@ -169,7 +169,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     {
         var host = BuildHost(new FakePaymentPluginResolver());
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-badurl");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         var response = await StartAsync(client, invoiceId, returnUrl: "https://evil.example/steal");
@@ -195,7 +195,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-fresh-pending");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         (await StartAsync(client, invoiceId)).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -221,7 +221,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, held ? "gw-start-held" : "gw-start-claim");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         if (held)
         {
@@ -254,7 +254,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-fresh-declined");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
         (await StartAsync(client, invoiceId)).StatusCode.Should().Be(HttpStatusCode.OK);
         plugin.CreatePaymentResult = new("gw-second", "https://pg.example/pay?mdOrder=gw-second");
@@ -285,7 +285,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-outage");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
 
         var response = await StartAsync(client, invoiceId);
@@ -316,7 +316,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-partial");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
         (await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
@@ -346,7 +346,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-credit");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BillingTestSeeds.GiveCreditAsync(host, clientId, 12m);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
         (await client.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/credit", new { amount = 12m })).StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -369,7 +369,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-credit-all");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BillingTestSeeds.GiveCreditAsync(host, clientId, 30m);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
         (await client.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/credit", new { amount = 25.50m })).StatusCode.Should().Be(HttpStatusCode.NoContent);

@@ -4,7 +4,7 @@
  */
 import type { ReportStatementLine } from '@/types/reportclientstatement'
 import type { ReportDomainRenewalRow } from '@/types/reportdomainrenewal'
-import type { ReportVatRow } from '@/types/reportvat'
+import type { ReportOssRow } from '@/types/reportoss'
 
 /** Separator between the parts of a composite key; no part contains it. */
 const KEY_SEPARATOR = '|'
@@ -33,4 +33,4 @@ export const renewalEmailKey = (row: ReportDomainRenewalRow): string =>
  * @param row - The VAT row.
  * @returns The key.
  */
-export const vatRowKey = (row: ReportVatRow): string => [row.countryCode, row.vatRate, row.currency].join(KEY_SEPARATOR)
+export const ossRowKey = (row: ReportOssRow): string => [row.countryCode, row.vatRate, row.currency].join(KEY_SEPARATOR)

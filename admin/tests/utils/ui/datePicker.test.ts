@@ -20,7 +20,9 @@ import {
   presetRange,
   quickDateFor,
   dateLibraryThemeClasses,
+  datePopupClasses,
 } from '@/utils/ui/datePicker'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 
 /** Fixed reference day (a Wednesday) so every expectation is deterministic. */
 const TODAY = new Date(2026, 4, 20)
@@ -118,5 +120,12 @@ describe('datePicker selected states', () => {
     expect(dateCellSelectedClasses).toContain('text-surface-base')
     expect(datePresetActiveClasses).toContain('bg-primary-600')
     expect(dateLibraryThemeClasses).toContain('[--dp-background-color:var(--surface-elevated)]')
+  })
+})
+
+describe('datePicker popup surface', () => {
+  it('wears the opaque floating panel classes and no glass', () => {
+    expect(datePopupClasses).toContain(FLOATING_PANEL_CLASSES)
+    expect(datePopupClasses).not.toContain('glass')
   })
 })

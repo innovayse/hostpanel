@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Common.Enums;
 using Innovayse.Hostpanel.Domain.Billing;

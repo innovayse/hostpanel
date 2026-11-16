@@ -244,6 +244,7 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         AddParty(section.Elements, labels.BillTo, model.BillTo).Format.SpaceBefore = SectionGap;
         AddItems(section, model.Lines, model.Money, labels);
         AddTotals(section, model.Money, model.SubTotal, model.TaxRate, model.Tax, model.Credit, model.Total, labels, labels.Total);
+        AddReverseChargeNotice(section, model.ClientVatNumber);
         AddFooter(section, labels);
 
         return Save(document, page => DrawStamp(page, InvoiceStamp(model)));
@@ -578,6 +579,24 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         AddText(total.Cells[1].Elements, FormatMoney(money, totalAmount), bold: true, EmphasisSize, alignment: ParagraphAlignment.Right);
 
         table.Rows[0].KeepWith = rows.Count;
+    }
+
+    /// <summary>
+    /// Adds the statement an invoice raised under the reverse charge must carry: that no VAT is charged and the recipient accounts
+    /// for it, with the client's VAT number. Nothing is added for an ordinary invoice.
+    /// </summary>
+    /// <param name="section">The section being built.</param>
+    /// <param name="clientVatNumber">The client's VAT number when the reverse charge applies; null for an ordinary invoice.</param>
+    private static void AddReverseChargeNotice(Section section, string? clientVatNumber)
+    {
+        if (clientVatNumber is null)
+        {
+            return;
+        }
+
+        AddText(section.Elements, "Reverse charge: VAT is to be accounted for by the recipient.", bold: true, SmallSize)
+            .Format.SpaceBefore = SectionGap;
+        AddText(section.Elements, $"Client VAT number: {clientVatNumber}", size: SmallSize, color: Muted);
     }
 
     /// <summary>Adds "Page n of m", centred in the bottom margin of every page.</summary>

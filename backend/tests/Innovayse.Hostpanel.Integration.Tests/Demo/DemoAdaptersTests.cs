@@ -1,10 +1,13 @@
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
+using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Domains.Common;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Time;
 
@@ -38,7 +41,7 @@ public sealed class DemoAdaptersTests
     [Fact]
     public async Task Registrar_RegistersDeterministicallyAndOffersAvailabilityBothWaysAsync()
     {
-        var registrar = new DemoRegistrarProvider(new SystemClock(TimeProvider.System));
+        var registrar = new DemoRegistrarProvider(new SystemClock(new ManualTimeProvider(TestMoments.Seeded)));
         var contact = new DomainContact(
             "Ani", "Hakobyan", null, "ani@example.test", "+374.10123456", "1 Main St", null, "Yerevan", "Yerevan", "0010", "AM");
         var order = new DomainRegistrationOrder("Example.COM", 1, true, true, null, null, contact);
@@ -48,7 +51,7 @@ public sealed class DemoAdaptersTests
 
         first.Success.Should().BeTrue();
         first.RegistrarRef.Should().Be("DEMO-example.com").And.Be(second.RegistrarRef);
-        first.ExpiresAt.Should().BeAfter(DateTimeOffset.UtcNow);
+        first.ExpiresAt.Should().BeAfter(TestMoments.Seeded);
         (await registrar.CheckAvailabilityAsync("free-name.com", CancellationToken.None)).Should().BeTrue();
         (await registrar.CheckAvailabilityAsync("taken-name.com", CancellationToken.None)).Should().BeFalse();
         (await registrar.GetDnsRecordsAsync(new DomainRef("example.com", "DEMO-example.com"), CancellationToken.None)).Should().HaveCount(3);
@@ -82,11 +85,27 @@ public sealed class DemoAdaptersTests
     {
         var source = new DemoExchangeRateSource();
 
-        var result = await source.QuoteAsync(new ExchangeRateLookup("USD", ["AMD", "EUR", "XXX"]), CancellationToken.None);
+        var result = await source.QuoteAsync(new ExchangeRateLookup(ExchangeRateProvider.Cba, "USD", ["AMD", "EUR", "XXX"]), CancellationToken.None);
 
         var rates = result.Value!.RatesToBase;
         rates["EUR"].Should().Be(Math.Round(1m / DemoCatalogueSeeder.EurosPerDollar, 8));
         rates["AMD"].Should().Be(Math.Round(1m / 385m, 8));
         rates.Should().NotContainKey("XXX");
+    }
+
+    /// <summary>A demo VAT number check never reaches a register: most numbers are registered, one ending in zero is not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task VatNumbers_AreJudgedByTheirLastDigitAsync()
+    {
+        var checker = new DemoVatNumberChecker();
+
+        var registered = await checker.CheckAsync(new VatNumberLookup("DE", "123456789"), CancellationToken.None);
+        var unregistered = await checker.CheckAsync(new VatNumberLookup("DE", "123456780"), CancellationToken.None);
+
+        registered.Outcome.Should().Be(VatCheckOutcome.Valid);
+        registered.Name.Should().NotBeNullOrEmpty();
+        unregistered.Outcome.Should().Be(VatCheckOutcome.Invalid);
+        unregistered.Name.Should().BeNull();
     }
 }

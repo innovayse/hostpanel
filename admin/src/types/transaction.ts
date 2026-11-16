@@ -123,3 +123,36 @@ export const PaymentMethod = {
 
 /** One of the payment methods. */
 export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod]
+
+/** Which side of the ledger a transaction list shows, as the API binds it by name. */
+export const TransactionDirection = {
+  /** Money received. */
+  In: 'In',
+  /** Money sent. */
+  Out: 'Out',
+} as const
+
+/** One of the {@link TransactionDirection} values. */
+export type TransactionDirection = (typeof TransactionDirection)[keyof typeof TransactionDirection]
+
+/** The transaction filters both transaction lists share (the ledger and the tab of a client). */
+export interface TransactionListFilters {
+  /** Keep only the money received or only the money sent; undefined for both. */
+  direction?: TransactionDirection
+  /** Keep only the rows of this payment method, compared as a whole; undefined for every method. */
+  paymentMethod?: string
+  /** First day to keep (ISO 8601 date); undefined for no lower bound. */
+  from?: string
+  /** Last day to keep (ISO 8601 date), the whole day included; undefined for no upper bound. */
+  to?: string
+  /** Keep only the rows whose amount in or amount out is exactly this; undefined for every amount. */
+  amount?: number
+}
+
+/** What narrows a transaction list: the search text and the shared filters; each member left out means no narrowing. */
+export interface TransactionFilters extends TransactionListFilters {
+  /** Search term matched against the description, the reference, the payment method and the id; empty for none. */
+  search?: string
+  /** Keep only the rows of this client; the ledger only, the tab of a client names its client in the route. */
+  clientId?: number
+}

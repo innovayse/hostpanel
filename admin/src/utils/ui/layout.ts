@@ -156,12 +156,6 @@ export const UiSplitRatio = {
 /** One of the split ratios. */
 export type UiSplitRatio = (typeof UiSplitRatio)[keyof typeof UiSplitRatio]
 
-/**
- * Media query under which a split drops its columns: the width of Tailwind's `lg` breakpoint, where the split
- * classes switch to two columns, so the classes and the aside-to-sheet mode of `UiSplit` change at the same width.
- */
-export const UI_SPLIT_COMPACT_QUERY = '(max-width: 1023.98px)'
-
 /** Column template per ratio, one column on narrow screens. */
 export const splitRatioClasses: Record<UiSplitRatio, string> = {
   half: 'grid-cols-1 lg:grid-cols-2',

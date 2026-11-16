@@ -101,18 +101,8 @@ export const modalPanelClasses = {
   drawerLeft: 'transition-transform duration-(--duration-slow) ease-out group-[.ui-from]/overlay:-translate-x-full motion-reduce:transition-none motion-reduce:group-[.ui-from]/overlay:translate-x-0',
   /** A drawer's panel on the right edge: slides in from the right. */
   drawerRight: 'transition-transform duration-(--duration-slow) ease-out group-[.ui-from]/overlay:translate-x-full motion-reduce:transition-none motion-reduce:group-[.ui-from]/overlay:translate-x-0',
-} as const
-
-/**
- * Classes of a drawer panel that is a bottom sheet on a phone (`UiDrawer` with `sheet`): it rises from the bottom
- * edge below the `sm` breakpoint and slides from its own edge from there up, so both motions read the same marker as
- * {@link modalPanelClasses}. Kept apart from that set because each panel here carries two moves, one per axis.
- */
-export const sheetPanelClasses = {
-  /** A sheet that is a left-edge drawer on a wide screen. */
-  left: 'transition-transform duration-(--duration-slow) ease-out max-sm:group-[.ui-from]/overlay:translate-y-full sm:group-[.ui-from]/overlay:-translate-x-full motion-reduce:transition-none motion-reduce:max-sm:group-[.ui-from]/overlay:translate-y-0 motion-reduce:sm:group-[.ui-from]/overlay:translate-x-0',
-  /** A sheet that is a right-edge drawer on a wide screen. */
-  right: 'transition-transform duration-(--duration-slow) ease-out max-sm:group-[.ui-from]/overlay:translate-y-full sm:group-[.ui-from]/overlay:translate-x-full motion-reduce:transition-none motion-reduce:max-sm:group-[.ui-from]/overlay:translate-y-0 motion-reduce:sm:group-[.ui-from]/overlay:translate-x-0',
+  /** A drawer's panel that is a bottom sheet (`UiDrawer` with `sheet` on a narrow screen): rises from the bottom edge. */
+  sheet: 'transition-transform duration-(--duration-slow) ease-out group-[.ui-from]/overlay:translate-y-full motion-reduce:transition-none motion-reduce:group-[.ui-from]/overlay:translate-y-0',
 } as const
 
 /**

@@ -22,6 +22,22 @@ import type { MigrationStep } from '~/templates/nova/types/migrationstep'
 import type { NavItem } from '~/templates/nova/types/navitem'
 import type { UseCase } from '~/templates/nova/types/usecase'
 import type { ComparisonRow } from '~/types/comparisonrow'
+import {
+  SITE_ABOUT_PATH,
+  SITE_ACCEPTABLE_USE_PATH,
+  SITE_ANNOUNCEMENTS_PATH,
+  SITE_CONTACT_PATH,
+  SITE_DOMAINS_PATH,
+  SITE_DOMAINS_TRANSFER_PATH,
+  SITE_FAQ_PATH,
+  SITE_HOSTING_PATH,
+  SITE_HOSTING_PLANS_PATH,
+  SITE_KNOWLEDGEBASE_PATH,
+  SITE_PRIVACY_PATH,
+  SITE_PRODUCTS_PATH,
+  SITE_REFUND_POLICY_PATH,
+  SITE_TERMS_PATH,
+} from '~/constants/siteRoutes'
 
 /**
  * Primary navigation.
@@ -33,12 +49,12 @@ import type { ComparisonRow } from '~/types/comparisonrow'
  * three 404s in the header of every page.
  */
 export const NAV_ITEMS: readonly NavItem[] = [
-  { key: 'hosting', labelKey: 'nova.nav.hosting', to: '/hosting' },
-  { key: 'domains', labelKey: 'nova.nav.domains', to: '/domains' },
-  { key: 'websites', labelKey: 'nova.nav.websites', to: '/products' },
-  { key: 'email', labelKey: 'nova.nav.email', to: '/products' },
-  { key: 'pricing', labelKey: 'nova.nav.pricing', to: '/hosting#plans' },
-  { key: 'support', labelKey: 'nova.nav.support', to: '/knowledgebase' },
+  { key: 'hosting', labelKey: 'nova.nav.hosting', to: SITE_HOSTING_PATH },
+  { key: 'domains', labelKey: 'nova.nav.domains', to: SITE_DOMAINS_PATH },
+  { key: 'websites', labelKey: 'nova.nav.websites', to: SITE_PRODUCTS_PATH },
+  { key: 'email', labelKey: 'nova.nav.email', to: SITE_PRODUCTS_PATH },
+  { key: 'pricing', labelKey: 'nova.nav.pricing', to: SITE_HOSTING_PLANS_PATH },
+  { key: 'support', labelKey: 'nova.nav.support', to: SITE_KNOWLEDGEBASE_PATH },
 ]
 
 /**
@@ -360,43 +376,43 @@ export const FOOTER_COLUMNS: readonly FooterColumn[] = [
     key: 'hosting',
     titleKey: 'nova.footer.hosting',
     links: [
-      { key: 'web', labelKey: 'nova.footer.webHosting', to: '/hosting' },
-      { key: 'wordpress', labelKey: 'nova.footer.wordpressHosting', to: '/hosting' },
-      { key: 'pricing', labelKey: 'nova.footer.pricing', to: '/hosting#plans' },
-      { key: 'trial', labelKey: 'nova.footer.trial', to: '/products' },
+      { key: 'web', labelKey: 'nova.footer.webHosting', to: SITE_HOSTING_PATH },
+      { key: 'wordpress', labelKey: 'nova.footer.wordpressHosting', to: SITE_HOSTING_PATH },
+      { key: 'pricing', labelKey: 'nova.footer.pricing', to: SITE_HOSTING_PLANS_PATH },
+      { key: 'trial', labelKey: 'nova.footer.trial', to: SITE_PRODUCTS_PATH },
     ],
   },
   {
     key: 'domains',
     titleKey: 'nova.footer.domains',
     links: [
-      { key: 'register', labelKey: 'nova.footer.domainRegister', to: '/domains' },
-      { key: 'transfer', labelKey: 'nova.footer.domainTransfer', to: '/domains/transfer' },
+      { key: 'register', labelKey: 'nova.footer.domainRegister', to: SITE_DOMAINS_PATH },
+      { key: 'transfer', labelKey: 'nova.footer.domainTransfer', to: SITE_DOMAINS_TRANSFER_PATH },
     ],
   },
   {
     key: 'products',
     titleKey: 'nova.footer.products',
     links: [
-      { key: 'catalogue', labelKey: 'nova.footer.catalogue', to: '/products' },
-      { key: 'email', labelKey: 'nova.footer.email', to: '/products' },
+      { key: 'catalogue', labelKey: 'nova.footer.catalogue', to: SITE_PRODUCTS_PATH },
+      { key: 'email', labelKey: 'nova.footer.email', to: SITE_PRODUCTS_PATH },
     ],
   },
   {
     key: 'company',
     titleKey: 'nova.footer.company',
     links: [
-      { key: 'about', labelKey: 'nova.footer.about', to: '/about' },
-      { key: 'contact', labelKey: 'nova.footer.contact', to: '/contact' },
-      { key: 'announcements', labelKey: 'nova.footer.announcements', to: '/announcements' },
+      { key: 'about', labelKey: 'nova.footer.about', to: SITE_ABOUT_PATH },
+      { key: 'contact', labelKey: 'nova.footer.contact', to: SITE_CONTACT_PATH },
+      { key: 'announcements', labelKey: 'nova.footer.announcements', to: SITE_ANNOUNCEMENTS_PATH },
     ],
   },
   {
     key: 'support',
     titleKey: 'nova.footer.support',
     links: [
-      { key: 'help', labelKey: 'nova.footer.helpCentre', to: '/knowledgebase' },
-      { key: 'faq', labelKey: 'nova.footer.faq', to: '/faq' },
+      { key: 'help', labelKey: 'nova.footer.helpCentre', to: SITE_KNOWLEDGEBASE_PATH },
+      { key: 'faq', labelKey: 'nova.footer.faq', to: SITE_FAQ_PATH },
       { key: 'login', labelKey: 'nova.footer.clientArea', to: CLIENT_LOGIN_PATH },
     ],
   },
@@ -404,10 +420,10 @@ export const FOOTER_COLUMNS: readonly FooterColumn[] = [
     key: 'legal',
     titleKey: 'nova.footer.legal',
     links: [
-      { key: 'terms', labelKey: 'nova.footer.terms', to: '/terms' },
-      { key: 'privacy', labelKey: 'nova.footer.privacy', to: '/privacy' },
-      { key: 'refund', labelKey: 'nova.footer.refund', to: '/refund-policy' },
-      { key: 'aup', labelKey: 'nova.footer.aup', to: '/acceptable-use' },
+      { key: 'terms', labelKey: 'nova.footer.terms', to: SITE_TERMS_PATH },
+      { key: 'privacy', labelKey: 'nova.footer.privacy', to: SITE_PRIVACY_PATH },
+      { key: 'refund', labelKey: 'nova.footer.refund', to: SITE_REFUND_POLICY_PATH },
+      { key: 'aup', labelKey: 'nova.footer.aup', to: SITE_ACCEPTABLE_USE_PATH },
     ],
   },
 ]

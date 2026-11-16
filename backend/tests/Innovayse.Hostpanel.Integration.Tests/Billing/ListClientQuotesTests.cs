@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Shared.Constants;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -47,8 +50,167 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task ListByClientRefusesAnonymous()
     {
-        var response = await factory.CreateClient().GetAsync("/api/billing/quotes/client/1");
+        var response = await factory.CreateClient().GetAsync("/api/billing/quotes/client/1?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    /// <summary>The list holds only the client of the route, and the route wins over a client id in the query string.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListHoldsOnlyTheClientOfTheRoute()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var other = await BillingTestSeeds.SeedClientAsync(factory);
+        var own = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Own", QuoteListTestSeeds.ExpiresAhead);
+        await QuoteListTestSeeds.SeedAsync(factory, other, "Other", QuoteListTestSeeds.ExpiresAhead);
+
+        var page = await PagedListReads.PageAsync(admin, $"/api/billing/quotes/client/{clientId}?page=1&pageSize=100&clientId={other}");
+
+        PagedListReads.IdsOf(page).Should().Equal(own);
+    }
+
+    /// <summary>The search matches the subject case-insensitively, by id, and wildcards typed into it match themselves.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchFindsTheSubjectAndTheIdWithLiteralWildcards()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var expiry = QuoteListTestSeeds.ExpiresAhead;
+        var website = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Website redesign", expiry);
+        var percent = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Launch 50% off", expiry);
+        await QuoteListTestSeeds.SeedAsync(factory, clientId, "Launch 50x off", expiry);
+        var underscore = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Plan a_c", expiry);
+        await QuoteListTestSeeds.SeedAsync(factory, clientId, "Plan abc", expiry);
+        var route = $"/api/billing/quotes/client/{clientId}?page=1&pageSize=100";
+
+        var bySubject = await PagedListReads.PageAsync(admin, $"{route}&search=WEBSITE");
+        var byId = await PagedListReads.PageAsync(admin, $"{route}&search={website}");
+        var byPercent = await PagedListReads.PageAsync(admin, $"{route}&search=50%25");
+        var byUnderscore = await PagedListReads.PageAsync(admin, $"{route}&search=a_c");
+        var bareWildcard = await PagedListReads.PageAsync(admin, $"{route}&search=%25%25");
+
+        PagedListReads.IdsOf(bySubject).Should().Equal(website);
+        PagedListReads.IdsOf(byId).Should().Contain(website);
+        PagedListReads.IdsOf(byPercent).Should().Equal(percent);
+        PagedListReads.IdsOf(byUnderscore).Should().Equal(underscore);
+        PagedListReads.IdsOf(bareWildcard).Should().BeEmpty();
+    }
+
+    /// <summary>The stage and validity filters each narrow the client's quotes, and narrow together.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StageAndValidityFiltersNarrowTheClientsQuotes()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var ahead = QuoteListTestSeeds.ExpiresAhead;
+        var passed = QuoteListTestSeeds.ExpiredBefore;
+        var draftAhead = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Draft ahead", ahead);
+        var deliveredAhead = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Delivered ahead", ahead, QuoteStage.Delivered);
+        var deliveredPassed = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Delivered passed", passed, QuoteStage.Delivered);
+        var route = $"/api/billing/quotes/client/{clientId}?page=1&pageSize=100";
+
+        var delivered = await PagedListReads.PageAsync(admin, $"{route}&stage=Delivered");
+        var valid = await PagedListReads.PageAsync(admin, $"{route}&validity=Valid");
+        var expired = await PagedListReads.PageAsync(admin, $"{route}&validity=Expired");
+        var deliveredValid = await PagedListReads.PageAsync(admin, $"{route}&stage=Delivered&validity=Valid");
+
+        PagedListReads.IdsOf(delivered).Should().BeEquivalentTo([deliveredAhead, deliveredPassed]);
+        PagedListReads.IdsOf(valid).Should().BeEquivalentTo([draftAhead, deliveredAhead]);
+        PagedListReads.IdsOf(expired).Should().Equal(deliveredPassed);
+        PagedListReads.IdsOf(deliveredValid).Should().Equal(deliveredAhead);
+    }
+
+    /// <summary>A filter is applied before paging: the total counts every match and each page holds its slice, newest first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task FilterIsAppliedBeforePaging()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+        var expiry = QuoteListTestSeeds.ExpiresAhead;
+        var oldest = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Oldest", expiry, QuoteStage.Delivered, TestMoments.Seeded);
+        await QuoteListTestSeeds.SeedAsync(factory, clientId, "Draft", expiry, createdAt: TestMoments.Seeded.AddDays(1));
+        var newest = await QuoteListTestSeeds.SeedAsync(factory, clientId, "Newest", expiry, QuoteStage.Delivered, TestMoments.Seeded.AddDays(2));
+        var route = $"/api/billing/quotes/client/{clientId}";
+
+        var first = await PagedListReads.PageAsync(admin, $"{route}?page=1&pageSize=1&stage=Delivered");
+        var second = await PagedListReads.PageAsync(admin, $"{route}?page=2&pageSize=1&stage=Delivered");
+        var beyond = await PagedListReads.PageAsync(admin, $"{route}?page=3&pageSize=1&stage=Delivered");
+
+        PagedListReads.IdsOf(first).Should().Equal(newest);
+        first.GetProperty("totalCount").GetInt32().Should().Be(2);
+        PagedListReads.IdsOf(second).Should().Equal(oldest);
+        PagedListReads.IdsOf(beyond).Should().BeEmpty();
+    }
+
+    /// <summary>A page below one, no page, or a page size outside the limit is refused with 400 on the page and page size, not corrected.</summary>
+    /// <param name="queryString">The paging part of the query string.</param>
+    /// <param name="field">The field the refusal must name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("page=0&pageSize=20", "page")]
+    [InlineData("pageSize=20", "page")]
+    [InlineData("page=1&pageSize=0", "pagesize")]
+    [InlineData("page=1&pageSize=101", "pagesize")]
+    public async Task PagingOutsideTheLimitsIsRefused(string queryString, string field)
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/billing/quotes/client/1?{queryString}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
+    }
+
+    /// <summary>A search longer than the limit is refused with 400 on the search, not cut.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SearchOverTheLimitIsRefused()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync(
+            $"/api/billing/quotes/client/1?page=1&pageSize=20&search={new string('a', PagingLimits.MaxSearchLength + 1)}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("search");
+    }
+
+    /// <summary>A route client id that names nothing is refused with 400 on the client id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task NonPositiveClientIsRefused()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync("/api/billing/quotes/client/0?page=1&pageSize=20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain("clientid");
+    }
+
+    /// <summary>
+    /// A stage or validity that names nothing, by name or by number, is refused with 400: the model binder turns it back
+    /// before the validator runs, so the refusal is the validation code without a field of the validator's own.
+    /// </summary>
+    /// <param name="filter">The filter's key and value.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("stage=Archived")]
+    [InlineData("stage=99")]
+    [InlineData("validity=Maybe")]
+    [InlineData("validity=99")]
+    public async Task UnknownEnumValueIsRefused(string filter)
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/billing/quotes/client/1?page=1&pageSize=20&{filter}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
     }
 }

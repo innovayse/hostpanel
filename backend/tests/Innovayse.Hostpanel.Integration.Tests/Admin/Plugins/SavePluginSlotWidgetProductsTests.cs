@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -212,8 +213,8 @@ public sealed class SavePluginSlotWidgetProductsTests : IClassFixture<AppPluginF
     /// <returns>A task that completes once a waiter exists; fails the test after a minute without one.</returns>
     private async Task WaitForALockWaiterAsync()
     {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
-        while (DateTimeOffset.UtcNow < deadline)
+        var timeout = Stopwatch.StartNew();
+        while (timeout.Elapsed < TimeSpan.FromSeconds(60))
         {
             using var scope = _fixture.Factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

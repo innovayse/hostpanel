@@ -14,7 +14,8 @@ import { mountClient } from '~/tests/helpers/mountClient'
 import ApplyCreditCard from '~/components/client/invoices/ApplyCreditCard.vue'
 import { useCreditStore } from '~/stores/credit'
 import { bodyOf } from '~/tests/helpers/requestBody'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { BillingEndpoint, invoiceCreditPath } from '~/tests/helpers/billingPaths'
+import { readOf, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -23,11 +24,8 @@ import type { ClientInvoice } from '~/types/clientinvoice'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The BFF path that answers the credit balance and its history. */
-const CREDIT_PATH = '/api/portal/client/credit'
-
 /** The BFF path that applies credit to invoice 41. */
-const APPLY_PATH = '/api/portal/client/invoices/41/credit'
+const APPLY_PATH = invoiceCreditPath(41)
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -55,7 +53,7 @@ const credit = (balance: number): ClientCredit => ({
  * @param balance - The balance.
  */
 const answerBalance = (balance: number): void => {
-  table[`GET ${CREDIT_PATH}`] = { body: credit(balance) }
+  table[readOf(BillingEndpoint.Credit)] = { body: credit(balance) }
 }
 
 /**
@@ -83,7 +81,7 @@ const invoice = (overrides: Record<string, unknown> = {}): ClientInvoice => ({
  */
 const mountCard = async (target: ClientInvoice) => {
   const wrapper = mountClient(ApplyCreditCard, { props: { invoice: target } })
-  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, BillingEndpoint.Credit)).toHaveLength(1))
   await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
@@ -166,8 +164,8 @@ describe('ClientInvoicesApplyCreditCard', () => {
 
   it('applies the amount, reads the balance again and tells the page to read the invoice again', async () => {
     const balances = [credit(60), credit(40)]
-    table[`GET ${CREDIT_PATH}`] = (): StubReply => ({ body: balances[Math.min(requestsTo(stub.requests, CREDIT_PATH).length, balances.length) - 1] })
-    table[`POST ${APPLY_PATH}`] = { body: {} }
+    table[readOf(BillingEndpoint.Credit)] = (): StubReply => ({ body: balances[Math.min(requestsTo(stub.requests, BillingEndpoint.Credit).length, balances.length) - 1] })
+    table[writeOf(APPLY_PATH)] = { body: {} }
     const wrapper = await mountCard(invoice())
 
     await wrapper.get('[data-testid="apply-credit-amount"]').setValue('20')
@@ -176,12 +174,12 @@ describe('ClientInvoicesApplyCreditCard', () => {
     await waitUntil(() => expect(wrapper.emitted('applied')).toHaveLength(1))
     expect(requestsTo(stub.requests, APPLY_PATH)).toHaveLength(1)
     expect(bodyOf(requestsTo(stub.requests, APPLY_PATH)[0])).toEqual({ amount: 20 })
-    expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(2)
+    expect(requestsTo(stub.requests, BillingEndpoint.Credit)).toHaveLength(2)
   })
 
   it('shows the backend sentence and stays quiet to the page when the application is refused', async () => {
     answerBalance(60)
-    table[`POST ${APPLY_PATH}`] = { status: 400, body: { detail: 'The balance is short.' } }
+    table[writeOf(APPLY_PATH)] = { status: 400, body: { detail: 'The balance is short.' } }
     const wrapper = await mountCard(invoice())
 
     await wrapper.get('[data-testid="apply-credit-amount"]').setValue('20')

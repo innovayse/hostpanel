@@ -83,6 +83,9 @@ public sealed class InvoiceItem : BaseEntity
     /// <summary>Gets whether this line charges for a digital product, as it was when billed.</summary>
     public bool IsDigital => ProductSnapshot is { IsDigital: true };
 
+    /// <summary>Gets whether this line charges for an electronic service in the sense of VAT, as it was when billed.</summary>
+    public bool IsDigitalService => ProductSnapshot is { IsDigitalService: true };
+
     /// <summary>Gets whether this line is a renewal (it carries a period). Lines written before renewals were tracked never are.</summary>
     public bool IsRenewal => RenewalPeriodStart is not null;
 

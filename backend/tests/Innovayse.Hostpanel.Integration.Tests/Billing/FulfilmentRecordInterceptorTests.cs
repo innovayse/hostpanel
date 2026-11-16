@@ -34,7 +34,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         using var host = HostWith(first, second);
         var invoiceId = await SeedUnpaidAsync(host, digital: true);
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, TestMoments.Seeded, TransactionSource.Manual));
 
         var records = await RecordsAsync(host, invoiceId);
         records.Select(r => (r.PluginId, r.Kind)).Should().BeEquivalentTo(
@@ -49,7 +49,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         var plugin = $"stub-{Guid.NewGuid():N}";
         using var host = HostWith(plugin);
         var invoiceId = await SeedUnpaidAsync(host, digital: true);
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         await MutateAsync(host, invoiceId, i => i.MarkOverdue(now));
         await MutateAsync(host, invoiceId, i => i.MarkLapsed(now));
         await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, now, TransactionSource.Manual));
@@ -75,7 +75,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         var stale = await loserDb.Invoices.Include(i => i.Items).Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
         await MutateAsync(host, invoiceId, i => i.UpdateNotes("changed first"));
 
-        stale.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual);
+        stale.Settle("manual", Reference, TestMoments.Seeded, TransactionSource.Manual);
         var save = () => loserDb.SaveChangesAsync(CancellationToken.None);
 
         await save.Should().ThrowAsync<ConcurrencyConflictException>();
@@ -93,11 +93,11 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         using (var scope = host.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoiceId, plugin, FulfilmentKind.Paid, DateTimeOffset.UtcNow));
+            db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoiceId, plugin, FulfilmentKind.Paid, TestMoments.Seeded));
             await db.SaveChangesAsync(CancellationToken.None);
         }
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, TestMoments.Seeded, TransactionSource.Manual));
 
         (await RecordsAsync(host, invoiceId)).Should().ContainSingle();
     }
@@ -110,7 +110,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         using var host = HostWith();
         var invoiceId = await SeedUnpaidAsync(host, digital: true);
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, TestMoments.Seeded, TransactionSource.Manual));
 
         (await RecordsAsync(host, invoiceId)).Should().BeEmpty();
     }
@@ -123,7 +123,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         using var host = HostWith($"stub-{Guid.NewGuid():N}");
         var invoiceId = await SeedUnpaidAsync(host, digital: false);
 
-        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual));
+        await MutateAsync(host, invoiceId, i => i.Settle("manual", Reference, TestMoments.Seeded, TransactionSource.Manual));
 
         (await RecordsAsync(host, invoiceId)).Should().BeEmpty();
     }
@@ -141,7 +141,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
             using var suppression = scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var invoice = await db.Invoices.Include(i => i.Items).Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            invoice.Settle("manual", Reference, DateTimeOffset.UtcNow, TransactionSource.Manual);
+            invoice.Settle("manual", Reference, TestMoments.Seeded, TransactionSource.Manual);
             await db.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -179,7 +179,7 @@ public sealed class FulfilmentRecordInterceptorTests(IntegrationTestFactory fact
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = Invoice.Create(client.Id, now.AddDays(1), "EUR", now);
         invoice.AddItem("Licence", 10m, 2, null, new ProductSnapshot(42, BillingCycle.Annual, digital, "licence", null));
         db.Invoices.Add(invoice);

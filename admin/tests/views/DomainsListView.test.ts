@@ -1,7 +1,8 @@
 /**
- * Mount tests for DomainsListView: rows render with status, price and links to the owning
- * client's detail page, the search and the page are kept in the address and sent to the API, and a
- * refused load or an empty result shows the right state.
+ * Mount tests for DomainsListView: rows render with registrar, status, price and links to the owning
+ * client's detail page, the search, the status and registrar filters and the page are kept in the address and
+ * sent to the API, each applied filter shows as a removable chip, and a refused load or an empty result shows the
+ * right state.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -9,7 +10,9 @@ import DomainsListView from '@/views/DomainsListView.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
+import { applyListFilter } from '../helpers/listFilter'
 import { DomainStatus } from '@/types/domain'
+import { RegistrarModule } from '@/types/registrarmodule'
 
 /** One active domain as the list endpoint returns it. */
 const domain = {
@@ -18,7 +21,7 @@ const domain = {
   clientName: 'Grace Hopper',
   name: 'example.com',
   regPeriodYears: 1,
-  registrar: null,
+  registrar: 'Name.am',
   recurringAmount: 12.99,
   priceCurrency: 'USD',
   nextDueDate: '2027-01-01T00:00:00Z',
@@ -46,6 +49,15 @@ const mountListAt = async (url: string) => {
  */
 const mountList = async () => (await mountListAt('/domains')).wrapper
 
+/**
+ * Lists the requests the mock has seen for the domain list.
+ *
+ * @param mock - The stubbed fetch.
+ * @returns The request URLs that went to the list endpoint.
+ */
+const listUrls = (mock: ReturnType<typeof vi.fn>): string[] =>
+  mock.mock.calls.map(([url]) => url as string).filter((url) => url.startsWith('/api/domains?'))
+
 describe('DomainsListView', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -60,6 +72,7 @@ describe('DomainsListView', () => {
     expect(row.text()).toContain('Grace Hopper')
     expect(row.text()).toContain('$12.99 USD')
     expect(row.text()).toContain('Yes')
+    expect(row.text()).toContain('Name.am')
     expect(wrapper.get('[data-testid="domains-name-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-view-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-client-4"]').attributes('href')).toBe('/clients/9')
@@ -97,14 +110,79 @@ describe('DomainsListView', () => {
     expect(router.currentRoute.value.query).toEqual({ page: '2' })
   })
 
-  it('shows the empty state, and the search hint when the list is searched', async () => {
+  it('sends the status picked in the filter dialog on Apply and shows it as a chip', async () => {
+    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const { wrapper, router } = await mountListAt('/domains')
+
+    await applyListFilter(wrapper, { 'domains-filter-status': DomainStatus.Expired })
+
+    expect(router.currentRoute.value.query).toEqual({ status: 'Expired' })
+    expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&status=Expired')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Expired')
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('1')
+  })
+
+  it('sends the registrar picked in the filter dialog on Apply', async () => {
+    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const { wrapper, router } = await mountListAt('/domains')
+
+    await applyListFilter(wrapper, { 'domains-filter-registrar': RegistrarModule.Namecheap })
+
+    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'Namecheap' })
+    expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&registrarModule=Namecheap')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Namecheap')
+  })
+
+  it('restores the filters, the search and the page from the address and sends them together', async () => {
+    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
+    const { wrapper } = await mountListAt('/domains?search=exam&status=Active&registrarModule=NameAm&page=2')
+
+    expect(listUrls(mock)[0]).toBe('/api/domains?page=2&pageSize=20&search=exam&status=Active&registrarModule=NameAm')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Active')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Name.am')
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
+  })
+
+  it('does not send a status or registrar the address holds that is not a known value', async () => {
+    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    await mountListAt('/domains?status=Nonsense&registrarModule=99')
+
+    expect(listUrls(mock)[0]).toBe('/api/domains?page=1&pageSize=20')
+  })
+
+  it('removes a filter from the address and reloads when its chip is removed', async () => {
+    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const { wrapper, router } = await mountListAt('/domains?status=Active&registrarModule=NameAm')
+    const before = listUrls(mock).length
+
+    await wrapper.get('[data-testid="filter-chip-remove-status"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'NameAm' })
+    expect(listUrls(mock).length).toBeGreaterThan(before)
+    expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&registrarModule=NameAm')
+  })
+
+  it('shows the empty state, and the filter hint when the list is narrowed', async () => {
     stubRoutes({ 'GET /api/domains': () => json({ items: [], totalCount: 0 }) })
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="domains-empty"]').text()).toContain('No domains found')
+    expect(wrapper.find('[data-testid="domains-clear-empty"]').exists()).toBe(false)
 
     const searched = (await mountListAt('/domains?search=zzz')).wrapper
-    expect(searched.get('[data-testid="domains-empty"]').text()).toContain('No domains match your search')
+    expect(searched.get('[data-testid="domains-empty"]').text()).toContain('No domains match your filters')
+    expect(searched.find('[data-testid="domains-clear-empty"]').exists()).toBe(false)
+  })
+
+  it('clears the filters from the empty state and keeps the search', async () => {
+    stubRoutes({ 'GET /api/domains': () => json({ items: [], totalCount: 0 }) })
+    const { wrapper, router } = await mountListAt('/domains?status=Active&search=zzz')
+
+    await wrapper.get('[data-testid="domains-clear-empty"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ search: 'zzz' })
   })
 
   it('shows the API sentence when the load is refused', async () => {

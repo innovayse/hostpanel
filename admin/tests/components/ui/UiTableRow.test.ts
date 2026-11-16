@@ -20,8 +20,11 @@ describe('UiTableRow', () => {
     expect(wrapper.attributes('data-testid')).toBe('probe')
   })
 
-  it('adds nothing by default', () => {
-    expect(mount(UiTableRow).classes()).toEqual([])
+  it('adds no state classes by default, only its card layout below sm', () => {
+    const classes = mount(UiTableRow).classes()
+
+    expect(classes.every((name) => name.startsWith('max-sm:'))).toBe(true)
+    expect(classes).toContain('max-sm:rounded-xl')
   })
 
   it('tints on hover, marks the selection and draws the border on request', () => {

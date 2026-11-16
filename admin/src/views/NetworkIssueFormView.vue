@@ -23,6 +23,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
+import { NETWORK_ISSUE_PRIORITY_OPTIONS, NETWORK_ISSUE_STATUS_OPTIONS, NETWORK_ISSUE_TYPE_OPTIONS } from '@/lib/constants'
 import { toDateInputValue, toIsoDay } from '@/lib/format'
 import { useNetworkIssuesStore } from '@/stores/networkIssues'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
@@ -65,28 +66,6 @@ const issueId = computed<number | null>(() => (route.params.id ? Number(route.pa
 const pageTitle = computed<string>(() =>
   isEditMode.value ? t('support.networkIssueForm.pageTitleEdit') : t('support.networkIssueForm.pageTitleCreate'),
 )
-
-/** Type select options. */
-const typeOptions = computed(() => [
-  { value: NetworkIssueType.Server, label: t('clients.clientServiceDetail.server') },
-  { value: NetworkIssueType.Other, label: t('support.networkIssueForm.other') },
-])
-
-/** Priority select options. */
-const priorityOptions = computed(() => [
-  { value: NetworkIssuePriority.Low, label: t('support.networkIssueForm.low') },
-  { value: NetworkIssuePriority.Medium, label: t('support.networkIssueForm.medium') },
-  { value: NetworkIssuePriority.High, label: t('support.networkIssueForm.high') },
-  { value: NetworkIssuePriority.Critical, label: t('support.networkIssueForm.critical') },
-])
-
-/** Status select options (edit mode only). */
-const statusOptions = computed(() => [
-  { value: NetworkIssueStatus.Reported, label: t('support.networkIssueForm.reported') },
-  { value: NetworkIssueStatus.Investigating, label: t('support.networkIssueForm.investigating') },
-  { value: NetworkIssueStatus.Scheduled, label: t('support.networkIssueForm.scheduled') },
-  { value: NetworkIssueStatus.Resolved, label: t('support.networkIssueForm.resolved') },
-])
 
 /** Form data. */
 const form = ref<NetworkIssueForm>({
@@ -215,7 +194,7 @@ onMounted(() => {
           <UiField :label="t('shared.type')">
             <UiSelect
               v-model="form.type"
-              :options="typeOptions"
+              :options="NETWORK_ISSUE_TYPE_OPTIONS"
               :placeholder="t('support.networkIssueForm.selectType')"
               data-testid="network-issue-form-type"
             />
@@ -233,7 +212,7 @@ onMounted(() => {
           <UiField :label="t('shared.priority')">
             <UiSelect
               v-model="form.priority"
-              :options="priorityOptions"
+              :options="NETWORK_ISSUE_PRIORITY_OPTIONS"
               :placeholder="t('shared.selectPriority')"
               data-testid="network-issue-form-priority"
             />
@@ -241,7 +220,7 @@ onMounted(() => {
           <UiField v-if="isEditMode" :label="t('shared.status')">
             <UiSelect
               v-model="form.status"
-              :options="statusOptions"
+              :options="NETWORK_ISSUE_STATUS_OPTIONS"
               :placeholder="t('support.networkIssueForm.selectStatus')"
               data-testid="network-issue-form-status"
             />

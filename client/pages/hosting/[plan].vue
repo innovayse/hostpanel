@@ -45,6 +45,7 @@ import { isFreePlan } from '~/utils/isFreePlan'
 import { detailTitle } from '~/utils/seoTitle'
 import { cycleAmount } from '~/utils/productFamilies'
 import { buildSeoLinks } from '~/utils/seoLinks'
+import { siteHostingPlanPath } from '~/constants/siteRoutes'
 
 /** Translation helpers and the active language. */
 const { t, locale } = useI18n()
@@ -212,7 +213,7 @@ useSeoMeta({
 const baseUrl = useRuntimeConfig().public.baseUrl
 
 useHead(() => ({
-  link: buildSeoLinks(baseUrl, `/hosting/${planParam.value}`, locale.value),
+  link: buildSeoLinks(baseUrl, siteHostingPlanPath(planParam.value), locale.value),
   meta: [{ name: 'keywords', content: t('seo.hostingPlan.keywords') }],
 }))
 </script>

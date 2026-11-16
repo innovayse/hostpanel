@@ -8,6 +8,7 @@ using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsC
 using Innovayse.Hostpanel.Application.Billing.Commands.SendRenewalRemindersCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.SuspendOverdueServicesCron;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Commands.UpdateExchangeRatesCron;
+using Innovayse.Hostpanel.Application.Clients.Commands.RecheckVatNumbersCron;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.CheckDomainExpiries;
@@ -57,6 +58,7 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
         new DispatchFulfilmentCronCommand(),
         new CheckReleaseUpdatesCronCommand(),
         new UpdateExchangeRatesCronCommand(),
+        new RecheckVatNumbersCronCommand(),
     };
 
     /// <summary>

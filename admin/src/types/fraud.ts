@@ -61,6 +61,14 @@ export enum FraudReasonCode {
   AnonymousIp = 'AnonymousIp',
 }
 
+/** What a block list read asks for: the list and the text its entries must contain. */
+export interface BlockListFilters {
+  /** Which block list to read. */
+  type: BlockListType
+  /** Text the value or the note must contain; empty or missing for none. */
+  search?: string
+}
+
 /** One entry of a block list. */
 export interface BlockListEntry {
   /** Entry id. */
@@ -109,12 +117,16 @@ export interface FraudLogEntry {
   createdAt: string
 }
 
-/** Filters the fraud log can be listed by; an empty value means no filter. */
+/** What narrows the fraud log: the search text and the kind, decision and reason filters; each member left out means no narrowing. */
 export interface FraudLogFilters {
-  /** Decision, or empty for any. */
-  decision: FraudDecision | ''
-  /** Reason code, or empty for any. */
-  reason: FraudReasonCode | ''
+  /** Search text matched against the email address and the IP address; empty for none. */
+  search?: string
+  /** Keep only the checks of this kind. */
+  kind?: FraudCheckKind
+  /** Keep only the checks that ended this way. */
+  decision?: FraudDecision
+  /** Keep only the checks that raised the risk for this reason. */
+  reason?: FraudReasonCode
 }
 
 /** The fraud detection settings. */

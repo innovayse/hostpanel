@@ -1,24 +1,18 @@
 /**
  * Unit tests for AuroraProjects: the projects come from the storefront store, show title, summary, link and image or a placeholder, and the section hides when there are none.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { projectFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import type { Project } from '~/types/project'
 import AuroraProjects from '~/templates/aurora/sections/AuroraProjects.vue'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** What the stub answers, by route; the tests below change the projects it serves. */
-const replies: StubRouteTable = {}
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useAuroraGlobals()
 
 /**
  * Makes the stub serve these projects.
@@ -35,22 +29,16 @@ const serve = (projects: Project[]): void => {
  * @returns The wrapper.
  */
 const mountSection = async () => {
-  stubAuroraGlobals()
-  return mountAfterReads(stub, [StorefrontPath.Projects], () => mountWithKit(AuroraProjects))
+  await loadGlobals()
+  return mountAfterReads(stub(), [StorefrontPath.Projects], () => mountWithKit(AuroraProjects))
 }
 
 describe('AuroraProjects', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
+  beforeEach(() => {
     serve([
       projectFixture(1, { title: 'Shop', summary: 'An online shop', imageUrls: ['https://cdn.example.test/s.png'], url: 'https://shop.example.test' }),
       projectFixture(2, { title: 'Blog', summary: null, imageUrls: [], url: null }),
     ])
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('renders a card per project with title, summary and link', async () => {

@@ -4,52 +4,48 @@
  * @module tests/composables/useContactHours.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { describe, expect, it } from 'vitest'
 import { useContactHours } from '~/composables/useContactHours'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { stubLocale } from '~/tests/helpers/runtimeStubs'
 
-/**
- * Stubs the settings reader with a fixed set of values.
- *
- * @param values Setting key to value.
- * @param locale The visitor's language.
- */
-const stubSettings = (values: Record<string, string>, locale = 'en'): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-  vi.stubGlobal('useI18n', () => ({ locale: ref(locale) }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('useContactHours', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('joins the hours and the time zone the operator set', () => {
-    stubSettings({ 'portal.contact.hours': '08:00 - 17:00', 'portal.contact.timezone': 'UTC+2' })
+  it('joins the hours and the time zone the operator set', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactHours]: '08:00 - 17:00', [PortalSettingKey.ContactTimezone]: 'UTC+2' })
 
     expect(useContactHours().workingHours.value).toBe('08:00 - 17:00 UTC+2')
   })
 
-  it('shows the hours alone when no time zone is set', () => {
-    stubSettings({ 'portal.contact.hours': '08:00 - 17:00' })
+  it('shows the hours alone when no time zone is set', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactHours]: '08:00 - 17:00' })
 
     expect(useContactHours().workingHours.value).toBe('08:00 - 17:00')
   })
 
-  it('is empty when no hours are set, even with a time zone', () => {
-    stubSettings({ 'portal.contact.timezone': 'UTC+2' })
+  it('is empty when no hours are set, even with a time zone', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactTimezone]: 'UTC+2' })
 
     expect(useContactHours().workingHours.value).toBe('')
   })
 
-  it('uses the hours written for the visitor language, with the one time zone', () => {
-    stubSettings({ 'portal.contact.hours': 'Mon-Fri', 'portal.contact.hours.ru': 'Пн-Пт', 'portal.contact.timezone': 'UTC+4' }, 'ru')
+  it('uses the hours written for the visitor language, with the one time zone', async () => {
+    await loadPortalSettings(replies, {
+      [PortalSettingKey.ContactHours]: 'Mon-Fri',
+      [PortalSettingKey.ContactHoursRu]: 'Пн-Пт',
+      [PortalSettingKey.ContactTimezone]: 'UTC+4',
+    })
+    stubLocale('ru')
 
     expect(useContactHours().workingHours.value).toBe('Пн-Пт UTC+4')
   })
 
-  it('falls back to the default hours when the language has none', () => {
-    stubSettings({ 'portal.contact.hours': 'Mon-Fri' }, 'hy')
+  it('falls back to the default hours when the language has none', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactHours]: 'Mon-Fri' })
+    stubLocale('hy')
 
     expect(useContactHours().workingHours.value).toBe('Mon-Fri')
   })

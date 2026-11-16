@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { stubSwitchLocalePath } from '~/tests/helpers/runtimeStubs'
 import LanguageSwitcher from '~/components/ui/UiLanguageSwitcher.vue'
 import { UiLanguageLayout, UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
 
@@ -25,7 +26,7 @@ describe('LanguageSwitcher', () => {
         { code: 'hy', name: 'Armenian' },
       ]),
     }))
-    vi.stubGlobal('useSwitchLocalePath', () => (code: string) => '/' + code)
+    stubSwitchLocalePath()
   })
 
   it('shows the active language on the trigger', () => {

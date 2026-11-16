@@ -14,14 +14,12 @@ export interface ActivityLog {
   createdAt: string
 }
 
-/** Filters the client activity-log endpoint accepts; an empty value is left off the request. */
+/** What narrows the client activity log: the search text and the period; each member left out means no narrowing. */
 export interface ActivityLogFilters {
-  /** Date filter. */
-  date?: string
-  /** Admin name or email search. */
-  adminSearch?: string
-  /** Description search. */
-  description?: string
-  /** IP address search. */
-  ipAddress?: string
+  /** Search term over the admin name, the admin email, the description and the IP address; empty for none. */
+  search?: string
+  /** First day kept, `YYYY-MM-DD`. */
+  from?: string
+  /** Last day kept, `YYYY-MM-DD`, the whole day included. */
+  to?: string
 }

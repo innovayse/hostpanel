@@ -2,12 +2,12 @@
 /**
  * Manage Users: list all Identity users with edit, password reset, and delete actions.
  *
- * The list, the paging and every refusal sentence come from the users store; this screen only
- * renders them and routes the row actions (manage, reset email, change password). Every action
- * reports its outcome above the table (success, or the API's sentence); a refused load shows the
- * sentence with a Retry button.
+ * The search text and the page live in the address (`useListQuery`), so a reload or a shared link restores the same
+ * list, which the API narrows before it pages. The list and every refusal sentence come from the users store; this
+ * screen only renders them and routes the row actions (manage, reset email, change password). Every action reports
+ * its outcome above the table (success, or the API's sentence); a refused load shows the sentence with a Retry button.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useUsersStore } from '@/stores/clientAccounts'
@@ -20,10 +20,10 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiFilterCard from '@/components/ui/UiFilterCard.vue'
-import UiInput from '@/components/ui/UiInput.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -31,11 +31,12 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
+import { useListQuery } from '@/composables/useListQuery'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
+import { UiTextSize } from '@/utils/ui/text'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -46,8 +47,8 @@ const router = useRouter()
 /** Users store: the paged list, the detail and the refusal sentences. */
 const store = useUsersStore()
 
-/** Search input value. */
-const search = ref('')
+/** The search text and the page of the list, kept in the address; the list has no filter fields. */
+const { search, appliedSearch, page, setPage, narrowed, loadOnChange, stepBackWhenEmpty } = useListQuery([])
 
 /** User being edited in the modal. */
 const editingUser = ref<UserDetail | null>(null)
@@ -95,33 +96,17 @@ const showSuccess = (message: string): void => {
 }
 
 /**
- * Loads the current page with the current search.
+ * Loads the page the address names with the search it holds.
  *
- * @returns Resolves when the list has settled.
+ * @returns True when loaded; false when refused (see `store.error`).
  */
-const reload = (): Promise<void> => store.fetchAll(search.value || undefined)
+const reload = (): Promise<boolean> => store.fetchAll(page.value, { search: appliedSearch.value })
 
-/** Applies the search filter, starting from the first page. */
-const applySearch = (): void => {
-  store.page = 1
-  void reload()
-}
+// Every change of the search or the page loads the list the address names.
+loadOnChange(reload)
 
-/** Clears the search box and reloads the unfiltered list. */
-const clearSearch = (): void => {
-  search.value = ''
-  applySearch()
-}
-
-/**
- * Navigates to a page.
- *
- * @param p - Target page number.
- */
-const goToPage = (p: number): void => {
-  store.page = p
-  void reload()
-}
+/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
+const initialLoading = computed<boolean>(() => store.loading && store.users.length === 0)
 
 /**
  * Opens the manage user modal for a user.
@@ -161,7 +146,7 @@ const handleSaveUser = async (
   }
 }
 
-/** Deletes the user being edited. */
+/** Deletes the user being edited, then reads the list again; when that emptied the last page, steps back one page. */
 const handleDeleteUser = async (): Promise<void> => {
   if (!editingUser.value) {
     return
@@ -171,6 +156,7 @@ const handleDeleteUser = async (): Promise<void> => {
     editingUser.value = null
     showSuccess(t('clients.manageUsers.userDeleted'))
     await reload()
+    await stepBackWhenEmpty(store.users.length === 0)
   }
 }
 
@@ -227,11 +213,6 @@ const formatDate = (dateStr: string | null): string => {
     hour: '2-digit', minute: '2-digit',
   })
 }
-
-/** Loads the first page of users. */
-onMounted(() => {
-  void store.fetchAll()
-})
 
 /** Stops the pending success-message timer. */
 onUnmounted(() => {
@@ -291,28 +272,13 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       </template>
     </UiPageHeader>
 
-    <!-- Search bar -->
-    <UiFilterCard>
-      <template #fields>
-        <UiInput
-          v-model="search"
-          type="text"
-          :label="t('shared.search2')"
-          :placeholder="t('clients.manageUsers.searchByNameOrEmail')"
-          class="min-w-48 flex-1 max-sm:w-full"
-          data-testid="users-search"
-          @keydown.enter="applySearch"
-        />
-      </template>
-      <template #actions>
-        <UiButton variant="primary" data-testid="users-search-submit" @click="applySearch">
-          {{ t('shared.search2') }}
-        </UiButton>
-        <UiButton v-if="search" variant="ghost" data-testid="users-search-clear" @click="clearSearch">
-          {{ t('shared.clear') }}
-        </UiButton>
-      </template>
-    </UiFilterCard>
+    <!-- Search box: the search is the only thing the identity provider can narrow the list by -->
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="users-search"
+      :search-placeholder="t('clients.manageUsers.searchByNameOrEmail')"
+      :loading="initialLoading"
+    />
 
     <!-- List load failed: replaces the table, with a Retry -->
     <UiErrorState
@@ -327,7 +293,7 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
     <UiTable
       v-else
       :density="UiTableDensity.Comfortable"
-      :loading="store.loading && store.users.length === 0"
+      :loading="initialLoading"
       :empty="!store.loading && store.users.length === 0"
       data-testid="users-table"
     >
@@ -354,7 +320,7 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
         </UiTableRow>
       </UiTableBody>
       <template #empty>
-        <UiEmptyState :title="t('clients.manageUsers.noUsersFound')" />
+        <UiEmptyState :title="narrowed ? t('clients.manageUsers.noUsersMatchYourSearch') : t('clients.manageUsers.noUsersFound')" />
       </template>
     </UiTable>
 
@@ -365,15 +331,15 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       align="center"
       justify="between"
     >
-      <UiText tone="muted" size="sm">
+      <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
         {{ t('clients.manageUsers.totalcountUserValue', { totalCount: store.totalCount }) }}
-      </UiText>
+      </UiResultCount>
       <UiPagination
-        :page="store.page"
+        :page="page"
         :total="store.totalCount"
         :page-size="store.pageSize"
         testid="users-pagination"
-        @update:page="goToPage"
+        @update:page="setPage"
       />
     </UiStack>
 

@@ -25,7 +25,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
         {
             subject = "Revised proposal",
             stage = "Delivered",
-            validUntil = DateTimeOffset.UtcNow.AddDays(30),
+            validUntil = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             proposalText = (string?)null,
             customerNotes = (string?)null,
@@ -51,7 +51,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
         {
             clientId,
             subject = "Totals",
-            expiryDate = DateTimeOffset.UtcNow.AddDays(30),
+            expiryDate = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             items = new[]
             {
@@ -67,7 +67,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
         {
             subject = "Totals",
             stage = "Draft",
-            validUntil = DateTimeOffset.UtcNow.AddDays(30),
+            validUntil = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             proposalText = (string?)null,
             customerNotes = (string?)null,
@@ -91,7 +91,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
         {
             subject = "Anything",
             stage = "Draft",
-            validUntil = DateTimeOffset.UtcNow.AddDays(30),
+            validUntil = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             proposalText = (string?)null,
             customerNotes = (string?)null,
@@ -112,7 +112,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
         {
             subject = "Anything",
             stage = "Draft",
-            validUntil = DateTimeOffset.UtcNow.AddDays(30),
+            validUntil = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             proposalText = (string?)null,
             customerNotes = (string?)null,

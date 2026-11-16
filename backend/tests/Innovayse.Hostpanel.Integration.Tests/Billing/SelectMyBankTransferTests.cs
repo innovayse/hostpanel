@@ -201,7 +201,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
         resolver.Register("bank-gateway", plugin);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BankTransferTestSeeds.EnableAsync(admin);
         var (owner, clientId, _, _) = await BillingTestSeeds.RegisterClientAsync(factory, host, "bt-session");
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
@@ -227,7 +227,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     {
         var sender = new FakeEmailSender();
         var host = BankTransferTestSeeds.HostWithMail(factory, sender);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         await BankTransferTestSeeds.EnableAsync(admin);
         var (owner, clientId, _, email) = await BillingTestSeeds.RegisterClientAsync(factory, host, "bt-mail");
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 100m);

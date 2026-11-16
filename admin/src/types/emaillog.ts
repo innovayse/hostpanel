@@ -36,3 +36,23 @@ export interface EmailLog {
   /** Why delivery failed; null on success. */
   failure: EmailSendFailure | null
 }
+
+/** The choices of the outcome filter of an email log; "any" is the empty value of the dropdown, so it is not a member. */
+export enum EmailLogOutcome {
+  /** Only the mail the relay accepted. */
+  Delivered = 'delivered',
+  /** Only the mail the relay did not accept. */
+  Failed = 'failed',
+}
+
+/** What narrows an email log: the search text, the outcome and the period; each member left out means no narrowing. */
+export interface EmailLogFilters {
+  /** Search term over the subject and the recipient; empty for none. */
+  search?: string
+  /** Keep only delivered mail (true) or only failed mail (false). */
+  success?: boolean
+  /** First day kept, `YYYY-MM-DD`. */
+  from?: string
+  /** Last day kept, `YYYY-MM-DD`, the whole day included. */
+  to?: string
+}

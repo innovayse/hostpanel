@@ -184,7 +184,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
         await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/credit", new { amount = 20m });
         await BillingTestSeeds.CreateTransactionAsync(admin, clientId, 8m, addToCredit: false);
 
-        var ledger = await admin.GetFromJsonAsync<JsonElement>($"/api/transactions/client/{clientId}");
+        var ledger = await admin.GetFromJsonAsync<JsonElement>($"/api/transactions/client/{clientId}?page=1&pageSize=100");
 
         var rows = ledger.GetProperty("transactions").GetProperty("items");
         rows.GetArrayLength().Should().Be(1);

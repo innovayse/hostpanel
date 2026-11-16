@@ -32,6 +32,7 @@ export default defineNuxtConfig({
   // Client area pages are auth-gated and fetch data client-side only: disable SSR
   // to avoid hydration mismatches (server renders empty state, client renders content)
   // X-Robots-Tag: noindex prevents search engines from indexing private pages
+  // These paths, and the sitemap ones below, mirror constants/siteRoutes.ts: the config cannot import it.
   routeRules: {
     // Immutable hashed assets: cache for 1 year
     '/_nuxt/**': { headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } },

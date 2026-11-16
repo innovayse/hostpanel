@@ -13,6 +13,7 @@ import CommandPalette from '@/components/layout/CommandPalette.vue'
 import { AppRoute } from '@/lib/routes'
 import { useAuthStore } from '@/stores/auth'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** Wrappers mounted by the current test, unmounted after it so the window listener and the DOM do not leak. */
@@ -94,6 +95,9 @@ describe('CommandPalette', () => {
     await settle()
 
     expect(find('command-palette')).not.toBeNull()
+    const classes = find('command-palette')?.className ?? ''
+    expect(classes.split(' ')).toEqual(expect.arrayContaining(FLOATING_PANEL_CLASSES.split(' ')))
+    expect(classes).not.toContain('glass')
   })
 
   it('toggles on Ctrl K and Cmd K and ignores a bare K', async () => {

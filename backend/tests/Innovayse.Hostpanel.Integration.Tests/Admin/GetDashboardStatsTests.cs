@@ -2,8 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Billing;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
@@ -20,7 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>Dashboard stats answer 200 with every counter present.</summary>
+    /// <summary>Dashboard stats answer 200 with every counter present and no revenue figure, which the charts own.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsEveryCounterAsync()
@@ -31,8 +29,12 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        body.TryGetProperty("totalRevenue", out _).Should().BeTrue();
+        body.TryGetProperty("activeServices", out _).Should().BeTrue();
+        body.TryGetProperty("overdueInvoices", out _).Should().BeTrue();
+        body.TryGetProperty("openTickets", out _).Should().BeTrue();
         body.TryGetProperty("totalClients", out _).Should().BeTrue();
+        body.TryGetProperty("totalRevenue", out _).Should().BeFalse();
+        body.TryGetProperty("monthlyRevenue", out _).Should().BeFalse();
     }
 
     /// <summary>
@@ -92,64 +94,5 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
         var response = await factory.CreateClient().GetAsync("/api/admin/dashboard/stats");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-    /// <summary>
-    /// Total revenue is income as the reports read it: the scenario adds 390 (payments less the
-    /// partial refund, the imported history, the converted foreign payment, no credit), all of it
-    /// long before the last 30 days, so the monthly figure does not move.
-    /// </summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task RevenueIsIncomeNetOfRefundsAsync()
-    {
-        var admin = await AdminTestSeeds.AdminClientAsync(factory);
-        var before = await admin.GetFromJsonAsync<JsonElement>("/api/admin/dashboard/stats");
-
-        var scenario = await IncomeTestSeeds.SeedAsync(factory, 2019);
-        var after = await admin.GetFromJsonAsync<JsonElement>("/api/admin/dashboard/stats");
-
-        (after.GetProperty("totalRevenue").GetDecimal() - before.GetProperty("totalRevenue").GetDecimal()).Should().Be(390m);
-        after.GetProperty("monthlyRevenue").GetDecimal().Should().Be(before.GetProperty("monthlyRevenue").GetDecimal());
-        after.GetProperty("currency").GetString().Should().Be(scenario.BaseCurrency);
-    }
-
-    /// <summary>
-    /// Revenue adds invoices up in the base currency: a paid invoice in a currency worth half the base adds half
-    /// its total, not the whole of it, so a mixed-currency demo does not report a thousand times its real revenue.
-    /// </summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task RevenueIsCountedInTheBaseCurrencyAsync()
-    {
-        async Task<decimal> TotalRevenueAsync()
-        {
-            var admin = await AdminTestSeeds.AdminClientAsync(factory);
-            var response = await admin.GetAsync("/api/admin/dashboard/stats");
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-            return body.GetProperty("totalRevenue").GetDecimal();
-        }
-
-        var before = await TotalRevenueAsync();
-
-        using (var scope = factory.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            context.Currencies.Add(Currency.Create("ZQD", "999", string.Empty, " ZQD", 2, 0.5m, isBase: false));
-            var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
-            context.Clients.Add(client);
-            await context.SaveChangesAsync(CancellationToken.None);
-
-            var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(14), "ZQD", DateTimeOffset.UtcNow);
-            invoice.AddItem("Hosting", 100m, 1);
-            invoice.AddPayment(DateTimeOffset.UtcNow, "Card", $"tx-{Guid.NewGuid():N}", 100m, 0m, null, TransactionSource.Manual);
-            context.Invoices.Add(invoice);
-            await context.SaveChangesAsync(CancellationToken.None);
-        }
-
-        var after = await TotalRevenueAsync();
-
-        (after - before).Should().Be(50m);
     }
 }

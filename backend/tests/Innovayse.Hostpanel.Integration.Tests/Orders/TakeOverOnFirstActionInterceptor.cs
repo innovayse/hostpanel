@@ -68,7 +68,8 @@ internal sealed class TakeOverOnFirstActionInterceptor : SaveChangesInterceptor
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var order = await db.Orders.Include(o => o.Items).FirstAsync(o => o.Id == stamping.OrderId, cancellationToken);
         var waiting = order.Items.First(i => i.Id != stamping.ItemId && i.FulfilmentState == OrderItemFulfilmentState.InProgress);
-        order.StartLineRetry(waiting.Id, DateTimeOffset.UtcNow.AddDays(1), TimeSpan.FromMinutes(10));
+        // Real time: the lines were stamped by the host on the system clock, so the lease runs out against it.
+        order.StartLineRetry(waiting.Id, TestMoments.Present().AddDays(1), TimeSpan.FromMinutes(10));
         TakenOverItemId = waiting.Id;
         await db.SaveChangesAsync(cancellationToken);
         return result;

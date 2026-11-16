@@ -19,11 +19,11 @@
  */
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { useDropdown } from '@/composables/useDropdown'
 import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
+import { FLOATING_PANEL_CLASSES, FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { fieldInvalidClasses, fieldSurfaceClasses } from '@/utils/ui/input'
 import { Key } from '@/utils/ui/keys'
@@ -39,6 +39,9 @@ import type { UiSelectOption } from '@/utils/ui/select'
 import { UiTransitionKind } from '@/utils/ui/transition'
 
 const { t } = useI18n()
+
+/** Placeholder rows drawn under the trigger while the owner fetches options. */
+const LOADING_ROWS = 3
 
 /** Props for UiSelect. */
 const props = defineProps<{
@@ -164,8 +167,8 @@ const panelClasses = computed<string>(() => {
   // A wide list is at least 18rem, but never wider than the screen less a margin, so on a phone it cannot reach past the page edge and widen the page.
   const width = props.wide ? 'min-w-[18rem] max-w-[calc(100vw-4rem)]' : 'w-[var(--fp-width)]'
   return props.compact
-    ? `${FLOATING_PLACE_CLASSES} z-50 min-w-[5.5rem] origin-top overflow-hidden rounded-xl border border-border bg-surface-card p-1 shadow-lg shadow-black/20 ${width}`
-    : `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`
+    ? `${FLOATING_PLACE_CLASSES} z-50 min-w-[5.5rem] origin-top overflow-hidden rounded-xl p-1 ${FLOATING_PANEL_CLASSES} ${width}`
+    : `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden rounded-[10px] ${FLOATING_PANEL_CLASSES} ${width}`
 })
 
 /**
@@ -506,8 +509,9 @@ onUnmounted(cancelSearchTimer)
           </div>
 
           <!-- Loading and empty rows sit beside the listbox, not in it: they are not options -->
-          <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" class="px-3 py-2">
-            <UiSkeleton :lines="3" />
+          <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" class="flex flex-col gap-2 px-3 py-2">
+            <!-- Rows of the height of an option, the last one shorter, like the options that will replace them -->
+            <UiSkeletonBar v-for="row in LOADING_ROWS" :key="row" class="h-4 rounded-md" :class="row === LOADING_ROWS ? 'w-2/3' : 'w-full'" aria-hidden="true" />
             <span class="sr-only">{{ t('ui.loading') }}</span>
           </div>
           <p v-else-if="visibleOptions.length === 0" role="status" data-testid="ui-select-empty" class="px-3 py-2 text-[0.82rem] text-text-secondary">

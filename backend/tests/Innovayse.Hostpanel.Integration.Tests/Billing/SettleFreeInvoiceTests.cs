@@ -54,7 +54,7 @@ public sealed class SettleFreeInvoiceTests(IntegrationTestFactory factory) : ICl
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Free Plan", amount, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);

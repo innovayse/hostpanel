@@ -40,3 +40,14 @@ export const ledgerAfterAdd: TransactionsResult = {
   balance: 100,
   currency: 'USD',
 }
+
+/** A payment sent out, so the ledger holds one entry of each direction. */
+export const refundTransaction: Transaction = {
+  ...newTransaction,
+  id: 702,
+  clientId: 8,
+  clientName: 'Grace Hopper',
+  description: 'Refund to client',
+  amountIn: 0,
+  amountOut: 40,
+}

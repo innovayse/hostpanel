@@ -1,8 +1,7 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Common;
-using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
@@ -12,8 +11,8 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Orders.Queries.ListOrders;
 
 /// <summary>
-/// Returns a paged list of all orders mapped to <see cref="OrderListItemDto"/>.
-/// Batch-fetches client names from the Clients module in one dispatch to avoid N+1 queries.
+/// Returns a paged list of orders, narrowed by the search text on the order number and id and by status in SQL ahead of
+/// paging, mapped to <see cref="OrderListItemDto"/>. Batch-fetches client names from the Clients module in one dispatch to avoid N+1 queries.
 /// </summary>
 public sealed class ListOrdersHandler
 {
@@ -33,25 +32,24 @@ public sealed class ListOrdersHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The page, page size and status filter to list by.</param>
+    /// <param name="query">The search, the status filter and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with a page of order summaries. Never refuses.</returns>
     public async Task<Result<PaginatedList<OrderListItemDto>>> HandleAsync(ListOrdersQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
-        IQueryable<Order> filtered = _context.Orders.AsNoTracking();
+        var filtered = _context.Orders.AsNoTracking().SearchIncludingId(query.Search, o => o.Id, o => o.OrderNumber);
         if (query.Status is { } status)
         {
             filtered = filtered.Where(o => o.Status == status);
         }
 
-        var ordered = filtered.OrderByDescending(o => o.CreatedAt);
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = filtered.OrderByDescending(o => o.CreatedAt).ThenByDescending(o => o.Id);
         var totalCount = await ordered.CountAsync(ct);
         var orders = await ordered
-            .Paginate(page, pageSize)
+            .Paginate(query.Page, query.PageSize)
             .Include(o => o.Items)
             .ToListAsync(ct);
 
@@ -77,6 +75,6 @@ public sealed class ListOrdersHandler
                 o.CreatedAt))
             .ToList();
 
-        return Result.Success(new PaginatedList<OrderListItemDto>(items, totalCount, page, pageSize));
+        return Result.Success(new PaginatedList<OrderListItemDto>(items, totalCount, query.Page, query.PageSize));
     }
 }

@@ -127,6 +127,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the tax rules table: the rate staff set per country, and per region of a country.</summary>
     public DbSet<Domain.Billing.TaxRule> TaxRules => Set<Domain.Billing.TaxRule>();
 
+    /// <summary>Gets the VAT rates table: the standard and reduced rate of each EU member state, with the day each applies from.</summary>
+    public DbSet<Domain.Billing.VatRate> VatRates => Set<Domain.Billing.VatRate>();
+
     /// <summary>Gets the client services table.</summary>
     public DbSet<ClientService> ClientServices => Set<ClientService>();
 

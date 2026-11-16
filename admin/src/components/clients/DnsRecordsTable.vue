@@ -36,6 +36,7 @@ import { UiTone } from '@/utils/ui/tone'
 import type { DnsRecordItem } from '@/types/domain'
 import { DnsRecordType } from '@/types/domain'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole } from '@/utils/ui/table'
 import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
@@ -332,11 +333,11 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
       <UiTable :density="UiTableDensity.Compact" :scrollable="false" :empty="isEmpty" data-testid="clients-dns-table">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.dnsRecordsTable.host') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.value') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.dnsRecordsTable.ttl') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.type') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.dnsRecordsTable.host') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.value') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.dnsRecordsTable.ttl') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.priority') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>

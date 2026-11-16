@@ -1,12 +1,9 @@
-using System.Globalization;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.Logging;
-using Polly;
 
 namespace Innovayse.Hostpanel.Infrastructure.Currency;
 
@@ -24,9 +21,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Currency;
 /// </para>
 /// <para>
 /// <b>Arithmetic.</b> Every quote is "AMD per unit", so with <c>amd(x)</c> the quote for <c>x</c>
-/// and <c>amd(AMD) = 1</c>, "1 unit of <c>code</c> in <c>base</c>" is
-/// <c>amd(code) / amd(base)</c>. With base USD and wanted AMD that is <c>1 / 363.28</c>; with base
-/// AMD and wanted USD it is <c>363.28</c>; with base USD and wanted EUR it is
+/// and <c>amd(AMD) = 1</c>, "1 unit of <c>code</c> in <c>base</c>" is <c>amd(code) / amd(base)</c>,
+/// worked out by <see cref="PivotRates"/>. With base USD and wanted AMD that is <c>1 / 363.28</c>;
+/// with base AMD and wanted USD it is <c>363.28</c>; with base USD and wanted EUR it is
 /// <c>421.11 / 363.28</c>. A base the bank does not quote cannot anchor any of this, and the call
 /// refuses rather than guess.
 /// </para>
@@ -37,15 +34,17 @@ namespace Innovayse.Hostpanel.Infrastructure.Currency;
 /// so "100 units = 243 AMD" is read as "1 unit = 2.43 AMD" and never as a hundred times too much.
 /// </para>
 /// <para>
-/// <b>Failures.</b> A bank that does not answer, answers with an error status or with a body that is
-/// not the published object is reported as <c>EXCHANGE_RATE_SOURCE_UNAVAILABLE</c> (503, with
-/// <c>Retry-After</c>), logged here with the cause; the bank's own text never reaches the response.
-/// A base the bank does not quote is <c>EXCHANGE_RATE_BASE_NOT_QUOTED</c>.
+/// <b>Failures.</b> A bank that does not answer, answers with an error status, with a body that is
+/// not the published object or with one larger than <see cref="ExchangeRateFeed.MaxBodyBytes"/> is
+/// reported as <c>EXCHANGE_RATE_SOURCE_UNAVAILABLE</c> (503, with <c>Retry-After</c>), logged here
+/// with the cause; the bank's own text never reaches the response. A base the bank does not quote is
+/// <c>EXCHANGE_RATE_BASE_NOT_QUOTED</c>.
 /// </para>
 /// <para>
-/// Registered as a typed client with the <c>Cba</c> read-only resilience profile: the one call is
-/// an idempotent GET an operator triggers by hand, so a retry costs nothing and a bounded timeout
-/// keeps a slow bank from holding the admin request open.
+/// Registered as a typed client with the <c>Cba</c> read-only resilience profile (see
+/// <see cref="Extensions.ExchangeRateHttpClientExtensions"/>): the one call is an idempotent GET the
+/// daily job or an operator triggers, so a retry costs nothing and a bounded timeout keeps a slow
+/// bank from holding the admin request open.
 /// </para>
 /// </remarks>
 public sealed class CbaExchangeRateSource : IExchangeRateSource
@@ -91,25 +90,7 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
             return Result<ExchangeRateQuotes>.FailureCode(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
         }
 
-        var upperBase = lookup.BaseCode.ToUpperInvariant();
-        var amdPerBase = AmdPerUnit(quotes, upperBase);
-        if (amdPerBase is null)
-        {
-            return Result<ExchangeRateQuotes>.FailureCode(HostpanelErrorCodes.EXCHANGE_RATE_BASE_NOT_QUOTED);
-        }
-
-        var rates = new Dictionary<string, decimal>(StringComparer.Ordinal);
-        foreach (var code in lookup.Codes)
-        {
-            var upper = code.ToUpperInvariant();
-            var amdPerUnit = AmdPerUnit(quotes, upper);
-            if (amdPerUnit is not null)
-            {
-                rates[upper] = amdPerUnit.Value / amdPerBase.Value;
-            }
-        }
-
-        return Result<ExchangeRateQuotes>.Success(new ExchangeRateQuotes(rates));
+        return PivotRates.Quote(lookup, PivotCode, quotes);
     }
 
     /// <summary>Downloads the bulletin and keeps only the properties that carry a usable quote.</summary>
@@ -120,29 +101,16 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
     /// </returns>
     private async Task<Dictionary<string, decimal>?> FetchAmdPerUnitAsync(CancellationToken ct)
     {
+        var body = await ExchangeRateFeed.TryReadAsync(_http, LatestRatesPath, _logger, ct);
+        if (body is null)
+        {
+            return null;
+        }
+
         Dictionary<string, JsonElement>? raw;
         try
         {
-            using var response = await _http.GetAsync(LatestRatesPath, ct);
-            response.EnsureSuccessStatusCode();
-            raw = await response.Content.ReadFromJsonAsync<Dictionary<string, JsonElement>>(ct);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogWarning(ex, "The exchange rate bulletin could not be fetched.");
-            return null;
-        }
-        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
-        {
-            // HttpClient reports its own timeout as a cancellation the caller never asked for.
-            _logger.LogWarning(ex, "The exchange rate bulletin did not answer in time.");
-            return null;
-        }
-        catch (ExecutionRejectedException ex)
-        {
-            // The resilience pipeline gave up: its total timeout elapsed or its breaker is open.
-            _logger.LogWarning(ex, "The exchange rate bulletin was refused by the resilience pipeline.");
-            return null;
+            raw = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
         }
         catch (JsonException ex)
         {
@@ -204,19 +172,12 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
     /// <returns>The positive decimal, or <see langword="null"/> when there is none.</returns>
     private static decimal? ParseDecimal(JsonElement value)
     {
-        decimal parsed;
-        switch (value.ValueKind)
+        return value.ValueKind switch
         {
-            case JsonValueKind.Number when value.TryGetDecimal(out parsed):
-                break;
-            case JsonValueKind.String when decimal.TryParse(
-                value.GetString(), NumberStyles.Number, CultureInfo.InvariantCulture, out parsed):
-                break;
-            default:
-                return null;
-        }
-
-        return parsed > 0 ? parsed : null;
+            JsonValueKind.Number => value.TryGetDecimal(out var number) && number > 0 ? number : null,
+            JsonValueKind.String => PivotRates.ParsePositive(value.GetString()),
+            _ => null,
+        };
     }
 
     /// <summary>Finds a property of an object without regard to the case of its name.</summary>
@@ -237,19 +198,5 @@ public sealed class CbaExchangeRateSource : IExchangeRateSource
 
         property = default;
         return false;
-    }
-
-    /// <summary>How many AMD one unit of a currency is worth, the dram itself included.</summary>
-    /// <param name="quotes">The parsed bulletin.</param>
-    /// <param name="upperCode">An upper-case ISO 4217 alpha code.</param>
-    /// <returns>The quote, or <see langword="null"/> when the bank does not carry it.</returns>
-    private static decimal? AmdPerUnit(Dictionary<string, decimal> quotes, string upperCode)
-    {
-        if (upperCode == PivotCode)
-        {
-            return 1m;
-        }
-
-        return quotes.TryGetValue(upperCode, out var quote) ? quote : null;
     }
 }

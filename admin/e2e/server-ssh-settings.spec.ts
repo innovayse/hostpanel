@@ -7,7 +7,7 @@
 import { HttpMethod } from '../src/types/http'
 import { SshAgentProfile, SshProviderFailure } from '../src/types/sshenums'
 import { expect, test } from '@playwright/test'
-import { hostServer, hostServerSsh, hostServerSshSetup } from './fixtures/servers'
+import { hostServer, hostServerSsh, hostServerSshSetup, serverPage } from './fixtures/servers'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '../src/types/serverssh'
 import { json, stubApi } from './support/stubApi'
 
@@ -26,7 +26,7 @@ test('generating an identity shows an installer command that verifies the bundle
   await stubApi(page, {
     signedIn: true,
     routes: [
-      json(HttpMethod.Get, '/api/admin/servers', [hostServer]),
+      json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
       json(HttpMethod.Get, SSH_PATH, hostServerSsh),
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),
@@ -52,7 +52,7 @@ test('enabling keeps the stored private key and stays in the dialog with a confi
   const api = await stubApi(page, {
     signedIn: true,
     routes: [
-      json(HttpMethod.Get, '/api/admin/servers', [hostServer]),
+      json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
       { method: HttpMethod.Get, path: SSH_PATH, respond: () => ({ body: stored }) },
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),
@@ -90,7 +90,7 @@ test('a failed agent test says why in words', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [
-      json(HttpMethod.Get, '/api/admin/servers', [hostServer]),
+      json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
       json(HttpMethod.Get, SSH_PATH, { ...hostServerSsh, isHealthy: false }),
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),
@@ -111,7 +111,7 @@ test('a test against an agent installed for another server explains the mismatch
   await stubApi(page, {
     signedIn: true,
     routes: [
-      json(HttpMethod.Get, '/api/admin/servers', [hostServer]),
+      json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
       json(HttpMethod.Get, SSH_PATH, { ...hostServerSsh, isHealthy: false }),
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),

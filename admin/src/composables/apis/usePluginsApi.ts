@@ -115,12 +115,12 @@ export const usePluginsApi = () => {
   /**
    * Lists one page of the plugins the registry offers.
    *
-   * @param query - Search text, category and page.
+   * @param query - Search text, category, page and page size.
    * @returns The page; rejects with the registry-disabled code when the registry is switched off.
    */
   const browseRegistry = (query: PluginRegistryQuery): Promise<PluginRegistryPageDto> =>
     request<PluginRegistryPageDto>(
-      `${ApiPath.AdminPlugins}/registry${buildQuery({ q: query.q, category: query.category, page: query.page })}`,
+      `${ApiPath.AdminPlugins}/registry${buildQuery({ search: query.search, category: query.category, page: query.page, pageSize: query.pageSize })}`,
     )
 
   /**

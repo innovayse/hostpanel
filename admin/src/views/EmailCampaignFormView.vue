@@ -27,7 +27,7 @@ import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -511,7 +511,7 @@ onBeforeUnmount(cancelCount)
               <UiText v-else-if="store.audienceError" tone="danger" size="sm" data-testid="email-campaign-audience">
                 {{ store.audienceError }}
               </UiText>
-              <UiSkeleton v-else-if="store.audienceCount === null" :lines="1" class="w-40" aria-busy="true" data-testid="email-campaign-audience" />
+              <UiSkeletonBar v-else-if="store.audienceCount === null" class="h-4 w-40 rounded-md" aria-busy="true" data-testid="email-campaign-audience" />
               <UiText v-else tone="secondary" size="sm" data-testid="email-campaign-audience">
                 {{ t('emailCampaigns.form.audienceCount', { count: store.audienceCount }) }}
               </UiText>

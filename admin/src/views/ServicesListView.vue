@@ -1,21 +1,27 @@
 <script setup lang="ts">
 /**
- * Services list view: paged table of all client hosted services.
+ * Services list view: a search box, the filter dialog (status, product and billing cycle) with its removable chips,
+ * and a paged table of all client hosted services.
  *
- * Shows id, product, domain, client, price, billing cycle, next due date and status. The page lives in the
- * address (`useFilterQuery`), so a reload or a shared link opens the same page; the services endpoint takes no
- * other filter. Reads `stores/services`; a refused load shows `store.error` with a retry.
+ * The search text, the filters and the page live in the address (`useListQuery`), so a reload, a shared link and the
+ * back button restore the same list, and the API applies them before it pages. Shows id, product, domain, client,
+ * price, billing cycle, next due date and status. Reads `stores/services`; a refused load shows `store.error` with a
+ * retry.
  */
-import { onMounted, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ServiceFilterFields from '@/components/services/ServiceFilterFields.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -23,35 +29,53 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import { Icon } from '@/lib/icons'
 import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { useServicesStore } from '@/stores/services'
+import { useSettingsStore } from '@/stores/settings'
 import { clientPath } from '@/lib/routes'
-import { useFilterQuery } from '@/composables/useFilterQuery'
+import { useListQuery } from '@/composables/useListQuery'
+import { ServiceFilterKey, useServiceFilters } from '@/composables/useServiceFilters'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
+/** Services store, the only caller of the service endpoints. */
 const store = useServicesStore()
 
-/** The page of the list, kept in the address. */
-const { page, setPage } = useFilterQuery([])
+/** Settings store, for the product choice of the filter. */
+const settingsStore = useSettingsStore()
+
+/** The filters, the search text and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, idOf, chipsOf }
+  = useListQuery(Object.values(ServiceFilterKey))
+
+/** The applied status, product and billing cycle, and their chips. */
+const serviceFilters = useServiceFilters({ enumOf, idOf }, computed(() => settingsStore.products))
+
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(serviceFilters.chipSources)
 
 /**
- * Loads the page the address names.
+ * Loads the page the address names with the filters and search it holds.
  *
  * @returns True when loaded; false when refused (see `store.error`).
  */
-const load = (): Promise<boolean> => store.fetchAll(page.value)
+const load = (): Promise<boolean> => store.fetchAll(page.value, { ...serviceFilters.filters.value, search: appliedSearch.value })
 
-// A page chosen, or the back button, loads the page the address names.
-watch(page, load)
+// Every change of a filter, the search or the page loads the list the address names.
+loadOnChange(load)
 
-onMounted(() => load())
+/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
+const initialLoading = computed<boolean>(() => store.loading && store.services.length === 0)
+
+onMounted(() => settingsStore.fetchProducts())
 </script>
 
 <template>
@@ -61,6 +85,29 @@ onMounted(() => load())
       :subtitle="t('services.servicesList.viewAndManageAllClient')"
       data-testid="services-header"
     />
+
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="services-search"
+      :search-placeholder="t('services.servicesList.searchServices')"
+      filter-testid="services-filter"
+      :active-count="activeCount"
+      :chips="chips"
+      :loading="initialLoading"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <ServiceFilterFields
+        v-model:status="draft.status"
+        v-model:product-id="draft.productId"
+        v-model:billing-cycle="draft.billingCycle"
+        :products="settingsStore.products"
+        testid-prefix="services-filter"
+      />
+    </UiListToolbar>
 
     <UiErrorState
       v-if="store.error"
@@ -73,19 +120,19 @@ onMounted(() => load())
     <UiCard v-else-if="store.services.length > 0 || store.loading">
       <UiTable
         :density="UiTableDensity.Comfortable"
-        :loading="store.loading && store.services.length === 0"
+        :loading="initialLoading"
         data-testid="services-table"
       >
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.productService') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.nextDueDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -118,9 +165,9 @@ onMounted(() => load())
 
       <template #footer>
         <UiStack direction="row" justify="between" align="center" wrap>
-          <UiText tone="muted" size="xs">
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
             {{ t('services.servicesList.totalcountServiceValue', { totalCount: store.totalCount }) }}
-          </UiText>
+          </UiResultCount>
           <UiPagination
             :page="page"
             :total="store.totalCount"
@@ -133,9 +180,17 @@ onMounted(() => load())
     </UiCard>
 
     <UiCard v-else>
-      <UiEmptyState :title="t('services.servicesList.noServicesFound')" data-testid="services-empty">
+      <UiEmptyState
+        :title="narrowed ? t('services.servicesList.noServicesMatchYourFilters') : t('services.servicesList.noServicesFound')"
+        data-testid="services-empty"
+      >
         <template #icon>
           <UiIcon :markup="Icon.Server" size="lg" />
+        </template>
+        <template v-if="activeCount > 0" #actions>
+          <UiButton :variant="UiButtonVariant.Link" data-testid="services-clear-empty" @click="clearAll">
+            {{ t('services.servicesList.clearFilters') }}
+          </UiButton>
         </template>
       </UiEmptyState>
     </UiCard>

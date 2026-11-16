@@ -23,8 +23,8 @@ public sealed class ListClaimedDomainRenewalsTests(IntegrationTestFactory factor
     [Fact]
     public async Task AClaimedLine_IsListed_OldestFirst()
     {
-        var older = await ClaimedRenewalSeeds.SeedAsync(factory, claimedAt: DateTimeOffset.UtcNow.AddDays(-30));
-        var newer = await ClaimedRenewalSeeds.SeedAsync(factory, claimedAt: DateTimeOffset.UtcNow.AddDays(-1));
+        var older = await ClaimedRenewalSeeds.SeedAsync(factory, claimedAt: TestMoments.Seeded.AddDays(-30));
+        var newer = await ClaimedRenewalSeeds.SeedAsync(factory, claimedAt: TestMoments.Seeded.AddDays(-1));
 
         var listed = await ListAsync();
 

@@ -46,18 +46,10 @@ public sealed class GetProductsHandler
 
         var currency = (await _payerCurrency.ForCallerAsync(ct)).Code;
 
-        var query = _context.Products.AsNoTracking().Include(p => p.Prices).AsQueryable();
-        if (qry.GroupId.HasValue)
-        {
-            query = query.Where(p => p.GroupId == qry.GroupId.Value);
-        }
-
-        if (qry.ActiveOnly)
-        {
-            query = query.Where(p => p.Status == ProductStatus.Active);
-        }
-
-        var products = await query.OrderBy(p => p.SortOrder).ThenBy(p => p.Name).ToListAsync(ct);
+        var products = await _context.Products.AsNoTracking().Include(p => p.Prices)
+            .Matching(qry.GroupId, qry.ActiveOnly ? ProductStatus.Active : null)
+            .InDisplayOrder()
+            .ToListAsync(ct);
 
         var dtos = products
             .Where(p => qry.IncludeUnsellable || p.SellsIn(currency))

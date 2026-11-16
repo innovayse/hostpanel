@@ -77,6 +77,15 @@ export const useClientsApi = () => {
     request<void>(`${ApiPath.Clients}/${id}/external-account`, { method: HttpMethod.Put, body: JSON.stringify(payload) })
 
   /**
+   * Checks the client's VAT number against the VAT number service and records the answer on the client.
+   *
+   * @param id - The client identifier.
+   * @returns Nothing; the client detail is read again for the new status.
+   */
+  const checkVat = (id: number | string): Promise<void> =>
+    request<void>(`${ApiPath.Clients}/${id}/vat-check`, { method: HttpMethod.Post })
+
+  /**
    * Searches Identity users by name or email.
    *
    * @param search - Search text.
@@ -177,6 +186,7 @@ export const useClientsApi = () => {
     create,
     update,
     setExternalAccount,
+    checkVat,
     searchUsers,
     countries,
     configuredCurrencies,

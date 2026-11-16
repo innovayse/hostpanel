@@ -5,11 +5,14 @@ import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import DomainSearchBar from '~/templates/aurora/sections/DomainSearchBar.vue'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 describe('DomainSearchBar', () => {
   it('emits the typed term when submitted, through the ids the e2e specs use', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearchBar)
 
     await wrapper.find('[data-testid="domain-search-input"]').setValue('shop')
@@ -29,22 +32,22 @@ describe('DomainSearchBar', () => {
     expect((input.element as HTMLInputElement).value).toBe('second-site')
   })
 
-  it('gives the field a placeholder and disables it without priced extensions', () => {
-    stubAuroraGlobals()
+  it('gives the field a placeholder and disables it without priced extensions', async () => {
+    await loadGlobals()
     const input = mountWithKit(DomainSearchBar, { props: { hasZones: false } }).find('[data-testid="domain-search-input"]')
 
     expect(input.attributes('placeholder')).toBe('aurora.domainSearch.placeholder')
     expect(input.attributes('disabled')).toBeDefined()
   })
 
-  it('hides the filter when the registrar supplied one category or none', () => {
-    stubAuroraGlobals()
+  it('hides the filter when the registrar supplied one category or none', async () => {
+    await loadGlobals()
 
     expect(mountWithKit(DomainSearchBar, { props: { categories: [ALL_CATEGORY] } }).find('[data-testid^="domain-category-"]').exists()).toBe(false)
   })
 
-  it('shows a chip per category, labels the sentinel "all" and marks the active one', () => {
-    stubAuroraGlobals()
+  it('shows a chip per category, labels the sentinel "all" and marks the active one', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearchBar, { props: { categories: [ALL_CATEGORY, 'Popular'], active: 'Popular' } })
 
     expect(wrapper.find(`[data-testid="domain-category-${ALL_CATEGORY}"]`).text()).toBe('aurora.tldTable.all')
@@ -53,15 +56,15 @@ describe('DomainSearchBar', () => {
     expect(wrapper.find('[data-testid="domain-category-Popular"]').text()).toBe('domains.pricing.categories.popular')
   })
 
-  it('capitalises a category that has no translation', () => {
-    stubAuroraGlobals()
+  it('capitalises a category that has no translation', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearchBar, { props: { categories: [ALL_CATEGORY, 'gaming'] } })
 
     expect(wrapper.find('[data-testid="domain-category-gaming"]').text()).toBe('Gaming')
   })
 
   it('emits the chosen category', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearchBar, { props: { categories: [ALL_CATEGORY, 'Popular'] } })
 
     await wrapper.find('[data-testid="domain-category-Popular"]').trigger('click')

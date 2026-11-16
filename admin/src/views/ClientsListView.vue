@@ -6,12 +6,12 @@
  * the back button restore the same list; the view loads whenever the address changes. The table scrolls inside its
  * card under a sticky header and the pager sits under it.
  */
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientsStore } from '@/stores/clients'
 import { useClientGroupsStore } from '@/stores/clientGroups'
-import { useFilterQuery } from '@/composables/useFilterQuery'
+import { useListQuery } from '@/composables/useListQuery'
 import type { ClientFilters } from '@/types/client'
 import { ClientStatus } from '@/types/client'
 import { clientStatusTone } from '@/lib/tones'
@@ -43,13 +43,12 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiCardRole } from '@/utils/ui/table'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
-import { actionsColumnClasses } from '@/utils/ui/table'
 import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
-import type { UiFilterChip } from '@/utils/ui/filter'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, clientPath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -64,9 +63,6 @@ const FilterKey = {
   ClientGroupId: 'clientGroupId',
 } as const
 
-/** One of the {@link FilterKey} values. */
-type FilterKey = (typeof FilterKey)[keyof typeof FilterKey]
-
 /** Router, used to open a client. */
 const router = useRouter()
 
@@ -77,8 +73,8 @@ const store = useClientsStore()
 const groupsStore = useClientGroupsStore()
 
 /** Filters, search text and page kept in the address. */
-const { applied, draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage }
-  = useFilterQuery(Object.values(FilterKey))
+const { applied, draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, idOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
 
 /** Status filter options; the empty value means any. */
 const statusOptions = computed(() => [
@@ -107,11 +103,11 @@ const groupDraft = computed<number | null>({
   },
 })
 
+/** The group in the address as an id, undefined when none is set or the value is not an id. */
+const groupIdOfAddress = idOf(FilterKey.ClientGroupId)
+
 /** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout with placeholders. */
 const initialLoading = computed<boolean>(() => store.loading && store.clients.length === 0)
-
-/** Whether the list is narrowed by the search or by a filter. */
-const narrowed = computed<boolean>(() => activeCount.value > 0 || appliedSearch.value !== '')
 
 /**
  * Names the applied group filter for its chip.
@@ -124,17 +120,16 @@ const groupName = computed<string>(() => {
 })
 
 /** One chip per applied filter, with the value as the operator reads it. */
-const chips = computed<UiFilterChip<FilterKey>[]>(() => {
-  const values = applied.value
-  const status = statusOptions.value.find(option => option.value === values.status)
-  const all: UiFilterChip<FilterKey>[] = [
-    { key: FilterKey.Email, label: t('shared.emailAddress'), value: values.email },
-    { key: FilterKey.Phone, label: t('shared.phoneNumber'), value: values.phone },
-    { key: FilterKey.Status, label: t('shared.status'), value: status?.label ?? values.status },
-    { key: FilterKey.ClientGroupId, label: t('clients.clientGroups.group'), value: groupName.value },
-  ]
-  return all.filter(chip => values[chip.key] !== '')
-})
+const chips = chipsOf(() => [
+  { key: FilterKey.Email, label: t('shared.emailAddress'), value: applied.value.email },
+  { key: FilterKey.Phone, label: t('shared.phoneNumber'), value: applied.value.phone },
+  {
+    key: FilterKey.Status,
+    label: t('shared.status'),
+    value: statusOptions.value.find(option => option.value === applied.value.status)?.label ?? applied.value.status,
+  },
+  { key: FilterKey.ClientGroupId, label: t('clients.clientGroups.group'), value: groupName.value },
+])
 
 /**
  * Loads the page the address names with the filters and search it holds.
@@ -148,7 +143,7 @@ const load = (): Promise<void> => {
     email: values.email || undefined,
     phone: values.phone || undefined,
     status: (values.status as ClientStatus) || undefined,
-    clientGroupId: values.clientGroupId === '' ? undefined : Number(values.clientGroupId),
+    clientGroupId: groupIdOfAddress.value,
   }
   return store.fetchAll(filters, page.value)
 }
@@ -188,18 +183,10 @@ const openClient = (id: number): void => {
   router.push(clientPath(id))
 }
 
-/**
- * The part of the address the list is loaded from. The router replaces the query object on every navigation, so
- * watching the values themselves would reload the list when the reader leaves for another screen; the key only
- * changes when a filter, the search or the page does.
- */
-const listKey = computed<string>(() => JSON.stringify([applied.value, appliedSearch.value, page.value]))
-
 // Every change of a filter, the search or the page loads the list the address names.
-watch(listKey, load)
+loadOnChange(load)
 
 onMounted(() => {
-  void load()
   void groupsStore.fetchAll()
 })
 </script>
@@ -297,14 +284,14 @@ onMounted(() => {
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader hide-below="md">{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader hide-below="lg">{{ t('shared.email') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('shared.company') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.name') }}</UiTableHeader>
+            <UiTableHeader hide-below="lg" :card-role="UiCardRole.Field">{{ t('shared.email') }}</UiTableHeader>
+            <UiTableHeader hide-below="xl" :card-role="UiCardRole.Field">{{ t('shared.company') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('clients.clientGroups.group') }}</UiTableHeader>
             <UiTableHeader hide-below="xl">{{ t('clients.clientsList.2fa') }}</UiTableHeader>
             <UiTableHeader hide-below="lg">{{ t('clients.clientsList.joined') }}</UiTableHeader>
-            <UiTableHeader :class="actionsColumnClasses">
+            <UiTableHeader actions>
               <UiText :as="UiTextTag.Span" class="sr-only">{{ t('shared.actions') }}</UiText>
             </UiTableHeader>
           </UiTableRow>
@@ -358,7 +345,7 @@ onMounted(() => {
               </UiTooltip>
             </UiTableCell>
             <UiTableCell muted hide-below="lg">{{ formatDate(client.createdAt) }}</UiTableCell>
-            <UiTableCell :class="actionsColumnClasses" @click.stop>
+            <UiTableCell actions @click.stop>
               <UiRowActions :actions="rowActions(client.id)" :testid="`client-row-actions-${client.id}`" />
             </UiTableCell>
           </UiTableRow>

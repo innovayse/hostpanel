@@ -29,7 +29,7 @@ public sealed class GetInvoiceLineSharesTests(IntegrationTestFactory factory) : 
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Domain", 10m, 1);
             invoice.AddItem("Hosting", 30m, 1);
             invoice.UpdateOptions(invoice.InvoiceDate, invoice.DueDate, invoice.PaymentMethod, taxRate: 10m);

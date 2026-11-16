@@ -100,6 +100,7 @@ import { productTypeCover } from '~/utils/productTypeCover'
 import { revealDelay } from '~/utils/reveal'
 import { ACCENT_CLASSES } from '~/utils/ui/accent'
 import type { ProductFamily } from '~/types/productfamily'
+import { siteProductFamilyPath } from '~/constants/siteRoutes'
 
 /** Props of ProductFamilyCard. */
 interface Props {
@@ -121,7 +122,7 @@ const localePath = useLocalePath()
 const accent = ACCENT_CLASSES
 
 /** The localized address the card links to: the family's learn-more page, or its detail page when it has none. */
-const href = computed<string>(() => localePath(props.product.learnMoreUrl || `/products/${props.product.id}`))
+const href = computed<string>(() => localePath(props.product.learnMoreUrl || siteProductFamilyPath(props.product.id)))
 
 /** Mask classes of the generated cover for the family's product type. */
 const coverClass = computed<string>(() => productTypeCover(props.product.type))

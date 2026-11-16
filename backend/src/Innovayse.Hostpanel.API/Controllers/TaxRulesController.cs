@@ -29,16 +29,18 @@ public sealed class TaxRulesController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Every tax rule.</summary>
+    /// <summary>A page of tax rules.</summary>
+    /// <param name="query">Pagination, optional search on name, country and region, and optional enabled filter.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 with the rules; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
+    /// <returns>200 with the page; 400 when the page, the page size or the search is refused; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<TaxRuleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedList<TaxRuleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ListAsync(CancellationToken ct)
+    public async Task<IActionResult> ListAsync([FromQuery] ListTaxRulesQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<TaxRuleDto>>>(new ListTaxRulesQuery(), ct);
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<TaxRuleDto>>>(query, ct);
         return HandleResult(outcome);
     }
 

@@ -48,7 +48,8 @@ public static class ServiceChangeTestSeeds
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        // The renewal date is measured from the host clock by the proration, and the callers run the shared host on the system clock.
+        var now = TestMoments.Present();
 
         var ownerId = clientId ?? await SeedClientAsync(context);
         var group = ProductGroup.Create($"plan-change-{Guid.NewGuid():N}", null);
@@ -109,7 +110,7 @@ public static class ServiceChangeTestSeeds
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
 
         var type = seeded.ToPrice > seeded.FromPrice ? ServiceChangeType.Upgrade : ServiceChangeType.Downgrade;
         var request = ServiceChangeRequest.Create(
@@ -153,7 +154,7 @@ public static class ServiceChangeTestSeeds
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Upgrade to Pro", amount, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -169,7 +170,7 @@ public static class ServiceChangeTestSeeds
     {
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
         {
-            date = DateTimeOffset.UtcNow,
+            date = TestMoments.Seeded,
             gateway = PaymentMethodNames.Manual,
             transactionId = $"pay-{Guid.NewGuid():N}",
             amount,

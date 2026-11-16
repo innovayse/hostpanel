@@ -7,7 +7,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mountWithLogo } from '~/tests/helpers/authScreens'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountClient } from '~/tests/helpers/mountClient'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -15,9 +16,11 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ForgotPasswordPanel from '~/components/client/ForgotPasswordPanel.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /** The BFF path the reset mail is requested from. */
-const FORGOT_PATH = '/api/portal/auth/forgot-password'
+const FORGOT_PATH = AccountEndpoint.ForgotPassword
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -31,7 +34,7 @@ let table: StubRouteTable
  * @param wrapper - The mounted panel.
  * @param email - Address to type.
  */
-const submitWith = async (wrapper: ReturnType<typeof mountWithLogo>, email: string): Promise<void> => {
+const submitWith = async (wrapper: ReturnType<typeof mountClient>, email: string): Promise<void> => {
   await wrapper.find('[data-testid="forgot-email"]').setValue(email)
   await wrapper.find('form').trigger('submit')
 }
@@ -39,6 +42,7 @@ const submitWith = async (wrapper: ReturnType<typeof mountWithLogo>, email: stri
 beforeEach(async () => {
   table = { [`POST ${FORGOT_PATH}`]: { body: {} } }
   stub = await startTransport(routeTable(table))
+  stubAuthRuntime()
 })
 
 afterEach(async () => {
@@ -47,26 +51,26 @@ afterEach(async () => {
 
 describe('ClientForgotPasswordPanel', () => {
   it('shows the form with a placeholder on the email field', () => {
-    const wrapper = mountWithLogo(ForgotPasswordPanel)
+    const wrapper = mountClient(ForgotPasswordPanel)
 
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="forgot-email"]').attributes('placeholder')).toBe('client.forgot.emailPlaceholder')
   })
 
   it('asks the API for a reset mail and switches to the sent state, echoing the address', async () => {
-    const wrapper = mountWithLogo(ForgotPasswordPanel)
+    const wrapper = mountClient(ForgotPasswordPanel)
 
     await submitWith(wrapper, 'ada@example.com')
     await waitUntil(() => expect(wrapper.find('[data-testid="outcome-panel"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, FORGOT_PATH)[0])).toEqual({ email: 'ada@example.com' })
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="forgot-sent-back"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="forgot-sent-back"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('keeps the form and shows the API sentence when the request is refused', async () => {
     table[`POST ${FORGOT_PATH}`] = { status: 429, body: { detail: 'Too many requests.' } }
-    const wrapper = mountWithLogo(ForgotPasswordPanel)
+    const wrapper = mountClient(ForgotPasswordPanel)
 
     await submitWith(wrapper, 'ada@example.com')
     await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
@@ -76,8 +80,8 @@ describe('ClientForgotPasswordPanel', () => {
   })
 
   it('links back to sign-in from the form', () => {
-    const wrapper = mountWithLogo(ForgotPasswordPanel)
+    const wrapper = mountClient(ForgotPasswordPanel)
 
-    expect(wrapper.find('[data-testid="forgot-back"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="forgot-back"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 })

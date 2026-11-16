@@ -12,10 +12,6 @@ import { stubRoutes } from '../helpers/routes'
 /** The clients endpoint answer: nobody to pick. */
 const noClients = () => json({ items: [], totalCount: 0 })
 
-/** The ledger answer the store reloads after a create. */
-const emptyLedger = () =>
-  json({ transactions: { items: [], pageNumber: 1, pageSize: 25, totalCount: 0, totalPages: 0 }, totalIn: 0, totalOut: 0, totalFees: 0, balance: 0 })
-
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -25,7 +21,6 @@ describe('AddTransactionView', () => {
     const mock = stubRoutes({
       'GET /api/clients': noClients,
       'POST /api/transactions': () => new Response(null, { status: 204 }),
-      'GET /api/transactions?': emptyLedger,
     })
     const { wrapper, router } = await mountRouted(AddTransactionView, '/billing/add-transaction', '/billing/add-transaction')
     await flushPromises()

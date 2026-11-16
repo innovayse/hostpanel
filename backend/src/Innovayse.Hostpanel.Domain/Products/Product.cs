@@ -100,6 +100,26 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// </summary>
     public int GracePeriodDays { get; private set; } = DefaultGracePeriodDays;
 
+    /// <summary>
+    /// Gets whether the product is an electronic service in the sense of VAT (hosting, a licence, a domain that counts as one).
+    /// A new invoice for a consumer in an EU member state other than the seller's is taxed at the rate of the client's country when
+    /// every line of it is such a product. Separate from <see cref="IsDigital"/>, which says how the product is delivered.
+    /// </summary>
+    public bool IsDigitalService { get; private set; }
+
+    /// <summary>
+    /// Gets how many services of this product may be live at once (not terminated, counting orders not yet
+    /// fulfilled), or null when the product is unlimited. A new order is refused, and the public catalogue
+    /// leaves the product out, once that many are live.
+    /// </summary>
+    public int? MaxActiveServices { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether a client may hold only one live (not terminated) service of this product,
+    /// so a client who has one cannot order it again.
+    /// </summary>
+    public bool OnePerClient { get; private set; }
+
     /// <summary>Gets the UTC timestamp when the product was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -331,6 +351,41 @@ public sealed class Product : BaseEntity, IAggregateRoot
 
         GracePeriodDays = days;
     }
+
+    /// <summary>Sets whether the product is an electronic service for VAT.</summary>
+    /// <param name="isDigitalService">Whether the product is an electronic service.</param>
+    public void SetDigitalService(bool isDigitalService) => IsDigitalService = isDigitalService;
+
+    /// <summary>Sets how many services of this product may be live at once.</summary>
+    /// <param name="max">The cap, at least one, or null for unlimited.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductMaxActiveServicesInvalid"/>: <paramref name="max"/> is zero or negative.
+    /// </exception>
+    public void SetMaxActiveServices(int? max)
+    {
+        if (max is < 1)
+        {
+            throw new DomainRuleException(
+                ProductsErrors.ProductMaxActiveServicesInvalid,
+                $"A cap of {max} live services is not allowed; use null for unlimited or a number of at least 1.");
+        }
+
+        MaxActiveServices = max;
+    }
+
+    /// <summary>Sets whether a client may hold only one live service of this product.</summary>
+    /// <param name="onePerClient"><see langword="true"/> to allow one live service per client.</param>
+    public void SetOnePerClient(bool onePerClient) => OnePerClient = onePerClient;
+
+    /// <summary>
+    /// Tells whether a product with these two rules takes a place that must be counted and locked: it has a cap on live
+    /// services or is one-per-client. The one definition of the rule for the order paths; the product limits query
+    /// states the same two columns in SQL, because a method cannot be translated.
+    /// </summary>
+    /// <param name="maxActiveServices">The product's cap on live services, or null when unlimited.</param>
+    /// <param name="onePerClient">Whether a client may hold only one live service of the product.</param>
+    /// <returns><see langword="true"/> when the product has a cap or is one-per-client.</returns>
+    public static bool IsPlaceLimited(int? maxActiveServices, bool onePerClient) => maxActiveServices is not null || onePerClient;
 
     /// <summary>Marks the product inactive so it cannot be ordered.</summary>
     public void Deactivate() => Status = ProductStatus.Inactive;

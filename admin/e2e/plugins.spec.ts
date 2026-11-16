@@ -1,7 +1,7 @@
 /**
- * Plugin manager flow: installed plugins are listed, uploading an archive first shows what it asks for and its
- * changelog, then installs it as multipart data after the confirmation and shows the restart banner, restarting posts the command, and removing a
- * plugin asks first and then deletes it from the list, and the allow unsigned switch warns and saves its setting.
+ * Plugin manager flow: installed plugins are listed, uploading an archive from the dialog first shows what it asks for and its
+ * changelog, then installs it as multipart data after the confirmation and shows the restart banner, restarting posts the command, the gear of a card
+ * opens the plugin's page, and the allow unsigned switch on the Settings tab warns and saves its setting.
  */
 import { HttpMethod } from '../src/types/http'
 import { PluginSettingKey } from '../src/types/setting'
@@ -53,6 +53,7 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   await page.goto('/plugins')
   await expect(page.getByTestId('plugins-empty')).toBeVisible()
 
+  await page.getByTestId('plugins-upload-open').click()
   await page.getByTestId('plugin-zip-input').setInputFiles({ name: 'cwp.zip', mimeType: 'application/zip', buffer: tinyPng })
   await expect(page.getByTestId('plugin-selected-name')).toContainText('cwp.zip')
   await page.getByTestId('plugin-install').click()
@@ -62,6 +63,9 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   expect(api.callsTo(HttpMethod.Post, '/api/admin/plugins/install')).toHaveLength(0)
   await page.getByTestId('plugin-install-confirm').click()
 
+  // The install runs behind the processing dialog, which ends with the restart note and a Close button.
+  await expect(page.getByTestId('plugin-processing-restart')).toBeVisible()
+  await page.getByTestId('plugin-processing-close').click()
   await expect(page.getByTestId(`plugin-card-${cwpPlugin.id}`)).toContainText(cwpPlugin.name)
   await expect(page.getByTestId('plugins-restart-banner')).toBeVisible()
   const [install] = api.callsTo(HttpMethod.Post, '/api/admin/plugins/install')
@@ -72,30 +76,16 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   await expect.poll(() => api.callsTo(HttpMethod.Post, '/api/admin/plugins/restart').length).toBe(1)
 })
 
-test('removing a plugin deletes it from the list', async ({ page }) => {
-  const stored: PluginListItemDto[] = [{ ...cwpPlugin }]
-
-  const api = await stubApi(page, {
+test('the gear of an installed plugin opens its own page', async ({ page }) => {
+  await stubApi(page, {
     signedIn: true,
-    routes: [
-      { method: HttpMethod.Get, path: '/api/admin/plugins', respond: () => ({ body: stored }) },
-      {
-        method: HttpMethod.Delete,
-        path: `/api/admin/plugins/${cwpPlugin.id}`,
-        respond: () => {
-          stored.splice(0, stored.length)
-          return { body: { requiresRestart: false } }
-        },
-      },
-    ],
+    routes: [json(HttpMethod.Get, '/api/admin/plugins', [{ ...cwpPlugin }])],
   })
 
   await page.goto('/plugins')
-  await page.getByTestId(`plugin-remove-${cwpPlugin.id}`).click()
-  await page.getByTestId('dialog-confirm').click()
+  await page.getByTestId(`plugin-settings-${cwpPlugin.id}`).click()
 
-  await expect(page.getByTestId('plugins-empty')).toBeVisible()
-  expect(api.callsTo(HttpMethod.Delete, `/api/admin/plugins/${cwpPlugin.id}`)).toHaveLength(1)
+  await expect(page).toHaveURL(new RegExp(`/plugins/${cwpPlugin.id}$`))
 })
 
 test('a refused install shows the API sentence', async ({ page }) => {
@@ -109,10 +99,11 @@ test('a refused install shows the API sentence', async ({ page }) => {
   })
 
   await page.goto('/plugins')
+  await page.getByTestId('plugins-upload-open').click()
   await page.getByTestId('plugin-zip-input').setInputFiles({ name: 'bad.zip', mimeType: 'application/zip', buffer: tinyPng })
   await page.getByTestId('plugin-install').click()
 
-  await expect(page.getByTestId('plugins-feedback')).toContainText(sentence)
+  await expect(page.getByTestId('plugin-processing-message')).toContainText(sentence)
 })
 
 test('the allow unsigned switch warns, and saving it writes the setting', async ({ page }) => {
@@ -135,7 +126,7 @@ test('the allow unsigned switch warns, and saving it writes the setting', async 
     ],
   })
 
-  await page.goto('/plugins')
+  await page.goto('/plugins?tab=settings')
   await expect(page.getByTestId('plugin-signing-warning')).toBeVisible()
   await expect(page.getByTestId('plugin-allow-unsigned')).toHaveAttribute('aria-checked', 'false')
 

@@ -14,7 +14,7 @@ import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import { useDropdown } from '@/composables/useDropdown'
 import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
+import { FLOATING_PANEL_CLASSES, FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { fieldSizeClasses } from '@/utils/ui/size'
 import { fieldBaseClasses } from '@/utils/ui/input'
 
@@ -57,7 +57,7 @@ const PANEL_WIDTH_PX = 320
 useFloatingPlace(trigger, panel, open, { align: FloatingAlign.Start, minRoom: PANEL_MIN_ROOM_PX, gap: PANEL_GAP_PX, keepInsideWidth: PANEL_WIDTH_PX })
 
 /** Classes of the panel: fixed at its place, the kit's card look. */
-const panelClasses = `${FLOATING_PLACE_CLASSES} z-50 bg-surface-card border border-border rounded-[10px] shadow-xl w-[320px] overflow-hidden`
+const panelClasses = `${FLOATING_PLACE_CLASSES} z-50 rounded-[10px] ${FLOATING_PANEL_CLASSES} w-[320px] overflow-hidden`
 
 /** Trigger classes: the kit's md field with a quiet label that brightens on hover. */
 const triggerClasses = `w-full flex items-center gap-2 ${fieldBaseClasses} ${fieldSizeClasses.md} text-text-secondary hover:text-text-primary hover:border-text-secondary`

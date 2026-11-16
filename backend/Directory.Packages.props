@@ -157,6 +157,8 @@
   <ItemGroup>
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" />
+    <!-- The syntax tree the architecture tests read C# sources through (DirectClockScan); the version Workspaces.MSBuild already brings. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <!--
       Transitive pins for advisories NuGet reports through `dotnet list package, vulnerable and
       include-transitive` (the build audit only looks at direct references):
@@ -176,6 +178,8 @@
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
+    <!-- FakeTimeProvider: tests move the clock a timer or a Task.Delay reads, so a time limit is crossed without waiting. Test-only, MIT. Versioned with the 9.x Extensions wave. -->
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.10.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <!-- Reads rendered invoice PDFs back in the renderer tests. Test-only, Apache-2.0. -->
     <PackageVersion Include="PdfPig" Version="0.1.16" />

@@ -29,15 +29,12 @@ public sealed class ListUsersHandler
     }
 
     /// <summary>Returns one page of user summaries with the unpaged total.</summary>
-    /// <param name="query">Search term and paging.</param>
+    /// <param name="query">Search text and paging.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with the page. This use case refuses nothing.</returns>
     public async Task<Result<PaginatedList<UserListItemDto>>> HandleAsync(ListUsersQuery query, CancellationToken ct)
     {
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
-        var page = Math.Max(1, query.Page);
-
-        var accounts = await _identity.ListAsync(new IdentityAccountListQuery(query.Search, page, pageSize), ct);
+        var accounts = await _identity.ListAsync(new IdentityAccountListQuery(query.Search, query.Page, query.PageSize), ct);
 
         // One lookup for the whole page rather than one per row.
         var subjects = accounts.Items.Select(a => a.Subject).ToList();
@@ -54,7 +51,7 @@ public sealed class ListUsersHandler
             // blank one.
             a.Language, a.LastLoginAt, CreatedAt: default)).ToList();
 
-        var page1 = new PaginatedList<UserListItemDto>(items, accounts.TotalCount, page, pageSize);
-        return Result<PaginatedList<UserListItemDto>>.Success(page1);
+        var page = new PaginatedList<UserListItemDto>(items, accounts.TotalCount, query.Page, query.PageSize);
+        return Result<PaginatedList<UserListItemDto>>.Success(page);
     }
 }

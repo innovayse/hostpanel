@@ -12,7 +12,7 @@
     </UiStack>
 
     <UiEmptyState v-else-if="!store.services.length" :icon="Server" :title="$t('client.dashboard.noActiveServices')" class="!py-6" data-testid="dashboard-services-empty">
-      <UiButton size="sm" variant="subtle" to="/hosting" data-testid="dashboard-place-order">{{ $t('client.dashboard.placeOrder') }}</UiButton>
+      <UiButton size="sm" variant="subtle" :to="SITE_HOSTING_PATH" data-testid="dashboard-place-order">{{ $t('client.dashboard.placeOrder') }}</UiButton>
     </UiEmptyState>
 
     <UiStack v-else gap="sm">
@@ -62,6 +62,7 @@ import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import type { ClientService } from '~/types/clientservice'
 import { canSignInToControlPanel } from '~/utils/controlPanel'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()

@@ -99,6 +99,10 @@ export interface InvoiceDetail {
   creditableAmount: number
   /** Whether this is a credit top-up invoice: one fixed line that puts its amount on the client's balance when paid. */
   isCreditTopUp: boolean
+  /** Whether the invoice was raised under the reverse charge: no tax is added and the client accounts for it. */
+  reverseCharge: boolean
+  /** The client's VAT number the reverse charge was applied for, null when it does not apply. */
+  clientVatNumber: string | null
   /** Payment method and gateway reference. */
   payment: InvoicePayment
   /** Optional admin notes. */
@@ -147,14 +151,22 @@ export interface InvoiceStatusCount {
   totals: CurrencyAmount[]
 }
 
-/** Filters the invoice list endpoints accept; an empty value is left off the request. */
-export interface InvoiceFilters {
-  /** Status filter, e.g. `Unpaid`. */
-  status?: string
-  /** Start date filter (ISO 8601). */
+/** The invoice filters both invoice lists share (the staff list and the tab of a client): status and creation period. */
+export interface InvoiceListFilters {
+  /** Keep only the invoices in this lifecycle status; undefined for every status. */
+  status?: InvoiceStatus
+  /** First creation day to keep (ISO 8601 date); undefined for no lower bound. */
   from?: string
-  /** End date filter (ISO 8601). */
+  /** Last creation day to keep (ISO 8601 date), the whole day included; undefined for no upper bound. */
   to?: string
+}
+
+/** What narrows an invoice list: the search text and the shared filters; each member left out means no narrowing. */
+export interface InvoiceFilters extends InvoiceListFilters {
+  /** Search term matched against the invoice id and the payment method; empty for none. */
+  search?: string
+  /** Keep only the invoices of this client; the staff list only, the tab of a client names its client in the address. */
+  clientId?: number
 }
 
 /** One line of a new invoice. */

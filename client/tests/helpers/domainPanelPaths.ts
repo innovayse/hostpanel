@@ -1,10 +1,17 @@
 /**
- * The BFF paths the client domain panels' tests share, so a test that answers them from a stub BFF
- * route table names an action instead of spelling out the URL. The account reads a panel also makes
- * are in `accountPaths.ts`.
+ * The BFF paths of the client domain endpoints: the list, the transfer order and the actions on
+ * the domain every panel test opens, so a test that answers them from a stub BFF route table names
+ * an endpoint instead of spelling out the URL. The account reads a panel also makes are in
+ * `accountPaths.ts`.
  *
  * @module tests/helpers/domainPanelPaths
  */
+
+/** The domain endpoints that do not belong to a single domain. */
+export const DomainEndpoint = {
+  List: '/api/portal/client/domains',
+  TransferOrder: '/api/portal/client/domains/transfer-order',
+} as const
 
 /** The id of the domain every panel test opens. */
 export const DOMAIN_ID = '7'
@@ -31,4 +38,4 @@ type DomainActionPath = typeof DomainAction[keyof typeof DomainAction] | ''
  * @returns The BFF path.
  */
 export const domainPath = (action: DomainActionPath): string =>
-  `/api/portal/client/domains/${DOMAIN_ID}${action === '' ? '' : `/${action}`}`
+  `${DomainEndpoint.List}/${DOMAIN_ID}${action === '' ? '' : `/${action}`}`

@@ -121,7 +121,7 @@ After these limits, the package goes through the same checks as an uploaded one:
 
 ## Browse and install
 
-When the registry is on, the Plugins page has two tabs, Installed and Browse.
+When the registry is on, the Plugins page has three tabs, Installed, Browse and Settings. Installed shows your plugins as cards and has the **Upload plugin** button, a search box and filters. Browse shows the catalogue with the same cards.
 
 1. Open **Plugins** and choose **Browse**.
 2. Search by name, or pick a category (Payment, Provisioning, Registrar, App or Other). The list is paged.
@@ -135,7 +135,7 @@ An entry in the catalogue that has no usable version is left out of the list, an
 
 ### The details page
 
-A card opens the plugin's own page, which shows:
+A card opens the plugin's own page (the gear button on the card and the card title do the same). Its tabs are Overview, Settings, Versions, Licence and Changes, and the last three exist for registry plugins only. **Update** and **Uninstall** are on this page too. The page shows:
 
 - The name, the publisher, the price, the Verified badge, the installed version, a staged version that waits for a restart, and the update that is available.
 - Links the publisher gave: documentation, support, source repository, where to buy a licence, and the licence of the plugin.

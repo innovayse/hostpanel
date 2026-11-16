@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -67,6 +68,20 @@ public static class OrdersTestSeeds
     /// <returns>The new order's primary key.</returns>
     public static async Task<int> SeedOrderAsync(IntegrationTestFactory factory, OrderStatus status = OrderStatus.Pending)
     {
+        var ids = await SeedOrdersAsync(factory, [($"ORD-{Guid.NewGuid():N}"[..12], status)]);
+        return ids.Single();
+    }
+
+    /// <summary>
+    /// Seeds one client and one hosting product, and an order for them with one plain line per entry, saved one after the
+    /// other so a later entry is the newer order.
+    /// </summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <param name="orders">The number and the status to leave each order in.</param>
+    /// <returns>The primary keys of the new orders, in the order given.</returns>
+    public static async Task<List<int>> SeedOrdersAsync(
+        IntegrationTestFactory factory, IReadOnlyList<(string OrderNumber, OrderStatus Status)> orders)
+    {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -82,26 +97,61 @@ public static class OrdersTestSeeds
         db.Products.Add(product);
         await db.SaveChangesAsync();
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
-        order.AddItem(product.Id, "Starter Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
-
-        if (status == OrderStatus.Cancelled)
+        var ids = new List<int>();
+        foreach (var (orderNumber, status) in orders)
         {
-            order.Cancel();
-        }
-        else if (status == OrderStatus.Active)
-        {
-            order.Accept(DateTimeOffset.UtcNow);
-        }
-        else if (status == OrderStatus.UnderReview)
-        {
-            order.HoldForReview(60, [FraudReasonCode.DisposableEmail]);
+            var order = Order.Create(orderNumber, client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
+            order.AddItem(product.Id, "Starter Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+
+            if (status == OrderStatus.Cancelled)
+            {
+                order.Cancel();
+            }
+            else if (status == OrderStatus.Active)
+            {
+                order.Accept(TestMoments.Seeded);
+            }
+            else if (status == OrderStatus.UnderReview)
+            {
+                order.HoldForReview(60, [FraudReasonCode.DisposableEmail]);
+            }
+
+            db.Orders.Add(order);
+            await db.SaveChangesAsync();
+            ids.Add(order.Id);
         }
 
-        db.Orders.Add(order);
-        await db.SaveChangesAsync();
+        return ids;
+    }
 
-        return order.Id;
+    /// <summary>Seeds four orders of one client that differ in number and status, for the order list tests.</summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <returns>The mix, with alpha, beta, gamma and delta placed in that order, so delta is the newest.</returns>
+    public static async Task<OrderListMix> SeedOrderMixAsync(IntegrationTestFactory factory)
+    {
+        var token = Guid.NewGuid().ToString("N")[..8];
+        var ids = await SeedOrdersAsync(
+            factory,
+            [
+                ($"{token}-ALPHA", OrderStatus.Pending),
+                ($"{token}-BETA", OrderStatus.Cancelled),
+                ($"{token}-GAMMA", OrderStatus.Active),
+                ($"{token}-DELTA", OrderStatus.Pending),
+            ]);
+        return new OrderListMix(token, ids[0], ids[1], ids[2], ids[3]);
+    }
+
+    /// <summary>Reads one page of the order list.</summary>
+    /// <param name="admin">A client authenticated as Admin.</param>
+    /// <param name="url">The list address with its query string.</param>
+    /// <returns>The ids of the page in the order the list gave them, and the total count of matches.</returns>
+    public static async Task<(List<int> Ids, int TotalCount)> ListOrderIdsAsync(HttpClient admin, string url)
+    {
+        var response = await admin.GetAsync(url);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var ids = body.RootElement.GetProperty("items").EnumerateArray().Select(o => o.GetProperty("id").GetInt32()).ToList();
+        return (ids, body.RootElement.GetProperty("totalCount").GetInt32());
     }
 
     /// <summary>
@@ -116,7 +166,7 @@ public static class OrdersTestSeeds
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var order = await db.Orders.Include(o => o.Items).FirstAsync(o => o.Id == orderId);
-        order.Accept(DateTimeOffset.UtcNow);
+        order.Accept(TestMoments.Seeded);
         await db.SaveChangesAsync();
     }
 
@@ -140,7 +190,7 @@ public static class OrdersTestSeeds
         db.Clients.Add(holder);
         await db.SaveChangesAsync();
         db.Domains.Add(RegisteredDomain.Register(
-            holder.Id, domainName, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
+            holder.Id, domainName, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
         await db.SaveChangesAsync();
 
         var product = Product.Create(
@@ -182,7 +232,7 @@ public static class OrdersTestSeeds
         foreach (var name in new[] { first, second })
         {
             db.Domains.Add(RegisteredDomain.Register(
-                holder.Id, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
+                holder.Id, name, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
         }
 
         var product = Product.Create(
@@ -253,6 +303,24 @@ public static class OrdersTestSeeds
         return product.Id;
     }
 
+    /// <summary>Seeds an active USD product with a cap on live services and a one-per-client rule, and switches the bank transfer on.</summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <param name="max">The cap on live services, or null for unlimited.</param>
+    /// <param name="onePerClient">Whether a client may hold only one.</param>
+    /// <returns>The new product's primary key.</returns>
+    public static async Task<int> SeedLimitedProductAsync(IntegrationTestFactory factory, int? max, bool onePerClient)
+    {
+        await EnableBankTransferAsync(factory);
+        var productId = await SeedProductAsync(factory);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var product = await db.Products.FindAsync(productId);
+        product!.SetMaxActiveServices(max);
+        product.SetOnePerClient(onePerClient);
+        await db.SaveChangesAsync();
+        return productId;
+    }
+
     /// <summary>Seeds a client, a Pending order with one line, and its linked unpaid invoice.</summary>
     /// <param name="factory">The factory whose database the pair is seeded in.</param>
     /// <param name="currency">The ISO 4217 code the order and its invoice are billed in.</param>
@@ -271,7 +339,7 @@ public static class OrdersTestSeeds
         order.AddItem(await DomainsTestSeeds.SeedHostingProductAsync(db), "Starter Hosting", BillingCycle.Monthly, 25m, 25m, domain: null, hostname: null);
         db.Orders.Add(order);
 
-        var invoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), currency, DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), currency, TestMoments.Seeded);
         invoice.AddItem("Starter Hosting", 25m, 1);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();

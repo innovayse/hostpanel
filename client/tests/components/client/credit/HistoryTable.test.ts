@@ -10,6 +10,7 @@ import { mountClient } from '~/tests/helpers/mountClient'
 import HistoryTable from '~/components/client/credit/HistoryTable.vue'
 import type { ClientCreditEntry } from '~/types/clientcreditentry'
 import { CreditMovement } from '~/types/creditmovement'
+import { clientInvoicePath } from '~/constants/clientRoutes'
 
 /** A credit added by staff. */
 const added: ClientCreditEntry = { id: 11, date: '2026-10-01T09:00:00Z', movement: CreditMovement.TopUp, change: 40, balanceAfter: 40, invoiceId: 7 }
@@ -66,7 +67,7 @@ describe('ClientCreditHistoryTable', () => {
   it('links a movement to its invoice and shows no link for one that has none', () => {
     const wrapper = mountClient(HistoryTable, { props: { entries: [added, adjusted], currency: 'USD' } })
 
-    expect(wrapper.get('[data-testid="credit-entry-invoice-11"]').attributes('href')).toBe('/client/invoices/7')
+    expect(wrapper.get('[data-testid="credit-entry-invoice-11"]').attributes('href')).toBe(clientInvoicePath(7))
     expect(wrapper.find('[data-testid="credit-entry-invoice-13"]').exists()).toBe(false)
   })
 })

@@ -8,7 +8,7 @@ import { flushPromises } from '@vue/test-utils'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import type { MountWithKitOptions } from '~/tests/helpers/mountWithKit'
 import { AccountEndpoint, completeSessionPath, consentPath, defaultConsentPath } from '~/tests/helpers/accountPaths'
-import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
+import { stubLocalePath, stubRoute, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import { bodyOf } from '~/tests/helpers/requestBody'
@@ -66,7 +66,7 @@ beforeEach(async () => {
   list = []
   table = { [readOf(AccountEndpoint.StoredMethods)]: () => ({ body: list }) }
   stub = await startTransport(routeTable(table))
-  stubLocalePath('/en')
+  stubLocalePath(TEST_LOCALE_PREFIX)
   stubRoute()
 })
 

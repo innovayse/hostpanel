@@ -168,7 +168,8 @@ RUN rid="$(cat /tmp/runtime-id)"; \
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.22-alpine3.24@sha256:c8e9a3262af499a08fd3911542af57a35c7a11819ba5db2a0a1658e47417d11b AS prod
 
 # icu-data-full: the Alpine image is culture-invariant by default, and the API starts with en, ru and hy.
-RUN apk add --no-cache icu-libs icu-data-full
+# tzdata: the image carries no time zone database, so a TZ name such as Asia/Yerevan would silently fall back to UTC.
+RUN apk add --no-cache icu-libs icu-data-full tzdata
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 WORKDIR /app

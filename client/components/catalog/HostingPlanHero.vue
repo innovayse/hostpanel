@@ -12,7 +12,7 @@
     <UiDecor class="bottom-0 left-0 w-48 h-48 border-l-2 border-b-2 border-primary-500/30" />
 
     <UiContainer class="relative z-10">
-      <UiLink :to="localePath('/hosting')" tone="muted" :underline="false" class="inline-flex items-center gap-2 mb-10" testid="hosting-plan-back">
+      <UiLink :to="localePath(SITE_HOSTING_PATH)" tone="muted" :underline="false" class="inline-flex items-center gap-2 mb-10" testid="hosting-plan-back">
         <ArrowLeft :size="16" :stroke-width="2" />
         {{ $t('hosting.backToPlans') }}
       </UiLink>
@@ -27,7 +27,7 @@
 
       <!-- Not found -->
       <UiEmptyState v-else-if="!plan" :icon="AlertCircle" :title="$t('hosting.planNotFound')" data-testid="hosting-plan-missing">
-        <UiLink :to="localePath('/hosting')" testid="hosting-plan-all">{{ $t('hosting.viewAllPlans') }}</UiLink>
+        <UiLink :to="localePath(SITE_HOSTING_PATH)" testid="hosting-plan-all">{{ $t('hosting.viewAllPlans') }}</UiLink>
       </UiEmptyState>
 
       <!-- Plan -->
@@ -70,6 +70,7 @@
  */
 import { AlertCircle, ArrowLeft, ShoppingCart } from 'lucide-vue-next'
 import type { PortalProduct } from '~/types/portalproduct'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Props of HostingPlanHero. */
 interface Props {

@@ -387,6 +387,8 @@
     "hideThisProductFromThe": "Hide this product from the order form",
     "featured": "Recommended plan",
     "featuredHint": "Show this product with a \"Recommended\" badge on the storefront. Only one product per group can be recommended; saving this clears the others.",
+    "digitalService": "Digital service",
+    "digitalServiceHint": "The product is an electronic service for VAT (hosting, a licence, a domain that counts as one). A consumer in another EU member state is invoiced for it at the VAT rate of their own country. Not the same as a digital product delivered by a plugin.",
     "sortOrder": "Sort order",
     "sortOrderHint": "Position inside the group, lowest first. Products with the same number are sorted by name.",
     "sortOrderPlaceholder": "e.g. 1",
@@ -399,6 +401,11 @@
     "gracePeriod": "Grace period (days)",
     "gracePeriodHint": "Days a service stays usable after its due date before it is suspended.",
     "gracePeriodPlaceholder": "e.g. 7",
+    "maxActiveServices": "Max active services",
+    "maxActiveServicesHint": "How many services of this product may be active at once, counting unfulfilled orders. When reached, the product is sold out and hidden from the storefront. Leave empty or 0 for unlimited.",
+    "maxActiveServicesPlaceholder": "Unlimited",
+    "onePerClient": "One per client",
+    "onePerClientHint": "A client who already has an active service of this product cannot order it again.",
     "createProduct": "Create Product",
     "sharedHosting": "Shared Hosting",
     "dedicated": "Dedicated",
@@ -428,6 +435,10 @@
     "editSpecification": "Edit specification",
     "editProduct": "Edit product",
     "noProductsFoundCreateYour": "No products found. Create your first product to get started.",
+    "searchPlaceholder": "Search by name, SKU or slug",
+    "noProductsMatchYourFilters": "No products match your filters",
+    "clearFilters": "Clear filters",
+    "totalCount": "Products: {totalCount}",
     "typeSharedHosting": "Shared Hosting",
     "typeDedicated": "Dedicated",
     "typeDomain": "Domain",
@@ -616,10 +627,10 @@
     "editTld": "Edit TLD",
     "deleteTld": "Delete TLD",
     "noTldConfigurationsFoundAdd": "No TLD configurations found. Add your first TLD or import from a provider.",
-    "showingValueValue2OfLength": "Showing {value}-{value2} of {length} TLDs",
+    "noTldsMatchYourFilters": "No TLDs match your filters",
+    "clearFilters": "Clear filters",
+    "totalcountTldValue": "TLDs: {totalCount}",
     "deleteTldConfiguration": "Delete TLD Configuration",
-    "allProviders": "All Providers",
-    "allStatus": "All Status",
     "priceSyncComplete": "Price sync complete.",
     "deleteMessage": "Delete \".{tld}\" TLD configuration? This action cannot be undone.",
     "importComplete": "Import complete: {imported} imported, {updated} updated.",
@@ -667,6 +678,10 @@
         "title": "Tax rules",
         "description": "Tax rates by country and region."
       },
+      "vatRates": {
+        "title": "VAT rates",
+        "description": "The VAT rate of each EU member state, used for digital services sold to consumers."
+      },
       "emailTemplates": {
         "title": "Email templates",
         "description": "The messages the panel sends to clients and staff."
@@ -676,6 +691,17 @@
         "description": "Order screening, block lists and the fraud log."
       }
     }
+  },
+  "tabs": {
+    "label": "Settings sections",
+    "general": "General",
+    "appearance": "Appearance",
+    "integrations": "Integrations",
+    "advanced": "Advanced"
+  },
+  "advanced": {
+    "title": "Advanced settings",
+    "description": "Settings that have no card of their own. Edit the key and value pairs here."
   },
   "saveBar": {
     "unsaved": "{count} unsaved change | {count} unsaved changes",

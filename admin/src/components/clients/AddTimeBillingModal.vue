@@ -22,6 +22,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { nextRowKey } from '@/lib/rowKey'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole } from '@/utils/ui/table'
 
 const { t } = useI18n()
 
@@ -136,10 +137,10 @@ onMounted(() => fetchServices())
       <UiTable :density="UiTableDensity.Compact" :scrollable="false" data-testid="clients-time-billing-table">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('clients.addTimeBilling.item') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.hours') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.addTimeBilling.rate') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.addTimeBilling.item') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.description') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.hours') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.addTimeBilling.rate') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>

@@ -15,29 +15,31 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Seeds an active service renewing in the given number of days.</summary>
-    /// <param name="inDays">Days from now to its next renewal.</param>
+    /// <param name="host">The clocked host whose moment the days count from.</param>
+    /// <param name="inDays">Days from the host clock to its next renewal.</param>
     /// <param name="autoRenew">Whether it renews automatically.</param>
     /// <returns>The service id.</returns>
-    private async Task<int> SeedAsync(int inDays, bool autoRenew)
+    private async Task<int> SeedAsync(ClockedHost host, int inDays, bool autoRenew)
     {
         var id = await ServicesTestSeeds.SeedServiceAsync(factory, ServiceStatus.Active);
-        using var scope = factory.Services.CreateScope();
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var service = await context.ClientServices.SingleAsync(s => s.Id == id);
         service.ChangeBillingTerms(new ServiceBillingTerms(
             BillingCycle: BillingCycle.Monthly, Quantity: 1, FirstPaymentAmount: 5m, RecurringAmount: 5m,
-            NextRenewalAt: DateTimeOffset.UtcNow.AddDays(inDays), PaymentMethod: null, PromotionCode: null, SubscriptionId: null));
+            NextRenewalAt: host.Clock.GetUtcNow().AddDays(inDays), PaymentMethod: null, PromotionCode: null, SubscriptionId: null));
         service.SetAutoRenew(autoRenew);
         await context.SaveChangesAsync(CancellationToken.None);
         return id;
     }
 
     /// <summary>Reads the ids of the services on a page of the endpoint.</summary>
+    /// <param name="host">The clocked host the endpoint runs on.</param>
     /// <param name="window">The window name on the wire.</param>
     /// <returns>The service ids and the flag of each, by id.</returns>
-    private async Task<Dictionary<int, bool>> ListAsync(string window)
+    private async Task<Dictionary<int, bool>> ListAsync(ClockedHost host, string window)
     {
-        var admin = await ServicesTestSeeds.AdminClientAsync(factory);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await admin.GetAsync($"/api/services/renewals/upcoming?window={window}&pageSize=100");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -50,13 +52,14 @@ public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory fact
     [Fact]
     public async Task Windows_BringInLaterRenewals_AndKeepManualBillingVisible()
     {
-        var soon = await SeedAsync(10, autoRenew: true);
-        var later = await SeedAsync(45, autoRenew: false);
-        var farOff = await SeedAsync(75, autoRenew: true);
+        using var host = new ClockedHost(factory);
+        var soon = await SeedAsync(host, 10, autoRenew: true);
+        var later = await SeedAsync(host, 45, autoRenew: false);
+        var farOff = await SeedAsync(host, 75, autoRenew: true);
 
-        var in30 = await ListAsync("Next30Days");
-        var in60 = await ListAsync("Next60Days");
-        var in90 = await ListAsync("Next90Days");
+        var in30 = await ListAsync(host, "Next30Days");
+        var in60 = await ListAsync(host, "Next60Days");
+        var in90 = await ListAsync(host, "Next90Days");
 
         in30.Keys.Should().Contain(soon).And.NotContain(later).And.NotContain(farOff);
         in60.Keys.Should().Contain([soon, later]).And.NotContain(farOff);
@@ -70,16 +73,17 @@ public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory fact
     [Fact]
     public async Task InactiveServices_AreLeftOut()
     {
-        var id = await SeedAsync(5, autoRenew: true);
-        using (var scope = factory.Services.CreateScope())
+        using var host = new ClockedHost(factory);
+        var id = await SeedAsync(host, 5, autoRenew: true);
+        using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var service = await context.ClientServices.SingleAsync(s => s.Id == id);
-            service.Terminate(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service.Terminate(host.Clock.GetUtcNow(), hostingAlreadyUpdated: true);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
-        (await ListAsync("Next30Days")).Keys.Should().NotContain(id);
+        (await ListAsync(host, "Next30Days")).Keys.Should().NotContain(id);
     }
 
     /// <summary>A window that is not one of the three is refused with 400 <c>VALIDATION_ERROR</c>.</summary>

@@ -47,12 +47,16 @@ export enum ApiPath {
   AdminPluginSlots = '/admin/plugins/slots',
   /** `/admin/plugins/ui` index of the plugin pages and menu items, and each page by its path. */
   AdminPluginUi = '/admin/plugins/ui',
+  /** `/admin/products` the paged staff product list. */
+  AdminProducts = '/admin/products',
   /** `/admin/projects` collection and its members. */
   AdminProjects = '/admin/projects',
   /** `/admin/server-groups` collection and its members. */
   AdminServerGroups = '/admin/server-groups',
   /** `/admin/servers` collection and its members. */
   AdminServers = '/admin/servers',
+  /** `/admin/servers/options` the unpaged lean server lookup the pickers and the dashboard read. */
+  AdminServerOptions = '/admin/servers/options',
   /** `/admin/release-status`: installed version and latest GitHub release. */
   AdminReleaseStatus = '/admin/release-status',
   /** `/admin/version`: installed version, readable by every staff role. */
@@ -69,6 +73,8 @@ export enum ApiPath {
   AdminTldConfigs = '/admin/tld-configs',
   /** `/admin/users` collection and its members. */
   AdminUsers = '/admin/users',
+  /** `/admin/vat-rates` collection and its members. */
+  AdminVatRates = '/admin/vat-rates',
   /** `/announcements` collection and its members. */
   Announcements = '/announcements',
   /** `/auth` collection and its members. */

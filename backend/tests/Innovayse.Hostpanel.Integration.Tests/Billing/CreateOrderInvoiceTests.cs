@@ -29,8 +29,9 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
     {
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
 
+        using var host = new ClockedHost(factory);
         Result<int> result;
-        using (var scope = factory.Services.CreateScope())
+        using (var scope = host.Services.CreateScope())
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
@@ -43,7 +44,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         }
 
         result.IsSuccess.Should().BeTrue();
-        using var check = factory.Services.CreateScope();
+        using var check = host.Services.CreateScope();
         var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.AsNoTracking().Include(i => i.Items).SingleAsync(i => i.Id == result.Value);
         invoice.ClientId.Should().Be(clientId);
@@ -53,7 +54,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         invoice.Items.Should().HaveCount(2);
         invoice.Items.Single(i => i.Description == "Starter Hosting").ProductSnapshot.Should().Be(Snapshot);
         invoice.Items.Single(i => i.Description == "example.test").ProductSnapshot.Should().BeNull();
-        invoice.DueDate.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(7), TimeSpan.FromMinutes(5));
+        invoice.DueDate.Should().Be(host.Clock.GetUtcNow().AddDays(7));
     }
 
     /// <summary>The payment term comes from the <c>Orders</c> settings, not from the code.</summary>
@@ -62,8 +63,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
     public async Task HandleAsync_ConfiguredPaymentTerm_DatesTheInvoiceByItAsync()
     {
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
-        using var host = factory.WithWebHostBuilder(builder =>
-            builder.UseSetting("Orders:InvoicePaymentTermDays", "30"));
+        using var host = new ClockedHost(factory, configure: builder => builder.UseSetting("Orders:InvoicePaymentTermDays", "30"));
 
         Result<int> result;
         using (var scope = host.Services.CreateScope())
@@ -77,7 +77,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         using var check = host.Services.CreateScope();
         var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == result.Value);
-        invoice.DueDate.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(30), TimeSpan.FromMinutes(5));
+        invoice.DueDate.Should().Be(host.Clock.GetUtcNow().AddDays(30));
     }
 
     /// <summary>A discounted line keeps its discount, and the invoice totals the discounted price.</summary>

@@ -26,7 +26,7 @@ public sealed class RecoverInterruptedMigrationJobsTests(IntegrationTestFactory 
     [Fact]
     public async Task StaleJobs_AreFailed_FreshJobsAreKeptAsync()
     {
-        using var host = new ClockedHost(factory, TestMoments.Seeded);
+        using var host = new ClockedHost(factory);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var stale = scope.ServiceProvider.GetRequiredService<IOptions<ScheduledJobsOptions>>().Value.MigrationStaleAfter;

@@ -1,32 +1,28 @@
 <script setup lang="ts">
 /**
- * Displays a single installed plugin as a glass card: a logo tile, the name with its version, the state
- * badge, the description, and the actions under a divider; it has a remove button; a plugin shipped with
- * the server build is marked built-in and has no remove button, since the server refuses it.
+ * One plugin as a card, drawn from a {@link PluginCardModel} so the same card serves the installed list
+ * and the registry. Top to bottom: the title row (logo, name, verified mark and the state badges), one
+ * meta line (publisher, category, price), the description clamped to two lines, one row of tags, and a
+ * footer with the downloads and version on the left and the `action` slot on the right.
  *
- * A refused plugin (one that broke a manifest rule) shows a Refused badge instead of a loaded
- * status, with its id, the broken rule and the localised reason; it is never shown as enabled and
- * can only be removed. A newer upload waiting for the restart shows its staged version, a newer version in the
- * registry shows an update badge with an Update button, a plugin the registry lists has a Details button, and each capability the manifest declares (such as serving pages from a
- * fulfilment plugin) is shown as a badge.
- *
- * While the installed list loads the card is drawn with no plugin and `loading` on: the same header, body and footer,
- * with placeholder bars where the plugin's own text and badges go and the remove button disabled.
+ * The whole card opens the plugin's details page: the name is a link stretched over the card, so a
+ * click anywhere follows it and a keyboard user reaches it by tab. The `action` and `notice` slots sit
+ * above that link, so their buttons stay clickable. The `notice` slot carries the refusal block of a
+ * plugin the host skipped; the card itself never reads the refusal data.
  */
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PluginStatus } from '@/types/plugin'
-import type { PluginListItemDto } from '@/types/plugin'
+import type { RouteLocationRaw } from 'vue-router'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCollapse from '@/components/ui/UiCollapse.vue'
-import UiMarkdown from '@/components/ui/UiMarkdown.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { Icon } from '@/lib/icons'
+import { PluginCardBadge } from '@/types/plugin'
+import type { PluginCardModel } from '@/types/plugin'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -34,225 +30,149 @@ import { UiTone } from '@/utils/ui/tone'
 const { t } = useI18n()
 
 /** Props for PluginCard. */
-const props = withDefaults(defineProps<{
-  /** The installed plugin to show; null while the installed list loads. */
-  plugin: PluginListItemDto | null
-  /** True while the installed list loads: the card draws placeholder bars in place of the plugin's data. */
-  loading?: boolean
-  /** True while this plugin's removal is in flight. */
-  removing?: boolean
-  /** The newer version the registry offers for this plugin; null or omitted when it is up to date. */
-  updateVersion?: string | null
-  /** Release notes of the newer registry version as Markdown; null when the registry sent none. */
-  updateChangelog?: string | null
-  /** True while this plugin's update from the registry is in flight. */
-  updating?: boolean
-  /** True when the registry lists this plugin, so it has a details page to open. */
-  hasDetails?: boolean
-}>(), {
-  loading: false,
-  removing: false,
-  updateVersion: null,
-  updateChangelog: null,
-  updating: false,
-  hasDetails: false,
-})
-
-/** True when the host skipped this plugin because it broke a manifest rule. */
-const refused = computed<boolean>(() => props.plugin?.status === PluginStatus.Refused)
-
-/** Id of the plugin; empty while the card is a placeholder. */
-const pluginId = computed<string>(() => props.plugin?.id ?? '')
-
-/** Localised reason for the broken rule; empty when the plugin is not refused. */
-const reason = computed<string>(() =>
-  props.plugin?.refusedRule ? t(`plugins.rules.${props.plugin.refusedRule}`) : '',
-)
-
-/** Whether the release notes of the installed version are open. */
-const notesOpen = ref(false)
-
-/** Whether the release notes of the offered update are open. */
-const updateNotesOpen = ref(false)
-
-/** Events emitted by PluginCard. */
-const emit = defineEmits<{
-  /** Emitted with the plugin id when the admin asks to remove it. */
-  remove: [id: string]
-  /** Emitted with the plugin id and the newer version when the admin asks to update it from the registry. */
-  update: [id: string, version: string]
-  /** Emitted with the plugin id when the admin opens its details page. */
-  details: [id: string]
+const props = defineProps<{
+  /** What the card shows. */
+  plugin: PluginCardModel
+  /** The plugin's details page, opened by a click anywhere on the card. */
+  to: RouteLocationRaw
 }>()
+
+/** Slots of PluginCard. */
+defineSlots<{
+  /** The action buttons at the right end of the footer (install, update, remove). */
+  action?: () => unknown
+  /** The block under the tags, such as the refusal explanation. */
+  notice?: () => unknown
+}>()
+
+/** Groups the digits of a download count the way the browser's language does. */
+const downloadFormat = new Intl.NumberFormat()
+
+/** Tone of each badge. */
+const badgeTone: Record<PluginCardBadge, UiTone> = {
+  [PluginCardBadge.Active]: UiTone.Success,
+  [PluginCardBadge.PendingRestart]: UiTone.Warning,
+  [PluginCardBadge.Refused]: UiTone.Danger,
+  [PluginCardBadge.Staged]: UiTone.Info,
+  [PluginCardBadge.Update]: UiTone.Warning,
+  [PluginCardBadge.BuiltIn]: UiTone.Neutral,
+}
+
+/** The badges that are a state of the plugin and so carry a status dot. */
+const dotBadges: PluginCardBadge[] = [PluginCardBadge.Active, PluginCardBadge.PendingRestart, PluginCardBadge.Refused]
+
+/**
+ * Text of a badge, with the version it names where it names one.
+ *
+ * @param badge - The badge to label.
+ * @returns The label in the operator's language.
+ */
+const badgeLabel = (badge: PluginCardBadge): string => {
+  switch (badge) {
+    case PluginCardBadge.Active:
+      return t('shared.active')
+    case PluginCardBadge.PendingRestart:
+      return t('plugins.pluginCard.pendingRestart')
+    case PluginCardBadge.Refused:
+      return t('plugins.pluginCard.refused')
+    case PluginCardBadge.Staged:
+      return t('plugins.pluginCard.staged', { version: props.plugin.stagedVersion })
+    case PluginCardBadge.Update:
+      return t('plugins.pluginCard.updateAvailable', { version: props.plugin.updateVersion })
+    case PluginCardBadge.BuiltIn:
+      return t('plugins.pluginCard.builtIn')
+  }
+}
+
+/** The meta line's parts that exist, in order: publisher, category, price. */
+const metaParts = computed<string[]>(() =>
+  [
+    props.plugin.publisher ? t('plugins.pluginRegistry.byAuthor', { author: props.plugin.publisher }) : '',
+    props.plugin.category,
+    props.plugin.pricingLabel,
+  ].filter(part => part !== ''),
+)
 </script>
 
 <template>
-  <UiCard padding="md" class="h-full" :data-testid="plugin ? `plugin-card-${plugin.id}` : 'plugin-card-loading'" :aria-busy="loading || undefined">
-    <UiStack gap="md" class="h-full">
-      <!-- Header: the logo tile, the name with its version, and the state at the right end -->
-      <UiStack direction="row" align="start" justify="between" gap="md">
-        <UiStack direction="row" align="center" gap="md" class="min-w-0">
-          <UiPluginAvatar v-if="plugin" :name="plugin.name" :icon-url="plugin.iconUrl" :color="plugin.color" :size="UiSize.Lg" />
-          <UiSkeletonBar v-else class="h-12 w-12 rounded-control" aria-hidden="true" />
-          <UiStack v-if="plugin" gap="none" class="min-w-0">
-            <UiText tone="primary" size="lg" class="truncate font-semibold">{{ plugin.name }}</UiText>
-            <UiText tone="muted" size="xs" class="font-mono">v{{ plugin.version }}</UiText>
-          </UiStack>
-          <UiStack v-else gap="xs" aria-hidden="true">
-            <UiSkeletonBar class="h-5 w-32 rounded-md" />
-            <UiSkeletonBar class="h-3 w-12 rounded-md" />
-          </UiStack>
-        </UiStack>
-        <UiSkeletonBar v-if="!plugin" class="h-5 w-16 rounded-full" aria-hidden="true" />
-        <UiBadge v-else-if="refused" :tone="UiTone.Danger" dot small :data-testid="`plugin-refused-${plugin.id}`">
-          {{ t('plugins.pluginCard.refused') }}
-        </UiBadge>
-        <UiBadge v-else :tone="plugin.isLoaded ? UiTone.Success : UiTone.Warning" dot small>
-          {{ plugin.isLoaded ? t('shared.active') : t('plugins.pluginCard.pendingRestart') }}
+  <UiCard
+    padding="md"
+    class="relative flex h-full flex-col gap-3 border border-transparent transition-colors hover:border-border-strong has-[a:focus-visible]:border-text-accent"
+    :data-testid="`plugin-card-${plugin.id}`"
+  >
+    <UiStack direction="row" align="center" justify="between" gap="sm">
+      <UiStack direction="row" align="center" gap="sm" class="min-w-0">
+        <UiPluginAvatar :name="plugin.name" :icon-url="plugin.iconUrl" :color="plugin.color ?? undefined" :size="UiSize.Lg" />
+        <UiLink
+          :to="to"
+          class="min-w-0 truncate rounded-control outline-none after:absolute after:inset-0 after:content-['']"
+          :data-testid="`plugin-card-link-${plugin.id}`"
+        >
+          <UiText as="span" tone="primary" size="lg" class="font-semibold">{{ plugin.name }}</UiText>
+        </UiLink>
+        <UiIcon
+          v-if="plugin.verified"
+          :markup="Icon.CheckCircle"
+          size="sm"
+          class="shrink-0 text-status-green"
+          role="img"
+          :aria-label="t('plugins.pluginRegistry.verified')"
+          :data-testid="`plugin-card-verified-${plugin.id}`"
+        />
+      </UiStack>
+      <UiStack direction="row" align="center" gap="xs" class="shrink-0">
+        <UiBadge
+          v-for="badge in plugin.badges"
+          :key="badge"
+          :tone="badgeTone[badge]"
+          :dot="dotBadges.includes(badge)"
+          small
+          :data-testid="`plugin-card-badge-${badge}-${plugin.id}`"
+        >
+          {{ badgeLabel(badge) }}
         </UiBadge>
       </UiStack>
+    </UiStack>
 
-      <UiStack gap="xs" class="min-w-0 flex-1">
-        <template v-if="plugin">
-          <UiText tone="muted" size="sm" class="line-clamp-2">{{ plugin.description }}</UiText>
-          <UiStack direction="row" align="center" gap="xs" wrap>
-            <UiBadge
-              v-if="plugin.stagedVersion !== null"
-              :tone="UiTone.Info"
-              small
-              :data-testid="`plugin-staged-${plugin.id}`"
-            >
-              {{ t('plugins.pluginCard.staged', { version: plugin.stagedVersion }) }}
-            </UiBadge>
-            <UiBadge
-              v-if="updateVersion"
-              :tone="UiTone.Warning"
-              small
-              :data-testid="`plugin-update-${plugin.id}`"
-            >
-              {{ t('plugins.pluginCard.updateAvailable', { version: updateVersion }) }}
-            </UiBadge>
-            <UiBadge v-if="plugin.isBuiltIn" :tone="UiTone.Info" small :data-testid="`plugin-builtin-${plugin.id}`">
-              {{ t('plugins.pluginCard.builtIn') }}
-            </UiBadge>
-            <UiBadge
-              v-for="capability in plugin.capabilities"
-              :key="capability"
-              :tone="UiTone.Neutral"
-              small
-              :data-testid="`plugin-capability-${plugin.id}-${capability}`"
-            >
-              {{ t(`plugins.pluginCard.capabilities.${capability}`) }}
-            </UiBadge>
-          </UiStack>
-          <UiStack v-if="refused" gap="xs" :data-testid="`plugin-refusal-${plugin.id}`">
-            <UiText tone="danger" size="sm">{{ reason }}</UiText>
-            <UiText tone="muted" size="xs" class="font-mono">
-              {{ t('plugins.pluginCard.brokenRule', { id: plugin.id, rule: plugin.refusedRule }) }}
-            </UiText>
-            <UiText v-if="plugin.refusedDetail" tone="muted" size="xs" class="font-mono break-all">
-              {{ plugin.refusedDetail }}
-            </UiText>
-          </UiStack>
-          <UiStack v-if="!refused" gap="xs">
-            <UiStack direction="row" align="center" gap="sm" wrap>
-              <UiButton
-                type="button"
-                :variant="UiButtonVariant.Link"
-                size="sm"
-                :aria-expanded="notesOpen"
-                :data-testid="`plugin-notes-toggle-${plugin.id}`"
-                @click="notesOpen = !notesOpen"
-              >
-                {{ notesOpen ? t('plugins.pluginCard.hideNotes') : t('plugins.pluginCard.showNotes', { version: plugin.version }) }}
-              </UiButton>
-              <UiButton
-                v-if="updateVersion"
-                type="button"
-                :variant="UiButtonVariant.Link"
-                size="sm"
-                :aria-expanded="updateNotesOpen"
-                :data-testid="`plugin-update-notes-toggle-${plugin.id}`"
-                @click="updateNotesOpen = !updateNotesOpen"
-              >
-                {{ updateNotesOpen ? t('plugins.pluginCard.hideUpdateNotes') : t('plugins.pluginCard.showUpdateNotes', { version: updateVersion }) }}
-              </UiButton>
-              <!-- The details page explains the whole update, with the notes of every version in between. -->
-              <UiButton
-                v-if="updateVersion && hasDetails"
-                type="button"
-                :variant="UiButtonVariant.Link"
-                size="sm"
-                :data-testid="`plugin-changes-${plugin.id}`"
-                @click="emit('details', pluginId)"
-              >
-                {{ t('plugins.pluginCard.whatChanged', { from: plugin.version, to: updateVersion }) }}
-              </UiButton>
-            </UiStack>
-            <UiCollapse :open="notesOpen">
-              <UiMarkdown
-                :source="plugin.changelog ?? null"
-                :empty="t('plugins.pluginCard.noNotes')"
-                :data-testid="`plugin-notes-${plugin.id}`"
-              />
-            </UiCollapse>
-            <UiCollapse :open="updateNotesOpen && !!updateVersion">
-              <UiMarkdown
-                :source="updateChangelog"
-                :empty="t('plugins.pluginCard.noNotes')"
-                :data-testid="`plugin-update-notes-${plugin.id}`"
-              />
-            </UiCollapse>
-          </UiStack>
+    <UiText v-if="metaParts.length > 0" tone="muted" size="xs" class="truncate" :data-testid="`plugin-card-meta-${plugin.id}`">
+      {{ metaParts.join(' · ') }}
+    </UiText>
+
+    <UiText tone="muted" size="sm" class="line-clamp-2" :data-testid="`plugin-card-description-${plugin.id}`">
+      {{ plugin.description }}
+    </UiText>
+
+    <UiStack
+      v-if="plugin.tags.length > 0"
+      direction="row"
+      align="center"
+      gap="xs"
+      class="overflow-hidden"
+      :data-testid="`plugin-card-tags-${plugin.id}`"
+    >
+      <UiBadge v-for="tag in plugin.tags" :key="tag" :tone="UiTone.Neutral" small>
+        {{ t('plugins.pluginRegistry.tag', { tag }) }}
+      </UiBadge>
+    </UiStack>
+
+    <UiStack v-if="$slots.notice" class="relative">
+      <slot name="notice" />
+    </UiStack>
+
+    <UiStack direction="row" align="center" justify="between" gap="sm" class="mt-auto border-t border-border pt-3">
+      <UiStack direction="row" align="center" gap="md" class="min-w-0">
+        <UiStack v-if="plugin.downloads !== null" direction="row" align="center" gap="xs" :data-testid="`plugin-card-downloads-${plugin.id}`">
+          <UiIcon :markup="Icon.Download" size="sm" />
           <UiText tone="muted" size="xs">
-            {{ t('plugins.pluginCard.categoryByAuthor', { category: plugin.category, author: plugin.author }) }}
+            {{ t('plugins.pluginRegistry.downloads', { count: downloadFormat.format(plugin.downloads) }) }}
           </UiText>
-        </template>
-        <UiStack v-else gap="xs" aria-hidden="true">
-          <UiSkeletonBar class="h-4 w-full rounded-md" />
-          <UiSkeletonBar class="h-4 w-2/3 rounded-md" />
-          <UiSkeletonBar class="h-3 w-40 rounded-md" />
         </UiStack>
+        <UiText tone="muted" size="xs" class="font-mono" :data-testid="`plugin-card-version-${plugin.id}`">
+          {{ t('plugins.pluginRegistry.version', { version: plugin.version }) }}
+        </UiText>
       </UiStack>
-
-      <!-- Footer: the actions under a divider -->
-      <UiStack direction="row" align="center" justify="end" gap="sm" wrap class="border-t border-border pt-3">
-      <UiButton
-        v-if="hasDetails"
-        type="button"
-        :variant="UiButtonVariant.Secondary"
-        size="sm"
-        :data-testid="`plugin-details-${pluginId}`"
-        @click="emit('details', pluginId)"
-      >
-        {{ t('plugins.pluginCard.details') }}
-      </UiButton>
-
-      <UiButton
-        v-if="updateVersion"
-        type="button"
-        :variant="UiButtonVariant.Primary"
-        size="sm"
-        :loading="updating"
-        :disabled="removing"
-        :data-testid="`plugin-update-button-${pluginId}`"
-        @click="emit('update', pluginId, updateVersion)"
-      >
-        {{ t('plugins.pluginRegistry.update', { version: updateVersion }) }}
-      </UiButton>
-
-      <UiButton
-        v-if="!plugin?.isBuiltIn"
-        type="button"
-        :variant="UiButtonVariant.Danger"
-        size="sm"
-        :loading="removing"
-        :disabled="loading || updating"
-        :data-testid="`plugin-remove-${pluginId}`"
-        @click="emit('remove', pluginId)"
-      >
-        {{ t('plugins.pluginCard.remove') }}
-      </UiButton>
+      <UiStack v-if="$slots.action" direction="row" align="center" gap="sm" class="relative shrink-0">
+        <slot name="action" />
       </UiStack>
     </UiStack>
   </UiCard>

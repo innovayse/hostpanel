@@ -485,7 +485,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         var sku = ProductsTestSeeds.UniqueSku();
         var race = new SkuRaceSaveInterceptor(sku.ToUpperInvariant());
         using var host = SkuRaceHost.Create(factory, race);
-        var client = await SkuRaceHost.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await ProductsTestSeeds.CreateProductAsync(client);
 
         var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, null, 3));
@@ -606,5 +606,70 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Toggle", monthlyPrice = 3m, annualPrice = 30m, isHidden = false }))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StateAsync()).Should().Be((nameof(ProductStatus.Active), true, 1));
+    }
+
+    /// <summary>
+    /// <c>isDigitalService</c> on update turns the VAT electronic service flag on or off, and an update that omits it keeps
+    /// whatever is stored, so a caller that does not know the field never changes it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_DigitalService_TogglesTheFlagAndKeepsItWhenOmitted()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        async Task<bool> FlagAsync() =>
+            (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("isDigitalService").GetBoolean();
+
+        (await FlagAsync()).Should().BeFalse();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag", monthlyPrice = 3m, annualPrice = 30m, isDigitalService = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeTrue();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag Renamed", monthlyPrice = 3m, annualPrice = 30m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeTrue();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag", monthlyPrice = 3m, annualPrice = 30m, isDigitalService = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// <c>maxActiveServices</c> and <c>onePerClient</c> are set on update, kept by an update that omits them, and
+    /// cleared by <c>maxActiveServices: 0</c> and <c>onePerClient: false</c>.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_OrderLimits_SetKeepAndClear()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Limits", type = ProductType.SharedHosting, monthlyPrice = 3m, annualPrice = 30m,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        async Task<(int? Max, bool One)> StateAsync()
+        {
+            var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+            var max = dto.GetProperty("maxActiveServices");
+            return (max.ValueKind == JsonValueKind.Null ? null : max.GetInt32(), dto.GetProperty("onePerClient").GetBoolean());
+        }
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Limits", monthlyPrice = 3m, annualPrice = 30m, maxActiveServices = 50, onePerClient = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be(((int?)50, true));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Limits", monthlyPrice = 3m, annualPrice = 30m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be(((int?)50, true));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Limits", monthlyPrice = 3m, annualPrice = 30m, maxActiveServices = 0, onePerClient = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be(((int?)null, false));
     }
 }

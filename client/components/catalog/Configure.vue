@@ -2,7 +2,7 @@
   <UiStack gap="none" class="bg-ui-page py-10 md:py-16 [.tpl-classic_&]:[--accent:rgb(var(--classic-brand))]" data-testid="configure">
     <UiContainer>
       <div>
-        <UiLink :to="localePath('/products')" tone="muted" :underline="false" class="inline-flex items-center gap-2 text-sm mb-8" testid="configure-back">
+        <UiLink :to="localePath(SITE_PRODUCTS_PATH)" tone="muted" :underline="false" class="inline-flex items-center gap-2 text-sm mb-8" testid="configure-back">
           <ArrowLeft :size="16" :stroke-width="2" />
           {{ $t('configure.back') }}
         </UiLink>
@@ -20,7 +20,7 @@
 
         <!-- Not found -->
         <UiEmptyState v-else-if="!found" :icon="AlertCircle" :title="$t('configure.notFound')" data-testid="configure-missing">
-          <UiLink :to="localePath('/products')" testid="configure-missing-back">{{ $t('configure.back') }}</UiLink>
+          <UiLink :to="localePath(SITE_PRODUCTS_PATH)" testid="configure-missing-back">{{ $t('configure.back') }}</UiLink>
         </UiEmptyState>
 
         <!-- Configure layout -->
@@ -129,7 +129,7 @@
             <UiText size="xs" tone="subtle" class="mt-4 text-center flex items-center justify-center gap-1.5">
               <HelpCircle :size="13" :stroke-width="2" />
               {{ $t('configure.haveQuestions') }}
-              <UiLink :to="localePath('/contact')" :underline="false" class="hover:underline" testid="configure-contact">{{ $t('configure.clickHere') }}</UiLink>
+              <UiLink :to="localePath(SITE_CONTACT_PATH)" :underline="false" class="hover:underline" testid="configure-contact">{{ $t('configure.clickHere') }}</UiLink>
             </UiText>
           </div>
         </div>
@@ -150,6 +150,7 @@
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle, HelpCircle } from 'lucide-vue-next'
 import type { PricingCycle } from '~/types/pricingcycle'
 import type { PricingCycleOption } from '~/types/pricingcycleoption'
+import { SITE_CONTACT_PATH, SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
 
 /** Props of Configure. */
 interface Props {

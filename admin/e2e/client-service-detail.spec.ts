@@ -42,7 +42,7 @@ const stubServicePage = (page: Page, service: ServiceDetail, saves: StubRoute[])
       json(HttpMethod.Get, servicePath, service),
       json(HttpMethod.Get, `/api/clients/${adaDetail.id}`, adaDetail),
       json(HttpMethod.Get, '/api/services', { items: [], pageNumber: 1, pageSize: 100, totalCount: 0, totalPages: 0 }),
-      json(HttpMethod.Get, '/api/admin/servers', []),
+      json(HttpMethod.Get, '/api/admin/servers/options', []),
       json(HttpMethod.Get, '/api/products', []),
     ],
   })

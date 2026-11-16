@@ -44,7 +44,7 @@ public sealed class ConvertQuoteToInvoiceTests(IntegrationTestFactory factory) :
         {
             clientId,
             subject = "Fractions",
-            expiryDate = DateTimeOffset.UtcNow.AddDays(30),
+            expiryDate = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             items = new[]
             {

@@ -23,7 +23,7 @@ public sealed class FakeHostingProbe : IHostingProbe
     {
         ProbedDomains.Add(input.Domain);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         return Task.FromResult(new HostingInfoDto([Nameserver], new HostingSslDto(true, Issuer, now.AddDays(-30), now.AddDays(60))));
     }
 }

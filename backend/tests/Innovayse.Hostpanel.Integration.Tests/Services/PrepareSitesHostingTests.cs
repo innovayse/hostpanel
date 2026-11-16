@@ -80,13 +80,13 @@ public sealed class PrepareSitesHostingTests(IntegrationTestFactory factory) : I
             var group = ProductGroup.Create($"sites-{Guid.NewGuid():N}", null);
             context.ProductGroups.Add(group);
             await context.SaveChangesAsync(CancellationToken.None);
-            var product = Product.Create(group.Id, "AI Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "AI Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
             product.SetMetadata(metadata);
             context.Products.Add(product);
             await context.SaveChangesAsync(CancellationToken.None);
-            var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+            var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
             service.AssignHostingAccount(domain, "web", "Secret-12345");
-            await ServicesTestSeeds.AddActivatedAsync(context, service, "web", DateTimeOffset.UtcNow, serverId);
+            await ServicesTestSeeds.AddActivatedAsync(context, service, "web", TestMoments.Seeded, serverId);
             await context.SaveChangesAsync(CancellationToken.None);
             return (clientId, serverId, service.Id, domain);
         }

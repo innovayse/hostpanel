@@ -92,4 +92,14 @@ describe('IntegrationCard', () => {
 
     expect(wrapper.find('[data-testid="integration-connection-bank-transfer"]').exists()).toBe(false)
   })
+
+  it('draws the same card with bars and no link while there is no integration', () => {
+    const wrapper = mountWithApp(IntegrationCard)
+    const card = wrapper.get('[data-testid="integration-card-loading"]')
+
+    expect(card.attributes('href')).toBeUndefined()
+    expect(wrapper.find('[aria-busy="true"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(5)
+    expect(wrapper.text()).toContain('Configure')
+  })
 })

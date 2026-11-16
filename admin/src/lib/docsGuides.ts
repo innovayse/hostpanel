@@ -13,6 +13,7 @@ export const DOCS_GUIDES: Partial<Record<string, string>> = {
   [AppRoute.Servers]: 'servers/servers',
   [AppRoute.IntegrationsPayments]: 'payments/gateways',
   [AppRoute.Migration]: 'migration/from-another-system',
+  [AppRoute.SettingsGeneral]: 'staff/system-settings',
   [AppRoute.SettingsEmailTemplates]: 'staff/email-templates',
   [AppRoute.SettingsTldPricing]: 'staff/tld-pricing',
   [AppRoute.SettingsProducts]: 'staff/products',

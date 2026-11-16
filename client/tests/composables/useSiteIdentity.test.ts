@@ -4,25 +4,20 @@
  * @module tests/composables/useSiteIdentity.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useSiteIdentity } from '~/composables/useSiteIdentity'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 
-/**
- * Stubs the settings reader with a fixed set of values.
- *
- * @param values Setting key to value.
- */
-const stubSettings = (values: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('useSiteIdentity', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('uses the name and tagline the operator set', () => {
-    stubSettings({ 'portal.site.name': 'Acme Hosting', 'portal.site.tagline': 'Fast and calm' })
+  it('uses the name and tagline the operator set', async () => {
+    await loadPortalSettings(replies, {
+      [PortalSettingKey.SiteName]: 'Acme Hosting',
+      [PortalSettingKey.SiteTagline]: 'Fast and calm',
+    })
 
     const { name, tagline } = useSiteIdentity()
 
@@ -30,8 +25,8 @@ describe('useSiteIdentity', () => {
     expect(tagline.value).toBe('Fast and calm')
   })
 
-  it('falls back to the neutral product name and an empty tagline', () => {
-    stubSettings({})
+  it('falls back to the neutral product name and an empty tagline', async () => {
+    await loadPortalSettings(replies)
 
     const { name, tagline } = useSiteIdentity()
 

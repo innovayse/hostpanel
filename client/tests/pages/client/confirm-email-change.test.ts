@@ -9,7 +9,8 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { settle } from '~/tests/helpers/settle'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -17,6 +18,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ConfirmEmailChangePage from '~/pages/client/confirm-email-change.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { CLIENT_ACCOUNT_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /** The BFF paths the page uses: the confirmation, and the session clear it ends with. */
 const PATHS = {
@@ -46,31 +48,31 @@ describe('client confirm-email-change page', () => {
   it('confirms the change from the link, ends this session and offers sign-in', async () => {
     stubAuthRuntime({ query: { email: 'new@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailChangePage)
+    const wrapper = await mountPage(ConfirmEmailChangePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-email-change-success"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, PATHS.confirm)[0])).toEqual({ email: 'new@example.com', token: 'tok' })
     expect(requestsTo(stub.requests, PATHS.logout)).toHaveLength(1)
     expect(wrapper.find('[data-testid="confirm-email-change-success"]').text()).toContain('client.emailChange.signInAgain')
-    expect(wrapper.find('[data-testid="confirm-email-change-signin"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="confirm-email-change-signin"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('shows the API sentence and a way back to the account when it is refused', async () => {
     table[`POST ${PATHS.confirm}`] = { status: 400, body: { detail: 'This link has expired.' } }
     stubAuthRuntime({ query: { email: 'new@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailChangePage)
+    const wrapper = await mountPage(ConfirmEmailChangePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-email-change-failed"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="confirm-email-change-failed"]').text()).toContain('This link has expired.')
-    expect(wrapper.find('[data-testid="confirm-email-change-account"]').attributes('href')).toBe('/client/account')
+    expect(wrapper.find('[data-testid="confirm-email-change-account"]').attributes('href')).toBe(CLIENT_ACCOUNT_PATH)
     expect(requestsTo(stub.requests, PATHS.logout)).toHaveLength(0)
   })
 
   it('reports an incomplete link without calling the API', async () => {
     stubAuthRuntime({ query: { email: 'new@example.com' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailChangePage)
+    const wrapper = await mountPage(ConfirmEmailChangePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-email-change-failed"]').exists()).toBe(true))
     await settle()
 

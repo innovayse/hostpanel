@@ -81,7 +81,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     {
         using var scenario = new FulfilmentScenario(factory);
         scenario.Plugin.Advice = (_, _) => Task.FromResult(new RefundAdvice(4m, "Licences already issued."));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);
@@ -100,7 +100,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     public async Task PluginAllowingTheAmountLeavesTheRefundUnchanged()
     {
         using var scenario = new FulfilmentScenario(factory);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);
@@ -119,7 +119,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     {
         using var scenario = new FulfilmentScenario(factory);
         scenario.Plugin.Advice = (_, _) => Task.FromResult(new RefundAdvice(0m, "Subscription is active."));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);
@@ -136,7 +136,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     {
         using var scenario = new FulfilmentScenario(factory);
         scenario.Plugin.Advice = (_, _) => throw new InvalidOperationException("boom");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);
@@ -157,7 +157,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
             await Task.Delay(Timeout.Infinite, ct);
             return new RefundAdvice(Price, null);
         };
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);
@@ -178,7 +178,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
             services.RemoveAll<IFulfilmentPluginResolver>();
             services.AddSingleton<IFulfilmentPluginResolver>(resolver);
         }));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await PaidInvoiceAsync(host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);
@@ -198,7 +198,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     public async Task AdvisingPlugin_IsToldItsOwnClientReference()
     {
         using var scenario = new FulfilmentScenario(factory);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);
@@ -215,7 +215,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     {
         using var scenario = new FulfilmentScenario(factory);
         var other = scenario.AddPlugin();
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var invoiceId = await PaidInvoiceAsync(scenario.Host, admin);
 
         var response = await RefundAsync(admin, invoiceId, 8m);

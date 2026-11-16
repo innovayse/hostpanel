@@ -18,9 +18,11 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
+import { clientServicePath } from '~/constants/clientRoutes'
 
 /** The BFF path that takes the first-time setup of service 4. */
-const SETUP_PATH = '/api/portal/client/services/4/setup'
+const SETUP_PATH = servicePath(4, ServiceAction.Setup)
 
 /** Stands in for Nuxt's `navigateTo`, so a test can see where the wizard went. */
 const navigate = vi.fn()
@@ -91,7 +93,7 @@ describe('SetupWizard', () => {
 
     await waitUntil(() => expect(requestsTo(stub.requests, SETUP_PATH)).toHaveLength(1))
     expect(bodyOf(requestsTo(stub.requests, SETUP_PATH)[0])).toEqual({ domain: 'example.com', username: 'webmstr', password: 'longenough' })
-    await waitUntil(() => expect(navigate).toHaveBeenCalledWith('/client/services/4'))
+    await waitUntil(() => expect(navigate).toHaveBeenCalledWith(clientServicePath(4)))
   })
 
   it('goes back a step and keeps what was typed', async () => {

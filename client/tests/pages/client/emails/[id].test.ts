@@ -13,6 +13,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import EmailPage from '~/pages/client/emails/[id].vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { CLIENT_EMAILS_PATH } from '~/constants/clientRoutes'
 
 /** The BFF path the page reads for email `e1`. */
 const EMAIL_PATH = '/api/portal/client/emails/e1'
@@ -52,7 +53,7 @@ describe('email page', () => {
     const wrapper = await mountPage(EmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="email-back"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="email-back"]').attributes('href')).toBe('/client/emails')
+    expect(wrapper.find('[data-testid="email-back"]').attributes('href')).toBe(CLIENT_EMAILS_PATH)
   })
 
   it('says the email was not found when the read fails', async () => {

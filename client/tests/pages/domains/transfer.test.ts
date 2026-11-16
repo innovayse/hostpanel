@@ -3,10 +3,12 @@
  * the visitor on to the signed-in transfer flow with what they typed.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import TransferPage from '~/pages/domains/transfer.vue'
 import DomainsTransfer from '~/components/domains/DomainsTransfer.vue'
+import { localized } from '~/tests/helpers/runtimeStubs'
+import { CLIENT_DOMAIN_TRANSFER_PATH } from '~/constants/clientRoutes'
 
 /** The `navigateTo` spy of the current test. */
 let navigate: ReturnType<typeof vi.fn>
@@ -69,7 +71,7 @@ describe('domain transfer page', () => {
 
     await wrapper.find('[data-testid="domains-transfer-submit"]').trigger('click')
 
-    expect(navigate).toHaveBeenCalledWith('/en/client/domains/transfer?domain=shop.test&eppcode=secret')
+    expect(navigate).toHaveBeenCalledWith(`${localized(CLIENT_DOMAIN_TRANSFER_PATH)}?domain=shop.test&eppcode=secret`)
   })
 
   it('leaves the code out of the address when none was typed', async () => {
@@ -78,12 +80,12 @@ describe('domain transfer page', () => {
 
     await wrapper.find('[data-testid="domains-transfer-submit"]').trigger('click')
 
-    expect(navigate).toHaveBeenCalledWith('/en/client/domains/transfer?domain=shop.test')
+    expect(navigate).toHaveBeenCalledWith(`${localized(CLIENT_DOMAIN_TRANSFER_PATH)}?domain=shop.test`)
   })
 
   it('sets the head for the page', async () => {
     await mountTransfer()
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ path: '/domains/transfer' }))
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/domains/transfer`)
   })
 })

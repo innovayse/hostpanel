@@ -75,4 +75,10 @@ describe('IntegrationStatusSidebar', () => {
     expect(wrapper.find('[data-testid="integration-status-result"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-status-connection"]').exists()).toBe(false)
   })
+
+  it('draws bars of the badge and the message line while a test is in flight', () => {
+    const wrapper = mountSidebar({ testing: true })
+
+    expect(wrapper.get('[data-testid="integration-status-testing"]').findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(2)
+  })
 })

@@ -11,6 +11,7 @@
  */
 import { CLIENT_DOMAIN_TRANSFER_PATH } from '~/constants/clientRoutes'
 import { detailTitle } from '~/utils/seoTitle'
+import { SITE_DOMAINS_TRANSFER_PATH } from '~/constants/siteRoutes'
 
 const { t } = useI18n()
 
@@ -44,6 +45,6 @@ const goTransfer = (): void => {
 useSeo({
   title: detailTitle(`${t('domains.tabTransfer')}: ${t('domains.card.name')}`, siteName.value),
   description: t('domains.promoTransferDesc'),
-  path: '/domains/transfer',
+  path: SITE_DOMAINS_TRANSFER_PATH,
 })
 </script>

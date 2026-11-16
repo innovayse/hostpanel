@@ -1,7 +1,7 @@
 /**
  * Tests for `pages/client/account/index.vue` against the real client, catalogue and account stores,
  * the real API composables and the real transport, with a stub BFF answering on a real socket
- * (nothing of ours is mocked): the page composes its header, tab strip and the tab named by the
+ * (nothing of ours is mocked, the tabs included): the page composes its header, tab strip and the tab named by the
  * query, and reads what the tabs show.
  *
  * @module tests/pages/client/account/index.test
@@ -9,49 +9,27 @@
 
 import type { VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { defineComponent, h } from 'vue'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ACCOUNT_COMPONENTS } from '~/tests/helpers/mountAccount'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
 import { makeClientUser } from '~/tests/helpers/clientUser'
-import { stubRoute } from '~/tests/helpers/runtimeStubs'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { useAuthMode } from '~/composables/useAuthMode'
 import { useClientStore } from '~/stores/client'
 import { AccountTab } from '~/types/accounttab'
+import { AuthMode } from '~/types/authmode'
 import { Permission } from '~/types/permission'
 
 const { default: AccountPage } = await import('~/pages/client/account/index.vue')
 
-/** The BFF paths the page reads. */
-const PATHS = {
-  me: '/api/portal/client/me',
-  countries: '/api/portal/public/countries',
-  gatewayMethods: '/api/portal/order/payment-methods',
-  users: '/api/portal/client/users',
-  contacts: '/api/portal/client/contacts',
-  emails: '/api/portal/client/emails',
-} as const
-
 /** The stub playing the BFF. */
 let stub: StubServer
-
-/**
- * Builds a stand-in for one tab component that renders a marker.
- *
- * @param marker - The `data-testid` the stand-in renders.
- * @returns The component.
- */
-const tabStub = (marker: string) => defineComponent({ render: () => h('div', { 'data-testid': marker }) })
-
-/** The tab components the page renders, replaced by markers: each tab has its own test. */
-const TAB_STUBS = {
-  AccountProfileTab: tabStub('tab-details'),
-  AccountContactsTab: tabStub('tab-contacts'),
-  AccountTeamTab: tabStub('tab-users'),
-  AccountEmailsTab: tabStub('tab-emails'),
-  AccountPaymentMethodsTab: tabStub('tab-payment'),
-}
 
 /**
  * How many times a path was read.
@@ -74,18 +52,21 @@ const reads = (path: string): number => requestsTo(stub.requests, path).length
 const mountAccountPage = async (permissions: number, query: Record<string, string> = {}): Promise<VueWrapper> => {
   const person = makeClientUser({ permissions })
   stub = await startTransport(routeTable({
-    [`GET ${PATHS.me}`]: { body: person },
-    [`GET ${PATHS.countries}`]: { body: [] },
-    [`GET ${PATHS.gatewayMethods}`]: { body: [] },
-    [`GET ${PATHS.users}`]: { body: [] },
-    [`GET ${PATHS.contacts}`]: { body: [] },
-    [`GET ${PATHS.emails}`]: { body: { items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 } },
+    [readOf(AccountEndpoint.Me)]: { body: person },
+    [readOf(CatalogPath.Countries)]: { body: [] },
+    [readOf(BillingEndpoint.OrderPaymentMethods)]: { body: [] },
+    [readOf(AccountEndpoint.Users)]: { body: [] },
+    [readOf(AccountEndpoint.Contacts)]: { body: [] },
+    [readOf(AccountEndpoint.Emails)]: { body: { items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 } },
   }))
   stubRoute({ query })
+  stubLocalePath()
+  vi.stubGlobal('useAuthMode', useAuthMode)
+  vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: AuthMode.Local } }))
   const pinia = createPinia()
   setActivePinia(pinia)
   useClientStore().user = person
-  return mountRenderedClientPage(AccountPage, 'account-page', { components: TAB_STUBS, pinia })
+  return mountRenderedClientPage(AccountPage, 'account-page', { components: ACCOUNT_COMPONENTS, pinia })
 }
 
 afterEach(async () => {
@@ -97,27 +78,36 @@ describe('client account page', () => {
     const wrapper = await mountAccountPage(Permission.All)
 
     expect(wrapper.find('[data-testid="account-page"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="tab-details"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="tab-contacts"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="account-profile-tab"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="account-contacts-tab"]').exists()).toBe(false)
   })
 
   it('opens the tab named by ?tab=', async () => {
     const wrapper = await mountAccountPage(Permission.All, { tab: AccountTab.Emails })
 
-    expect(wrapper.find('[data-testid="tab-emails"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="tab-details"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="account-emails-tab"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="account-profile-tab"]').exists()).toBe(false)
   })
 
   it('falls back to the details tab for an unknown ?tab=', async () => {
     const wrapper = await mountAccountPage(Permission.All, { tab: 'nope' })
 
-    expect(wrapper.find('[data-testid="tab-details"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="account-profile-tab"]').exists()).toBe(true)
   })
 
   it('loads the profile and everything the tabs read', async () => {
     await mountAccountPage(Permission.All)
 
-    for (const path of Object.values(PATHS)) {
+    const paths = [
+      AccountEndpoint.Me,
+      CatalogPath.Countries,
+      BillingEndpoint.OrderPaymentMethods,
+      AccountEndpoint.Users,
+      AccountEndpoint.Contacts,
+      AccountEndpoint.Emails,
+    ]
+
+    for (const path of paths) {
       expect(reads(path)).toBe(1)
     }
   })
@@ -137,8 +127,8 @@ describe('client account page permissions', () => {
   it('opens the details tab when ?tab= names a tab the person may not open', async () => {
     const wrapper = await mountAccountPage(Permission.ViewEmails, { tab: AccountTab.Users })
 
-    expect(wrapper.find('[data-testid="tab-details"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="tab-users"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="account-profile-tab"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="account-team-tab"]').exists()).toBe(false)
   })
 
   it('offers the team tab only with full access', async () => {
@@ -151,6 +141,6 @@ describe('client account page permissions', () => {
     const wrapper = await mountAccountPage(Permission.ViewEmails, { tab: AccountTab.Payment })
 
     expect(wrapper.text()).toContain('client.account.tabPayment')
-    expect(wrapper.find('[data-testid="tab-payment"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="account-payment-tab"]').exists()).toBe(true)
   })
 })

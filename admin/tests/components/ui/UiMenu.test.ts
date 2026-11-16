@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import UiMenu from '@/components/ui/UiMenu.vue'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import { createTestI18n } from '../../helpers/i18n'
 
 /**
@@ -38,6 +39,16 @@ describe('UiMenu', () => {
     expect(trigger.attributes('aria-label')).toBe('Account menu')
     expect(trigger.find('[data-testid="tile"]').exists()).toBe(true)
     expect(trigger.find('svg').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('draws the panel on the opaque floating surface, never glass', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="ui-menu-trigger"]').trigger('click')
+
+    const classes = wrapper.get('[data-testid="ui-menu-panel"]').classes()
+    expect(classes).toEqual(expect.arrayContaining(FLOATING_PANEL_CLASSES.split(' ')))
+    expect(classes.some((name) => name.includes('glass'))).toBe(false)
     wrapper.unmount()
   })
 

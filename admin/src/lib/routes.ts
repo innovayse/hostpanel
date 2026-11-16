@@ -49,8 +49,6 @@ export enum AppRoute {
   ClientsCancellations = '/clients/cancellations',
   /** The `/clients/groups` screen. */
   ClientsGroups = '/clients/groups',
-  /** The `/clients/domain-registrations` screen. */
-  ClientsDomainRegistrations = '/clients/domain-registrations',
   /** The `/clients/plan-changes` screen. */
   ClientsPlanChanges = '/clients/plan-changes',
   /** The `/clients/shared-hostings` screen. */
@@ -87,6 +85,8 @@ export enum AppRoute {
   Plugins = '/plugins',
   /** The `/reports` screen. */
   Reports = '/reports',
+  /** The `/reports/oss` screen: the One Stop Shop report, which the old `/reports/vat-moss` address redirects to. */
+  ReportsOss = '/reports/oss',
   /** The `/reports/daily-performance` screen. */
   ReportsDailyPerformance = '/reports/daily-performance',
   /** The `/servers` screen. */
@@ -111,6 +111,8 @@ export enum AppRoute {
   SettingsTaxRules = '/settings/tax-rules',
   /** The `/settings/tld-pricing` screen. */
   SettingsTldPricing = '/settings/tld-pricing',
+  /** The `/settings/vat-rates` screen. */
+  SettingsVatRates = '/settings/vat-rates',
   /** The `/setup` screen. */
   Setup = '/setup',
   /** The `/storefront` screen. */

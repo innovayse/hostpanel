@@ -13,46 +13,35 @@ import { useServersStore } from '@/stores/servers'
 import { INTEGRATION_META } from '@/types/integrationmeta'
 import { IntegrationSlug } from '@/types/integration'
 import { ServerModule } from '@/types/server'
-import type { ServerDto } from '@/types/server'
-import type { UiTone } from '@/utils/ui/tone'
+import type { ServerOptionDto } from '@/types/server'
+import Cwp7ServerCard from '@/components/integrations/Cwp7ServerCard.vue'
 import IntegrationBreadcrumb from '@/components/integrations/IntegrationBreadcrumb.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTextSize } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
 
-/** Servers store: the server list. */
+/** Servers store: the lean server lookup. */
 const serversStore = useServersStore()
 
 /** Static metadata of the CWP7 integration (logo and tile colour). */
 const meta = INTEGRATION_META[IntegrationSlug.Cwp7]
 
-/** CWP7 servers only. */
-const cwp7Servers = computed<ServerDto[]>(() =>
-  serversStore.servers.filter(s => s.module === ServerModule.Cwp7),
-)
+/** Placeholder cards drawn in the servers grid while the list loads. */
+const LOADING_CARD_COUNT = 3
 
-/**
- * Tone of a server's last known state.
- *
- * @param server - The server.
- * @returns Success when online, danger when offline, neutral when never tested.
- */
-const stateTone = (server: ServerDto): UiTone => {
-  if (server.isOnline === true) {
-    return 'success'
-  }
-  return server.isOnline === false ? 'danger' : 'neutral'
-}
+/** CWP7 servers only: the lookup is asked for that module, so nothing is filtered in the browser. */
+const cwp7Servers = computed<ServerOptionDto[]>(() => serversStore.serverOptions)
 
 /** Route of the servers page with the CWP7 server form open, opened by the create server links. */
 const createServerRoute: RouteLocationRaw = { path: AppRoute.Servers, query: { create: ServerModule.Cwp7 } }
@@ -62,7 +51,7 @@ const createProductRoute: RouteLocationRaw = { path: AppRoute.SettingsProducts, 
 
 /** Loads the servers. */
 onMounted(() => {
-  void serversStore.fetchServers()
+  void serversStore.fetchServerOptions(ServerModule.Cwp7)
 })
 </script>
 
@@ -124,11 +113,11 @@ onMounted(() => {
     <UiStack gap="sm">
       <UiStack direction="row" align="center" justify="between">
         <UiHeading :level="2" variant="section">{{ t('integrations.cwp7Integration.cwp7Servers') }}</UiHeading>
-        <UiText tone="muted" size="sm">{{ t('integrations.cwp7Integration.lengthServerValue', { length: cwp7Servers.length }) }}</UiText>
+        <UiResultCount :loading="serversStore.optionsLoading" :size="UiTextSize.Sm">{{ t('integrations.cwp7Integration.lengthServerValue', { length: cwp7Servers.length }) }}</UiResultCount>
       </UiStack>
 
       <!-- Empty state -->
-      <UiCard v-if="!serversStore.loading && cwp7Servers.length === 0" padding="md" data-testid="cwp7-servers-empty">
+      <UiCard v-if="!serversStore.optionsLoading && cwp7Servers.length === 0" padding="md" data-testid="cwp7-servers-empty">
         <UiStack gap="sm" align="center">
           <UiText tone="muted" size="md">{{ t('integrations.cwp7Integration.noCwp7ServersConfiguredYet') }}</UiText>
           <UiLink :to="createServerRoute" :variant="UiButtonVariant.Link" data-testid="cwp7-add-first-server">
@@ -137,29 +126,14 @@ onMounted(() => {
         </UiStack>
       </UiCard>
 
-      <!-- Loading -->
-      <UiGrid v-else-if="serversStore.loading" :columns="3" gap="md" data-testid="cwp7-servers-loading">
-        <UiCard v-for="index in 3" :key="index" padding="md" loading :skeleton-lines="3" />
-      </UiGrid>
-
-      <!-- Server cards -->
+      <!-- Server cards; while the servers load the same grid holds placeholder cards -->
       <UiGrid v-else :columns="3" gap="md" data-testid="cwp7-servers">
-        <UiLink v-for="server in cwp7Servers" :key="server.id" :to="AppRoute.Servers" class="block" :data-testid="`cwp7-server-${server.id}`">
-          <UiCard padding="md" class="h-full">
-            <UiStack gap="sm">
-              <UiStack direction="row" align="center" gap="sm">
-                <UiHeading :level="3" variant="card" class="min-w-0 flex-1 truncate">{{ server.name }}</UiHeading>
-                <UiBadge v-if="server.limits.isDisabled" tone="danger" small>{{ t('shared.disabled') }}</UiBadge>
-                <UiBadge v-else :tone="stateTone(server)" dot small />
-              </UiStack>
-              <UiText tone="muted" size="sm">{{ server.endpoint.hostname }}</UiText>
-              <UiText v-if="server.endpoint.ipAddress" tone="muted" size="sm">{{ server.endpoint.ipAddress }}</UiText>
-              <UiText v-if="server.accountsCount !== null" tone="muted" size="sm">
-                {{ t('integrations.cwp7Integration.accountscountValueAccounts', { accountsCount: server.accountsCount, value: server.limits.maxAccounts ?? '∞' }) }}
-              </UiText>
-            </UiStack>
-          </UiCard>
-        </UiLink>
+        <template v-if="serversStore.optionsLoading">
+          <Cwp7ServerCard v-for="index in LOADING_CARD_COUNT" :key="index" />
+        </template>
+        <template v-else>
+          <Cwp7ServerCard v-for="server in cwp7Servers" :key="server.id" :server="server" />
+        </template>
       </UiGrid>
     </UiStack>
   </UiStack>

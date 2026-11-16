@@ -149,6 +149,7 @@ import { useAuthStore } from '~/stores/auth'
 import { HEADER_CONTROL, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_PRIMARY } from '~/utils/headerControl'
 import { buildAccountLinks } from '~/utils/headerAccountLinks'
 import { activeHeaderKey, isHeaderPathActive } from '~/utils/headerNav'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Props of LayoutHeaderDrawer. */
 const props = defineProps<{
@@ -188,7 +189,7 @@ const authStore = useAuthStore()
 const { isLoggedIn, user } = storeToRefs(authStore)
 
 /** Where "Get started" goes: the hosting plans. */
-const getStartedTo = computed(() => localePath('/hosting'))
+const getStartedTo = computed(() => localePath(SITE_HOSTING_PATH))
 
 /** Client-area links of the signed-in group. */
 const accountLinks = computed(() => buildAccountLinks(t, localePath))

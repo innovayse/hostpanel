@@ -1,7 +1,7 @@
 <template>
   <!-- Knowledgebase article list row -->
   <UiLink
-    :to="localePath(`/knowledgebase/${article.id}`)"
+    :to="localePath(siteKnowledgebaseArticlePath(article.id))"
     tone="inherit"
     :underline="false"
     :testid="`kb-article-${article.id}`"
@@ -42,6 +42,7 @@
  */
 
 import { FileText } from 'lucide-vue-next'
+import { siteKnowledgebaseArticlePath } from '~/constants/siteRoutes'
 import type { KbArticleSummary } from '~/types/kbarticlesummary'
 
 /** Props of ArticleRow. */

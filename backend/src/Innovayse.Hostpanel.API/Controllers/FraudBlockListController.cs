@@ -27,11 +27,11 @@ public sealed class FraudBlockListController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a page of the block list, newest first, optionally for one type.</summary>
-    /// <param name="query">The page, page size and type filter.</param>
+    /// <summary>Returns a page of the block list, newest first, optionally searched and for one type.</summary>
+    /// <param name="query">The page, page size, search and type filter.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the page; 400 with <c>VALIDATION_ERROR</c> for a bad paging window or an unknown type; 401 without a session; 403 for a
+    /// 200 with the page; 400 with <c>VALIDATION_ERROR</c> for a missing or bad paging window, a search that is too long or an unknown type; 401 without a session; 403 for a
     /// caller who is not an administrator;
     /// 429 when the rate limit is hit.
     /// </returns>

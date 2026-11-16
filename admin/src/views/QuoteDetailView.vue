@@ -108,9 +108,6 @@ const deleteOpen = ref(false)
 /** True while the convert confirmation is open. */
 const convertOpen = ref(false)
 
-/** Stages the select offers (the "all stages" entry is for filters). */
-const stageOptions = computed(() => QUOTE_STAGE_OPTIONS.filter((option) => option.value !== ''))
-
 /** The sentence to show: a local problem first, otherwise the store's. */
 const errorText = computed<string | null>(() => localError.value ?? store.error)
 
@@ -291,7 +288,7 @@ onMounted(() => {
               </template>
             </UiField>
             <UiField :label="t('shared.stage')" :error="store.fieldErrors.stage">
-              <UiSelect v-model="stage" :options="stageOptions" :placeholder="t('billing.quoteDetail.selectStage')" />
+              <UiSelect v-model="stage" :options="QUOTE_STAGE_OPTIONS" :placeholder="t('billing.quoteDetail.selectStage')" />
             </UiField>
             <UiField v-if="!isNew" :label="t('billing.quoteDetail.dateCreated')">
               <UiText tone="secondary" size="md" data-testid="billing-quote-created">

@@ -4,36 +4,28 @@
  * @module tests/composables/useGuarantees.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { GuaranteeKey } from '~/constants/guaranteeKey'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { SETTING_ON } from '~/constants/settingValue'
 import { useGuarantees } from '~/composables/useGuarantees'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 
-/**
- * Stubs the settings reader with a fixed set of values.
- *
- * @param values Setting key to value.
- */
-const stubSettings = (values: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('useGuarantees', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('is empty when nothing is set', () => {
-    stubSettings({})
+  it('is empty when nothing is set', async () => {
+    await loadPortalSettings(replies)
 
     expect(useGuarantees().value).toEqual([])
   })
 
-  it('returns every promise in enum order, money back with its days', () => {
-    stubSettings({
-      [PortalSettingKey.GuaranteeNoHiddenFees]: 'true',
+  it('returns every promise in enum order, money back with its days', async () => {
+    await loadPortalSettings(replies, {
+      [PortalSettingKey.GuaranteeNoHiddenFees]: SETTING_ON,
       [PortalSettingKey.GuaranteeMoneyBackDays]: '30',
-      [PortalSettingKey.MigrationFree]: 'true',
+      [PortalSettingKey.MigrationFree]: SETTING_ON,
     })
 
     expect(useGuarantees().value).toEqual([
@@ -43,11 +35,11 @@ describe('useGuarantees', () => {
     ])
   })
 
-  it('ignores a money-back period that is zero or not digits', () => {
-    stubSettings({ [PortalSettingKey.GuaranteeMoneyBackDays]: '0' })
+  it('ignores a money-back period that is zero or not digits', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.GuaranteeMoneyBackDays]: '0' })
     expect(useGuarantees().value).toEqual([])
 
-    stubSettings({ [PortalSettingKey.GuaranteeMoneyBackDays]: 'thirty' })
+    await loadPortalSettings(replies, { [PortalSettingKey.GuaranteeMoneyBackDays]: 'thirty' })
     expect(useGuarantees().value).toEqual([])
   })
 })

@@ -10,6 +10,7 @@ using Innovayse.Hostpanel.API.Logging;
 using Innovayse.Hostpanel.Application;
 using Innovayse.Hostpanel.Application.Admin.Seeding;
 using Innovayse.Hostpanel.Application.Auth.Seeding;
+using Innovayse.Hostpanel.Application.Billing.Seeding;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Notifications.Seeding;
@@ -133,6 +134,11 @@ try
         // key no operator can ever set from the admin panel.
         await PortalSettingsSeeder.EnsureSeededAsync(
             scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>());
+
+        // The VAT rates that ship with the application, also every environment: a release that carries a changed rate
+        // brings it as a new row, and a row staff edited is never touched.
+        await VatRateSeeder.EnsureSeededAsync(
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(), CancellationToken.None);
 
         // The translated versions of the schema-seeded mail templates, also every environment:
         // a client who chose Russian or Armenian would otherwise get English mail. Never

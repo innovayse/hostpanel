@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiFieldSelector from '@/components/ui/UiFieldSelector.vue'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** Fields offered to the selector. */
@@ -37,6 +38,16 @@ describe('UiFieldSelector', () => {
 
     expect(wrapper.get('[data-testid="field-selector-field-a"]').attributes('aria-checked')).toBe('true')
     expect(wrapper.get('[data-testid="field-selector-field-b"]').attributes('aria-checked')).toBe('false')
+  })
+
+  it('draws the panel with the opaque floating surface and no glass', async () => {
+    const wrapper = mountSelector([])
+
+    await wrapper.get('[data-testid="field-selector-trigger"]').trigger('click')
+    const panel = wrapper.get('[role="group"]')
+
+    expect(panel.classes()).toEqual(expect.arrayContaining(FLOATING_PANEL_CLASSES.split(' ')))
+    expect(panel.classes().some((name) => name.startsWith('glass'))).toBe(false)
   })
 
   it('reports toggles, select all and clear all', async () => {

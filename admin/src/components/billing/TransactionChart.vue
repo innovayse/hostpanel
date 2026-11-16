@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Net revenue per day over the last thirty days, drawn by the kit chart. A day's net is the money
- * in, minus the money out, minus the gateway fees of the transactions dated that day.
+ * in, minus the money out, minus the gateway fees of the transactions dated that day. While `loading` the chart draws
+ * placeholder bars at its height.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,10 +16,14 @@ const { t } = useI18n()
 /** How many days back the chart reaches, today included. */
 const DAYS = 30
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** The transactions to chart; those older than thirty days or undated are ignored. */
   transactions: Transaction[]
-}>()
+  /** True while the transactions are still being read. */
+  loading?: boolean
+}>(), {
+  loading: false,
+})
 
 /** Net amount per ISO day, from the transactions. */
 const netByDay = computed<Record<string, number>>(() => {
@@ -65,6 +70,7 @@ const series = computed<UiChartSeries[]>(() => [
     :series="series"
     :legend="false"
     height="md"
+    :loading="loading"
     data-testid="billing-transaction-chart"
   />
 </template>

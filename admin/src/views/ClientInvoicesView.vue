@@ -1,23 +1,28 @@
 <script setup lang="ts">
 /**
- * Client-scoped invoices list: shows invoices for a specific client with filtering, bulk actions on the
- * selected rows (`useRowSelection`, the floating `InvoiceBulkBar`), pagination, and create functionality. Deleting and cancelling are confirmed first; every action
- * reports its outcome (success, or the API's sentence) above the list, and a refused load shows
- * the sentence with a Retry.
+ * Client-scoped invoices list: shows invoices for a specific client with a search box (invoice number or payment
+ * method), a filter dialog (status and invoice date) whose applied filters show as chips, bulk actions on the selected
+ * rows (`useRowSelection`, the floating `InvoiceBulkBar`), pagination, and create functionality. The search text, the
+ * filters and the page live in the address (`useListQuery`), so a reload or a shared link shows the same list, and the
+ * API applies them before it pages. Deleting and cancelling are confirmed first; every action reports its outcome
+ * (success, or the API's sentence) above the list, and a refused load shows the sentence with a Retry.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBillingStore } from '@/stores/billing'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useFilterDateRange } from '@/composables/useFilterDateRange'
+import { InvoiceFilterKey, useInvoiceFilters } from '@/composables/useInvoiceFilters'
+import { useListQuery } from '@/composables/useListQuery'
 import { useRowSelection } from '@/composables/useRowSelection'
-import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
 import { invoiceStatusTone } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceOpenAction } from '@/types/invoice'
 import type { InvoiceBulkAction } from '@/types/invoice'
 import InvoiceBulkBar from '@/components/billing/InvoiceBulkBar.vue'
+import InvoiceFilterFields from '@/components/billing/InvoiceFilterFields.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -34,11 +39,11 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
-import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -81,20 +86,20 @@ const initialLoading = computed<boolean>(() => store.loading && store.clientInvo
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
 
-/** Current page (1-based). */
-const page = ref(1)
-
 /** Items per page. */
-const pageSize = ref(LEDGER_PAGE_SIZE)
+const pageSize = LEDGER_PAGE_SIZE
 
-/** Status filter value. */
-const filterStatus = ref('')
+/** The filters, the search text and the page of the list, as the address holds them. */
+const list = useListQuery(Object.values(InvoiceFilterKey))
 
-/** Date from filter. */
-const filterFrom = ref('')
+/** The applied status and period, and their chips. */
+const invoiceFilters = useInvoiceFilters(list)
 
-/** Date to filter. */
-const filterTo = ref('')
+/** The invoice-date range of the filter draft; the picker edits the pair, the address keeps its two ends. */
+const draftRange = useFilterDateRange(list.draft, InvoiceFilterKey.From, InvoiceFilterKey.To)
+
+/** One chip per applied filter, in the order they are shown. */
+const chips = list.chipsOf(invoiceFilters.chipSources)
 
 /** The selected invoices of the page. */
 const selection = useRowSelection(() => store.clientInvoices.map((invoice) => invoice.id))
@@ -154,39 +159,14 @@ const report = (ok: boolean, successKey: string): void => {
 }
 
 /**
- * Fetches client invoices with current filters.
+ * Loads the page the address names, with the search text and filters it holds; the selection of the previous page is dropped.
  *
  * @returns Promise that resolves when data is loaded.
  */
 const fetchInvoices = async (): Promise<void> => {
-  await store.fetchClientInvoices(
-    clientId.value, page.value, pageSize.value,
-    filterStatus.value, filterFrom.value, filterTo.value,
-  )
+  selection.clear()
+  await store.fetchClientInvoices(clientId.value, list.page.value, { ...invoiceFilters.filters.value, search: list.appliedSearch.value })
   loadError.value = store.error
-}
-
-/**
- * Applies filters and resets to page 1.
- *
- * @returns Nothing.
- */
-const applyFilters = (): void => {
-  page.value = 1
-  selection.clear()
-  fetchInvoices()
-}
-
-/**
- * Navigates to a specific page.
- *
- * @param p - Target page number.
- * @returns Nothing.
- */
-const goToPage = (p: number): void => {
-  page.value = p
-  selection.clear()
-  fetchInvoices()
 }
 
 /**
@@ -359,8 +339,8 @@ const invoiceActions = (invoice: Invoice): UiMenuAction[] => [
   },
 ]
 
-/** Loads the first page. */
-onMounted(() => fetchInvoices())
+// The address is the source of truth: the first load and every change of a filter, the search or the page read the list.
+list.loadOnChange(fetchInvoices)
 </script>
 
 <template>
@@ -472,19 +452,25 @@ onMounted(() => fetchInvoices())
       </UiCard>
     </UiCollapse>
 
-    <UiStack direction="row" wrap :align="UiAlignItems.Center" gap="sm">
-      <UiSelect v-model="filterStatus" :options="INVOICE_STATUS_OPTIONS" :placeholder="t('clients.clientInvoices.allStatuses')" data-testid="client-invoices-filter-status" />
-      <UiDatePicker v-model="filterFrom" :placeholder="t('clients.clientInvoices.from')" />
-      <UiDatePicker v-model="filterTo" :placeholder="t('shared.to')" />
-      <UiButton
-        type="button"
-        :variant="UiButtonVariant.Secondary"
-        data-testid="client-invoices-filter"
-        @click="applyFilters"
-      >
-        {{ t('clients.clientInvoices.filter') }}
-      </UiButton>
-    </UiStack>
+    <UiListToolbar
+      v-model:search="list.search.value"
+      search-testid="client-invoices-search"
+      :search-placeholder="t('billing.invoicesList.searchInvoices')"
+      filter-testid="client-invoices-filter"
+      :active-count="list.activeCount.value"
+      :chips="chips"
+      @apply="list.apply"
+      @reset="list.reset"
+      @cancel="list.cancel"
+      @remove="list.remove"
+      @clear="list.clearAll"
+    >
+      <InvoiceFilterFields
+        v-model:status="list.draft.value.status"
+        v-model:period="draftRange"
+        testid-prefix="client-invoices-filter"
+      />
+    </UiListToolbar>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-invoices-feedback" />
 
@@ -554,12 +540,12 @@ onMounted(() => fetchInvoices())
             {{ t('clients.clientInvoices.clientinvoicestotalInvoiceValue', { clientInvoicesTotal: store.clientInvoicesTotal }) }}
           </UiText>
           <UiPagination
-            :page="page"
+            :page="list.page.value"
             :total="store.clientInvoicesTotal"
             :page-size="pageSize"
             :loading="initialLoading"
             testid="client-invoices-pagination"
-            @update:page="goToPage"
+            @update:page="list.setPage"
           />
         </UiStack>
       </UiCard>

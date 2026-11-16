@@ -1,4 +1,3 @@
-using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
@@ -17,9 +16,6 @@ public sealed class DailyPerformanceValidator : LocalizedValidator<DailyPerforma
     public DailyPerformanceValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.To)
-            .GreaterThanOrEqualTo(x => x.From!.Value)
-            .When(x => x.From.HasValue && x.To.HasValue)
-            .WithMessage(L["ReportDateRangeInvalid"]);
+        RuleFor(x => x.To).MustNotBeBefore(x => x.From, L["DateRangeInvalid"]);
     }
 }

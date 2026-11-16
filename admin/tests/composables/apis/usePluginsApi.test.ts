@@ -19,6 +19,17 @@ describe('usePluginsApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/plugins', method: 'GET' })
   })
 
+  it('browseRegistry sends search, category, page and page size, and leaves out an empty filter', async () => {
+    const mock = stubFetch(json({ items: [], total: 0, page: 1, pageSize: 20 }))
+    const api = usePluginsApi()
+
+    await api.browseRegistry({ search: 'pay', category: 'Payment', page: 2, pageSize: 20 })
+    await api.browseRegistry({ search: '', category: '', page: 1, pageSize: 20 })
+
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/plugins/registry?search=pay&category=Payment&page=2&pageSize=20', method: 'GET' })
+    expect(callOf(mock, 1).url).toBe('/api/admin/plugins/registry?page=1&pageSize=20')
+  })
+
   it('installPlugin posts the file as multipart form data', async () => {
     const mock = stubFetch(json({ requiresRestart: true }))
     const zip = new File(['z'], 'plugin.zip', { type: 'application/zip' })

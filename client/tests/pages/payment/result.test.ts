@@ -26,6 +26,8 @@ import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { HttpMethod } from '~/types/httpmethod'
 import { PricingCycle } from '~/types/pricingcycle'
 import { ProductType } from '~/types/producttype'
+import { localized } from '~/tests/helpers/runtimeStubs'
+import { CLIENT_INVOICES_PATH, clientInvoicePath, clientInvoicePayPath, clientOrderSuccessPath } from '~/constants/clientRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -113,7 +115,7 @@ describe('payment result page', () => {
   it('says there is nothing to check, and does not call the backend, when the address names no payment', async () => {
     const wrapper = await mountResult(ResultTitle.Missing)
 
-    expect(wrapper.find('[data-testid="payment-invoices"]').attributes('href')).toBe('/en/client/invoices')
+    expect(wrapper.find('[data-testid="payment-invoices"]').attributes('href')).toBe(localized(CLIENT_INVOICES_PATH))
     expect(checks()).toBe(0)
   })
 
@@ -123,7 +125,7 @@ describe('payment result page', () => {
     const wrapper = await mountResult(ResultTitle.Success, { order: '5' })
 
     expect(bodyOf(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))[0])).toEqual({ paymentToken: ORDER.token, returnParameters: [] })
-    expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=INV-77')
+    expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe(localized(clientOrderSuccessPath({ order: 'INV-77' })))
     expect(useOrderPaymentToken().recall(ORDER.id)).toBeUndefined()
   })
 
@@ -133,7 +135,7 @@ describe('payment result page', () => {
     const wrapper = await mountResult(ResultTitle.Success, { invoice: '9' })
 
     expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({ returnParameters: [] })
-    expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/invoices/9')
+    expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe(localized(clientInvoicePath(9)))
   })
 
   it('hands what the gateway returned the payer with to the backend, without the page own parameters', async () => {
@@ -167,10 +169,10 @@ describe('payment result page', () => {
     table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Declined } }
 
     const order = await mountResult(ResultTitle.Declined, { order: '5' })
-    expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices/77/pay')
+    expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe(localized(clientInvoicePayPath(77)))
 
     const invoice = await mountResult(ResultTitle.Declined, { invoice: '9' })
-    expect(invoice.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices/9/pay')
+    expect(invoice.find('[data-testid="payment-try-again"]').attributes('href')).toBe(localized(clientInvoicePayPath(9)))
   })
 
   it('sends a declined order payer to the invoice list when the billed invoice is not remembered', async () => {
@@ -179,7 +181,7 @@ describe('payment result page', () => {
 
     const order = await mountResult(ResultTitle.Declined, { order: '5' })
 
-    expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices')
+    expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe(localized(CLIENT_INVOICES_PATH))
   })
 
   it('empties the cart only once an order payment is confirmed', async () => {
@@ -217,7 +219,7 @@ describe('payment result page', () => {
 
     const wrapper = await mountResult(ResultTitle.Success, { order: '5' }, pinia)
 
-    expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=ORD-5&digital=1')
+    expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe(localized(clientOrderSuccessPath({ order: 'ORD-5', digital: true })))
   })
 
   it('treats a repeated or malformed id as missing and does not call the backend', async () => {

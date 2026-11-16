@@ -9,6 +9,7 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Commands.UpdateServer;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.GetServerSshSettings;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.GetServerSshSetup;
+using Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServerOptions;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServers;
 using Innovayse.Hostpanel.Application.Services.Commands.RevokeServerSshKeys;
 using Innovayse.Hostpanel.Application.Services.Common;
@@ -37,22 +38,44 @@ public sealed class ServersController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Every configured provisioning server, optionally filtered by module.</summary>
-    /// <param name="query">The optional module filter.</param>
+    /// <summary>One page of the configured provisioning servers, by name, narrowed by a search text, a module and a last known state.</summary>
+    /// <param name="query">The page, page size, search, module and state.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the servers; 400 when a value is refused; 401 when the caller is not signed in;
+    /// 200 with the page; 400 when a value is refused; 401 when the caller is not signed in;
     /// 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<ServerDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedList<ServerDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ListAsync([FromQuery] ListServersQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ServerDto>>>(query, ct);
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<ServerDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Every configured provisioning server as a lean option, by name, optionally filtered by module: the picker the group
+    /// form, the add existing service dialog, the service detail, the CWP 7 integration and the dashboard read whole.
+    /// </summary>
+    /// <param name="query">The optional module filter.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the servers; 400 when the module is refused; 401 when the caller is not signed in;
+    /// 403 when the caller's role is not allowed;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("options")]
+    [ProducesResponseType(typeof(IReadOnlyList<ServerOptionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListOptionsAsync([FromQuery] ListServerOptionsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ServerOptionDto>>>(query, ct);
         return HandleResult(outcome);
     }
 

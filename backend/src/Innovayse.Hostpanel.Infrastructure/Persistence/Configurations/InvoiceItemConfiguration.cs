@@ -53,10 +53,11 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
 
         builder.Ignore(x => x.IsRenewal);
         builder.Ignore(x => x.IsDigital);
+        builder.Ignore(x => x.IsDigitalService);
 
         // What the product was when the line was billed, stored in the line's own row. Optional: a line that
         // is not a product's charge, and every line written before snapshots were kept, has none, and all
-        // six columns are null. ProductId is never null on a snapshot, which is how EF tells the two apart.
+        // snapshot columns are null. ProductId is never null on a snapshot, which is how EF tells the two apart.
         // The column names are given here because EF would otherwise prefix them with the navigation's name.
         builder.OwnsOne(x => x.ProductSnapshot, snapshot =>
         {
@@ -69,6 +70,11 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
             snapshot.Property(x => x.Sku).HasColumnName("Sku").HasMaxLength(ProductSku.MaxLength);
             snapshot.Property(x => x.Metadata).HasColumnName("ProductMetadata").HasColumnType("jsonb");
             snapshot.Property(x => x.GracePeriodDays).HasColumnName("GracePeriodDays");
+
+            // The column is nullable like every snapshot column (a line with no snapshot leaves it empty), but a line
+            // that has a snapshot always has a value: a line snapshotted before the flag existed was never a digital
+            // service for VAT, so the column default fills it for those rows when the migration adds the column.
+            snapshot.Property(x => x.IsDigitalService).HasColumnName("IsDigitalService").HasDefaultValue(false);
         });
         builder.Navigation(x => x.ProductSnapshot).IsRequired(false);
 

@@ -66,8 +66,6 @@
     "searchPlaceholder": "Поиск по названию, хосту или IP",
     "filterModule": "Модуль",
     "filterState": "Статус",
-    "anyModule": "Любой модуль",
-    "anyState": "Любой статус",
     "accountsLoad": "Аккаунты",
     "disabled": "ОТКЛЮЧЁН",
     "noMatches": "Нет серверов по этим фильтрам",

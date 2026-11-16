@@ -33,7 +33,7 @@ public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : I
             PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, "deploy", CancellationToken.None));
 
-        await fixture.Host.Services.PublishAndWaitAsync(new PluginRemovedEvent(fixture.SshPluginId, DateTimeOffset.UtcNow));
+        await fixture.Host.Services.PublishAndWaitAsync(new PluginRemovedEvent(fixture.SshPluginId, TestMoments.Seeded));
 
         using var scope = fixture.Host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

@@ -15,7 +15,6 @@ using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -40,9 +39,9 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
 
     /// <summary>Builds a host with a suppressed event gate and a fake SMTP relay.</summary>
     /// <param name="sender">The fake relay the host's mail goes to.</param>
-    /// <returns>The isolated host.</returns>
-    private WebApplicationFactory<Program> Host(FakeEmailSender sender) =>
-        EventHandlerTestHost.WithFakeRelay(factory, sender, adminEmail: AdminEmail);
+    /// <returns>The isolated host, on a clock standing at <see cref="TestMoments.Seeded"/>, which every row is seeded relative to.</returns>
+    private ClockedHost Host(FakeEmailSender sender) =>
+        new(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, sender, adminEmail: AdminEmail));
 
     /// <summary>Seeds a client with no credit and default settings.</summary>
     /// <param name="context">The data context to seed through.</param>
@@ -79,14 +78,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, type, 5m, 50m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, type, 5m, 50m, TestMoments.Seeded);
         product.SetSku(sku);
         product.SetMetadata("{\"tier\":\"basic\"}");
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(ownerId, product.Id, cycle, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", DateTimeOffset.UtcNow);
+        var service = ClientService.Create(ownerId, product.Id, cycle, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "panel-ref", TestMoments.Seeded);
         service.ChangeBillingTerms(new ServiceBillingTerms(
             BillingCycle: cycle, Quantity: 1, FirstPaymentAmount: 5m,
             RecurringAmount: recurringAmount, NextRenewalAt: nextRenewalAt, PaymentMethod: null,
@@ -124,8 +123,8 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         context.TldConfigs.Add(config);
 
         var domain = RegisteredDomain.Register(
-            clientId, $"example.{tld}", DateTimeOffset.UtcNow, expiresAt, autoRenew: true, whoisPrivacy: false, registrationPeriod: registrationPeriod, priceCurrency: TestCurrencies.Base);
-        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, DateTimeOffset.UtcNow);
+            clientId, $"example.{tld}", TestMoments.Seeded, expiresAt, autoRenew: true, whoisPrivacy: false, registrationPeriod: registrationPeriod, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var stored = await context.Domains.AsNoTracking()
@@ -181,10 +180,11 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task ServiceInsideLeadTime_IsInvoicedOnce()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, service, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (clientId, service, start) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10));
 
         var result = await RaiseAsync(bus, clientId);
 
@@ -229,11 +229,12 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [InlineData(BillingCycle.Biennial, 24)]
     public async Task ServiceOnAnyCycle_IsInvoicedForOnePeriodOfThatCycle(BillingCycle cycle, int months)
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var (clientId, service, start) = await SeedServiceAsync(
-            context, DateTimeOffset.UtcNow.AddDays(10), cycle, recurringAmount: 42.5m);
+            context, TestMoments.Seeded.AddDays(10), cycle, recurringAmount: 42.5m);
 
         var result = await RaiseAsync(bus, clientId);
 
@@ -259,12 +260,13 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [InlineData(ProductType.Digital, true)]
     public async Task ServiceRenewalLine_CarriesTheProductSnapshot(ProductType type, bool digital)
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var sku = $"snap-{Guid.NewGuid():N}";
         var (clientId, service, _) = await SeedServiceAsync(
-            context, DateTimeOffset.UtcNow.AddDays(10), BillingCycle.Annual, type: type, sku: sku);
+            context, TestMoments.Seeded.AddDays(10), BillingCycle.Annual, type: type, sku: sku);
 
         var result = await RaiseAsync(bus, clientId);
 
@@ -280,15 +282,37 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         invoice.HasDigitalItems.Should().Be(digital);
     }
 
+    /// <summary>A service's renewal line keeps the product's VAT digital service flag, so the invoice can be taxed at the client's country rate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ServiceRenewalLine_CarriesTheDigitalServiceFlag()
+    {
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var (clientId, service, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10), BillingCycle.Annual);
+        var product = await context.Products.SingleAsync(p => p.Id == service.ProductId);
+        product.SetDigitalService(true);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var result = await RaiseAsync(bus, clientId);
+
+        result.IsSuccess.Should().BeTrue();
+        var invoice = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject;
+        invoice.Items.Should().ContainSingle().Which.IsDigitalService.Should().BeTrue();
+    }
+
     /// <summary>A service outside the lead time is not invoiced yet.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceOutsideLeadTime_IsNotInvoiced()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, _, _) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(20));
+        var (clientId, _, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(20));
 
         var result = await RaiseAsync(bus, clientId);
 
@@ -306,10 +330,11 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [InlineData("cancel")]
     public async Task Skips(string why)
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var due = DateTimeOffset.UtcNow.AddDays(10);
+        var due = TestMoments.Seeded.AddDays(10);
         var (clientId, service, _) = why switch
         {
             "autorenew" => await SeedServiceAsync(context, due, autoRenew: false),
@@ -343,10 +368,11 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task OpenInvoice_BlocksAfterDateEdit()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, service, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (clientId, service, start) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10));
         (await RaiseAsync(bus, clientId)).Value.Should().Be(1);
 
         // Staff move the renewal date a few days on, still inside the lead time: a new period
@@ -369,13 +395,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task CancelledInvoice_IsReRaised()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, service, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10));
+        var (clientId, service, start) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10));
         (await RaiseAsync(bus, clientId)).Value.Should().Be(1);
         var first = await context.Invoices.FirstAsync(i => i.ClientId == clientId, CancellationToken.None);
-        first.Cancel(DateTimeOffset.UtcNow);
+        first.Cancel(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await RaiseAsync(bus, clientId);
@@ -398,13 +425,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         await TaxRuleTestSeeds.CreateAsync(admin, "MT", null, 18m);
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
         client.UpdateAddress(null, null, null, null, null, "MT");
         await context.SaveChangesAsync(CancellationToken.None);
-        await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(5), clientId: client.Id);
+        await SeedServiceAsync(context, TestMoments.Seeded.AddDays(5), clientId: client.Id);
 
         var result = await RaiseAsync(bus, client.Id);
 
@@ -415,12 +443,48 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         invoice.Total.Should().Be(invoice.SubTotal + invoice.Tax);
     }
 
+    /// <summary>
+    /// The renewal invoice of a digital service for a consumer in another EU member state is taxed at that country's standard
+    /// VAT rate in force on the invoice date, not at a tax rule, and the rate is fixed on the invoice.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DigitalService_ForAConsumerInAnotherMemberState_IsTaxedAtTheirCountrysVatRate()
+    {
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var client = await SeedClientAsync(context);
+        client.UpdateAddress(null, null, null, null, null, "LU");
+        var (_, service, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(5), clientId: client.Id);
+        (await context.Products.SingleAsync(p => p.Id == service.ProductId)).SetDigitalService(true);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        await VatRateTestSeeds.SetSellerCountryAsync(factory, "DE");
+        try
+        {
+            var result = await RaiseAsync(bus, client.Id);
+
+            result.Value.Should().Be(1);
+        }
+        finally
+        {
+            await VatRateTestSeeds.SetSellerCountryAsync(factory, string.Empty);
+        }
+
+        var invoice = (await InvoicesOfAsync(context, client.Id)).Single();
+        invoice.TaxRate.Should().Be(17m);
+        invoice.Total.Should().Be(invoice.SubTotal + invoice.Tax);
+    }
+
     /// <summary>SeparateInvoices gives one invoice per line.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeparateInvoices_OnePerLine()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
@@ -430,8 +494,8 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
             overdueNotices: true, taxExempt: false, taxId: null, taxExemptionReason: null, separateInvoices: true,
             disableCcProcessing: false, marketingOptIn: false, statusUpdate: true, allowSso: false);
         await context.SaveChangesAsync(CancellationToken.None);
-        var (_, first, _) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(5), clientId: client.Id);
-        var (_, second, _) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(9), clientId: client.Id);
+        var (_, first, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(5), clientId: client.Id);
+        var (_, second, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(9), clientId: client.Id);
 
         var result = await RaiseAsync(bus, client.Id);
 
@@ -450,11 +514,12 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task OneInvoicePerClient_DueOnEarliestStart()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, _, earliest) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(5));
-        await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(9), clientId: clientId);
+        var (clientId, _, earliest) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(5));
+        await SeedServiceAsync(context, TestMoments.Seeded.AddDays(9), clientId: clientId);
 
         var result = await RaiseAsync(bus, clientId);
 
@@ -472,23 +537,18 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task BackDatedStart_DueAfterTheLeadTime()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, _, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(-5));
+        var (clientId, _, start) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(-5));
 
-        var before = DateTimeOffset.UtcNow;
         var result = await RaiseAsync(bus, clientId);
-        var after = DateTimeOffset.UtcNow;
 
         result.Value.Should().Be(1);
         var invoice = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject;
         invoice.Items.Single().RenewalPeriodStart.Should().Be(start);
-
-        // One second either side: the handler's own clock sits between the two reads, and Postgres
-        // truncates to microseconds.
-        invoice.DueDate.Should().BeOnOrAfter(before.AddDays(14).AddSeconds(-1))
-            .And.BeOnOrBefore(after.AddDays(14).AddSeconds(1));
+        invoice.DueDate.Should().Be(host.Clock.GetUtcNow().AddDays(14));
     }
 
     /// <summary>
@@ -499,11 +559,12 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task BackDatedAndFutureStart_DueOnTheFutureStart()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, _, _) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(-5));
-        var (_, _, future) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(3), clientId: clientId);
+        var (clientId, _, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(-5));
+        var (_, _, future) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(3), clientId: clientId);
 
         var result = await RaiseAsync(bus, clientId);
 
@@ -518,14 +579,15 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task CancelledDomainInvoice_IsReRaisedOnceOnly()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
-        var (domain, expiry) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 12m });
+        var (domain, expiry) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(10), new() { [1] = 12m });
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
         var first = await context.Invoices.FirstAsync(i => i.ClientId == client.Id, CancellationToken.None);
-        first.Cancel(DateTimeOffset.UtcNow);
+        first.Cancel(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
@@ -545,11 +607,12 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task Domain_PricedFromTld()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
-        var (domain, expiry) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 12m });
+        var (domain, expiry) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(10), new() { [1] = 12m });
 
         var result = await RaiseAsync(bus, client.Id);
 
@@ -579,13 +642,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     public async Task Domain_NoPrice_AtCheckpoint_SkippedAndAlerted()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
 
         // The TLD is priced only for two years; the domain renews for one.
-        var (domain, _) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(7).AddHours(-1), new() { [2] = 20m });
+        var (domain, _) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(7).AddHours(-1), new() { [2] = 20m });
 
         var result = await RaiseAsync(bus, client.Id);
 
@@ -606,11 +670,12 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     public async Task Domain_NoPrice_OffCheckpoint_SkippedWithoutAlert()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
-        var (domain, _) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(5).AddHours(-1), new() { [2] = 20m });
+        var (domain, _) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(5).AddHours(-1), new() { [2] = 20m });
 
         var result = await RaiseAsync(bus, client.Id);
 
@@ -631,17 +696,18 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     public async Task Domain_NoPrice_InsideWindowAtGoLive_AlertedAtNextCheckpoint()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
-        var (domain, _) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10).AddHours(-1), new() { [2] = 20m });
+        var (domain, _) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(10).AddHours(-1), new() { [2] = 20m });
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(0);
         (await WaitForAlertAsync(sender, domain.Name, attempts: 10)).Should().BeEmpty();
 
         // Three days later, as far as the domain is concerned: its expiry is now 7 days out.
-        var later = DateTimeOffset.UtcNow.AddDays(7).AddHours(-1);
+        var later = TestMoments.Seeded.AddDays(7).AddHours(-1);
         await context.Domains.Where(d => d.Id == domain.Id)
             .ExecuteUpdateAsync(set => set.SetProperty(d => d.ExpiresAt, later), CancellationToken.None);
 
@@ -654,13 +720,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task Domain_SellCurrencyConvertedToPayer()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
 
         // AMD is seeded at 0.00256410 USD: 5000 AMD = 12.8205 USD, rounded to 12.82.
-        await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 5000m }, sellCurrency: "AMD");
+        await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(10), new() { [1] = 5000m }, sellCurrency: "AMD");
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
 
@@ -675,12 +742,13 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     public async Task Domain_MissingCurrencyRow_Skipped()
     {
         var sender = new FakeEmailSender();
-        using var scope = Host(sender).Services.CreateScope();
+        using var host = Host(sender);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
         var (domain, _) = await SeedDomainAsync(
-            context, client.Id, DateTimeOffset.UtcNow.AddDays(7).AddHours(-1), new() { [1] = 12m }, sellCurrency: "XYZ");
+            context, client.Id, TestMoments.Seeded.AddDays(7).AddHours(-1), new() { [1] = 12m }, sellCurrency: "XYZ");
 
         var result = await RaiseAsync(bus, client.Id);
 
@@ -696,12 +764,13 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task Domain_RegistrationPeriodZero_InvoicedAsOneYear()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
         var (domain, expiry) = await SeedDomainAsync(
-            context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 12m }, registrationPeriod: 0);
+            context, client.Id, TestMoments.Seeded.AddDays(10), new() { [1] = 12m }, registrationPeriod: 0);
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
 
@@ -719,16 +788,17 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task PaidUnappliedLine_BlocksAfterExpiryEdit()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
-        var (domain, expiry) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 12m });
-        var paid = Invoice.Create(client.Id, expiry, "USD", DateTimeOffset.UtcNow);
+        var (domain, expiry) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(10), new() { [1] = 12m });
+        var paid = Invoice.Create(client.Id, expiry, "USD", TestMoments.Seeded);
         paid.AddDomainRenewal($"{domain.Name} renewal", 12m, domain.Id, expiry, expiry.AddYears(1));
         context.Invoices.Add(paid);
         await context.SaveChangesAsync(CancellationToken.None);
-        paid.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        paid.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         // Staff correct the expiry by two days, still inside the window: a new period start.
@@ -747,16 +817,17 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task PaidSamePeriod_Blocks()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, service, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10));
-        var paid = Invoice.Create(clientId, start!.Value, "USD", DateTimeOffset.UtcNow);
+        var (clientId, service, start) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10));
+        var paid = Invoice.Create(clientId, start!.Value, "USD", TestMoments.Seeded);
         paid.AddServiceRenewal("Starter renewal", 5m, service.Id, start!.Value, start!.Value.AddMonths(1));
         context.Invoices.Add(paid);
         await context.SaveChangesAsync(CancellationToken.None);
-        paid.RecordPaidHistory("t", DateTimeOffset.UtcNow);
-        paid.Items.Single().MarkRenewalApplied(DateTimeOffset.UtcNow);
+        paid.RecordPaidHistory("t", TestMoments.Seeded);
+        paid.Items.Single().MarkRenewalApplied(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         (await RaiseAsync(bus, clientId)).Value.Should().Be(0);
@@ -768,15 +839,16 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task RefundedSamePeriod_Blocks()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, service, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10));
-        var refunded = Invoice.Create(clientId, start!.Value, "USD", DateTimeOffset.UtcNow);
+        var (clientId, service, start) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10));
+        var refunded = Invoice.Create(clientId, start!.Value, "USD", TestMoments.Seeded);
         refunded.AddServiceRenewal("Starter renewal", 5m, service.Id, start!.Value, start!.Value.AddMonths(1));
         context.Invoices.Add(refunded);
         await context.SaveChangesAsync(CancellationToken.None);
-        refunded.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        refunded.RecordPaidHistory("t", TestMoments.Seeded);
         refunded.Refund();
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -790,11 +862,12 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task NegativeAmountService_Skipped_OthersInvoiced()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var (clientId, _, _) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(5), recurringAmount: -1m);
-        var (_, good, _) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(9), clientId: clientId);
+        var (clientId, _, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(5), recurringAmount: -1m);
+        var (_, good, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(9), clientId: clientId);
 
         var result = await RaiseAsync(bus, clientId);
 
@@ -809,13 +882,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task Credit_Partial()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
         client.AddCredit(2m);
         await context.SaveChangesAsync(CancellationToken.None);
-        await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10), clientId: client.Id);
+        await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10), clientId: client.Id);
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
 
@@ -840,13 +914,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task Credit_Full_PaysAndApplies()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
         client.AddCredit(10m);
         await context.SaveChangesAsync(CancellationToken.None);
-        var (_, service, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10), clientId: client.Id);
+        var (_, service, start) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10), clientId: client.Id);
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
 
@@ -873,13 +948,14 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task AutoApplyCreditOff_LeavesCredit()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
         client.AddCredit(10m);
         await context.SaveChangesAsync(CancellationToken.None);
-        await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10), clientId: client.Id);
+        await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10), clientId: client.Id);
 
         var row = await context.Settings.FirstAsync(s => s.Key == BillingSettingKeys.AutoApplyCredit);
         row.UpdateValue("false");
@@ -906,7 +982,8 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task UnknownClient_IsRefused()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var result = await RaiseAsync(bus, int.MaxValue);
@@ -925,19 +1002,20 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task OpenRenewOrder_BlocksTheDomainUntilFulfilled()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
-        var (domain, _) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 12m });
+        var (domain, _) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(10), new() { [1] = 12m });
 
         // What PlaceOrderHandler leaves behind for a renew order: a plain invoice line, an order
         // item naming the domain, the order still Pending and linked to its invoice.
-        var orderInvoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var orderInvoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         orderInvoice.AddItem($"Domain renewal: {domain.Name}", 12m, 1);
         context.Invoices.Add(orderInvoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..20], client.Id, "bank-transfer", null, "USD", DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..20], client.Id, "bank-transfer", null, "USD", TestMoments.Seeded);
         order.AddItem(
             await DomainsTestSeeds.SeedHostingProductAsync(context), "Domain", BillingCycle.Annual, 12m, 12m, domain.Name, null, DomainAction.Renew, null, 1);
         order.LinkInvoice(orderInvoice.Id);
@@ -946,13 +1024,13 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(0, "the renew order's unpaid invoice bills the domain");
 
-        orderInvoice.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        orderInvoice.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(0, "paid but not fulfilled: the registrar renewal is still pending");
 
         // Fulfilled. The expiry is left where it was on purpose, so the only thing that changed is
         // the order's state: normal behaviour resumes and the period is invoiced.
-        order.Accept(DateTimeOffset.UtcNow);
+        order.Accept(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
         (await InvoicesOfAsync(context, client.Id)).Should().Contain(i => i.Items.Any(l => l.RegisteredDomainId == domain.Id));
@@ -963,18 +1041,19 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     [Fact]
     public async Task CancelledRenewOrder_DoesNotBlock()
     {
-        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var client = await SeedClientAsync(context);
-        var (domain, _) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 12m });
+        var (domain, _) = await SeedDomainAsync(context, client.Id, TestMoments.Seeded.AddDays(10), new() { [1] = 12m });
 
-        var orderInvoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var orderInvoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         orderInvoice.AddItem($"Domain renewal: {domain.Name}", 12m, 1);
-        orderInvoice.Cancel(DateTimeOffset.UtcNow);
+        orderInvoice.Cancel(TestMoments.Seeded);
         context.Invoices.Add(orderInvoice);
         await context.SaveChangesAsync(CancellationToken.None);
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..20], client.Id, "bank-transfer", null, "USD", DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..20], client.Id, "bank-transfer", null, "USD", TestMoments.Seeded);
         order.AddItem(
             await DomainsTestSeeds.SeedHostingProductAsync(context), "Domain", BillingCycle.Annual, 12m, 12m, domain.Name, null, DomainAction.Renew, null, 1);
         order.LinkInvoice(orderInvoice.Id);

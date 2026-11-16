@@ -20,10 +20,10 @@ public sealed class GetRenewableDomainsTests(IntegrationTestFactory factory) : I
     public async Task HandleAsync_MixedDomains_ListsOnlyDueAutoRenewingOnesAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var due = await RenewalTestSeeds.SeedActiveDomainAsync(host, DateTimeOffset.UtcNow.AddDays(5), autoRenew: true);
-        var later = await RenewalTestSeeds.SeedActiveDomainAsync(host, DateTimeOffset.UtcNow.AddDays(90), autoRenew: true);
-        var manual = await RenewalTestSeeds.SeedActiveDomainAsync(host, DateTimeOffset.UtcNow.AddDays(5), autoRenew: false);
-        var horizon = DateTimeOffset.UtcNow.AddDays(14);
+        var due = await RenewalTestSeeds.SeedActiveDomainAsync(host.Services, TestMoments.Seeded.AddDays(5), autoRenew: true);
+        var later = await RenewalTestSeeds.SeedActiveDomainAsync(host.Services, TestMoments.Seeded.AddDays(90), autoRenew: true);
+        var manual = await RenewalTestSeeds.SeedActiveDomainAsync(host.Services, TestMoments.Seeded.AddDays(5), autoRenew: false);
+        var horizon = TestMoments.Seeded.AddDays(14);
 
         var everyone = await InvokeAsync(host, new GetRenewableDomainsQuery(null, horizon));
         var one = await InvokeAsync(host, new GetRenewableDomainsQuery(due.ClientId, horizon));

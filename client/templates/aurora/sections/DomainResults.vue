@@ -51,7 +51,7 @@
               <UiButton
                 v-else-if="result.status === DomainResultStatus.Taken"
                 variant="bare"
-                :to="`${localePath('/domains/transfer')}?domain=${result.name}`"
+                :to="`${localePath(SITE_DOMAINS_TRANSFER_PATH)}?domain=${result.name}`"
                 :data-testid="`domain-transfer-${result.name}`"
                 :class="[LINE_BUTTON, 'px-[18px] py-[11px] text-sm font-bold']"
               >
@@ -76,6 +76,7 @@ import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
 import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_TONES } from '~/utils/domainStatus'
 import { DomainResultStatus } from '~/types/domainresultstatus'
 import type { DomainResult } from '~/types/domainresult'
+import { SITE_DOMAINS_TRANSFER_PATH } from '~/constants/siteRoutes'
 
 withDefaults(defineProps<{
   /** Lookup results, one row per checked extension. */

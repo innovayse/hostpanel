@@ -22,6 +22,8 @@ Go to **Settings → Products**. Subtitle: "Manage hosting plans and services av
 
 **Columns:** Name, Group, Type, Monthly price, Annual price (both in the base currency), a "+" count of other currencies the product is priced in, and Status.
 
+Type part of a name, SKU or slug in the search box to find a product. The **Filters** button narrows the list by group, type and status (active or hidden); applied filters show as chips you can remove. The list is paged, 20 products to a page, in the order you set with the sort order, and the search, the filters and the page stay in the address, so a link or a reload opens the same list. Search treats `%` and `_` as ordinary characters.
+
 ## Product types
 
 | Type | What it represents |
@@ -102,6 +104,21 @@ Go to **Settings → Products → Create Product** and fill in the form.
 <li>
 
 **Grace period (days)**: days a service stays usable after its due date before it is suspended.
+
+</li>
+<li>
+
+**Digital service**: turn it on for a product that counts as an electronic service for VAT (hosting, a licence, a domain that counts as one). A consumer in another EU member state is invoiced for such a product at the VAT rate of their own country; see [VAT rates and digital services](/staff/billing#vat-rates-and-digital-services). It is not the same as the product type Digital.
+
+</li>
+<li>
+
+**Max active services**: how many services of the product may be live at once (not terminated). An order that is placed but not yet fulfilled holds a place too, and an unpaid order keeps holding it until it is cancelled, so cancel an order that will not be paid to give its place back. When every place is taken the product is sold out: it is left off the storefront and a new order is refused (`ORDER_PRODUCT_SOLD_OUT`). Leave the field empty or 0 for no limit. Lowering the cap below the number already taken leaves the existing services alone and only stops new orders until places are free.
+
+</li>
+<li>
+
+**One per client**: a client who already has a live service of the product, or an open order for it, cannot order it again, and one order cannot name it twice (`ORDER_PRODUCT_ONE_PER_CLIENT`).
 
 </li>
 <li>

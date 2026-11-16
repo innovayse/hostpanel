@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The "Slot widgets" section of one plugin on the plugins page.
+ * The "Slot widgets" section of one plugin, in the Settings tab of its details page.
  *
  * Lists every widget the plugin puts into a page slot, each with a product multi select
  * and its own Save. Product ids differ per installation, so a plugin cannot know them when it is

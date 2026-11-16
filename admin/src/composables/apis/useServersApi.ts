@@ -4,11 +4,15 @@
  * No state lives here; every function rejects with an `ApiError` carrying the problem+json body.
  */
 
-import { useApi } from '@/composables/useApi'
+import { buildQuery, useApi } from '@/composables/useApi'
+import type { PaginatedList } from '@/types/paginatedlist'
 import type {
   ServerDto,
   ServerGroupDto,
   ServerGroupPayload,
+  ServerListQuery,
+  ServerModule,
+  ServerOptionDto,
   ServerPayload,
   TestConnectionResultDto,
 } from '@/types/server'
@@ -25,11 +29,30 @@ export const useServersApi = () => {
   const { request } = useApi()
 
   /**
-   * Lists the provisioning servers.
+   * Lists one page of the provisioning servers.
    *
-   * @returns Every server.
+   * @param query - Page, page size, search text, module and last known state.
+   * @returns The page and the total count.
    */
-  const listServers = (): Promise<ServerDto[]> => request<ServerDto[]>(ApiPath.AdminServers)
+  const listServers = (query: ServerListQuery): Promise<PaginatedList<ServerDto>> =>
+    request<PaginatedList<ServerDto>>(
+      `${ApiPath.AdminServers}${buildQuery({
+        page: query.page,
+        pageSize: query.pageSize,
+        search: query.search,
+        module: query.module,
+        state: query.state,
+      })}`,
+    )
+
+  /**
+   * Lists every provisioning server as a lean option, for the screens that choose a server or sum up all of them.
+   *
+   * @param module - Keep only the servers that run this module; every server when omitted.
+   * @returns Every matching server, by name.
+   */
+  const listServerOptions = (module?: ServerModule): Promise<ServerOptionDto[]> =>
+    request<ServerOptionDto[]>(`${ApiPath.AdminServerOptions}${buildQuery({ module })}`)
 
   /**
    * Creates a server.
@@ -161,6 +184,7 @@ export const useServersApi = () => {
 
   return {
     listServers,
+    listServerOptions,
     createServer,
     updateServer,
     deleteServer,

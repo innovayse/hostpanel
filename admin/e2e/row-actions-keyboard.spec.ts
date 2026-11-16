@@ -4,14 +4,14 @@
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
-import { hostServer } from './fixtures/servers'
+import { hostServer, serverPage } from './fixtures/servers'
 import { json, stubApi } from './support/stubApi'
 
 test('row actions menu: arrow keys navigate items and Escape returns focus to the trigger', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [
-      json(HttpMethod.Get, '/api/admin/servers', [hostServer]),
+      json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
     ],
   })

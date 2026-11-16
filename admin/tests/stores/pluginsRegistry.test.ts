@@ -50,13 +50,13 @@ describe('pluginsStore.fetchRegistry', () => {
     const mock = stubFetch(json({ items: [listing], total: 31, pageSize: 10 }))
     const store = usePluginsStore()
 
-    await store.setRegistryFilter({ q: 'pay', category: PluginCategory.Payment })
+    await store.setRegistryFilter({ search: 'pay', category: PluginCategory.Payment })
 
     expect(store.registryItems).toEqual([listing])
     expect(store.registryTotal).toBe(31)
     expect(store.registryPageSize).toBe(10)
     expect(store.registryLoading).toBe(false)
-    expect(callOf(mock).url).toBe('/api/admin/plugins/registry?q=pay&category=Payment&page=1')
+    expect(callOf(mock).url).toBe('/api/admin/plugins/registry?search=pay&category=Payment&page=1&pageSize=20')
   })
 
   it('sends no empty filter members', async () => {
@@ -64,7 +64,7 @@ describe('pluginsStore.fetchRegistry', () => {
 
     await usePluginsStore().fetchRegistry()
 
-    expect(callOf(mock).url).toBe('/api/admin/plugins/registry?page=1')
+    expect(callOf(mock).url).toBe('/api/admin/plugins/registry?page=1&pageSize=20')
   })
 
   it('starts again at page 1 on a new search or category, and keeps the filter on a page change', async () => {
@@ -73,12 +73,12 @@ describe('pluginsStore.fetchRegistry', () => {
 
     await store.setRegistryFilter({ page: 3 })
     expect(store.registryQuery.page).toBe(3)
-    await store.setRegistryFilter({ q: 'pay' })
-    expect(store.registryQuery).toEqual({ q: 'pay', category: '', page: 1 })
+    await store.setRegistryFilter({ search: 'pay' })
+    expect(store.registryQuery).toEqual({ search: 'pay', category: '', page: 1, pageSize: 20 })
     await store.setRegistryFilter({ page: 2 })
-    expect(store.registryQuery).toEqual({ q: 'pay', category: '', page: 2 })
+    expect(store.registryQuery).toEqual({ search: 'pay', category: '', page: 2, pageSize: 20 })
     await store.setRegistryFilter({ category: PluginCategory.Registrar })
-    expect(store.registryQuery).toEqual({ q: 'pay', category: 'Registrar', page: 1 })
+    expect(store.registryQuery).toEqual({ search: 'pay', category: 'Registrar', page: 1, pageSize: 20 })
   })
 
   it('keeps the API sentence on refusal', async () => {
@@ -127,15 +127,6 @@ describe('pluginsStore.fetchRegistryUpdates', () => {
     expect(store.updateVersions).toEqual({ 'example-pay': '2.0.0' })
   })
 
-  it('maps the release notes of the newer version by plugin id, null when the registry sent none', async () => {
-    stubFetch(json([{ ...listing, latestChangelog: '- Faster **refunds**' }, { ...listing, id: 'other-pay' }]))
-    const store = usePluginsStore()
-
-    await store.fetchRegistryUpdates()
-
-    expect(store.updateChangelogs).toEqual({ 'example-pay': '- Faster **refunds**', 'other-pay': null })
-  })
-
   it('leaves the list empty on a refusal, with no error shown', async () => {
     stubFetch(problem('Registry unavailable.', 503))
     const store = usePluginsStore()
@@ -178,7 +169,7 @@ describe('pluginsStore.installFromRegistry', () => {
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0', allowDowngrade: false })
     expect(requestsOf(mock)).toEqual(expect.arrayContaining([
       'GET /admin/plugins',
-      'GET /admin/plugins/registry?page=1',
+      'GET /admin/plugins/registry?page=1&pageSize=20',
       'GET /admin/plugins/registry/updates',
     ]))
   })

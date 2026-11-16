@@ -34,6 +34,7 @@ import type { ComparisonGroup } from '~/types/comparisongroup'
 import type { ProductFamily } from '~/types/productfamily'
 import { ProductType } from '~/types/producttype'
 import { SeoPageType } from '~/types/seopagetype'
+import { SITE_DOMAINS_PATH, SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
 
 /** Translation helpers and the active language. */
 const { t, locale } = useI18n()
@@ -78,7 +79,7 @@ const domainsFamily = computed<ProductFamily>(() => ({
   icon: productTypeIcon(ProductType.Domain),
   color: '#3b82f6',
   demoUrl: '',
-  learnMoreUrl: '/domains',
+  learnMoreUrl: SITE_DOMAINS_PATH,
   name: t('domains.card.name'),
   // No tagline, like every other family card, so the cards read alike.
   tagline: '',
@@ -114,7 +115,7 @@ const { baseUrl: productsBaseUrl } = useSeo({
   description: t('seo.products.description', { site: siteName.value }),
   keywords: t('seo.products.keywords', { site: siteName.value }),
   type: SeoPageType.Website,
-  path: '/products',
+  path: SITE_PRODUCTS_PATH,
 })
 
 /** Schema.org builders and the head injector. */

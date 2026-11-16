@@ -9,12 +9,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { APP_LOGO_STUB, mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { mountPage } from '~/tests/helpers/mountClient'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { settle } from '~/tests/helpers/settle'
-import { heldReply, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { CLIENT_DASHBOARD_PATH, CLIENT_FORGOT_PASSWORD_PATH, clientInvoicePath, CLIENT_REDIRECT_QUERY, CLIENT_REGISTER_PATH, SSO_AUTHORIZE_PATH } from '~/constants/clientRoutes'
+import { heldReply, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -22,12 +24,6 @@ import LoginPage from '~/pages/client/login.vue'
 import { useDemoStore } from '~/stores/demo'
 import { DemoAccountRole } from '~/types/demoaccountrole'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF path of the password sign-in. */
-const LOGIN_PATH = '/api/portal/auth/login'
-
-/** The BFF path of the second-factor sign-in. */
-const TWO_FACTOR_PATH = '/api/portal/auth/2fa-login'
 
 /** What the password sign-in answers when the account has a second factor. */
 const CHALLENGE = { twoFactorRequired: true, pendingToken: 'p' }
@@ -47,7 +43,7 @@ let table: StubRouteTable
  * @param wrapper - The mounted page.
  * @param password - Password to type.
  */
-const signIn = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>, password = 'secret'): Promise<void> => {
+const signIn = async (wrapper: Awaited<ReturnType<typeof mountPage>>, password = 'secret'): Promise<void> => {
   await wrapper.find('[data-testid="login-email"]').setValue('ada@example.com')
   await wrapper.find('[data-testid="login-password"]').setValue(password)
   await wrapper.find('form').trigger('submit')
@@ -59,7 +55,7 @@ const signIn = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>, passwo
  *
  * @param wrapper - The mounted page.
  */
-const reachCodeStep = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promise<void> => {
+const reachCodeStep = async (wrapper: Awaited<ReturnType<typeof mountPage>>): Promise<void> => {
   await signIn(wrapper)
   await waitUntil(() => expect(wrapper.find('[data-testid="login-2fa-form"]').exists()).toBe(true))
 }
@@ -70,7 +66,7 @@ const reachCodeStep = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>)
  * @param wrapper - The mounted page.
  * @param code - The six digits.
  */
-const typeCode = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>, code: string): Promise<void> => {
+const typeCode = async (wrapper: Awaited<ReturnType<typeof mountPage>>, code: string): Promise<void> => {
   for (const [index, digit] of [...code].entries()) {
     await wrapper.find(`[data-testid="otp-input-${index}"]`).setValue(digit)
   }
@@ -88,7 +84,7 @@ afterEach(async () => {
 describe('client login page (local mode)', () => {
   it('shows both fields with placeholders and the submit button', async () => {
     stubAuthRuntime()
-    const wrapper = await mountAuthPage(LoginPage)
+    const wrapper = await mountPage(LoginPage)
 
     expect(wrapper.find('[data-testid="login-email"]').attributes('placeholder')).toBe('client.login.emailPlaceholder')
     expect(wrapper.find('[data-testid="login-password"]').attributes('placeholder')).toBe('client.login.passwordPlaceholder')
@@ -98,47 +94,47 @@ describe('client login page (local mode)', () => {
 
   it('links to password recovery and registration', async () => {
     stubAuthRuntime()
-    const wrapper = await mountAuthPage(LoginPage)
+    const wrapper = await mountPage(LoginPage)
 
-    expect(wrapper.find('[data-testid="login-forgot"]').attributes('href')).toBe('/client/forgot-password')
-    expect(wrapper.find('[data-testid="login-register"]').attributes('href')).toBe('/client/register')
+    expect(wrapper.find('[data-testid="login-forgot"]').attributes('href')).toBe(CLIENT_FORGOT_PASSWORD_PATH)
+    expect(wrapper.find('[data-testid="login-register"]').attributes('href')).toBe(CLIENT_REGISTER_PATH)
   })
 
   it('signs in and goes to the dashboard', async () => {
     const { push } = stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { body: makeClientUser({ email: 'ada@example.com' }) }
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { body: makeClientUser({ email: 'ada@example.com' }) }
+    const wrapper = await mountPage(LoginPage)
 
     await signIn(wrapper)
-    await waitUntil(() => expect(push).toHaveBeenCalledWith('/client/dashboard'))
+    await waitUntil(() => expect(push).toHaveBeenCalledWith(CLIENT_DASHBOARD_PATH))
 
-    expect(bodyOf(requestsTo(stub.requests, LOGIN_PATH)[0])).toEqual({ email: 'ada@example.com', password: 'secret' })
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.Login)[0])).toEqual({ email: 'ada@example.com', password: 'secret' })
   })
 
   it('goes back to the page the visitor asked for', async () => {
-    const { push } = stubAuthRuntime({ query: { redirect: '/client/invoices/7' } })
-    table[`POST ${LOGIN_PATH}`] = { body: makeClientUser({ email: 'ada@example.com' }) }
-    const wrapper = await mountAuthPage(LoginPage)
+    const { push } = stubAuthRuntime({ query: { [CLIENT_REDIRECT_QUERY]: clientInvoicePath(7) } })
+    table[writeOf(AccountEndpoint.Login)] = { body: makeClientUser({ email: 'ada@example.com' }) }
+    const wrapper = await mountPage(LoginPage)
 
     await signIn(wrapper)
 
-    await waitUntil(() => expect(push).toHaveBeenCalledWith('/client/invoices/7'))
+    await waitUntil(() => expect(push).toHaveBeenCalledWith(clientInvoicePath(7)))
   })
 
   it('ignores a redirect that leaves the app and goes to the dashboard', async () => {
-    const { push } = stubAuthRuntime({ query: { redirect: 'https://evil.example/phish' } })
-    table[`POST ${LOGIN_PATH}`] = { body: makeClientUser({ email: 'ada@example.com' }) }
-    const wrapper = await mountAuthPage(LoginPage)
+    const { push } = stubAuthRuntime({ query: { [CLIENT_REDIRECT_QUERY]: 'https://evil.example/phish' } })
+    table[writeOf(AccountEndpoint.Login)] = { body: makeClientUser({ email: 'ada@example.com' }) }
+    const wrapper = await mountPage(LoginPage)
 
     await signIn(wrapper)
 
-    await waitUntil(() => expect(push).toHaveBeenCalledWith('/client/dashboard'))
+    await waitUntil(() => expect(push).toHaveBeenCalledWith(CLIENT_DASHBOARD_PATH))
   })
 
   it('shows the API sentence and stays put when the credentials are refused', async () => {
     const { push } = stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { status: 401, body: { detail: 'Wrong email or password.' } }
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { status: 401, body: { detail: 'Wrong email or password.' } }
+    const wrapper = await mountPage(LoginPage)
 
     await signIn(wrapper, 'nope')
     await waitUntil(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
@@ -149,8 +145,8 @@ describe('client login page (local mode)', () => {
 
   it('shows a field message under the field it belongs to', async () => {
     stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { status: 400, body: { errors: { email: ['Enter a valid email.'] } } }
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { status: 400, body: { errors: { email: ['Enter a valid email.'] } } }
+    const wrapper = await mountPage(LoginPage)
 
     await signIn(wrapper)
 
@@ -159,8 +155,8 @@ describe('client login page (local mode)', () => {
 
   it('swaps the password form for the code step when a second factor is required', async () => {
     const { push } = stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { body: CHALLENGE }
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { body: CHALLENGE }
+    const wrapper = await mountPage(LoginPage)
 
     await reachCodeStep(wrapper)
 
@@ -171,22 +167,22 @@ describe('client login page (local mode)', () => {
 
   it('finishes the sign-in with the typed code and follows the return path', async () => {
     const { push } = stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { body: CHALLENGE }
-    table[`POST ${TWO_FACTOR_PATH}`] = { body: makeClientUser() }
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { body: CHALLENGE }
+    table[writeOf(AccountEndpoint.TwoFactorLogin)] = { body: makeClientUser() }
+    const wrapper = await mountPage(LoginPage)
     await reachCodeStep(wrapper)
 
     await typeCode(wrapper, '123456')
     await waitUntil(() => expect(push).toHaveBeenCalledTimes(1))
 
-    expect(bodyOf(requestsTo(stub.requests, TWO_FACTOR_PATH)[0])).toEqual({ pendingToken: 'p', code: '123456' })
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.TwoFactorLogin)[0])).toEqual({ pendingToken: 'p', code: '123456' })
   })
 
   it('shows the refusal, clears the code and stays on the step when the code is wrong', async () => {
     const { push } = stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { body: CHALLENGE }
-    table[`POST ${TWO_FACTOR_PATH}`] = WRONG_CODE
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { body: CHALLENGE }
+    table[writeOf(AccountEndpoint.TwoFactorLogin)] = WRONG_CODE
+    const wrapper = await mountPage(LoginPage)
     await reachCodeStep(wrapper)
 
     await typeCode(wrapper, '000000')
@@ -201,8 +197,8 @@ describe('client login page (local mode)', () => {
 
   it('goes back to the password form from the code step', async () => {
     stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { body: CHALLENGE }
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { body: CHALLENGE }
+    const wrapper = await mountPage(LoginPage)
     await reachCodeStep(wrapper)
 
     await wrapper.find('[data-testid="login-2fa-cancel"]').trigger('click')
@@ -212,9 +208,9 @@ describe('client login page (local mode)', () => {
   })
   it('sends the login request again after a wrong code and a step back', async () => {
     stubAuthRuntime()
-    table[`POST ${LOGIN_PATH}`] = { body: CHALLENGE }
-    table[`POST ${TWO_FACTOR_PATH}`] = WRONG_CODE
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { body: CHALLENGE }
+    table[writeOf(AccountEndpoint.TwoFactorLogin)] = WRONG_CODE
+    const wrapper = await mountPage(LoginPage)
     await reachCodeStep(wrapper)
     await typeCode(wrapper, '000000')
     await waitUntil(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
@@ -222,15 +218,15 @@ describe('client login page (local mode)', () => {
     await wrapper.find('[data-testid="login-2fa-cancel"]').trigger('click')
     await wrapper.find('form').trigger('submit')
 
-    await waitUntil(() => expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(2))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.Login)).toHaveLength(2))
   })
 
   it('does not leave the sign-in button disabled when the step is left while a code is in flight', async () => {
     stubAuthRuntime()
     const held = heldReply()
-    table[`POST ${LOGIN_PATH}`] = { body: CHALLENGE }
-    table[`POST ${TWO_FACTOR_PATH}`] = held.reply
-    const wrapper = await mountAuthPage(LoginPage)
+    table[writeOf(AccountEndpoint.Login)] = { body: CHALLENGE }
+    table[writeOf(AccountEndpoint.TwoFactorLogin)] = held.reply
+    const wrapper = await mountPage(LoginPage)
     await reachCodeStep(wrapper)
     await typeCode(wrapper, '000000')
     await waitUntil(() => expect(held.waiting()).toBe(1))
@@ -249,9 +245,9 @@ describe('client login page (local mode)', () => {
 describe('client login page (SSO mode)', () => {
   it('shows one button to the identity provider and no form', async () => {
     stubAuthRuntime({ isSso: true })
-    const wrapper = await mountAuthPage(LoginPage)
+    const wrapper = await mountPage(LoginPage)
 
-    expect(wrapper.find('[data-testid="login-sso"]').attributes('href')).toBe('/api/portal/auth/sso/authorize')
+    expect(wrapper.find('[data-testid="login-sso"]').attributes('href')).toBe(SSO_AUTHORIZE_PATH)
     expect(wrapper.find('form').exists()).toBe(false)
     expect(wrapper.find('[data-testid="login-register"]').exists()).toBe(false)
   })
@@ -273,7 +269,7 @@ describe('client login page (demo mode)', () => {
     const demo = useDemoStore()
     demo.enabled = enabled
     demo.accounts = [{ role: DemoAccountRole.Admin, email: 'admin@demo.test', password: 'x' }, CLIENT]
-    return mountPage(LoginPage, { pinia, components: { Logo: APP_LOGO_STUB } })
+    return mountPage(LoginPage, { pinia })
   }
 
   it('offers no demo account outside a demo', async () => {

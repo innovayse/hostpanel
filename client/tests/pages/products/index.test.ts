@@ -7,7 +7,7 @@
  * @module tests/pages/products/index.test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, publishedSchemas, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
@@ -181,8 +181,8 @@ describe('products page', () => {
   it('sets the canonical head and publishes the collection page schema', async () => {
     await mountProducts()
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ path: '/products', title: 'seo.products.title' }))
-    const schemas = spies.injectSchema.mock.calls[0]?.[0] as Array<Record<string, unknown>>
-    expect(schemas.some((schema) => schema['@type'] === 'CollectionPage')).toBe(true)
+    expect(seoTags(spies)).toMatchObject({ title: 'seo.products.title' })
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/products`)
+    expect(publishedSchemas(spies).some((schema) => schema['@type'] === 'CollectionPage')).toBe(true)
   })
 })

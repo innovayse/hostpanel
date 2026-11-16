@@ -6,7 +6,10 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import TldTable from '~/templates/aurora/sections/TldTable.vue'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
 import type { TldPriceRow } from '~/types/tldpricerow'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 /**
  * Builds one price row.
@@ -30,23 +33,23 @@ const row = (tld: string, categories: string[]): TldPriceRow => ({
 const ROWS = [row('.com', ['Popular']), row('.am', ['Country']), row('.net', ['Popular'])]
 
 describe('TldTable', () => {
-  it('lists every extension for the all category, with its first category tag', () => {
-    stubAuroraGlobals()
+  it('lists every extension for the all category, with its first category tag', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(TldTable, { props: { rows: ROWS, active: ALL_CATEGORY } })
 
     expect(wrapper.findAll('[data-testid^="tld-row-"]')).toHaveLength(3)
     expect(wrapper.find('[data-testid="tld-row-.am"]').text()).toContain('Country')
   })
 
-  it('narrows the rows to the selected category', () => {
-    stubAuroraGlobals()
+  it('narrows the rows to the selected category', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(TldTable, { props: { rows: ROWS, active: 'Popular' } })
 
     expect(wrapper.findAll('[data-testid^="tld-row-"]').map((tr) => tr.attributes('data-testid'))).toEqual(['tld-row-.com', 'tld-row-.net'])
   })
 
-  it('shows the empty line when nothing matches', () => {
-    stubAuroraGlobals()
+  it('shows the empty line when nothing matches', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(TldTable, { props: { rows: ROWS, active: 'Unknown' } })
 
     expect(wrapper.find('[data-testid="tld-empty"]').text()).toBe('aurora.tldTable.empty')

@@ -8,7 +8,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { stubLocalePath, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 import SectionsProductsSlide from '~/components/sections/SectionsProductsSlide.vue'
 import type { SliderItem } from '~/types/slideritem'
 
@@ -44,7 +44,7 @@ const mountSlide = (slide: SliderItem, eager = false) =>
 
 describe('SectionsProductsSlide', () => {
   beforeEach(() => {
-    stubLocalePath('/en')
+    stubLocalePath(TEST_LOCALE_PREFIX)
   })
 
   it('shows the title, tagline, description and a chip per feature', () => {

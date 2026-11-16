@@ -87,7 +87,7 @@ public sealed class DomainRegisteredNotificationHandlerTests(IntegrationTestFact
         using (services.GetRequiredService<IDomainEventGate>().Suppress())
         {
             var domain = RegisteredDomain.Register(
-                clientId, $"event-{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1),
+                clientId, $"event-{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
                 autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             context.Domains.Add(domain);
             await context.SaveChangesAsync(CancellationToken.None);

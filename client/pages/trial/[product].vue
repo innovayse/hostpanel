@@ -29,6 +29,7 @@ import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import { FAMILY_ICON, familyConfig, familyKey, parseDescription } from '~/utils/catalogGroups'
+import { SITE_PRODUCTS_PATH, siteTrialPath } from '~/constants/siteRoutes'
 
 /** Colour of a product that matches no catalogue group: empty, so the trial components fall back to the portal brand accent. */
 const UNKNOWN_PRODUCT_COLOR = ''
@@ -62,7 +63,7 @@ const config = computed(() => (group.value ? familyConfig(group.value, catalogSt
   name: productSlug,
   icon: FAMILY_ICON,
   color: UNKNOWN_PRODUCT_COLOR,
-  learnMoreUrl: '/products',
+  learnMoreUrl: SITE_PRODUCTS_PATH,
   demoUrl: undefined,
 }))
 
@@ -78,6 +79,6 @@ const features = computed(() => (trialPlan.value ? parseDescription(trialPlan.va
 useSeo({
   title: t('trial.seo.title', { product: config.value.name }),
   description: t('trial.seo.description', { product: config.value.name }),
-  path: `/trial/${productSlug}`,
+  path: siteTrialPath(productSlug),
 })
 </script>

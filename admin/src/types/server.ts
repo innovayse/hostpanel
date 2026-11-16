@@ -163,6 +163,47 @@ export interface ServerDto {
   credentials: ServerCredentialStatus
 }
 
+/**
+ * A server as a picker or a summary reads it: no credential, name server or hosting detail. The whole set comes from one
+ * unpaged request, so a screen that chooses a server or sums up every server never pages through the list. It is the server
+ * brief (id, name, host name and address, flat as `ServerBriefDto` sends them) plus the state and capacity; the nested `endpoint` of
+ * {@link ServerDto} stays on the detail, because a picker has no use for the SSL flag and the assigned addresses.
+ */
+export interface ServerOptionDto {
+  /** Unique server identifier. */
+  id: number
+  /** Display name. */
+  name: string
+  /** Hostname or IP used for API access. */
+  hostname: string
+  /** Primary public IP address, or null. */
+  ipAddress: string | null
+  /** Whether the last connection test succeeded, or null if never tested. */
+  isOnline: boolean | null
+  /** Account count from the last test, or null if unknown. */
+  accountsCount: number | null
+  /** Account capacity and whether the server takes new accounts. */
+  limits: ServerLimits
+}
+
+/** What narrows the server list: the search text, the module and the last known state; each member left out means no narrowing. */
+export interface ServerListFilters {
+  /** Text the name, hostname or IP address must contain; empty for none. */
+  search?: string
+  /** Keep only the servers that run this control panel module. */
+  module?: ServerModule
+  /** Keep only the servers in this last known connection state. */
+  state?: ServerState
+}
+
+/** Filter and paging of the server list. */
+export interface ServerListQuery extends ServerListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
+}
+
 /** Result of a server connection test. */
 export interface TestConnectionResultDto {
   /** Whether the connection succeeded. */
@@ -241,13 +282,10 @@ export const FILL_TYPE_LABELS: Record<ServerFillType, string> = {
   get FillUntilFull() { return translate('servers.fillType.fillUntilFull') },
 }
 
-/** Closed set of which lists a server mutation reloads afterwards. */
-export const ServerRefresh = {
-  /** Only the server list. */
-  Servers: 'servers',
-  /** The server list and the group list. */
-  Both: 'both',
-} as const
-
-/** One of the {@link ServerRefresh} values. */
-export type ServerRefresh = (typeof ServerRefresh)[keyof typeof ServerRefresh]
+/** Result of one connection test, as shown on the server's card. */
+export interface ServerTestOutcome {
+  /** Whether the server answered. */
+  ok: boolean
+  /** The sentence to show: the summary on success, the server's reason otherwise. */
+  message: string
+}

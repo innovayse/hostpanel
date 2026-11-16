@@ -46,7 +46,9 @@ public sealed class GetOrderableProductsHandler
                 p.Name,
                 p.Status,
                 ProductPriceDto.Of(currency, cycle => p.PriceFor(currency, cycle)),
-                p.ToFulfilmentDto()))
+                p.ToFulfilmentDto(),
+                p.MaxActiveServices,
+                p.OnePerClient))
             .ToList();
 
         return Result<IReadOnlyList<OrderableProductDto>>.Success(orderable);

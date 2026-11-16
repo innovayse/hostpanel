@@ -3,6 +3,10 @@
   "description": "Set the tax rate new invoices are taxed at, per country or per region of a country",
   "addRule": "Add Tax Rule",
   "empty": "No tax rules yet. Add a rule to tax new invoices automatically.",
+  "searchPlaceholder": "Search by name, country or region",
+  "noMatches": "No tax rules match your filters",
+  "clearFilters": "Clear filters",
+  "totalCount": "Tax rules: {totalCount}",
   "table": {
     "name": "Name",
     "country": "Country",

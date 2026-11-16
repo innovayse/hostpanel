@@ -34,6 +34,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
@@ -153,6 +154,9 @@ const isHidden = ref(false)
 /** Whether the product is the group's recommended plan. */
 const isFeatured = ref(false)
 
+/** Whether the product is an electronic service for VAT. */
+const isDigitalService = ref(false)
+
 /** Position inside the group, lowest first. */
 const sortOrder = ref(0)
 
@@ -164,6 +168,12 @@ const metadata = ref('')
 
 /** Grace period in days. */
 const gracePeriodDays = ref(DEFAULT_GRACE_PERIOD_DAYS)
+
+/** Cap on live services of the product; empty or 0 means unlimited. */
+const maxActiveServices = ref<number | null>(null)
+
+/** Whether a client may hold only one live service of the product. */
+const onePerClient = ref(false)
 
 /** Available server groups (owned by the servers store). */
 const serverGroups = computed(() => serversStore.groups)
@@ -212,10 +222,13 @@ watch(() => props.product, (p) => {
     serverGroupId.value = p.serverGroupId ?? null
     isHidden.value = p.status === ProductStatus.Inactive
     isFeatured.value = p.isFeatured
+    isDigitalService.value = p.isDigitalService
     sortOrder.value = p.sortOrder
     sku.value = p.sku ?? ''
     metadata.value = p.metadata ?? ''
     gracePeriodDays.value = p.gracePeriodDays
+    maxActiveServices.value = p.maxActiveServices
+    onePerClient.value = p.onePerClient
     resetPriceRows(p.prices)
   } else {
     type.value = ProductType.SharedHosting
@@ -228,10 +241,13 @@ watch(() => props.product, (p) => {
     serverGroupId.value = null
     isHidden.value = false
     isFeatured.value = false
+    isDigitalService.value = false
     sortOrder.value = 0
     sku.value = ''
     metadata.value = ''
     gracePeriodDays.value = DEFAULT_GRACE_PERIOD_DAYS
+    maxActiveServices.value = null
+    onePerClient.value = false
     resetPriceRows()
   }
 }, { immediate: true })
@@ -336,6 +352,7 @@ useFieldErrorClear(
     [ProductField.Sku, sku],
     [ProductField.Metadata, metadata],
     [ProductField.GracePeriodDays, gracePeriodDays],
+    [ProductField.MaxActiveServices, maxActiveServices],
   ],
 )
 
@@ -361,6 +378,10 @@ const handleSubmit = (): void => {
     metadata: metadata.value.trim(),
     gracePeriodDays: Number(gracePeriodDays.value),
     isHidden: isHidden.value,
+    isDigitalService: isDigitalService.value,
+    // 0 is unlimited: always sent, so clearing the field on update clears the stored cap.
+    maxActiveServices: Math.max(0, Math.trunc(Number(maxActiveServices.value)) || 0),
+    onePerClient: onePerClient.value,
   })
 }
 </script>
@@ -509,6 +530,17 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
+      <UiField :label="t('settings.productForm.maxActiveServices')" :hint="t('settings.productForm.maxActiveServicesHint')" :error="props.fieldErrors[ProductField.MaxActiveServices]">
+        <UiNumberInput
+          v-model="maxActiveServices"
+          nullable
+          :min="0"
+          :step="1"
+          :placeholder="t('settings.productForm.maxActiveServicesPlaceholder')"
+          data-testid="product-form-max-active-services"
+        />
+      </UiField>
+
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
         <UiCard class="overflow-hidden">
@@ -517,7 +549,7 @@ const handleSubmit = (): void => {
               <UiTableRow>
                 <UiTableHeader>{{ t('shared.enabled') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.currency') }}</UiTableHeader>
-                <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
+                <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric :card-role="UiCardRole.Control">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -557,6 +589,15 @@ const handleSubmit = (): void => {
         <UiToggle v-model="isFeatured" data-testid="product-form-featured" />
       </UiStack>
 
+      <!-- Digital service (VAT) toggle -->
+      <UiStack direction="row" align="center" justify="between">
+        <UiStack gap="xs">
+          <UiText tone="primary" size="md">{{ t('settings.productForm.digitalService') }}</UiText>
+          <UiText tone="muted" size="sm">{{ t('settings.productForm.digitalServiceHint') }}</UiText>
+        </UiStack>
+        <UiToggle v-model="isDigitalService" data-testid="product-form-digital-service" />
+      </UiStack>
+
       <!-- Hidden toggle -->
       <UiStack direction="row" align="center" justify="between">
         <UiStack gap="xs">
@@ -564,6 +605,15 @@ const handleSubmit = (): void => {
           <UiText tone="muted" size="sm">{{ t('settings.productForm.hideThisProductFromThe') }}</UiText>
         </UiStack>
         <UiToggle v-model="isHidden" data-testid="product-form-hidden" />
+      </UiStack>
+
+      <!-- One-per-client toggle -->
+      <UiStack direction="row" align="center" justify="between">
+        <UiStack gap="xs">
+          <UiText tone="primary" size="md">{{ t('settings.productForm.onePerClient') }}</UiText>
+          <UiText tone="muted" size="sm">{{ t('settings.productForm.onePerClientHint') }}</UiText>
+        </UiStack>
+        <UiToggle v-model="onePerClient" data-testid="product-form-one-per-client" />
       </UiStack>
 
       <UiStatusMessage :message="error ?? null" :tone="UiTone.Danger" data-testid="product-form-error" />

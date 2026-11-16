@@ -50,30 +50,29 @@ export const redirectToExternal = (target: string): boolean => {
 }
 
 /**
- * Whether the browser may be handed to what the backend answered a payment start with. A form post is
- * safe when its action is a safe address, because that is where the browser sends the fields; every
- * other kind is safe when its page address is.
+ * Whether the browser may be handed to what the backend answered a payment start with. The page address
+ * must be safe for every kind, because for a form post it is where the browser sends the fields; a form
+ * post must also carry its form.
  *
  * @param start - The answer to a payment start.
  * @param allowHttp - Whether `http` is acceptable; true only in development.
  * @returns True when the form or the address may be followed.
  */
 export const isSafeGatewayStart = (start: GatewayStart, allowHttp: boolean = Boolean(import.meta.dev)): boolean =>
-  start.kind === GatewaySessionKind.FormPost
-    ? start.formPost !== null && isSafeRedirectUrl(start.formPost.action, allowHttp)
-    : isSafeRedirectUrl(start.redirectUrl, allowHttp)
+  isSafeRedirectUrl(start.redirectUrl, allowHttp) && (start.kind !== GatewaySessionKind.FormPost || start.formPost !== null)
 
 /**
  * Posts a form to a gateway from a form the page builds and submits itself. Names and values are set as
  * properties of the elements, never written as markup, so nothing a plugin supplied can become markup
  * or script.
  *
- * @param formPost - The form to post; its action has been checked by {@link isSafeGatewayStart}.
+ * @param action - The address to post to; it has been checked by {@link isSafeGatewayStart}.
+ * @param formPost - The form to post.
  */
-const postToGateway = (formPost: PaymentFormPost): void => {
+const postToGateway = (action: string, formPost: PaymentFormPost): void => {
   const form = document.createElement('form')
   form.method = 'post'
-  form.action = formPost.action
+  form.action = action
   form.hidden = true
   for (const field of formPost.fields) {
     const input = document.createElement('input')
@@ -99,7 +98,7 @@ export const redirectToGateway = (start: GatewayStart): boolean => {
     return false
   }
   if (start.kind === GatewaySessionKind.FormPost && start.formPost) {
-    postToGateway(start.formPost)
+    postToGateway(start.redirectUrl, start.formPost)
     return true
   }
   window.location.href = start.redirectUrl

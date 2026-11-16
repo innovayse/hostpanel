@@ -1,7 +1,7 @@
 /**
- * A sellable product, the group it sits in, and the payloads that create or update one.
+ * A sellable product, the group it sits in, what narrows the product list, and the payloads that create or update one.
  */
-
+import type { ProductStatus, ProductType } from '@/types/productenums'
 
 /** Represents a product/plan available for purchase. */
 export interface Product {
@@ -39,6 +39,32 @@ export interface Product {
   metadata: string | null
   /** Days a service stays usable after its due date before it is suspended, 0 to 365. */
   gracePeriodDays: number
+  /** Whether the product is an electronic service for VAT, taxed at the client's country rate when sold to a consumer in another EU member state. */
+  isDigitalService: boolean
+  /** How many services of the product may be live at once, counting orders not yet fulfilled; null when unlimited. */
+  maxActiveServices: number | null
+  /** Whether a client may hold only one live service of the product. */
+  onePerClient: boolean
+}
+
+/** What narrows the product list: the search text, the group, the type and the status; each member left out means no narrowing. */
+export interface ProductListFilters {
+  /** Text the name, SKU or slug must contain; empty for none. */
+  search?: string
+  /** Keep only the products of this group. */
+  groupId?: number
+  /** Keep only the products of this type. */
+  type?: ProductType
+  /** Keep only the products in this status. */
+  status?: ProductStatus
+}
+
+/** Filter and paging of the product list. */
+export interface ProductListQuery extends ProductListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
 }
 
 /**
@@ -105,6 +131,12 @@ export interface CreateProductPayload {
   gracePeriodDays?: number
   /** Hides the product (Inactive status) from the storefront and order form; omitted keeps the stored status on update. */
   isHidden?: boolean
+  /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
+  isDigitalService?: boolean
+  /** Cap on live services; 0 means unlimited, omitted keeps the stored cap on update. */
+  maxActiveServices?: number
+  /** Allows one live service per client; omitted keeps the stored setting on update. */
+  onePerClient?: boolean
 }
 
 /** Payload for updating an existing product. */
@@ -135,4 +167,10 @@ export interface UpdateProductPayload {
   gracePeriodDays?: number
   /** Hides the product (Inactive status) from the storefront and order form; omitted keeps the stored status on update. */
   isHidden?: boolean
+  /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
+  isDigitalService?: boolean
+  /** Cap on live services; 0 means unlimited, omitted keeps the stored cap on update. */
+  maxActiveServices?: number
+  /** Allows one live service per client; omitted keeps the stored setting on update. */
+  onePerClient?: boolean
 }

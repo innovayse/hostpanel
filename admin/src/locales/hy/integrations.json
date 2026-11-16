@@ -48,7 +48,7 @@
     "lengthServerValue": "Սերվերներ՝ {length}",
     "noCwp7ServersConfiguredYet": "CWP7 սերվերներ դեռ կարգավորված չեն։",
     "addYourFirstServer": "Ավելացրեք առաջին սերվերը →",
-    "accountscountValueAccounts": "Հաշիվներ՝ {accountsCount} / {value}"
+    "accountsUsage": "Հաշիվներ՝ {usage}"
   },
   "cwpIntegration": {
     "centosWebPanel": "CentOS Web Panel"

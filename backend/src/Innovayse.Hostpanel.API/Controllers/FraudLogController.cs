@@ -25,11 +25,11 @@ public sealed class FraudLogController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a page of the fraud log, newest first, optionally for one decision and one reason.</summary>
-    /// <param name="query">The page, page size and filters.</param>
+    /// <summary>Returns a page of the fraud log, newest first, optionally searched and narrowed by kind, decision and reason.</summary>
+    /// <param name="query">The page, page size, search and filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the page; 400 with <c>VALIDATION_ERROR</c> for a bad paging window or an unknown decision or reason; 401 without a session;
+    /// 200 with the page; 400 with <c>VALIDATION_ERROR</c> for a missing or bad paging window, a search that is too long or an unknown kind, decision or reason; 401 without a session;
     /// 403 for a caller who is not an administrator;
     /// 429 when the rate limit is hit.
     /// </returns>

@@ -27,7 +27,9 @@ describe('DashboardRecentInvoices', () => {
     const wrapper = mountWithApp(DashboardRecentInvoices, { props: { invoices: [], loading: true } })
 
     expect(wrapper.text()).toContain('Latest invoices')
-    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(true)
+    expect(wrapper.attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('li')).toHaveLength(5)
+    expect(wrapper.findAll('li [data-testid="ui-skeleton-bar"]')).toHaveLength(20)
     expect(wrapper.text()).not.toContain('No invoices yet.')
   })
 })

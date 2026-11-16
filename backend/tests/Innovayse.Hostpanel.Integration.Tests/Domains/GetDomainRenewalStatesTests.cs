@@ -17,7 +17,7 @@ public sealed class GetDomainRenewalStatesTests(IntegrationTestFactory factory) 
     public async Task HandleAsync_KnownAndUnknown_AnswersOnlyTheKnownStateAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var domain = await RenewalTestSeeds.SeedActiveDomainAsync(host, DateTimeOffset.UtcNow.AddDays(20), autoRenew: true);
+        var domain = await RenewalTestSeeds.SeedActiveDomainAsync(host.Services, TestMoments.Seeded.AddDays(20), autoRenew: true);
 
         using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

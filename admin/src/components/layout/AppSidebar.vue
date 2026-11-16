@@ -11,8 +11,8 @@
  *   In the rail an entry is its icon alone (the label is its tooltip and accessible name) and a click on an
  *   entry with a sub-menu opens the panel again, so a sub-menu is never out of reach.
  * - Emits `navigate` on link click so the mobile drawer can close.
- * - In the drawer (`embedded`) it is always drawn in full, keeps clear of the home indicator and also carries
- *   the theme select, which the top bar has no room for on a phone.
+ * - In the menu sheet (`embedded`) it is always drawn in full (the sheet keeps it clear of the home indicator) and
+ *   also carries the theme and language menus, which the top bar has no room for on a phone.
  */
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -307,7 +307,7 @@ watch(locale, () => {
   <aside
     class="flex h-full min-h-0 flex-col"
     :class="embedded
-      ? 'w-full pb-[env(safe-area-inset-bottom)]'
+      ? 'w-full'
       : ['shrink-0 overflow-hidden border-r border-border-shell bg-surface-sidebar transition-[width] duration-(--duration-slow) motion-reduce:transition-none', rail ? 'w-18' : 'w-62']"
     data-testid="app-sidebar"
   >

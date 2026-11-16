@@ -44,7 +44,7 @@
                 :class="plan.isFeatured ? 'bg-gradient-to-b from-primary-500/10 to-transparent [.tpl-classic_&]:bg-none [.tpl-classic_&]:bg-classic-brand-soft' : ''"
                 :data-testid="`comparison-plan-${plan.id}`"
               >
-                <NuxtLink :to="localePath(`/configure/${plan.id}`)" class="inline-flex flex-col items-center gap-1">
+                <NuxtLink :to="localePath(siteConfigurePath(plan.id))" class="inline-flex flex-col items-center gap-1">
                   <span class="text-gray-900 dark:text-white font-bold text-base [.tpl-classic_&]:text-classic-ink">{{ plan.name }}</span>
                   <span
                     v-if="plan.isFeatured"
@@ -100,6 +100,7 @@ import { PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
 import { revealDelay } from '~/utils/reveal'
 import type { ChipTab } from '~/types/chiptab'
 import type { ComparisonGroup } from '~/types/comparisongroup'
+import { siteConfigurePath } from '~/constants/siteRoutes'
 
 /** Props of ProductsComparison. */
 interface Props {

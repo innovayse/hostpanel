@@ -337,7 +337,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     {
         var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-note" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
 
@@ -365,7 +365,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     {
         var plugin = new FakePaymentPlugin { RefundResult = null };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId);
 
@@ -384,7 +384,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     {
         var plugin = new FakePaymentPlugin { RefundResult = "never" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.PaidInvoiceAsync(host, clientId);
 
@@ -403,7 +403,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     {
         var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-rest" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
         await CreditNoteTestSeeds.IssueOkAsync(admin, invoiceId, 70m);
@@ -427,14 +427,15 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     {
         var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-unused" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
         using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            invoice.BeginGatewayRefund(DateTimeOffset.UtcNow, 40m);
+            // Real time: the refund claim is held for a lease that the shared host judges by its own system clock.
+            invoice.BeginGatewayRefund(TestMoments.Present(), 40m);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

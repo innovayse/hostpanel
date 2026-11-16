@@ -8,10 +8,11 @@
  */
 import { provide } from 'vue'
 import { UI_TABLE_HEAD } from '@/utils/ui/injection'
+import { cardTableClasses } from '@/utils/ui/table'
 
 provide(UI_TABLE_HEAD, true)
 </script>
 
 <template>
-  <thead class="sticky top-0 z-10"><slot /></thead>
+  <thead role="rowgroup" class="sticky top-0 z-10" :class="cardTableClasses"><slot /></thead>
 </template>

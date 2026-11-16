@@ -15,6 +15,7 @@ import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import PluginPage from '~/pages/client/apps/[plugin]/[...page].vue'
 import { PluginBlockKind } from '~/types/pluginblockkind'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { CLIENT_DASHBOARD_PATH, clientServicePath } from '~/constants/clientRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -126,7 +127,7 @@ describe('plugin page', () => {
 
     const wrapper = await mountPluginPage()
 
-    expect(wrapper.get('[data-testid="plugin-page-back"]').attributes('href')).toBe('/client/services/blog')
+    expect(wrapper.get('[data-testid="plugin-page-back"]').attributes('href')).toBe(clientServicePath('blog'))
   })
 
   it('goes back to the dashboard from a workspace page with no service', async () => {
@@ -134,7 +135,7 @@ describe('plugin page', () => {
 
     const wrapper = await mountPluginPage()
 
-    expect(wrapper.get('[data-testid="plugin-page-back"]').attributes('href')).toBe('/client/dashboard')
+    expect(wrapper.get('[data-testid="plugin-page-back"]').attributes('href')).toBe(CLIENT_DASHBOARD_PATH)
   })
 
   it.each(['standard', 'unknown-layout'])('draws no back link on a page whose layout is %s', async (layout) => {

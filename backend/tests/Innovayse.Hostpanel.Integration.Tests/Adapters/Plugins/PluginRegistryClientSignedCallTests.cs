@@ -58,7 +58,8 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
         call.IsSigned.Should().BeTrue();
         call.HasLicenceKey.Should().BeFalse();
         call.Headers["X-Hostpanel-Instance"].Should().Be(registry.Instances.Single().Id.ToString("D"));
-        long.Parse(call.Headers["X-Hostpanel-Timestamp"]).Should().BeCloseTo(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), 30);
+        // Real time: the client signs with the system clock of the shared host.
+        long.Parse(call.Headers["X-Hostpanel-Timestamp"]).Should().BeCloseTo(TestMoments.Present().ToUnixTimeSeconds(), 30);
         call.Headers["X-Hostpanel-Nonce"].Length.Should().BeInRange(16, 64);
         Convert.FromBase64String(call.Headers["X-Hostpanel-Signature"]).Should().HaveCount(64);
     }

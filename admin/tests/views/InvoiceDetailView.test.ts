@@ -26,7 +26,10 @@ describe('InvoiceDetailView', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
 
-    expect(wrapper.get('[data-testid="billing-invoice-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="billing-invoice-summary"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-client-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-payments-table"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-history-table"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="billing-invoice-items-table"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="billing-invoice-tab-payment"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(4)

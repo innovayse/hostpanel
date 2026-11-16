@@ -95,7 +95,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     public async Task GetPdf_AnswersBusyWhenNoRenderSlotFrees()
     {
         using var host = BillingTestSeeds.RenderBusyHost(factory);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 12.50m);
         using var held = await host.Services.GetRequiredService<InvoicePdfRenderGate>().TryEnterAsync(CancellationToken.None);
@@ -248,7 +248,8 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
         var created = await admin.PostAsJsonAsync("/api/billing", new
         {
             clientId,
-            dueDate = DateTimeOffset.UtcNow.AddDays(14),
+            // Real time: the shared host rejects a due date before its own system date.
+            dueDate = TestMoments.Present().AddDays(14),
             isDraft = false,
             items = Enumerable.Range(1, count)
                 .Select(n => new { description = $"Line {n}", unitPrice = 1m, quantity = 1 })

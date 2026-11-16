@@ -8,7 +8,7 @@ description: Install, update, remove and sign payment plugins.
 ## Signed plugin packages
 
 A plugin runs inside the server, so the server needs to know who made a package before it runs one. A plugin package
-(the ZIP you upload on the Plugins page) is signed with a detached Ed25519 signature, the file `plugin.sig` at the
+(the ZIP you upload with **Upload plugin** on the Plugins page) is signed with a detached Ed25519 signature, the file `plugin.sig` at the
 root of the package.
 
 ### What the server does
@@ -27,7 +27,7 @@ Everything except the Development and Testing environments counts as production.
 
 ### Allowing unsigned plugins
 
-Open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. It is off by default, and each change is
+Open **Plugins** in the admin panel, choose the **Settings** tab and switch on **Allow unsigned plugins**. It is off by default, and each change is
 written to the activity log. With it on, a production server installs and loads packages that fail the signature
 check, so only switch it on when you trust every package you upload. A change of the switch applies to the next
 upload at once, and to plugins that are already installed after the next restart.
@@ -71,7 +71,7 @@ releases you have chosen, and remove a key from `PluginSigning` if everything it
 A plugin that is installed but breaks a manifest rule is skipped when the server starts. The log gets one warning that
 names the plugin and the rule, and the plugin never runs.
 
-The plugin list on the Plugins page shows such a plugin as a **Refused** entry. The entry gives the plugin's folder name
+The **Installed** tab of the Plugins page shows such a plugin as a **Refused** card. The entry gives the plugin's folder name
 as its id, the rule it broke and a short detail saying what is wrong, and it is never shown as enabled or loaded. Only a
 broken manifest rule is listed this way; a package that fails for another reason (for example a signature check) is only
 a line in the log.
@@ -160,7 +160,7 @@ stays loaded until the next restart, but is switched off at once and answers not
 image cannot be removed. If the files are already gone but the plugin was once switched on here, removing it again just
 switches it off. The removal is written to the activity log.
 
-A plugin that was removed but still keeps data appears in the list as **Removed**. To delete that data, use the purge on
+A plugin that was removed but still keeps data is listed as **Removed** under **Removed plugins** on the **Settings** tab of the Plugins page. To delete that data, use the purge on
 that row, which calls `DELETE /api/admin/plugins/{id}/data`:
 
 - It is refused with `PLUGIN_STILL_INSTALLED` (409) while a folder for the plugin exists on disk, in the server image or
@@ -184,7 +184,7 @@ Purging cannot be undone. The plugin's stored data is deleted for good, so take 
 
 A plugin can put a widget into a page slot and, in its manifest, limit it to some products with `productIds`. Product ids
 differ between installations, so a plugin that targets your own products cannot know them when it is built. After
-install you can bind each widget to your products on the plugin page of the admin panel.
+install you can bind each widget to your products on the plugin's own page: open the plugin from the Installed tab, then its **Settings** tab, which lists its slot widgets.
 
 - The setting made there overrides the manifest. A widget with products chosen there shows only for services of those
   products, and the `productIds` in the manifest are ignored for that widget.

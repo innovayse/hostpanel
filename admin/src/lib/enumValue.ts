@@ -6,7 +6,7 @@
 /**
  * Finds the member of a string enum that holds the given value.
  *
- * @param enumObject - The enum object (for example `NetworkIssueTab`).
+ * @param enumObject - The enum object (for example `DownloadsTab`).
  * @param value - The raw string to look up.
  * @returns The enum member whose value equals `value`, or null when there is none.
  */

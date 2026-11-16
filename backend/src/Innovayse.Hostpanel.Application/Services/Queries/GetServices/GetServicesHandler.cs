@@ -1,9 +1,12 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
+using Innovayse.Hostpanel.Application.Domains.Queries.FindServiceIdsByDomainName;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetLinkedDomainNames;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Extensions;
+using Innovayse.Hostpanel.Application.Products.Queries.FindProductIdsByName;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductCyclePrices;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -14,7 +17,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Services.Queries.GetServices;
 
-/// <summary>Returns a paginated list of all client services for admin use, enriched with client, domain, and pricing data.</summary>
+/// <summary>
+/// Returns a paginated list of client services for admin use, narrowed by the search text and by owner, status, product
+/// and billing cycle, all in SQL ahead of paging, enriched with client, domain, and pricing data.
+/// </summary>
 public sealed class GetServicesHandler
 {
     /// <summary>Price shown when the product has no price in the client's currency for that cycle.</summary>
@@ -44,9 +50,9 @@ public sealed class GetServicesHandler
     /// Handles the query by resolving product names, client names, linked domains, and the price
     /// in each owning client's currency for the billing cycle.
     /// </summary>
-    /// <param name="qry">The page, page size and optional client filter.</param>
+    /// <param name="qry">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success, always: an out-of-range page answers an empty page, not a refusal.</returns>
+    /// <returns>Success with the requested page; a page past the last answers an empty page, not a refusal.</returns>
     /// <exception cref="InvalidOperationException">A service names a product or a client that does not exist, so the database is broken.</exception>
     public async Task<Result<PaginatedList<ServiceListItemDto>>> HandleAsync(GetServicesQuery qry, CancellationToken ct)
     {
@@ -56,9 +62,37 @@ public sealed class GetServicesHandler
             servicesQuery = servicesQuery.Where(s => s.ClientId == qry.ClientId.Value);
         }
 
-        var total = await servicesQuery.CountAsync(ct);
-        var services = await servicesQuery
-            .OrderByDescending(s => s.CreatedAt)
+        // A service shows its registered domain when one is linked and its own domain otherwise, and the product name is
+        // not a column of the service, so the search also asks the owners of those tables which services and products
+        // match. Each answer is one array parameter in the query, however many ids it holds.
+        if (!string.IsNullOrWhiteSpace(qry.Search))
+        {
+            var ownMatches = servicesQuery.SearchIncludingId(qry.Search, s => s.Id, s => s.Domain).Select(s => s.Id);
+            var domainServiceIds = await FindIdsAsync(new FindServiceIdsByDomainNameQuery(qry.Search), ct);
+            var matchingProductIds = await FindIdsAsync(new FindProductIdsByNameQuery(qry.Search), ct);
+            servicesQuery = servicesQuery.Where(s =>
+                ownMatches.Contains(s.Id) || domainServiceIds.Contains(s.Id) || matchingProductIds.Contains(s.ProductId));
+        }
+
+        if (qry.Status is { } status)
+        {
+            servicesQuery = servicesQuery.Where(s => s.Status == status);
+        }
+
+        if (qry.ProductId is { } productId)
+        {
+            servicesQuery = servicesQuery.Where(s => s.ProductId == productId);
+        }
+
+        if (qry.BillingCycle is { } billingCycle)
+        {
+            servicesQuery = servicesQuery.Where(s => s.BillingCycle == billingCycle);
+        }
+
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var orderedServices = servicesQuery.OrderByDescending(s => s.CreatedAt).ThenByDescending(s => s.Id);
+        var total = await orderedServices.CountAsync(ct);
+        var services = await orderedServices
             .Paginate(qry.Page, qry.PageSize)
             .ToListAsync(ct);
 
@@ -120,5 +154,16 @@ public sealed class GetServicesHandler
 
         return Result<PaginatedList<ServiceListItemDto>>.Success(
             new PaginatedList<ServiceListItemDto>(result, total, qry.Page, qry.PageSize));
+    }
+
+    /// <summary>Asks the module that owns a table which of its ids match the search; a refusal is no match.</summary>
+    /// <param name="query">The lookup, a message answered with the matching ids.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching ids.</returns>
+    private async Task<IReadOnlyList<int>> FindIdsAsync(object query, CancellationToken ct)
+    {
+        var answer = await _bus.InvokeAsync<Result<IReadOnlyList<int>>>(query, ct);
+
+        return answer.Value ?? [];
     }
 }

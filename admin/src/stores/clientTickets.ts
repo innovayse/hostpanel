@@ -13,7 +13,7 @@ import { useClientTicketsApi } from '@/composables/apis/useClientTicketsApi'
 import { runAction } from '@/lib/runAction'
 import type { ClientTicketStats } from '@/types/client'
 import type { Department } from '@/types/department'
-import type { CreateTicketPayload, Ticket, TicketListItem, UpdateTicketPayload } from '@/types/ticket'
+import type { ClientTicketListFilters, CreateTicketPayload, Ticket, TicketListItem, UpdateTicketPayload } from '@/types/ticket'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
 /** Loads and changes the support tickets of a client. */
@@ -25,6 +25,9 @@ export const useClientTicketsStore = defineStore('clientTickets', () => {
 
   /** Total count of tickets matching the current query. */
   const totalCount = ref(0)
+
+  /** Items per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
 
   /** Ticket statistics for summary cards. */
   const stats = ref<ClientTicketStats>({ openedThisMonth: 0, openedLastMonth: 0, openedThisYear: 0, openedLastYear: 0 })
@@ -51,27 +54,29 @@ export const useClientTicketsStore = defineStore('clientTickets', () => {
   const quiet = ref<string | null>(null)
 
   /**
-   * Fetches a paginated list of tickets for a client.
+   * Fetches one page of a client's tickets. The page, the search and the filters come from the list's address, so
+   * the store keeps no copy of them.
    *
    * @param clientId - The client identifier.
-   * @param page - One-based page number.
-   * @param pageSize - Number of items per page.
-   * @param search - Optional subject search term.
-   * @returns Promise that resolves when tickets are loaded.
+   * @param page - Page to load, 1-based.
+   * @param filters - The subject search text and the status, priority and department filters; empty for none.
+   * @returns True when loaded; false when refused (see `error`).
    */
   const fetchClientTickets = async (
     clientId: number | string,
-    page = 1,
-    pageSize = DEFAULT_PAGE_SIZE,
-    search?: string,
-  ): Promise<void> => {
+    page: number,
+    filters: ClientTicketListFilters = {},
+  ): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.list(clientId, page, pageSize, search))
+    const result = await runAction(error, () =>
+      api.list(clientId, { ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
+    )
     loading.value = false
     if (result.ok) {
       tickets.value = result.value.items
       totalCount.value = result.value.totalCount
     }
+    return result.ok
   }
 
   /**
@@ -166,6 +171,7 @@ export const useClientTicketsStore = defineStore('clientTickets', () => {
   return {
     tickets,
     totalCount,
+    pageSize,
     stats,
     currentTicket,
     departments,

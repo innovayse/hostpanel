@@ -34,7 +34,7 @@ public sealed class InvoiceSelectedItemsTests(IntegrationTestFactory factory) : 
             $"/api/clients/{clientId}/billable-items/invoice-selected", new { billableItemIds = new[] { itemId } });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items");
+        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items?page=1&pageSize=20");
         using var body = JsonDocument.Parse(await list.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("uninvoicedItems").EnumerateArray()
             .Should().NotContain(item => item.GetProperty("id").GetInt32() == itemId);

@@ -27,16 +27,14 @@ export interface GatewayLogEntry {
   invoiceId: number | null
 }
 
-/** Filters the gateway log can be listed by; an empty value means no filter. */
+/** What narrows the gateway log: the search text, the period and the outcome; each member left out means no narrowing. */
 export interface GatewayLogFilters {
-  /** Inclusive start day (ISO date), or empty. */
-  from: string
-  /** Inclusive end day (ISO date), or empty. */
-  to: string
-  /** Gateway name text, or empty. */
-  gateway: string
-  /** Debug text, or empty. */
-  debugData: string
-  /** Outcome, or empty for any. */
-  result: GatewayLogResult | ''
+  /** Search term over the gateway name and the debug text; empty for none. */
+  search?: string
+  /** First day kept, `YYYY-MM-DD`. */
+  from?: string
+  /** Last day kept, `YYYY-MM-DD`, the whole day included. */
+  to?: string
+  /** Keep only entries with this outcome. */
+  result?: GatewayLogResult
 }

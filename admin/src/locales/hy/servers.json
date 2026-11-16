@@ -66,8 +66,6 @@
     "searchPlaceholder": "Որոնել ըստ անվան, հոսթի կամ IP-ի",
     "filterModule": "Մոդուլ",
     "filterState": "Կարգավիճակ",
-    "anyModule": "Ցանկացած մոդուլ",
-    "anyState": "Ցանկացած կարգավիճակ",
     "accountsLoad": "Հաշիվներ",
     "disabled": "ԱՆՋԱՏՎԱԾ",
     "noMatches": "Ֆիլտրերին համապատասխան սերվերներ չկան",

@@ -8,22 +8,21 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
 /// <summary><c>BaseApiController.HandleStream</c>: a stream for a good outcome, the mapped refusal for a failed one or one with no stream.</summary>
 public sealed class HandleStreamTests
 {
-    /// <summary>A controller that exposes <c>HandleStream</c>, over the real error message resolver.</summary>
+    /// <summary>A controller that exposes <c>HandleStream</c>, over the real error message resolver, logging and clock.</summary>
     private sealed class StreamingController : BaseApiController
     {
-        /// <summary>Initializes the controller with a request whose services hold the resolver.</summary>
+        /// <summary>Initializes the controller with a request whose services hold the resolver, the logging and the clock.</summary>
         public StreamingController()
         {
             var services = new ServiceCollection();
-            services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
+            services.AddLogging();
+            services.AddSingleton(TimeProvider.System);
             services.AddLocalization();
             services.AddSingleton<IErrorMessageResolver, ErrorMessageResolver>();
             ControllerContext = new ControllerContext

@@ -5,7 +5,7 @@
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
-import { fieldOf } from './support/locators'
+import { fieldOf, settingsPanel } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 import type { Setting } from '../src/types/setting'
 
@@ -47,11 +47,11 @@ test('editing a field counts as an unsaved change in the bar', async ({ page }) 
   })
 
   await page.goto('/settings/general')
-  await expect(page.getByTestId('settings-form-status')).toHaveText('No unsaved changes')
-  await expect(page.getByTestId('settings-form-save')).toBeDisabled()
+  await expect(settingsPanel(page, 'general').getByTestId('settings-form-status')).toHaveText('No unsaved changes')
+  await expect(settingsPanel(page, 'general').getByTestId('settings-form-save')).toBeDisabled()
 
   await fieldOf(page, 'site-identity-name').fill('Acme Cloud')
 
-  await expect(page.getByTestId('settings-form-status')).toHaveText('1 unsaved change')
-  await expect(page.getByTestId('settings-form-save')).toBeEnabled()
+  await expect(settingsPanel(page, 'general').getByTestId('settings-form-status')).toHaveText('1 unsaved change')
+  await expect(settingsPanel(page, 'general').getByTestId('settings-form-save')).toBeEnabled()
 })

@@ -18,3 +18,15 @@ export const fieldOf = (page: Page, testId: string): Locator =>
   page.getByTestId(testId).locator('input, textarea').or(
     page.locator(`input[data-testid="${testId}"], textarea[data-testid="${testId}"]`),
   )
+
+/**
+ * One tab's panel on the system settings screen.
+ *
+ * Every panel stays mounted and only the selected one shows, so a test id such as the Save bar's
+ * exists once per tab; scoping to the panel keeps a locator to one element.
+ *
+ * @param page - The page under test.
+ * @param tab - The tab's value in the address (`general`, `appearance`, `integrations`, `advanced`).
+ * @returns A locator for the panel.
+ */
+export const settingsPanel = (page: Page, tab: string): Locator => page.getByTestId(`settings-panel-${tab}`)

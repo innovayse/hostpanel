@@ -12,18 +12,13 @@
   "paymentMethodOptions": {
     "bankTransfer": "Банковский перевод"
   },
-  "quoteStageOptions": {
-    "allStages": "Все этапы"
-  },
   "orderStatusOptions": {
     "fraud": "Мошенничество",
     "incomplete": "Не завершён",
     "underReview": "На проверке"
   },
   "ticketFilterOptions": {
-    "allActiveTickets": "Все активные тикеты",
-    "flagged": "Помеченные",
-    "awaitingReply": "Ожидает ответа"
+    "flagged": "Помеченные"
   },
   "recurringPeriodOptions": {
     "weekly": "Еженедельно",
@@ -67,5 +62,9 @@
     "cidr": "Диапазон IP (CIDR)",
     "emailDomain": "Домен e-mail",
     "country": "Страна"
+  },
+  "emailLogOutcomeOptions": {
+    "delivered": "Доставлено",
+    "failed": "Не доставлено"
   }
 }

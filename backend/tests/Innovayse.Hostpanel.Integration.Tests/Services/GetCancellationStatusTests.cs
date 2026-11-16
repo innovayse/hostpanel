@@ -26,7 +26,7 @@ public sealed class GetCancellationStatusTests(IntegrationTestFactory factory) :
         using var scope = factory.Services.CreateScope();
         var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -61,7 +61,7 @@ public sealed class GetCancellationStatusTests(IntegrationTestFactory factory) :
         using var scope = factory.Services.CreateScope();
         var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
 

@@ -60,6 +60,45 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     [Range(0, 23)]
     public int CheckReleaseUpdatesHour { get; init; } = 10;
 
+    /// <summary>UTC hour (0-23) of the daily re-check of clients' VAT numbers.</summary>
+    [Range(0, 23)]
+    public int RecheckVatNumbersHour { get; init; } = 2;
+
+    /// <summary>
+    /// Days a client's VAT number check stays current before the daily re-check asks the VAT number service again, so a
+    /// number that stops being valid stops the reverse charge for new invoices within this many days.
+    /// </summary>
+    [Range(1, 365)]
+    public int VatRecheckAfterDays { get; init; } = 7;
+
+    /// <summary>
+    /// Days a valid VAT number check keeps the reverse charge on new invoices. A check older than this no longer counts, so the
+    /// invoice is taxed again until the number is checked once more: the reverse charge fails closed when the daily re-check
+    /// stops running (switched off, a register that never answers) instead of holding on to a verdict nobody renewed. Longer
+    /// than <see cref="VatRecheckAfterDays"/>, so a healthy re-check always renews a check before it lapses.
+    /// </summary>
+    [Range(2, 730)]
+    public int VatCheckValidForDays { get; init; } = 30;
+
+    /// <summary>How many clients one daily re-check pass checks at most; the clients left over are first in line the next day.</summary>
+    [Range(1, 5000)]
+    public int VatRecheckBatchSize { get; init; } = 500;
+
+    /// <summary>
+    /// How many answers in a row may come back without a verdict for one country before a re-check pass stops asking about that
+    /// country. Its register is then down, and asking for every remaining client of it would only wait out a timeout each; the
+    /// other countries are still checked, and the next daily run starts again.
+    /// </summary>
+    [Range(1, 1000)]
+    public int VatRecheckStopAfterUnavailable { get; init; } = 5;
+
+    /// <summary>
+    /// When <see langword="true"/>, the daily re-check of VAT numbers is skipped entirely and no outbound request is made
+    /// to the VAT number services. Set this for installations that have no outbound internet access; a number is then
+    /// checked only when staff run the check or the client changes it.
+    /// </summary>
+    public bool DisableVatRechecks { get; init; }
+
     /// <summary>
     /// When <see langword="true"/>, the daily release-update check is skipped entirely and no
     /// outbound request is made to GitHub. Set this for installations that have no outbound
@@ -229,6 +268,15 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Gets the schedule of the GitHub release update check.</summary>
     public JobSchedule CheckReleaseUpdates => JobSchedule.Daily(CheckReleaseUpdatesHour);
 
+    /// <summary>Gets the schedule of the re-check of VAT numbers.</summary>
+    public JobSchedule RecheckVatNumbers => JobSchedule.Daily(RecheckVatNumbersHour);
+
+    /// <summary>Gets how old a VAT number check must be before the re-check asks again, as a span.</summary>
+    public TimeSpan VatRecheckAfter => TimeSpan.FromDays(VatRecheckAfterDays);
+
+    /// <summary>Gets how long a valid VAT number check keeps the reverse charge, as a span.</summary>
+    public TimeSpan VatCheckValidFor => TimeSpan.FromDays(VatCheckValidForDays);
+
     /// <summary>Gets the schedule of the gateway payment reconciliation.</summary>
     public JobSchedule ReconcileGatewayPayments =>
         JobSchedule.Every(TimeSpan.FromMinutes(ReconcileGatewayPaymentsIntervalMinutes));
@@ -314,6 +362,14 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <returns>One failure per relation that does not hold, none otherwise.</returns>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        // A check that lapses before the re-check looks at it again would drop the reverse charge of a healthy installation.
+        if (VatCheckValidForDays <= VatRecheckAfterDays)
+        {
+            yield return new ValidationResult(
+                "VatCheckValidForDays must be longer than VatRecheckAfterDays.",
+                [nameof(VatCheckValidForDays), nameof(VatRecheckAfterDays)]);
+        }
+
         // A cap below the start would make the first wait longer than the cap allows.
         if (GatewayCheckMaxIntervalMinutes < GatewayCheckBackoffStartMinutes)
         {

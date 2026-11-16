@@ -76,7 +76,7 @@ public sealed class UpdateMyProfileHandler
                 PaymentMethod = cmd.PaymentMethod ?? current.Preferences.PaymentMethod,
             },
             cmd.Notifications ?? current.Notifications,
-            current.Settings,
+            current.Settings with { TaxId = cmd.VatNumber ?? current.Settings.TaxId },
             null,
             current.ClientGroupId);
 

@@ -6,6 +6,7 @@
  * focus inside the trigger, and linked to it with `aria-describedby`. The hint is an opaque elevated surface.
  */
 import { useId } from 'vue'
+import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import type { UiTooltipPlacement } from '@/utils/ui/tooltip'
 
 /** Props for UiTooltip. */
@@ -34,8 +35,8 @@ const placementClasses: Record<UiTooltipPlacement, string> = {
     <span
       :id="id"
       role="tooltip"
-      class="pointer-events-none absolute left-1/2 -translate-x-1/2 z-40 whitespace-nowrap glass-strong rounded-lg px-2.5 py-1.5 text-xs text-text-primary shadow-popover hidden group-hover:block group-focus-within:block"
-      :class="placementClasses[placement]"
+      class="pointer-events-none absolute left-1/2 -translate-x-1/2 z-40 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs text-text-primary hidden group-hover:block group-focus-within:block"
+      :class="[FLOATING_PANEL_CLASSES, placementClasses[placement]]"
     >
       {{ text }}
     </span>

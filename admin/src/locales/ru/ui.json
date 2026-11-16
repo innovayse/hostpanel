@@ -80,7 +80,9 @@
     "rowsPerPage": "Строк на странице"
   },
   "table": {
-    "empty": "Нет данных"
+    "empty": "Нет данных",
+    "sortBy": "Сортировать по",
+    "sortDirection": "Изменить направление сортировки"
   },
   "bulkBar": {
     "label": "Массовые действия",
@@ -101,9 +103,5 @@
   },
   "errorState": {
     "retry": "Повторить"
-  },
-  "rating": {
-    "label": "Оценка {average} из 5 по {count} отзыву | Оценка {average} из 5 по {count} отзывам | Оценка {average} из 5 по {count} отзывам",
-    "summary": "{average} ({count})"
   }
 }

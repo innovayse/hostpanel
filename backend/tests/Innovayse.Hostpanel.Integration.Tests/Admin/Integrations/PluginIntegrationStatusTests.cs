@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -206,11 +207,11 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
         var id = PluginActivationTestSeeds.NewId("status-hang");
         await EnableAsync(id, "hang");
         var client = await ClientAsync(Host(Plugin(id, typeof(ScriptedStatusPlugin))));
-        var started = DateTimeOffset.UtcNow;
+        var stopwatch = Stopwatch.StartNew();
 
         var response = await client.PostAsync($"/api/admin/integrations/{id}/test", null);
 
-        (DateTimeOffset.UtcNow - started).Should().BeLessThan(TimeSpan.FromSeconds(15));
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(15));
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("success").GetBoolean().Should().BeFalse();

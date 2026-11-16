@@ -33,6 +33,7 @@ import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { EmailForwardingRuleItem } from '@/types/domain'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole } from '@/utils/ui/table'
 import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
@@ -303,8 +304,8 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
       <UiTable :density="UiTableDensity.Compact" :empty="isEmpty" data-testid="clients-forwarding-table">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.emailForwardingTable.destination') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.emailForwardingTable.destination') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.active') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>

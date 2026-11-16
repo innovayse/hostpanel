@@ -37,7 +37,7 @@ test('uploading a logo stages its URL and saving persists it', async ({ page }) 
   // would, so the request never falls through to the preview server's proxy.
   await page.route(uploadedLogoUrl, (route) => route.fulfill({ contentType: 'image/png', body: tinyPng }))
 
-  await page.goto('/settings/general')
+  await page.goto('/settings/general?tab=appearance')
 
   await page.getByTestId('branding-file-logo').setInputFiles({
     name: 'logo.png',

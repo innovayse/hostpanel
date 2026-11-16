@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
@@ -10,7 +10,10 @@ using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListCreditNotes;
 
-/// <summary>Lists credit notes for staff, newest first, optionally of one invoice, one client or one status.</summary>
+/// <summary>
+/// Lists credit notes for staff, newest first, narrowed by the search text, the invoice, the client, the status and the
+/// method, all in SQL ahead of paging.
+/// </summary>
 public sealed class ListCreditNotesHandler
 {
     /// <summary>The module's data context.</summary>
@@ -36,10 +39,9 @@ public sealed class ListCreditNotesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
+        var filtered = _context.CreditNotes.AsNoTracking()
+            .SearchIncludingId(query.Search, n => n.Id, n => n.Number, n => n.Reason, n => n.RefundReference);
 
-        var filtered = _context.CreditNotes.AsNoTracking();
         if (query.InvoiceId is { } invoiceId)
         {
             filtered = filtered.Where(n => n.InvoiceId == invoiceId);
@@ -55,13 +57,18 @@ public sealed class ListCreditNotesHandler
             filtered = filtered.Where(n => n.Status == status);
         }
 
+        if (query.Method is { } method)
+        {
+            filtered = filtered.Where(n => n.Method == method);
+        }
+
         var ordered = filtered.OrderByDescending(n => n.CreatedAt).ThenByDescending(n => n.Id);
         var total = await ordered.CountAsync(ct);
-        var notes = await ordered.Paginate(page, pageSize).ToListAsync(ct);
+        var notes = await ordered.Paginate(query.Page, query.PageSize).ToListAsync(ct);
 
         var clients = await _bus.GetRequiredClientBriefsByIdAsync(notes.Select(n => n.ClientId).Distinct().ToList(), ct);
         var rows = notes.Select(n => CreditNoteMapper.ToDto(n, clients[n.ClientId].FullName)).ToList();
 
-        return Result.Success(new PaginatedList<CreditNoteDto>(rows, total, page, pageSize));
+        return Result.Success(new PaginatedList<CreditNoteDto>(rows, total, query.Page, query.PageSize));
     }
 }

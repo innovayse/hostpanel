@@ -58,7 +58,7 @@ internal sealed class BindingRaceSaveInterceptor : SaveChangesInterceptor
         insert.Parameters.AddWithValue("slotId", pending.Entity.SlotId);
         insert.Parameters.AddWithValue("widgetId", pending.Entity.WidgetId);
         insert.Parameters.AddWithValue("productId", pending.Entity.ProductId);
-        insert.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+        insert.Parameters.AddWithValue("createdAt", TestMoments.Seeded);
         await insert.ExecuteNonQueryAsync(cancellationToken);
         FireCount++;
         return result;

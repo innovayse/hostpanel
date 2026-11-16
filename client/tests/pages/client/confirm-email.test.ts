@@ -8,17 +8,17 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { settle } from '~/tests/helpers/settle'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { CLIENT_LOGIN_PATH, CLIENT_REGISTER_PATH } from '~/constants/clientRoutes'
 import ConfirmEmailPage from '~/pages/client/confirm-email.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF path the confirmation is posted to. */
-const CONFIRM_PATH = '/api/portal/auth/confirm-email'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -27,7 +27,7 @@ let stub: StubServer
 let table: StubRouteTable
 
 beforeEach(async () => {
-  table = { [`POST ${CONFIRM_PATH}`]: { body: {} } }
+  table = { [writeOf(AccountEndpoint.ConfirmEmail)]: { body: {} } }
   stub = await startTransport(routeTable(table))
 })
 
@@ -39,28 +39,28 @@ describe('client confirm-email page', () => {
   it('confirms the address from the link and offers sign-in', async () => {
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
 
-    expect(bodyOf(requestsTo(stub.requests, CONFIRM_PATH)[0])).toEqual({ email: 'ada@example.com', token: 'tok' })
-    expect(wrapper.find('[data-testid="confirm-signin"]').attributes('href')).toBe('/client/login')
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.ConfirmEmail)[0])).toEqual({ email: 'ada@example.com', token: 'tok' })
+    expect(wrapper.find('[data-testid="confirm-signin"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('shows the API sentence and a way back to registration when it is refused', async () => {
-    table[`POST ${CONFIRM_PATH}`] = { status: 400, body: { detail: 'This link has expired.' } }
+    table[writeOf(AccountEndpoint.ConfirmEmail)] = { status: 400, body: { detail: 'This link has expired.' } }
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="confirm-failed"]').text()).toContain('This link has expired.')
-    expect(wrapper.find('[data-testid="confirm-register"]').attributes('href')).toBe('/client/register')
+    expect(wrapper.find('[data-testid="confirm-register"]').attributes('href')).toBe(CLIENT_REGISTER_PATH)
   })
 
   it('reports an incomplete link without calling the API', async () => {
     stubAuthRuntime({ query: { email: 'ada@example.com' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
     await settle()
 
@@ -71,7 +71,7 @@ describe('client confirm-email page', () => {
   it('has no logo or heading of its own, only the outcome', async () => {
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="auth-logo"]').exists()).toBe(false)

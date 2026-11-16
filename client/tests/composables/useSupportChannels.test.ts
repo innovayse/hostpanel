@@ -5,35 +5,26 @@
  * @module tests/composables/useSupportChannels.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { CLIENT_TICKET_NEW_PATH } from '~/constants/clientRoutes'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SupportChannel } from '~/constants/supportChannel'
+import { useContactDetails } from '~/composables/useContactDetails'
 import { useSupportChannels } from '~/composables/useSupportChannels'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 
-/**
- * Stubs the settings reader with a
- * fixed set of values.
- *
- * @param values Setting key to value.
- */
-const stubSettings = (values: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useContactDetails })
 
 describe('useSupportChannels', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('offers only the ticket form when nothing is configured', () => {
-    stubSettings({})
+  it('offers only the ticket form when nothing is configured', async () => {
+    await loadPortalSettings(replies)
 
     expect(useSupportChannels().value).toEqual([{ channel: SupportChannel.Ticket, href: CLIENT_TICKET_NEW_PATH }])
   })
 
-  it('offers every channel with links and response times when configured', () => {
-    stubSettings({
+  it('offers every channel with links and response times when configured', async () => {
+    await loadPortalSettings(replies, {
       [PortalSettingKey.ChatProvider]: 'widget',
       [PortalSettingKey.ContactEmail]: 'help@acme.test',
       [PortalSettingKey.ContactPhone]: '+1 (555) 010-200',

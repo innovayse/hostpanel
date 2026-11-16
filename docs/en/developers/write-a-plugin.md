@@ -73,7 +73,7 @@ Choose the redirect whenever the gateway offers one. For a **form post** the plu
 
 A plugin that answers `BrowserStep`, or that needs a value only the payer's browser has when it comes back (a payer id in the return address), implements `IPaymentReturnPlugin` beside `IPaymentPlugin` and lists `paymentReturn` in `capabilities`. A `BrowserStep` session from a plugin without the interface is a failed payment.
 
-The payer returns to the panel's result page, which posts the other query parameters of the return request to the host. The host then calls `CompleteAsync(gatewayOrderId, returnParameters, ct)` and, after it, `GetStatusAsync`; the status decides what the payer is told, never the value `CompleteAsync` answered. The host chooses which names reach the plugin and keeps within `PaymentReturnLimits`: names are compared ordinally, the first value of a repeated name wins, and a set with more than 32 parameters, a name over 64 characters or a value over 2048 characters is not passed in part, the plugin gets none. Credentials, cookies and headers are never passed. The values come from the payer's browser, so check them against the gateway and never trust them for the amount or the order. `CompleteAsync` is called again when the payer returns twice, so it must be idempotent. It is not called for an invoice that is already paid, nor by the reconciliation job, which only reads the status. A plugin that throws leaves the status unread and the payer is told the gateway is unavailable; the reconciliation job settles the payment later if the gateway took it.
+The payer returns to the panel's result page, which posts the other query parameters of the return request to the host. The host then calls `CompleteAsync(gatewayOrderId, returnParameters, ct)` and, after it, `GetStatusAsync`; the status decides what the payer is told, never the value `CompleteAsync` answered. The host chooses which names reach the plugin and keeps within `PaymentReturnLimits`: names are compared ordinally, the first value of a repeated name wins, and a set with more than 32 parameters, a name over 64 characters or a value over 2048 characters is refused with a 400 before the plugin is called, so the plugin never sees part of a set. Credentials, cookies and headers are never passed. The values come from the payer's browser, so check them against the gateway and never trust them for the amount or the order. The route the result page posts them to for an order (`POST /api/orders/{id}/gateway-payment/complete`) is anonymous, because a guest checkout has no sign-in: only the order's payment token guards it, and anyone who holds it can send any names and values. The plugin must therefore verify every value it acts on with its gateway and treat what arrives as a claim. `CompleteAsync` is called again when the payer returns twice, so it must be idempotent. It is not called for an invoice that is already paid, nor by the reconciliation job, which only reads the status. A plugin that throws leaves the status unread and the payer is told the gateway is unavailable; the reconciliation job settles the payment later if the gateway took it.
 
 ### Keeping the payer's method with a payment {#save-payment-method}
 
@@ -352,7 +352,7 @@ Each entry in `ui.slots` puts a widget into a slot the host offers. The slot lis
   { name: 'title', type: 'string', default: '', description: 'Title shown with the widget.' },
   { name: 'order', type: 'number', default: '0', description: 'Position among the widgets of the slot, lowest first.' },
   { name: 'permission', type: 'string', default: '', description: 'Client slots only: a client permission name, or Any.' },
-  { name: 'productIds', type: 'number[]', default: '[]', description: 'Products the widget is bound to; it shows only where the slot service belongs to one of them. Empty shows it for every product. An administrator can change the binding on the Plugins page.' },
+  { name: 'productIds', type: 'number[]', default: '[]', description: 'Products the widget is bound to; it shows only where the slot service belongs to one of them. Empty shows it for every product. An administrator can change the binding on the page of the plugin, in its Settings tab.' },
   { name: 'contextKeys', type: 'string[]', default: '[]', description: 'Context the widget needs from the slot. The host verifies the keys for the caller and passes only these to the plugin.' }
 ]" />
 
@@ -684,7 +684,7 @@ Do **not** include the SDK assembly (`Hostpanel.Sdk.dll`) or any assembly the ho
 
 ### Sign the package
 
-Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks, open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping. The tool uses `Hostpanel.Sdk.Packaging` (3.1.0) for the signature format, so the signature it writes is checked by the same code the host installs with, and your pipeline can call `PluginSigner` and `PluginSignatureValidator` from that package to verify a signed folder before release.
+Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks, open **Plugins** in the admin panel, choose the **Settings** tab and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping. The tool uses `Hostpanel.Sdk.Packaging` (3.1.0) for the signature format, so the signature it writes is checked by the same code the host installs with, and your pipeline can call `PluginSigner` and `PluginSignatureValidator` from that package to verify a signed folder before release.
 
 Generate a key pair. The key file is a base64-encoded private key; store it outside any git working tree (the tool refuses to sign if the key file is inside one):
 
@@ -716,7 +716,7 @@ Start a local Hostpanel stack (see [Local development](/developers/local-dev)).
 </li>
 <li>
 
-Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP via **Settings → Plugin Manager → Install Plugin**. In Development and Testing environments unsigned packages load without any switch. On other servers, open **Plugins** in the admin panel and switch on **Allow unsigned plugins** to skip signature verification.
+Build your class library in Release, sign the output folder with `PluginSigner`, zip it, and upload the ZIP with the **Upload plugin** button on the Installed tab of the Plugins page. In Development and Testing environments unsigned packages load without any switch. On other servers, open **Plugins** in the admin panel, choose the **Settings** tab and switch on **Allow unsigned plugins** to skip signature verification.
 
 </li>
 <li>

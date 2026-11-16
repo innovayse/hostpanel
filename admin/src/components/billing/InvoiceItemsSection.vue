@@ -34,6 +34,7 @@ import type { InvoiceDetail, InvoiceItemUpdate } from '@/types/invoice'
 import { MAX_PERCENT } from '@/lib/limits'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole } from '@/utils/ui/table'
 
 const { t } = useI18n()
 
@@ -322,7 +323,7 @@ watch(
         >
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader>
+              <UiTableHeader select>
                 <UiCheckbox
                   :model-value="allSelected"
                   :aria-label="t('shared.selectAll')"
@@ -330,16 +331,16 @@ watch(
                   @update:model-value="toggleAll"
                 />
               </UiTableHeader>
-              <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.qty') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
+              <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.description') }}</UiTableHeader>
+              <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.qty') }}</UiTableHeader>
+              <UiTableHeader :card-role="UiCardRole.Control">{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
               <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
               <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
             <UiTableRow v-for="(line, index) in lines" :key="line.key">
-              <UiTableCell>
+              <UiTableCell select>
                 <UiCheckbox
                   v-model="line.selected"
                   :aria-label="t('shared.selectRow')"

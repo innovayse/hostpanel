@@ -4,7 +4,7 @@
  *
  * Shows the current page title, the wide search trigger (it announces Ctrl K and opens the command palette), the
  * theme and language switches, the notification feed (in a side drawer, a bottom sheet on a phone) and the primary
- * action. The signed-in account lives in the sidebar. Below lg it carries the menu button, which emits `toggle-sidebar` to open the navigation drawer; from lg up the
+ * action. The signed-in account lives in the sidebar. Below lg it carries the menu button, which emits `toggle-sidebar` to open the navigation sheet; from lg up the
  * sidebar's own header button folds the sidebar, so the bar has no second control for it.
  */
 import { computed, onMounted, ref } from 'vue'
@@ -12,6 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { activityEventLink } from '@/lib/activityEventLink'
 import { formatRelativeFromNow } from '@/lib/format'
+import { placeholderRows } from '@/lib/placeholderRows'
 import { useActivityStore } from '@/stores/activity'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
 import type { ActivityEvent } from '@/types/activityevent'
@@ -24,7 +25,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import ThemeMenu from '@/components/layout/ThemeMenu.vue'
 import LocaleMenu from '@/components/layout/LocaleMenu.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -36,7 +37,7 @@ import { UiBreakpoint } from '@/utils/ui/layout'
 
 /** Emitted by the hamburger button on a phone. */
 const emit = defineEmits<{
-  /** Emitted to toggle the sidebar drawer on mobile/tablet. */
+  /** Emitted to toggle the navigation sheet below lg. */
   'toggle-sidebar': []
 }>()
 
@@ -54,6 +55,12 @@ const palette = useCommandPaletteStore()
 
 /** Activity store: the notification feed. */
 const activity = useActivityStore()
+
+/** Placeholder rows drawn in the notification drawer while the feed loads. */
+const FEED_PLACEHOLDER_ROWS = 3
+
+/** The rows of the drawer: the events, or null placeholders while the feed loads. */
+const feedRows = computed(() => placeholderRows(activity.events, activity.initialLoading, FEED_PLACEHOLDER_ROWS))
 
 /** The keys the search trigger announces for the command palette. */
 const SEARCH_SHORTCUT = 'Ctrl K'
@@ -212,21 +219,26 @@ onMounted(() => {
       <UiStack gap="sm" data-testid="notifications-drawer">
         <UiBadge tone="primary" small>{{ t('common.newCount', { count: notificationCount }, notificationCount) }}</UiBadge>
 
-        <UiSkeleton v-if="activity.loading && activity.events.length === 0" :lines="3" />
-        <UiEmptyState v-else-if="activity.events.length === 0" :title="t('common.noNotifications')" />
-        <UiStack v-else gap="xs">
+        <UiEmptyState v-if="!activity.initialLoading && activity.events.length === 0" :title="t('common.noNotifications')" />
+        <!-- The feed; while it loads the same rows are drawn with bars where the event goes -->
+        <UiStack v-else gap="xs" :aria-busy="activity.initialLoading ? 'true' : undefined">
           <UiButton
-            v-for="(event, index) in activity.events"
-            :key="`${event.type}-${event.entityId}-${event.occurredAt}`"
+            v-for="(event, index) in feedRows"
+            :key="event ? `${event.type}-${event.entityId}-${event.occurredAt}` : `placeholder-${index}`"
             type="button"
             variant="ghost"
             class="w-full !justify-start text-left"
+            :disabled="event === null"
             :data-testid="`notification-${index}`"
-            @click="goToActivityEvent(event)"
+            @click="event && goToActivityEvent(event)"
           >
-            <UiStack gap="xs" class="min-w-0">
+            <UiStack v-if="event" gap="xs" class="min-w-0">
               <UiText tone="primary" size="md">{{ event.message }}</UiText>
               <UiText tone="muted" size="xs">{{ relativeTime(event.occurredAt) }}</UiText>
+            </UiStack>
+            <UiStack v-else gap="xs" class="w-full" aria-hidden="true">
+              <UiSkeletonBar class="h-4 w-full rounded" />
+              <UiSkeletonBar class="h-3 w-16 rounded" />
             </UiStack>
           </UiButton>
         </UiStack>

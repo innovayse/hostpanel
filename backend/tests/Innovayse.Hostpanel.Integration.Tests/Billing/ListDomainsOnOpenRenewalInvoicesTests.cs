@@ -30,7 +30,7 @@ public sealed class ListDomainsOnOpenRenewalInvoicesTests(IntegrationTestFactory
         var paid = RenewalInvoice(clientId, paidDomainId);
         context.Invoices.AddRange(open, paid);
         await context.SaveChangesAsync(CancellationToken.None);
-        paid.RecordPaidHistory("t", DateTimeOffset.UtcNow);
+        paid.RecordPaidHistory("t", TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -60,8 +60,8 @@ public sealed class ListDomainsOnOpenRenewalInvoicesTests(IntegrationTestFactory
     /// <returns>The unsaved invoice.</returns>
     private static Invoice RenewalInvoice(int clientId, int domainId)
     {
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(10), "USD", DateTimeOffset.UtcNow);
-        var start = DateTimeOffset.UtcNow.AddDays(10);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(10), "USD", TestMoments.Seeded);
+        var start = TestMoments.Seeded.AddDays(10);
         invoice.AddDomainRenewal("Domain renewal", 12m, domainId, start, start.AddYears(1));
         return invoice;
     }

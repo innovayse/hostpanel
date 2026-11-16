@@ -76,8 +76,8 @@ public static class IncomeTestSeeds
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var baseService = ClientService.Create(baseClient.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        var foreignService = ClientService.Create(foreignClient.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var baseService = ClientService.Create(baseClient.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+        var foreignService = ClientService.Create(foreignClient.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(baseService);
         context.ClientServices.Add(foreignService);
         await context.SaveChangesAsync(CancellationToken.None);

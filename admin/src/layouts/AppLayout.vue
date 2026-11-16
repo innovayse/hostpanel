@@ -6,8 +6,8 @@
  * strip, when shown, spans the full width above the sidebar and the main column, so their header lines stay aligned.
  * Responsive sidebar state:
  * - Desktop (lg+): a full-height column against the left edge, open or folded to an icon rail
- * - Smaller screens: hidden, opened as an off-canvas drawer from the topbar hamburger (backdrop, focus trap,
- *   Escape closes: the drawer surface provides them)
+ * - Below lg: hidden, opened from the topbar menu button as a bottom sheet (grab handle, drag to close, backdrop,
+ *   focus trap, Escape closes: the drawer surface provides them)
  */
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -20,6 +20,7 @@ import EmailVerificationBanner from '@/components/layout/EmailVerificationBanner
 import RoutedView from '@/components/layout/RoutedView.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import { UiDrawerSheetBelow } from '@/utils/ui/drawer'
 import { UiBreakpoint } from '@/utils/ui/layout'
 import { useLinkPrefetch } from '@/composables/useLinkPrefetch'
 import { useAuthStore } from '@/stores/auth'
@@ -90,8 +91,8 @@ const closeDrawer = (): void => {
         <AppSidebar />
       </UiStack>
 
-      <!-- Sidebar: drawer on smaller screens -->
-      <UiDrawer :open="drawerOpen" side="left" :title="t('layout.menu')" flush narrow @close="closeDrawer">
+      <!-- Sidebar: a bottom sheet below lg (the persistent sidebar above takes over from there) -->
+      <UiDrawer :open="drawerOpen" side="left" :title="t('layout.menu')" flush narrow sheet :sheet-below="UiDrawerSheetBelow.Lg" @close="closeDrawer">
         <AppSidebar embedded @navigate="closeDrawer" />
       </UiDrawer>
 

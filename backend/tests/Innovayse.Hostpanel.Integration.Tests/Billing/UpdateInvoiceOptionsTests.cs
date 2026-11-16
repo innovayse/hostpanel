@@ -24,8 +24,8 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
 
         var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow,
-            dueDate = DateTimeOffset.UtcNow.AddDays(7),
+            invoiceDate = TestMoments.Seeded,
+            dueDate = TestMoments.Seeded.AddDays(7),
             paymentMethod = PaymentMethodNames.Manual,
             taxRate = 10m,
         });
@@ -74,8 +74,8 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
 
         var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow,
-            dueDate = DateTimeOffset.UtcNow.AddDays(7),
+            invoiceDate = TestMoments.Seeded,
+            dueDate = TestMoments.Seeded.AddDays(7),
             paymentMethod = PaymentMethodNames.Manual,
             taxRate = 101m,
         });
@@ -95,8 +95,8 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
 
         var response = await admin.PutAsJsonAsync($"/api/billing/{BillingTestSeeds.NoSuchId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow,
-            dueDate = DateTimeOffset.UtcNow.AddDays(7),
+            invoiceDate = TestMoments.Seeded,
+            dueDate = TestMoments.Seeded.AddDays(7),
             paymentMethod = (string?)null,
             taxRate = 0m,
         });
@@ -112,8 +112,8 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     {
         var response = await factory.CreateClient().PutAsJsonAsync("/api/billing/1/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow,
-            dueDate = DateTimeOffset.UtcNow.AddDays(7),
+            invoiceDate = TestMoments.Seeded,
+            dueDate = TestMoments.Seeded.AddDays(7),
             paymentMethod = (string?)null,
             taxRate = 0m,
         });
@@ -133,8 +133,8 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
 
         var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow,
-            dueDate = DateTimeOffset.UtcNow.AddDays(7),
+            invoiceDate = TestMoments.Seeded,
+            dueDate = TestMoments.Seeded.AddDays(7),
             paymentMethod = PaymentMethodNames.Manual,
             taxRate = 10m,
         });
@@ -220,8 +220,8 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
 
         var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow,
-            dueDate = DateTimeOffset.UtcNow.AddDays(7),
+            invoiceDate = TestMoments.Seeded,
+            dueDate = TestMoments.Seeded.AddDays(7),
             paymentMethod = PaymentMethodNames.Manual,
             taxRate = 10m,
         });
@@ -245,8 +245,8 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
 
         var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
         {
-            invoiceDate = DateTimeOffset.UtcNow,
-            dueDate = DateTimeOffset.UtcNow.AddDays(7),
+            invoiceDate = TestMoments.Seeded,
+            dueDate = TestMoments.Seeded.AddDays(7),
             paymentMethod = PaymentMethodNames.Manual,
             taxRate = 0m,
         });

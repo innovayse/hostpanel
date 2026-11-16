@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Seeding;
+using Innovayse.Hostpanel.Application.Billing.Seeding;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Support.Seeding;
@@ -123,10 +124,11 @@ public sealed class DemoDataManager : IDemoDataManager
     /// <returns>A task that completes once everything is saved.</returns>
     private async Task SeedAllAsync(CancellationToken ct)
     {
-        // The two deployment-wide seeders every environment runs; both are idempotent and a reset
+        // The deployment-wide seeders every environment runs; all are idempotent and a reset
         // has just emptied the tables they fill.
         await DefaultDepartmentsSeeder.EnsureSeededAsync(_db, _departmentOptions.Value, ct);
         await PortalSettingsSeeder.EnsureSeededAsync(_db, ct);
+        await VatRateSeeder.EnsureSeededAsync(_db, ct);
 
         // One anchor for the whole run, so every date in every seeder is counted from the same day.
         var today = DemoAnchor.Today(_clock.UtcNow);

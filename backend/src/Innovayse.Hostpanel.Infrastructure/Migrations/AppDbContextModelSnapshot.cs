@@ -504,6 +504,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ClientVatNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -594,6 +598,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("RefundStartedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("ReverseCharge")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1084,6 +1093,41 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.VatRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("RatePercent")
+                        .HasColumnType("numeric(6,3)");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Country", "Kind", "ValidFrom")
+                        .IsUnique();
+
+                    b.ToTable("VatRates", t =>
+                        {
+                            t.HasCheckConstraint("CK_VatRates_RatePercent", "\"RatePercent\" >= 0 AND \"RatePercent\" <= 100");
+                        });
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaign", b =>
                 {
                     b.Property<int>("Id")
@@ -1410,6 +1454,21 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("character varying(450)");
+
+                    b.Property<string>("VatAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("VatCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VatName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("VatStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -3288,8 +3347,16 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsDigitalService")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
+
+                    b.Property<int?>("MaxActiveServices")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Metadata")
                         .HasColumnType("jsonb");
@@ -3301,6 +3368,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("OnePerClient")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PackageName")
                         .HasMaxLength(100)
@@ -3345,6 +3415,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Products", t =>
                         {
                             t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
+
+                            t.HasCheckConstraint("CK_Products_MaxActiveServices", "\"MaxActiveServices\" IS NULL OR \"MaxActiveServices\" >= 1");
                         });
                 });
 
@@ -3570,7 +3642,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_ProductOptionGroups_DisplayOrderNotNegative", "\"DisplayOrder\" >= 0");
 
-                            t.HasCheckConstraint("CK_ProductOptionGroups_QuantityRange", "(\"MinQuantity\" IS NULL AND \"MaxQuantity\" IS NULL) OR (\"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
+                            t.HasCheckConstraint("CK_ProductOptionGroups_QuantityRange", "(\"MinQuantity\" IS NULL AND \"MaxQuantity\" IS NULL) OR (\"MinQuantity\" IS NOT NULL AND \"MaxQuantity\" IS NOT NULL AND \"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
                         });
                 });
 
@@ -4122,11 +4194,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasDatabaseName("IX_ClientServices_OrderItemId")
                         .HasFilter("\"OrderItemId\" IS NOT NULL");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("ClientId", "ExternalId")
                         .IsUnique()
                         .HasFilter("\"ExternalId\" IS NOT NULL");
+
+                    b.HasIndex("ProductId", "Status");
 
                     b.HasIndex("Status", "NextRenewalAt");
 
@@ -5595,6 +5667,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                             b1.Property<bool>("IsDigital")
                                 .HasColumnType("boolean")
                                 .HasColumnName("IsDigital");
+
+                            b1.Property<bool>("IsDigitalService")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(false)
+                                .HasColumnName("IsDigitalService");
 
                             b1.Property<string>("Metadata")
                                 .HasColumnType("jsonb")

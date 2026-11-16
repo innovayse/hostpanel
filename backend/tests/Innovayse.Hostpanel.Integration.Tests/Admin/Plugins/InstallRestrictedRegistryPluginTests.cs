@@ -55,7 +55,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     }
 
     /// <summary>
-    /// A restricted plugin installs from a host that was never registered: it registers on demand, then the details, the list, the
+    /// A restricted plugin installs from a host that was never registered: it registers on demand, then the list, the details, the
     /// ticket and the package fetch are signed, none carries the licence key that is stored for the plugin, and the install is audited.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -80,8 +80,8 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
             registry.Instances.Single().Verified.Should().BeTrue();
             var signed = registry.Calls.Where(c => c.IsSigned).Select(c => (c.Method, Path: c.Target.Split('?')[0])).ToList();
             signed.Should().Equal(
-                ("GET", $"/v1/plugins/{pluginId}/versions/1.0.0"),
                 ("GET", $"/v1/plugins/{pluginId}/versions"),
+                ("GET", $"/v1/plugins/{pluginId}/versions/1.0.0"),
                 ("POST", $"/v1/plugins/{pluginId}/versions/1.0.0/download-tickets"),
                 ("GET", $"/v1/plugins/{pluginId}/versions/1.0.0/download"));
             registry.Calls.Where(c => c.IsSigned).Should().OnlyContain(c => !c.HasLicenceKey);
@@ -271,6 +271,94 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
         body.GetProperty("versions").GetArrayLength().Should().Be(1);
         registry.Calls.Single(c => c.Target == $"/v1/plugins/{pluginId}/versions").IsSigned.Should().BeTrue();
         registry.Calls.Where(c => c.IsSigned).Should().OnlyContain(c => !c.HasLicenceKey);
+    }
+
+    /// <summary>
+    /// A plugin the registry does not list is refused as not found, as the details page shows it: the install asks for the page and
+    /// nothing else, so it does not register the installation, ask for a version or fetch a package.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APluginTheRegistryDoesNotList_IsRefusedAsNotFound_AndNothingElseIsAskedAsync()
+    {
+        var registry = new FakeRegistryServer();
+        using var host = new RegistryTestHost(factory, registry);
+        var client = await host.AdminClientAsync(factory);
+        var pluginId = $"test-reg-{Guid.NewGuid():N}";
+
+        var (status, body) = await InstallAsync(client, pluginId);
+
+        status.Should().Be(HttpStatusCode.NotFound);
+        body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_REGISTRY_PLUGIN_NOT_FOUND);
+        registry.Calls.Select(c => c.Target).Should().Equal($"/v1/plugins/{pluginId}");
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// The licence key stored for a restricted plugin goes only on its unsigned page call: the signed version details, version list,
+    /// ticket and package fetch carry none, whichever caller reads the plugin.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TheLicenceKeyOfARestrictedPlugin_IsSentOnItsPageOnly_NotOnTheSignedCallsAsync()
+    {
+        var registry = new FakeRegistryServer();
+        using var host = new RegistryTestHost(factory, registry);
+        var client = await host.AdminClientAsync(factory);
+        var pluginId = Offer(registry);
+
+        try
+        {
+            (await client.PutAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/licence", new { key = "LICENCE-KEY-for-a-restricted-plugin" }))
+                .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            (await InstallAsync(client, pluginId)).Status.Should().Be(HttpStatusCode.OK);
+
+            registry.Calls.Single(c => c.Target == $"/v1/plugins/{pluginId}").HasLicenceKey.Should().BeTrue();
+            registry.Calls.Where(c => c.IsSigned).Should().NotBeEmpty().And.OnlyContain(c => !c.HasLicenceKey);
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
+    /// <summary>When the registry cannot be used at its first answer, the install stops there: one call, the code of the outage, no enrolment.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnOutageOfTheRegistry_StopsTheInstallAtTheFirstCallAsync()
+    {
+        var registry = new FakeRegistryServer { Intercept = _ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) };
+        using var host = new RegistryTestHost(factory, registry);
+        var client = await host.AdminClientAsync(factory);
+        var pluginId = Offer(registry);
+
+        var (status, body) = await InstallAsync(client, pluginId);
+
+        status.Should().Be(HttpStatusCode.BadGateway);
+        body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_REGISTRY_UNAVAILABLE);
+        registry.Calls.Should().ContainSingle();
+    }
+
+    /// <summary>When the version list is the call that finds the registry down, no release is looked up and no package is fetched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnOutageAtTheVersionList_StopsTheInstallBeforeTheReleaseAsync()
+    {
+        var registry = new FakeRegistryServer();
+        using var host = new RegistryTestHost(factory, registry);
+        var client = await host.AdminClientAsync(factory);
+        var pluginId = Offer(registry);
+        registry.Intercept = call => call.Target == $"/v1/plugins/{pluginId}/versions"
+            ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+            : null;
+
+        var (status, body) = await InstallAsync(client, pluginId);
+
+        status.Should().Be(HttpStatusCode.BadGateway);
+        body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_REGISTRY_UNAVAILABLE);
+        registry.Calls.Select(c => c.Target).Should().NotContain(t => t.Contains("/versions/1.0.0", StringComparison.Ordinal));
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>The update check is the unsigned lookup and a restricted plugin with no package address in it is not an error.</summary>

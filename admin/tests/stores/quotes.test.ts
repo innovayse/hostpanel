@@ -33,6 +33,16 @@ describe('quoteStore', () => {
     expect(callOf(mock).url).toBe('/api/billing/quotes?page=2&pageSize=25')
   })
 
+  it('fetchAll and fetchClientQuotes send the search and the filters the screen holds', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const store = useQuotesStore()
+
+    await store.fetchAll(1, { search: 'logo', clientId: 4, stage: 'Delivered', validity: 'Valid' })
+    await store.fetchClientQuotes(7, 3, { stage: 'Lost' })
+    expect(callOf(mock, 0).url).toBe('/api/billing/quotes?page=1&pageSize=25&search=logo&clientId=4&stage=Delivered&validity=Valid')
+    expect(callOf(mock, 1).url).toBe('/api/billing/quotes/client/7?page=3&pageSize=25&stage=Lost')
+  })
+
   it('fetchAll shows the API sentence on refusal', async () => {
     stubFetch(problem('Quotes are disabled.', 403))
     const store = useQuotesStore()

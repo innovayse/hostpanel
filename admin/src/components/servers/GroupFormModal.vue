@@ -9,7 +9,7 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { FILL_TYPE_LABELS, ServerFillType } from '@/types/server'
-import type { ServerDto, ServerGroupDto, ServerGroupPayload } from '@/types/server'
+import type { ServerGroupDto, ServerGroupPayload, ServerOptionDto } from '@/types/server'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<{
   /** Group to edit, or null when creating. */
   group: ServerGroupDto | null
   /** All available servers to choose from. */
-  availableServers: ServerDto[]
+  availableServers: ServerOptionDto[]
   /** True while the save request is in flight. */
   saving: boolean
   /** Sentence for the last refused save, null when none. */
@@ -86,14 +86,14 @@ watch(() => props.group, (g) => {
  *
  * @returns The available servers whose id is not selected.
  */
-const unselected = (): ServerDto[] => props.availableServers.filter(s => !selectedIds.value.includes(s.id))
+const unselected = (): ServerOptionDto[] => props.availableServers.filter(s => !selectedIds.value.includes(s.id))
 
 /**
  * Servers in the group.
  *
  * @returns The available servers whose id is selected.
  */
-const selected = (): ServerDto[] => props.availableServers.filter(s => selectedIds.value.includes(s.id))
+const selected = (): ServerOptionDto[] => props.availableServers.filter(s => selectedIds.value.includes(s.id))
 
 /**
  * Toggles a server in/out of the group.

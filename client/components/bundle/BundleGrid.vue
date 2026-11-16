@@ -31,7 +31,7 @@
             </UiListItem>
           </UiList>
 
-          <UiButton :to="localePath(`/bundles/${bundle.id}`)" full-width :data-testid="`bundle-choose-${bundle.id}`">
+          <UiButton :to="localePath(siteBundlePath(bundle.id))" full-width :data-testid="`bundle-choose-${bundle.id}`">
             {{ $t('bundles.choose') }}
           </UiButton>
         </UiCard>
@@ -50,6 +50,7 @@
  */
 import { CheckCircle, Globe } from 'lucide-vue-next'
 import type { CatalogBundle } from '~/types/catalogbundle'
+import { siteBundlePath } from '~/constants/siteRoutes'
 
 /** Props of BundleGrid. */
 interface Props {

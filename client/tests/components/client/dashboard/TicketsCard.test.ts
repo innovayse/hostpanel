@@ -11,6 +11,7 @@ import TicketsCard from '~/components/client/dashboard/TicketsCard.vue'
 import { useClientStore } from '~/stores/client'
 import type { ClientTicket } from '~/types/clientticket'
 import { TicketStatus } from '~/types/ticketstatus'
+import { CLIENT_TICKET_NEW_PATH, clientTicketPath } from '~/constants/clientRoutes'
 
 /**
  * Builds a ticket row.
@@ -25,7 +26,7 @@ describe('ClientDashboardTicketsCard', () => {
   it('always offers to open a new ticket from the header', () => {
     const wrapper = mountClient(TicketsCard)
 
-    expect(wrapper.find('[data-testid="dashboard-ticket-new"]').attributes('href')).toBe('/client/tickets/new')
+    expect(wrapper.find('[data-testid="dashboard-ticket-new"]').attributes('href')).toBe(CLIENT_TICKET_NEW_PATH)
   })
 
   it('shows skeletons while loading', async () => {
@@ -40,7 +41,7 @@ describe('ClientDashboardTicketsCard', () => {
     const wrapper = mountClient(TicketsCard)
 
     expect(wrapper.find('[data-testid="dashboard-tickets-empty"]').text()).toContain('client.dashboard.noTickets')
-    expect(wrapper.find('[data-testid="dashboard-ticket-open"]').attributes('href')).toBe('/client/tickets/new')
+    expect(wrapper.find('[data-testid="dashboard-ticket-open"]').attributes('href')).toBe(CLIENT_TICKET_NEW_PATH)
   })
 
   it('lists at most four tickets with subject, department and status', async () => {
@@ -50,7 +51,7 @@ describe('ClientDashboardTicketsCard', () => {
 
     expect(wrapper.find('[data-testid="dashboard-ticket-5"]').exists()).toBe(false)
     const row = wrapper.find('[data-testid="dashboard-ticket-1"]')
-    expect(row.attributes('href')).toBe('/client/tickets/1')
+    expect(row.attributes('href')).toBe(clientTicketPath(1))
     expect(row.text()).toContain('Subject 1')
     expect(row.text()).toContain('Sales')
     expect(row.find('[data-testid="status-badge"]').exists()).toBe(true)

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PluginBlockKind, PluginBlockTone } from '@/types/pluginview'
 import { json, problem } from '../../../helpers/fetch'
-import { ext, mountPluginView } from '../../../helpers/pluginView'
+import { ext, mountLoadingPluginView, mountPluginView } from '../../../helpers/pluginView'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -44,6 +44,13 @@ describe('PluginBadgeBlock', () => {
       routes: { [`GET ${ext('status')}`]: () => json({ state: { nested: true } }) },
     })
 
+    expect(wrapper.find('[data-testid="plugin-badge"]').exists()).toBe(false)
+  })
+
+  it('draws a badge-sized bar while the value is read', async () => {
+    const wrapper = await mountLoadingPluginView([{ kind: PluginBlockKind.Badge, source: status }])
+
+    expect(wrapper.get('[data-testid="plugin-badge-loading"]').classes()).toContain('rounded-full')
     expect(wrapper.find('[data-testid="plugin-badge"]').exists()).toBe(false)
   })
 })

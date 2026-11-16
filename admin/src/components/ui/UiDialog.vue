@@ -3,6 +3,8 @@
  * Modal dialog.
  *
  * `variant="plain"` is a titled panel around the default slot (with an optional `footer` slot).
+ * `dismissible="false"` makes it a modal the user cannot leave (no close button, Escape and the backdrop do nothing)
+ * while work runs. On a phone the panel fills the row between the page gutters and its footer buttons stack full width.
  * `variant="confirm"` is the confirmation prompt: a `message`, a Cancel button and a confirm
  * button coloured by `tone`; it replaces the former confirmation modal. The panel is teleported to
  * `<body>`, is an opaque elevated surface (nothing shows through it), closes on Escape or a backdrop click, keeps Tab inside and returns focus to the opener.
@@ -55,6 +57,8 @@ const props = withDefaults(defineProps<{
   size?: UiDialogSize
   /** Whether a click on the backdrop closes the dialog. */
   closeOnBackdrop?: boolean
+  /** Whether the user can close it at all: false hides the close button and ignores Escape and the backdrop (work is running). */
+  dismissible?: boolean
 }>(), {
   open: true,
   variant: UiDialogVariant.Plain,
@@ -65,6 +69,7 @@ const props = withDefaults(defineProps<{
   tone: 'primary',
   size: UiDialogSize.Sm,
   closeOnBackdrop: true,
+  dismissible: true,
 })
 
 const emit = defineEmits<{
@@ -83,12 +88,12 @@ const backdrop = ref<HTMLElement | null>(null)
 /** The dialog panel, for focus handling. */
 const panel = ref<HTMLElement | null>(null)
 
-/** Panel widths. */
+/** Panel widths: below `sm` the panel takes the whole row between the backdrop's gutters, from `sm` up the size applies. */
 const sizeClasses: Record<UiDialogSize, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
+  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-sm',
+  md: 'max-w-[calc(100vw-2rem)] sm:max-w-md',
+  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-2xl',
+  xl: 'max-w-[calc(100vw-2rem)] sm:max-w-4xl',
 }
 
 /** Classes of the confirm button's colour. */
@@ -100,9 +105,9 @@ const confirmText = computed<string>(() => props.confirmLabel ?? t('ui.dialog.co
 /** Whether the leave animation is running; no request may be made from a dialog that is going away. */
 const leaving = ref(false)
 
-/** Requests closing, unless the dialog is already leaving. */
+/** Requests closing, unless the dialog is already leaving or may not be dismissed. */
 const close = (): void => {
-  if (!leaving.value) {
+  if (!leaving.value && props.dismissible) {
     emit('close')
   }
 }
@@ -205,6 +210,7 @@ const onBackdrop = (): void => {
               {{ title }}
             </UiHeading>
             <UiIconButton
+              v-if="dismissible"
               :label="t('ui.dialog.close')"
               size="sm"
               data-testid="dialog-close"
@@ -222,7 +228,7 @@ const onBackdrop = (): void => {
             </UiText>
             <slot />
           </div>
-          <div v-if="variant === UiDialogVariant.Confirm" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0">
+          <div v-if="variant === UiDialogVariant.Confirm" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0 max-sm:flex-col-reverse max-sm:items-stretch">
             <UiButton variant="secondary" data-testid="dialog-cancel" @click="close">
               {{ t('shared.cancel') }}
             </UiButton>

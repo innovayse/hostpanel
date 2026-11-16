@@ -8,7 +8,7 @@
       <UiStack direction="row" align="center" gap="none" class="h-16 gap-3 xl:h-[72px] xl:gap-6">
         <!-- Brand: the operator's uploaded logo, or the mark beside the site name. -->
         <UiLink
-          :to="localePath('/')"
+          :to="localePath(SITE_HOME_PATH)"
           tone="inherit"
           :underline="false"
           class="flex min-w-0 shrink-0 items-center gap-2.5 rounded-lg text-classic-ink focus-visible:ring-classic-brand"
@@ -76,7 +76,7 @@
             </UiButton>
             <UiButton
               variant="bare"
-              :to="localePath('/hosting')"
+              :to="localePath(SITE_HOSTING_PATH)"
               :class="HEADER_PRIMARY"
               data-testid="layout-get-started"
             >
@@ -133,6 +133,7 @@ import { useCartStore } from '~/stores/cart'
 import { useCatalogStore } from '~/stores/catalog'
 import { HEADER_CONTROL, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_NAV_ITEM, HEADER_PRIMARY } from '~/utils/headerControl'
 import { activeHeaderKey, buildHeaderNav } from '~/utils/headerNav'
+import { SITE_HOME_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Scroll distance (px) after which the bar gets its shadow. */
 const SCROLL_SHADOW_THRESHOLD = 8

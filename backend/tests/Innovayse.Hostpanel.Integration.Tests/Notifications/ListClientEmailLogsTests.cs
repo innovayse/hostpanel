@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Innovayse.Hostpanel.Domain.Notifications.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 
@@ -18,7 +19,7 @@ public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : I
     {
         var client = await NotificationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.GetAsync("/api/admin/email-logs/client/999999");
+        var response = await client.GetAsync("/api/admin/email-logs/client/999999?page=1&pageSize=100");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var page = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
@@ -37,7 +38,7 @@ public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : I
         await NotificationsTestSeeds.SeedLogAsync(factory, email, "Hello, client");
 
         var admin = await NotificationsTestSeeds.AdminClientAsync(factory);
-        var response = await admin.GetAsync($"/api/admin/email-logs/client/{clientId}");
+        var response = await admin.GetAsync($"/api/admin/email-logs/client/{clientId}?page=1&pageSize=100");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var page = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
@@ -49,6 +50,71 @@ public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : I
         page.GetProperty("totalCount").GetInt32().Should().Be(items.Count);
         items.Should().OnlyContain(i => i.GetProperty("to").GetString() == email);
         items.Select(i => i.GetProperty("subject").GetString()).Should().Contain("Hello, client");
+    }
+
+    /// <summary>
+    /// The search, the outcome and the period narrow the client's mail together and never reach another address; the last day of
+    /// the period is kept whole and the total counts every match before paging.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AdminListByClient_SearchOutcomeAndPeriodNarrowTheClientsMail()
+    {
+        var (_, clientId, _, email) = await NotificationsTestSeeds.RegisterClientAsync(factory);
+        var token = PagedListReads.UniqueToken();
+        var day = new DateTimeOffset(2026, 3, 10, 0, 0, 0, TimeSpan.Zero);
+        var first = await NotificationsTestSeeds.SeedLogAsync(factory, email, $"Invoice {token}", sentAt: day);
+        var last = await NotificationsTestSeeds.SeedLogAsync(factory, email, $"Invoice {token}", EmailSendFailure.Timeout, day.AddDays(1).AddSeconds(-1));
+        await NotificationsTestSeeds.SeedLogAsync(factory, email, $"Invoice {token}", sentAt: day.AddDays(1));
+        await NotificationsTestSeeds.SeedLogAsync(factory, email, $"Receipt {token}", sentAt: day);
+        await NotificationsTestSeeds.SeedLogAsync(factory, $"other-{token}@example.test", $"Invoice {token}", sentAt: day);
+        var admin = await NotificationsTestSeeds.AdminClientAsync(factory);
+        var route = $"/api/admin/email-logs/client/{clientId}?page=1&pageSize=100&search=invoice%20{token.ToUpperInvariant()}";
+
+        var oneDay = await PagedListReads.PageAsync(admin, $"{route}&from=2026-03-10&to=2026-03-10");
+        var failedOnly = await PagedListReads.PageAsync(admin, $"{route}&from=2026-03-10&to=2026-03-10&success=false");
+        var deliveredOnly = await PagedListReads.PageAsync(admin, $"{route}&success=true");
+        var paged = await PagedListReads.PageAsync(admin, $"/api/admin/email-logs/client/{clientId}?page=2&pageSize=1&search={token}&from=2026-03-10&to=2026-03-10");
+
+        PagedListReads.IdsOf(oneDay).Should().BeEquivalentTo([first, last]);
+        PagedListReads.IdsOf(failedOnly).Should().Equal(last);
+        PagedListReads.IdsOf(deliveredOnly).Should().HaveCount(2).And.Contain(first);
+        paged.GetProperty("totalCount").GetInt32().Should().Be(3);
+        PagedListReads.IdsOf(paged).Should().HaveCount(1);
+    }
+
+    /// <summary>A percent sign typed into the search matches itself on a client's mail, not any text.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AdminListByClient_SearchWildcardsAreLiteral()
+    {
+        var (_, clientId, _, email) = await NotificationsTestSeeds.RegisterClientAsync(factory);
+        var token = PagedListReads.UniqueToken();
+        var percent = await NotificationsTestSeeds.SeedLogAsync(factory, email, $"{token} 50% off");
+        await NotificationsTestSeeds.SeedLogAsync(factory, email, $"{token} 50x off");
+        var admin = await NotificationsTestSeeds.AdminClientAsync(factory);
+
+        var page = await PagedListReads.PageAsync(admin, $"/api/admin/email-logs/client/{clientId}?page=1&pageSize=100&search={token}%2050%25");
+
+        PagedListReads.IdsOf(page).Should().Equal(percent);
+    }
+
+    /// <summary>A page outside the limits or a period that ends before it starts is refused with 400 on that field.</summary>
+    /// <param name="queryString">The query string.</param>
+    /// <param name="field">The field the refusal must name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("pageSize=20", "page")]
+    [InlineData("page=1&pageSize=101", "pagesize")]
+    [InlineData("page=1&pageSize=20&from=2026-03-11&to=2026-03-10", "to")]
+    public async Task AdminListByClient_ValueOutOfRangeIsRefused(string queryString, string field)
+    {
+        var admin = await NotificationsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/admin/email-logs/client/1?{queryString}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
     }
 
     /// <summary>The admin per-client route is not for anonymous callers.</summary>

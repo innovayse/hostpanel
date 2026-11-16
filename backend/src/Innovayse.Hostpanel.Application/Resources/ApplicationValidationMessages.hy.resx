@@ -181,6 +181,9 @@
 <data name="QuoteStageInvalid" xml:space="preserve">
     <value>Նշեք նախահաշվի վավեր փուլ։</value>
   </data>
+<data name="QuoteValidityInvalid" xml:space="preserve">
+    <value>Նշեք՝ նախահաշիվները վավեր են, թե ժամկետանց։</value>
+  </data>
 <data name="QuoteItemsRequired" xml:space="preserve">
     <value>Ավելացրեք առնվազն մեկ տող։</value>
   </data>
@@ -234,6 +237,15 @@
   </data>
 <data name="TransactionClientIdInvalid" xml:space="preserve">
     <value>Նշեք գործարքի համար վավեր հաճախորդ։</value>
+  </data>
+<data name="TransactionDirectionInvalid" xml:space="preserve">
+    <value>Նշեք՝ գործարքները մուտքեր են, թե ելքեր։</value>
+  </data>
+<data name="TransactionAmountInvalid" xml:space="preserve">
+    <value>Փնտրվող գումարը պետք է մեծ լինի զրոյից։</value>
+  </data>
+<data name="TransactionPaymentMethodTooLong" xml:space="preserve">
+    <value>Վճարման եղանակը կարող է լինել առավելագույնը {0} նիշ։</value>
   </data>
 <data name="TransactionDescriptionInvalid" xml:space="preserve">
     <value>Գործարքի նկարագրությունը կարող է ունենալ առավելագույնը {0} նիշ։</value>
@@ -370,14 +382,8 @@
   <data name="DomainStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled։</value>
   </data>
-  <data name="DomainPageRequired" xml:space="preserve">
-    <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
-  </data>
-  <data name="DomainListSearchTooLong" xml:space="preserve">
-    <value>Տիրույթների որոնման տեքստը չի կարող լինել {0} նիշից երկար։</value>
-  </data>
-  <data name="DomainPageSizeRange" xml:space="preserve">
-    <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
+  <data name="DomainListRegistrarInvalid" xml:space="preserve">
+    <value>Գրանցողը պետք է լինի հետևյալներից մեկը՝ NameAm, Namecheap։</value>
   </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
@@ -385,14 +391,11 @@
   <data name="EmailLogPageSizeRange" xml:space="preserve">
     <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
   </data>
-  <data name="GatewayLogPageRequired" xml:space="preserve">
-    <value>Էջի համարը պետք է լինի առնվազն 1։</value>
-  </data>
-  <data name="GatewayLogPageSizeRange" xml:space="preserve">
-    <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
-  </data>
   <data name="TicketPeriodInvalid" xml:space="preserve">
     <value>Ժամանակահատվածը վավեր հաշվետու ժամանակահատված չէ։</value>
+  </data>
+  <data name="GatewayLogResultInvalid" xml:space="preserve">
+    <value>Արդյունքը պետք է լինի հետևյալներից մեկը՝ Payment, Refund, Credit, Pending։</value>
   </data>
   <data name="KbArticleIdInvalid" xml:space="preserve">
     <value>Հոդվածի ID-ն պետք է լինի դրական թիվ։</value>
@@ -411,15 +414,6 @@
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Կատեգորիան չպետք է գերազանցի {0} նիշը։</value>
-  </data>
-  <data name="KbArticleSearchTooLong" xml:space="preserve">
-    <value>Որոնման տեքստը չպետք է գերազանցի {0} նիշը։</value>
-  </data>
-  <data name="KbArticlePageRequired" xml:space="preserve">
-    <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
-  </data>
-  <data name="KbArticlePageSizeRange" xml:space="preserve">
-    <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
   </data>
   <data name="KbCategoryIdInvalid" xml:space="preserve">
     <value>Կատեգորիայի ID-ն պետք է լինի դրական թիվ։</value>
@@ -706,6 +700,9 @@
   <data name="CancellationTypeInvalid" xml:space="preserve">
     <value>Տեսակը պետք է լինի 'Immediate' կամ 'EndOfBillingPeriod'։</value>
   </data>
+  <data name="CancellationStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի 'Open' կամ 'Closed'։</value>
+  </data>
   <data name="CancellationRequestIdInvalid" xml:space="preserve">
     <value>Նշեք չեղարկման վավեր հայտ։</value>
   </data>
@@ -750,6 +747,12 @@
   </data>
   <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
     <value>Զտման համար նշեք վավեր հաճախորդ։</value>
+  </data>
+  <data name="ServiceListStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Pending, Active, Suspended, Terminated։</value>
+  </data>
+  <data name="ServiceListBillingCycleInvalid" xml:space="preserve">
+    <value>Վճարման պարբերությունը պետք է լինի հետևյալներից մեկը՝ Monthly, Quarterly, SemiAnnual, Annual, Biennial։</value>
   </data>
   <data name="HostingAccountDomainTooLong" xml:space="preserve">
     <value>Դոմեյնը չի կարող գերազանցել 253 նիշը։</value>
@@ -1093,10 +1096,7 @@
   <data name="ActivityLogClientIdInvalid" xml:space="preserve">
     <value>Նշեք հաճախորդի վավեր ID։</value>
   </data>
-  <data name="ActivityLogFilterTooLong" xml:space="preserve">
-    <value>Որոնման զտիչը կարող է լինել առավելագույնը 200 նիշ։</value>
-  </data>
-  <data name="ReportDateRangeInvalid" xml:space="preserve">
+  <data name="DateRangeInvalid" xml:space="preserve">
     <value>Ավարտի ամսաթիվը չի կարող լինել սկզբի ամսաթվից առաջ։</value>
   </data>
   <data name="ReportMonthInvalid" xml:space="preserve">
@@ -1300,6 +1300,9 @@
   <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
     <value>Պատվերի տողի վերադարձի արդյունքը պետք է լինի NothingRefunded կամ PartlyRefunded։</value>
   </data>
+  <data name="OrderStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Pending, Active, Cancelled, Fraud, Incomplete, UnderReview։</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Ընտրեք վճարման եղանակը։</value>
   </data>
@@ -1393,17 +1396,20 @@
   <data name="CurrencyCodeDuplicate" xml:space="preserve">
     <value>Յուրաքանչյուր արժույթ կարելի է նշել միայն մեկ անգամ։</value>
   </data>
-  <data name="ClientListPageRequired" xml:space="preserve">
+  <data name="ListPageRequired" xml:space="preserve">
     <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
   </data>
-  <data name="ClientListPageSizeRange" xml:space="preserve">
-    <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
+  <data name="ListPageSizeRange" xml:space="preserve">
+    <value>Էջի չափը պետք է լինի {0}-ից {1}-ի սահմաններում։</value>
   </data>
   <data name="ClientListStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Active, Inactive, Suspended, Closed։</value>
   </data>
-  <data name="ClientListSearchTooLong" xml:space="preserve">
+  <data name="ListSearchTooLong" xml:space="preserve">
     <value>Որոնման տեքստը չի կարող լինել {0} նիշից երկար։</value>
+  </data>
+  <data name="ListClientIdInvalid" xml:space="preserve">
+    <value>Նշեք առկա հաճախորդ։</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">
     <value>Էլ. փոստի ֆիլտրը չի կարող լինել {0} նիշից երկար։</value>
@@ -1684,6 +1690,21 @@
   <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
     <value>Հարկի դրույքը կարող է ունենալ առավելագույնը երեք տասնորդական նիշ։</value>
   </data>
+  <data name="VatRateCountryInvalid" xml:space="preserve">
+    <value>Նշեք ԵՄ անդամ երկրի երկտառ կոդը։</value>
+  </data>
+  <data name="VatRateKindInvalid" xml:space="preserve">
+    <value>Ընտրեք ստանդարտ կամ նվազեցված դրույք։</value>
+  </data>
+  <data name="VatRateRateInvalid" xml:space="preserve">
+    <value>ԱԱՀ դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
+  <data name="VatRateRateDecimalsInvalid" xml:space="preserve">
+    <value>ԱԱՀ դրույքը կարող է ունենալ առավելագույնը երեք տասնորդական նիշ։</value>
+  </data>
+  <data name="VatRateValidFromInvalid" xml:space="preserve">
+    <value>Նշեք սկզբի ամսաթիվ 1993-ից 2100 թվականի սահմաններում։</value>
+  </data>
   <data name="FraudBlockListTypeInvalid" xml:space="preserve">
     <value>Արգելված ցուցակի տեսակը վավեր չէ։</value>
   </data>
@@ -1714,10 +1735,43 @@
   <data name="FraudDecisionInvalid" xml:space="preserve">
     <value>Խարդախության վերաբերյալ որոշումը վավեր չէ։</value>
   </data>
+  <data name="FraudReasonInvalid" xml:space="preserve">
+    <value>Խարդախության պատճառը վավեր չէ։</value>
+  </data>
   <data name="OrderReviewReasonRequired" xml:space="preserve">
     <value>Նշեք պատճառը, որը կտեսնի հաճախորդը։</value>
   </data>
   <data name="OrderReviewReasonTooLong" xml:space="preserve">
     <value>Պատճառը չպետք է գերազանցի 1000 նիշը։</value>
+  </data>
+  <data name="DashboardPeriodInvalid" xml:space="preserve">
+    <value>Ընտրեք ժամանակահատվածը՝ 30 կամ 90 օր։</value>
+  </data>
+  <data name="CampaignListStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Draft, Scheduled, Sending, Sent։</value>
+  </data>
+  <data name="ServerListModuleInvalid" xml:space="preserve">
+    <value>Մոդուլը պետք է լինի հետևյալներից մեկը՝ CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm։</value>
+  </data>
+  <data name="ServerListStateInvalid" xml:space="preserve">
+    <value>Վիճակը պետք է լինի հետևյալներից մեկը՝ Online, Offline, Untested։</value>
+  </data>
+  <data name="ProductListTypeInvalid" xml:space="preserve">
+    <value>Տեսակը պետք է լինի հետևյալներից մեկը՝ SharedHosting, Vps, Dedicated, Domain, Ssl, Other, Email, Addon, Backup, Digital։</value>
+  </data>
+  <data name="ProductListStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Active, Inactive։</value>
+  </data>
+  <data name="PaymentReturnParametersTooMany" xml:space="preserve">
+    <value>Վերադարձի պարամետրերը չափազանց շատ են։</value>
+  </data>
+  <data name="PaymentReturnParameterNameTooLong" xml:space="preserve">
+    <value>Վերադարձի պարամետրի անունը սահմանափակված է 64 նիշով։</value>
+  </data>
+  <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
+    <value>Վերադարձի պարամետրի արժեքը չափազանց երկար է։</value>
+  </data>
+  <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
+    <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
   </data>
 </root>

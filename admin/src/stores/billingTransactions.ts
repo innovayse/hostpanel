@@ -9,7 +9,7 @@ import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { useTransactionsApi } from '@/composables/apis/useTransactionsApi'
 import { runAction } from '@/lib/runAction'
-import type { CreateTransactionPayload, Transaction, UpdateTransactionPayload } from '@/types/transaction'
+import type { CreateTransactionPayload, Transaction, TransactionFilters, UpdateTransactionPayload } from '@/types/transaction'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { CurrencyCode } from '@/types/currency'
 
@@ -38,13 +38,10 @@ export const useTransactionsStore = defineStore('billingTransactions', () => {
   /** Per-field messages of the last refused request, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
 
-  /** Current page (1-based). */
-  const page = ref(1)
-
   /** Items per page. */
   const pageSize = ref(LEDGER_PAGE_SIZE)
 
-  /** Financial summary totals of the whole ledger, in the base currency named by `currency`. */
+  /** Financial summary totals of the rows the filters keep, in the base currency named by `currency`. */
   const summary = reactive({ totalIn: 0, totalOut: 0, totalFees: 0, balance: 0, currency: CurrencyCode.Usd as string })
 
   /**
@@ -74,16 +71,17 @@ export const useTransactionsStore = defineStore('billingTransactions', () => {
   }
 
   /**
-   * Loads one page of the ledger with its totals.
+   * Loads one page of the ledger, narrowed by the server, with the totals of the rows the filters keep. The page and the
+   * filters come from the list's address, so the store keeps no copy of the filters.
    *
    * @param p - Page number (1-based).
+   * @param filters - The search text and the client, direction, payment method, period and amount filters; a member left out does not narrow.
    * @param ps - Items per page.
    * @returns Promise that resolves when data is loaded.
    */
-  const fetchAll = async (p = 1, ps = LEDGER_PAGE_SIZE): Promise<void> => {
-    page.value = p
+  const fetchAll = async (p = 1, filters: TransactionFilters = {}, ps = LEDGER_PAGE_SIZE): Promise<void> => {
     pageSize.value = ps
-    const result = await run(() => api.list(p, ps))
+    const result = await run(() => api.list(p, ps, filters))
     if (result.ok) {
       transactions.value = result.value.transactions.items
       totalCount.value = result.value.transactions.totalCount
@@ -96,16 +94,14 @@ export const useTransactionsStore = defineStore('billingTransactions', () => {
   }
 
   /**
-   * Creates a transaction, then reloads the current page.
+   * Creates a transaction. The list is not reloaded here: the store does not know the filters the screen shows, so the
+   * screen reads the list again through its own address.
    *
    * @param payload - Transaction fields.
    * @returns True when created; false when refused (see `error`).
    */
   const create = async (payload: CreateTransactionPayload): Promise<boolean> => {
     const result = await run(() => api.create(payload))
-    if (result.ok) {
-      await fetchAll(page.value, pageSize.value)
-    }
     return result.ok
   }
 
@@ -122,7 +118,8 @@ export const useTransactionsStore = defineStore('billingTransactions', () => {
   }
 
   /**
-   * Deletes a transaction, then reloads the current page.
+   * Deletes a transaction. The list is not reloaded here: the store does not know the filters the screen shows, so the
+   * screen reads the list again through its own address.
    *
    * @param id - The transaction id.
    * @returns True when deleted; false when refused (see `actionError`).
@@ -131,9 +128,6 @@ export const useTransactionsStore = defineStore('billingTransactions', () => {
     loading.value = true
     const result = await runAction(actionError, () => api.remove(id))
     loading.value = false
-    if (result.ok) {
-      await fetchAll(page.value, pageSize.value)
-    }
     return result.ok
   }
 
@@ -146,7 +140,6 @@ export const useTransactionsStore = defineStore('billingTransactions', () => {
     error,
     actionError,
     fieldErrors,
-    page,
     pageSize,
     fetchAll,
     fetchById,

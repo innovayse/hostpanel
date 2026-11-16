@@ -1,5 +1,4 @@
 using FluentValidation;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
@@ -7,17 +6,11 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListPublishedKbArticles;
 
 /// <summary>
-/// Validates <see cref="ListPublishedKbArticlesQuery"/>. <c>Category</c> and <c>Search</c> are free
-/// text with no invalid shape; only their lengths and the paging bounds are checked.
+/// Validates <see cref="ListPublishedKbArticlesQuery"/>: the page, page size and search every list shares
+/// (<see cref="ListQueryValidator{T}"/>) and the length of the category filter, which is free text with no invalid shape.
 /// </summary>
-public sealed class ListPublishedKbArticlesValidator : LocalizedValidator<ListPublishedKbArticlesQuery>
+public sealed class ListPublishedKbArticlesValidator : ListQueryValidator<ListPublishedKbArticlesQuery>
 {
-    /// <summary>Largest page size the public listing may ask for.</summary>
-    private const int MaxPageSize = PagingLimits.MaxPageSize;
-
-    /// <summary>Longest search text the public listing accepts; a longer one cannot be something a person typed to find an article.</summary>
-    private const int SearchMaxLength = 200;
-
     /// <summary>Longest a category filter may be: a category name (255) or a slug (150).</summary>
     private const int CategoryFilterMaxLength = 255;
 
@@ -27,8 +20,5 @@ public sealed class ListPublishedKbArticlesValidator : LocalizedValidator<ListPu
         : base(localizer)
     {
         RuleFor(x => x.Category).MaximumLength(CategoryFilterMaxLength).WithMessage(L["KbArticleCategoryTooLong", CategoryFilterMaxLength]);
-        RuleFor(x => x.Search).MaximumLength(SearchMaxLength).WithMessage(L["KbArticleSearchTooLong", SearchMaxLength]);
-        RuleFor(x => x.Page).MustBePage(L["KbArticlePageRequired"]);
-        RuleFor(x => x.PageSize).MustBePageSize(MaxPageSize, L["KbArticlePageSizeRange"]);
     }
 }

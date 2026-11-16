@@ -24,14 +24,8 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
 
         await ServersTestSeeds.CreateServerAsync(client, name);
 
-        var response = await client.GetAsync("/api/admin/servers");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().NotContain("top-secret-access-hash");
-
-        using var doc = System.Text.Json.JsonDocument.Parse(body);
-        var row = doc.RootElement.EnumerateArray().Single(r => r.GetProperty("name").GetString() == name);
+        var row = (await ServersTestSeeds.SearchServersAsync(client, name)).Single(r => r.GetProperty("name").GetString() == name);
+        row.GetRawText().Should().NotContain("top-secret-access-hash");
         row.GetProperty("credentials").TryGetProperty("accessHash", out _).Should().BeFalse("the DTO never carries a server's credentials");
     }
 

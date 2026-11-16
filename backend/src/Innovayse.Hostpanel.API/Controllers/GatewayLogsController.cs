@@ -25,7 +25,7 @@ public sealed class GatewayLogsController : BaseApiController
     }
 
     /// <summary>Returns a paginated, filtered page of the payment-gateway log, newest first.</summary>
-    /// <param name="query">Paging and filters (date range, gateway, debug text, result).</param>
+    /// <param name="query">The page, page size, search, period and outcome to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the page; 400 when paging is out of range; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
     [HttpGet]

@@ -25,6 +25,7 @@ import {
 } from '~/templates/nova/content'
 import type { Feature } from '~/templates/nova/types/feature'
 import type { ComparisonRow } from '~/types/comparisonrow'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 
 /**
  * Every route nova links to, taken from client/pages/. A link into this portal
@@ -40,7 +41,7 @@ const ROUTES = [
   '/knowledgebase',
   '/faq',
   '/announcements',
-  '/client/login',
+  CLIENT_LOGIN_PATH,
   '/terms',
   '/privacy',
   '/refund-policy',

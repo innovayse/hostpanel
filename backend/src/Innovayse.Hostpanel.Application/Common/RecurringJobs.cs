@@ -232,11 +232,15 @@ public sealed class RecurringJobs
         }
     }
 
-    /// <summary>Schedules a job's run, retrying when the bus refuses, and logs a failure that outlasts the retries.</summary>
+    /// <summary>
+    /// Schedules a job's run for a moment on the application's clock, retrying when the bus refuses, and logs a failure that
+    /// outlasts the retries. The one way to put a run on the bus: the startup of a job whose first run is not decided by its last
+    /// success (the demo reset) comes here too, so no caller hands the bus an absolute moment of its own.
+    /// </summary>
     /// <typeparam name="TCommand">The job's marker command.</typeparam>
-    /// <param name="at">When the run is due.</param>
+    /// <param name="at">When the run is due, on the application's clock.</param>
     /// <returns><paramref name="at"/>, or <see langword="null"/> when every attempt failed or the host stopped meanwhile.</returns>
-    private async Task<DateTimeOffset?> ScheduleAsync<TCommand>(DateTimeOffset at)
+    public async Task<DateTimeOffset?> ScheduleAsync<TCommand>(DateTimeOffset at)
         where TCommand : IRecurringJob, new()
     {
         var jobName = typeof(TCommand).Name;
@@ -246,7 +250,7 @@ public sealed class RecurringJobs
         {
             try
             {
-                await _bus.ScheduleAsync(new TCommand(), at);
+                await _bus.ScheduleAsync(new TCommand(), DelayUntil(at));
                 _logger.LogInformation("{JobName} scheduled for {ScheduledAt:u}.", jobName, at);
                 return at;
             }
@@ -267,6 +271,20 @@ public sealed class RecurringJobs
             jobName,
             options.ScheduleAttempts);
         return null;
+    }
+
+    /// <summary>
+    /// How long from now, on the application's clock, a run is due. The bus counts a scheduled run against the system clock, so an
+    /// absolute moment handed to it is only right where the application's clock is the system clock. Every planned moment (the
+    /// next run, the lease and the last success it is compared with) is read from the one application clock, and the bus is given
+    /// the span on that same clock, so the run falls where the rest of the schedule says it does.
+    /// </summary>
+    /// <param name="at">When the run is due, on the application's clock.</param>
+    /// <returns>The span from now until <paramref name="at"/>, zero when that moment has passed.</returns>
+    private TimeSpan DelayUntil(DateTimeOffset at)
+    {
+        var delay = at - _clock.UtcNow;
+        return delay > TimeSpan.Zero ? delay : TimeSpan.Zero;
     }
 
     /// <summary>Waits between two scheduling attempts, ending early when the host stops.</summary>

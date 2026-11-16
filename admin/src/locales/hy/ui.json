@@ -80,7 +80,9 @@
     "rowsPerPage": "Տողեր էջում"
   },
   "table": {
-    "empty": "Տվյալներ չկան"
+    "empty": "Տվյալներ չկան",
+    "sortBy": "Տեսակավորել ըստ",
+    "sortDirection": "Փոխել տեսակավորման ուղղությունը"
   },
   "bulkBar": {
     "label": "Խմբային գործողություններ",
@@ -101,9 +103,5 @@
   },
   "errorState": {
     "retry": "Կրկնել"
-  },
-  "rating": {
-    "label": "Գնահատական {average} 5-ից, կարծիքներ՝ {count}",
-    "summary": "{average} ({count})"
   }
 }

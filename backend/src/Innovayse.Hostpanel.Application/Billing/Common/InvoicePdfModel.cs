@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="SubTotal">Sum of the line amounts before tax and credit.</param>
 /// <param name="TaxRate">Tax rate as a percentage, e.g. 20 for 20%.</param>
 /// <param name="Tax">Tax amount.</param>
+/// <param name="ClientVatNumber">The client's VAT number when the invoice was raised under the reverse charge, which the document then states; null otherwise.</param>
 /// <param name="Credit">Credit applied; the line is left out when zero.</param>
 /// <param name="Total">Amount due.</param>
 /// <param name="Money">How amounts in the invoice's currency are written.</param>
@@ -38,6 +39,7 @@ public sealed record InvoicePdfModel(
     decimal SubTotal,
     decimal TaxRate,
     decimal Tax,
+    string? ClientVatNumber,
     decimal Credit,
     decimal Total,
     InvoicePdfMoneyFormat Money);

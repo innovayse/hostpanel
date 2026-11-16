@@ -10,7 +10,7 @@
 import { computed } from 'vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import { usePluginSource, usePluginView } from '@/composables/usePluginView'
 import { Icon } from '@/lib/icons'
 import { pluginLinkTarget } from '@/lib/pluginView'
@@ -36,7 +36,7 @@ const target = computed<PluginLinkTarget | null>(() =>
 </script>
 
 <template>
-  <UiSkeleton v-if="loading" :lines="1" class="w-32" />
+  <UiSkeletonBar v-if="loading" class="h-8 w-32 rounded-control" aria-hidden="true" data-testid="plugin-link-loading" />
   <UiLink v-else-if="target?.external" :href="target.href" external :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="plugin-link">
     {{ block.label }}
     <UiIcon :markup="Icon.ExternalLink" :size="UiSize.Sm" data-testid="plugin-link-external" />

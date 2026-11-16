@@ -73,7 +73,7 @@ public sealed class CreditNoteIncomeTests(IntegrationTestFactory factory) : ICla
     {
         var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-income" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
 
@@ -89,7 +89,7 @@ public sealed class CreditNoteIncomeTests(IntegrationTestFactory factory) : ICla
     {
         var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-ledger" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var refundInvoice = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
         var creditInvoice = await CreditNoteTestSeeds.PaidInvoiceAsync(host, clientId, price: 50m);

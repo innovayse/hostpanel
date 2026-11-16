@@ -518,6 +518,7 @@
       "creditApplied": "Credit Applied",
       "total": "Total",
       "unpaidBanner": "This invoice is due. Please pay to keep your services active.",
+      "reverseCharge": "This invoice is raised under the reverse charge: no VAT is added and you account for it. Your VAT number: {vatNumber}.",
       "payAmount": "Pay"
     },
     "tickets": {
@@ -572,6 +573,7 @@
         "companyName": "Company name",
         "email": "you{'@'}example.com",
         "phone": "+1 555 0100",
+        "vatNumber": "Your VAT number, e.g. DE123456789",
         "address1": "Street and number",
         "address2": "Apartment, suite, etc.",
         "city": "City",
@@ -734,6 +736,13 @@
       "postcode": "Zip Code",
       "country": "Country",
       "phone": "Phone Number",
+      "vatNumber": "VAT Number",
+      "vatNumberHint": "Add your VAT number to be invoiced without VAT when you are a business in another EU country or the UK. It is checked against the official register.",
+      "vatStatus": {
+        "Valid": "Valid",
+        "Invalid": "Not valid",
+        "none": "Not checked yet"
+      },
       "prefGeneral": "General Emails",
       "prefGeneralDesc": "All account related emails",
       "prefInvoice": "Invoice Emails",

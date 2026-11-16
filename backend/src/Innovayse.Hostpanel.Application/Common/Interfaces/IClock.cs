@@ -12,4 +12,7 @@ public interface IClock
 {
     /// <summary>Gets the current moment in UTC.</summary>
     public DateTimeOffset UtcNow { get; }
+
+    /// <summary>Gets the time zone of the host, the one a calendar day is cut by when a report groups per day.</summary>
+    public TimeZoneInfo TimeZone { get; }
 }

@@ -32,7 +32,7 @@ public sealed class CreateBillableItemTests(IntegrationTestFactory factory) : IC
         created.StatusCode.Should().Be(HttpStatusCode.Created);
         var itemId = await created.Content.ReadFromJsonAsync<int>();
 
-        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items");
+        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items?page=1&pageSize=20");
         list.StatusCode.Should().Be(HttpStatusCode.OK);
         using var body = JsonDocument.Parse(await list.Content.ReadAsStringAsync());
         var uninvoiced = body.RootElement.GetProperty("uninvoicedItems");
@@ -63,7 +63,7 @@ public sealed class CreateBillableItemTests(IntegrationTestFactory factory) : IC
         created.StatusCode.Should().Be(HttpStatusCode.Created);
         var itemId = await created.Content.ReadFromJsonAsync<int>();
 
-        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items");
+        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items?page=1&pageSize=20");
         using var body = JsonDocument.Parse(await list.Content.ReadAsStringAsync());
         var item = body.RootElement.GetProperty("uninvoicedItems").EnumerateArray()
             .Single(candidate => candidate.GetProperty("id").GetInt32() == itemId);

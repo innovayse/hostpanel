@@ -61,6 +61,9 @@ public static class StatusMapping
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
             // Exact row: the order is not in the review state the action needs, a state conflict whose name carries no CONFLICT token.
             "ORDER_NOT_UNDER_REVIEW" => new(409, "Conflict"),
+            // Exact rows: the product's live-service cap or its one-per-client rule refuses the order, a state conflict
+            // whose names carry no CONFLICT / ALREADY token.
+            "ORDER_PRODUCT_SOLD_OUT" or "ORDER_PRODUCT_ONE_PER_CLIENT" => new(409, "Conflict"),
             // Exact rows: fraud detection refused the request, a policy refusal and not a malformed request.
             "ORDER_FRAUD_REJECTED" or "REGISTRATION_FRAUD_REJECTED" => new(403, "Forbidden"),
             // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was
@@ -125,7 +128,7 @@ public static class StatusMapping
                 => new(409, "Conflict"),
             // Exact row: an unpaid invoice stands in the way, a state conflict, and the name carries no
             // CONFLICT / ALREADY token for the generic arms to catch.
-            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" or "CREDIT_TOP_UP_TOO_MANY_OPEN"
+            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_REVERSE_CHARGE_APPLIES" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" or "CREDIT_TOP_UP_TOO_MANY_OPEN"
                 => new(409, "Conflict"),
             // Exact row: the gateway module is off, missing or has no stored credential capability, a state of the
             // deployment rather than a malformed request, and the name carries no CONFLICT / ALREADY token.

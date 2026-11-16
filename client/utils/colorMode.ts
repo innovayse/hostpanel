@@ -11,6 +11,7 @@
  * @module utils/colorMode
  */
 
+import { SETTING_OFF } from '~/constants/settingValue'
 import { ColorMode } from '~/types/colormode'
 import { ColorModeSystem } from '~/types/colormodesystem'
 import type { ColorModeSetting } from '~/types/colormodesetting'
@@ -76,7 +77,7 @@ export const resolveColorMode = (
 }
 
 /**
- * Reads `portal.theme.user_toggle`. Only the literal `false` hides the switch: an
+ * Reads `portal.theme.user_toggle`. Only the stored off value (`SETTING_OFF`) hides the switch: an
  * unset row, an older backend or anything else keeps today's behaviour, which is a
  * visible toggle.
  *
@@ -84,7 +85,7 @@ export const resolveColorMode = (
  * @returns Whether visitors may switch modes.
  */
 export const isUserToggleEnabled = (input: string | null | undefined): boolean => {
-  return input !== 'false'
+  return input !== SETTING_OFF
 }
 
 /**

@@ -679,6 +679,17 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PRODUCT_NOT_AVAILABLE = "PRODUCT_NOT_AVAILABLE";
 
+    /// <summary>
+    /// The product's cap on live services is reached, counting orders not yet fulfilled, so it takes no new order (409).
+    /// </summary>
+    public const string ORDER_PRODUCT_SOLD_OUT = "ORDER_PRODUCT_SOLD_OUT";
+
+    /// <summary>
+    /// The product allows one live service per client and the client already holds or has ordered one, or the order
+    /// names it more than once (409).
+    /// </summary>
+    public const string ORDER_PRODUCT_ONE_PER_CLIENT = "ORDER_PRODUCT_ONE_PER_CLIENT";
+
     /// <summary>The service is not Pending, so it cannot be set up (400).</summary>
     public const string SERVICE_NOT_PENDING = "SERVICE_NOT_PENDING";
 
@@ -1502,6 +1513,21 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string CLIENT_TAX_EXEMPT = Domain.Clients.ClientsErrors.ClientTaxExempt;
 
+    /// <summary>The account is invoiced under the reverse charge, so a tax rate cannot be set on its invoices by hand (409).</summary>
+    public const string CLIENT_REVERSE_CHARGE_APPLIES = Domain.Clients.ClientsErrors.ClientReverseChargeApplies;
+
+    /// <summary>The client holds no VAT number to check (400).</summary>
+    public const string CLIENT_VAT_NUMBER_MISSING = Domain.Clients.ClientsErrors.ClientVatNumberMissing;
+
+    /// <summary>The client's billing country has no VAT number register to ask: it is neither an EU member state nor the United Kingdom (400).</summary>
+    public const string CLIENT_VAT_COUNTRY_NOT_SUPPORTED = Domain.Clients.ClientsErrors.ClientVatCountryNotSupported;
+
+    /// <summary>The VAT number service, or the member state behind it, gave no verdict; nothing was changed (503).</summary>
+    public const string VAT_SERVICE_UNAVAILABLE = Domain.Clients.ClientsErrors.VatServiceUnavailable;
+
+    /// <summary>The register of the client's country is not set up on this installation, so no check can be made (503).</summary>
+    public const string VAT_CHECK_NOT_CONFIGURED = Domain.Clients.ClientsErrors.VatCheckNotConfigured;
+
     /// <summary>The discount of a client group is outside 0 to 100 percent (400).</summary>
     public const string CLIENT_GROUP_DISCOUNT_INVALID = Domain.Clients.ClientsErrors.ClientGroupDiscountInvalid;
 
@@ -1516,6 +1542,15 @@ public static class HostpanelErrorCodes
 
     /// <summary>The rate of a tax rule is outside 0 to 100 percent (400).</summary>
     public const string TAX_RULE_RATE_INVALID = Domain.Billing.BillingErrors.TaxRuleRateInvalid;
+
+    /// <summary>The id names no VAT rate row (404).</summary>
+    public const string VAT_RATE_NOT_FOUND = "VAT_RATE_NOT_FOUND";
+
+    /// <summary>A VAT rate row for the same country, kind and first day exists already (409, the <c>ALREADY</c> arm of <c>StatusMapping</c>).</summary>
+    public const string VAT_RATE_ALREADY_EXISTS = "VAT_RATE_ALREADY_EXISTS";
+
+    /// <summary>The rate of a VAT rate row is outside 0 to 100 percent (400).</summary>
+    public const string VAT_RATE_INVALID = Domain.Billing.BillingErrors.VatRateInvalid;
 
     /// <summary>
     /// The account owner cannot be removed as an additional user (409, an exact <c>StatusMapping</c> row):
@@ -1642,6 +1677,12 @@ public static class HostpanelErrorCodes
     /// <see cref="Domain.Products.Product.SetGracePeriodDays"/>.
     /// </summary>
     public const string PRODUCT_GRACE_PERIOD_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductGracePeriodOutOfRange;
+
+    /// <summary>
+    /// The cap on live services is negative (400): <see cref="Domain.Products.Product.SetMaxActiveServices"/>. Zero is
+    /// the unlimited cap on the command and never reaches the aggregate.
+    /// </summary>
+    public const string PRODUCT_MAX_ACTIVE_SERVICES_INVALID = Domain.Products.ProductsErrors.ProductMaxActiveServicesInvalid;
 
     /// <summary>
     /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):

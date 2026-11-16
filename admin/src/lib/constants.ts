@@ -13,14 +13,21 @@ import { ClientStatus } from '@/types/client'
 import { CurrencyCode } from '@/types/currency'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
+import { CampaignStatus } from '@/types/emailcampaign'
+import { EmailLogOutcome } from '@/types/emaillog'
+import { EnabledFilter } from '@/types/enabledfilter'
 import { PaymentGateway } from '@/types/gateway'
+import { GatewayLogResult } from '@/types/gatewaylog'
 import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { InvoiceStatus } from '@/types/invoice'
+import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
-import { QuoteStage } from '@/types/quote'
+import { PublishedFilter } from '@/types/publishedfilter'
+import { QuoteStage, QuoteValidity } from '@/types/quote'
+import { RegistrarModule } from '@/types/registrarmodule'
 import { BillingCycle, ServiceStatus } from '@/types/service'
-import { TicketPriority } from '@/types/ticket'
-import { PaymentMethod } from '@/types/transaction'
+import { TicketPriority, TicketStatus } from '@/types/ticket'
+import { PaymentMethod, TransactionDirection } from '@/types/transaction'
 
 /**
  * One option of a dropdown or radio group: the wire value and the label shown for it.
@@ -67,6 +74,26 @@ export const DOMAIN_STATUS_OPTIONS: SelectOption[] = [
   { value: DomainStatus.Redemption, get label() { return translate('constants.domainStatusOptions.redemption') } },
   { value: DomainStatus.Transferred, get label() { return translate('constants.domainStatusOptions.transferred') } },
   { value: DomainStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
+]
+
+/** Registrar module options for dropdowns: the registrar a TLD is sourced from and the registrar a domain list is filtered by. */
+export const REGISTRAR_MODULE_OPTIONS: SelectOption[] = [
+  { value: RegistrarModule.NameAm, get label() { return translate('settings.tldConfigs.nameAm') } },
+  { value: RegistrarModule.Namecheap, get label() { return translate('settings.tldConfigs.namecheap') } },
+]
+
+/** Enabled-state filter options of a list whose rows are switched on or off (TLD configurations, tax rules). */
+export const ENABLED_FILTER_OPTIONS: SelectOption<EnabledFilter>[] = [
+  { value: EnabledFilter.Enabled, get label() { return translate('shared.enabled') } },
+  { value: EnabledFilter.Disabled, get label() { return translate('shared.disabled') } },
+]
+
+/** Email campaign status options for the list's status filter. */
+export const CAMPAIGN_STATUS_OPTIONS: SelectOption<CampaignStatus>[] = [
+  { value: CampaignStatus.Draft, get label() { return translate('emailCampaigns.status.Draft') } },
+  { value: CampaignStatus.Scheduled, get label() { return translate('emailCampaigns.status.Scheduled') } },
+  { value: CampaignStatus.Sending, get label() { return translate('emailCampaigns.status.Sending') } },
+  { value: CampaignStatus.Sent, get label() { return translate('emailCampaigns.status.Sent') } },
 ]
 
 /** Payment method options for dropdowns (the empty entry means "none"). */
@@ -123,21 +150,21 @@ export const RECURRING_PERIOD_OPTIONS: SelectOption<RecurringPeriod>[] = [
   { value: RecurringPeriod.Annually, get label() { return translate('constants.recurringPeriodOptions.annually') } },
 ]
 
-/** Invoice status options for filter dropdowns. */
-export const INVOICE_STATUS_OPTIONS: SelectOption[] = [
-  { value: '', get label() { return translate('clients.clientInvoices.allStatuses') } },
+/** Every invoice status, for the invoice filters and for naming a status; a filter puts its own "any" choice in front. */
+export const INVOICE_STATUS_OPTIONS: SelectOption<InvoiceStatus>[] = [
   { value: InvoiceStatus.Draft, get label() { return translate('clients.clientSummary.draft') } },
   { value: InvoiceStatus.Unpaid, get label() { return translate('billing.invoiceDetail.unpaid') } },
+  { value: InvoiceStatus.PaymentPending, get label() { return translate('billing.invoicesList.paymentPending') } },
   { value: InvoiceStatus.Paid, get label() { return translate('clients.clientSummary.paid') } },
   { value: InvoiceStatus.Overdue, get label() { return translate('clients.clientSummary.overdue') } },
+  { value: InvoiceStatus.Collections, get label() { return translate('billing.invoicesList.collections') } },
   { value: InvoiceStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
   { value: InvoiceStatus.PartiallyRefunded, get label() { return translate('clients.clientSummary.partiallyRefunded') } },
   { value: InvoiceStatus.Refunded, get label() { return translate('clients.clientSummary.refunded') } },
 ]
 
-/** Quote stage options for filter dropdowns. */
-export const QUOTE_STAGE_OPTIONS: SelectOption[] = [
-  { value: '', get label() { return translate('constants.quoteStageOptions.allStages') } },
+/** Every quote stage, for the quote form and the quote filters; a filter puts its own "any" choice in front. */
+export const QUOTE_STAGE_OPTIONS: SelectOption<QuoteStage>[] = [
   { value: QuoteStage.Draft, get label() { return translate('clients.clientSummary.draft') } },
   { value: QuoteStage.Delivered, get label() { return translate('billing.addQuote.delivered') } },
   { value: QuoteStage.OnHold, get label() { return translate('billing.addQuote.onHold') } },
@@ -145,6 +172,60 @@ export const QUOTE_STAGE_OPTIONS: SelectOption[] = [
   { value: QuoteStage.Lost, get label() { return translate('billing.addQuote.lost') } },
   { value: QuoteStage.Expired, get label() { return translate('billing.quotesList.expired') } },
   { value: QuoteStage.Dead, get label() { return translate('billing.addQuote.dead') } },
+]
+
+/** Quote validity options for the quote filters; a filter puts its own "any" choice in front. */
+export const QUOTE_VALIDITY_OPTIONS: SelectOption<QuoteValidity>[] = [
+  { value: QuoteValidity.Valid, get label() { return translate('billing.quotesList.valid') } },
+  { value: QuoteValidity.Expired, get label() { return translate('billing.quotesList.expired') } },
+]
+
+/** Transaction direction options for the transaction filters; a filter puts its own "any" choice in front. */
+export const TRANSACTION_DIRECTION_OPTIONS: SelectOption<TransactionDirection>[] = [
+  { value: TransactionDirection.In, get label() { return translate('billing.transactionsList.paymentsReceived') } },
+  { value: TransactionDirection.Out, get label() { return translate('billing.transactionsList.paymentsSent') } },
+]
+
+/** Gateway log outcome options for the log's result filter; a filter puts its own "any" choice in front. */
+export const GATEWAY_LOG_RESULT_OPTIONS: SelectOption<GatewayLogResult>[] = [
+  { value: GatewayLogResult.Payment, get label() { return translate('billing.gatewayLog.payment') } },
+  { value: GatewayLogResult.Refund, get label() { return translate('billing.gatewayLog.refund') } },
+  { value: GatewayLogResult.Credit, get label() { return translate('billing.gatewayLog.credit') } },
+  { value: GatewayLogResult.Pending, get label() { return translate('billing.gatewayLog.pending') } },
+]
+
+/** Email log outcome options for the log's outcome filter; a filter puts its own "any" choice in front. */
+export const EMAIL_LOG_OUTCOME_OPTIONS: SelectOption<EmailLogOutcome>[] = [
+  { value: EmailLogOutcome.Delivered, get label() { return translate('constants.emailLogOutcomeOptions.delivered') } },
+  { value: EmailLogOutcome.Failed, get label() { return translate('constants.emailLogOutcomeOptions.failed') } },
+]
+
+/** Published-state options for the knowledge base and announcement filters; a filter puts its own "any" choice in front. */
+export const PUBLISHED_FILTER_OPTIONS: SelectOption<PublishedFilter>[] = [
+  { value: PublishedFilter.Published, get label() { return translate('shared.published') } },
+  { value: PublishedFilter.Draft, get label() { return translate('support.knowledgebase.draft') } },
+]
+
+/** Every network issue type, for the issue form and the list filter; a filter puts its own "any" choice in front. */
+export const NETWORK_ISSUE_TYPE_OPTIONS: SelectOption<NetworkIssueType>[] = [
+  { value: NetworkIssueType.Server, get label() { return translate('support.networkIssueForm.server') } },
+  { value: NetworkIssueType.Other, get label() { return translate('support.networkIssueForm.other') } },
+]
+
+/** Every network issue priority, for the issue form and the list filter; a filter puts its own "any" choice in front. */
+export const NETWORK_ISSUE_PRIORITY_OPTIONS: SelectOption<NetworkIssuePriority>[] = [
+  { value: NetworkIssuePriority.Low, get label() { return translate('support.networkIssueForm.low') } },
+  { value: NetworkIssuePriority.Medium, get label() { return translate('support.networkIssueForm.medium') } },
+  { value: NetworkIssuePriority.High, get label() { return translate('support.networkIssueForm.high') } },
+  { value: NetworkIssuePriority.Critical, get label() { return translate('support.networkIssueForm.critical') } },
+]
+
+/** Every network issue status, for the issue form and the list filter; a filter puts its own "any" choice in front. */
+export const NETWORK_ISSUE_STATUS_OPTIONS: SelectOption<NetworkIssueStatus>[] = [
+  { value: NetworkIssueStatus.Reported, get label() { return translate('support.networkIssueForm.reported') } },
+  { value: NetworkIssueStatus.Investigating, get label() { return translate('support.networkIssueForm.investigating') } },
+  { value: NetworkIssueStatus.Scheduled, get label() { return translate('support.networkIssueForm.scheduled') } },
+  { value: NetworkIssueStatus.Resolved, get label() { return translate('support.networkIssueForm.resolved') } },
 ]
 
 /** Payment gateway options. */
@@ -209,6 +290,13 @@ export const ORDER_LINE_FULFILMENT_OPTIONS: SelectOption[] = [
   { value: OrderItemFulfilmentState.Refunded, get label() { return translate('constants.orderLineFulfilmentOptions.refunded') } },
   { value: OrderItemFulfilmentState.Refunding, get label() { return translate('constants.orderLineFulfilmentOptions.refunding') } },
   { value: OrderItemFulfilmentState.PartiallyRefunded, get label() { return translate('constants.orderLineFulfilmentOptions.partiallyRefunded') } },
+]
+
+/** Ticket status options for dropdowns: the status a ticket list is filtered by. */
+export const TICKET_STATUS_OPTIONS: SelectOption[] = [
+  { value: TicketStatus.Open, get label() { return translate('ticketStatus.Open') } },
+  { value: TicketStatus.AwaitingReply, get label() { return translate('ticketStatus.AwaitingReply') } },
+  { value: TicketStatus.Closed, get label() { return translate('ticketStatus.Closed') } },
 ]
 
 /** Available ticket priority options for dropdowns. */

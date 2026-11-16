@@ -55,6 +55,7 @@ import { storeToRefs } from 'pinia'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
 import { redirectToGateway } from '~/utils/externalRedirect'
 import { UiButtonVariant } from '~/utils/ui/enums'
+import { SITE_PAYMENT_RESULT_PATH } from '~/constants/siteRoutes'
 
 /** Props of PayPanel. */
 interface Props {
@@ -97,7 +98,7 @@ const payWithHostedGateway = async (): Promise<void> => {
   if (!hostedGatewayModule.value) {
     return
   }
-  const returnUrl = new URL(localePath(`/payment/result?invoice=${props.invoiceId}`), window.location.origin).toString()
+  const returnUrl = new URL(localePath(`${SITE_PAYMENT_RESULT_PATH}?invoice=${props.invoiceId}`), window.location.origin).toString()
   const start = await paymentStore.startGatewayPayment(props.invoiceId, hostedGatewayModule.value, returnUrl)
   if (start) {
     // The store already refused an unsafe answer; this is the last guard before the browser leaves.

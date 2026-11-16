@@ -1,6 +1,6 @@
 /**
  * Pure helpers of the invoice lists: the paid, due and overdue rollup the summary tiles show, built from the
- * rows a page already holds, and the narrowing of a page by the text typed in the search box.
+ * rows a page already holds.
  */
 import { formatPlainAmount } from '@/lib/money'
 import { CurrencyCode } from '@/types/currency'
@@ -81,21 +81,3 @@ export const bucketAmountText = (bucket: InvoiceBucket): string =>
   bucket.totals.length === 0
     ? formatPlainAmount(0)
     : bucket.totals.map(total => formatPlainAmount(total.amount, total.currency)).join(', ')
-
-/**
- * Narrows a page of invoices by the search text: the invoice number, the client or the payment method.
- *
- * @param invoices - The invoices of the page.
- * @param term - The text typed in the search box; blank keeps every invoice.
- * @returns The invoices whose number, client name or payment method contains the text, ignoring case.
- */
-export const searchInvoices = (invoices: readonly Invoice[], term: string): Invoice[] => {
-  const needle = term.trim().toLowerCase()
-  if (needle === '') {
-    return [...invoices]
-  }
-  return invoices.filter(invoice =>
-    [String(invoice.id), invoice.clientName, invoice.paymentMethod ?? '']
-      .some(field => field.toLowerCase().includes(needle)),
-  )
-}

@@ -26,7 +26,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Domain", 15m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
@@ -54,12 +54,14 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
+            // The statement orders an invoice by its creation moment, which a save stamps from the system clock: pinned before the payment.
+            invoice.Backdate(TestMoments.Seeded);
             invoice.AddItem("Domain", 15m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
             db.Transactions.Add(Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 10m, 0m, 0m, false, "USD", TransactionSource.Manual));
+                clientId, TestMoments.Seeded.AddMinutes(1), "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 10m, 0m, 0m, false, "USD", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 
@@ -113,11 +115,11 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var draft = Invoice.CreateDraft(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var draft = Invoice.CreateDraft(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             draft.AddItem("Draft", 11m, 1);
-            var cancelled = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var cancelled = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             cancelled.AddItem("Cancelled", 13m, 1);
-            cancelled.Cancel(DateTimeOffset.UtcNow);
+            cancelled.Cancel(TestMoments.Seeded);
             db.Invoices.AddRange(draft, cancelled);
             await db.SaveChangesAsync();
         }
@@ -143,14 +145,14 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Hosting", 100m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 100m, 0m, null, TransactionSource.Manual));
+            db.Transactions.Add(invoice.AddPayment(TestMoments.Seeded, "Manual", $"tx-{Guid.NewGuid():N}", 100m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
             db.Transactions.Add(invoice.AddRefund(
-                DateTimeOffset.UtcNow, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 100m, 0m, null, addedToCredit: true, source: TransactionSource.Manual));
+                TestMoments.Seeded, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 100m, 0m, null, addedToCredit: true, source: TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 
@@ -176,14 +178,17 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var usd = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow.AddMinutes(-2));
+            var usd = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded.AddMinutes(-2));
+            // The statement orders an invoice by its creation moment, which a save stamps from the system clock: pinned beside the payment dates.
+            usd.Backdate(TestMoments.Seeded.AddMinutes(-2));
             usd.AddItem("Hosting", 20m, 1);
-            var eur = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "EUR", DateTimeOffset.UtcNow.AddMinutes(-1));
+            var eur = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "EUR", TestMoments.Seeded.AddMinutes(-1));
+            eur.Backdate(TestMoments.Seeded.AddMinutes(-1));
             eur.AddItem("Domain", 30m, 1);
             db.Invoices.AddRange(usd, eur);
             await db.SaveChangesAsync();
             db.Transactions.Add(Transaction.Create(
-                clientId, DateTimeOffset.UtcNow, "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 5m, 0m, 0m, false, "EUR", TransactionSource.Manual));
+                clientId, TestMoments.Seeded, "Card payment", $"tx-{Guid.NewGuid():N}", null, "manual", 5m, 0m, 0m, false, "EUR", TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 

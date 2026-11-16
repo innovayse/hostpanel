@@ -7,20 +7,21 @@
  *
  * @module tests/pages/domains/index.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { defineComponent, h, ref } from 'vue'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { defineComponent, h } from 'vue'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, publishedSchemas, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { stubTemplateSlots } from '~/tests/helpers/templateSlots'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
 import { bodyOf } from '~/tests/helpers/requestBody'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { requestsTo } from '~/tests/helpers/stubRoutes'
 import { until } from '~/tests/helpers/settle'
 import DomainsPage from '~/pages/domains/index.vue'
+import { useTemplate } from '~/composables/useTemplate'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useCartStore } from '~/stores/cart'
 import { useDomainsStore } from '~/stores/domains'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
@@ -30,6 +31,7 @@ import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
 import { TemplateName } from '~/types/templatename'
+import { TemplateSlot } from '~/types/templateslot'
 
 /** The public reads of the domains page that no catalogue helper names. */
 const DomainPath = {
@@ -72,48 +74,40 @@ const TemplateDomains = defineComponent({
 /** What the stood-in runtime recorded for the current test. */
 let spies: PublicPageSpies
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** The replies of the current test; a test changes them before it mounts. */
-let table: StubRouteTable
+/** What the stub answers, by route, and the accessor of the stub the hooks start and close around each test; a test changes the replies before it mounts. */
+const { replies, stub } = usePortalSettingsServer({ useTemplate })
 
 /**
  * The domain checks the stub has received.
  *
  * @returns The requests, oldest first.
  */
-const domainChecks = () => requestsTo(stub.requests, DomainPath.DomainCheck)
+const domainChecks = () => requestsTo(stub().requests, DomainPath.DomainCheck)
 
 /**
  * Mounts the page and waits until the price table, the catalogue and the currencies have been read.
  *
- * @param template Template the stood-in `useTemplate` reports.
+ * @param template Template the operator chose.
  * @returns The wrapper.
  */
 const mountDomains = async (template: TemplateName = TemplateName.Aurora) => {
-  vi.stubGlobal('useTemplate', () => ({ slot: () => TemplateDomains, name: ref(template) }))
+  await loadPortalSettings(replies, { [PortalSettingKey.Template]: template })
   const wrapper = await mountPage(DomainsPage)
   await awaitCatalogue()
   return wrapper
 }
 
 describe('domains page', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     spies = stubPublicPageRuntime()
-    vi.stubGlobal('useTemplate', () => ({ slot: () => TemplateDomains }))
+    stubTemplateSlots({ [TemplateSlot.Domains]: TemplateDomains })
     window.localStorage.clear()
-    table = {
+    Object.assign(replies, {
       [`GET ${CatalogPath.Products}`]: { body: [{ id: 7, groupId: 2, name: 'Domain Registration' }] },
       [`GET ${DomainPath.TldPricing}`]: { body: pricing('USD') },
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`POST ${DomainPath.DomainCheck}`]: { body: { domain: 'example.com', available: true } },
-    }
-    stub = await startTransport(routeTable(table))
-  })
-
-  afterEach(async () => {
-    await stub.close()
+    })
   })
 
   it('hands the template the price rows, the categories and the all-categories filter', async () => {
@@ -158,7 +152,7 @@ describe('domains page', () => {
   })
 
   it('adds an extension that sells in another currency, at the payer-currency amount the API converted', async () => {
-    table[`GET ${DomainPath.TldPricing}`] = { body: pricing('AMD') }
+    replies[`GET ${DomainPath.TldPricing}`] = { body: pricing('AMD') }
     const wrapper = await mountDomains()
     useDomainsStore().lookupResults = [{ name: 'example.com', price: '$10.00', status: DomainResultStatus.Available }]
     await flushPromises()
@@ -172,7 +166,7 @@ describe('domains page', () => {
   })
 
   it('adds nothing when the operator has no domain product', async () => {
-    table[`GET ${CatalogPath.Products}`] = { body: [] }
+    replies[`GET ${CatalogPath.Products}`] = { body: [] }
     const wrapper = await mountDomains()
 
     wrapper.findComponent(TemplateDomains).vm.$emit('add', 'example.com')
@@ -203,8 +197,7 @@ describe('domains page', () => {
   it('sets the canonical head and publishes the collection page schema', async () => {
     await mountDomains()
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ path: '/domains' }))
-    const schemas = spies.injectSchema.mock.calls[0]?.[0] as Array<Record<string, unknown>>
-    expect(schemas.some((schema) => schema['@type'] === 'CollectionPage')).toBe(true)
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/domains`)
+    expect(publishedSchemas(spies).some((schema) => schema['@type'] === 'CollectionPage')).toBe(true)
   })
 })

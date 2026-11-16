@@ -3,8 +3,8 @@
  * catalogue defines, and an entry's outcome picks "delivered" or its reason.
  */
 import { describe, expect, it } from 'vitest'
-import { emailOutcomeLabelKey, emailSendFailureLabelKey } from '@/lib/emailLogStatus'
-import { EmailSendFailure } from '@/types/emaillog'
+import { emailOutcomeLabelKey, emailSendFailureLabelKey, successOfOutcome } from '@/lib/emailLogStatus'
+import { EmailLogOutcome, EmailSendFailure } from '@/types/emaillog'
 import { createTestI18n } from '../helpers/i18n'
 
 describe('emailLogStatus', () => {
@@ -25,5 +25,11 @@ describe('emailLogStatus', () => {
       'clients.clientEmails.failure.recipientRejected',
     )
     expect(emailOutcomeLabelKey({ success: false, failure: null })).toBe('clients.clientEmails.failure.unknown')
+  })
+
+  it('turns the outcome filter into the API switch: delivered true, failed false, none unnarrowed', () => {
+    expect(successOfOutcome(EmailLogOutcome.Delivered)).toBe(true)
+    expect(successOfOutcome(EmailLogOutcome.Failed)).toBe(false)
+    expect(successOfOutcome(undefined)).toBeUndefined()
   })
 })

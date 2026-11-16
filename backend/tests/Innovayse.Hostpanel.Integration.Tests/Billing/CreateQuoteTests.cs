@@ -38,7 +38,7 @@ public sealed class CreateQuoteTests(IntegrationTestFactory factory) : IClassFix
         {
             clientId = 1,
             subject = "Website redesign",
-            expiryDate = DateTimeOffset.UtcNow.AddDays(30),
+            expiryDate = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             items = new[] { new { description = "Design", unitPrice = 500m, quantity = 1 } },
         });
@@ -57,7 +57,7 @@ public sealed class CreateQuoteTests(IntegrationTestFactory factory) : IClassFix
         {
             clientId = BillingTestSeeds.NoSuchId,
             subject = "Website redesign",
-            expiryDate = DateTimeOffset.UtcNow.AddDays(30),
+            expiryDate = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             items = new[] { new { description = "Design", unitPrice = 500m, quantity = 1 } },
         });

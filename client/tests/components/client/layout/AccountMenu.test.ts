@@ -9,6 +9,7 @@ import { Home, UserCog } from 'lucide-vue-next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import AccountMenu from '~/components/client/layout/AccountMenu.vue'
+import { CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH } from '~/constants/clientRoutes'
 
 afterEach(() => { vi.unstubAllGlobals() })
 
@@ -18,8 +19,8 @@ const PROPS = {
   lastName: 'Lovelace',
   email: 'ada@example.com',
   items: [
-    { to: '/client/dashboard', label: 'Dashboard', icon: Home },
-    { to: '/client/account', label: 'Account', icon: UserCog }
+    { to: CLIENT_DASHBOARD_PATH, label: 'Dashboard', icon: Home },
+    { to: CLIENT_ACCOUNT_PATH, label: 'Account', icon: UserCog }
   ]
 }
 
@@ -40,8 +41,8 @@ describe('ClientLayoutAccountMenu', () => {
 
     expect(wrapper.find('[data-testid="client-account-name"]').text()).toBe('Ada Lovelace')
     expect(wrapper.find('[data-testid="client-account-email"]').text()).toBe('ada@example.com')
-    expect(wrapper.find('[data-testid="client-account-link-/client/dashboard"]').attributes('href')).toBe('/client/dashboard')
-    expect(wrapper.find('[data-testid="client-account-link-/client/account"]').text()).toContain('Account')
+    expect(wrapper.find(`[data-testid="client-account-link-${CLIENT_DASHBOARD_PATH}"]`).attributes('href')).toBe(CLIENT_DASHBOARD_PATH)
+    expect(wrapper.find(`[data-testid="client-account-link-${CLIENT_ACCOUNT_PATH}"]`).text()).toContain('Account')
     expect(wrapper.find('[data-testid="client-account-sign-out"]').exists()).toBe(true)
   })
 
@@ -55,7 +56,7 @@ describe('ClientLayoutAccountMenu', () => {
     const wrapper = mountClient(AccountMenu, { props: PROPS })
     await wrapper.find('[data-testid="client-account-trigger"]').trigger('click')
 
-    await wrapper.find('[data-testid="client-account-link-/client/dashboard"]').trigger('click')
+    await wrapper.find(`[data-testid="client-account-link-${CLIENT_DASHBOARD_PATH}"]`).trigger('click')
 
     expect(wrapper.find('[data-testid="ui-popover-panel"]').exists()).toBe(false)
   })

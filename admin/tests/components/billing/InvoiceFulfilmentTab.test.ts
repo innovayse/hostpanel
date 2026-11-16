@@ -76,7 +76,8 @@ describe('InvoiceFulfilmentTab', () => {
     const rows = wrapper.findAll('tbody tr')
     /** Text of the completed or next attempt cell of one row. */
     const whenOfRow = (index: number): string => rows[index]?.findAll('td')[5]?.text() ?? ''
-    expect(whenOfRow(0)).toBe('—')
+    // The cell carries the caption of its column as real text on a card, so the value is what follows it.
+    expect(whenOfRow(0)).toMatch(/—$/)
     expect(whenOfRow(1)).toContain('19/10/2026')
     expect(whenOfRow(2)).toContain('21/10/2026')
   })

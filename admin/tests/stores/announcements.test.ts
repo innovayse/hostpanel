@@ -22,25 +22,33 @@ describe('announcementsStore', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fetchAll requests the current page and fills the list', async () => {
+  it('fetchAll requests the page given and fills the list', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 1 }))
     const store = useAnnouncementsStore()
-    store.page = 2
 
-    expect(await store.fetchAll()).toBe(true)
+    expect(await store.fetchAll(2)).toBe(true)
     expect(callOf(mock).url).toBe('/api/announcements?page=2&pageSize=20')
     expect(store.announcements).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(1)
   })
 
+  it('fetchAll sends the trimmed search and the published state', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const store = useAnnouncementsStore()
+
+    await store.fetchAll(1, { search: '  window  ', isPublished: false })
+
+    expect(callOf(mock).url).toBe('/api/announcements?page=1&pageSize=20&search=window&isPublished=false')
+  })
+
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useAnnouncementsStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe('Not allowed.')
 
     stubOffline()
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
   })
 

@@ -62,6 +62,26 @@ public sealed class CompleteOrderGatewayPaymentTests(IntegrationTestFactory fact
     }
 
     /// <summary>
+    /// The anonymous complete route refuses a return carrying more distinct parameters than the plugin limit with 400,
+    /// before any order is read.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnOverLimitReturnSetIsRefusedBadRequest()
+    {
+        var host = BuildHost(new FakePaymentPluginResolver());
+        var client = host.CreateClient();
+        var returnParameters = Enumerable.Range(0, PaymentReturnLimits.MaxParameters + 1)
+            .Select(i => new { name = $"p{i}", value = "v" })
+            .ToArray();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders/1/gateway-payment/complete", new { paymentToken = "token", returnParameters });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
     /// Completing a gateway payment the bank reports as paid marks the invoice paid and fulfils
     /// the order: the order moves from Pending to Active.
     /// </summary>

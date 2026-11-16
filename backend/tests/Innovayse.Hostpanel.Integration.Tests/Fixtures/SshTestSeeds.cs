@@ -74,8 +74,8 @@ public static class SshTestSeeds
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, username, DateTimeOffset.UtcNow, serverId);
+        var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, username, TestMoments.Seeded, serverId);
         await context.SaveChangesAsync(CancellationToken.None);
         return service.Id;
     }

@@ -37,8 +37,8 @@ public sealed class ServicesController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a paginated list of all client services with enriched data.</summary>
-    /// <param name="query">Page, page size and optional client filter.</param>
+    /// <summary>Returns a paginated list of client services with enriched data, narrowed by a search and by owner, status, product and billing cycle.</summary>
+    /// <param name="query">The paging window, the optional search (domain, product name or service id) and the optional filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 400 when a value is refused; 401 when the caller is not signed in;

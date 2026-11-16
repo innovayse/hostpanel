@@ -6,12 +6,15 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraApps from '~/templates/aurora/sections/AuroraApps.vue'
 import { InstallerAppCategory } from '~/constants/installerAppCategory'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
 import { balancedColumns } from '~/utils/balancedGrid'
 
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
+
 describe('AuroraApps', () => {
-  it('renders a card for every category and the count line when a count is set', () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.InstallerAppCount]: '150+' } })
+  it('renders a card for every category and the count line when a count is set', async () => {
+    await loadGlobals({ settings: { [PortalSettingKey.InstallerAppCount]: '150+' } })
 
     const wrapper = mountWithKit(AuroraApps)
 
@@ -22,8 +25,8 @@ describe('AuroraApps', () => {
     expect(wrapper.find('[data-testid="aurora-apps-grid"]').attributes('data-columns')).toBe(String(balancedColumns(6)))
   })
 
-  it('hides the count line when no count is set', () => {
-    stubAuroraGlobals()
+  it('hides the count line when no count is set', async () => {
+    await loadGlobals()
 
     const wrapper = mountWithKit(AuroraApps)
 

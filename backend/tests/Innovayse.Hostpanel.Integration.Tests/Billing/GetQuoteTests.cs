@@ -39,7 +39,7 @@ public sealed class GetQuoteTests(IntegrationTestFactory factory) : IClassFixtur
         {
             clientId,
             subject = "Rounded",
-            expiryDate = DateTimeOffset.UtcNow.AddDays(30),
+            expiryDate = TestMoments.Seeded.AddDays(30),
             notes = (string?)null,
             items = new[] { new { description = "Hosting", unitPrice = 10m, quantity = 3, discountPercent = 33.33m } },
         });

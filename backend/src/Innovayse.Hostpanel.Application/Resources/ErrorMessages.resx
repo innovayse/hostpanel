@@ -1183,6 +1183,21 @@
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>This client is tax exempt, so a tax rate cannot be set on their invoices.</value>
   </data>
+  <data name="CLIENT_REVERSE_CHARGE_APPLIES" xml:space="preserve">
+    <value>This client is invoiced under the reverse charge, so a tax rate cannot be set on their invoices.</value>
+  </data>
+  <data name="CLIENT_VAT_NUMBER_MISSING" xml:space="preserve">
+    <value>This client has no VAT number to check.</value>
+  </data>
+  <data name="CLIENT_VAT_COUNTRY_NOT_SUPPORTED" xml:space="preserve">
+    <value>VAT numbers can be checked only for EU countries and the United Kingdom. Set the client's billing country first.</value>
+  </data>
+  <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>The VAT number service is not answering right now. The earlier result is kept. Try again later.</value>
+  </data>
+  <data name="VAT_CHECK_NOT_CONFIGURED" xml:space="preserve">
+    <value>VAT numbers of this country cannot be checked yet: the register is not set up on this server. Ask the administrator to configure it (United Kingdom numbers need the HMRC credentials).</value>
+  </data>
   <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
     <value>Another product already uses this SKU. Choose a different one.</value>
   </data>
@@ -1492,6 +1507,15 @@
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>A tax rate must be between 0 and 100 percent.</value>
   </data>
+  <data name="VAT_RATE_NOT_FOUND" xml:space="preserve">
+    <value>No such VAT rate exists.</value>
+  </data>
+  <data name="VAT_RATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>A VAT rate for this country, kind and start date already exists.</value>
+  </data>
+  <data name="VAT_RATE_INVALID" xml:space="preserve">
+    <value>A VAT rate must be between 0 and 100 percent.</value>
+  </data>
   <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
     <value>This order is not waiting for a fraud review.</value>
   </data>
@@ -1509,5 +1533,14 @@
   </data>
   <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
     <value>The block list entry was not found.</value>
+  </data>
+  <data name="ORDER_PRODUCT_SOLD_OUT" xml:space="preserve">
+    <value>Sorry, this product is sold out.</value>
+  </data>
+  <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
+    <value>You already have this product; it can be ordered once per customer.</value>
+  </data>
+  <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
+    <value>The maximum number of active services must be 0 or empty for unlimited, or a positive number.</value>
   </data>
 </root>

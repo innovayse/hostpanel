@@ -7,7 +7,6 @@
  * @module tests/templates/classic/pages/ClassicCheckout.test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { bankTransferPath, BillingEndpoint } from '~/tests/helpers/billingPaths'
@@ -33,6 +32,8 @@ import type { CartItem } from '~/types/cartitem'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import { Permission } from '~/types/permission'
 import { PaymentModule } from '~/types/paymentmodule'
+import { localized } from '~/tests/helpers/runtimeStubs'
+import { CLIENT_LOGIN_PATH, clientInvoicePayPath } from '~/constants/clientRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -46,18 +47,6 @@ const DEFAULT_METHODS: GatewayMethod[] = [
   { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: true },
 ]
 
-/** Stand-in for the phone field, which keeps its country picker out of this test. */
-const PhoneInputStub = defineComponent({
-  name: 'UiPhoneInput',
-  props: { modelValue: { type: String, default: '' } },
-  emits: ['update:modelValue'],
-  setup: (props, { emit }) => () => h('input', {
-    'data-testid': 'checkout-phone',
-    value: props.modelValue,
-    onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value),
-  }),
-})
-
 /** A signed-in client. */
 const client = makeClientUser()
 
@@ -69,7 +58,7 @@ const client = makeClientUser()
  */
 const mountCheckout = async (items: CartItem[] = [cartLine(1, 5), cartLine(2, 7)]) => {
   const wrapper = await mountPage(ClassicCheckout, {
-    components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
+    components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint },
   })
   await awaitCheckoutLoaded()
   useCartStore().items = items
@@ -135,7 +124,7 @@ describe('ClassicCheckout', () => {
     expect(wrapper.find('[data-testid="checkout-lastname"]').attributes('placeholder')).toBe('checkout.placeholders.lastname')
     expect(wrapper.find('[data-testid="checkout-email"]').attributes('placeholder')).toBe('checkout.placeholders.email')
     expect(wrapper.find('[data-testid="checkout-password"]').attributes('placeholder')).toBe('checkout.placeholders.password')
-    expect(wrapper.find('[data-testid="checkout-sign-in"]').attributes('href')).toBe('/en/client/login')
+    expect(wrapper.find('[data-testid="checkout-sign-in"]').attributes('href')).toBe(localized(CLIENT_LOGIN_PATH))
   })
 
   it('shows the signed-in client instead of the guest form', async () => {
@@ -247,7 +236,7 @@ describe('ClassicCheckout', () => {
     await fillGuestForm(wrapper)
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
-    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay'))
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(localized(clientInvoicePayPath(12))))
 
     expect(bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0])).toEqual(expect.objectContaining({
       paymentmethod: PaymentModule.BankTransfer,

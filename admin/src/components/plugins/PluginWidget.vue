@@ -15,7 +15,7 @@ import type { PluginSlotWidgetDto } from '@/types/pluginslot'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiSkeleton from '@/components/ui/UiSkeleton.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -120,7 +120,11 @@ const heading = computed<string>(() =>
       <Suspense v-else @pending="startTimer" @resolve="stopTimer">
         <slot />
         <template #fallback>
-          <UiSkeleton :lines="2" :data-testid="`plugin-widget-loading-${testId}`" />
+          <!-- The widget's body is drawn by the plugin, so its shape is not known: two lines stand in until it resolves -->
+          <UiStack gap="sm" aria-busy="true" :data-testid="`plugin-widget-loading-${testId}`">
+            <UiSkeletonBar class="h-3.5 w-full rounded-md" aria-hidden="true" />
+            <UiSkeletonBar class="h-3.5 w-2/3 rounded-md" aria-hidden="true" />
+          </UiStack>
         </template>
       </Suspense>
     </UiStack>

@@ -5,22 +5,19 @@
  * The real auth store, API composable and transport run against a stub server playing the BFF.
  */
 import { createPinia, setActivePinia } from 'pinia'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderAccount from '~/components/layout/HeaderAccount.vue'
 import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
+import { requestsTo, writeOf } from '~/tests/helpers/stubRoutes'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** Path of the endpoint that ends the session. */
-const LOGOUT_PATH = '/api/portal/auth/logout'
-
-/** The stub playing the BFF. */
-let stub: StubServer
+/** The stub server and the loader of the template globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useTemplateGlobals()
 
 /** A signed-in client. */
 const client = makeClientUser()
@@ -40,12 +37,8 @@ const mountAccount = () => {
 
 describe('LayoutHeaderAccount', () => {
   beforeEach(async () => {
-    stubTemplateGlobals()
-    stub = await startTransport(routeTable({ [`POST ${LOGOUT_PATH}`]: { body: {} } }))
-  })
-
-  afterEach(async () => {
-    await stub.close()
+    replies[writeOf(AccountEndpoint.Logout)] = { body: {} }
+    await loadGlobals()
   })
 
   it('names the trigger after the client and keeps the panel closed', async () => {
@@ -67,12 +60,12 @@ describe('LayoutHeaderAccount', () => {
     const hrefs = ['dashboard', 'services', 'domains', 'invoices', 'tickets', 'account']
       .map((key) => wrapper.find(`[data-testid="header-account-${key}"]`).attributes('href'))
     expect(hrefs).toEqual([
-      '/client/dashboard',
-      '/client/services',
-      '/client/domains',
-      '/client/invoices',
-      '/client/tickets',
-      '/client/account',
+      CLIENT_DASHBOARD_PATH,
+      CLIENT_SERVICES_PATH,
+      CLIENT_DOMAINS_PATH,
+      CLIENT_INVOICES_PATH,
+      CLIENT_TICKETS_PATH,
+      CLIENT_ACCOUNT_PATH,
     ])
   })
 
@@ -102,7 +95,7 @@ describe('LayoutHeaderAccount', () => {
 
     await wrapper.find('[data-testid="header-account-sign-out"]').trigger('click')
 
-    await waitUntil(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub().requests, AccountEndpoint.Logout)).toHaveLength(1))
     await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.find('[data-testid="header-account-panel"]').exists()).toBe(false)
   })

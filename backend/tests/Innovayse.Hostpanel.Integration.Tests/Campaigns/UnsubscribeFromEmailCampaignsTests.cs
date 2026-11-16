@@ -62,7 +62,7 @@ public sealed class UnsubscribeFromEmailCampaignsTests(IntegrationTestFactory fa
         var seeded = await CampaignTestSeeds.SeedSendingRecipientAsync(scope.ServiceProvider);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var recipient = await context.EmailCampaignRecipients.SingleAsync(r => r.CampaignId == seeded.CampaignId);
-        recipient.MarkSent(DateTimeOffset.UtcNow);
+        recipient.MarkSent(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var response = await factory.CreateClient().PostAsJsonAsync(Route, new { token = seeded.Token });

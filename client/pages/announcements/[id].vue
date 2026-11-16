@@ -3,7 +3,7 @@
     <UiStack class="w-full" gap="lg">
       <!-- Back link -->
       <UiLink
-        :to="localePath('/announcements')"
+        :to="localePath(SITE_ANNOUNCEMENTS_PATH)"
         tone="muted"
         :underline="false"
         class="inline-flex items-center gap-2 self-start text-sm"
@@ -62,6 +62,7 @@ import { SeoPageType } from '~/types/seopagetype'
 import { formatDate } from '~/utils/formatDate'
 import { pageLoadError } from '~/utils/pageLoadError'
 import { detailTitle, plainDescription } from '~/utils/seoTitle'
+import { SITE_ANNOUNCEMENTS_PATH } from '~/constants/siteRoutes'
 import type { PublishedAnnouncement } from '~/types/publishedannouncement'
 
 /** The reader's language, so the publication date is written the way they read dates. */

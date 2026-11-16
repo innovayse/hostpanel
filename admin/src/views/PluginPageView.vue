@@ -74,7 +74,8 @@ watch(locale, load)
   <UiStack :gap="UiGap.Lg" class="w-full" data-testid="plugin-page">
     <template v-if="store.pageLoading">
       <UiPageHeader v-if="!ownHeader" loading data-testid="plugin-page-loading-header" />
-      <UiCard padding="md" loading :skeleton-lines="4" data-testid="plugin-page-loading" />
+      <!-- The blocks of the page are defined by the plugin, so the shape is only known once its view has arrived -->
+      <UiCard padding="md" loading data-testid="plugin-page-loading" />
     </template>
     <UiEmptyState
       v-else-if="store.pageNotFound"

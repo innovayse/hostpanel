@@ -152,7 +152,6 @@ public sealed class RaiseClientRenewalInvoicesHandler
         var now = _clock.UtcNow;
         var horizon = now.AddDays(settings.InvoiceDaysBefore);
         var payer = await _payerCurrency.ForClientAsync(client.Id, ct);
-        var taxRate = await _taxRates.ForClientAsync(client, ct);
 
         var lines = new List<PendingLine>();
         lines.AddRange(await DueServiceLinesAsync(client.Id, now, horizon, ct));
@@ -177,7 +176,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
             }
 
             // After the lines and before the credit below: the credit is taken off the taxed total.
-            invoice.ApplyTaxRate(taxRate);
+            ClientTaxRateResolver.Apply(invoice, await _taxRates.ForInvoiceAsync(client, invoice, ct));
 
             Transaction? creditLine = null;
             if (settings.AutoApplyCredit && credit > 0 && invoice.Total > 0)

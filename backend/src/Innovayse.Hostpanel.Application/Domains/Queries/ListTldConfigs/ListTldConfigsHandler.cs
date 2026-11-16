@@ -1,14 +1,17 @@
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Domains.Queries.ListTldConfigs;
 
 /// <summary>
-/// Handles <see cref="ListTldConfigsQuery"/> by loading all TLD configurations
-/// and mapping them to <see cref="TldConfigListItemDto"/> summaries with margin calculations.
+/// Handles <see cref="ListTldConfigsQuery"/> by loading one page of TLD configurations, narrowed by the search text
+/// on the TLD and by registrar module and enabled state in SQL ahead of paging, and mapping them to
+/// <see cref="TldConfigListItemDto"/> summaries with margin calculations.
 /// </summary>
 public sealed class ListTldConfigsHandler
 {
@@ -23,19 +26,36 @@ public sealed class ListTldConfigsHandler
     }
 
     /// <summary>
-    /// Returns all TLD configurations as admin list-item DTOs with calculated margin percentages.
+    /// Returns a page of TLD configurations as admin list-item DTOs with calculated margin percentages.
     /// </summary>
-    /// <param name="query">The list TLD configs query (carries no parameters).</param>
+    /// <param name="query">The page, page size, search and filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success with every TLD configuration ordered by sort order, mapped to
+    /// Success with a page of configurations ordered by sort order, then TLD, mapped to
     /// <see cref="TldConfigListItemDto"/>. This use case answers no refusal code of its own.
     /// </returns>
-    public async Task<Result<List<TldConfigListItemDto>>> HandleAsync(ListTldConfigsQuery query, CancellationToken ct)
+    public async Task<Result<PaginatedList<TldConfigListItemDto>>> HandleAsync(ListTldConfigsQuery query, CancellationToken ct)
     {
-        var configs = await _context.TldConfigs.OrderBy(x => x.SortOrder).ThenBy(x => x.Tld).ToListAsync(ct);
+        // A TLD is stored without its dot, so ".com" typed into the search must find "com".
+        var filtered = _context.TldConfigs.AsNoTracking().Search(query.Search?.Trim().TrimStart('.'), x => x.Tld);
 
-        return Result.Success(configs.Select(MapToListItem).ToList());
+        if (query.RegistrarModule is { } registrarModule)
+        {
+            filtered = filtered.Where(x => x.RegistrarModule == registrarModule);
+        }
+
+        if (query.Enabled is { } enabled)
+        {
+            filtered = filtered.Where(x => x.IsEnabled == enabled);
+        }
+
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = filtered.OrderBy(x => x.SortOrder).ThenBy(x => x.Tld).ThenBy(x => x.Id);
+        var totalCount = await ordered.CountAsync(ct);
+        var configs = await ordered.Paginate(query.Page, query.PageSize).ToListAsync(ct);
+
+        return Result.Success(new PaginatedList<TldConfigListItemDto>(
+            configs.Select(MapToListItem).ToList(), totalCount, query.Page, query.PageSize));
     }
 
     /// <summary>

@@ -12,7 +12,8 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { LocationQueryRaw, LocationQueryValue } from 'vue-router'
+import type { LocationQueryRaw } from 'vue-router'
+import { readQueryString } from '@/lib/query'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 
 /** Query key the search text is stored under unless the screen names another. */
@@ -57,7 +58,7 @@ export interface FilterQuery<K extends string> {
   page: ComputedRef<number>
   /** How many filter fields are set in the address (the search text is not counted). */
   activeCount: ComputedRef<number>
-  /** Writes the draft to the address and returns to the first page; does nothing when nothing changed. */
+  /** Writes the draft and the text of the search box to the address and returns to the first page; does nothing when nothing changed. */
   apply: () => Promise<void>
   /** Empties the draft; the address changes only on Apply. */
   reset: () => void
@@ -70,15 +71,6 @@ export interface FilterQuery<K extends string> {
   /** Moves to a page; the first page leaves no `page` in the address. */
   setPage: (next: number) => Promise<void>
 }
-
-/**
- * Reads a query value as one string.
- *
- * @param value - What the router holds for a key: nothing, one value, or a repeated key.
- * @returns The first value, or an empty string when the key is missing.
- */
-const readString = (value: LocationQueryValue | LocationQueryValue[] | undefined): string =>
-  (Array.isArray(value) ? value[0] : value) ?? ''
 
 /**
  * Keeps the filter fields, the search text and the page of a list in the address.
@@ -117,21 +109,21 @@ export const useFilterQuery = <K extends string>(
 
   /** The filters in the address right now. */
   const applied = whileOnOwnRoute<FilterValues<K>>(
-    () => Object.fromEntries(keys.map(key => [key, readString(route.query[key])])) as FilterValues<K>,
+    () => Object.fromEntries(keys.map(key => [key, readQueryString(route.query[key])])) as FilterValues<K>,
   )
 
   /** The filters being edited, starting from what the address holds. */
   const draft = ref<FilterValues<K>>({ ...applied.value }) as Ref<FilterValues<K>>
 
   /** The text of the search box. */
-  const search = ref(readString(route.query[searchKey]))
+  const search = ref(readQueryString(route.query[searchKey]))
 
   /** The search text in the address right now. */
-  const appliedSearch = whileOnOwnRoute<string>(() => readString(route.query[searchKey]))
+  const appliedSearch = whileOnOwnRoute<string>(() => readQueryString(route.query[searchKey]))
 
   /** The current page: a whole number from 1, else the first page. */
   const page = whileOnOwnRoute<number>(() => {
-    const parsed = Number.parseInt(readString(route.query[pageKey]), 10)
+    const parsed = Number.parseInt(readQueryString(route.query[pageKey]), 10)
     return Number.isInteger(parsed) && parsed >= 1 ? parsed : 1
   })
 
@@ -153,7 +145,7 @@ export const useFilterQuery = <K extends string>(
     const next: LocationQueryRaw = { ...route.query }
     let changed = false
     for (const [key, value] of Object.entries(patch)) {
-      if (readString(route.query[key]) !== value) {
+      if (readQueryString(route.query[key]) !== value) {
         changed = true
       }
       if (value === '') {
@@ -179,11 +171,14 @@ export const useFilterQuery = <K extends string>(
     Object.fromEntries(keys.map(key => [key, values[key].trim()]))
 
   /**
-   * Writes the draft to the address (a new history entry) and returns to the first page.
+   * Writes the draft to the address (a new history entry) and returns to the first page. The text of the search box
+   * goes with it, so a search typed a moment ago and a filter chosen now reach the address together (one load, not
+   * two), and a screen that sets the draft and empties the box in one step (a tab that has its own search) changes
+   * the list once.
    *
    * @returns A promise that settles when the navigation has finished.
    */
-  const apply = (): Promise<void> => commit(patchOf(draft.value), FilterHistory.Push)
+  const apply = (): Promise<void> => commit({ ...patchOf(draft.value), [searchKey]: search.value.trim() }, FilterHistory.Push)
 
   /**
    * Empties every field of the draft; the address changes only when the reader applies.

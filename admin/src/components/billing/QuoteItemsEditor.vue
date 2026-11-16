@@ -29,6 +29,7 @@ import { blankQuoteLine } from '@/lib/quoteLines'
 import type { QuoteLineDraft } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole } from '@/utils/ui/table'
 
 const { t } = useI18n()
 
@@ -122,10 +123,10 @@ const lineActions = (index: number): UiMenuAction[] => {
       <UiTable :density="UiTableDensity.Compact" :empty="lines.length === 0" :loading="loading" :colspan="7" :skeleton-rows="3">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.qty') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.quoteDetail.discount') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.qty') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.description') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
+            <UiTableHeader :card-role="UiCardRole.Control">{{ t('billing.quoteDetail.discount') }}</UiTableHeader>
             <UiTableHeader align="center">{{ t('shared.taxed') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>

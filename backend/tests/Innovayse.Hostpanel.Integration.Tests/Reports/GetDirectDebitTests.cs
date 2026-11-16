@@ -23,9 +23,9 @@ public sealed class GetDirectDebitTests(IntegrationTestFactory factory) : IClass
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(5), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(5), "USD", TestMoments.Seeded);
             invoice.AddItem("Renewal", 60m, 1);
-            invoice.UpdateOptions(DateTimeOffset.UtcNow, invoice.DueDate, "Direct Debit", 0m);
+            invoice.UpdateOptions(TestMoments.Seeded, invoice.DueDate, "Direct Debit", 0m);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
         }

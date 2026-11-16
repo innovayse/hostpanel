@@ -7,6 +7,7 @@ import TicketRow from '~/components/client/support/TicketRow.vue'
 import type { ClientTicket } from '~/types/clientticket'
 import { TicketPriority } from '~/types/ticketpriority'
 import { TicketStatus } from '~/types/ticketstatus'
+import { clientTicketPath } from '~/constants/clientRoutes'
 
 /**
  * Builds a ticket with the fields the row reads.
@@ -24,7 +25,7 @@ describe('TicketRow', () => {
   it('links the whole row to the ticket', () => {
     const wrapper = mountClient(TicketRow, { props: { ticket: ticket() } })
 
-    expect(wrapper.attributes('href')).toBe('/client/tickets/12')
+    expect(wrapper.attributes('href')).toBe(clientTicketPath(12))
     expect(wrapper.attributes('data-testid')).toBe('ticket-row-12')
   })
 

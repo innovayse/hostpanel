@@ -25,6 +25,12 @@ export const stubSchemeQuery = (light: boolean): FakeSchemeQuery => {
     addEventListener: (_type: string, listener: () => void): void => {
       listeners.push(listener)
     },
+    removeEventListener: (_type: string, listener: () => void): void => {
+      const at = listeners.indexOf(listener)
+      if (at >= 0) {
+        listeners.splice(at, 1)
+      }
+    },
   }
   vi.stubGlobal('matchMedia', () => query)
   return {

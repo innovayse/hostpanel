@@ -5,10 +5,11 @@
     "overview": "Overview",
     "versions": "Versions",
     "licence": "Licence",
-    "changes": "Changes"
+    "changes": "Changes",
+    "settings": "Settings"
   },
   "notFoundTitle": "Plugin not found",
-  "notFoundDescription": "The registry has no plugin with this id.",
+  "notFoundDescription": "This plugin is not installed on this server.",
   "verified": "Verified",
   "pricing": {
     "Free": "Free",
@@ -17,7 +18,6 @@
   },
   "byAuthor": "by {author}",
   "installedVersion": "Installed {version}",
-  "notInstalled": "Not installed",
   "staged": "Version {version} staged, applies after restart",
   "updateAvailable": "Update available: {version}",
   "updateTo": "Update to {version}",
@@ -83,19 +83,18 @@
     "install": "Install",
     "downgradeTitle": "Install an older version?",
     "downgradeMessage": "Version {version} of {name} is older than the installed {installed}. An older version may lack fixes and may not read data the newer one wrote. The change applies after a server restart. Install it anyway?",
-    "downgrade": "Install older version",
-    "uninstallTitle": "Uninstall this plugin?",
-    "uninstallMessage": "Uninstall {name}? Its stored data is kept until you delete it, and the removal finishes after a server restart."
+    "downgrade": "Install older version"
   },
   "feedback": {
-    "staged": "Version {version} is staged and applies after the restart.",
-    "installed": "Version {version} is installed. Restart the server to apply it.",
-    "uninstalled": "The plugin is uninstalled. Restart the server to finish the removal.",
     "licenceSaved": "The licence key is saved.",
     "licenceRemoved": "The licence key is removed."
   },
   "changes": {
     "heading": "What changes from {from} to {to}",
     "headingFresh": "Release notes of {version}"
+  },
+  "settings": {
+    "emptyTitle": "No settings",
+    "emptyDescription": "This plugin has no settings to change."
   }
 }

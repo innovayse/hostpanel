@@ -21,7 +21,7 @@
         </div>
 
         <!-- Secondary action -->
-        <UiButton :to="localePath('/hosting')" variant="outline" size="lg" class="mb-14" data-testid="hero-secondary">
+        <UiButton :to="localePath(SITE_HOSTING_PATH)" variant="outline" size="lg" class="mb-14" data-testid="hero-secondary">
           <span>{{ $t('hero.cta.secondary') }}</span>
           <ArrowRight :size="18" :stroke-width="2" class="ml-2" />
         </UiButton>
@@ -43,6 +43,7 @@
 
 import { ArrowRight } from 'lucide-vue-next'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Where a headline figure's value and caption come from. */
 interface StatDefinition {

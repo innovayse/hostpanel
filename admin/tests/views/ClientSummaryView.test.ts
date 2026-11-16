@@ -15,17 +15,29 @@ import { CurrencyCode } from '@/types/currency'
 import type { ClientSummaryData } from '@/types/client'
 import type { InvoiceStatusCount } from '@/types/invoice'
 import type { ClientExternalAccount } from '@/types/clientexternalaccount'
+import { ClientVatStatus } from '@/types/clientvat'
+import type { ClientVat } from '@/types/clientvat'
+
+/** A client's tax ID with the last completed check of it, as the detail endpoint carries them. */
+interface ClientVatCase {
+  /** The client's VAT number (Tax ID). */
+  taxId: string
+  /** The last completed check of it. */
+  check: ClientVat
+}
 
 /**
  * Client 7 as the detail endpoint returns it.
  *
  * @param externalAccount - The link the client holds, null for none.
  * @param currency - The client's billing currency, null for none.
+ * @param vat - The tax ID and the last completed check of it, null for a client with no number.
  * @returns The response.
  */
-const client = (externalAccount: ClientExternalAccount | null = null, currency: string | null = null) =>
+const client = (externalAccount: ClientExternalAccount | null = null, currency: string | null = null, vat: ClientVatCase | null = null) =>
   json({
     externalAccount,
+    vat: vat?.check ?? { status: null, checkedAt: null, name: null, address: null },
     id: 7,
     firstName: 'Ada',
     lastName: 'Lovelace',
@@ -39,6 +51,7 @@ const client = (externalAccount: ClientExternalAccount | null = null, currency: 
     settings: {
       overdueNotices: true,
       taxExempt: false,
+      taxId: vat?.taxId ?? null,
       separateInvoices: false,
       disableCcProcessing: false,
       marketingOptIn: false,
@@ -128,6 +141,69 @@ const externalAccountPuts = (mock: ReturnType<typeof stubRoutes>) =>
     .filter((call) => call.method === 'PUT' && call.url === '/api/clients/7/external-account')
 
 describe('ClientSummaryView', () => {
+  it('shows the VAT number card with the status the client holds', async () => {
+    const check = { status: ClientVatStatus.Valid, checkedAt: '2026-11-10T09:30:00Z', name: 'Acme GmbH', address: null }
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client(null, null, { taxId: 'DE123456789', check })))
+    const wrapper = await mountSummary()
+
+    expect(wrapper.get('[data-testid="client-vat-number"]').text()).toBe('DE123456789')
+    expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
+    expect(wrapper.get('[data-testid="client-vat-name"]').text()).toBe('Acme GmbH')
+  })
+
+  it('says there is no VAT number to check for a client without one', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    expect(wrapper.find('[data-testid="client-vat-none"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="client-vat-check"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('runs the check again and shows the status the API now holds', async () => {
+    let checked = false
+    const unchecked = { status: null, checkedAt: null, name: null, address: null }
+    const valid = { status: ClientVatStatus.Valid, checkedAt: '2026-11-10T09:30:00Z', name: 'Acme GmbH', address: null }
+    const mock = stubRoutes({
+      ...summaryRoutes(
+        () => new Response(null, { status: 204 }),
+        undefined,
+        () => client(null, null, { taxId: 'DE123456789', check: checked ? valid : unchecked }),
+      ),
+      'POST /api/clients/7/vat-check': () => {
+        checked = true
+        return new Response(null, { status: 204 })
+      },
+    })
+    const wrapper = await mountSummary()
+    expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Not checked')
+
+    await wrapper.get('[data-testid="client-vat-check"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.map((_, index) => callOf(mock, index)).some((call) => call.method === 'POST' && call.url === '/api/clients/7/vat-check')).toBe(true)
+    expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
+    expect(wrapper.get('[data-testid="client-vat-feedback"]').text()).toBe('VAT number checked.')
+  })
+
+  it('shows the API sentence when the service gave no verdict and keeps the status', async () => {
+    const valid = { status: ClientVatStatus.Valid, checkedAt: '2026-11-10T09:30:00Z', name: 'Acme GmbH', address: null }
+    stubRoutes({
+      ...summaryRoutes(
+        () => new Response(null, { status: 204 }),
+        undefined,
+        () => client(null, null, { taxId: 'DE123456789', check: valid }),
+      ),
+      'POST /api/clients/7/vat-check': () => problem('The VAT number service is not answering right now.', 503),
+    })
+    const wrapper = await mountSummary()
+
+    await wrapper.get('[data-testid="client-vat-check"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="client-vat-feedback"]').text()).toBe('The VAT number service is not answering right now.')
+    expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
+  })
+
   it('keeps every card with its heading and captions as placeholders while the summary loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountRouted(ClientSummaryView, '/clients/:id/summary', '/clients/7/summary')

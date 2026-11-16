@@ -204,7 +204,7 @@ public sealed class FakeRegistryServer : HttpMessageHandler
                     state = "Pending",
                     challenge = instance.Challenge,
                     challengePath = $"/.well-known/hostpanel-registry/{instance.Id:D}",
-                    challengeExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+                    challengeExpiresAt = TestMoments.Seeded.AddMinutes(10),
                 },
                 HttpStatusCode.Created);
         }
@@ -298,7 +298,8 @@ public sealed class FakeRegistryServer : HttpMessageHandler
                 return Problem(HttpStatusCode.Forbidden, "INSTANCE_NOT_VERIFIED_FORBIDDEN");
             }
 
-            var distance = (DateTimeOffset.UtcNow + ClockOffset - DateTimeOffset.FromUnixTimeSeconds(seconds)).Duration();
+            // Real time on purpose: the host signs each call with the system clock of the shared host, which this server must be measured against.
+            var distance = (TestMoments.Present() + ClockOffset - DateTimeOffset.FromUnixTimeSeconds(seconds)).Duration();
             if (distance > Skew)
             {
                 return Problem(HttpStatusCode.Unauthorized, "INSTANCE_TIMESTAMP_UNAUTHORIZED");
@@ -446,7 +447,7 @@ public sealed class FakeRegistryServer : HttpMessageHandler
                 version = p.Version,
                 sdkVersion = "3.1.0",
                 sizeBytes = p.Package.Length,
-                publishedAt = DateTimeOffset.UtcNow,
+                publishedAt = TestMoments.Seeded,
                 status = "Published",
             }));
     }
@@ -501,7 +502,7 @@ public sealed class FakeRegistryServer : HttpMessageHandler
         {
             ticket = token,
             downloadUrl = $"{BaseUrl}plugins/{id}/versions/{plugin.Version}/download?ticket={token}",
-            expiresAt = DateTimeOffset.UtcNow.AddSeconds(60),
+            expiresAt = TestMoments.Seeded.AddSeconds(60),
         });
     }
 

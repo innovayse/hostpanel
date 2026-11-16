@@ -467,7 +467,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     public async Task TooManyEntries_RefusesAsync()
     {
         var host = factory.WithWebHostBuilder(builder => builder.UseSetting("Plugins:MaxEntryCount", "2"));
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         var zip = PluginsTestSeeds.BuildValidPluginZip(
             pluginId, new Dictionary<string, string> { ["extra.txt"] = "one too many" });
@@ -485,7 +485,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     public async Task TooManyUnpackedBytes_RefusesAsync()
     {
         var host = factory.WithWebHostBuilder(builder => builder.UseSetting("Plugins:MaxUncompressedBytes", "1024"));
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         var zip = PluginsTestSeeds.BuildValidPluginZip(
             pluginId, new Dictionary<string, string> { ["big.txt"] = new string('x', 64 * 1024) });
@@ -507,7 +507,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     public async Task AnEntryLyingAboutItsSize_NeverUnpacksPastTheLimitAsync()
     {
         var host = factory.WithWebHostBuilder(builder => builder.UseSetting("Plugins:MaxUncompressedBytes", "4096"));
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         var zip = PluginsTestSeeds.BuildValidPluginZip(
             pluginId, new Dictionary<string, string> { ["big.txt"] = new string('x', 64 * 1024) });
@@ -605,7 +605,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         var trusted = PluginsTestSeeds.BuildValidPluginZip(trustedId);
         var host = factory.WithWebHostBuilder(builder => builder.UseSetting(
             "Plugins:TrustedPackageSha256:0", Convert.ToHexString(SHA256.HashData(trusted))));
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
 
         try
         {

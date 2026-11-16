@@ -28,7 +28,7 @@ public sealed class GetLinkedDomainNamesTests(IntegrationTestFactory factory) : 
             var clientId = await DomainsTestSeeds.SeedClientAsync(context);
             serviceId = await DomainsTestSeeds.SeedServiceAsync(context, clientId);
             var domain = RegisteredDomain.Register(
-                clientId, name, TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+                clientId, name, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             domain.LinkService(serviceId);
             context.Domains.Add(domain);
             await context.SaveChangesAsync(CancellationToken.None);
@@ -38,6 +38,35 @@ public sealed class GetLinkedDomainNamesTests(IntegrationTestFactory factory) : 
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().ContainSingle().Which.Should().Be(new LinkedDomainNameDto(serviceId, name));
+    }
+
+    /// <summary>A service with several linked domains gets one entry, the first by name, so a list never fails on it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task HandleAsync_SeveralLinkedDomains_ReturnsTheFirstByNameOnceAsync()
+    {
+        int serviceId;
+        var token = Guid.NewGuid().ToString("N")[..12];
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var clientId = await DomainsTestSeeds.SeedClientAsync(context);
+            serviceId = await DomainsTestSeeds.SeedServiceAsync(context, clientId);
+            foreach (var name in new[] { $"b-{token}.example", $"a-{token}.example" })
+            {
+                var domain = RegisteredDomain.Register(
+                    clientId, name, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+                domain.LinkService(serviceId);
+                context.Domains.Add(domain);
+            }
+
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var result = await InvokeAsync(new GetLinkedDomainNamesQuery([serviceId]));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().ContainSingle().Which.Should().Be(new LinkedDomainNameDto(serviceId, $"a-{token}.example"));
     }
 
     /// <summary>An empty id list answers an empty list.</summary>

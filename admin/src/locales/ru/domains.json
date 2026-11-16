@@ -4,8 +4,9 @@
     "searchDomains": "Поиск доменов",
     "expiresAt": "Истекает",
     "renewalPrice": "Цена продления",
-    "noDomainsMatchYourSearch": "Нет доменов, соответствующих поиску",
-    "noDomainsFound": "Домены не найдены",
-    "tryAdjustingYourSearchTerm": "Попробуйте изменить поисковый запрос"
+    "regPeriod": "Срок регистрации",
+    "noDomainsMatchYourFilters": "Нет доменов, соответствующих фильтрам",
+    "clearFilters": "Сбросить фильтры",
+    "noDomainsFound": "Домены не найдены"
   }
 }

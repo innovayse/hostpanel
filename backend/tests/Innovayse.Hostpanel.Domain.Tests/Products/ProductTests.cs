@@ -432,6 +432,93 @@ public class ProductTests
         return Prefix + new string('a', bytes - Prefix.Length - Suffix.Length) + Suffix;
     }
 
+    /// <summary>A new product is not an electronic service for VAT; the flag is set and cleared on its own, whatever the product type.</summary>
+    [Fact]
+    public void SetDigitalService_TurnsTheVatFlagOnAndOff_IndependentlyOfTheDeliveryType()
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+        product.IsDigitalService.Should().BeFalse();
+
+        product.SetDigitalService(true);
+
+        product.IsDigitalService.Should().BeTrue();
+        product.IsDigital.Should().BeFalse();
+
+        product.SetDigitalService(false);
+
+        product.IsDigitalService.Should().BeFalse();
+    }
+
+    /// <summary>A new product is unlimited and not limited to one per client.</summary>
+    [Fact]
+    public void Create_StartsUnlimited_AndNotOnePerClient()
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+
+        Assert.Null(product.MaxActiveServices);
+        Assert.False(product.OnePerClient);
+    }
+
+    /// <summary>SetMaxActiveServices stores a cap of one or more, and null clears it to unlimited.</summary>
+    /// <param name="max">A valid cap.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(50)]
+    [InlineData(null)]
+    public void SetMaxActiveServices_Valid_StoresIt(int? max)
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+        product.SetMaxActiveServices(7);
+
+        product.SetMaxActiveServices(max);
+
+        Assert.Equal(max, product.MaxActiveServices);
+    }
+
+    /// <summary>SetMaxActiveServices refuses zero or a negative cap and keeps the one it had.</summary>
+    /// <param name="max">An invalid cap.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(int.MinValue)]
+    public void SetMaxActiveServices_ZeroOrNegative_ThrowsAndKeepsTheOldCap(int max)
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+        product.SetMaxActiveServices(50);
+
+        var ex = Assert.Throws<DomainRuleException>(() => product.SetMaxActiveServices(max));
+
+        Assert.Equal(ProductsErrors.ProductMaxActiveServicesInvalid, ex.Code);
+        Assert.Equal(50, product.MaxActiveServices);
+    }
+
+    /// <summary>SetOnePerClient turns the rule on and off.</summary>
+    [Fact]
+    public void SetOnePerClient_TogglesTheRule()
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+
+        product.SetOnePerClient(true);
+        Assert.True(product.OnePerClient);
+
+        product.SetOnePerClient(false);
+        Assert.False(product.OnePerClient);
+    }
+
+    /// <summary>A product takes a place to count when it has a cap or is one-per-client, and not otherwise.</summary>
+    /// <param name="max">The cap, or null.</param>
+    /// <param name="onePerClient">Whether the product is one-per-client.</param>
+    /// <param name="expected">Whether the product is place limited.</param>
+    [Theory]
+    [InlineData(null, false, false)]
+    [InlineData(5, false, true)]
+    [InlineData(null, true, true)]
+    [InlineData(5, true, true)]
+    public void IsPlaceLimited_IsTrueForACapOrOnePerClient(int? max, bool onePerClient, bool expected)
+    {
+        Assert.Equal(expected, Product.IsPlaceLimited(max, onePerClient));
+    }
+
     /// <summary>Creates a product of the given type with fixed, irrelevant values.</summary>
     /// <param name="type">The product type.</param>
     /// <returns>A new active product.</returns>

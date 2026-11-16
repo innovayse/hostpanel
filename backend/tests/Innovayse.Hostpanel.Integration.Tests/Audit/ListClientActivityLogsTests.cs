@@ -1,242 +1,277 @@
 using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json;
-using Innovayse.Hostpanel.Application.Audit.Common;
-using Innovayse.Hostpanel.Application.Audit.Queries.ListClientActivityLogs;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Audit;
-using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Wolverine;
+using static Innovayse.Hostpanel.Integration.Tests.Fixtures.PagedListReads;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Audit;
 
 /// <summary>
-/// <see cref="ListClientActivityLogsQuery"/>, both through the real <see cref="IMessageBus"/> (the
-/// date window, the admin/description/IP substring filters, and the newest-first order)
-/// and through
-/// <c>ClientActivityLogsController</c>'s <c>GET /api/clients/{id}/activity-logs</c> (the
-/// authorization boundary and the paging shape). This query is the module's only use case.
+/// <c>GET /api/clients/{id}/activity-logs</c> against Postgres: the activity log of one client, searched over the admin,
+/// the description and the IP address, narrowed by a period, ordered newest first and paged on the server. This query is the
+/// module's only use case.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A client id no seeded or created client ever takes.</summary>
     private const int NoSuchClientId = 999_999_999;
 
-    /// <summary>
-    /// Adds a log entry for <paramref name="clientId"/> and back-dates <c>CreatedAt</c> directly on
-    /// the tracked entry: <see cref="ActivityLog.Create"/> always stamps <see cref="DateTimeOffset.UtcNow"/>
-    /// and takes no timestamp argument, so a specific date can only be written this way.
-    /// </summary>
-    /// <param name="context">The data context to seed into.</param>
-    /// <param name="clientId">FK the row is filed under.</param>
-    /// <param name="description">The entry's description.</param>
-    /// <param name="createdAt">The timestamp to force onto the row after insertion.</param>
-    /// <param name="adminName">Optional admin display name.</param>
-    /// <param name="adminEmail">Optional admin email.</param>
-    /// <param name="ipAddress">Optional IP address.</param>
-    /// <returns>A task that completes once the row is saved.</returns>
-    private static async Task SeedLogAsync(
-        IHostpanelDbContext context, int clientId, string description, DateTimeOffset createdAt,
-        string? adminName = null, string? adminEmail = null, string? ipAddress = null)
-    {
-        var log = ActivityLog.Create(clientId, description, adminId: null, adminName, adminEmail, ipAddress);
-        context.ActivityLogs.Add(log);
-        await context.SaveChangesAsync(CancellationToken.None);
-        ((Microsoft.EntityFrameworkCore.DbContext)context).Entry(log).Property(l => l.CreatedAt).CurrentValue = createdAt;
-        await context.SaveChangesAsync(CancellationToken.None);
-    }
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
 
-    /// <summary>A client carrying the seeded admin's bearer token.</summary>
-    /// <returns>An authenticated client.</returns>
-    private async Task<HttpClient> AdminClientAsync()
-    {
-        var client = factory.CreateClient();
-        var token = await factory.GetAdminTokenAsync();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
-
-    /// <summary>Results come back newest first, so the latest activity leads.</summary>
+    /// <summary>Results come back newest first, and the id breaks a tie so the order is stable.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_OrdersNewestFirstAsync()
+    public async Task OrdersNewestFirstAndTheIdBreaksATie()
     {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = SeededAt;
-        await SeedLogAsync(context, clientId, "Oldest", now.AddDays(-2));
-        await SeedLogAsync(context, clientId, "Newest", now);
-        await SeedLogAsync(context, clientId, "Middle", now.AddDays(-1));
+        var (admin, clientId) = await AdminAndClientAsync();
+        var oldest = await SeedLogAsync(clientId, "Oldest", SeededAt.AddDays(-2));
+        var tiedFirst = await SeedLogAsync(clientId, "Tied first", SeededAt);
+        var tiedSecond = await SeedLogAsync(clientId, "Tied second", SeededAt);
+        var middle = await SeedLogAsync(clientId, "Middle", SeededAt.AddDays(-1));
 
-        var result = await bus.InvokeAsync<Result<PaginatedList<ActivityLogDto>>>(
-            new ListClientActivityLogsQuery(clientId, 1, 10, null, null, null, null));
+        var page = await PageAsync(admin, Route(clientId, string.Empty));
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(["Newest", "Middle", "Oldest"], result.Value!.Items.Select(i => i.Description));
+        IdsOf(page).Should().Equal(tiedSecond, tiedFirst, middle, oldest);
     }
 
-    /// <summary>The date filter matches only entries created on that UTC calendar day.</summary>
+    /// <summary>The search matches the admin name, the admin email, the description and the IP address in any letter case.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_DateFilter_MatchesOnlyThatUtcDayAsync()
+    public async Task SearchFindsAdminDescriptionAndIpInAnyCase()
     {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var targetDay = new DateTimeOffset(2025, 6, 15, 10, 0, 0, TimeSpan.Zero);
-        await SeedLogAsync(context, clientId, "OnTargetDay", targetDay);
-        await SeedLogAsync(context, clientId, "DayBefore", targetDay.AddDays(-1));
-        await SeedLogAsync(context, clientId, "DayAfter", targetDay.AddDays(1));
+        var (admin, clientId) = await AdminAndClientAsync();
+        var token = UniqueToken();
+        var byName = await SeedLogAsync(clientId, "By name", SeededAt, adminName: $"Ada {token}");
+        var byEmail = await SeedLogAsync(clientId, "By email", SeededAt, adminEmail: $"{token}@example.test");
+        var byDescription = await SeedLogAsync(clientId, $"Added Invoice {token}", SeededAt);
+        var byIp = await SeedLogAsync(clientId, "By IP", SeededAt, ipAddress: $"10.0.0.5 {token}");
+        await SeedLogAsync(clientId, "Unrelated", SeededAt, adminName: "Grace Hopper");
 
-        var result = await bus.InvokeAsync<Result<PaginatedList<ActivityLogDto>>>(
-            new ListClientActivityLogsQuery(clientId, 1, 10, targetDay, null, null, null));
+        var page = await PageAsync(admin, Route(clientId, $"search={token.ToUpperInvariant()}"));
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(["OnTargetDay"], result.Value!.Items.Select(i => i.Description));
+        IdsOf(page).Should().BeEquivalentTo([byName, byEmail, byDescription, byIp]);
     }
 
-    /// <summary>The admin search matches a substring of either the admin's name or their email.</summary>
+    /// <summary>A percent sign and an underscore typed into the search match themselves, not any text.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_AdminSearch_MatchesNameOrEmailSubstringAsync()
+    public async Task SearchWildcardsAreLiteral()
     {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = SeededAt;
-        await SeedLogAsync(context, clientId, "ByName", now, adminName: "Ada Lovelace");
-        await SeedLogAsync(context, clientId, "ByEmail", now.AddMinutes(-1), adminEmail: "ada@example.test");
-        await SeedLogAsync(context, clientId, "NoMatch", now.AddMinutes(-2), adminName: "Grace Hopper");
+        var (admin, clientId) = await AdminAndClientAsync();
+        var token = UniqueToken();
+        var percent = await SeedLogAsync(clientId, $"{token} 50% off", SeededAt);
+        await SeedLogAsync(clientId, $"{token} 50x off", SeededAt);
+        var underscore = await SeedLogAsync(clientId, $"{token} a_c", SeededAt);
+        await SeedLogAsync(clientId, $"{token} abc", SeededAt);
 
-        var result = await bus.InvokeAsync<Result<PaginatedList<ActivityLogDto>>>(
-            new ListClientActivityLogsQuery(clientId, 1, 10, null, "ada", null, null));
+        var percentPage = await PageAsync(admin, Route(clientId, $"search={token}%2050%25"));
+        var underscorePage = await PageAsync(admin, Route(clientId, $"search={token}%20a_c"));
+        var bareWildcard = await PageAsync(admin, Route(clientId, $"search={token}%25%25"));
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(["ByEmail", "ByName"], result.Value!.Items.Select(i => i.Description).OrderBy(d => d));
+        IdsOf(percentPage).Should().Equal(percent);
+        IdsOf(underscorePage).Should().Equal(underscore);
+        IdsOf(bareWildcard).Should().BeEmpty();
     }
 
-    /// <summary>The description filter matches a case-insensitive substring.</summary>
+    /// <summary>The period keeps the whole of its first and last day, and nothing outside them.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_DescriptionFilter_MatchesCaseInsensitiveSubstringAsync()
+    public async Task PeriodKeepsTheWholeLastDay()
     {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = SeededAt;
-        await SeedLogAsync(context, clientId, "Added Invoice Payment", now);
-        await SeedLogAsync(context, clientId, "Refunded Invoice", now.AddMinutes(-1));
+        var (admin, clientId) = await AdminAndClientAsync();
+        var day = new DateTimeOffset(2026, 3, 10, 0, 0, 0, TimeSpan.Zero);
+        await SeedLogAsync(clientId, "Before", day.AddSeconds(-1));
+        var first = await SeedLogAsync(clientId, "First instant", day);
+        var last = await SeedLogAsync(clientId, "Last second", day.AddDays(1).AddSeconds(-1));
+        await SeedLogAsync(clientId, "After", day.AddDays(1));
 
-        var result = await bus.InvokeAsync<Result<PaginatedList<ActivityLogDto>>>(
-            new ListClientActivityLogsQuery(clientId, 1, 10, null, null, "PAYMENT", null));
+        var oneDay = await PageAsync(admin, Route(clientId, "from=2026-03-10&to=2026-03-10"));
+        var fromOnly = await PageAsync(admin, Route(clientId, "from=2026-03-10"));
+        var toOnly = await PageAsync(admin, Route(clientId, "to=2026-03-09"));
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(["Added Invoice Payment"], result.Value!.Items.Select(i => i.Description));
+        IdsOf(oneDay).Should().BeEquivalentTo([first, last]);
+        IdsOf(fromOnly).Should().HaveCount(3);
+        IdsOf(toOnly).Should().HaveCount(1);
     }
 
-    /// <summary>The IP filter matches a substring of the recorded address.</summary>
+    /// <summary>The search and the period narrow together: an entry must pass both.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_IpAddressFilter_MatchesSubstringAsync()
+    public async Task SearchAndPeriodNarrowTogether()
     {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = SeededAt;
-        await SeedLogAsync(context, clientId, "FromOffice", now, ipAddress: "10.0.0.5");
-        await SeedLogAsync(context, clientId, "FromHome", now.AddMinutes(-1), ipAddress: "192.168.1.1");
+        var (admin, clientId) = await AdminAndClientAsync();
+        var token = UniqueToken();
+        var match = await SeedLogAsync(clientId, $"Payment {token}", SeededAt);
+        await SeedLogAsync(clientId, $"Payment {token}", SeededAt.AddDays(3));
+        await SeedLogAsync(clientId, "Other", SeededAt);
 
-        var result = await bus.InvokeAsync<Result<PaginatedList<ActivityLogDto>>>(
-            new ListClientActivityLogsQuery(clientId, 1, 10, null, null, null, "10.0.0"));
+        var page = await PageAsync(admin, Route(clientId, $"search={token}&from=2026-03-10&to=2026-03-10"));
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(["FromOffice"], result.Value!.Items.Select(i => i.Description));
+        IdsOf(page).Should().Equal(match);
     }
 
     /// <summary>An entry belonging to a different client is never returned.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_NeverReturnsAnotherClientsEntryAsync()
+    public async Task NeverReturnsAnotherClientsEntry()
     {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        // A real second client: the log's client is a foreign key, so another client's entry needs one.
-        var otherClientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = SeededAt;
-        await SeedLogAsync(context, clientId, "Mine", now);
-        await SeedLogAsync(context, otherClientId, "TheirsNotMine", now);
+        var (admin, clientId) = await AdminAndClientAsync();
+        var otherClientId = await SeedClientAsync();
+        var mine = await SeedLogAsync(clientId, "Mine", SeededAt);
+        await SeedLogAsync(otherClientId, "Theirs", SeededAt);
 
-        var result = await bus.InvokeAsync<Result<PaginatedList<ActivityLogDto>>>(
-            new ListClientActivityLogsQuery(clientId, 1, 10, null, null, null, null));
+        var page = await PageAsync(admin, Route(clientId, string.Empty));
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(["Mine"], result.Value!.Items.Select(i => i.Description));
+        IdsOf(page).Should().Equal(mine);
+    }
+
+    /// <summary>A filter is applied before paging: the total counts every match and each page holds its slice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task FilterIsAppliedBeforePaging()
+    {
+        var (admin, clientId) = await AdminAndClientAsync();
+        var token = UniqueToken();
+        var oldest = await SeedLogAsync(clientId, $"One {token}", SeededAt);
+        var middle = await SeedLogAsync(clientId, $"Two {token}", SeededAt.AddMinutes(1));
+        var newest = await SeedLogAsync(clientId, $"Three {token}", SeededAt.AddMinutes(2));
+        await SeedLogAsync(clientId, "Not a match", SeededAt.AddMinutes(3));
+        var route = $"/api/clients/{clientId}/activity-logs?pageSize=2&search={token}";
+
+        var first = await PageAsync(admin, $"{route}&page=1");
+        var second = await PageAsync(admin, $"{route}&page=2");
+        var beyond = await PageAsync(admin, $"{route}&page=3");
+
+        IdsOf(first).Should().Equal(newest, middle);
+        first.GetProperty("totalCount").GetInt32().Should().Be(3);
+        IdsOf(second).Should().Equal(oldest);
+        IdsOf(beyond).Should().BeEmpty();
+    }
+
+    /// <summary>A client with no recorded activity, or an id that names no client, answers 200 with an empty page.</summary>
+    /// <param name="useUnknownClient">Whether to ask for a client id that names nobody.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ClientWithNoActivityAnswersAnEmptyPage(bool useUnknownClient)
+    {
+        var (admin, clientId) = await AdminAndClientAsync();
+
+        var page = await PageAsync(admin, Route(useUnknownClient ? NoSuchClientId : clientId, string.Empty));
+
+        IdsOf(page).Should().BeEmpty();
+        page.GetProperty("totalCount").GetInt32().Should().Be(0);
+    }
+
+    /// <summary>A page below one, no page, or a page size outside the limit is refused with 400 on the page and page size, not corrected.</summary>
+    /// <param name="queryString">The paging part of the query string.</param>
+    /// <param name="field">The field the refusal must name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("page=0&pageSize=20", "page")]
+    [InlineData("pageSize=20", "page")]
+    [InlineData("page=1&pageSize=0", "pagesize")]
+    [InlineData("page=1&pageSize=101", "pagesize")]
+    public async Task PagingOutsideTheLimitsIsRefused(string queryString, string field)
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync($"/api/clients/{NoSuchClientId}/activity-logs?{queryString}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await RefusedFieldsAsync(response)).Should().Contain(field);
+    }
+
+    /// <summary>A search longer than the limit, or a period that ends before it starts, is refused with 400 on that field.</summary>
+    /// <param name="filter">The filter's key and value.</param>
+    /// <param name="field">The field the refusal must name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("search=TOO_LONG", "search")]
+    [InlineData("from=2026-03-11&to=2026-03-10", "to")]
+    public async Task FilterValueOutOfRangeIsRefused(string filter, string field)
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var value = filter.Replace("TOO_LONG", new string('a', PagingLimits.MaxSearchLength + 1), StringComparison.Ordinal);
+
+        var response = await admin.GetAsync($"/api/clients/{NoSuchClientId}/activity-logs?page=1&pageSize=20&{value}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await RefusedFieldsAsync(response)).Should().Contain(field);
+    }
+
+    /// <summary>A client id that is not a positive number is refused with 400 on the client id (<c>ActivityLogClientIdInvalid</c>).</summary>
+    /// <param name="clientId">The client id in the route.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-3)]
+    public async Task ClientIdThatIsNotPositiveIsRefused(int clientId)
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.GetAsync(Route(clientId, string.Empty));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await RefusedFieldsAsync(response)).Should().Contain("clientid");
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task Get_RefusesAnonymousAsync()
+    public async Task RefusesAnonymous()
     {
-        var response = await factory.CreateClient().GetAsync("/api/clients/1/activity-logs");
+        var response = await factory.CreateClient().GetAsync("/api/clients/1/activity-logs?page=1&pageSize=20");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    /// <summary>A client with no recorded activity answers 200 with an empty page.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Get_ClientWithNoActivity_ReturnsAnEmptyPageAsync()
+    /// <summary>The address of the first page of a client's log, with the filters appended.</summary>
+    /// <param name="clientId">The client whose log is read.</param>
+    /// <param name="filters">The filters as a query string tail; empty for none.</param>
+    /// <returns>The route with a page of a hundred rows.</returns>
+    private static string Route(int clientId, string filters)
     {
-        var admin = await AdminClientAsync();
-        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
-
-        var response = await admin.GetAsync($"/api/clients/{clientId}/activity-logs");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        body.GetProperty("items").GetArrayLength().Should().Be(0);
-        body.GetProperty("totalCount").GetInt32().Should().Be(0);
+        return $"/api/clients/{clientId}/activity-logs?page=1&pageSize=100{(filters.Length == 0 ? string.Empty : "&" + filters)}";
     }
 
-    /// <summary>An id that names no client simply answers an empty page, not a refusal.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Get_UnknownClientId_ReturnsAnEmptyPageAsync()
+    /// <summary>An admin client and a fresh client to read the log of.</summary>
+    /// <returns>The admin client and the new client's id.</returns>
+    private async Task<(HttpClient Admin, int ClientId)> AdminAndClientAsync()
     {
-        var admin = await AdminClientAsync();
-
-        var response = await admin.GetAsync($"/api/clients/{NoSuchClientId}/activity-logs");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        body.GetProperty("items").GetArrayLength().Should().Be(0);
+        return (await SupportTestSeeds.AdminClientAsync(factory), await SeedClientAsync());
     }
 
-    /// <summary>A search filter past the length limit is refused before the handler runs.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Get_OverlongFilter_IsRefusedAsync()
+    /// <summary>Seeds a client the log entries can be filed under.</summary>
+    /// <returns>The new client's id.</returns>
+    private async Task<int> SeedClientAsync()
     {
-        var admin = await AdminClientAsync();
-        var filter = new string('a', 201);
+        using var scope = factory.Services.CreateScope();
+        return await DomainsTestSeeds.SeedClientAsync(scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>());
+    }
 
-        var response = await admin.GetAsync($"/api/clients/{NoSuchClientId}/activity-logs?description={filter}");
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    /// <summary>Adds a log entry for a client, stamped with the moment given.</summary>
+    /// <param name="clientId">The client the row is filed under.</param>
+    /// <param name="description">The entry's description.</param>
+    /// <param name="createdAt">The moment the entry is stamped with.</param>
+    /// <param name="adminName">Optional admin display name.</param>
+    /// <param name="adminEmail">Optional admin email.</param>
+    /// <param name="ipAddress">Optional IP address.</param>
+    /// <returns>The new entry's id.</returns>
+    private async Task<int> SeedLogAsync(
+        int clientId, string description, DateTimeOffset createdAt,
+        string? adminName = null, string? adminEmail = null, string? ipAddress = null)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var log = ActivityLog.Create(clientId, description, adminId: null, adminName, adminEmail, ipAddress);
+        log.Backdate(createdAt);
+        context.ActivityLogs.Add(log);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return log.Id;
     }
 }

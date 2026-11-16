@@ -23,7 +23,8 @@ public sealed class DuplicateInvoiceTests(IntegrationTestFactory factory) : ICla
         var created = await admin.PostAsJsonAsync("/api/billing", new
         {
             clientId,
-            dueDate = DateTimeOffset.UtcNow.AddDays(14),
+            // Real time: the shared host rejects a due date before its own system date.
+            dueDate = TestMoments.Present().AddDays(14),
             items = new[] { new { description = "Hosting", unitPrice = 5m, quantity = 2 } },
         });
         var invoiceId = await created.Content.ReadFromJsonAsync<int>();

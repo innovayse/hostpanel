@@ -115,7 +115,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(10), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(10), "USD", TestMoments.Seeded);
         build(invoice);
         if (clientCredit > 0)
         {
@@ -141,7 +141,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     /// <param name="domainId">The domain.</param>
     private static void AddRenewal(Invoice invoice, int domainId)
     {
-        var start = DateTimeOffset.UtcNow.AddDays(10);
+        var start = TestMoments.Seeded.AddDays(10);
         invoice.AddDomainRenewal("Domain renewal", 12m, domainId, start, start.AddYears(1));
     }
 
@@ -201,7 +201,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     public async Task RenewMyDomain_LeavesAPaidRenewalInvoiceAloneAsync()
     {
         var (owner, clientId, domainId, _) = await ArrangeAsync("renew-my-domain-paid");
-        var invoiceId = await SeedInvoiceAsync(clientId, i => AddRenewal(i, domainId), after: i => i.RecordPaidHistory("t", DateTimeOffset.UtcNow));
+        var invoiceId = await SeedInvoiceAsync(clientId, i => AddRenewal(i, domainId), after: i => i.RecordPaidHistory("t", TestMoments.Seeded));
 
         var response = await RenewAsync(owner, domainId);
 
@@ -271,7 +271,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
             {
                 AddRenewal(i, domainId);
                 i.AddItem("Hosting", 10m, 1);
-            }, after: i => i.MarkOverdue(DateTimeOffset.UtcNow));
+            }, after: i => i.MarkOverdue(TestMoments.Seeded));
 
         var response = await RenewAsync(owner, domainId);
 
@@ -319,6 +319,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task RenewMyDomain_ReleasedButOrderFailed_NextRenewalRunRaisesANewInvoiceAsync()
     {
+        using var host = new ClockedHost(factory);
         var (owner, clientId, domainId, _) = await ArrangeAsync("renew-my-domain-reraise");
         using (var arrange = factory.Services.CreateScope())
         {
@@ -328,7 +329,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
                 .ExecuteUpdateAsync(
                     set => set
                         .SetProperty(d => d.AutoRenew, true)
-                        .SetProperty(d => d.ExpiresAt, DateTimeOffset.UtcNow.AddDays(10)),
+                        .SetProperty(d => d.ExpiresAt, host.Clock.GetUtcNow().AddDays(10)),
                     CancellationToken.None);
         }
 
@@ -340,7 +341,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
         response.IsSuccessStatusCode.Should().BeFalse();
         (await LoadInvoiceAsync(invoiceId)).Status.Should().Be(InvoiceStatus.Cancelled);
 
-        using var scope = factory.Services.CreateScope();
+        using var scope = host.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var raised = await bus.InvokeAsync<Result<int>>(new RaiseClientRenewalInvoicesCommand(clientId), CancellationToken.None);
 

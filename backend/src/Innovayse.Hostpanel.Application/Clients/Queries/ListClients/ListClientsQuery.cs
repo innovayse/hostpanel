@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 
 namespace Innovayse.Hostpanel.Application.Clients.Queries.ListClients;
@@ -22,4 +23,4 @@ public sealed record ListClientsQuery(
     string? Email = null,
     string? Phone = null,
     ClientStatus? Status = null,
-    int? ClientGroupId = null);
+    int? ClientGroupId = null) : IListQuery;

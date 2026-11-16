@@ -104,6 +104,34 @@ public static class ClientsErrors
     /// </summary>
     public const string ClientTaxExempt = "CLIENT_TAX_EXEMPT";
 
+    /// <summary>
+    /// The account is invoiced under the reverse charge, so a tax rate cannot be set on its invoices by hand (409, an exact
+    /// <c>StatusMapping</c> row). Raised by the invoice options use case, not by the aggregate; declared here with the other client codes.
+    /// </summary>
+    public const string ClientReverseChargeApplies = "CLIENT_REVERSE_CHARGE_APPLIES";
+
+    /// <summary>The client holds no VAT number to check (400). Raised by the VAT check use case, not by the aggregate.</summary>
+    public const string ClientVatNumberMissing = "CLIENT_VAT_NUMBER_MISSING";
+
+    /// <summary>
+    /// The client's billing country has no VAT number register to ask: it is neither an EU member state nor the United Kingdom
+    /// (400). Raised by the VAT check use case, not by the aggregate.
+    /// </summary>
+    public const string ClientVatCountryNotSupported = "CLIENT_VAT_COUNTRY_NOT_SUPPORTED";
+
+    /// <summary>
+    /// The VAT number service, or the member state behind it, gave no verdict; nothing was changed (503, through the
+    /// <c>SERVICE_UNAVAILABLE</c> token). Raised by the VAT check use case, not by the aggregate.
+    /// </summary>
+    public const string VatServiceUnavailable = "VAT_SERVICE_UNAVAILABLE";
+
+    /// <summary>
+    /// The register of the client's country is not set up on this installation, for example the United Kingdom's without its
+    /// credentials, so no check can be made until the operator configures it (503, through the <c>_NOT_CONFIGURED</c> suffix).
+    /// Raised by the VAT check use case, not by the aggregate.
+    /// </summary>
+    public const string VatCheckNotConfigured = "VAT_CHECK_NOT_CONFIGURED";
+
     /// <summary>The discount of a client group is outside 0 to 100 percent (400): <see cref="ClientGroup.Create"/> and <see cref="ClientGroup.Update"/>.</summary>
     public const string ClientGroupDiscountInvalid = "CLIENT_GROUP_DISCOUNT_INVALID";
 

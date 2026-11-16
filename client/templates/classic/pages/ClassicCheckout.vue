@@ -30,7 +30,7 @@
           data-testid="checkout-empty"
         >
           <UiEmptyState :icon="ShoppingCart" :title="$t('cart.empty')" :description="$t('cart.emptyDesc')">
-            <UiButton :to="localePath('/hosting')" variant="primary" size="lg" data-testid="checkout-browse">
+            <UiButton :to="localePath(SITE_HOSTING_PATH)" variant="primary" size="lg" data-testid="checkout-browse">
               {{ $t('cart.browseHosting') }}
             </UiButton>
           </UiEmptyState>
@@ -125,6 +125,7 @@
                   />
                   <UiPhoneInput
                     v-model="form.phonenumber"
+                    testid="checkout-phone"
                     :label="$t('checkout.fields.phonenumber')"
                     required
                   />
@@ -280,7 +281,7 @@
                   <UiText size="sm" weight="semibold">{{ $t('checkout.needHelp') }}</UiText>
                   <UiText size="xs" tone="inherit" class="text-classic-muted">{{ $t('checkout.supportAlways') }}</UiText>
                 </UiStack>
-                <UiLink :to="localePath('/contact')" :underline="false" class="ml-auto text-xs font-semibold" data-testid="checkout-contact">
+                <UiLink :to="localePath(SITE_CONTACT_PATH)" :underline="false" class="ml-auto text-xs font-semibold" data-testid="checkout-contact">
                   {{ $t('checkout.contactUs') }}
                 </UiLink>
               </UiStack>
@@ -312,6 +313,7 @@ import {
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 import { UiHeadingLevel } from '~/utils/ui/enums'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
+import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** State and actions of the checkout flow, shared with the other checkout template. */
 const {

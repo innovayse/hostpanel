@@ -18,7 +18,7 @@ import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { Icon } from '@/lib/icons'
-import { UI_SHEET_QUERY } from '@/utils/ui/drawer'
+import { UI_BELOW_SM_QUERY } from '@/utils/ui/breakpoints'
 
 const { t } = useI18n()
 
@@ -51,7 +51,7 @@ const emit = defineEmits<{
 const open = ref(false)
 
 /** Whether the screen is a phone, which swaps the dialog for a bottom sheet. */
-const isPhone = useMediaQuery(UI_SHEET_QUERY)
+const isPhone = useMediaQuery(UI_BELOW_SM_QUERY)
 
 /** The surface component: a bottom sheet on a phone, a centred dialog otherwise. */
 const surface = computed(() => (isPhone.value ? UiDrawer : UiDialog))

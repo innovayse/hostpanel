@@ -1,7 +1,7 @@
 /**
  * Tests for FraudLogView: the log comes from the API with decisions and reasons as translated
- * labels, the client and order link to their screens, the two filters reload the first page, and a
- * refused load can be retried.
+ * labels, the client and order link to their screens, the search, the kind, decision and reason filters and the page
+ * live in the address and are sent to the API, and a refused load can be retried.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -9,9 +9,10 @@ import FraudLogView from '@/views/FraudLogView.vue'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import type { FraudLogEntry } from '@/types/fraud'
 import { json, problem } from '../helpers/fetch'
+import { applyListFilter } from '../helpers/listFilter'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
-import { pickOption } from '../helpers/select'
+import { optionValues } from '../helpers/select'
 
 /** Request line of the unfiltered first page. */
 const FIRST_PAGE = 'GET /admin/fraud/log?page=1&pageSize=20'
@@ -108,41 +109,116 @@ describe('FraudLogView', () => {
     expect(wrapper.get('[data-testid="fraud-log-count"]').text()).toContain('0 Records Found')
   })
 
-  it('reloads the first page with the decision picked and again with it cleared', async () => {
+  it('puts an applied decision in the address, shows its chip and sends it', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
+    const { wrapper, router } = await mountScreen(FraudLogView)
+
+    await applyListFilter(wrapper, { 'fraud-log-decision': FraudDecision.Rejected })
+
+    expect(router.currentRoute.value.query).toEqual({ decision: 'Rejected' })
+    expect(wrapper.get('[data-testid="filter-chip-decision"]').text()).toContain('Rejected')
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('1')
+    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=1&pageSize=20&decision=Rejected'])
+  })
+
+  it('sends the kind, the decision and the reason together', async () => {
     const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
     const { wrapper } = await mountScreen(FraudLogView)
 
-    await pickOption(wrapper, 'fraud-log-decision', 'Rejected')
-    await flushPromises()
-    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=1&pageSize=20&decision=Rejected'])
+    await applyListFilter(wrapper, {
+      'fraud-log-kind': FraudCheckKind.Registration,
+      'fraud-log-decision': FraudDecision.Review,
+      'fraud-log-reason': FraudReasonCode.AnonymousIp,
+    })
 
-    await pickOption(wrapper, 'fraud-log-decision', 'Any')
+    expect(requestsOf(mock).slice(-1)).toEqual([
+      'GET /admin/fraud/log?page=1&pageSize=20&kind=Registration&decision=Review&reason=AnonymousIp',
+    ])
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('3')
+  })
+
+  it('offers any and every kind, decision and reason in the filter dialog', async () => {
+    stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
+    const { wrapper } = await mountScreen(FraudLogView)
+
+    await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
     await flushPromises()
+
+    expect(optionValues(wrapper, 'fraud-log-kind')).toEqual(['', ...Object.values(FraudCheckKind)])
+    expect(optionValues(wrapper, 'fraud-log-decision')).toEqual(['', ...Object.values(FraudDecision)])
+    expect(optionValues(wrapper, 'fraud-log-reason')).toEqual(['', ...Object.values(FraudReasonCode)])
+  })
+
+  it('puts the typed search in the address and sends it after the pause', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
+    const { wrapper, router } = await mountScreen(FraudLogView)
+
+    await wrapper.get('[data-testid="fraud-log-search"]').setValue('203.0')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ search: '203.0' })
+    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=1&pageSize=20&search=203.0'])
+  })
+
+  it('restores the search and the filters from the address and shows their chips', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
+    const { wrapper } = await mountScreen(FraudLogView, {}, '/?search=buyer&kind=Order&decision=Review&reason=OrderVelocity')
+
+    expect(requestsOf(mock)[0]).toBe('GET /admin/fraud/log?page=1&pageSize=20&search=buyer&kind=Order&decision=Review&reason=OrderVelocity')
+    expect((wrapper.get('[data-testid="fraud-log-search"]').element as HTMLInputElement).value).toBe('buyer')
+    expect(wrapper.get('[data-testid="filter-chip-kind"]').text()).toContain('Order')
+    expect(wrapper.get('[data-testid="filter-chip-decision"]').text()).toContain('Pending review')
+    expect(wrapper.get('[data-testid="filter-chip-reason"]').text()).toContain('Too many orders from one IP address')
+  })
+
+  it('ignores a filter in the address that is not a member and sends nothing for it', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
+    const { wrapper } = await mountScreen(FraudLogView, {}, '/?decision=Nonsense')
+
+    expect(requestsOf(mock)[0]).toBe(FIRST_PAGE)
+    expect(wrapper.find('[data-testid="filter-chip-decision"]').exists()).toBe(false)
+  })
+
+  it('clears a filter from the address and reloads when its chip is removed', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
+    const { wrapper, router } = await mountScreen(FraudLogView, {}, '/?decision=Rejected')
+
+    await wrapper.get('[data-testid="filter-chip-remove-decision"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+    expect(wrapper.find('[data-testid="filter-chip-decision"]').exists()).toBe(false)
     expect(requestsOf(mock).slice(-1)).toEqual([FIRST_PAGE])
   })
 
-  it('reloads the first page with the reason picked, keeping the decision', async () => {
-    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held])) })
-    const { wrapper } = await mountScreen(FraudLogView)
-
-    await pickOption(wrapper, 'fraud-log-decision', 'Pending review')
-    await flushPromises()
-    await pickOption(wrapper, 'fraud-log-reason', 'Proxy, VPN or hosting IP address')
-    await flushPromises()
-
-    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=1&pageSize=20&decision=Review&reason=AnonymousIp'])
-  })
-
-  it('keeps the filters when another page is opened', async () => {
-    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held], 25)) })
-    const { wrapper } = await mountScreen(FraudLogView)
-    await pickOption(wrapper, 'fraud-log-decision', 'Rejected')
-    await flushPromises()
+  it('keeps the search and the filters when another page is opened', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held], 45)) })
+    const { wrapper, router } = await mountScreen(FraudLogView, {}, '/?search=buyer&decision=Rejected')
 
     await wrapper.get('[data-testid="fraud-log-pagination-page-2"]').trigger('click')
     await flushPromises()
 
-    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=2&pageSize=20&decision=Rejected'])
+    expect(router.currentRoute.value.query).toEqual({ search: 'buyer', decision: 'Rejected', page: '2' })
+    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=2&pageSize=20&search=buyer&decision=Rejected'])
+  })
+
+  it('returns to the first page when a filter is applied', async () => {
+    const mock = stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([held], 45)) })
+    const { wrapper, router } = await mountScreen(FraudLogView, {}, '/?page=2')
+    expect(requestsOf(mock)[0]).toBe('GET /admin/fraud/log?page=2&pageSize=20')
+
+    await applyListFilter(wrapper, { 'fraud-log-kind': FraudCheckKind.Order })
+
+    expect(router.currentRoute.value.query).toEqual({ kind: 'Order' })
+    expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/log?page=1&pageSize=20&kind=Order'])
+  })
+
+  it('names the search in the empty state of a searched log', async () => {
+    stubRouteTable({ 'GET /admin/fraud/log': () => json(pageOf([])) })
+    const { wrapper } = await mountScreen(FraudLogView, {}, '/?search=nobody')
+
+    expect(wrapper.get('[data-testid="fraud-log-table"]').text()).toContain('No log entries match your search or filters')
   })
 
   it('loads again from the Retry of a refused load', async () => {

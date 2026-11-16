@@ -10,7 +10,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { settle } from '~/tests/helpers/settle'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import UiCurrencySwitcher from '~/components/ui/UiCurrencySwitcher.vue'
@@ -18,9 +19,6 @@ import { useClientStore } from '~/stores/client'
 import type { BillingCurrency } from '~/types/currency'
 import { UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** Path of the endpoint that lists the enabled billing currencies. */
-const CURRENCIES_PATH = '/api/portal/public/billing-currencies'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -51,7 +49,7 @@ const mountSwitcher = async (props: Record<string, unknown> = {}) => {
     useClientStore().user = makeClientUser({ currency: fixedCurrency })
   }
   const wrapper = mountWithKit(UiCurrencySwitcher, { props, pinia })
-  await waitUntil(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, CatalogPath.BillingCurrencies)).toHaveLength(1))
   await settle(5)
   return wrapper
 }
@@ -61,7 +59,7 @@ describe('UiCurrencySwitcher', () => {
     fixedCurrency = null
     currencies = [USD, AMD]
     localStorage.clear()
-    stub = await startTransport(routeTable({ [`GET ${CURRENCIES_PATH}`]: () => ({ body: currencies }) }))
+    stub = await startTransport(routeTable({ [readOf(CatalogPath.BillingCurrencies)]: () => ({ body: currencies }) }))
   })
 
   afterEach(async () => {

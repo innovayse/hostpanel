@@ -8,11 +8,14 @@ import PlanCards from '~/templates/aurora/sections/PlanCards.vue'
 import { balancedColumns } from '~/utils/balancedGrid'
 import type { PlanCard } from '~/types/plancard'
 import { PricingCycle } from '~/types/pricingcycle'
-import { stubAuroraGlobals, PLANS } from '../auroraGlobals'
+import { useAuroraGlobals, PLANS } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 describe('PlanCards', () => {
-  it('pulls the free plan out of the grid and keeps the paid ones in it', () => {
-    stubAuroraGlobals()
+  it('pulls the free plan out of the grid and keeps the paid ones in it', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS } })
 
     expect(wrapper.find('[data-testid="plan-free"]').text()).toContain('Free')
@@ -21,24 +24,24 @@ describe('PlanCards', () => {
     expect(wrapper.find('[data-testid="plan-card-2"]').text()).toContain('Business')
   })
 
-  it('links every plan button to its order route through the e2e ids', () => {
-    stubAuroraGlobals()
+  it('links every plan button to its order route through the e2e ids', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS } })
 
     expect(wrapper.find('[data-testid="plan-choose-1"]').attributes('href')).toBe('/configure/1')
     expect(wrapper.find('[data-testid="plan-choose-3"]').attributes('href')).toBe('/configure/3')
   })
 
-  it('keeps the paid cards the same height and pins price and button to the bottom', () => {
-    stubAuroraGlobals()
+  it('keeps the paid cards the same height and pins price and button to the bottom', async () => {
+    await loadGlobals()
     const card = mountWithKit(PlanCards, { props: { plans: PLANS } }).find('[data-testid="plan-card-1"]')
 
     expect(card.classes()).toEqual(expect.arrayContaining(['h-full', 'flex', 'flex-col']))
     expect(card.find('.mt-auto').exists()).toBe(true)
   })
 
-  it('frames every plan card with a theme token and a hover state, never an opacity-modified accent', () => {
-    stubAuroraGlobals()
+  it('frames every plan card with a theme token and a hover state, never an opacity-modified accent', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS } })
     const free = wrapper.find('[data-testid="plan-free"]').classes()
     const paid = wrapper.find('[data-testid="plan-card-1"]').classes()
@@ -51,8 +54,8 @@ describe('PlanCards', () => {
     expect(paid).toContain('hover:border-ac1')
   })
 
-  it('shows the monthly price by default and the per-month price of the chosen cycle otherwise', () => {
-    stubAuroraGlobals()
+  it('shows the monthly price by default and the per-month price of the chosen cycle otherwise', async () => {
+    await loadGlobals()
     /** Mounts the cards with the given cycle and returns the text of the paid plan's card. */
     const card = (cycle?: PricingCycle) => mountWithKit(PlanCards, { props: { plans: PLANS, cycle } }).find('[data-testid="plan-card-2"]').text()
 
@@ -62,15 +65,15 @@ describe('PlanCards', () => {
     expect(card(PricingCycle.Annual)).toContain('aurora.plans.perMonthBilled')
   })
 
-  it('shows a dash on a card whose plan is not priced on the chosen cycle', () => {
-    stubAuroraGlobals()
+  it('shows a dash on a card whose plan is not priced on the chosen cycle', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS, cycle: PricingCycle.Quarterly } })
 
     expect(wrapper.find('[data-testid="plan-card-1"]').text()).toContain('\u2014')
   })
 
-  it('offers every cycle some plan is priced on, shortest first, as segments', () => {
-    stubAuroraGlobals()
+  it('offers every cycle some plan is priced on, shortest first, as segments', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS } })
 
     expect(wrapper.findAll('[data-testid="billing-toggle"] [role="radio"]').map(segment => segment.attributes('data-testid'))).toEqual([
@@ -80,15 +83,15 @@ describe('PlanCards', () => {
     ])
   })
 
-  it('hides the toggle when the plans offer a single cycle', () => {
-    stubAuroraGlobals()
+  it('hides the toggle when the plans offer a single cycle', async () => {
+    await loadGlobals()
     const plans = PLANS.map(plan => ({ ...plan, cyclePrices: { monthly: plan.priceMonthly } }))
 
     expect(mountWithKit(PlanCards, { props: { plans } }).find('[data-testid="billing-toggle"]').exists()).toBe(false)
   })
 
   it('reports the billing cycle the visitor picks', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
 
     const monthly = mountWithKit(PlanCards, { props: { plans: PLANS } })
     await monthly.find('[data-testid="billing-annual"]').trigger('click')
@@ -99,8 +102,8 @@ describe('PlanCards', () => {
     expect(annual.emitted('update:cycle')).toEqual([[PricingCycle.Quarterly]])
   })
 
-  it('renders the toggle as the kit segmented control with the active cycle checked', () => {
-    stubAuroraGlobals()
+  it('renders the toggle as the kit segmented control with the active cycle checked', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS, cycle: PricingCycle.Annual } })
     const active = wrapper.find('[data-testid="billing-annual"]')
 
@@ -111,21 +114,21 @@ describe('PlanCards', () => {
     expect(active.classes()).not.toContain('rounded-lg')
   })
 
-  it('drops the section headline when the page already has one', () => {
-    stubAuroraGlobals()
+  it('drops the section headline when the page already has one', async () => {
+    await loadGlobals()
 
     expect(mountWithKit(PlanCards, { props: { plans: PLANS } }).find('h2').text()).toBe('aurora.plans.title')
     expect(mountWithKit(PlanCards, { props: { plans: PLANS, showHeader: false } }).find('h2').exists()).toBe(false)
   })
 
-  it('says so when there are no plans', () => {
-    stubAuroraGlobals()
+  it('says so when there are no plans', async () => {
+    await loadGlobals()
 
     expect(mountWithKit(PlanCards).find('[data-testid="plans-empty"]').text()).toBe('aurora.plans.empty')
   })
 
-  it('lists what every plan includes only when no plan carries its own features', () => {
-    stubAuroraGlobals()
+  it('lists what every plan includes only when no plan carries its own features', async () => {
+    await loadGlobals()
     const bare = PLANS.filter((plan) => plan.features.length === 0)
 
     expect(mountWithKit(PlanCards, { props: { plans: bare } }).find('[data-testid="plans-included"]').exists()).toBe(true)
@@ -142,8 +145,8 @@ describe('PlanCards', () => {
   const paid = (count: number, overrides: Partial<PlanCard> = {}): PlanCard[] =>
     Array.from({ length: count }, (_, i) => ({ ...PLANS[0]!, id: 100 + i, name: `Plan ${i}`, href: `/configure/${100 + i}`, ...overrides }))
 
-  it.each([1, 2, 5, 7])('balances %i plans in one centred grid with equal-height cards', (count) => {
-    stubAuroraGlobals()
+  it.each([1, 2, 5, 7])('balances %i plans in one centred grid with equal-height cards', async (count) => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: paid(count) } })
     const grid = wrapper.find('[data-testid="plan-grid"]').element as HTMLElement
 
@@ -152,8 +155,8 @@ describe('PlanCards', () => {
     expect(wrapper.find('[data-testid="plan-card-100"]').classes()).toContain('h-full')
   })
 
-  it('caps the feature list and links the rest as "+N more"', () => {
-    stubAuroraGlobals()
+  it('caps the feature list and links the rest as "+N more"', async () => {
+    await loadGlobals()
     const features = Array.from({ length: 9 }, (_, i) => `Feature ${i}`)
     const wrapper = mountWithKit(PlanCards, { props: { plans: paid(1, { features }), maxFeatures: 4 } })
     const card = wrapper.find('[data-testid="plan-card-100"]')
@@ -163,15 +166,15 @@ describe('PlanCards', () => {
     expect(card.find('[data-testid="plan-more-100"]').exists()).toBe(true)
   })
 
-  it('shows no "+N more" link when every line fits', () => {
-    stubAuroraGlobals()
+  it('shows no "+N more" link when every line fits', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: paid(1, { features: ['a', 'b'] }) } })
 
     expect(wrapper.find('[data-testid="plan-more-100"]').exists()).toBe(false)
   })
 
-  it('clamps a very long description and lets a long name wrap', () => {
-    stubAuroraGlobals()
+  it('clamps a very long description and lets a long name wrap', async () => {
+    await loadGlobals()
     const long = 'word '.repeat(300)
     const card = mountWithKit(PlanCards, { props: { plans: paid(1, { name: long, description: long }) } }).find('[data-testid="plan-card-100"]')
 
@@ -179,8 +182,8 @@ describe('PlanCards', () => {
     expect(card.find('.break-words').exists()).toBe(true)
   })
 
-  it('badges the recommended plan and frames it with the brand border token', () => {
-    stubAuroraGlobals()
+  it('badges the recommended plan and frames it with the brand border token', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: paid(2).map((plan, index) => ({ ...plan, isFeatured: index === 1 })) } })
 
     expect(wrapper.find('[data-testid="plan-recommended-101"]').text()).toContain('aurora.plans.recommended')
@@ -189,8 +192,8 @@ describe('PlanCards', () => {
     expect(wrapper.find('[data-testid="plan-card-100"]').classes()).toContain('border-line')
   })
 
-  it('shows no recommended badge when no plan is featured', () => {
-    stubAuroraGlobals()
+  it('shows no recommended badge when no plan is featured', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(PlanCards, { props: { plans: paid(2) } })
 
     expect(wrapper.find('[data-testid^="plan-recommended-"]').exists()).toBe(false)

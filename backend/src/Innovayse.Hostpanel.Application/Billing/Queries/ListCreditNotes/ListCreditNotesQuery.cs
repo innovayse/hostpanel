@@ -1,16 +1,21 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListCreditNotes;
 
-/// <summary>Paginated, optionally filtered query for credit notes: staff view.</summary>
+/// <summary>Paginated, searchable, filterable query for credit notes: staff view.</summary>
 /// <param name="Page">1-based page number.</param>
-/// <param name="PageSize">Number of items per page (clamped by the handler).</param>
+/// <param name="PageSize">Items per page (1 to 100); a size outside that range is refused, not clamped.</param>
+/// <param name="Search">Optional text; only notes whose number, reason, refund reference or id contains it (case-insensitive) are listed. Blank lists all.</param>
 /// <param name="InvoiceId">Optional filter: only the notes of this invoice.</param>
 /// <param name="ClientId">Optional filter: only the notes of this client.</param>
-/// <param name="Status">Optional status filter.</param>
+/// <param name="Status">Optional status filter, bound by name from the query string; <see langword="null"/> for every status.</param>
+/// <param name="Method">Optional method filter, bound by name from the query string; <see langword="null"/> for every method.</param>
 public sealed record ListCreditNotesQuery(
-    int Page = 1,
-    int PageSize = 25,
+    int Page,
+    int PageSize,
+    string? Search = null,
     int? InvoiceId = null,
     int? ClientId = null,
-    CreditNoteStatus? Status = null);
+    CreditNoteStatus? Status = null,
+    CreditNoteMethod? Method = null) : IListQuery;

@@ -22,7 +22,7 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
     public async Task AdminCanCreateReadUpdateAndDeleteATldConfigAsync()
     {
         var admin = await DomainsTestSeeds.AdminClientAsync(factory);
-        var (_, createBody) = DomainsTestSeeds.NewTldBody();
+        var (tld, createBody) = DomainsTestSeeds.NewTldBody();
 
         var createResponse = await admin.PostAsJsonAsync("/api/admin/tld-configs", createBody);
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -33,10 +33,10 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
         var got = await getResponse.Content.ReadFromJsonAsync<JsonElement>();
         got.GetProperty("id").GetInt32().Should().Be(id);
 
-        var listResponse = await admin.GetAsync("/api/admin/tld-configs");
+        var listResponse = await admin.GetAsync($"/api/admin/tld-configs?page=1&pageSize=20&search={tld}");
         listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var list = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
-        list.EnumerateArray().Select(i => i.GetProperty("id").GetInt32()).Should().Contain(id);
+        list.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetInt32()).Should().Contain(id);
 
         var updateResponse = await admin.PutAsJsonAsync($"/api/admin/tld-configs/{id}", new
         {

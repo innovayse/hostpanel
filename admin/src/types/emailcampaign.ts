@@ -91,6 +91,22 @@ export interface EmailCampaignListItem {
   stats: EmailCampaignStats
 }
 
+/** What narrows the campaign list: the subject search and the status filter; each member left out means no narrowing. */
+export interface EmailCampaignListFilters {
+  /** Subject search term; empty for none. */
+  search?: string
+  /** Keep only the campaigns in this lifecycle status. */
+  status?: CampaignStatus
+}
+
+/** Filter and paging of the campaign list. */
+export interface EmailCampaignFilter extends EmailCampaignListFilters {
+  /** Page, 1-based. */
+  page: number
+  /** Items per page. */
+  pageSize: number
+}
+
 /** A campaign with its body and audience, as the detail endpoint returns it. */
 export interface EmailCampaign extends EmailCampaignListItem {
   /** HTML body of the mail. */

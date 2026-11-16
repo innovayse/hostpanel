@@ -70,7 +70,7 @@ repositories. What is specific to this project is short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`, `RecheckVatNumbersCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -191,6 +191,25 @@ docker/                              compose set (shared·dev·prod·platform), 
   the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
   API URL and test mode saved on the admin Integrations page over the bound options
   (`IsConfiguredAsync`), so the page configures what requests use.
+- **VAT numbers are checked through one port, and the reverse charge is decided in one place (#1144).** `IVatNumberChecker`
+  (`Application/Common/Interfaces/`) takes a `VatNumberLookup` (country, number without prefix) and answers a `VatNumberCheck`
+  (`VatCheckOutcome` valid, invalid or unavailable, plus the registered name and address); `Infrastructure/Vat/VatNumberChecker`
+  picks the register, `ViesVatClient` for an EU member state and `HmrcVatClient` for the UK, and nothing else takes those two
+  clients (`VatNumberCheckerPortTests`). Unavailable (a down service, an error status, an unreadable body, a timeout, no UK
+  credentials) is never stored as invalid: `Client.RecordVatCheck` ignores it, so the client keeps its status and date. The
+  client's VAT number is its existing `TaxId`; `Client` clears the verdict when the number or the billing country changes
+  (`VatCheckPending`), and the writers that can change them (`UpdateClient`, so the portal's `UpdateMyProfile` too, and
+  `AdminCreateClient`) publish `ClientVatCheckRequestedEvent` after the save, which `ClientVatCheckRequestedHandler` runs as
+  `CheckClientVat` in the background. `VatRegisters` (Application) is the one list of the countries that have a register (the EU
+  member states and `GB`) and the one place a number is put in lookup shape. `RecheckVatNumbersCron` re-checks never judged
+  numbers first, then those older than `ScheduledJobs:VatRecheckAfterDays`; it leaves out the countries whose register is not set
+  up (`IVatNumberChecker.IsConfiguredFor`, the UK without credentials) and stops asking about a country after
+  `VatRecheckStopAfterUnavailable` answers in a row without a verdict, so one register never starves the others. `ClientTaxRateResolver` is still the one place a new
+  invoice's tax is decided: it answers a `ClientTaxTreatment` (rate, or the VAT number of a reverse charge), `Tax Exempt` wins, and
+  a reverse charge needs a valid verdict no older than `ScheduledJobs:VatCheckValidForDays` (it fails closed when the re-check stops), a country with a register other than `billing.tax.seller_country`; the invoice stores
+  `ReverseCharge` and `ClientVatNumber` (`Invoice.ApplyReverseCharge`) so a later change of the client never rewrites it, and
+  `UpdateInvoiceOptions` asks the resolver (`EnsureMayBeTaxedAsync`) instead of deciding. The UK lookup needs `Vat:Hmrc` credentials
+  (`HmrcVatOptions`, both or neither); the demo replaces the port with `DemoVatNumberChecker`.
 - **Plugin integrations on the Integrations page (#854, #855, #856).** A plugin's form texts are resolved per request:
   `IntegrationFields.Resolve` maps each `GetSettings()` entry with `ToFieldDefinition(PluginUiTexts)`, so the label, the
   help text (`description`), the `placeholder` and every select option label (`optionLabels`, keyed by the stored value;
@@ -324,13 +343,13 @@ docker/                              compose set (shared·dev·prod·platform), 
   `https` action without user info or control characters, field count, name and value lengths) and a browser step from a plugin
   that is not an `IPaymentReturnPlugin`, answers `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, stores no session and cancels the order
   the gateway just registered (`GatewayPaymentCanceller`); an accepted one is mapped by the same class to `RedirectDto`
-  (`RedirectUrl`, `Kind`, `FormPost`), which the three start routes answer with. The portal never renders plugin markup: it builds
+  (`RedirectUrl`, `Kind`, `FormPost`), which the three start routes answer with; the address a form is posted to is `RedirectUrl` only, `FormPost` carries the fields. The portal never renders plugin markup: it builds
   the form from the fields as element properties and submits it (`utils/externalRedirect`, `redirectToGateway`), a redirect and a
   browser step open the address. The payer returns to `/payment/result`, which posts the other query pairs as
   `returnParameters` to the three complete routes (`CompleteMyGatewayPayment`, `CompleteOrderGatewayPayment`, then
-  `CompleteGatewayPayment`); `null` (the reconciliation job) is not a return and only reads the status. For a return the handler
+  `CompleteGatewayPayment`), whose validators hold them to `PaymentReturnLimits` with the one rule `MustBePaymentReturnParameters` (400 over a limit); `null` (the reconciliation job) is not a return and only reads the status. For a return the handler
   calls `IPaymentReturnPlugin.CompleteAsync` first, with `PaymentReturnParameterExtensions.ToPluginParameters` (ordinal names,
-  first value wins, a set over `PaymentReturnLimits` is dropped whole), and then `GetStatusAsync`, whose answer alone decides;
+  first value wins; a set over `PaymentReturnLimits` never gets here, the validator refused it), and then `GetStatusAsync`, whose answer alone decides;
   an invoice already settled is never completed again, and a plugin that throws leaves the status unread (503
   `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, the reconciliation job settles it later). `paymentReturn` is a payment-only capability
   checked against `IPaymentReturnPlugin` by the activator. A callback may answer an HTML page (`PluginReply.Raw` with
@@ -621,7 +640,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     - **Sandbox decision.** `allow-scripts allow-forms`, **never `allow-same-origin`**: a client chooses a service's
       domain, so it could name the panel's own host, and that pair is an escape from the sandbox on a shared origin. The
       opaque origin also means a framed site's session can never be driven from the panel. Accepted cost: a page that
-      needs its own cookies or storage degrades in the preview.
+      needs its own cookies or storage degrades in the preview. The sandbox limits what the framed page is, not
+      where it can go: a sandboxed page can still navigate itself to another host (a link, `location`, a form), so the
+      frame may end up on a site other than the address that was framed. It stays in an opaque origin there, with no access
+      to the panel, its cookies or its storage, which is why the address is never treated as a promise of what will be
+      shown and the page's messages stay claims (see the selection rule below).
     - **http only in Development.** `PluginPreviewOptionsValidator` refuses to start with `DevelopmentHttpOrigins` set
       outside Development (a blank entry counts as unset, which is what `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN`, a dev compose key only,
       passes when empty), and with anything but an http origin on a loopback host (a browser blocks other http frames in
@@ -795,7 +818,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     `... -- sign <package-dir> <private-key-file> <key-id>` writes `plugin.sig`; `... -- public-key <private-key-file>`
     prints the public key again. The tool refuses a key file inside a git working tree. Sign the folder that will be
     zipped, after its last change. The future plugin repositories (#780) sign in their release pipeline with the same tool.
-  - **Admin.** The plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
+  - **Admin.** The Settings tab of the plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
     saved through the settings store like every other settings row.
 - **Plugin registry (#866).** The admin panel can browse and install plugins from a remote catalogue the operator points it
   at. Off by default and no address is shipped: `PluginRegistryOptions` (sealed, section `PluginRegistry`, validated on
@@ -806,11 +829,13 @@ docker/                              compose set (shared·dev·prod·platform), 
   - **Where it sits.** Port `IPluginRegistryClient` (Application) and one adapter, `Infrastructure/Plugins/Registry/PluginRegistryClient`
     (typed `HttpClient`, `*Wire` records beside it, `internal`). `IPluginPackageInspector` reads what an archive claims
     (plugin id, version, signing key id) and answers `IsOperatorKey`. Use cases (`Admin/Plugins`): `ListRegistryPluginsQuery`
-    (`GET /api/admin/plugins/registry?q=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
+    (`GET /api/admin/plugins/registry?search=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
     (`GET .../registry/updates`) and `InstallRegistryPluginCommand` (`POST .../registry/{id}/install`, body `{version}`,
     demo restricted). One type each for a plugin (`RegistryPluginDto`) and a page (`RegistryPluginPageDto`): the client fills
     the registry's members, `PluginUpdateOffer` (shared by the browser and the update check, reading through `RegistryPluginReader`) sets `installed`,
-    `installedVersion` and `updateAvailable`. The offer is `PluginUpdateRule.NewestOffer`: the newest published version
+    `installedVersion` and `updateAvailable`. The install reads the plugin through the same reader and keeps no
+    sequence of its own, so a plugin the registry does not list is refused with `PLUGIN_REGISTRY_PLUGIN_NOT_FOUND` and
+    is never read as a public download. The offer is `PluginUpdateRule.NewestOffer`: the newest published version
     that is newer than the installed one and than any staged upload and whose host range admits the running host
     (`PluginHostCompatibility`). `latestVersion` of a row with an update is that version, which is the one an update
     installs, so it can be older than the registry's newest; a newer version the host cannot run is not offered, and
@@ -993,7 +1018,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     and `EventStreamResult` ends the stream when the producer has sent no event for that long, counted from the start or from
     its last event. The host's own `: keepalive` heartbeat does not count as an event, so a heartbeat below the limit never keeps
     a silent plugin alive. The plugin is cancelled through its token, the client gets `error` with `PLUGIN_TIMEOUT` and `done`,
-    and the `plugin-stream` lease is released with the response. A first event that arrives as the wait runs out is used, not cut.
+    and the `plugin-stream` lease is released with the response. A first event that arrives as the wait runs out is used, not cut. Every silence, heartbeat and settle wait of the stream is measured through the `TimeProvider` registered in the container, which `BaseApiController.HandleStream` hands to `EventStreamResult` with its logger (no service locator and no fallback to the system clock inside the result), and tests swap it (`FakeTimeProvider`, or `TimerWatchingTimeProvider` when the test must know that a wait has started before it moves the clock). On a fake clock the settle limit, like the silence limit, passes only when the clock moves.
     **The status is checked again by the host**, not trusted to the SDK factories: a `Json` reply must be 200 to 203 with a
     body, `NoContent` 204, a `Problem` 400 to 599 except 401 and 407; anything else (a reply built by reflection or by a
     plugin compiled against another SDK) answers 502 `PLUGIN_FAILED`, logged with the plugin id. **A plugin problem
@@ -1400,13 +1425,58 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   count as use cases).
 - **Time comes from `IClock`; timestamps are stamped on save.** `IClock`
   (`Application/Common/Interfaces/`) is the port, `Infrastructure/Time/SystemClock` reads the
-  registered `TimeProvider`, so a test that swaps `TimeProvider` moves both. The entities declare
+  registered `TimeProvider`, so a test that swaps `TimeProvider` moves both. `IClock.TimeZone` is the host zone
+  (`TimeProvider.LocalTimeZone`, the API container's `TZ`, UTC by default; `docs/*/operators/configuration.md`): a per-day
+  series cuts its days through `Application/Common/DayWindow` and counts them with `CountPerDayAsync`
+  (`Common/Extensions/DayWindowExtensions`; income sums with `IncomeExtensions.SumPerDayAsync`), which group in the database by UTC
+  quarter hour (`TimeBucket`) and assign the few buckets to days in code, so the dashboard charts and the daily performance
+  report agree and no timestamp is loaded. Other reports still bucket by UTC (`DateOnlyExtensions` in `Common/Extensions`). The entities declare
   their own audit columns rather than deriving from `AuditableEntity`, so
   `Infrastructure/Persistence/AuditableEntityInterceptor.cs` stamps by convention: `CreatedAt` on
   insert unless already set (`Backdate` before the first save wins), `UpdatedAt` on change unless
   the entity set it itself. Factories do not write `CreatedAt`; a domain method that needs a
   moment takes it from the caller (`ClientService.Activate` gets its billing anchor that way: the
   activation moment, when provisioning succeeds, not the order date; it never lowers a later renewal date).
+  **Read time through the clock, in production and in tests (issue 1208).** `NoDirectClockTests` fails on any
+  `DateTimeOffset.UtcNow`, `DateTimeOffset.Now`, `DateTime.UtcNow`, `DateTime.Now` or `DateTime.Today` under
+  `backend/src` outside the `Hostpanel.Sdk` submodule (a separate repository; no file is exempt, `SystemClock` asks the
+  `TimeProvider`). The scan (`DirectClockScan`) reads the syntax tree, so a comment never counts as a read and a `//` or
+  `/*` inside a string literal hides nothing on its line; both are proved on planted sources. It checks the `Type.Member`
+  form only: a bare `UtcNow` from `using static` and a read through an alias of the type are out of scope, and a planted case says so.
+- **Time in the tests has five sources, and a test takes the one that matches what judges the time (issue 1208).**
+  - *The host clock.* A test that depends on a time window (renewal, expiry, cron pass, reminder period, month or day
+    boundary) runs on `ClockedHost`, which derives a host of its own on a `ManualTimeProvider`. It stands at
+    `TestMoments.Seeded` unless the test names a moment; the test sets it with `host.Clock.Set(...)` or moves it with
+    `host.Clock.Advance(...)`, reads it as `host.Clock.GetUtcNow()` and seeds its rows relative to it, never to the real
+    clock. What else the test changes on the host (a setting, a fake in place of an adapter) goes in through the
+    `configure` argument, so the host is derived once and `ClockedHost` disposes it; a test never wraps an intermediate
+    `WithWebHostBuilder` host it would have to dispose itself.
+  - *`TestMoments.Seeded`.* The start of every clocked host, and the label or timestamp of any seeded row of a test
+    that does not depend on a time window.
+  - *`TestMoments.Present()`.* The one read of the system clock in the tests, cut to whole seconds. It is for what has to
+    agree with the shared host's own clock: a row the shared host judges by its own date (a due date, an expiry, a
+    lease), the bound a stamp the shared host wrote is checked against, and the start of a derived host that must accept
+    the tokens and cookies the shared host mints (`TwoFactorHost`, `SessionRenewalHost`). A stamp the shared host wrote
+    itself keeps the system clock's full precision, so a test compares it with `BeCloseTo`. No test reads
+    `DateTimeOffset.UtcNow` itself.
+  - *The host's `IClock`.* What a handler stamped is read back through the host's own clock port: the host clock above,
+    or the system clock on the shared host.
+  - *`Stopwatch`.* A duration the test measures itself (how long a call waited), which is not a moment.
+- **The shared host keeps the system clock, and which hosts need a real start follows from what they check.** The sign-in
+  tokens, cookies and their expiry the tests mint and validate run against real time and would be born expired or never
+  expire on a fixed clock, so a test about a token lifetime moves a clocked host it derives (see `SessionRenewalHost`,
+  `TwoFactorHost`), not the shared one. JWT bearer validation checks the token's expiry only, so an admin or client
+  token minted by the shared host works on a clocked host standing at `Seeded` (`AuthTestSeeds.AdminClientAsync(factory,
+  host)` is the one admin client for any host derived from the shared one, clocked or not). The 401 note applies to the
+  cookie and two-factor hosts only: they also check when the token was issued, so a token issued "later" than the host's
+  clock is refused, and a derived host that must accept tokens minted by the shared host starts at `TestMoments.Present()`.
+  Only the test that moves the clock past a token lifetime leaves it.
+- **A clocked host runs its jobs by hand and does not repeat them.** The Testing host schedules no recurring chain at
+  start (the demo reset aside); a cron a test dispatches reschedules itself through `RecurringJobs`, which hands the bus
+  the next run as a delay measured on the host's clock, because the bus counts a scheduled run against the system clock.
+  So a clock fixed in the past puts the next run a real day away instead of making it due at once: the job is never
+  repeated behind the test and never meets the lease of its own repeat. Cron tests therefore stand at `Seeded` with exact
+  assertions and clean nothing out of `JobRuns`; `RecurringJobsTests` proves the past clock on a fixed moment.
 - **A module owns its tables** (`ModuleTableOwnershipTests`, allow-list in `CrossModuleReadModels`). Another
   module's rows are reached through its query on `IMessageBus` or a port, never its `DbSet`. The shared
   blocks: `GetClientBriefsQuery` (id, owner subject, name, company, currency, status, invoicing preference, credit balance and, on request, the
@@ -1532,6 +1602,17 @@ addresses. Module `Products`; this slice stores and serves the options and does 
 
 ### Recurring billing
 
+- Exchange rates come from the bank in the `billing.exchange_rates.provider` setting (`ExchangeRateProvider`, `Cba` by
+  default, or `Ecb`). `UpdateExchangeRatesHandler` reads the provider on every refresh through `ExchangeRateSettingsReader`
+  (Application, on `SettingSource`; the stored name matched without regard to case, a missing or invalid row read as `Cba`
+  with a warning) and names it in the `ExchangeRateLookup`. `IExchangeRateSource` resolves to `ConfiguredExchangeRateSource`,
+  which only picks `CbaExchangeRateSource` or `EcbExchangeRateSource` by that name and reads no setting. Both adapters are typed
+  clients registered by `AddExchangeRateHttpClients`, each with its own read only resilience profile and the client's
+  `MaxResponseContentBufferSize` set to `ExchangeRateFeed.MaxBodyBytes` (an oversized body fails the call) and the client timeout
+  `HttpBackstopTimeouts.ExchangeRate` (the only bound on a body that stalls: the pipeline ends with the headers). They share `PivotRates` (the conversion to the requested base, a quotient too large for a decimal left out) and
+  `ExchangeRateFeed` (the download and its failure handling). The ECB feed is
+  read with DTD processing prohibited and no resolver and is published on working days only, so a weekend refresh keeps the last set.
+  The admin Currencies page edits the row through `ExchangeRateProviderCard`, so the key is card owned.
 `UpdateExchangeRatesCron` (03:00 UTC, `ScheduledJobsOptions.UpdateExchangeRatesHour`) refreshes the currency rates by running the same `UpdateExchangeRatesCommand` as the admin button, so the update has one implementation. A refusal (source down, no base currency) is logged and the next run is scheduled all the same; `ScheduledJobs:DisableExchangeRateUpdates` turns the outbound call off. It changes rates only: product prices are recomputed by `UpdateProductPricesCommand`, an operator's decision.
 
 Renewal invoicing, payment and suspension run as four crons (UTC, the default hours of `ScheduledJobsOptions`):
@@ -1694,6 +1775,23 @@ feature does not exist is not kept. The decisions:
   The exempt switch is also enforced on the manual rate: `UpdateInvoiceOptions` refuses a new or higher
   rate on a tax-exempt client's invoice with 409 `CLIENT_TAX_EXEMPT`. A rate the invoice already
   carries may stay.
+- **VAT rates per EU member state and the destination rate (#1145).** `VatRates` (`VatRate` in
+  Domain, admin CRUD at `/api/admin/vat-rates`) holds the standard and, where staff enter one, the reduced
+  rate of each member state with `ValidFrom`; one row per country, kind and day. A rate change is a new row; `Update`
+  (the edit on the screen) exists to correct a row entered by mistake, so the rate in force on a day is read back with
+  `VatRateQueryExtensions.InForceOn`. A reduced row is stored for reference only: nothing applies it to an invoice. The rates
+  that ship live in `VatRateCatalogue` (`Billing/Seeding`) and `VatRateSeeder` adds a shipped rate at startup (and in the
+  demo reset) only when the country holds no standard row that starts on the same day or later, and never touches an existing
+  one, so an edited or moved row is not brought back beside its replacement; a handler never holds a rate. Below the EU
+  threshold of 10,000 euro a year the seller may charge their own country's VAT; the host does not track it, the operator
+  leaves `billing.tax.seller_country` empty until it is passed. `ClientTaxRateResolver` is still the one place
+  that decides: for a client with no `TaxId` in an EU country other than `billing.tax.seller_country`
+  (empty turns it off), on an invoice whose every line has `InvoiceItem.IsDigitalService` (the product's
+  `IsDigitalService`, copied into the line's `ProductSnapshot` at billing time; not `IsDigital`, which is about delivery) the rate is the
+  standard `VatRate` in force on the invoice date; everything else keeps the tax rule rate. A client with a `TaxId` never gets the
+  destination rate: the same method gives one whose number checked valid the reverse charge (#1144), the same
+  `billing.tax.seller_country` switching both off, and a hand-typed rate is refused for it. The OSS report (`GetOssReport`, `GET /api/reports/oss`, formerly named
+  after the scheme it replaced; the old route `vat-moss` is a deprecated alias for one release, removed in the next) groups by member state, rate and currency.
 - **`OverdueNotices`.** The payment reminder mail for an unpaid renewal invoice
   (`SendRenewalReminder`) goes only to a client with both `NotifyInvoice` and `OverdueNotices` on. The
   reminder threshold is still recorded when nobody is mailed, so it is not retried every day. No other
@@ -1747,6 +1845,133 @@ feature does not exist is not kept. The decisions:
   validated (400, not clamped), and the order ends in the id so a page never repeats a row. A
   `pg_trgm` GIN index on `lower("FirstName")`, `lower("LastName")`, `lower("FirstName" || ' ' || "LastName")`
   and `lower("CompanyName")` would serve the search once the table is large; it is not created yet.
+- **Every list shares one query shape.** A searchable, paged list query is a record that implements `IListQuery`
+  (`Page`, `PageSize`, `Search`; `Application/Common/Interfaces/`) and adds its own filters as further members. Its
+  validator derives from `ListQueryValidator<T>`, which states the page, page size and search rules once (400 on a value out
+  of range, `PagingLimits` holds the figures, the sentences are `ListPageRequired`, `ListPageSizeRange` and
+  `ListSearchTooLong`), and its handler narrows by the search text with `TextSearchExtensions.Search` or
+  `SearchIncludingId` (a case-insensitive contains match, wildcards escaped, applied before ordering and paging; both take
+  column selectors, so a text filter such as the client list's `Phone` uses `Search(query.Phone, c => c.Phone)` too, never a
+  hand-written `LIKE`) and
+  slices with `Paginate`. The admin list screens bind search, filters and page to the address through
+  `useFilterQuery` and lay them out with `UiListToolbar`; the client list is the reference. The domain list
+  (`ListDomainsQuery`, the one list behind the admin Domains screen; the old Domain Registrations screen was the same
+  data and now redirects to it) is on it with a name search and `Status` and `RegistrarModule` enum filters; a domain with
+  no registrar module recorded is left out when a registrar is chosen.
+  The two ticket lists (`ListTicketsQuery`, the staff list, and `ListClientTicketsQuery`, the tickets tab of a client) are on it
+  with a subject search and the shared `ITicketListFilters` (`Status`, `Priority`, `DepartmentId`), validated once by
+  `TicketListQueryValidator<T>` and applied once by `TicketFilterExtensions.Matching`; the staff list adds its `Flagged` switch. On the
+  frontend the pieces every list repeated (loading when the address changes, `narrowed`, reading a filter as an enum member
+  or an id, building chips) are `useListQuery`, and the ticket filters both ticket screens share are `useTicketFilters` and
+  `SupportTicketFilterFields`.
+  The order list (`ListOrdersQuery`, the admin Orders screen) is on it with `SearchIncludingId` on the order number and id and a
+  `Status` enum filter; it does not search the client name, which only the Clients module can read, so Orders never joins it.
+  The service list (`GetServicesQuery`, behind the admin Services screen and the services tab of a client, which adds
+  `ClientId`) is on it with a search over the service's own domain, its linked registered domain, the product name and the service id
+  (the linked domain names and the product names are asked of the Domains and Products modules, `FindServiceIdsByDomainNameQuery` and
+  `FindProductIdsByNameQuery`, so the list reads neither table), and `Status`, `ProductId` and `BillingCycle` filters; the screens share `useServiceFilters` and
+  `ServiceFilterFields`. `Page` and `PageSize` are required on `GET /api/services`, so a caller that sent neither (the
+  billable item lookup did) now sends `page=1`.
+  The admin user list (`ListUsersQuery`, Clients, Manage Users) is on it with the search alone: the identity provider can narrow only by a search text, so
+  there is no filter to add and none is faked; the provider matches the text itself (name, email), the handler passes page, page size and search through
+  `IdentityAccountListQuery`, and the two user pickers (the add-client and add-user searches) already send `page=1` with their page size, which is now
+  required. The fraud log (`ListFraudLogQuery`) searches the email and IP address with `Search` and takes `Kind`, `Decision` and `Reason` enum filters
+  (`IsInEnum`, `FraudCheckKindInvalid`, `FraudDecisionInvalid`, `FraudReasonInvalid`); it has no date range yet, because a day boundary needs the host time
+  zone (`DayWindow`) and a rule that the end is not before the start, which is its own change. The block lists (`ListBlockListEntriesQuery`) search the value
+  and the note and take the `Type` enum filter; on the screen the type is a tab that lives in the address like a filter, and choosing a tab sets it and
+  empties the search in one navigation (`useFilterQuery.apply` writes the text of the search box with the draft, so a screen can change both at once).
+  The plugin registry list (`ListRegistryPluginsQuery`, the Browse tab of the admin Plugins page) is on it with `Search` forwarded to the registry's own search and a
+  `Category` enum filter; its search is bounded at 100 characters (`PluginRegistrySearchTooLong`), narrower than the shared 200, because that is what the registry accepts, so the
+  validator keeps that one extra rule beside the shared ones. The Installed tab's list (`ListPluginsQuery`) is the documented exception: it is not paged and is
+  filtered in the browser, because it is the inventory of the plugin folder that other code reads whole (the update badges, the registry cards' installed state, the restart banner).
+  The Settings lists are on it too. The TLD list (`ListTldConfigsQuery`, Settings, TLD Pricing) searches the TLD with `Search` and takes the `RegistrarModule` enum
+  filter (the existing `DomainListRegistrarInvalid` sentence is generic and is reused) and an `Enabled` switch, ordered by sort order, TLD and id; its margin is still worked out
+  in the mapper from the one-year prices. The TLD list had no other caller (the portal and the order flow read prices through `GetTldPricingQuery` and `GetTldRenewPriceQuery`), so no unpaged
+  variant exists. The email campaign list (`ListEmailCampaignsQuery`) searches the subject and takes a `CampaignStatus` filter (`CampaignListStatusInvalid`), newest first; the delivery
+  counters are read in one grouped query for the ids of the page only. The tax rule list (`ListTaxRulesQuery`) searches the name, country and region and takes an `Enabled` switch,
+  with the country-wide rule before the regions of its country. A bool filter is a plain `bool?`: an unparsable value is refused by the model binder with the field named. On the
+  frontend the three screens read their filters through `useListQuery`; the enabled switch is the shared `EnabledFilter` (`types/enabledfilter.ts`, `ENABLED_FILTER_OPTIONS`,
+  `enabledOfFilter`), and a store's write no longer re-reads the list itself: the screen reloads the page the address names, and steps back one page when a delete emptied the last (`useListQuery`'s `stepBackWhenEmpty`, used by every list screen with a delete). A list store loads with `fetchAll(page, filters)` (`fetchPage` on the fraud stores) and answers true or false, and the store owns the page size, so a screen never names it. The TLD search ignores a leading dot, because a TLD is stored without it.
+  The server list (`ListServersQuery`, `GET /api/admin/servers`, the admin Servers screen) is on it too: it searches the name, host name and IP address and takes a `Module` (`ServerModule`) and a `State`
+  filter, `State` being `ServerState` (`Online`, `Offline`, `Untested`, read from the outcome of the last connection test, so a server never tested is its own state), both checked with `IsInEnum`
+  (`ServerListModuleInvalid`, `ServerListStateInvalid`), ordered by name and id; the group names are looked up for the servers of the page only, and `ServerQueryableExtensions.Matching` applies
+  the module and state once for the list and the option lookup. A connection test, a save and a delete no longer re-read the list from the store: the screen reads the page the address names again, and
+  the group form reads the option lookup when it opens, so it offers every server and not the page. The product list (`ListProductsQuery`, `GET /api/admin/products`, the admin Products screen; the action sits in `ProductsController` under the absolute route `/api/admin/products` beside the `/api/products` and `/api/public/products` ones, so the admin screen keeps its own address) searches
+  the name, SKU and slug and takes a group id (`ProductGroupIdInvalid`), a `ProductType` and a `ProductStatus` filter (`ProductListTypeInvalid`, `ProductListStatusInvalid`), is ordered by sort order, name
+  and id, lists the products with no price in the caller's currency too (the admin grid shows every product), and maps them with the same `ToDto` and narrows them with the same
+  `ProductQueryableExtensions.Matching` and `InDisplayOrder` as the unpaged picker read `GetProductsQuery`. The Products screen's `fetchProductsPage(page, filters)` fills its own page state; the picker callers
+  keep reading `fetchProducts`.
+  The logs, the knowledge base, the announcements and the network issues are on it too. A list that offers a period implements `IPeriodListFilter` (`DateOnly? From`, `To`), validated once by
+  `PeriodListQueryValidator<T>` (`DateRangeInvalid` when the last day is before the first) and applied by `DateRangeExtensions.InPeriod` in `Common/Extensions`: the one place a
+  range of days becomes the half-open UTC window, so a one-day range lists that whole day. The billing lists use the same pieces: `IInvoiceListFilters` and `ITransactionListFilters` extend
+  `IPeriodListFilter`, and `InvoiceListQueryValidator<T>` and `TransactionListQueryValidator<T>` derive from `PeriodListQueryValidator<T>`, so the period is declared and validated once for every list that has one.
+  The only period that is not an `IPeriodListFilter` is `DailyPerformanceValidator`'s, a report and not a list. The client activity log (`ListClientActivityLogsQuery`, a client's Log tab) searches the admin name, admin email,
+  description and IP address with one `Search` and takes the period, newest first and then by id; its old `Date`, `AdminSearch`, `Description` and `IpAddress` parameters, their clamp and hand-written `LIKE`s
+  (which did not escape `%` and `_`) are gone. The gateway log (`ListGatewayLogsQuery`, derived from the invoice transactions and the open payment sessions) searches the gateway and the debug text with one
+  `Search` and takes the period as days (it took exact instants before, and the admin sent the day bounds itself) and a `Result` checked with `IsInEnum` (`GatewayLogResultInvalid`). The email logs
+  (`IEmailLogListFilters`: `Success` and the period) search the subject and the recipient, and `EmailLogFilterExtensions.Matching` serves both `ListClientEmailLogsQuery` (a client's mail, found by address) and
+  `ListEmailLogsQuery` (the staff log, which now answers a `PaginatedList` and has no screen yet); `ListMyEmailLogsQuery`, the portal's own mail list, keeps its defaults and dispatches the client query with
+  a page and a size only. The knowledge base article list (`ListKbArticlesQuery`, `GET /api/admin/knowledgebase`) searches with `KbArticleSearchExtensions.MatchingText` and takes a `CategoryId` and an
+  `IsPublished` filter and answers a `PaginatedList<KbArticleDto>`; the public list (`ListPublishedKbArticlesQuery`) uses the same `MatchingText`, derives from `ListQueryValidator` keeping only its category
+  length rule, and keeps `Page = 1`, `PageSize = 20` as defaults because the client portal never sends a page. `MatchingText` is `TextSearchExtensions.SearchChildren(term, children, columns)`, a method of its own rather than an overload of `Search` (a `string` is an `IEnumerable<char>`, so an overload would be one wrong argument away from the wrong method):
+  an `EXISTS` over the translations built from the same escaped `LIKE` as the other overloads, so an article that matches in several languages is listed once. The announcement list searches the title and the
+  content and takes `IsPublished`; the network issue list searches the title, server and description and takes one `Status`, `Type` and `Priority` (the `statuses` array and the Open, Scheduled and Resolved
+  tabs are gone), each checked with `IsInEnum`. All of them are ordered newest first with the id last, except the knowledge base list, which keeps the oldest first order of its ids. On the frontend each
+  screen reads its filters through `useListQuery`, with `usePeriodFilter` and `useFilterDateRange` for a period; the closed value sets are `GATEWAY_LOG_RESULT_OPTIONS`, `EMAIL_LOG_OUTCOME_OPTIONS`
+  (`EmailLogOutcome`, read as the `success` switch by `successOfOutcome`), `PUBLISHED_FILTER_OPTIONS` (`PublishedFilter`, read by `isPublishedOfFilter`) and `NETWORK_ISSUE_STATUS_OPTIONS`, `NETWORK_ISSUE_TYPE_OPTIONS`
+  and `NETWORK_ISSUE_PRIORITY_OPTIONS` (which the network issue form uses too); the knowledge base article list is its own component, `KnowledgebaseArticleList`, which loads itself and is asked to `reload` after a save,
+  because the store's article writes no longer re-read the list.
+- **Lists that are deliberately not paged.** A list is paged, searched and filtered on the server unless it is one of these, each with its reason; a new one is added here, with its
+  reason, or it is paged. The storefront content lists (slides, testimonials, FAQs, locations, partners and projects) are curated sets of a few rows that staff reorder by dragging, and a
+  reorder writes the order of the whole set, so a page of it could not be reordered. Server groups, product groups and client groups are a handful of rows that other forms
+  (server, product, client, campaign audience) use as pickers and that need every group at once. Product bundles are a short curated set shown whole on the storefront. Currencies
+  are the few currencies the panel prices in; every price form, picker and `ListCurrenciesQuery` caller needs the whole set. Email templates are a fixed catalogue with one
+  template per kind of mail, edited in place. Integrations are the catalogue of providers the panel ships or has installed, grouped by category and bounded by that catalogue.
+  The Installed plugins tab is the one documented above.
+  The server option lookup (`ListServerOptionsQuery`, `GET /api/admin/servers/options`) is a documented picker: the group form, the add existing service dialog, the service
+  detail, the CWP 7 integration (which asks for its own module) and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
+  rows (name, host name, address, state, account count and capacity, no credential or hosting detail), ordered by name; `ServerOptionDto` extends `ServerBriefDto` (the id, name, host name and address other modules show next to a service), so those four facts are declared once, and it keeps the host name and address flat like the brief, where `ServerDto` nests them in `endpoint` with the SSL flag and assigned addresses a picker has no use for, while the Servers screen reads the paged `ListServersQuery`.
+  The unpaged product read (`GetProductsQuery`, `GET /api/products`) is the same kind of picker for the screens that choose a product, and the Products screen reads the paged
+  `ListProductsQuery`. Knowledge base categories (`ListKbCategories`) are a short
+  curated tree that the article screen turns into tabs and the article and predefined reply forms use as a picker, so every caller needs the whole set. Downloads
+  (`ListDownloads`) are read one category folder at a time by the admin Downloads screen, and the folder is the bound: a folder holds a handful of files and the screen has no page controls.
+  Status incidents (`ListStatusIncidents`, the public status page) are bounded by their time window (`Days`, 1 to 365, 90 by default) and are the same for every visitor, so the answer is
+  cached whole. The SSH keys of a service (`ListMySshKeys`) are the few keys of one of the caller's own services, shown whole on that service. The credit notes of a client
+  (`ListMyCreditNotes`) are the caller's own account's only, a short list the portal's credit notes page shows whole; the list is scoped by the credential and not by a client id, so no screen can ask for more than its own.
+  The billable item list (`ListBillableItemsQuery`, the admin Billable Items screen) is on it with `SearchIncludingId` on the description and id and
+  `ClientId`, `Type` and `Invoiced` filters (type and invoiced together cover the screen's six status choices); it does not search the client name,
+  which only the Clients module can read, so the screen filters by a client chosen from the client picker. The billable items tab of a client
+  (`ListClientBillableItemsQuery`: `ClientId`, `Page`, `PageSize`, `Search`, `Type`) shares the `IBillableItemListFilters` (`Type`) with it, validated once by
+  `BillableItemListQueryValidator<T>` and applied once by `BillableItemFilterExtensions.Matching`, so the search and
+  the type narrow the uninvoiced list and the invoiced list alike, while `Page` and `PageSize` cut the invoiced list only. The cancellation request list
+  (`ListCancellationRequestsQuery`) is on it with `SearchIncludingId` on the reason and id and `Type` and `Status` filters, all applied to the requests
+  before they are joined to their service (and counted there), and it does not search the product or the client name, which other modules own.
+  The invoice lists (`ListInvoicesQuery`, the admin Invoices screen, and `ListClientInvoicesQuery`, the invoices tab of a client) are on it
+  with `SearchIncludingId` over the invoice id and its payment method and the shared `IInvoiceListFilters` (`Status`, `From`, `To`),
+  validated once by `InvoiceListQueryValidator<T>` and applied once by `InvoiceFilterExtensions.Matching`; the staff list adds `ClientId`, and
+  the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list does not search the client name, which only the Clients
+  module can read, so it offers the client as a picker (`ClientId`, `useClientOptions`) and Billing never joins the client tables. The credit
+  note list (`ListCreditNotesQuery`) is on it with `SearchIncludingId` over the number, the reason and the refund reference and `InvoiceId`,
+  `ClientId`, `Status` and `Method` filters. The two billing lists that offer a period, the invoice lists and the transaction lists, take it through `IPeriodListFilter` (see the paragraph on the
+  logs above): `From` and `To` are bare days (`DateOnly`, bound from `yyyy-MM-dd`; a timestamp is a 400), applied by `DateRangeExtensions.InPeriod` in `Common/Extensions`,
+  which turns the days into UTC instants with the one helper every report uses, `DateOnlyExtensions.StartOfDayUtc` and `EndOfDayExclusiveUtc` (same folder): the window is the half-open
+  `[from 00:00, to + 1 day 00:00)` in UTC whatever zone the host runs in, so a range of one day lists that whole day (a test runs it on hosts east and west of UTC).
+  The range compares the column itself, so an index can serve it, and a `To` before its `From` is refused once, by `PeriodListQueryValidator<T>` (`DateRangeInvalid`, `MustNotBeBefore`). The credit
+  note and quote lists have no period, and the payment gateway log takes its period as days like the rest. Every list validator words a bad client filter with the one key `ListClientIdInvalid` instead of a creation message.
+  The quote lists (`ListQuotesQuery`, the admin Quotes screen, and `ListClientQuotesQuery`, the quotes tab of a client) are on it with
+  `SearchIncludingId` over the quote id and subject and the shared `IQuoteListFilters` (`Stage`, `Validity`), validated once by
+  `QuoteListQueryValidator<T>` and applied once by `QuoteFilterExtensions.Matching(query, now)`; `Validity` (`QuoteValidity`: `Valid` or `Expired`) is
+  judged on `ExpiryDate` against `IClock` alone, so a quote in the `Expired` stage with a date still ahead is valid. The staff list adds `ClientId`
+  (a picker, since client names belong to the Clients module); the screens share `useQuoteFilters` and `QuoteFilterFields`. The transaction
+  lists (`ListTransactionsQuery`, behind the admin Transactions screen and the transactions tab of a client, which the controller overlays with
+  `ClientId` from the route) are on it with `SearchIncludingId` over the id, description, reference and payment method and the shared
+  `ITransactionListFilters` (`ClientId`, `Direction`, `PaymentMethod`, `From`, `To`, `Amount`), validated once by `TransactionListQueryValidator<T>` and
+  applied once by `TransactionFilterExtensions.Matching`: `Direction` (`TransactionDirection`) keeps the rows with an amount in or an amount out, the method
+  is compared whole, the period is `InPeriod` on `Date`, and `Amount` equals the amount in or the amount out. The handler starts from
+  `Transaction.MovedMoneyFilter`, so credit-only rows stay out whatever is asked, and the per-currency summary totals are computed on the same narrowed
+  set as the page, so the tiles, the count and the rows always describe the same transactions. The quote lists order by `CreatedAt` and the transaction lists by `Date`, each then by id, so a page never repeats a row.
+  The screens share `useTransactionFilters` and `TransactionFilterFields`, and the transaction store no longer reloads after a create or a delete: the
+  screen reads the list again through its own address.
 
 ### Email campaigns
 
@@ -1819,7 +2044,7 @@ adds the weights and holds the sum to 0 to 100. A block list hit weighs 100, so 
 - **The held state is a status, not a flag.** `OrderStatus.UnderReview` (5) is only reached from Pending (`Order.HoldForReview`); fulfilment acts on Pending orders
   only, so a payment for a held order fulfils nothing, and `ApproveOrderReview` returns the order to Pending and fulfils it at once when its invoice is already
   paid. `RejectOrderReview` cancels the open invoice through Billing (a paid invoice refuses, and the order stays held until it is refunded) and
-  `Order.RejectFromReview` makes the order `Fraud` and raises the event the `order-rejected` mail answers. The queue is `GET /api/orders?status=UnderReview`.
+  `Order.RejectFromReview` makes the order `Fraud` and raises the event the `order-rejected` mail answers. The queue is `GET /api/orders?page=1&pageSize=20&status=UnderReview`.
 - **The check runs before anything is created** in `PlaceOrderHandler` (a refusal creates no account, order number or invoice) and in `RegisterHandler` (local
   mode; a sign-up through the external sign-on provider never reaches this host). A held order is stored already `UnderReview`, never Pending.
 - **The log is the memory of the signals.** Orders from one address within the velocity window and the other e-mail addresses seen from it within 30 days are
@@ -1939,6 +2164,27 @@ backend on the shared network, and Docker's DNS round-robins between the two.
 
 ## Operational scripts at the repo root (`scripts/`)
 
+- `scripts/retry-bounded.sh <command>` runs a command with a per attempt `timeout -k` and a bounded number of
+  attempts. The numbers are defined in that script only (defaults 2 attempts, 900 s, 10 s pause, about 31 minutes at
+  worst) and a call overrides them for itself with `RETRY_ATTEMPTS`, `RETRY_TIMEOUT_SECONDS` (at least 1) and
+  `RETRY_PAUSE_SECONDS`. The image pushes of `.build-image` and every `docker compose pull` of the stage, demo and
+  production deploys go through it; the fetch of the target commit in `.fetch-target-commit` keeps its own small
+  loop, because that job has no checkout of the repository yet (and the deploy directory is empty on the first deploy);
+  each of its attempts is wrapped in `timeout -k 10 600`, so a hung fetch cannot hold the job. Before the first attempt
+  and after a killed one (status 124 or 137) it removes the lock files git leaves in `.git`, only by name
+  (`shallow.lock`, `index.lock`, `HEAD.lock`), never every `*.lock`, so the lock of a background `git gc` stays. The
+  first clean up covers a lock left by an earlier job that was cancelled during its fetch, and it is safe because the
+  deploy jobs run one at a time per `resource_group`. A status of 125 to 127 stops the loop at once, like in the retry
+  script.
+  A command that cannot run (status 125 to 127) is not retried. The last message of a failure says whether the final
+  attempt timed out or was killed (status 124 or 137), could not run, or exited with another status.
+  `scripts/test-retry-bounded.sh` tests it, and `scripts/test-deploy-rollback.sh` runs the real
+  `before_script` and `after_script` of `deploy:prod` against a fake docker and git, in the GitLab
+  `deploy-scripts:test` job and the GitHub `deploy-scripts` job. The deploy jobs have an explicit `timeout:`
+  (`.build-image` and the stage and demo deploys 2 hours, `deploy:prod` 2 hours: fetch about 41 minutes, pull about 31, health 3, the rest for the database dump) that covers
+  those worst cases;
+  the runner's maximum job timeout must allow it. `deploy:prod`, `deploy:staging` and `deploy:demo` each have a `resource_group`, so
+  two deploys of one kind never run at once and never clear each other's markers.
 - `scripts/check-client-owner-ids.sh [container]`: read-only check of what `clients.UserId` points at
   (the local `AspNetUsers.Id` or the external identity provider's subject), run before and after switching
   `AUTH_MODE`. Defaults to the `hostpanel-db` container; on a remote host pipe it as
@@ -2010,7 +2256,17 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
 `admin:build:prod`, tagged with the commit id) and starts them with `--no-build`. It dumps the database with `pg_dump -Fc` into `backups/` **before**
 anything is rebuilt and fails the deploy if the dump fails: the API applies pending EF
 migrations on startup, so `up -d` is the moment the schema changes, and a deploy that cannot be
-undone should not start. The last ten dumps are kept.
+undone should not start. The last ten dumps are kept. The job removes the two markers `.deploy/fetched` and `.deploy/recreating` as the very first thing
+in `before_script` (before any check and before the registry login, so a stale marker of an earlier deploy never
+counts), writes `fetched` once the target commit is fetched and `recreating` right before `up -d`. The failure
+handler leaves the running stack alone without `fetched` (the deploy changed nothing), only puts the checkout back
+with `fetched` alone (a pull failed, no container was touched), and rolls back checkout and containers when
+`recreating` exists. It removes both markers on the way out, on success too. Restoring the checkout runs
+`scripts/clear-stale-submodule-dirs.sh` only when the commit being restored has it (an older commit does not, and
+the rollback goes on, printing that the step is skipped). When the restore itself fails it prints a `WARNING` and
+carries on, so the containers are still put back to the recorded images. The whole handler runs under the runner's
+`after_script` limit, which is separate from the job `timeout:` (5 minutes unless the runner sets another), so the
+rollback, its health wait included, has to fit in it.
 
 **The host version is the release tag, never the Dockerfile placeholder.** The API image takes its version from the
 `VERSION` build argument (`HostVersion` in `backend/src/Directory.Build.props`), and the host reports it as its own
@@ -2020,12 +2276,38 @@ argument refuses every plugin that declares a range. The GitLab `.build-image` t
 once with `scripts/image-version.sh` (full clone, `GIT_DEPTH: "0"`) and passes it as `--build-arg VERSION` to the API
 image; the job fails when no release tag is reachable. The GitHub image publisher passes the tag it is run for.
 The mirror workflow pushes the `v*` tags with the branch, because GitLab can only see a tag that was mirrored; a
-tag push alone starts nothing, it travels with the next push to `main` or `develop`, and a release tag is never
-moved. **Releasing:** tag the release commit `vMAJOR.MINOR.PATCH` and push the tag (`git tag v0.6.0 <develop tip>`
-then `git push origin v0.6.0`) before the `develop` to `main` pull request is merged, and merge that pull request
-with a merge commit (never squash or rebase, which would leave the tag unreachable from `main`), so the
-production build already carries the new version. A tag made on `main` after the merge only reaches the next main
-build. Without a new tag the version stays at the last release plus the commit id.
+tag push alone starts nothing on GitLab, it travels with the next push to `main` or `develop`, and a release tag is
+never moved. Without a new tag the version stays at the last release plus the commit id.
+
+**Releasing, in this order:**
+
+1. **Tag the release commit** on the `develop` tip, `vMAJOR.MINOR.PATCH` with no pre-release suffix:
+   `git tag v0.6.0 <develop tip>`.
+2. **Push the tag:** `git push origin v0.6.0`. The tag must exist on GitHub before the merge, so the mirror carries
+   it to GitLab with the `main` push. The tag push also starts `publish-dockerhub.yml`, which refuses to publish
+   until the tagged commit is an ancestor of `main` and has a green CI run (see step 4), so a red run here is expected.
+3. **Merge the `develop` to `main` pull request with a merge commit.** Never squash or rebase: both create new
+   commits, so the tagged commit would not be reachable from `main` and the image version would not see the tag.
+4. **The `main` build carries the version.** The mirror pushes `main` with the tags, and the GitLab API image job
+   (`backend:build:api:prod`) builds with `scripts/image-version.sh`, for example `0.6.0+1a2b3c4d`. When the `main` CI
+   is green, re-run the failed Docker Hub publish run of the tag: its commit is now on `main`, so it passes the
+   check and pushes `api-0.6.0`, `client-0.6.0` and `admin-0.6.0` with the moving `-latest` tags.
+5. **Deploy:** play `deploy:prod` (manual) once every test of the `main` pipeline is green. It pulls the images that
+   pipeline built.
+
+**When the tag is missing.** What happens depends on whether any release tag is reachable. With no release tag at
+all (the first release), the API image job fails with `image-version: no release tag vMAJOR.MINOR.PATCH is reachable
+from HEAD`, the production images are not built and `deploy:prod` has nothing to pull; nothing is ever built with the
+`0.0.0-dev` placeholder. With an older release tag reachable, a skipped step 1 or 2 does not fail anything: the images
+build green but carry the previous version plus the commit id, which is wrong. A tag made on `main` after the merge
+starts the Docker Hub publisher on its own and passes its check, but the GitLab images of that main build already
+carry the old version. To recover:
+
+1. Tag the commit the release is built from (it must be reachable from `main`) and push the tag:
+   `git tag v0.6.0 <that commit>`, then `git push origin v0.6.0`.
+2. Re-run the failed `Mirror to GitLab` run of `main` on GitHub, so the tag reaches GitLab. The tag push alone does not.
+3. Re-run the image jobs in the existing GitLab pipeline of `main`, then go on with the Docker Hub re-run and the
+   deploy from the list above. Never move or delete a pushed release tag to fix a mistake: cut the next patch version.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on
 these hosts belong to the host's shared reverse proxy; naming it would fail the whole deploy.
@@ -2519,8 +2801,24 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `tests/lint/noOwnMocks.test.ts` (admin) and `tests/config/noOwnMocks.test.ts` (client, one guard per
   app because an app's container cannot read the other's files) fail on a `vi.mock` or `vi.doMock` of
   any module of ours; the client one also fails on a test that fakes a composable or store of ours with
-  `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed), and its `KNOWN_REMAINDER` list of
-  tests that still do so may only shrink.
+  `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed), in every client test with no exemption list,
+  and it reads `vitest.setup.ts` (by `define`, `vi.stubGlobal` and `globalThis` assignment), which may stand
+  in for none of our composables. Registering the real one under its own name (`vi.stubGlobal('useX', useX)`)
+  is allowed only when `useX` is imported (or destructured from `await import`) from a composable, store or
+  util of the client, never a local value. The guard also reads the argument of `usePortalSettingsServer`
+  with the same check: each entry must be a bare name bound that way, never renamed on import and never from
+  a test helper. The client guard also fails on a stub of a component of ours: every component under
+  `client/components` runs for real in every client test (its data comes from the stub server, the real
+  composables registered under their auto-import names), so an entry of a `stubs` or `components` option or of
+  `registerPageComponents` that is named after one of them (by the name Nuxt gives its file, kebab-case read
+  as the same name) must be that very component, the default import of its `.vue` file, never `true`, a marker
+  component or a component from another file, and `shallowMount` (which stubs every child) and `shallow: true`
+  are refused. Framework and third-party components (`NuxtLink`, `i18n-t`, `Swiper`) are not ours and may be
+  stood in for, and the template slot stand-ins of the page tests (`stubTemplateSlots`) replace a template
+  page, not a component under `client/components`. The scan reads object literals (or a `const` one in the same
+  file) after those options, so a registry spread from a helper (`...CLASSIC_COMPONENTS`) is not read; the
+  helpers register only real components. `tests/helpers/nuxtComponentName.ts` is the one place the Nuxt naming
+  rule lives, for the mount helpers and for the guard.
   On this laptop vitest needs `--maxWorkers=2`.
 - **e2e.** `admin/e2e/`: Playwright, one spec per flow, `data-testid` selectors only (`fieldOf` for
   inputs), against `vite preview` of a production build with the API replaced by `page.route`

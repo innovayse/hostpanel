@@ -56,7 +56,7 @@ public sealed class EmptyPluginsTests : IClassFixture<EmptyPluginUiFixture>
     {
         var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(_empty.Factory);
         var serviceId = await ServicesTestSeeds.SeedPendingServiceAsync(_empty.Factory, clientId);
-        using var http = await PluginUiFixture.AdminClientOfAsync(_empty.Host, _empty.Factory);
+        using var http = await AuthTestSeeds.AdminClientAsync(_empty.Factory, _empty.Host);
 
         foreach (var slot in PluginSlots.All.Where(slot => slot.Area == PluginArea.Admin))
         {
@@ -72,7 +72,7 @@ public sealed class EmptyPluginsTests : IClassFixture<EmptyPluginUiFixture>
     {
         var owner = await ClientsTestSeeds.RegisterClientAsync(_empty.Factory, "empty-ui-indexes");
         using var client = AppPluginFixture.WithBearerOf(_empty.Host, owner.Client);
-        using var admin = await PluginUiFixture.AdminClientOfAsync(_empty.Host, _empty.Factory);
+        using var admin = await AuthTestSeeds.AdminClientAsync(_empty.Factory, _empty.Host);
 
         foreach (var (http, url) in new[] { (client, "/api/client/plugins/ui"), (admin, "/api/admin/plugins/ui") })
         {

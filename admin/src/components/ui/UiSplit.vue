@@ -13,7 +13,8 @@ import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
-import { gapClasses, splitRatioClasses, UI_SPLIT_COMPACT_QUERY } from '@/utils/ui/layout'
+import { UI_BELOW_LG_QUERY } from '@/utils/ui/breakpoints'
+import { gapClasses, splitRatioClasses } from '@/utils/ui/layout'
 import type { UiGap, UiSplitRatio } from '@/utils/ui/layout'
 
 /** Props for UiSplit. */
@@ -34,7 +35,7 @@ const props = withDefaults(defineProps<{
 const open = defineModel<boolean>('open', { default: false })
 
 /** Whether the screen is below `lg`. */
-const compact = useMediaQuery(UI_SPLIT_COMPACT_QUERY)
+const compact = useMediaQuery(UI_BELOW_LG_QUERY)
 
 /** Whether the aside currently lives in the sheet instead of the second column. */
 const sheeted = computed<boolean>(() => props.asideTitle !== undefined && compact.value)

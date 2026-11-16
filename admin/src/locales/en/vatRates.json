@@ -1,0 +1,51 @@
+{
+  "title": "VAT Rates",
+  "description": "The VAT rate of each EU member state and the day it applies from. A consumer in another member state is invoiced for digital services at the standard rate of their own country. Reduced rates are stored for reference and are never applied automatically.",
+  "addRate": "Add VAT Rate",
+  "empty": "No VAT rates yet. Add a rate, or restart the application to import the rates that ship with it.",
+  "searchPlaceholder": "Search by country code",
+  "noMatches": "No VAT rates match your search",
+  "totalCount": "VAT rates: {totalCount}",
+  "table": {
+    "country": "Country",
+    "kind": "Kind",
+    "rate": "Rate",
+    "validFrom": "Valid from",
+    "actions": "Actions"
+  },
+  "kind": {
+    "Standard": "Standard",
+    "Reduced": "Reduced"
+  },
+  "deleteModal": {
+    "title": "Delete VAT Rate",
+    "message": "Delete the {kind} rate of {country} that applies from {validFrom}? Invoices already issued keep the rate they were taxed at.",
+    "confirmLabel": "Delete"
+  },
+  "toasts": {
+    "deleted": "The VAT rate was deleted."
+  },
+  "form": {
+    "addTitle": "Add VAT Rate",
+    "editTitle": "Edit VAT Rate",
+    "country": {
+      "label": "Member state",
+      "placeholder": "Select a country"
+    },
+    "kind": {
+      "label": "Kind",
+      "placeholder": "Select a kind"
+    },
+    "rate": {
+      "label": "Rate (%)",
+      "placeholder": "e.g. 19"
+    },
+    "validFrom": {
+      "label": "Valid from",
+      "hint": "A rate stays in force until a later row of the same country and kind starts. To change a rate, add a row with the new start day; edit a row only to correct a mistake. A shipped rate whose day you move later is not imported again."
+    },
+    "cancel": "Cancel",
+    "add": "Add",
+    "save": "Save"
+  }
+}

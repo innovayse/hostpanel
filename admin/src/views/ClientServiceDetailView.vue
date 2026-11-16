@@ -235,7 +235,7 @@ const productIdRef = ref<number | null>(null)
 const clientServices = ref<ServiceListItem[]>([])
 
 /** Available servers for dropdown. */
-const serverList = computed(() => serversStore.servers)
+const serverList = computed(() => serversStore.serverOptions)
 
 /** Available products for dropdown. */
 const productList = computed(() => settingsStore.products)
@@ -272,7 +272,7 @@ const serverOptions = computed(() => [
   { value: 0, label: t('shared.none') },
   ...serverList.value.map(s => ({
     value: s.id,
-    label: `${s.name} (${s.endpoint.hostname}, ${s.accountsCount ?? 0}/${s.limits.maxAccounts ?? '∞'})`,
+    label: `${s.name} (${s.hostname}, ${s.accountsCount ?? 0}/${s.limits.maxAccounts ?? '∞'})`,
   })),
 ])
 
@@ -766,7 +766,7 @@ watch(serviceId, () => {
 onMounted(() => {
   fetchService()
   fetchClientServices()
-  serversStore.fetchServers()
+  serversStore.fetchServerOptions()
   settingsStore.fetchProducts()
 })
 </script>

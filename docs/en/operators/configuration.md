@@ -84,6 +84,17 @@ A server left on <code>Development</code> runs the DevDataSeeder and re-seeds te
   { name: 'DISABLE_EXCHANGE_RATE_UPDATES', type: 'flag', default: 'false', description: 'Set to true to disable the daily update of the currency exchange rates (03:00 UTC). Disable when the installation has no outbound internet access; the rates then change only by hand or with the Update Exchange Rates button. Maps to ScheduledJobs__DisableExchangeRateUpdates. Tiers: hub, prod.' },
 ]" />
 
+### Time zone
+
+Calendar days are cut in the time zone of the API process: the dashboard charts and the Daily Performance report start and end each day at that zone's midnight, and "today" is the day that zone's clock reads. Instants stored in the database, the scheduled jobs that name UTC (such as the 03:00 UTC exchange rate update) and every other report are not affected. The zone is the system time zone of the `hostpanel-api` container: UTC unless you set the standard `TZ` variable to an IANA name on the service, for example in a compose override. The image carries the time zone database, so any IANA name works.
+
+```yaml [compose override]
+services:
+  hostpanel-api:
+    environment:
+      TZ: "Asia/Yerevan"
+```
+
 ## Sign-in modes
 
 Hostpanel supports two authentication modes: local (users managed by Hostpanel itself) and SSO (users signed in through an external OpenID Connect provider).
@@ -186,6 +197,8 @@ Unset or misspelled SMTP_ENCRYPTION stops the API on startup and names this key 
   { name: 'DEPARTMENT_GENERAL_EMAIL', type: 'string', default: 'hello@example.com', description: 'General department email on first install. Tiers: all.' },
   { name: 'TELEGRAM_BOT_TOKEN', type: 'secret', default: '', description: 'Telegram bot token for contact form notifications. Both or neither: half a pair refuses startup. Tiers: all.' },
   { name: 'TELEGRAM_CHAT_ID', type: 'string', default: '', description: 'Telegram chat ID, optional pair. Set both or neither. Tiers: all.' },
+  { name: 'HMRC_VAT_CLIENT_ID', type: 'string', default: '', description: 'Client id of the application registered with the UK tax authority, needed to check UK VAT numbers (EU numbers need nothing). Set it with the secret or leave both empty: half a pair refuses startup. Tiers: all.' },
+  { name: 'HMRC_VAT_CLIENT_SECRET', type: 'secret', default: '', description: 'Client secret of that application. Tiers: all.' },
 ]" />
 
 ## Reverse proxy and trusted proxies

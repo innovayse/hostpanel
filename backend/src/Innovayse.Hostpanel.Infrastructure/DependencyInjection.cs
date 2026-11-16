@@ -10,6 +10,7 @@ using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
 using Innovayse.Hostpanel.Infrastructure.Authorization;
 using Innovayse.Hostpanel.Infrastructure.Currency;
+using Innovayse.Hostpanel.Infrastructure.Currency.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
@@ -49,6 +50,8 @@ using Innovayse.Hostpanel.Infrastructure.Security.Settings;
 using Innovayse.Hostpanel.Infrastructure.Storage;
 using Innovayse.Hostpanel.Infrastructure.Storage.Settings;
 using Innovayse.Hostpanel.Infrastructure.Time;
+using Innovayse.Hostpanel.Infrastructure.Vat;
+using Innovayse.Hostpanel.Infrastructure.Vat.Settings;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP7;
@@ -473,24 +476,49 @@ public static class DependencyInjection
         // Billing services
         services.AddScoped<IPayerCurrencyResolver, PayerCurrencyResolver>();
 
-        // Exchange rates come from the Central Bank of Armenia's bulletin. The URL and its shape
-        // are argued on CbaExchangeRateSource; the read-only profile with retries is argued on
-        // HttpResilienceOptions.Cba. The interface is what the handler depends on, so another
-        // bank is another class here and nothing in Application moves.
-        services.AddHttpClient<IExchangeRateSource, CbaExchangeRateSource>(client =>
+        // Exchange rates come from the bank the operator chose in billing.exchange_rates.provider: the
+        // Central Bank of Armenia's bulletin or the European Central Bank's reference rates. Each URL and
+        // shape is argued on its source class. The handler reads the choice and names it in the lookup;
+        // ConfiguredExchangeRateSource only picks the adapter, so another bank is another class and one
+        // more arm there.
+        services.AddExchangeRateHttpClients();
+        services.AddScoped<IExchangeRateSource, ConfiguredExchangeRateSource>();
+
+        // VAT number checks: one port, one adapter per register. The EU register needs no credentials; the UK one is
+        // asked with the credentials of an application registered with its authority, left unset by a deployment that
+        // serves no UK clients (its numbers then answer unavailable). Both are idempotent lookups, so both are registered
+        // read-only with retries (HttpResilienceOptions.Vat). The UK base address is the API root and ends in a slash so a
+        // relative path extends it.
+        services.AddOptions<HmrcVatOptions>()
+            .Bind(configuration.GetSection(HmrcVatOptions.SectionName))
+            .Validate(
+                o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out _) && o.BaseUrl.EndsWith('/'),
+                $"{HmrcVatOptions.SectionName}:{nameof(HmrcVatOptions.BaseUrl)} must be an absolute URL ending in a slash.")
+            .Validate(
+                o => o.IsUsable,
+                $"{HmrcVatOptions.SectionName} is partly configured: ClientId and ClientSecret must either both be set or the whole section left unset.")
+            .ValidateOnStart();
+        services.AddHttpClient<ViesVatClient>(client =>
         {
-            client.BaseAddress = new Uri(CbaExchangeRateSource.BaseAddress);
+            client.BaseAddress = new Uri(ViesVatClient.BaseAddress);
+            client.Timeout = HttpBackstopTimeouts.VatRegister;
         })
-            .AddReadOnlyResilience(o => o.Cba);
+            .AddReadOnlyResilience(o => o.Vat);
+        services.AddHttpClient<HmrcVatClient>((sp, client) =>
+        {
+            client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<HmrcVatOptions>>().Value.BaseUrl);
+            client.Timeout = HttpBackstopTimeouts.VatRegister;
+        })
+            .AddReadOnlyResilience(o => o.Vat);
+        services.AddScoped<IVatNumberChecker, VatNumberChecker>();
 
         // Payment plugins (hosted-gateway providers)
         services.AddHttpClient();
 
         // The factory's unnamed client: what CreateClient() with no argument hands back. It is
-        // used by CpanelWhmApi for per-server WHM calls and by any plugin that asks for a client
-        // without naming one, so nobody knows what it calls: a plugin's POST may well be a
-        // charge. Unknown means unrepeatable, and no breaker, since every caller addresses a
-        // different host. AddHttpClient() above only registers the factory; the empty name is
+        // used by any plugin that asks for a client without naming one, so nobody knows what it
+        // calls: a plugin's POST may well be a charge. Unknown means unrepeatable, and no breaker,
+        // since every caller addresses a different host. AddHttpClient() above only registers the factory; the empty name is
         // what configures the default client itself.
         services.AddHttpClient(string.Empty)
             .AddNoRedirects()

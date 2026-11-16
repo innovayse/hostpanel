@@ -13,6 +13,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -110,11 +111,10 @@ onMounted(() => {
       </UiGrid>
 
       <UiGrid :columns="2">
-        <UiCard padding="md" :loading="overviewLoading">
-          <template #header>
-            <UiHeading :level="2" variant="card">{{ t('support.supportOverview.averageFirstReplyTime') }}</UiHeading>
-          </template>
-          <UiText tone="muted" size="md" class="mt-3" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
+        <UiCard padding="md" :aria-busy="overviewLoading ? 'true' : undefined">
+          <UiHeading :level="2" variant="card">{{ t('support.supportOverview.averageFirstReplyTime') }}</UiHeading>
+          <UiSkeletonBar v-if="overviewLoading" class="mt-3 h-4 w-20 rounded-md" aria-hidden="true" data-testid="support-overview-average-loading" />
+          <UiText v-else tone="muted" size="md" class="mt-3" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
         </UiCard>
 
         <UiCard padding="md">

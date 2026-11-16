@@ -41,19 +41,21 @@ public sealed class AgingInvoicesSummaryTests(IntegrationTestFactory factory) : 
     {
         // A currency no other test bills in, so the sum below is this test's invoice alone.
         const string currency = "CHF";
+        using var host = new ClockedHost(factory);
+        var now = host.Clock.GetUtcNow();
         var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"AgingSum{Guid.NewGuid():N}");
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(-75), currency, DateTimeOffset.UtcNow.AddDays(-90));
+            var invoice = Invoice.Create(clientId, now.AddDays(-75), currency, now.AddDays(-90));
             invoice.AddItem("Hosting", 100m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow, "Manual", $"tx-{Guid.NewGuid():N}", 40m, 0m, null, TransactionSource.Manual));
+            db.Transactions.Add(invoice.AddPayment(now, "Manual", $"tx-{Guid.NewGuid():N}", 40m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
         }
 
-        var client = await ReportsTestSeeds.AdminClientAsync(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var response = await client.GetAsync("/api/reports/aging-invoices-summary");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);

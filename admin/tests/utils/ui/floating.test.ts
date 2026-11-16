@@ -3,7 +3,7 @@
  * place reaches the element as CSS variables.
  */
 import { describe, expect, it } from 'vitest'
-import { FloatingAlign, applyFloatingPlace, computeFloatingPlace } from '@/utils/ui/floating'
+import { FLOATING_PANEL_CLASSES, FloatingAlign, applyFloatingPlace, computeFloatingPlace } from '@/utils/ui/floating'
 
 /** A trigger 200px wide near the top left of a 1000x800 viewport. */
 const anchor = { left: 100, right: 300, top: 100, bottom: 140, width: 200 }
@@ -55,5 +55,14 @@ describe('applyFloatingPlace', () => {
     expect(element.style.getPropertyValue('--fp-width')).toBe('30px')
     expect(element.style.getPropertyValue('--fp-bottom')).toBe('')
     expect(element.style.getPropertyValue('--fp-right')).toBe('')
+  })
+})
+
+describe('FLOATING_PANEL_CLASSES', () => {
+  it('is an opaque raised surface with a border and the popover shadow, and no glass or translucent utility', () => {
+    const classes = FLOATING_PANEL_CLASSES.split(' ')
+
+    expect(classes).toEqual(expect.arrayContaining(['bg-surface-elevated', 'border', 'border-border', 'shadow-popover']))
+    expect(FLOATING_PANEL_CLASSES).not.toMatch(/glass|backdrop-blur|bg-surface-card|\/\d/)
   })
 })

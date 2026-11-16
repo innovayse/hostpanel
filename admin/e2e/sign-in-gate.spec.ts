@@ -53,13 +53,10 @@ test('signing out ends the session and returns to the login page', async ({ page
         },
       },
       json(HttpMethod.Get, '/api/admin/dashboard/stats', {
-        totalRevenue: 0,
-        monthlyRevenue: 0,
         activeServices: 0,
         overdueInvoices: 0,
         openTickets: 0,
         totalClients: 0,
-        currency: 'USD',
       }),
     ],
   })

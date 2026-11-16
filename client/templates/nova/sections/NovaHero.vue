@@ -30,11 +30,11 @@
         </UiText>
 
         <UiStack direction="row" wrap gap="sm" class="mt-8">
-          <NovaCta :to="localePath('/hosting')" size="lg" lift data-testid="nova-hero-cta-primary">
+          <NovaCta :to="localePath(SITE_HOSTING_PATH)" size="lg" lift data-testid="nova-hero-cta-primary">
             {{ t('nova.hero.ctaPrimary') }}
           </NovaCta>
           <NovaCta
-            :to="localePath('/hosting#plans')"
+            :to="localePath(SITE_HOSTING_PLANS_PATH)"
             tone="outline"
             size="lg"
             data-testid="nova-hero-cta-secondary"
@@ -69,6 +69,7 @@ import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import NovaDashboard from '~/templates/nova/sections/NovaDashboard.vue'
 import { HERO_BENEFITS } from '~/templates/nova/content'
 import { useVisibleFeatures } from '~/templates/nova/features'
+import { SITE_HOSTING_PATH, SITE_HOSTING_PLANS_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the copy. */
 const { t } = useI18n()

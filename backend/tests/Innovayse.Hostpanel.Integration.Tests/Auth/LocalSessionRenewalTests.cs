@@ -173,7 +173,8 @@ public sealed class LocalSessionRenewalTests(IntegrationTestFactory factory) : I
     /// <returns>The client, the clock and the host token service.</returns>
     private SessionRenewalHost Host(int maxSessionMinutes)
     {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        // Real time: the account is registered and the token minted through the shared database, whose rows are stamped now.
+        var clock = new ManualTimeProvider(TestMoments.Present());
         var host = factory.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("Session:AccessTokenMinutes", AccessMinutes.ToString());

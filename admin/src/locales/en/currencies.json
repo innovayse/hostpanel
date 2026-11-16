@@ -4,6 +4,18 @@
   "updateRates": "Update Exchange Rates",
   "updateProductPrices": "Update Product Prices",
   "addCurrency": "Add Currency",
+  "rateProvider": {
+    "title": "Exchange rate source",
+    "description": "Choose the bank the exchange rates are taken from. The daily update and the Update Exchange Rates button both use it. The European Central Bank quotes against the euro, so the base currency must be one it publishes.",
+    "label": "Bank",
+    "placeholder": "Choose a bank",
+    "hint": "A change applies to the next update. A failed update keeps the rates as they were.",
+    "notSeeded": "The {key} setting has not been seeded yet, so it cannot be changed here.",
+    "options": {
+      "Cba": "Central Bank of Armenia",
+      "Ecb": "European Central Bank"
+    }
+  },
   "table": {
     "code": "Code",
     "numeric": "Numeric",

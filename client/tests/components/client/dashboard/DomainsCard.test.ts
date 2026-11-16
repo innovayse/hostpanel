@@ -13,6 +13,7 @@ import { useClientStore } from '~/stores/client'
 import type { ClientDomain } from '~/types/clientdomain'
 import { EMPTY_DATE } from '~/utils/formatDate'
 import { DomainStatus } from '~/types/domainstatus'
+import { clientDomainPath } from '~/constants/clientRoutes'
 
 /**
  * Builds a domain row.
@@ -44,7 +45,7 @@ describe('ClientDashboardDomainsCard', () => {
     await nextTick()
 
     expect(wrapper.find('[data-testid="dashboard-domain-5"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="dashboard-domain-1"]').attributes('href')).toBe('/client/domains/1')
+    expect(wrapper.find('[data-testid="dashboard-domain-1"]').attributes('href')).toBe(clientDomainPath(1))
     expect(wrapper.find('[data-testid="dashboard-domain-1"]').text()).toContain('d1.test')
   })
 

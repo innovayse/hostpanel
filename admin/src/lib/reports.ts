@@ -56,6 +56,7 @@ export const REPORTS: ReportDef[] = [
   defineReport('monthly-orders', 'reports.titles.reports.monthlyOrders', 'shopping-cart', () => import('@/views/MonthlyOrdersView.vue')),
   defineReport('monthly-transactions', 'reports.titles.reports.monthlyTransactions', 'shuffle', () => import('@/views/MonthlyTransactionsView.vue')),
   defineReport('new-customers', 'reports.newCustomers.newCustomers', 'user-plus', () => import('@/views/NewCustomersView.vue')),
+  defineReport('oss', 'reports.titles.reports.oss', 'flag', () => import('@/views/OssReportView.vue')),
   defineReport('pdf-batch', 'reports.pdfBatch.pdfBatch', 'layers', () => import('@/views/PdfBatchView.vue')),
   defineReport('product-suspensions', 'reports.productSuspensions.productSuspensions', 'pause', () => import('@/views/ProductSuspensionsView.vue')),
   defineReport('promotions', 'reports.titles.reports.promotionsUsage', 'tag', () => import('@/views/PromotionsView.vue')),
@@ -71,5 +72,4 @@ export const REPORTS: ReportDef[] = [
   defineReport('ticket-tags', 'reports.titles.reports.ticketTags', 'hash', () => import('@/views/TicketTagsView.vue')),
   defineReport('top-clients', 'reports.topClients.top10ClientsByIncome', 'trophy', () => import('@/views/TopClientsView.vue')),
   defineReport('transactions', 'shared.transactions', 'list', () => import('@/views/TransactionsReportView.vue')),
-  defineReport('vat-moss', 'reports.titles.reports.vatMoss', 'flag', () => import('@/views/VatMossView.vue')),
 ]

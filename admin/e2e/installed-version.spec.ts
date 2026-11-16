@@ -68,7 +68,7 @@ test('a refused load shows no version and no error', async ({ page }) => {
     ],
   })
 
-  await page.goto('/settings/general')
+  await page.goto('/settings/general?tab=advanced')
 
   await expect(page.getByTestId(`setting-value-${timezone.id}`)).toBeVisible()
   await expect(page.getByTestId('sidebar-version')).toHaveCount(0)

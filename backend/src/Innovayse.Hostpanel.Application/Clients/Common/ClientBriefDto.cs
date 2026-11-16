@@ -25,6 +25,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="Status">The client's account status.</param>
 /// <param name="NotifyInvoice">Whether the client wants invoice emails, renewal reminders included.</param>
 /// <param name="Settings">The account switches staff set on the client: reminders, tax, invoice grouping, card processing and single sign-on.</param>
+/// <param name="Vat">The last completed check of the client's VAT number, which the reverse charge on their invoices depends on.</param>
 /// <param name="CreditBalance">
 /// The client's credit balance, in the client's billing currency (the payer currency its invoices are
 /// raised in); the balance has no currency of its own.
@@ -43,6 +44,7 @@ public sealed record ClientBriefDto(
     ClientStatus Status,
     bool NotifyInvoice,
     ClientSettingsDto Settings,
+    ClientVatDto Vat,
     decimal CreditBalance,
     DateTimeOffset CreatedAt)
 {

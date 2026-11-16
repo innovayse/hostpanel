@@ -26,7 +26,7 @@ public sealed class DomainQueryExtensionsTests(IntegrationTestFactory factory) :
         await context.SaveChangesAsync(CancellationToken.None);
 
         var domain = RegisteredDomain.Register(
-            client.Id, $"children-{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            client.Id, $"children-{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.SetNameservers(["ns1.example.test", "ns2.example.test"]);
         domain.AddDnsRecord(DnsRecordType.A, "www", "192.0.2.10", 3600, null);
         context.Domains.Add(domain);

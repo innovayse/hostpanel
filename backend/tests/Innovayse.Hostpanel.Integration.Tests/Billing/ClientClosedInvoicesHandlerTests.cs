@@ -23,7 +23,7 @@ public sealed class ClientClosedInvoicesHandlerTests(IntegrationTestFactory fact
     /// <returns>The saved invoice's id.</returns>
     private static async Task<int> SeedInvoiceAsync(IHostpanelDbContext context, int clientId, bool renewal, bool overdue = false)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = Invoice.Create(clientId, now.AddDays(7), TestCurrencies.Base, now);
         if (renewal)
         {

@@ -79,6 +79,31 @@ describe('AppLayout', () => {
     expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(2)
   })
 
+  it('opens the navigation as a bottom sheet below lg, closes it after choosing a page and on Escape', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
+    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+
+    await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
+    await flushPromises()
+
+    const sheet = wrapper.get('aside[role="dialog"]')
+    expect(sheet.classes()).toContain('rounded-t-panel')
+    expect(sheet.find('[data-testid="drawer-grip"]').exists()).toBe(true)
+    expect(sheet.find('[data-testid="sidebar-theme"]').exists()).toBe(true)
+    expect(sheet.find('[data-testid="sidebar-locale"]').exists()).toBe(true)
+
+    await sheet.get('[data-testid="app-sidebar"] a').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(1)
+
+    await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('aside[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await flushPromises()
+    expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(1)
+  })
+
   it('shows the skeleton in the content area while the next screen downloads, and keeps the shell', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })

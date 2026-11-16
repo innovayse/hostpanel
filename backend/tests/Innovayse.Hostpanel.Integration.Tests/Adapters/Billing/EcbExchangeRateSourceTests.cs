@@ -221,6 +221,24 @@ public sealed class EcbExchangeRateSourceTests : IAsyncLifetime
         result.Value!.RatesToBase.Keys.Should().BeEquivalentTo(["USD"]);
     }
 
+    /// <summary>
+    /// A wanted currency whose quotient against a base worth a great deal rounds to zero is left out, and the
+    /// others are still answered: a zero rate would make the whole update throw.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task QuoteAsync_QuotientRoundingToZeroIsOmitted()
+    {
+        // One AAA is 1e27 euro and one BBB is 1e-27 euro, so a BBB is 1e-54 AAA, which a decimal rounds to zero.
+        var document = EcbReplies.Document("2026-11-13", ("USD", "1.25"), ("AAA", "0.000000000000000000000000001"), ("BBB", "1000000000000000000000000000"));
+        http.Enqueue(HttpStatusCode.OK, document, EcbReplies.ContentType);
+
+        var result = await QuoteAsync("AAA", "USD", "BBB");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.RatesToBase.Keys.Should().BeEquivalentTo(["USD"]);
+    }
+
     /// <summary>A bank that holds the request past the client's timeout is the source being unavailable.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

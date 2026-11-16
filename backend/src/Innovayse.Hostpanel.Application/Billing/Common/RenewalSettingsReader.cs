@@ -27,15 +27,7 @@ public sealed class RenewalSettingsReader
     /// <returns>The parsed settings.</returns>
     public async Task<RenewalSettings> ReadAsync(CancellationToken ct)
     {
-        var rows = await _source.ReadRowsAsync(
-            [
-                BillingSettingKeys.InvoiceDaysBefore,
-                BillingSettingKeys.ReminderDays,
-                BillingSettingKeys.AutoApplyCredit,
-                BillingSettingKeys.SuspendAfterOverdueDays,
-                BillingSettingKeys.TerminateAfterSuspendedDays,
-            ],
-            ct);
+        var rows = await _source.ReadRowsAsync(BillingSettingKeys.RenewalKeys, ct);
 
         return new RenewalSettings(
             Int(rows, BillingSettingKeys.InvoiceDaysBefore),

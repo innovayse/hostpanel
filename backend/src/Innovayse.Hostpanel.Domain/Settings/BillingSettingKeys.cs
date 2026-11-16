@@ -25,6 +25,16 @@ public static class BillingSettingKeys
     /// <summary>Days a service suspended for non-payment may stay suspended before it is terminated automatically.</summary>
     public const string TerminateAfterSuspendedDays = "billing.renewal.terminate_after_suspended_days";
 
+    /// <summary>The five renewal settings the billing engine reads together.</summary>
+    public static readonly IReadOnlyList<string> RenewalKeys =
+    [
+        InvoiceDaysBefore,
+        ReminderDays,
+        AutoApplyCredit,
+        SuspendAfterOverdueDays,
+        TerminateAfterSuspendedDays,
+    ];
+
     /// <summary>The least a client may add to their credit balance in one top-up, in the client's billing currency.</summary>
     public const string CreditTopUpMinimum = "billing.credit.topup_min";
 

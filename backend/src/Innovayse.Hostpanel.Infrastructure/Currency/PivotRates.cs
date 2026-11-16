@@ -28,7 +28,7 @@ public static class PivotRates
     /// With <c>p(x)</c> the pivot value of one unit of <c>x</c> and <c>p(pivot) = 1</c>, one unit of
     /// <c>code</c> in <c>base</c> is <c>p(code) / p(base)</c>. A base the bank does not quote cannot anchor
     /// any of this, so the call refuses rather than guess; a requested code the bank does not quote, quotes at nothing
-    /// above zero, or whose quotient against the base is too large for a decimal, is left out of the answer.
+    /// above zero, or whose quotient against the base is too large for a decimal or rounds to zero, is left out of the answer.
     /// </remarks>
     /// <param name="lookup">The base currency and the codes to quote.</param>
     /// <param name="pivotCode">The currency the bank quotes everything in; it is worth 1 of itself and is not in <paramref name="pivotPerUnit"/>.</param>
@@ -66,7 +66,14 @@ public static class PivotRates
             var pivotPerCode = PivotPerUnit(pivotCode, pivotPerUnit, upper);
             if (pivotPerCode > 0 && pivotPerCode <= ceiling)
             {
-                rates[upper] = pivotPerCode.Value / pivotPerBase.Value;
+                var quotient = pivotPerCode.Value / pivotPerBase.Value;
+
+                // A code worth almost nothing against a base worth a great deal rounds to zero, which no rate may be:
+                // it is left out like the others, so one such code does not fail the whole update.
+                if (quotient > 0)
+                {
+                    rates[upper] = quotient;
+                }
             }
         }
 

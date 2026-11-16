@@ -1,6 +1,7 @@
 using System.Net;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Currency;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -52,7 +53,7 @@ public sealed class EcbExchangeRateSourceTests : IAsyncLifetime
     /// <param name="codes">The codes to quote.</param>
     /// <returns>The source's answer.</returns>
     private Task<Result<ExchangeRateQuotes>> QuoteAsync(string baseCode, params string[] codes) =>
-        Source().QuoteAsync(new ExchangeRateLookup(baseCode, codes), CancellationToken.None);
+        Source().QuoteAsync(new ExchangeRateLookup(ExchangeRateProvider.Ecb, baseCode, codes), CancellationToken.None);
 
     /// <summary>With the euro as the base, one unit of a currency is the inverse of what one euro buys.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -182,19 +183,6 @@ public sealed class EcbExchangeRateSourceTests : IAsyncLifetime
         result.ErrorCode.Should().Be(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
     }
 
-    /// <summary>A body past the size the feed reads is refused unread, as the source being unavailable.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task QuoteAsync_OversizedBodyIsUnavailable()
-    {
-        var padding = new string(' ', (int)ExchangeRateFeed.MaxBodyBytes);
-        http.Enqueue(HttpStatusCode.OK, EcbReplies.Daily + padding, EcbReplies.ContentType);
-
-        var result = await QuoteAsync("EUR", "USD");
-
-        result.ErrorCode.Should().Be(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
-    }
-
     /// <summary>
     /// A rate so large that one unit rounds to nothing in the euro is an unusable feed when it is the base (it
     /// would be the divisor), and is left out when it is only a wanted currency.
@@ -215,6 +203,24 @@ public sealed class EcbExchangeRateSourceTests : IAsyncLifetime
         asCode.Value!.RatesToBase.Keys.Should().BeEquivalentTo(["USD"]);
     }
 
+    /// <summary>
+    /// A wanted currency whose quotient against a base worth almost nothing is too large for a decimal is left out
+    /// like one the bank does not quote, and the others are still answered.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task QuoteAsync_QuotientTooLargeForADecimalIsOmitted()
+    {
+        // One AAA is 1e-27 euro and one BBB is 100 euro, so a BBB is 1e29 AAA, past the 7.9e28 a decimal holds.
+        var document = EcbReplies.Document("2026-11-13", ("USD", "1.25"), ("AAA", "1000000000000000000000000000"), ("BBB", "0.01"));
+        http.Enqueue(HttpStatusCode.OK, document, EcbReplies.ContentType);
+
+        var result = await QuoteAsync("AAA", "USD", "BBB");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.RatesToBase.Keys.Should().BeEquivalentTo(["USD"]);
+    }
+
     /// <summary>A bank that holds the request past the client's timeout is the source being unavailable.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -223,7 +229,7 @@ public sealed class EcbExchangeRateSourceTests : IAsyncLifetime
         http.Enqueue(new StubReply(HttpStatusCode.OK, EcbReplies.Daily, EcbReplies.ContentType, Delay: TimeSpan.FromSeconds(30)));
 
         var result = await Source(TimeSpan.FromMilliseconds(300))
-            .QuoteAsync(new ExchangeRateLookup("EUR", ["USD"]), CancellationToken.None);
+            .QuoteAsync(new ExchangeRateLookup(ExchangeRateProvider.Ecb, "EUR", ["USD"]), CancellationToken.None);
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
     }

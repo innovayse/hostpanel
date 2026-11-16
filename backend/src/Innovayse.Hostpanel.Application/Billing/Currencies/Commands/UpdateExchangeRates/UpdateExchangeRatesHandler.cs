@@ -18,15 +18,20 @@ public sealed class UpdateExchangeRatesHandler
     /// <summary>Where today's rates are read from.</summary>
     private readonly IExchangeRateSource _source;
 
+    /// <summary>Reads which bank the operator chose to take the rates from.</summary>
+    private readonly ExchangeRateSettingsReader _settings;
+
     /// <summary>
     ///     Initializes the handler.
     /// </summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="source">Where today's rates are read from.</param>
-    public UpdateExchangeRatesHandler(IHostpanelDbContext context, IExchangeRateSource source)
+    /// <param name="settings">Reads which bank the operator chose to take the rates from.</param>
+    public UpdateExchangeRatesHandler(IHostpanelDbContext context, IExchangeRateSource source, ExchangeRateSettingsReader settings)
     {
         _context = context;
         _source = source;
+        _settings = settings;
     }
 
     /// <summary>
@@ -53,8 +58,9 @@ public sealed class UpdateExchangeRatesHandler
         }
 
         var others = all.Where(c => !c.IsBase).ToList();
+        var provider = await _settings.ProviderAsync(ct);
         var quoted = await _source.QuoteAsync(
-            new ExchangeRateLookup(baseCurrency.Code, others.Select(c => c.Code).ToList()), ct);
+            new ExchangeRateLookup(provider, baseCurrency.Code, others.Select(c => c.Code).ToList()), ct);
         if (quoted.IsFailure)
         {
             return Result<UpdateExchangeRatesResultDto>.FailureCode(quoted.ErrorCode!);

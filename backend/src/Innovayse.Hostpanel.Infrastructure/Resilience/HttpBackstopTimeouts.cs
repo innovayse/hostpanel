@@ -35,6 +35,12 @@ public static class HttpBackstopTimeouts
     /// <summary>The migration pull client.</summary>
     public static readonly TimeSpan Migration = TimeSpan.FromMinutes(5);
 
+    /// <summary>
+    /// The exchange rate banks, typed clients. Above the 15 seconds the resilience profile allows a call, and the only bound on a
+    /// body that stalls after its headers: the pipeline ends when the headers arrive, the client buffers the body after that.
+    /// </summary>
+    public static readonly TimeSpan ExchangeRate = TimeSpan.FromSeconds(20);
+
     /// <summary>Domain registrar clients (Name.am and Namecheap).</summary>
     public static readonly TimeSpan Registrar = TimeSpan.FromSeconds(30);
 }

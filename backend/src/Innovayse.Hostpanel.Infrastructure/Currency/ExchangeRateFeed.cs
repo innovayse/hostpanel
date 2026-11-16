@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Microsoft.Extensions.Logging;
 using Polly;
 
@@ -16,6 +17,25 @@ public static class ExchangeRateFeed
     /// </summary>
     public const long MaxBodyBytes = 1024 * 1024;
 
+    /// <summary>
+    /// Aims a typed client at a bank, caps what it buffers of an answer at <see cref="MaxBodyBytes"/> and bounds the
+    /// whole call, body included, by <see cref="HttpBackstopTimeouts.ExchangeRate"/>.
+    /// </summary>
+    /// <remarks>
+    /// The client buffers the body itself, after the resilience pipeline has handed back the headers, so the pipeline's
+    /// timeouts do not cover it. The cap (<see cref="HttpClient.MaxResponseContentBufferSize"/>) fails a body past it as an
+    /// <see cref="HttpRequestException"/> instead of reading it whole; the client's own timeout cancels a body that
+    /// stalls, which <see cref="TryReadAsync"/> reports like a bank that did not answer in time.
+    /// </remarks>
+    /// <param name="client">The typed client being registered.</param>
+    /// <param name="baseAddress">The bank's origin.</param>
+    public static void Configure(HttpClient client, Uri baseAddress)
+    {
+        client.BaseAddress = baseAddress;
+        client.MaxResponseContentBufferSize = MaxBodyBytes;
+        client.Timeout = HttpBackstopTimeouts.ExchangeRate;
+    }
+
     /// <summary>Downloads the document at <paramref name="path"/> and returns its text.</summary>
     /// <param name="http">The typed client, with the bank's origin as its base address.</param>
     /// <param name="path">The document, relative to the client's base address.</param>
@@ -29,11 +49,10 @@ public static class ExchangeRateFeed
     {
         try
         {
-            // Headers first, then a bounded buffering: an oversized body is refused as a failed download
-            // (an HttpRequestException) instead of being read whole.
-            using var response = await http.GetAsync(path, HttpCompletionOption.ResponseHeadersRead, ct);
+            // The client buffers the body under MaxResponseContentBufferSize (see Configure), so an oversized
+            // body surfaces here as an HttpRequestException.
+            using var response = await http.GetAsync(path, ct);
             response.EnsureSuccessStatusCode();
-            await response.Content.LoadIntoBufferAsync(MaxBodyBytes, ct);
             return await response.Content.ReadAsStringAsync(ct);
         }
         catch (HttpRequestException ex)

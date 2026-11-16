@@ -21,9 +21,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Currency;
 /// </para>
 /// <para>
 /// <b>Arithmetic.</b> Every quote is "AMD per unit", so with <c>amd(x)</c> the quote for <c>x</c>
-/// and <c>amd(AMD) = 1</c>, "1 unit of <c>code</c> in <c>base</c>" is
-/// <c>amd(code) / amd(base)</c>. With base USD and wanted AMD that is <c>1 / 363.28</c>; with base
-/// AMD and wanted USD it is <c>363.28</c>; with base USD and wanted EUR it is
+/// and <c>amd(AMD) = 1</c>, "1 unit of <c>code</c> in <c>base</c>" is <c>amd(code) / amd(base)</c>,
+/// worked out by <see cref="PivotRates"/>. With base USD and wanted AMD that is <c>1 / 363.28</c>;
+/// with base AMD and wanted USD it is <c>363.28</c>; with base USD and wanted EUR it is
 /// <c>421.11 / 363.28</c>. A base the bank does not quote cannot anchor any of this, and the call
 /// refuses rather than guess.
 /// </para>
@@ -34,15 +34,17 @@ namespace Innovayse.Hostpanel.Infrastructure.Currency;
 /// so "100 units = 243 AMD" is read as "1 unit = 2.43 AMD" and never as a hundred times too much.
 /// </para>
 /// <para>
-/// <b>Failures.</b> A bank that does not answer, answers with an error status or with a body that is
-/// not the published object is reported as <c>EXCHANGE_RATE_SOURCE_UNAVAILABLE</c> (503, with
-/// <c>Retry-After</c>), logged here with the cause; the bank's own text never reaches the response.
-/// A base the bank does not quote is <c>EXCHANGE_RATE_BASE_NOT_QUOTED</c>.
+/// <b>Failures.</b> A bank that does not answer, answers with an error status, with a body that is
+/// not the published object or with one larger than <see cref="ExchangeRateFeed.MaxBodyBytes"/> is
+/// reported as <c>EXCHANGE_RATE_SOURCE_UNAVAILABLE</c> (503, with <c>Retry-After</c>), logged here
+/// with the cause; the bank's own text never reaches the response. A base the bank does not quote is
+/// <c>EXCHANGE_RATE_BASE_NOT_QUOTED</c>.
 /// </para>
 /// <para>
-/// Registered as a typed client with the <c>Cba</c> read-only resilience profile: the one call is
-/// an idempotent GET an operator triggers by hand, so a retry costs nothing and a bounded timeout
-/// keeps a slow bank from holding the admin request open.
+/// Registered as a typed client with the <c>Cba</c> read-only resilience profile (see
+/// <see cref="Extensions.ExchangeRateHttpClientExtensions"/>): the one call is an idempotent GET the
+/// daily job or an operator triggers, so a retry costs nothing and a bounded timeout keeps a slow
+/// bank from holding the admin request open.
 /// </para>
 /// </remarks>
 public sealed class CbaExchangeRateSource : IExchangeRateSource

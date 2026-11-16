@@ -74,6 +74,12 @@ const showPricesConfirm = ref(false)
 /** Non-base currency codes selected for the product-price recompute. */
 const selectedPriceCurrencies = ref<string[]>([])
 
+/**
+ * Whether the first settings load has finished, with rows or with a refusal. The settings store starts with no rows and no
+ * request in flight, so without this the rate source card would claim its row is not seeded for the moment before the load starts.
+ */
+const settingsLoaded = ref(false)
+
 /** True while exchange rates are being refreshed. */
 const updatingRates = ref(false)
 
@@ -222,7 +228,13 @@ const currencyActions = (currency: CurrencyDto): UiMenuAction[] => [
   },
 ]
 
-onMounted(() => Promise.all([store.fetchAll(), settingsStore.fetchSettings()]))
+/** Loads the settings the rate source card reads and marks the first load finished. */
+const loadSettings = async (): Promise<void> => {
+  await settingsStore.fetchSettings()
+  settingsLoaded.value = true
+}
+
+onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
 </script>
 
 <template>
@@ -273,7 +285,7 @@ onMounted(() => Promise.all([store.fetchAll(), settingsStore.fetchSettings()]))
       @retry="settingsStore.fetchSettings()"
     />
     <ExchangeRateProviderCard
-      v-else-if="!settingsStore.loading || settingsStore.settings.length > 0"
+      v-else-if="settingsLoaded"
       :settings="settingsStore.settings"
       :save="settingsStore.saveSetting"
     />

@@ -27,8 +27,8 @@ public static class PivotRates
     /// <remarks>
     /// With <c>p(x)</c> the pivot value of one unit of <c>x</c> and <c>p(pivot) = 1</c>, one unit of
     /// <c>code</c> in <c>base</c> is <c>p(code) / p(base)</c>. A base the bank does not quote cannot anchor
-    /// any of this, so the call refuses rather than guess; a requested code the bank does not quote, or quotes at nothing above zero, is
-    /// left out of the answer.
+    /// any of this, so the call refuses rather than guess; a requested code the bank does not quote, quotes at nothing
+    /// above zero, or whose quotient against the base is too large for a decimal, is left out of the answer.
     /// </remarks>
     /// <param name="lookup">The base currency and the codes to quote.</param>
     /// <param name="pivotCode">The currency the bank quotes everything in; it is worth 1 of itself and is not in <paramref name="pivotPerUnit"/>.</param>
@@ -55,12 +55,16 @@ public static class PivotRates
             return Result<ExchangeRateQuotes>.FailureCode(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
         }
 
+        // A base worth less than one pivot unit multiplies what it divides, so a figure above this ceiling would not
+        // fit a decimal; such a code is left out like one the bank does not quote. From one up a quotient only shrinks.
+        var ceiling = decimal.MaxValue * Math.Min(pivotPerBase.Value, 1m);
+
         var rates = new Dictionary<string, decimal>(StringComparer.Ordinal);
         foreach (var code in lookup.Codes)
         {
             var upper = code.ToUpperInvariant();
             var pivotPerCode = PivotPerUnit(pivotCode, pivotPerUnit, upper);
-            if (pivotPerCode > 0)
+            if (pivotPerCode > 0 && pivotPerCode <= ceiling)
             {
                 rates[upper] = pivotPerCode.Value / pivotPerBase.Value;
             }

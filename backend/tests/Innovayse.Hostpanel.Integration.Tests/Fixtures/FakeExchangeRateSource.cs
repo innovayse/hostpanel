@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
@@ -16,12 +17,16 @@ public sealed class FakeExchangeRateSource(IReadOnlyDictionary<string, decimal> 
     /// <summary>The codes the last call asked to be quoted.</summary>
     public IReadOnlyList<string> RequestedCodes { get; private set; } = [];
 
+    /// <summary>The bank the last call was told to ask.</summary>
+    public ExchangeRateProvider? RequestedProvider { get; private set; }
+
     /// <summary>The base currency the last call asked the rates against.</summary>
     public string? RequestedBase { get; private set; }
 
     /// <inheritdoc />
     public Task<Result<ExchangeRateQuotes>> QuoteAsync(ExchangeRateLookup lookup, CancellationToken ct)
     {
+        RequestedProvider = lookup.Provider;
         RequestedBase = lookup.BaseCode;
         RequestedCodes = [.. lookup.Codes];
 

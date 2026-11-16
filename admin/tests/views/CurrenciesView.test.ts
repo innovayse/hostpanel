@@ -8,7 +8,7 @@ import { ExchangeRateProvider } from '@/types/currency'
 import type { CurrencyDto } from '@/types/currency'
 import { BillingSettingKey } from '@/types/setting'
 import { json, problem, stubFetch } from '../helpers/fetch'
-import { mountScreen } from '../helpers/mount'
+import { mountScreen, mountWithApp } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { flushPromises } from '@vue/test-utils'
 import { pickOption } from '../helpers/select'
@@ -62,6 +62,20 @@ describe('CurrenciesView', () => {
     const { wrapper } = await mountScreen(CurrenciesView)
     await flushPromises()
 
+    expect(wrapper.find('[data-testid="exchange-rate-provider-not-seeded"]').exists()).toBe(true)
+  })
+
+  it('does not claim the rate source row is missing before the settings have loaded', async () => {
+    stubRouteTable({
+      'GET /admin/currencies': () => json([usd, eur]),
+      'GET /admin/settings': () => json([]),
+    })
+    const wrapper = mountWithApp(CurrenciesView)
+
+    // The first render comes before the load starts: no card yet, so no "not seeded" claim.
+    expect(wrapper.find('[data-testid="exchange-rate-provider-not-seeded"]').exists()).toBe(false)
+
+    await flushPromises()
     expect(wrapper.find('[data-testid="exchange-rate-provider-not-seeded"]').exists()).toBe(true)
   })
 

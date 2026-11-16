@@ -9,14 +9,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
-import { defineComponent, h, ref } from 'vue'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { defineComponent, h } from 'vue'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, publishedSchemas, registerPageComponents, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { until } from '~/tests/helpers/settle'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { requestsTo } from '~/tests/helpers/stubRoutes'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import UiDropdown from '~/components/ui/UiDropdown.vue'
 import { ContactService } from '~/types/contactservice'
 
@@ -25,11 +24,8 @@ const { default: Page } = await import('~/pages/contact.vue')
 /** The public contact endpoint the form posts to. */
 const CONTACT_PATH = '/api/contact'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** The replies of the current test; a test changes them before it submits. */
-let table: StubRouteTable
+/** What the stub answers, by route, and the accessor of the stub the hooks start and close around each test; a test changes the replies before it submits. */
+const { replies, stub } = usePortalSettingsServer()
 
 /** Stands in for the FAQ preview section. */
 const SectionsFaqStub = defineComponent({
@@ -78,25 +74,22 @@ const submit = async (wrapper: VueWrapper): Promise<void> => {
 }
 
 describe('pages/contact', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     spies = stubPublicPageRuntime()
     registerPageComponents({ SectionsFAQ: SectionsFaqStub })
-    table = { [`POST ${CONTACT_PATH}`]: { status: 204 } }
-    stub = await startTransport(routeTable(table))
+    replies[`POST ${CONTACT_PATH}`] = { status: 204 }
   })
 
-  afterEach(async () => {
+  afterEach(() => {
     vi.useRealTimers()
-    vi.unstubAllGlobals()
-    await stub.close()
   })
 
   it('sets the page tags and publishes the contact-page structured data', async () => {
     await mountPage(Page)
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ title: 'seo.contact.title', path: '/contact' }))
-    const published = spies.injectSchema.mock.calls[0]?.[0] as Array<Record<string, unknown>>
-    expect(published.some(entry => entry['@type'] === 'ContactPage')).toBe(true)
+    expect(seoTags(spies)).toMatchObject({ title: 'seo.contact.title' })
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/contact`)
+    expect(publishedSchemas(spies).some(entry => entry['@type'] === 'ContactPage')).toBe(true)
   })
 
   it('shows the hero and the FAQ preview', async () => {
@@ -117,25 +110,24 @@ describe('pages/contact', () => {
   })
 
   it('shows the working hours the operator set and hides the row when none are set', async () => {
-    vi.stubGlobal('useContactHours', () => ({ workingHours: ref('08:00 - 17:00 UTC+2') }))
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactHours]: '08:00 - 17:00', [PortalSettingKey.ContactTimezone]: 'UTC+2' })
     const shown = await mountPage(Page)
     expect(shown.find('[data-testid="contact-hours"]').text()).toContain('08:00 - 17:00 UTC+2')
 
-    vi.stubGlobal('useContactHours', () => ({ workingHours: ref('') }))
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactTimezone]: 'UTC+2' })
     const hidden = await mountPage(Page)
     expect(hidden.find('[data-testid="contact-hours"]').exists()).toBe(false)
   })
 
   it('links the operator-configured contact details to mail, phone and the two messengers', async () => {
-    vi.stubGlobal('useContactDetails', () => ({
-      email: ref('hello@acme.test'),
-      phone: ref('+1 555 010 200'),
-      phoneLink: ref('+1555010200'),
-      telegramUrl: ref('https://t.me/acme'),
-      whatsappUrl: ref('https://wa.me/1555010200'),
-      address: ref('1 Example Street\nSpringfield'),
-      mapUrl: ref('https://maps.example.test/embed?ll=1,2'),
-    }))
+    await loadPortalSettings(replies, {
+      [PortalSettingKey.ContactEmail]: 'hello@acme.test',
+      [PortalSettingKey.ContactPhone]: '+1 555 010 200',
+      [PortalSettingKey.ContactTelegram]: '@acme',
+      [PortalSettingKey.ContactWhatsapp]: '+1 555 010 200',
+      [PortalSettingKey.ContactAddress]: '1 Example Street\nSpringfield',
+      [PortalSettingKey.ContactMapUrl]: 'https://maps.example.test/embed?ll=1,2',
+    })
     const wrapper = await mountPage(Page)
 
     expect(wrapper.find('[data-testid="contact-email-link"]').attributes('href')).toBe('mailto:hello@acme.test')
@@ -149,10 +141,7 @@ describe('pages/contact', () => {
   })
 
   it('makes the map follow the colour mode', async () => {
-    vi.stubGlobal('useContactDetails', () => ({
-      email: ref(''), phone: ref(''), phoneLink: ref(''), telegramUrl: ref(''), whatsappUrl: ref(''),
-      address: ref(''), mapUrl: ref('https://maps.example.test/embed?ll=1,2'),
-    }))
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactMapUrl]: 'https://maps.example.test/embed?ll=1,2' })
     stubPublicPageRuntime({ dark: true })
     const dark = await mountPage(Page)
 
@@ -183,7 +172,7 @@ describe('pages/contact', () => {
 
     await submit(wrapper)
 
-    expect(requestsTo(stub.requests, CONTACT_PATH)).toHaveLength(0)
+    expect(requestsTo(stub().requests, CONTACT_PATH)).toHaveLength(0)
     expect(wrapper.find('[data-testid="contact-error"]').text()).toContain('contact.form.error.consentRequired')
   })
 
@@ -194,7 +183,7 @@ describe('pages/contact', () => {
 
     await submit(wrapper)
 
-    const [sent] = requestsTo(stub.requests, CONTACT_PATH)
+    const [sent] = requestsTo(stub().requests, CONTACT_PATH)
     expect(sent?.method).toBe('POST')
     expect(JSON.parse(sent?.body ?? '')).toEqual(expect.objectContaining({
       name: 'Ada Lovelace',
@@ -223,7 +212,7 @@ describe('pages/contact', () => {
   })
 
   it('shows the API sentence when the message is refused and keeps what was typed', async () => {
-    table[`POST ${CONTACT_PATH}`] = { status: 502, body: { detail: 'The inbox is not configured.' } }
+    replies[`POST ${CONTACT_PATH}`] = { status: 502, body: { detail: 'The inbox is not configured.' } }
     const wrapper = await mountPage(Page)
     await fillForm(wrapper)
     await tickConsent(wrapper)
@@ -236,7 +225,7 @@ describe('pages/contact', () => {
   })
 
   it('renders the API field message under its field', async () => {
-    table[`POST ${CONTACT_PATH}`] = { status: 400, body: { errors: { email: ['Enter a valid address.'] } } }
+    replies[`POST ${CONTACT_PATH}`] = { status: 400, body: { errors: { email: ['Enter a valid address.'] } } }
     const wrapper = await mountPage(Page)
     await fillForm(wrapper)
     await tickConsent(wrapper)

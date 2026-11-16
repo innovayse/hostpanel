@@ -6,12 +6,15 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraGuarantees from '~/templates/aurora/sections/AuroraGuarantees.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SETTING_ON } from '~/constants/settingValue'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
 import { balancedColumns } from '~/utils/balancedGrid'
 
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
+
 describe('AuroraGuarantees', () => {
-  it('renders a card for each promise that is set', () => {
-    stubAuroraGlobals({
+  it('renders a card for each promise that is set', async () => {
+    await loadGlobals({
       settings: { [PortalSettingKey.MigrationFree]: SETTING_ON, [PortalSettingKey.GuaranteeMoneyBackDays]: '30' },
     })
 
@@ -22,14 +25,14 @@ describe('AuroraGuarantees', () => {
     expect(wrapper.find('[data-testid="guarantee-no_hidden_fees"]').exists()).toBe(false)
   })
 
-  it('renders nothing when no promise is set', () => {
-    stubAuroraGlobals()
+  it('renders nothing when no promise is set', async () => {
+    await loadGlobals()
 
     expect(mountWithKit(AuroraGuarantees).find('[data-testid="aurora-guarantees"]').exists()).toBe(false)
   })
 
-  it('lays the cards out in the balanced grid', () => {
-    stubAuroraGlobals({
+  it('lays the cards out in the balanced grid', async () => {
+    await loadGlobals({
       settings: {
         [PortalSettingKey.MigrationFree]: SETTING_ON,
         [PortalSettingKey.GuaranteeMoneyBackDays]: '14',

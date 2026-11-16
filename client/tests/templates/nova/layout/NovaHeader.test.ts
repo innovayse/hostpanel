@@ -7,8 +7,11 @@ import { useCartStore } from '~/stores/cart'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import NovaHeader from '~/templates/nova/layout/NovaHeader.vue'
 import { NAV_ITEMS } from '~/templates/nova/content'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
+
+/** The stub server and the loader of the template globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useTemplateGlobals()
 
 /**
  * Mounts the header in the document so focus and document listeners work.
@@ -20,8 +23,8 @@ const mountHeader = (props: Record<string, unknown> = {}) =>
   mountWithKit(NovaHeader, { props, attachToBody: true })
 
 describe('NovaHeader', () => {
-  it('links every navigation entry and marks the current one', () => {
-    stubTemplateGlobals()
+  it('links every navigation entry and marks the current one', async () => {
+    await loadGlobals()
     const wrapper = mountHeader({ active: NAV_ITEMS[1]!.key })
 
     for (const item of NAV_ITEMS) {
@@ -31,22 +34,22 @@ describe('NovaHeader', () => {
     expect(wrapper.find(`[data-testid="nova-nav-${NAV_ITEMS[0]!.key}"]`).attributes('aria-current')).toBeUndefined()
   })
 
-  it('points the skip link at the page main region', () => {
-    stubTemplateGlobals()
+  it('points the skip link at the page main region', async () => {
+    await loadGlobals()
 
     expect(mountHeader().find('[data-testid="nova-skip-link"]').attributes('href')).toBe('#nova-main')
   })
 
-  it('draws the bundled cube mark and the site name, never a letter tile, when no logo is uploaded', () => {
-    stubTemplateGlobals({ siteName: 'Acme Host' })
+  it('draws the bundled cube mark and the site name, never a letter tile, when no logo is uploaded', async () => {
+    await loadGlobals({ siteName: 'Acme Host' })
     const logo = mountHeader().find('[data-testid="nova-nav-logo"]')
 
     expect(logo.text()).toBe('Acme Host')
     expect(logo.find('[data-testid="app-logo-mark"]').attributes('src')).toContain('/favicon.svg')
   })
 
-  it('renders the uploaded logo instead of the mark', () => {
-    stubTemplateGlobals({ logo: '/api/uploads/logo.png' })
+  it('renders the uploaded logo instead of the mark', async () => {
+    await loadGlobals({ logo: '/api/uploads/logo.png' })
     const logo = mountHeader().find('[data-testid="nova-nav-logo"]')
 
     expect(logo.find('[data-testid="app-logo-light"]').attributes('src')).toBe('/api/uploads/logo.png')
@@ -54,7 +57,7 @@ describe('NovaHeader', () => {
   })
 
   it('shows the cart count only when the cart has lines', async () => {
-    stubTemplateGlobals()
+    await loadGlobals()
     const wrapper = mountHeader()
 
     expect(wrapper.find('[data-testid="nova-nav-cart-count"]').exists()).toBe(false)
@@ -66,14 +69,14 @@ describe('NovaHeader', () => {
     expect(wrapper.find('[data-testid="nova-nav-cart-count"]').text()).toBe('2')
   })
 
-  it('sends the sign-in action to the deployment-chosen target', () => {
-    stubTemplateGlobals()
+  it('sends the sign-in action to the deployment-chosen target', async () => {
+    await loadGlobals()
 
     expect(mountHeader().find('[data-testid="nova-nav-login"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })
 
   it('opens the mobile panel with aria-expanded and closes it on Escape, returning focus', async () => {
-    stubTemplateGlobals()
+    await loadGlobals()
     const wrapper = mountHeader()
     const toggle = wrapper.find('[data-testid="nova-nav-menu-toggle"]')
 
@@ -92,7 +95,7 @@ describe('NovaHeader', () => {
   })
 
   it('closes the panel when a mobile link is followed', async () => {
-    stubTemplateGlobals()
+    await loadGlobals()
     const wrapper = mountHeader()
 
     await wrapper.find('[data-testid="nova-nav-menu-toggle"]').trigger('click')
@@ -102,7 +105,7 @@ describe('NovaHeader', () => {
   })
 
   it('wraps Tab from the last panel entry back to the first', async () => {
-    stubTemplateGlobals()
+    await loadGlobals()
     const wrapper = mountHeader()
 
     await wrapper.find('[data-testid="nova-nav-menu-toggle"]').trigger('click')

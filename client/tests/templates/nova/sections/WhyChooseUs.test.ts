@@ -9,7 +9,10 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import WhyChooseUs from '~/templates/nova/sections/WhyChooseUs.vue'
 import { WHY_FEATURES } from '~/templates/nova/content'
 import type { Feature } from '~/templates/nova/types/feature'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
+
+/** The stub server and the loader of the template globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useTemplateGlobals()
 
 /**
  * Counts the features that do not wait on an operator setting.
@@ -20,8 +23,8 @@ import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 const ungated = (features: readonly Feature[]): number => features.filter(feature => !feature.requiresSetting).length
 
 describe('WhyChooseUs', () => {
-  it('lists every ungated card under an h2', () => {
-    stubTemplateGlobals()
+  it('lists every ungated card under an h2', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(WhyChooseUs)
 
     expect(wrapper.find('h2').text()).toBe('nova.why.title')

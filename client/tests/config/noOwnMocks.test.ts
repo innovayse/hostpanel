@@ -6,10 +6,9 @@
  *
  * Two forms of replacing are caught. `vi.mock` and `vi.doMock` of a module of ours are refused outright.
  * `vi.stubGlobal` of one of our own auto-imported composables or stores is the same replacement by
- * another API (a Nuxt auto-import is a global under test), and it is refused too, except in the files of
- * {@link KNOWN_REMAINDER}: the tests written before this guard existed that still fake a composable of
- * ours. That list may only shrink. A file that no longer fakes one fails the guard until it is removed
- * from the list, and a new file that fakes one fails until it uses the real composable instead.
+ * another API (a Nuxt auto-import is a global under test), and it is refused too, in every file: a test that
+ * needs one uses the real composable. The one global stand-in file, `vitest.setup.ts`, is read as well and may
+ * define no composable or store of ours.
  * Stubbing a Nuxt or Vue framework global (`useRoute`, `useHead`, `useCookie`, `navigateTo`, `fetch` and so on)
  * is not replacing code of ours and is always allowed, and so is registering the real composable under its own
  * name (`vi.stubGlobal('useX', useX)`), which only makes the real one reachable as the global it is in the app.
@@ -64,23 +63,11 @@ const EXPORTED_NAME = /export\s+(?:const|function|async function)\s+([A-Za-z0-9_
 /** The start of a specifier that names a module of ours: an alias, a relative path or an import map entry. */
 const OWN_MODULE = /^(?:~|@\/|\.|#)/
 
-/**
- * The client tests that still replace a composable or store of ours with `vi.stubGlobal`, relative to
- * `client/tests`. Each one is a test to convert to the real composable; the list may only shrink.
- */
-const KNOWN_REMAINDER: readonly string[] = [
-  'helpers/authScreens.ts',
-  'helpers/publicPage.ts',
-  'helpers/templateGlobals.ts',
-  'pages/about.test.ts',
-  'pages/checkout/index.test.ts',
-  'pages/contact.test.ts',
-  'pages/cookie-policy.test.ts',
-  'pages/domains/index.test.ts',
-  'pages/hosting/index.test.ts',
-  'pages/index.test.ts',
-  'templates/aurora/auroraGlobals.ts',
-]
+/** The global test setup, which defines the Nuxt auto-imports a unit test lacks. */
+const SETUP_FILE = join(CLIENT_ROOT, 'vitest.setup.ts')
+
+/** A stand-in the setup defines as a global by name (`define('useX', ...)`), the name captured in group 2. */
+const SETUP_DEFINITION = /\bdefine\(\s*(['"`])([^'"`]+)\1/g
 
 /**
  * Lists every `.ts` file under a folder, skipping dependencies and build output.
@@ -141,6 +128,16 @@ const importsRealModule = (text: string, name: string): boolean =>
     REAL_SOURCE.test(statement[3] ?? '') &&
     (statement[1] ?? '').split(',').some((specifier) => specifier.trim().replace(/^type\s+/, '') === name)
   )
+
+/**
+ * Finds the globals of ours that the setup file defines as stand-ins.
+ *
+ * @param text - Contents of the setup file.
+ * @param ownNames - The auto-imported names the client defines itself.
+ * @returns The names defined, empty when the setup stands in for nothing of ours.
+ */
+const ownSetupDefinitions = (text: string, ownNames: ReadonlySet<string>): string[] =>
+  [...text.matchAll(SETUP_DEFINITION)].map((match) => match[2] ?? '').filter((name) => ownNames.has(name))
 
 /**
  * Reads the body of the object literal that opens at an index.
@@ -208,7 +205,7 @@ const OWN_AUTO_IMPORTS: ReadonlySet<string> = new Set(
  * The path of a test relative to the tests folder, with forward slashes.
  *
  * @param path - Absolute path of a test file.
- * @returns The path as the known list spells it.
+ * @returns The path as the test names spell it.
  */
 const testPath = (path: string): string => relative(TESTS_ROOT, path).replace(/\\/g, '/')
 
@@ -225,7 +222,7 @@ describe('no mocks of our own modules in the client tests', () => {
     expect(ownMocks(readFileSync(path, 'utf8'))).toEqual([])
   })
 
-  it.each(SOURCES.filter((path) => !KNOWN_REMAINDER.includes(testPath(path))).map((path) => [testPath(path), path]))(
+  it.each(SOURCES.map((path) => [testPath(path), path]))(
     '%s fakes no composable or store of ours as a global',
     (_name, path) => {
       expect(ownGlobalStubs(readFileSync(path, 'utf8'), OWN_AUTO_IMPORTS)).toEqual([])
@@ -236,10 +233,16 @@ describe('no mocks of our own modules in the client tests', () => {
     expect(fakedRegistrations(readFileSync(path, 'utf8'))).toEqual([])
   })
 
-  it.each(KNOWN_REMAINDER.map((name) => [name]))('%s still fakes one, so it stays on the known list', (name) => {
-    const path = join(TESTS_ROOT, name)
-    expect(existsSync(path)).toBe(true)
-    expect(ownGlobalStubs(readFileSync(path, 'utf8'), OWN_AUTO_IMPORTS)).not.toEqual([])
+  it('stands in for no composable or store of ours in the global test setup', () => {
+    expect(ownSetupDefinitions(readFileSync(SETUP_FILE, 'utf8'), OWN_AUTO_IMPORTS)).toEqual([])
+  })
+
+  it('catches a composable of ours defined as a setup stand-in and leaves the Nuxt ones alone', () => {
+    const own = new Set(['useSiteIdentity'])
+
+    expect(ownSetupDefinitions(`define('useSiteIdentity', () => ({}))`, own)).toEqual(['useSiteIdentity'])
+    expect(ownSetupDefinitions(`define("useSiteIdentity", () => ({}))`, own)).toEqual(['useSiteIdentity'])
+    expect(ownSetupDefinitions(`define('useRoute', () => ({}))`, own)).toEqual([])
   })
 
   it('catches a store, a composable and a relative module being mocked', () => {

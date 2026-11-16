@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import Page from '~/pages/announcements/[id].vue'
 import { ContentPath, announcementPath } from '~/tests/helpers/contentPaths'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, mountPage, publishedSchemas, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -79,29 +79,27 @@ describe('pages/announcements/[id]', () => {
     expect(requestsTo(stub.requests, ContentPath.Announcements)).toHaveLength(0)
   })
 
-  it('gives the head a getter with a plain separator and a text-only description', async () => {
+  it('sets the head with a plain separator and a text-only description', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    const options = (spies.useSeo.mock.calls[0]![0] as () => Record<string, unknown>)()
-    expect(options).toEqual({
+    const tags = seoTags(spies)
+    expect(tags).toMatchObject({
       title: 'Maintenance window | announcements.title',
       description: 'We will restart servers.',
-      type: SeoPageType.Article,
+      ogType: SeoPageType.Article,
     })
-    expect(String(options.title)).not.toMatch(/[–—]/)
-    expect(spies.useSeoMeta).not.toHaveBeenCalled()
+    expect(String(tags.title)).not.toMatch(/[–—]/)
   })
 
   it('publishes Article structured data with the publication date', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    const schema = (spies.injectSchema.mock.calls[0]![0] as () => object[])()
-    expect(schema).toEqual([
+    expect(publishedSchemas(spies)).toMatchObject([
       {
         '@type': 'Article',
         headline: 'Maintenance window',
         description: 'We will restart servers.',
-        url: 'https://portal.test/canonical',
+        url: `${PUBLIC_PAGE_BASE_URL}/`,
         datePublished: '2026-03-15T12:00:00Z',
       },
     ])

@@ -3,7 +3,7 @@
  * the visitor on to the signed-in transfer flow with what they typed.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import TransferPage from '~/pages/domains/transfer.vue'
 import DomainsTransfer from '~/components/domains/DomainsTransfer.vue'
@@ -86,6 +86,6 @@ describe('domain transfer page', () => {
   it('sets the head for the page', async () => {
     await mountTransfer()
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ path: '/domains/transfer' }))
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/domains/transfer`)
   })
 })

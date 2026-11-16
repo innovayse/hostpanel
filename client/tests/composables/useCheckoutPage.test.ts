@@ -23,6 +23,8 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
+import { usePortalSettings } from '~/composables/usePortalSettings'
+import { useSiteIdentity } from '~/composables/useSiteIdentity'
 import { clientInvoicePayPath } from '~/constants/clientRoutes'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
@@ -144,6 +146,8 @@ beforeEach(async () => {
   window.localStorage.clear()
   window.sessionStorage.clear()
   vi.stubGlobal('useHead', vi.fn())
+  vi.stubGlobal('usePortalSettings', usePortalSettings)
+  vi.stubGlobal('useSiteIdentity', useSiteIdentity)
   stubLocalePath()
   table = {
     [readOf(CatalogPath.BillingCurrencies)]: { body: [

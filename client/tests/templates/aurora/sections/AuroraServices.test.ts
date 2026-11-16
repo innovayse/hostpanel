@@ -6,27 +6,30 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraServices from '~/templates/aurora/sections/AuroraServices.vue'
 import { HOME_SECTION_SCROLL_MARGIN_CLASS } from '~/constants/homeSections'
 import { HomeSectionId } from '~/types/homesectionid'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 describe('AuroraServices', () => {
-  it('carries the anchor id the header links to, with room above it', () => {
-    stubAuroraGlobals()
+  it('carries the anchor id the header links to, with room above it', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraServices)
 
     expect(wrapper.attributes('id')).toBe(HomeSectionId.Services)
     expect(wrapper.classes()).toContain(HOME_SECTION_SCROLL_MARGIN_CLASS)
   })
 
-  it('keeps the full catalogue one click away', () => {
-    stubAuroraGlobals()
+  it('keeps the full catalogue one click away', async () => {
+    await loadGlobals()
     const link = mountWithKit(AuroraServices).find('[data-testid="services-view-all"]')
 
     expect(link.attributes('href')).toBe('/products')
     expect(link.text()).toBe('aurora.services.viewAll')
   })
 
-  it('renders the four services with their copy', () => {
-    stubAuroraGlobals()
+  it('renders the four services with their copy', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraServices)
 
     for (const tag of ['hosting', 'servers', 'domains', 'billing']) {
@@ -35,8 +38,8 @@ describe('AuroraServices', () => {
     expect(wrapper.text()).toContain('aurora.services.domainsBody')
   })
 
-  it('puts an icon, not a text tag, in every tile', () => {
-    stubAuroraGlobals()
+  it('puts an icon, not a text tag, in every tile', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraServices)
 
     for (const key of ['hosting', 'servers', 'domains', 'billing']) {
@@ -49,8 +52,8 @@ describe('AuroraServices', () => {
     expect(wrapper.text()).not.toContain('Tag')
   })
 
-  it('paints each tile from a gradient token, never an inline style', () => {
-    stubAuroraGlobals()
+  it('paints each tile from a gradient token, never an inline style', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraServices)
     const tile = wrapper.find('[data-testid="service-card-hosting"]').find('.place-items-center')
 

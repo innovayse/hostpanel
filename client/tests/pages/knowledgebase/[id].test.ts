@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import Page from '~/pages/knowledgebase/[id].vue'
 import { kbArticlePath } from '~/tests/helpers/contentPaths'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, mountPage, publishedSchemas, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import { routeTable } from '~/tests/helpers/stubRoutes'
@@ -81,25 +81,23 @@ describe('pages/knowledgebase/[id]', () => {
     expect(wrapper.find('[data-testid="kb-back"]').attributes('href')).toBe('/en/knowledgebase')
   })
 
-  it('gives the head a getter that follows the article, with a plain separator in the title', async () => {
+  it('sets the head from the article, with a plain separator in the title', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    const options = (spies.useSeo.mock.calls[0]![0] as () => Record<string, unknown>)()
-    expect(options).toEqual({
+    const tags = seoTags(spies)
+    expect(tags).toMatchObject({
       title: 'Point a domain at your server | kb.title',
       description: 'Change the DNS records',
-      type: SeoPageType.Article,
+      ogType: SeoPageType.Article,
     })
-    expect(String(options.title)).not.toMatch(/[–—]/)
-    expect(spies.useSeoMeta).not.toHaveBeenCalled()
+    expect(String(tags.title)).not.toMatch(/[–—]/)
   })
 
   it('publishes Article structured data for the article at its canonical URL', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    const schema = (spies.injectSchema.mock.calls[0]![0] as () => object[])()
-    expect(schema).toEqual([
-      { '@type': 'Article', headline: 'Point a domain at your server', description: 'Change the DNS records', url: 'https://portal.test/canonical' },
+    expect(publishedSchemas(spies)).toMatchObject([
+      { '@type': 'Article', headline: 'Point a domain at your server', description: 'Change the DNS records', url: `${PUBLIC_PAGE_BASE_URL}/` },
     ])
   })
 

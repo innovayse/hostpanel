@@ -2,13 +2,17 @@
  * Unit tests for the checkout page: it owns only the route and renders whichever checkout
  * component the active template provides.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { stubTemplateSlots } from '~/tests/helpers/templateSlots'
+import { useTemplate } from '~/composables/useTemplate'
 import CheckoutPage from '~/pages/checkout/index.vue'
+import { TemplateSlot } from '~/types/templateslot'
 
-/** The template slots the page asked for. */
-const requestedSlots: string[] = []
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useTemplate })
 
 /** Stand-in for the template's checkout component. */
 const TemplateCheckout = defineComponent({
@@ -17,26 +21,13 @@ const TemplateCheckout = defineComponent({
 })
 
 describe('checkout page', () => {
-  beforeEach(() => {
-    requestedSlots.length = 0
-    vi.stubGlobal('useTemplate', () => ({
-      /**
-       * Records the requested slot and answers with the stood-in checkout.
-       *
-       * @param name The slot name.
-       * @returns The stood-in component.
-       */
-      slot: (name: string) => {
-        requestedSlots.push(name)
-        return TemplateCheckout
-      },
-    }))
-  })
+  it('renders the checkout component of the active template', async () => {
+    const requestedSlots = stubTemplateSlots({ [TemplateSlot.Checkout]: TemplateCheckout })
+    await loadPortalSettings(replies)
 
-  it('renders the checkout component of the active template', () => {
     const wrapper = mountWithKit(CheckoutPage)
 
-    expect(requestedSlots).toEqual(['checkout'])
+    expect(requestedSlots).toEqual([TemplateSlot.Checkout])
     expect(wrapper.find('[data-testid="template-checkout"]').exists()).toBe(true)
   })
 })

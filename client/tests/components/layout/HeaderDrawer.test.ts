@@ -5,24 +5,22 @@
  * The real auth store, API composable and transport run against a stub server playing the BFF;
  * only the two pickers are stood in for.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderDrawer from '~/components/layout/HeaderDrawer.vue'
 import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { CLIENT_INVOICES_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
-import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { requestsTo, writeOf } from '~/tests/helpers/stubRoutes'
 import type { HeaderNavItem } from '~/types/headernavitem'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
-/** The stub playing the BFF. */
-let stub: StubServer
+/** The stub server and the loader of the template globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useTemplateGlobals()
 
 /** Stand-in for the language switcher, which needs the i18n runtime. */
 const LanguageSwitcherStub = defineComponent({
@@ -69,12 +67,8 @@ const mountDrawer = (path = '/en/') => mountWithKit(LayoutHeaderDrawer, {
 
 describe('LayoutHeaderDrawer', () => {
   beforeEach(async () => {
-    stubTemplateGlobals()
-    stub = await startTransport(routeTable({ [writeOf(AccountEndpoint.Logout)]: { body: {} } }))
-  })
-
-  afterEach(async () => {
-    await stub.close()
+    replies[writeOf(AccountEndpoint.Logout)] = { body: {} }
+    await loadGlobals()
   })
 
   it('renders nothing while closed', () => {
@@ -167,7 +161,7 @@ describe('LayoutHeaderDrawer', () => {
 
     await wrapper.find('[data-testid="header-drawer-sign-out"]').trigger('click')
 
-    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub().requests, AccountEndpoint.Logout)).toHaveLength(1))
     await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
   })

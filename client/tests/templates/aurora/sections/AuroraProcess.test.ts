@@ -6,11 +6,14 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraProcess from '~/templates/aurora/sections/AuroraProcess.vue'
 import { HOME_SECTION_SCROLL_MARGIN_CLASS } from '~/constants/homeSections'
 import { HomeSectionId } from '~/types/homesectionid'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 describe('AuroraProcess', () => {
-  it('renders the four steps in order with their copy', () => {
-    stubAuroraGlobals()
+  it('renders the four steps in order with their copy', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraProcess)
 
     for (const n of ['01', '02', '03', '04']) {
@@ -20,8 +23,8 @@ describe('AuroraProcess', () => {
     expect(wrapper.find('[data-testid="process-step-02"]').text()).toContain('aurora.process.step2Body')
   })
 
-  it('renders the headline and the anchor id the header links to', () => {
-    stubAuroraGlobals()
+  it('renders the headline and the anchor id the header links to', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraProcess)
 
     expect(wrapper.find('h2').text()).toBe('aurora.process.title')
@@ -29,8 +32,8 @@ describe('AuroraProcess', () => {
     expect(wrapper.classes()).toContain(HOME_SECTION_SCROLL_MARGIN_CLASS)
   })
 
-  it('keeps the intro column sticky from lg up and shows both calls to action', () => {
-    stubAuroraGlobals()
+  it('keeps the intro column sticky from lg up and shows both calls to action', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraProcess)
 
     expect(wrapper.find('[data-testid="process-aside"]').classes()).toEqual(expect.arrayContaining(['lg:sticky', 'lg:self-start']))

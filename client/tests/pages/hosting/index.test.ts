@@ -6,18 +6,19 @@
  *
  * @module tests/pages/hosting/index.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { stubTemplateSlots } from '~/tests/helpers/templateSlots'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
-import { routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
 import HostingPage from '~/pages/hosting/index.vue'
+import { useTemplate } from '~/composables/useTemplate'
 import { PricingCycle } from '~/types/pricingcycle'
+import { TemplateSlot } from '~/types/templateslot'
 import { buildComparisonRows } from '~/utils/comparisonRows'
 import type { PortalProduct } from '~/types/portalproduct'
 
@@ -44,8 +45,8 @@ const TemplateHosting = defineComponent({
 /** What the stood-in runtime recorded for the current test. */
 let spies: PublicPageSpies
 
-/** The stub playing the BFF. */
-let stub: StubServer
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useTemplate })
 
 /**
  * Mounts the page and lets the catalogue and the currencies load.
@@ -61,18 +62,15 @@ const mountHosting = async () => {
 describe('hosting page', () => {
   beforeEach(async () => {
     spies = stubPublicPageRuntime()
-    vi.stubGlobal('useTemplate', () => ({ slot: () => TemplateHosting }))
+    stubTemplateSlots({ [TemplateSlot.Hosting]: TemplateHosting })
     vi.stubGlobal('buildComparisonRows', buildComparisonRows)
     window.localStorage.clear()
-    stub = await startTransport(routeTable({
+    Object.assign(replies, {
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`GET ${CatalogPath.Products}`]: { body: plans },
       [`GET ${CatalogPath.ProductFeatures}`]: { body: [] },
-    }))
-  })
-
-  afterEach(async () => {
-    await stub.close()
+    })
+    await loadPortalSettings(replies)
   })
 
   it('renders the template component with one plan card per hosting plan', async () => {
@@ -107,6 +105,6 @@ describe('hosting page', () => {
   it('sets the canonical head for the page', async () => {
     await mountHosting()
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ path: '/hosting' }))
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/hosting`)
   })
 })

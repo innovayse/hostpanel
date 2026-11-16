@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-16
+
 ### Fixed
 
+- Docs: the documentation app starts again on a site whose Content Security Policy has no `unsafe-eval`. The Edit this page link was a function in the config, which VitePress writes into the site data as source text for the browser to rebuild with `new Function`; it is now a plain pattern, and a page served from the fallback folder still links to its real source file. A docs test refuses any function in the resolved config.
 - SSH key agent 1.4.0: a new `remove-jail` operation removes the SSH jail and its home mount unit of an account the hosting panel has already deleted (it refuses while the account exists and while anything is still mounted inside the jail, and removes the tree on its own filesystem only). HostPanel asks for it after it terminated a service's hosting account. Before, every terminated jailed account left its jail and an enabled systemd mount unit on the server, because the agent keeps a jail for cheap re-enrolment.
 
 ### Fixed
@@ -368,7 +371,8 @@ Upgrade notes, read before upgrading:
 - Backend sources were tracked as a submodule; they are now part of the repository.
 - Repository URLs in the README and clone instructions.
 
-[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/innovayse/hostpanel/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/innovayse/hostpanel/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/innovayse/hostpanel/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/innovayse/hostpanel/compare/v0.3.0...v0.3.1

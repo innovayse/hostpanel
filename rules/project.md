@@ -2134,9 +2134,12 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   `RETRY_PAUSE_SECONDS`. The image pushes of `.build-image` and every `docker compose pull` of the stage, demo and
   production deploys go through it; the fetch of the target commit in `.fetch-target-commit` keeps its own small
   loop, because that job has no checkout of the repository yet (and `$DEPLOY_DIR` is empty on the first deploy);
-  each of its attempts is wrapped in `timeout -k 10 600`, so a hung fetch cannot hold the job. After a killed attempt
-  (status 124 or 137) it removes the lock files git leaves in `.git` (`shallow.lock`, `index.lock`), and a status of 125
-  to 127 stops it at once, like in the retry script.
+  each of its attempts is wrapped in `timeout -k 10 600`, so a hung fetch cannot hold the job. Before the first attempt
+  and after a killed one (status 124 or 137) it removes the lock files git leaves in `.git`, only by name
+  (`shallow.lock`, `index.lock`, `HEAD.lock`), never every `*.lock`, so the lock of a background `git gc` stays. The
+  first clean up covers a lock left by an earlier job that was cancelled during its fetch, and it is safe because the
+  deploy jobs run one at a time per `resource_group`. A status of 125 to 127 stops the loop at once, like in the retry
+  script.
   A command that cannot run (status 125 to 127) is not retried. The last message of a failure says whether the final
   attempt timed out or was killed (status 124 or 137), could not run, or exited with another status.
   `scripts/test-retry-bounded.sh` tests it, and `scripts/test-deploy-rollback.sh` runs the real
@@ -2224,7 +2227,10 @@ handler leaves the running stack alone without `fetched` (the deploy changed not
 with `fetched` alone (a pull failed, no container was touched), and rolls back checkout and containers when
 `recreating` exists. It removes both markers on the way out, on success too. Restoring the checkout runs
 `scripts/clear-stale-submodule-dirs.sh` only when the commit being restored has it (an older commit does not, and
-the rollback goes on, printing that the step is skipped), and prints a `WARNING` when the restore itself fails.
+the rollback goes on, printing that the step is skipped). When the restore itself fails it prints a `WARNING` and
+carries on, so the containers are still put back to the recorded images. The whole handler runs under the runner's
+`after_script` limit, which is separate from the job `timeout:` (5 minutes unless the runner sets another), so the
+rollback, its health wait included, has to fit in it.
 
 **The host version is the release tag, never the Dockerfile placeholder.** The API image takes its version from the
 `VERSION` build argument (`HostVersion` in `backend/src/Directory.Build.props`), and the host reports it as its own

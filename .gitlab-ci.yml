@@ -236,12 +236,21 @@ variables:
 # first deploy, so no script of the repository exists yet when it runs. Each attempt is wrapped in GNU `timeout`
 # (the host has it) for the same reason as the pushes: a fetch that hangs would otherwise hold the job for the
 # whole job timeout. 600 s per attempt, and the kill follows 10 s after the first signal.
-# A fetch that was killed (status 124 or 137) can leave a lock file of git (shallow.lock, index.lock, HEAD.lock)
-# that makes the next attempt fail at once, so those are removed before the next attempt. Status 125 to 127 means
-# the command cannot run at all (as in scripts/retry-bounded.sh), so the loop stops there instead of retrying.
+# A fetch that was killed (status 124 or 137) can leave a lock file of git behind, and so can an earlier job that
+# was cancelled during its fetch. Either makes every attempt fail at once with "File exists", so the named locks
+# (shallow.lock, index.lock, HEAD.lock) are removed before the first attempt and again after a killed one. Only
+# those names are removed, never every *.lock, so the lock of a background `git gc` stays. Clearing them is safe
+# because the deploy jobs that use this fetch run one at a time (resource_group). Status 125 to 127 means the
+# command cannot run at all (as in scripts/retry-bounded.sh), so the loop stops there instead of retrying.
 .fetch-target-commit:
   script:
     - |
+      clear_git_locks() {
+        for lock in shallow.lock index.lock HEAD.lock; do
+          rm -f "$DEPLOY_DIR/.git/$lock"
+        done
+      }
+      clear_git_locks
       attempt=1
       while :; do
         status=0
@@ -255,7 +264,7 @@ variables:
             exit 1
             ;;
           124|137)
-            find "$DEPLOY_DIR/.git" -maxdepth 1 -name '*.lock' -type f -delete
+            clear_git_locks
             ;;
         esac
         if [ "$attempt" -ge 4 ]; then

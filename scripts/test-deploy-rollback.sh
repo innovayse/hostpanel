@@ -9,8 +9,9 @@
 #     the containers were being recreated (both restores clear stale submodule folders first), does nothing
 #     on a failure with nothing recorded, and removes the markers on success and on failure.
 #
-# The shared fetch loop (.fetch-target-commit) is tested the same way: a killed fetch loses its stale git locks
-# before the next attempt, and a fetch that cannot run (status 125 to 127) is not retried.
+# The shared fetch loop (.fetch-target-commit) is tested the same way: the named git locks (shallow.lock, index.lock,
+# HEAD.lock) are removed before the first attempt and after a killed one, any other lock name is kept, and a fetch
+# that cannot run (status 125 to 127) is not retried.
 #
 # It also checks the order of the deploy script: the fetch, the fetched marker and the checkout, then the retried
 # pull, the recreating marker and the start of the containers.
@@ -39,17 +40,20 @@ expect() {
 # default deploy:prod, without the YAML indentation. A comment line indented by four spaces or less (between the
 # items, or before the next key) belongs to no item and never ends the key; one indented deeper is a line of the
 # item's own script. Prints nothing and fails when the key does not hold exactly one such item.
+# With $3 set to `all` it prints instead every line of the key that is not a comment, indentation kept, whatever
+# the number of items, for a key made of several items such as the script of deploy:prod.
 block() {
-  awk -v key="$1" -v name="${2:-deploy:prod}" '
+  awk -v key="$1" -v name="${2:-deploy:prod}" -v all="${3:-}" '
     { sub(/[[:cntrl:]]$/, "") }
     $0 == name ":" { job = 1; next }
     job && /^[^ #]/ { job = 0; inside = 0 }
     job && $0 == "  " key ":" { inside = 1; next }
-    inside && /^ *#/ { match($0, /^ */); if (RLENGTH <= 4) { next } }
+    inside && /^ *#/ { match($0, /^ */); if (RLENGTH <= 4 || all == "all") { next } }
     inside && /^  [^ ]/ { inside = 0 }
+    inside && all == "all" { print; next }
     inside && /^    - / { items++; piped = ($0 == "    - |"); next }
     inside && items == 1 && piped { sub(/^      /, ""); body = body $0 "\n"; next }
-    END { if (items != 1 || !piped) { exit 1 } printf "%s", body }
+    END { if (all != "all" && (items != 1 || !piped)) { exit 1 } printf "%s", body }
   ' "$ROOT/.gitlab-ci.yml"
 }
 
@@ -66,18 +70,6 @@ extract() {
 
 extract before_script before.sh
 extract after_script handler.sh
-
-# Prints the lines of the `script` key of deploy:prod that are not comments, without the YAML indentation.
-script_lines() {
-  awk '
-    { sub(/[[:cntrl:]]$/, "") }
-    /^deploy:prod:/ { job = 1; next }
-    job && /^[^ #]/ { job = 0; inside = 0 }
-    job && $0 == "  script:" { inside = 1; next }
-    inside && /^  [^ ]/ { inside = 0 }
-    inside && $0 !~ /^ *#/ { print }
-  ' "$ROOT/.gitlab-ci.yml"
-}
 
 # Prints yes when each text given after the file $1 is found, as a fixed string, on a line of that file, the
 # second after the line of the first and so on.
@@ -98,7 +90,7 @@ in_order() {
 # The markers only protect the deploy when they are written at these points, so the order of the script is
 # checked: the fetch, then the fetched marker, then the checkout; the pull through the shared retry script, then
 # the recreating marker, then the start of the containers.
-script_lines > "$WORK/script.txt"
+block script deploy:prod all > "$WORK/script.txt"
 expect "the deploy script writes the fetched marker between the fetch and the checkout" "yes" \
   "$(in_order "$WORK/script.txt" '!reference [.fetch-target-commit, script]' 'touch "$DEPLOY_DIR/.deploy/fetched"' 'checkout -f "$CI_COMMIT_SHA"')"
 expect "the deploy script writes the recreating marker between the retried pull and the start" "yes" \
@@ -305,8 +297,9 @@ expect "a successful job removes the recreating marker" "no" "$(exists "$WORK/de
 
 # ── .fetch-target-commit: the bounded fetch loop ──────────────────────────────────────────────────
 # A fake timeout stands in for `timeout ... git fetch`: it answers with the next status of $WORK/fetch-statuses
-# (one per line, 0 when the list is used up) and records whether a git lock file existed when it was called. A
-# fake sleep keeps the pauses out of the test.
+# (one per line, 0 when the list is used up), records whether the shallow lock existed when it was called, and
+# leaves the shallow and index locks behind when it fails, the way a killed or failed git does. A fake sleep keeps
+# the pauses out of the test.
 if block script .fetch-target-commit > "$WORK/fetch.sh"; then found=yes; else found=no; fi
 expect ".fetch-target-commit script is exactly one block in .gitlab-ci.yml" "yes" "$found"
 cat > "$WORK/bin/timeout" <<FAKE
@@ -315,19 +308,26 @@ count=\$(( \$(cat "$WORK/fetch-count" 2>/dev/null || echo 0) + 1 ))
 echo "\$count" > "$WORK/fetch-count"
 echo "fetch \$count lock=\$([ -e "$WORK/deploy/.git/shallow.lock" ] && echo yes || echo no)" >> "$WORK/calls"
 status=\$(sed -n "\${count}p" "$WORK/fetch-statuses")
+if [ "\${status:-0}" -ne 0 ]; then
+  : > "$WORK/deploy/.git/shallow.lock"
+  : > "$WORK/deploy/.git/index.lock"
+fi
 exit "\${status:-0}"
 FAKE
 printf '#!/usr/bin/env sh\nexit 0\n' > "$WORK/bin/sleep"
 chmod +x "$WORK/bin/timeout" "$WORK/bin/sleep"
 
-# Runs the fetch loop with the fetch statuses $1 (space separated), a stale lock and a config file in the .git of
-# the deploy directory. Prints the exit status of the loop.
+# Runs the fetch loop with the fetch statuses $1 (space separated), the stale locks of an earlier job (the three
+# named ones and packed-refs.lock, which is not named), and a config file in the .git of the deploy directory.
+# Prints the exit status of the loop.
 run_fetch() {
   prepare no no no
   rm -f "$WORK/fetch-count"
   mkdir -p "$WORK/deploy/.git"
   : > "$WORK/deploy/.git/shallow.lock"
   : > "$WORK/deploy/.git/index.lock"
+  : > "$WORK/deploy/.git/HEAD.lock"
+  : > "$WORK/deploy/.git/packed-refs.lock"
   : > "$WORK/deploy/.git/config"
   printf '%s\n' $1 > "$WORK/fetch-statuses"
   PATH="$WORK/bin:$PATH" DEPLOY_DIR="$WORK/deploy" CI_REPOSITORY_URL=https://git.example/repo CI_COMMIT_SHA=abc123 \
@@ -337,12 +337,18 @@ run_fetch() {
 
 expect "a fetch that succeeds ends cleanly" "0" "$(run_fetch "0")"
 expect "a fetch that succeeds runs once" "1" "$(calls_matching '^fetch ')"
+expect "the first attempt starts without the stale shallow lock of an earlier job" "1" "$(calls_matching '^fetch 1 lock=no')"
+expect "the stale index lock of an earlier job is removed before the first attempt" "no" "$(exists "$WORK/deploy/.git/index.lock")"
+expect "the stale HEAD lock of an earlier job is removed before the first attempt" "no" "$(exists "$WORK/deploy/.git/HEAD.lock")"
+expect "a lock with another name stays before the first attempt" "yes" "$(exists "$WORK/deploy/.git/packed-refs.lock")"
+expect "a file of .git that is not a lock stays before the first attempt" "yes" "$(exists "$WORK/deploy/.git/config")"
 
 expect "a fetch killed once is retried and ends cleanly" "0" "$(run_fetch "124 0")"
 expect "a fetch killed once runs twice" "2" "$(calls_matching '^fetch ')"
 expect "the second attempt after a kill starts without the stale lock" "1" "$(calls_matching '^fetch 2 lock=no')"
 expect "the stale index lock is removed after a kill" "no" "$(exists "$WORK/deploy/.git/index.lock")"
 expect "a file of .git that is not a lock stays" "yes" "$(exists "$WORK/deploy/.git/config")"
+expect "a lock with another name stays after a kill" "yes" "$(exists "$WORK/deploy/.git/packed-refs.lock")"
 
 expect "a fetch killed with status 137 is retried" "0" "$(run_fetch "137 0")"
 expect "a fetch killed with status 137 removes the stale lock" "1" "$(calls_matching '^fetch 2 lock=no')"

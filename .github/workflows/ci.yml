@@ -124,6 +124,17 @@ jobs:
           HOSTPANEL_TEST_POSTGRES: "1"
         run: bash scripts/test-install-backup.sh
 
+  # The two deploy helper tests, the same ones as deploy-scripts:test in .gitlab-ci.yml: the bounded retry and
+  # the marker handling of the production deploy, which runs against a fake docker and git.
+  deploy-scripts:
+    name: Deploy helper scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - run: sh scripts/test-retry-bounded.sh
+      - run: sh scripts/test-deploy-rollback.sh
+
   image-version:
     name: Image version script
     runs-on: ubuntu-latest

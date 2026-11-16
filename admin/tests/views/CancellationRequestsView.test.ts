@@ -185,6 +185,7 @@ describe('CancellationRequestsView', () => {
     await wrapper.get('[data-testid="cancellations-filter"]').trigger('click')
     await flushPromises()
 
+    /** Reads the option values handed to the filter select with the given test id. */
     const optionsOf = (testid: string) =>
       (selectOf(wrapper, testid).props() as unknown as { options: { value: string }[] }).options.map((option) => option.value)
     expect(optionsOf('cancellations-filter-type')).toEqual(['', 'Immediate', 'EndOfBillingPeriod'])

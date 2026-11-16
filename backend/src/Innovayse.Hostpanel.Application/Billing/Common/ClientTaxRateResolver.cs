@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -14,18 +15,21 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 
 /// <summary>
-/// The one place that decides which tax rate a new invoice for a client is raised at. Every use case that creates a
-/// customer-facing invoice from lines asks it (<see cref="ApplyToAsync"/>), which fixes the answer on the invoice with
-/// <see cref="Invoice.ApplyTaxRate"/>, so a later change of the rules or of the client never alters an invoice that was issued.
+/// The one place that decides how a new invoice for a client is taxed. Every use case that creates a customer-facing
+/// invoice from lines asks it (<see cref="ApplyToAsync"/>, or <see cref="ForInvoiceAsync(ClientBriefDto, Invoice, CancellationToken)"/>
+/// and <see cref="Apply"/>), which fixes the answer on the invoice, so a later change of the rules or of the client never
+/// alters an invoice that was issued.
 /// </summary>
 /// <remarks>
-/// The rate is 0 when tax is switched off (<see cref="BillingSettingKeys.TaxEnabled"/>), when the client is tax exempt, or when the
-/// client has no country. For a consumer in an EU member state other than the seller's
-/// (<see cref="BillingSettingKeys.SellerCountry"/>), an invoice whose every line is a digital service is taxed at the standard VAT
-/// rate of the client's country that was in force on the invoice date (<see cref="VatRate"/>). Every other invoice takes the
-/// enabled tax rule of the client's region, or else the enabled country-wide rule, and none when no rule matches. A client who
-/// has a tax identification number is a business, not a consumer: the reverse charge decision for business clients does not
-/// belong here, so such a client keeps the rate of the tax rules.
+/// The rate is 0 when tax is switched off (<see cref="BillingSettingKeys.TaxEnabled"/>), when the client is tax exempt (the manual
+/// override, which wins over everything below), or when the client has no country. A business client whose VAT number last
+/// checked valid, in an EU country other than the seller's (<see cref="BillingSettingKeys.SellerCountry"/>) or in the United
+/// Kingdom, is invoiced under the reverse charge: rate 0, and the invoice states it and shows their number. A client in the
+/// seller's own country is taxed, and so is one whose number is invalid, never checked or missing. For a consumer (no tax
+/// identification number) in an EU member state other than the seller's, an invoice whose every line is a digital service is
+/// taxed at the standard VAT rate of the client's country that was in force on the invoice date (<see cref="VatRate"/>). Every
+/// other invoice takes the enabled tax rule of the client's region, or else the enabled country-wide rule, and none when no
+/// rule matches.
 /// </remarks>
 public sealed class ClientTaxRateResolver
 {
@@ -49,7 +53,7 @@ public sealed class ClientTaxRateResolver
         _bus = bus;
     }
 
-    /// <summary>Fixes the tax rate of a freshly raised invoice, after its lines are added and before any credit is applied to it.</summary>
+    /// <summary>Fixes the tax of a freshly raised invoice, after its lines are added and before any credit is applied to it.</summary>
     /// <param name="invoice">The new, still editable invoice of the client.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success, or <c>CLIENT_NOT_FOUND</c> when the invoice names no client record.</returns>
@@ -57,64 +61,121 @@ public sealed class ClientTaxRateResolver
     {
         ArgumentNullException.ThrowIfNull(invoice);
 
-        var rate = await ForInvoiceAsync(invoice, ct);
-        if (rate.IsFailure)
+        var treatment = await ForInvoiceAsync(invoice, ct);
+        if (treatment.IsFailure)
         {
-            return Result.FailureCode(rate.ErrorCode!);
+            return Result.FailureCode(treatment.ErrorCode!);
         }
 
-        invoice.ApplyTaxRate(rate.Value);
+        Apply(invoice, treatment.Value!);
         return Result.Success();
     }
 
-    /// <summary>The rate a new invoice is raised at, once its lines are added.</summary>
+    /// <summary>Fixes a treatment on an invoice: the reverse charge with the client's number, or the rate.</summary>
+    /// <param name="invoice">The new, still editable invoice.</param>
+    /// <param name="treatment">What <see cref="ForInvoiceAsync(ClientBriefDto, Invoice, CancellationToken)"/> answered for its client.</param>
+    public static void Apply(Invoice invoice, ClientTaxTreatment treatment)
+    {
+        ArgumentNullException.ThrowIfNull(invoice);
+        ArgumentNullException.ThrowIfNull(treatment);
+
+        if (treatment.ReverseChargeVatNumber is { } vatNumber)
+        {
+            invoice.ApplyReverseCharge(vatNumber);
+            return;
+        }
+
+        invoice.ApplyTaxRate(treatment.Rate);
+    }
+
+    /// <summary>Refuses a tax rate typed by hand on the invoice of a client whose tax is not the operator's to enter.</summary>
+    /// <param name="clientId">The client record's id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// Success when the client is liable to tax, <c>CLIENT_NOT_FOUND</c> when the id names no record,
+    /// <c>CLIENT_TAX_EXEMPT</c> for a tax exempt client, or <c>CLIENT_REVERSE_CHARGE_APPLIES</c> for one invoiced under the reverse charge.
+    /// </returns>
+    public async Task<Result> EnsureMayBeTaxedAsync(int clientId, CancellationToken ct)
+    {
+        var client = await _bus.FindClientBriefAsync(clientId, withEmail: false, ct);
+        if (client is null)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
+        }
+
+        if (client.Settings.TaxExempt)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.CLIENT_TAX_EXEMPT);
+        }
+
+        var (taxEnabled, sellerCountry) = await ReadTaxSwitchesAsync(ct);
+        return taxEnabled && IsReverseCharge(client, sellerCountry)
+            ? Result.FailureCode(HostpanelErrorCodes.CLIENT_REVERSE_CHARGE_APPLIES)
+            : Result.Success();
+    }
+
+    /// <summary>How a new invoice is taxed, once its lines are added.</summary>
     /// <param name="invoice">The new invoice of the client.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success with the rate in percent (0 when none applies), or <c>CLIENT_NOT_FOUND</c> when the invoice names no client record.</returns>
-    public async Task<Result<decimal>> ForInvoiceAsync(Invoice invoice, CancellationToken ct)
+    /// <returns>Success with the treatment, or <c>CLIENT_NOT_FOUND</c> when the invoice names no client record.</returns>
+    public async Task<Result<ClientTaxTreatment>> ForInvoiceAsync(Invoice invoice, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(invoice);
 
         var client = await _bus.FindClientBriefAsync(invoice.ClientId, withEmail: false, ct);
 
         return client is null
-            ? Result<decimal>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND)
+            ? Result<ClientTaxTreatment>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND)
             : Result.Success(await ForInvoiceAsync(client, invoice, ct));
     }
 
-    /// <summary>The rate a new invoice is raised at, for a caller that has read the client's brief already.</summary>
+    /// <summary>How a new invoice is taxed, for a caller that has read the client's brief already.</summary>
     /// <param name="client">The brief of the invoice's client.</param>
     /// <param name="invoice">The new invoice of the client, with its lines.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The rate in percent; 0 when none applies.</returns>
-    public async Task<decimal> ForInvoiceAsync(ClientBriefDto client, Invoice invoice, CancellationToken ct)
+    /// <returns>The treatment; rate 0 and no reverse charge when no tax applies.</returns>
+    public async Task<ClientTaxTreatment> ForInvoiceAsync(ClientBriefDto client, Invoice invoice, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(invoice);
 
         if (client.Settings.TaxExempt || string.IsNullOrWhiteSpace(client.Address.Country))
         {
-            return 0m;
+            return new ClientTaxTreatment(0m);
         }
 
-        var rows = await _settings.ReadRowsAsync([BillingSettingKeys.TaxEnabled, BillingSettingKeys.SellerCountry], ct);
-        if (!bool.Parse(_settings.Value(rows, BillingSettingKeys.TaxEnabled)))
+        var (taxEnabled, sellerCountry) = await ReadTaxSwitchesAsync(ct);
+        if (!taxEnabled)
         {
-            return 0m;
+            return new ClientTaxTreatment(0m);
+        }
+
+        if (IsReverseCharge(client, sellerCountry))
+        {
+            return new ClientTaxTreatment(0m, client.Settings.TaxId);
         }
 
         var country = client.Address.Country.Trim().ToUpperInvariant();
-        var sellerCountry = _settings.Value(rows, BillingSettingKeys.SellerCountry);
         if (IsDestinationRateDue(client, invoice, country, sellerCountry))
         {
             var vatRate = await StandardVatRateAsync(country, DateOnly.FromDateTime(invoice.InvoiceDate.UtcDateTime), ct);
             if (vatRate is { } destinationRate)
             {
-                return destinationRate;
+                return new ClientTaxTreatment(destinationRate);
             }
         }
 
-        return await RuleRateAsync(client, country, ct);
+        return new ClientTaxTreatment(await RuleRateAsync(client, country, ct));
+    }
+
+    /// <summary>Reads the two settings every tax decision starts from.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Whether tax is switched on, and the seller's country (empty when the operator has set none).</returns>
+    private async Task<(bool TaxEnabled, string SellerCountry)> ReadTaxSwitchesAsync(CancellationToken ct)
+    {
+        var rows = await _settings.ReadRowsAsync([BillingSettingKeys.TaxEnabled, BillingSettingKeys.SellerCountry], ct);
+
+        return (bool.Parse(_settings.Value(rows, BillingSettingKeys.TaxEnabled)), _settings.Value(rows, BillingSettingKeys.SellerCountry));
     }
 
     /// <summary>The standard VAT rate of a member state that was in force on a day.</summary>
@@ -139,11 +200,10 @@ public sealed class ClientTaxRateResolver
     /// <param name="client">The brief of the invoice's client.</param>
     /// <param name="invoice">The invoice, with its lines.</param>
     /// <param name="country">The client's country, upper case.</param>
-    /// <param name="sellerCountry">The seller's country, upper case, or empty when none is set.</param>
+    /// <param name="sellerCountry">The seller's country, or empty when none is set.</param>
     /// <returns><see langword="true"/> when the destination rate applies.</returns>
     private static bool IsDestinationRateDue(ClientBriefDto client, Invoice invoice, string country, string sellerCountry) =>
-        sellerCountry.Length > 0
-        && !string.Equals(country, sellerCountry, StringComparison.Ordinal)
+        IsOtherCountry(country, sellerCountry)
         && string.IsNullOrWhiteSpace(client.Settings.TaxId)
         && invoice.Items.Count > 0
         && invoice.Items.All(i => i.IsDigitalService);
@@ -165,4 +225,24 @@ public sealed class ClientTaxRateResolver
 
         return rule?.RatePercent ?? 0m;
     }
+
+    /// <summary>
+    /// Whether the reverse charge applies: the client holds a VAT number that last checked valid, in a country with a VAT
+    /// register (an EU member state or the United Kingdom) other than the seller's own. With no seller country set it never applies.
+    /// </summary>
+    /// <param name="client">The client's brief.</param>
+    /// <param name="sellerCountry">The seller's country as stored; empty when the operator has set none.</param>
+    /// <returns><see langword="true"/> when the invoice is raised under the reverse charge.</returns>
+    private static bool IsReverseCharge(ClientBriefDto client, string sellerCountry) =>
+        client.Vat.Status == VatCheckOutcome.Valid
+            && !string.IsNullOrWhiteSpace(client.Settings.TaxId)
+            && VatRegisters.Covers(client.Address.Country)
+            && IsOtherCountry(client.Address.Country!, sellerCountry);
+
+    /// <summary>Whether a client's country is a country other than the seller's. With no seller country set, none is.</summary>
+    /// <param name="country">The client's country code.</param>
+    /// <param name="sellerCountry">The seller's country as stored; empty when the operator has set none.</param>
+    /// <returns><see langword="true"/> when a seller country is set and differs from the client's.</returns>
+    private static bool IsOtherCountry(string country, string sellerCountry) =>
+        sellerCountry.Length > 0 && !string.Equals(country.Trim(), sellerCountry, StringComparison.OrdinalIgnoreCase);
 }

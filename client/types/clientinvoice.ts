@@ -71,6 +71,10 @@ export interface ClientInvoice {
   taxRate: number
   /** Total credit applied. */
   credit: number
+  /** Whether the invoice was raised under the reverse charge: no tax is added and the client accounts for it. */
+  reverseCharge: boolean
+  /** The client's VAT number the reverse charge was applied for, null when it does not apply. */
+  clientVatNumber: string | null
   /**
    * Whether this is a credit top-up invoice: one fixed line that puts its amount on the client's balance when paid. Credit
    * cannot be applied to it.

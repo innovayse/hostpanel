@@ -70,7 +70,7 @@ repositories. What is specific to this project is short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`, `RecheckVatNumbersCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -191,6 +191,23 @@ docker/                              compose set (shared·dev·prod·platform), 
   the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
   API URL and test mode saved on the admin Integrations page over the bound options
   (`IsConfiguredAsync`), so the page configures what requests use.
+- **VAT numbers are checked through one port, and the reverse charge is decided in one place (#1144).** `IVatNumberChecker`
+  (`Application/Common/Interfaces/`) takes a `VatNumberLookup` (country, number without prefix) and answers a `VatNumberCheck`
+  (`VatCheckOutcome` valid, invalid or unavailable, plus the registered name and address); `Infrastructure/Vat/VatNumberChecker`
+  picks the register, `ViesVatClient` for an EU member state and `HmrcVatClient` for the UK, and nothing else takes those two
+  clients (`VatNumberCheckerPortTests`). Unavailable (a down service, an error status, an unreadable body, a timeout, no UK
+  credentials) is never stored as invalid: `Client.RecordVatCheck` ignores it, so the client keeps its status and date. The
+  client's VAT number is its existing `TaxId`; `Client` clears the verdict when the number or the billing country changes
+  (`VatCheckPending`), and the writers that can change them (`UpdateClient`, so the portal's `UpdateMyProfile` too, and
+  `AdminCreateClient`) publish `ClientVatCheckRequestedEvent` after the save, which `ClientVatCheckRequestedHandler` runs as
+  `CheckClientVat` in the background. `VatRegisters` (Application) is the one list of the countries that have a register (the EU
+  member states and `GB`) and the one place a number is put in lookup shape. `RecheckVatNumbersCron` re-checks never judged
+  numbers first, then those older than `ScheduledJobs:VatRecheckAfterDays`. `ClientTaxRateResolver` is still the one place a new
+  invoice's tax is decided: it answers a `ClientTaxTreatment` (rate, or the VAT number of a reverse charge), `Tax Exempt` wins, and
+  a reverse charge needs a valid verdict, a country with a register other than `billing.tax.seller_country`; the invoice stores
+  `ReverseCharge` and `ClientVatNumber` (`Invoice.ApplyReverseCharge`) so a later change of the client never rewrites it, and
+  `UpdateInvoiceOptions` asks the resolver (`EnsureMayBeTaxedAsync`) instead of deciding. The UK lookup needs `Vat:Hmrc` credentials
+  (`HmrcVatOptions`, both or neither); the demo replaces the port with `DemoVatNumberChecker`.
 - **Plugin integrations on the Integrations page (#854, #855, #856).** A plugin's form texts are resolved per request:
   `IntegrationFields.Resolve` maps each `GetSettings()` entry with `ToFieldDefinition(PluginUiTexts)`, so the label, the
   help text (`description`), the `placeholder` and every select option label (`optionLabels`, keyed by the stored value;
@@ -1769,8 +1786,9 @@ feature does not exist is not kept. The decisions:
   that decides: for a client with no `TaxId` in an EU country other than `billing.tax.seller_country`
   (empty turns it off), on an invoice whose every line has `InvoiceItem.IsDigitalService` (the product's
   `IsDigitalService`, copied into the line's `ProductSnapshot` at billing time; not `IsDigital`, which is about delivery) the rate is the
-  standard `VatRate` in force on the invoice date; everything else keeps the tax rule rate. The reverse charge for
-  business clients is not decided here. The OSS report (`GetOssReport`, `GET /api/reports/oss`, formerly named
+  standard `VatRate` in force on the invoice date; everything else keeps the tax rule rate. A client with a `TaxId` never gets the
+  destination rate: the same method gives one whose number checked valid the reverse charge (#1144), the same
+  `billing.tax.seller_country` switching both off, and a hand-typed rate is refused for it. The OSS report (`GetOssReport`, `GET /api/reports/oss`, formerly named
   after the scheme it replaced; the old route `vat-moss` is a deprecated alias for one release, removed in the next) groups by member state, rate and currency.
 - **`OverdueNotices`.** The payment reminder mail for an unpaid renewal invoice
   (`SendRenewalReminder`) goes only to a client with both `NotifyInvoice` and `OverdueNotices` on. The

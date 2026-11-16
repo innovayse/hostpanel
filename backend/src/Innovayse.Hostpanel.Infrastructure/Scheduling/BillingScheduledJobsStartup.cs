@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsC
 using Innovayse.Hostpanel.Application.Billing.Commands.SendRenewalRemindersCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.SuspendOverdueServicesCron;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Commands.UpdateExchangeRatesCron;
+using Innovayse.Hostpanel.Application.Clients.Commands.RecheckVatNumbersCron;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.AutoTerminateSuspendedCron;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +16,7 @@ using Microsoft.Extensions.Hosting;
 namespace Innovayse.Hostpanel.Infrastructure.Scheduling;
 
 /// <summary>
-/// Hosted service that starts the billing jobs on application startup: exchange rate updates, renewal invoices, billable
+/// Hosted service that starts the billing jobs on application startup: exchange rate updates, VAT number re-checks, renewal invoices, billable
 /// items processing, renewal reminders, overdue checks, overdue suspensions, plus the server sync,
 /// auto-terminate, gateway reconcile and fulfilment dispatch jobs. Their hours and intervals are the
 /// <c>ScheduledJobsOptions</c> values the job handlers read too.
@@ -47,6 +48,7 @@ public sealed class BillingScheduledJobsStartup : IHostedService
         var schedules = jobs.Schedules;
 
         await jobs.StartAsync<UpdateExchangeRatesCronCommand>(schedules.UpdateExchangeRates, cancellationToken);
+        await jobs.StartAsync<RecheckVatNumbersCronCommand>(schedules.RecheckVatNumbers, cancellationToken);
         await jobs.StartAsync<ProcessBillableItemsCronCommand>(schedules.ProcessBillableItems, cancellationToken);
         await jobs.StartAsync<CheckOverdueInvoicesCronCommand>(schedules.CheckOverdueInvoices, cancellationToken);
         await jobs.StartAsync<ProcessRenewalsCronCommand>(schedules.ProcessRenewals, cancellationToken);

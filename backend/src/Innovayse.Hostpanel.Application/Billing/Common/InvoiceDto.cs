@@ -12,6 +12,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="AmountDue">What is still owed: the total less the payments recorded against it; zero once the invoice is closed.</param>
 /// <param name="CreditableAmount">What a credit note may still cover: zero unless the invoice is paid, and zero for a credit top-up.</param>
 /// <param name="IsCreditTopUp">Whether this is a credit top-up invoice: one fixed line that puts its amount on the client's balance when paid.</param>
+/// <param name="ReverseCharge">Whether the invoice was raised under the reverse charge: no tax, the client accounts for it.</param>
+/// <param name="ClientVatNumber">The client's VAT number the reverse charge was applied for; null when it does not apply.</param>
 /// <param name="Payment">Payment method and gateway reference.</param>
 /// <param name="Notes">Optional invoice notes.</param>
 /// <param name="Items">Line items on the invoice.</param>
@@ -27,6 +29,8 @@ public sealed record InvoiceDto(
     decimal AmountDue,
     decimal CreditableAmount,
     bool IsCreditTopUp,
+    bool ReverseCharge,
+    string? ClientVatNumber,
     InvoicePaymentDto Payment,
     string? Notes,
     IReadOnlyList<InvoiceItemDto> Items,

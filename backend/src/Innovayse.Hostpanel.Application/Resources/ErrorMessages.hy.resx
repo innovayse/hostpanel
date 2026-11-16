@@ -1183,6 +1183,18 @@
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>Այս հաճախորդն ազատված է հարկից, ուստի նրա հաշիվ-ապրանքագրերի համար հարկի դրույք սահմանել հնարավոր չէ։</value>
   </data>
+  <data name="CLIENT_REVERSE_CHARGE_APPLIES" xml:space="preserve">
+    <value>Այս հաճախորդի հաշիվ-ապրանքագրերը դուրս են գրվում հակադարձ հարկման կարգով, ուստի դրանց համար հարկի դրույք ձեռքով սահմանել հնարավոր չէ։</value>
+  </data>
+  <data name="CLIENT_VAT_NUMBER_MISSING" xml:space="preserve">
+    <value>Հաճախորդը ստուգելու ԱԱՀ համար չունի։</value>
+  </data>
+  <data name="CLIENT_VAT_COUNTRY_NOT_SUPPORTED" xml:space="preserve">
+    <value>ԱԱՀ համարը կարելի է ստուգել միայն ԵՄ երկրների և Միացյալ Թագավորության համար։ Նախ նշեք հաճախորդի հաշվարկային երկիրը։</value>
+  </data>
+  <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>ԱԱՀ համարների ստուգման ծառայությունը այս պահին չի պատասխանում։ Նախորդ արդյունքը պահպանվել է։ Փորձեք ավելի ուշ։</value>
+  </data>
   <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
     <value>Այս SKU-ն արդեն օգտագործվում է մեկ այլ ապրանքում։ Ընտրեք այլ SKU։</value>
   </data>

@@ -1183,6 +1183,18 @@
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>This client is tax exempt, so a tax rate cannot be set on their invoices.</value>
   </data>
+  <data name="CLIENT_REVERSE_CHARGE_APPLIES" xml:space="preserve">
+    <value>This client is invoiced under the reverse charge, so a tax rate cannot be set on their invoices.</value>
+  </data>
+  <data name="CLIENT_VAT_NUMBER_MISSING" xml:space="preserve">
+    <value>This client has no VAT number to check.</value>
+  </data>
+  <data name="CLIENT_VAT_COUNTRY_NOT_SUPPORTED" xml:space="preserve">
+    <value>VAT numbers can be checked only for EU countries and the United Kingdom. Set the client's billing country first.</value>
+  </data>
+  <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>The VAT number service is not answering right now. The earlier result is kept. Try again later.</value>
+  </data>
   <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
     <value>Another product already uses this SKU. Choose a different one.</value>
   </data>

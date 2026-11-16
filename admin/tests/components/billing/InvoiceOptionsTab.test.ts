@@ -23,6 +23,16 @@ describe('InvoiceOptionsTab', () => {
     expect(unpaid.find('[data-testid="billing-invoice-options-draft"]').exists()).toBe(false)
   })
 
+  it('states the reverse charge with the client VAT number only for an invoice raised under it', () => {
+    const reverse = mountWithApp(InvoiceOptionsTab, {
+      props: { invoice: invoiceFixture({ reverseCharge: true, clientVatNumber: 'DE123456789' }) },
+    })
+    const ordinary = mountWithApp(InvoiceOptionsTab, { props: { invoice: invoiceFixture() } })
+
+    expect(reverse.get('[data-testid="billing-invoice-options-reverse-charge"]').text()).toContain('DE123456789')
+    expect(ordinary.find('[data-testid="billing-invoice-options-reverse-charge"]').exists()).toBe(false)
+  })
+
   it('offers forward-looking quick dates for the due date, not past ones', async () => {
     const wrapper = mountWithApp(InvoiceOptionsTab, { props: { invoice: invoiceFixture() } })
     const dueDate = wrapper.findAll('[data-testid="date-picker-input"]')[1]!

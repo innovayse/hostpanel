@@ -6,6 +6,7 @@
  */
 
 import type { AccountContact } from '~/types/accountcontact'
+import type { ClientVat } from '~/types/clientvat'
 import type { PostalAddress } from '~/types/postaladdress'
 import type { MyProfileNotifications } from '~/types/myprofilenotifications'
 
@@ -33,6 +34,10 @@ export interface MyProfile {
   paymentMethod: string | null
   /** Which emails the client receives. */
   notifications: MyProfileNotifications
+  /** The client's VAT number (their tax identification number), null when none is recorded. */
+  vatNumber: string | null
+  /** The last completed check of that number. */
+  vat: ClientVat
   /** True if the user has TOTP 2FA enabled. */
   twoFactorEnabled: boolean
   /** Additional contacts linked to this client. */

@@ -26,6 +26,12 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <summary>Longest tax exemption reason the stored column holds.</summary>
     public const int TaxExemptionReasonMaxLength = 500;
 
+    /// <summary>Longest registered name of a checked VAT number the stored column holds.</summary>
+    public const int VatNameMaxLength = 200;
+
+    /// <summary>Longest registered address of a checked VAT number the stored column holds.</summary>
+    public const int VatAddressMaxLength = 500;
+
     /// <summary>
     /// Longest name of the other system an external account link points into, in characters; the
     /// <c>Clients.ExternalAccountProvider</c> column is this wide.
@@ -141,6 +147,29 @@ public sealed class Client : BaseEntity, IAggregateRoot
 
     /// <summary>Gets why the client is tax exempt, or <see langword="null"/> when no reason is recorded.</summary>
     public string? TaxExemptionReason { get; private set; }
+
+    /// <summary>
+    /// Gets how the last completed check of <see cref="TaxId"/> against the VAT number service ended, or
+    /// <see langword="null"/> when the number was never checked or was changed since. It holds only
+    /// <see cref="VatCheckOutcome.Valid"/> or <see cref="VatCheckOutcome.Invalid"/>: a check that could not be
+    /// completed leaves it as it was (see <see cref="RecordVatCheck"/>).
+    /// </summary>
+    public VatCheckOutcome? VatStatus { get; private set; }
+
+    /// <summary>Gets the moment <see cref="VatStatus"/> was recorded (UTC), or <see langword="null"/> while it is unset.</summary>
+    public DateTimeOffset? VatCheckedAt { get; private set; }
+
+    /// <summary>Gets the name the service returned for a valid number, or <see langword="null"/> when it returned none.</summary>
+    public string? VatName { get; private set; }
+
+    /// <summary>Gets the address the service returned for a valid number, or <see langword="null"/> when it returned none.</summary>
+    public string? VatAddress { get; private set; }
+
+    /// <summary>
+    /// Gets whether the client holds a tax identification number that no completed check has judged yet: the number
+    /// was never checked, or it or the billing country changed since. The check runs when this is true.
+    /// </summary>
+    public bool VatCheckPending => TaxId is not null && VatStatus is null;
 
     /// <summary>Gets whether invoices are generated separately per service.</summary>
     public bool SeparateInvoices { get; private set; }
@@ -275,7 +304,15 @@ public sealed class Client : BaseEntity, IAggregateRoot
         City = city;
         State = state;
         PostCode = postCode;
-        Country = CountryCode.Normalize(country);
+
+        var normalizedCountry = CountryCode.Normalize(country);
+        if (!string.Equals(Country, normalizedCountry, StringComparison.Ordinal))
+        {
+            // A number is registered in one country, so a verdict reached for the old country says nothing about the new one.
+            ClearVatCheck();
+        }
+
+        Country = normalizedCountry;
     }
 
     /// <summary>
@@ -434,6 +471,12 @@ public sealed class Client : BaseEntity, IAggregateRoot
                 $"A client's tax exemption reason is at most {TaxExemptionReasonMaxLength} characters.", nameof(taxExemptionReason));
         }
 
+        if (!string.Equals(TaxId, trimmedTaxId, StringComparison.Ordinal))
+        {
+            // The verdict belongs to the number that was checked, never to the one that replaced it.
+            ClearVatCheck();
+        }
+
         OverdueNotices = overdueNotices;
         TaxExempt = taxExempt;
         TaxId = trimmedTaxId;
@@ -443,6 +486,41 @@ public sealed class Client : BaseEntity, IAggregateRoot
         MarketingOptIn = marketingOptIn;
         StatusUpdate = statusUpdate;
         AllowSso = allowSso;
+    }
+
+    /// <summary>
+    /// Records the answer of the VAT number service for <see cref="TaxId"/>. A valid answer stores the name and address the
+    /// service returned; an invalid one clears them. An unavailable answer (the service or the member state could not be
+    /// reached) changes nothing at all: it is not a verdict, so the earlier status, date, name and address stay, and a
+    /// number never turns invalid because a service was down.
+    /// </summary>
+    /// <param name="outcome">How the check ended.</param>
+    /// <param name="now">The current moment (UTC), read by the caller; stored as the date of the check.</param>
+    /// <param name="name">The registered name the service returned, or null or blank when it returned none.</param>
+    /// <param name="address">The registered address the service returned, or null or blank when it returned none.</param>
+    /// <exception cref="InvalidOperationException">The client holds no tax identification number to record a check for.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="outcome"/> is not a defined outcome.</exception>
+    public void RecordVatCheck(VatCheckOutcome outcome, DateTimeOffset now, string? name = null, string? address = null)
+    {
+        if (!Enum.IsDefined(outcome))
+        {
+            throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "Not a VAT check outcome.");
+        }
+
+        if (TaxId is null)
+        {
+            throw new InvalidOperationException("A client with no tax identification number has nothing to check.");
+        }
+
+        if (outcome == VatCheckOutcome.Unavailable)
+        {
+            return;
+        }
+
+        VatStatus = outcome;
+        VatCheckedAt = now;
+        VatName = outcome == VatCheckOutcome.Valid ? CutOrNull(name, VatNameMaxLength) : null;
+        VatAddress = outcome == VatCheckOutcome.Valid ? CutOrNull(address, VatAddressMaxLength) : null;
     }
 
     /// <summary>Withdraws the client's consent to marketing emails and touches no other setting. Repeating it changes nothing.</summary>
@@ -722,6 +800,30 @@ public sealed class Client : BaseEntity, IAggregateRoot
 
         Status = ClientStatus.Inactive;
         AddDomainEvent(() => new ClientDeactivatedEvent(Id, now));
+    }
+
+    /// <summary>Forgets the verdict of the last VAT number check, because the number or the country it was reached for changed.</summary>
+    private void ClearVatCheck()
+    {
+        VatStatus = null;
+        VatCheckedAt = null;
+        VatName = null;
+        VatAddress = null;
+    }
+
+    /// <summary>Trims a text a service returned and cuts it to the column it is stored in.</summary>
+    /// <param name="text">The text, or null.</param>
+    /// <param name="maxLength">The column's length.</param>
+    /// <returns>The trimmed and cut text, or <see langword="null"/> when nothing is left.</returns>
+    private static string? CutOrNull(string? text, int maxLength)
+    {
+        var trimmed = text?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+
+        return trimmed.Length > maxLength ? trimmed[..maxLength] : trimmed;
     }
 
     /// <summary>

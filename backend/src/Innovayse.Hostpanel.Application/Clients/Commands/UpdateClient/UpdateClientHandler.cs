@@ -212,6 +212,9 @@ public sealed class UpdateClientHandler
         // not run ahead of a save that may still be refused (a concurrent edit answers 409 here).
         await _context.SaveChangesAsync(ct);
 
+        // A number or country that changed is checked in the background; the verdict of the old ones was dropped above.
+        await _bus.RequestVatCheckWhenPendingAsync(client, _clock.UtcNow);
+
         if (newEmail is not null)
         {
             var emailChanged = await _provisioning.ChangeEmailAsync(client.UserId, newEmail, ct);

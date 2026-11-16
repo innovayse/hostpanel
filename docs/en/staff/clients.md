@@ -85,6 +85,7 @@ Open a client and click **Summary**. The page shows:
 
 - **Client Information**: contact and billing details at a glance.
 - **Other Information**: account settings and notes.
+- **VAT number**: the client's VAT number (Tax ID), the status of its last check (Valid, Not valid or Not checked), the date of that check and the registered name and address the service returned. **Check again** runs the check now. See [VAT numbers and the reverse charge](billing.md#vat-numbers-and-the-reverse-charge).
 - **Invoices / Billing**: invoice counters and financial totals: Gross Revenue, Client Expenses, Net Income, Credit Balance.
 - **Products / Services**: active and past services.
 - **Recent Emails**: last few emails sent to the client.

@@ -52,8 +52,9 @@ public static class BillingSettingKeys
 
     /// <summary>
     /// The ISO 3166-1 alpha-2 country the seller is established in, or empty when none is set. A consumer in an EU member state
-    /// other than this one is invoiced for electronic services at the VAT rate of their own country; with no seller country
-    /// set, the tax rules alone decide the rate.
+    /// other than this one is invoiced for electronic services at the VAT rate of their own country, and a business client with a
+    /// valid VAT number in another EU country or in the UK is invoiced under the reverse charge; with no seller country
+    /// set, the tax rules alone decide the rate and the reverse charge is off.
     /// </summary>
     public const string SellerCountry = "billing.tax.seller_country";
 
@@ -156,7 +157,7 @@ public static class BillingSettingKeys
         new(CreditTopUpMaxOpen, "3", "Most unpaid top-up invoices a client can hold at once; they pay or cancel one before raising another."),
         new(AutoApproveDowngrades, "false", "Approve a client's downgrade to a cheaper plan at once and credit the rest of the billing cycle to their balance (true/false). When off, staff approve each downgrade."),
         new(TaxEnabled, "true", "Add tax to new invoices from the tax rules of the client's country (true/false). When off, no invoice is taxed automatically."),
-        new(SellerCountry, "", "Country the seller is established in, as a two-letter code like DE. A consumer in another EU member state is invoiced for electronic services at the VAT rate of their own country. Empty turns this off, and the tax rules alone decide the rate."),
+        new(SellerCountry, "", "Country the seller is established in, as a two-letter code like DE. A consumer in another EU member state is invoiced for electronic services at the VAT rate of their own country. A business client with a valid VAT number in another EU country or in the UK is invoiced without VAT (reverse charge). Empty turns both off, and the tax rules alone decide the rate."),
         new(RateProvider, nameof(ExchangeRateProvider.Cba), "Bank the currency exchange rates are taken from: Cba (Central Bank of Armenia) or Ecb (European Central Bank). Cba by default."),
     ];
 

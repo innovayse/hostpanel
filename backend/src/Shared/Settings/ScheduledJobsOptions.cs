@@ -60,6 +60,35 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     [Range(0, 23)]
     public int CheckReleaseUpdatesHour { get; init; } = 10;
 
+    /// <summary>UTC hour (0-23) of the daily re-check of clients' VAT numbers.</summary>
+    [Range(0, 23)]
+    public int RecheckVatNumbersHour { get; init; } = 2;
+
+    /// <summary>
+    /// Days a client's VAT number check stays current before the daily re-check asks the VAT number service again, so a
+    /// number that stops being valid stops the reverse charge for new invoices within this many days.
+    /// </summary>
+    [Range(1, 365)]
+    public int VatRecheckAfterDays { get; init; } = 7;
+
+    /// <summary>How many clients one daily re-check pass checks at most; the clients left over are first in line the next day.</summary>
+    [Range(1, 5000)]
+    public int VatRecheckBatchSize { get; init; } = 500;
+
+    /// <summary>
+    /// How many answers in a row may come back without a verdict before a re-check pass stops. The VAT number service is then
+    /// down, and asking for every remaining client would only wait out a timeout each; the next daily run starts again.
+    /// </summary>
+    [Range(1, 1000)]
+    public int VatRecheckStopAfterUnavailable { get; init; } = 5;
+
+    /// <summary>
+    /// When <see langword="true"/>, the daily re-check of VAT numbers is skipped entirely and no outbound request is made
+    /// to the VAT number services. Set this for installations that have no outbound internet access; a number is then
+    /// checked only when staff run the check or the client changes it.
+    /// </summary>
+    public bool DisableVatRechecks { get; init; }
+
     /// <summary>
     /// When <see langword="true"/>, the daily release-update check is skipped entirely and no
     /// outbound request is made to GitHub. Set this for installations that have no outbound
@@ -228,6 +257,12 @@ public sealed class ScheduledJobsOptions : IValidatableObject
 
     /// <summary>Gets the schedule of the GitHub release update check.</summary>
     public JobSchedule CheckReleaseUpdates => JobSchedule.Daily(CheckReleaseUpdatesHour);
+
+    /// <summary>Gets the schedule of the re-check of VAT numbers.</summary>
+    public JobSchedule RecheckVatNumbers => JobSchedule.Daily(RecheckVatNumbersHour);
+
+    /// <summary>Gets how old a VAT number check must be before the re-check asks again, as a span.</summary>
+    public TimeSpan VatRecheckAfter => TimeSpan.FromDays(VatRecheckAfterDays);
 
     /// <summary>Gets the schedule of the gateway payment reconciliation.</summary>
     public JobSchedule ReconcileGatewayPayments =>

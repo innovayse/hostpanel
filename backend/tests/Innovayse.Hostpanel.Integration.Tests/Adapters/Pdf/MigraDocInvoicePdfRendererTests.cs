@@ -74,6 +74,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         SubTotal: 12.50m,
         TaxRate: 20m,
         Tax: 2.50m,
+        ClientVatNumber: null,
         Credit: 0m,
         Total: 15.00m,
         Money: new InvoicePdfMoneyFormat("$", string.Empty, 2));
@@ -97,6 +98,28 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// <param name="value">The text.</param>
     /// <returns>The text without whitespace.</returns>
     private static string Compact(string value) => string.Concat(value.Where(c => !char.IsWhiteSpace(c)));
+
+    /// <summary>An invoice raised under the reverse charge states it and prints the client's VAT number.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Render_UnderTheReverseCharge_StatesItAndPrintsTheClientsVatNumber()
+    {
+        using var document = await RenderAsync(SampleModel() with { TaxRate = 0m, Tax = 0m, Total = 12.50m, ClientVatNumber = "DE123456789" });
+
+        var text = CompactText(document);
+        text.Should().Contain(Compact("Reverse charge: VAT is to be accounted for by the recipient."));
+        text.Should().Contain(Compact("Client VAT number: DE123456789"));
+    }
+
+    /// <summary>An ordinary invoice carries no reverse charge statement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Render_OrdinaryInvoice_HasNoReverseChargeStatement()
+    {
+        using var document = await RenderAsync(SampleModel());
+
+        CompactText(document).Should().NotContain(Compact("Reverse charge"));
+    }
 
     /// <summary>
     /// With the limit at one and its slot taken, a render waits rather than starting, and goes ahead

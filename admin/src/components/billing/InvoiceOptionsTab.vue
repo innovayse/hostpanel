@@ -103,6 +103,10 @@ onMounted(populate)
       {{ t('billing.invoiceOptionsTab.thisIsADraftInvoice') }}
     </UiAlert>
 
+    <UiAlert v-if="invoice.reverseCharge" variant="info" data-testid="billing-invoice-options-reverse-charge">
+      {{ t('billing.invoiceOptionsTab.reverseCharge', { vatNumber: invoice.clientVatNumber ?? '' }) }}
+    </UiAlert>
+
     <UiCard padding="md">
       <UiForm stacked data-testid="billing-invoice-options-form" @submit="save">
         <UiGrid :columns="2">

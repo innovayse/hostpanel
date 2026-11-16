@@ -5,9 +5,9 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Clients.Extensions;
 
 /// <summary>
-/// The per-client switches an admin sets on the account (card processing, single sign-on, tax
-/// exemption), checked in one place for every module that acts on them, so a use case asks the
-/// question instead of reading the Clients tables or repeating the refusal.
+/// The per-client switches an admin sets on the account (card processing, single sign-on), checked in one place
+/// for every module that acts on them, so a use case asks the question instead of reading the Clients tables or
+/// repeating the refusal.
 /// </summary>
 public static class ClientSettingsExtensions
 {
@@ -47,26 +47,6 @@ public static class ClientSettingsExtensions
         {
             null => Result.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND),
             { Settings.AllowSso: false } => Result.FailureCode(HostpanelErrorCodes.CLIENT_SSO_DISABLED),
-            _ => Result.Success(),
-        };
-    }
-
-    /// <summary>Refuses a tax rate on the invoice of a tax-exempt account.</summary>
-    /// <param name="bus">The Wolverine bus the client's brief is read through.</param>
-    /// <param name="clientId">The client record's id.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// Success when the account is liable to tax, <c>CLIENT_NOT_FOUND</c> when the id names no record, or
-    /// <c>CLIENT_TAX_EXEMPT</c>.
-    /// </returns>
-    public static async Task<Result> EnsureClientMayBeTaxedAsync(this IMessageBus bus, int clientId, CancellationToken ct)
-    {
-        var client = await bus.FindClientBriefAsync(clientId, withEmail: false, ct);
-
-        return client switch
-        {
-            null => Result.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND),
-            { Settings.TaxExempt: true } => Result.FailureCode(HostpanelErrorCodes.CLIENT_TAX_EXEMPT),
             _ => Result.Success(),
         };
     }

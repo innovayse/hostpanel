@@ -432,6 +432,23 @@ public class ProductTests
         return Prefix + new string('a', bytes - Prefix.Length - Suffix.Length) + Suffix;
     }
 
+    /// <summary>A new product is not an electronic service for VAT; the flag is set and cleared on its own, whatever the product type.</summary>
+    [Fact]
+    public void SetDigitalService_TurnsTheVatFlagOnAndOff_IndependentlyOfTheDeliveryType()
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+        product.IsDigitalService.Should().BeFalse();
+
+        product.SetDigitalService(true);
+
+        product.IsDigitalService.Should().BeTrue();
+        product.IsDigital.Should().BeFalse();
+
+        product.SetDigitalService(false);
+
+        product.IsDigitalService.Should().BeFalse();
+    }
+
     /// <summary>Creates a product of the given type with fixed, irrelevant values.</summary>
     /// <param name="type">The product type.</param>
     /// <returns>A new active product.</returns>

@@ -33,6 +33,7 @@ const listed: Product = {
   sku: null,
   metadata: null,
   gracePeriodDays: 7,
+  isDigitalService: false,
 }
 
 test('the operator prices a product for a quarterly and a biennial cycle', async ({ page }) => {

@@ -46,6 +46,7 @@ const plan: Product = {
   sku: null,
   metadata: null,
   gracePeriodDays: 7,
+  isDigitalService: false,
 }
 
 /** The address the screen is registered under. */

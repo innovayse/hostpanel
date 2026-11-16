@@ -12,7 +12,7 @@ import { createTestI18n } from '../../helpers/i18n'
  * @param props - Props for the picker.
  * @returns The wrapper.
  */
-const mountCountry = (props: { modelValue: string; placeholder?: string }) =>
+const mountCountry = (props: { modelValue: string; placeholder?: string; only?: readonly string[] }) =>
   mount(UiCountrySelect, { props, global: { plugins: [createTestI18n()], stubs: { teleport: true } } })
 
 describe('UiCountrySelect', () => {
@@ -36,6 +36,14 @@ describe('UiCountrySelect', () => {
     await armenia?.trigger('mousedown')
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['AM'])
+  })
+
+  it('offers only the countries it is limited to', async () => {
+    const wrapper = mountCountry({ modelValue: '', only: ['DE', 'FR'] })
+
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.findAll('[role="option"]').map(o => o.text()).sort()).toEqual(['France', 'Germany'])
   })
 
   it('filters the long list by what is typed', async () => {

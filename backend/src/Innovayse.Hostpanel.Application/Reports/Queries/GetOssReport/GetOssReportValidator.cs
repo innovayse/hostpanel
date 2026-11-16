@@ -3,16 +3,16 @@ using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
 
-namespace Innovayse.Hostpanel.Application.Reports.Queries.GetVatMoss;
+namespace Innovayse.Hostpanel.Application.Reports.Queries.GetOssReport;
 
 /// <summary>
-/// Validates <see cref="GetVatMossQuery"/> inputs before the handler executes. The unvalidated
+/// Validates <see cref="GetOssReportQuery"/> inputs before the handler executes. The unvalidated
 /// endpoint silently mapped any quarter outside 1-4 onto Q4 (October-December); refusing it here
 /// is the same fix the month-range validators elsewhere in this module already apply.
 /// </summary>
-public sealed class GetVatMossValidator : LocalizedValidator<GetVatMossQuery>
+public sealed class GetOssReportValidator : LocalizedValidator<GetOssReportQuery>
 {
-    /// <summary>Earliest calendar year a report can be asked for; the VAT MOSS scheme did not exist before it.</summary>
+    /// <summary>Earliest calendar year a report can be asked for; the scheme this report replaced started in 2015.</summary>
     private const int MinYear = 2015;
 
     /// <summary>Latest calendar year a report can be asked for.</summary>
@@ -26,7 +26,7 @@ public sealed class GetVatMossValidator : LocalizedValidator<GetVatMossQuery>
 
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
-    public GetVatMossValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
+    public GetOssReportValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
         RuleFor(x => x.Year!.Value)

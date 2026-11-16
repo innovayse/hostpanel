@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Billing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing.TaxRules;
@@ -11,6 +12,12 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing.TaxRules;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ClientTaxRateResolverTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>Starts an invoice with no lines for a client, dated at the fixed test moment.</summary>
+    /// <param name="clientId">The client.</param>
+    /// <returns>The new invoice.</returns>
+    private static Invoice NewInvoice(int clientId) =>
+        Invoice.Create(clientId, TestMoments.Seeded.AddDays(14), "USD", TestMoments.Seeded);
+
     /// <summary>Resolves the rate for a client.</summary>
     /// <param name="clientId">The client.</param>
     /// <returns>The resolver's answer.</returns>
@@ -18,7 +25,7 @@ public sealed class ClientTaxRateResolverTests(IntegrationTestFactory factory) :
     {
         using var scope = factory.Services.CreateScope();
         var resolver = scope.ServiceProvider.GetRequiredService<ClientTaxRateResolver>();
-        var result = await resolver.ForClientAsync(clientId, CancellationToken.None);
+        var result = await resolver.ForInvoiceAsync(NewInvoice(clientId), CancellationToken.None);
         result.IsSuccess.Should().BeTrue();
         return result.Value;
     }
@@ -144,7 +151,7 @@ public sealed class ClientTaxRateResolverTests(IntegrationTestFactory factory) :
         using var scope = factory.Services.CreateScope();
         var resolver = scope.ServiceProvider.GetRequiredService<ClientTaxRateResolver>();
 
-        var result = await resolver.ForClientAsync(2147483000, CancellationToken.None);
+        var result = await resolver.ForInvoiceAsync(NewInvoice(2147483000), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.ErrorCode.Should().Be(HostpanelErrorCodes.CLIENT_NOT_FOUND);

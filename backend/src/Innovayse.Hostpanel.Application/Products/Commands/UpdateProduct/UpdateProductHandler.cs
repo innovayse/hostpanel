@@ -85,6 +85,11 @@ public sealed class UpdateProductHandler
             product.SetGracePeriodDays(gracePeriodDays);
         }
 
+        if (cmd.IsDigitalService is { } isDigitalService)
+        {
+            product.SetDigitalService(isDigitalService);
+        }
+
         // Hidden is the Inactive status; null leaves the status as stored.
         if (cmd.IsHidden == true)
         {

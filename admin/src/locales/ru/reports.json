@@ -263,9 +263,9 @@
     "noTransactionsFound": "Транзакции не найдены.",
     "userId": "ID пользователя"
   },
-  "vatMoss": {
-    "vatMossSettlementData": "Данные для расчётов по VAT MOSS",
-    "thisReportProvidesTheInformation": "Этот отчёт содержит информацию, необходимую для подачи декларации VATMOSS. Уточните в налоговом органе, как загрузить данные в портал MOSS.",
+  "oss": {
+    "ossReport": "Отчёт OSS (единое окно)",
+    "thisReportProvidesTheInformation": "Этот отчёт содержит данные для квартальной декларации НДС по схеме единого окна (OSS): выставленная сумма и собранный НДС по каждой стране ЕС и ставке НДС. Возврат и кредит-нота вычитаются из квартала, в котором они оформлены. Уточните в налоговом органе, как подать эти данные.",
     "selectQuarter": "Выберите квартал",
     "countryName": "Название страны",
     "countryCode": "Код страны",
@@ -295,7 +295,7 @@
       "supportTicketReplies": "Ответы на тикеты поддержки",
       "ticketRatingsReviewer": "Проверка оценок тикетов",
       "ticketTags": "Теги тикетов",
-      "vatMoss": "VAT MOSS"
+      "oss": "OSS (единое окно)"
     },
     "incomeByProductFor": "Доход по продуктам за {month} {year}",
     "salesByProductFor": "Продажи по продуктам за {month} {year}",

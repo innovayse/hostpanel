@@ -1690,6 +1690,21 @@
   <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
     <value>Հարկի դրույքը կարող է ունենալ առավելագույնը երեք տասնորդական նիշ։</value>
   </data>
+  <data name="VatRateCountryInvalid" xml:space="preserve">
+    <value>Նշեք ԵՄ անդամ երկրի երկտառ կոդը։</value>
+  </data>
+  <data name="VatRateKindInvalid" xml:space="preserve">
+    <value>Ընտրեք ստանդարտ կամ նվազեցված դրույք։</value>
+  </data>
+  <data name="VatRateRateInvalid" xml:space="preserve">
+    <value>ԱԱՀ դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
+  <data name="VatRateRateDecimalsInvalid" xml:space="preserve">
+    <value>ԱԱՀ դրույքը կարող է ունենալ առավելագույնը երեք տասնորդական նիշ։</value>
+  </data>
+  <data name="VatRateValidFromInvalid" xml:space="preserve">
+    <value>Նշեք սկզբի ամսաթիվ 1993-ից 2100 թվականի սահմաններում։</value>
+  </data>
   <data name="FraudBlockListTypeInvalid" xml:space="preserve">
     <value>Արգելված ցուցակի տեսակը վավեր չէ։</value>
   </data>

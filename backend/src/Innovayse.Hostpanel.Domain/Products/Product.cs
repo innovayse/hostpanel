@@ -100,6 +100,13 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// </summary>
     public int GracePeriodDays { get; private set; } = DefaultGracePeriodDays;
 
+    /// <summary>
+    /// Gets whether the product is an electronic service in the sense of VAT (hosting, a licence, a domain that counts as one).
+    /// A new invoice for a consumer in an EU member state other than the seller's is taxed at the rate of the client's country when
+    /// every line of it is such a product. Separate from <see cref="IsDigital"/>, which says how the product is delivered.
+    /// </summary>
+    public bool IsDigitalService { get; private set; }
+
     /// <summary>Gets the UTC timestamp when the product was created.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -331,6 +338,10 @@ public sealed class Product : BaseEntity, IAggregateRoot
 
         GracePeriodDays = days;
     }
+
+    /// <summary>Sets whether the product is an electronic service for VAT.</summary>
+    /// <param name="isDigitalService">Whether the product is an electronic service.</param>
+    public void SetDigitalService(bool isDigitalService) => IsDigitalService = isDigitalService;
 
     /// <summary>Marks the product inactive so it cannot be ordered.</summary>
     public void Deactivate() => Status = ProductStatus.Inactive;

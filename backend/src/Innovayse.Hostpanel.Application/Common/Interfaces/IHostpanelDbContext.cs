@@ -93,6 +93,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the tax rules table: the rate staff set per country, and per region of a country.</summary>
     public DbSet<TaxRule> TaxRules { get; }
 
+    /// <summary>Gets the VAT rates table: the standard and reduced rate of each EU member state, with the day each applies from.</summary>
+    public DbSet<VatRate> VatRates { get; }
+
     /// <summary>Gets the client services table.</summary>
     public DbSet<ClientService> ClientServices { get; }
 

@@ -1,5 +1,5 @@
-/** VAT figures of one member state, rate and invoice currency. */
-export interface ReportVatRow {
+/** OSS figures of one member state, rate and invoice currency. */
+export interface ReportOssRow {
   /** ISO-2 country code; the screen names the country in the reader's language. */
   countryCode: string
   /** VAT rate in percent. */
@@ -14,12 +14,12 @@ export interface ReportVatRow {
   currency: string
 }
 
-/** The VAT MOSS report of one quarter. */
-export interface ReportVat {
+/** The OSS (One Stop Shop) report of one quarter. */
+export interface ReportOss {
   /** First day of the quarter, `yyyy-MM-dd`. */
   periodStart: string
   /** Last day of the quarter, `yyyy-MM-dd`. */
   periodEnd: string
   /** One row per member state, rate and currency. */
-  rows: ReportVatRow[]
+  rows: ReportOssRow[]
 }

@@ -3,6 +3,7 @@
  * Country picker: a searchable `UiSelect` over a fixed list of countries.
  *
  * The model is the ISO 3166 alpha-2 code. Names come from the geo atlas, the list every country picker shares.
+ * A caller that deals with a fixed set of countries (the EU member states) passes it as `only`.
  */
 import { computed } from 'vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -18,6 +19,8 @@ const props = defineProps<{
   modelValue: string
   /** Text shown while nothing is selected. */
   placeholder?: string
+  /** ISO codes the picker is limited to; every country of the atlas when omitted. */
+  only?: readonly string[]
 }>()
 
 const emit = defineEmits<{
@@ -28,9 +31,13 @@ const emit = defineEmits<{
 /** Country list of the geo atlas, the same source every other country picker reads. */
 const { geoCountries } = useGeoOptions()
 
-/** The countries as `UiSelect` options: value is the ISO code, label the country name; entries without either are left out. */
+/** The countries as `UiSelect` options: value is the ISO code, label the country name; entries without either, or outside `only`, are left out. */
 const countryOptions = computed(() =>
-  geoCountries.flatMap(c => (c.iso2 && c.name ? [{ value: String(c.iso2), label: c.name }] : [])),
+  geoCountries.flatMap(c =>
+    c.iso2 && c.name && (!props.only || props.only.includes(String(c.iso2)))
+      ? [{ value: String(c.iso2), label: c.name }]
+      : [],
+  ),
 )
 
 /** Two-way bridge between the prop and the inner select. */

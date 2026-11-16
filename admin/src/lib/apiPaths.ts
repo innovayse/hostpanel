@@ -73,6 +73,8 @@ export enum ApiPath {
   AdminTldConfigs = '/admin/tld-configs',
   /** `/admin/users` collection and its members. */
   AdminUsers = '/admin/users',
+  /** `/admin/vat-rates` collection and its members. */
+  AdminVatRates = '/admin/vat-rates',
   /** `/announcements` collection and its members. */
   Announcements = '/announcements',
   /** `/auth` collection and its members. */

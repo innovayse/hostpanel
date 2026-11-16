@@ -1690,6 +1690,21 @@
   <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
     <value>A tax rate can have at most three decimal places.</value>
   </data>
+  <data name="VatRateCountryInvalid" xml:space="preserve">
+    <value>Provide the two-letter code of an EU member state.</value>
+  </data>
+  <data name="VatRateKindInvalid" xml:space="preserve">
+    <value>Choose standard or reduced.</value>
+  </data>
+  <data name="VatRateRateInvalid" xml:space="preserve">
+    <value>A VAT rate must be between 0 and 100 percent.</value>
+  </data>
+  <data name="VatRateRateDecimalsInvalid" xml:space="preserve">
+    <value>A VAT rate can have at most three decimal places.</value>
+  </data>
+  <data name="VatRateValidFromInvalid" xml:space="preserve">
+    <value>Provide a start date between 1993 and 2100.</value>
+  </data>
   <data name="FraudBlockListTypeInvalid" xml:space="preserve">
     <value>The block list type is not valid.</value>
   </data>

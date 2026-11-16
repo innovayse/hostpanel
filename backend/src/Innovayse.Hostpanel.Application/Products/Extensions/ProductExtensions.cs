@@ -34,7 +34,8 @@ public static class ProductExtensions
             product.SortOrder,
             product.Sku,
             product.Metadata,
-            product.GracePeriodDays);
+            product.GracePeriodDays,
+            product.IsDigitalService);
     }
 
     /// <summary>Maps a product to the facts a billed line keeps a copy of.</summary>
@@ -44,7 +45,7 @@ public static class ProductExtensions
     {
         ArgumentNullException.ThrowIfNull(product);
 
-        return new ProductFulfilmentDto(product.Id, product.IsDigital, product.Sku, product.Metadata, product.GracePeriodDays);
+        return new ProductFulfilmentDto(product.Id, product.IsDigital, product.Sku, product.Metadata, product.GracePeriodDays, product.IsDigitalService);
     }
 
     /// <summary>Maps a product to its storefront catalogue DTO, pricing it in the caller's currency.</summary>

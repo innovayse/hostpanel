@@ -1756,6 +1756,22 @@ feature does not exist is not kept. The decisions:
   The exempt switch is also enforced on the manual rate: `UpdateInvoiceOptions` refuses a new or higher
   rate on a tax-exempt client's invoice with 409 `CLIENT_TAX_EXEMPT`. A rate the invoice already
   carries may stay.
+- **VAT rates per EU member state and the destination rate (#1145).** `VatRates` (`VatRate` in
+  Domain, admin CRUD at `/api/admin/vat-rates`) holds the standard and, where staff enter one, the reduced
+  rate of each member state with `ValidFrom`; one row per country, kind and day. A rate change is a new row; `Update`
+  (the edit on the screen) exists to correct a row entered by mistake, so the rate in force on a day is read back with
+  `VatRateQueryExtensions.InForceOn`. A reduced row is stored for reference only: nothing applies it to an invoice. The rates
+  that ship live in `VatRateCatalogue` (`Billing/Seeding`) and `VatRateSeeder` adds a shipped rate at startup (and in the
+  demo reset) only when the country holds no standard row that starts on the same day or later, and never touches an existing
+  one, so an edited or moved row is not brought back beside its replacement; a handler never holds a rate. Below the EU
+  threshold of 10,000 euro a year the seller may charge their own country's VAT; the host does not track it, the operator
+  leaves `billing.tax.seller_country` empty until it is passed. `ClientTaxRateResolver` is still the one place
+  that decides: for a client with no `TaxId` in an EU country other than `billing.tax.seller_country`
+  (empty turns it off), on an invoice whose every line has `InvoiceItem.IsDigitalService` (the product's
+  `IsDigitalService`, copied into the line's `ProductSnapshot` at billing time; not `IsDigital`, which is about delivery) the rate is the
+  standard `VatRate` in force on the invoice date; everything else keeps the tax rule rate. The reverse charge for
+  business clients is not decided here. The OSS report (`GetOssReport`, `GET /api/reports/oss`, formerly named
+  after the scheme it replaced; the old route `vat-moss` is a deprecated alias for one release, removed in the next) groups by member state, rate and currency.
 - **`OverdueNotices`.** The payment reminder mail for an unpaid renewal invoice
   (`SendRenewalReminder`) goes only to a client with both `NotifyInvoice` and `OverdueNotices` on. The
   reminder threshold is still recorded when nobody is mailed, so it is not retried every day. No other

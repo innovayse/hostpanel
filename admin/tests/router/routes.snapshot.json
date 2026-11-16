@@ -263,6 +263,10 @@
             "redirect": "/reports/daily-performance"
           },
           {
+            "path": "vat-moss",
+            "redirect": "/reports/oss"
+          },
+          {
             "path": "aging-invoices",
             "component": "AgingInvoicesView.vue"
           },
@@ -335,6 +339,10 @@
             "component": "NewCustomersView.vue"
           },
           {
+            "path": "oss",
+            "component": "OssReportView.vue"
+          },
+          {
             "path": "pdf-batch",
             "component": "PdfBatchView.vue"
           },
@@ -393,10 +401,6 @@
           {
             "path": "transactions",
             "component": "TransactionsReportView.vue"
-          },
-          {
-            "path": "vat-moss",
-            "component": "VatMossView.vue"
           }
         ]
       },
@@ -593,6 +597,10 @@
       {
         "path": "settings/tax-rules",
         "component": "TaxRulesView.vue"
+      },
+      {
+        "path": "settings/vat-rates",
+        "component": "VatRatesView.vue"
       },
       {
         "path": "storefront/testimonials",

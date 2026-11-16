@@ -215,6 +215,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           { to: AppRoute.IntegrationsPayments, labelKey: 'nav.settingsChildren.gateways' },
           { to: AppRoute.SettingsCurrencies, labelKey: 'nav.settingsChildren.currencies' },
           { to: AppRoute.SettingsTaxRules, labelKey: 'nav.settingsChildren.taxRules' },
+          { to: AppRoute.SettingsVatRates, labelKey: 'nav.settingsChildren.vatRates' },
         ],
       },
       {

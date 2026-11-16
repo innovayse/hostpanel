@@ -38,6 +38,8 @@ export enum SettingsItem {
   Currencies = 'currencies',
   /** Tax rules. */
   TaxRules = 'taxRules',
+  /** VAT rates of the EU member states. */
+  VatRates = 'vatRates',
   /** Email templates. */
   EmailTemplates = 'emailTemplates',
   /** Fraud protection. */
@@ -80,6 +82,7 @@ export const SETTINGS_INDEX: SettingsIndexGroup[] = [
       { item: SettingsItem.Gateways, to: AppRoute.IntegrationsPayments, icon: Icon.Puzzle },
       { item: SettingsItem.Currencies, to: AppRoute.SettingsCurrencies, icon: Icon.Dollar },
       { item: SettingsItem.TaxRules, to: AppRoute.SettingsTaxRules, icon: Icon.List },
+      { item: SettingsItem.VatRates, to: AppRoute.SettingsVatRates, icon: Icon.Flag },
     ],
   },
   {

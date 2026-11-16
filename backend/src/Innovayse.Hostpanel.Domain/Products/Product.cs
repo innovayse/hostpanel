@@ -377,6 +377,16 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// <param name="onePerClient"><see langword="true"/> to allow one live service per client.</param>
     public void SetOnePerClient(bool onePerClient) => OnePerClient = onePerClient;
 
+    /// <summary>
+    /// Tells whether a product with these two rules takes a place that must be counted and locked: it has a cap on live
+    /// services or is one-per-client. The one definition of the rule for the order paths; the product limits query
+    /// states the same two columns in SQL, because a method cannot be translated.
+    /// </summary>
+    /// <param name="maxActiveServices">The product's cap on live services, or null when unlimited.</param>
+    /// <param name="onePerClient">Whether a client may hold only one live service of the product.</param>
+    /// <returns><see langword="true"/> when the product has a cap or is one-per-client.</returns>
+    public static bool IsPlaceLimited(int? maxActiveServices, bool onePerClient) => maxActiveServices is not null || onePerClient;
+
     /// <summary>Marks the product inactive so it cannot be ordered.</summary>
     public void Deactivate() => Status = ProductStatus.Inactive;
 

@@ -1584,11 +1584,12 @@ addresses. Module `Products`; this slice stores and serves the options and does 
 ### Recurring billing
 
 - Exchange rates come from the bank in the `billing.exchange_rates.provider` setting (`ExchangeRateProvider`, `Cba` by
-  default, or `Ecb`). `IExchangeRateSource` resolves to `ConfiguredExchangeRateSource`, which reads the row on every call
+  default, or `Ecb`). `IExchangeRateSource` resolves to `ConfiguredExchangeRateSource`, which asks `ExchangeRateSettingsReader`
+  (Application, on `SettingSource`) for the provider on every call, the stored name matched without regard to case,
   and delegates to `CbaExchangeRateSource` or `EcbExchangeRateSource`; a missing or invalid row reads as `Cba` with a
-  warning. Both adapters are typed clients with their own read only resilience profile and share `PivotRates` (the
-  conversion to the requested base) and `ExchangeRateFeed` (the download and its failure handling). The ECB feed is
-  read with DTD processing prohibited and is published on working days only, so a weekend refresh keeps the last set.
+  warning, in the reader. Both adapters are typed clients with their own read only resilience profile and share `PivotRates` (the
+  conversion to the requested base) and `ExchangeRateFeed` (the download, capped at `MaxBodyBytes`, and its failure handling). The ECB feed is
+  read with DTD processing prohibited and no resolver and is published on working days only, so a weekend refresh keeps the last set.
   The admin Currencies page edits the row through `ExchangeRateProviderCard`, so the key is card owned.
 `UpdateExchangeRatesCron` (03:00 UTC, `ScheduledJobsOptions.UpdateExchangeRatesHour`) refreshes the currency rates by running the same `UpdateExchangeRatesCommand` as the admin button, so the update has one implementation. A refusal (source down, no base currency) is logged and the next run is scheduled all the same; `ScheduledJobs:DisableExchangeRateUpdates` turns the outbound call off. It changes rates only: product prices are recomputed by `UpdateProductPricesCommand`, an operator's decision.
 

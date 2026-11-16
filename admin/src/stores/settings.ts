@@ -17,7 +17,7 @@ import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import type { MessageLanguage } from '@/locales/messages'
 import type { CreateProductPayload, Product, ProductGroup, ProductListFilters, UpdateProductPayload } from '@/types/product'
 import { ProductErrorCode } from '@/types/productenums'
-import type { Setting } from '@/types/setting'
+import type { Setting, SettingSave } from '@/types/setting'
 import type { BrandingImageKind } from '@/types/upload'
 
 /** Holds the settings, email templates, products and groups the settings screens show. */
@@ -105,6 +105,22 @@ export const useSettingsStore = defineStore('settings', () => {
       await fetchSettings()
     }
     return result.ok
+  }
+
+  /**
+   * Persists one setting on behalf of a settings card and reports how it went.
+   *
+   * It is the one save callback every card is given: it answers rather than swallows, because the
+   * caller has to know whether it may drop the operator's text and shows the API's own sentence
+   * next to the control.
+   *
+   * @param id - Setting ID.
+   * @param value - New value to store.
+   * @returns Whether the value was stored, and the API's sentence when it was refused.
+   */
+  const saveSetting: SettingSave = async (id, value) => {
+    const saved = await updateSetting(id, value)
+    return { saved, error: saved ? null : actionError.value }
   }
 
   /**
@@ -257,7 +273,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     settings, emailTemplates, products, productPage, productPageSize, productTotalCount, productGroups, fieldErrors, clearFieldError,
     loading, error, actionError, uploadError,
-    fetchSettings, updateSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductsPage, fetchProductGroups,
+    fetchSettings, updateSetting, saveSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductsPage, fetchProductGroups,
     createProduct, updateProduct, uploadBrandingFile,
   }
 })

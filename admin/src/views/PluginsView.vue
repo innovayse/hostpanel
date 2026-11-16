@@ -48,7 +48,6 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
-import type { SettingSaveResult } from '@/types/setting'
 import { PluginCategory, PluginCategoryAll, PluginProcessingStep } from '@/types/plugin'
 import type { PluginActionOutcome } from '@/types/plugin'
 import type { UiTabItem } from '@/utils/ui/tabs'
@@ -189,18 +188,6 @@ const handleConfirmInstall = async (): Promise<void> => {
      */
     handsOff: () => store.downgradeFile !== null,
   })
-}
-
-/**
- * Persists the signing switch and reports how it went to the control that asked.
- *
- * @param id - Setting ID.
- * @param value - New value, `true` or `false`.
- * @returns Whether the value was stored, and the API's sentence when it was refused.
- */
-const saveSetting = async (id: number, value: string): Promise<SettingSaveResult> => {
-  const saved = await settingsStore.updateSetting(id, value)
-  return { saved, error: saved ? null : settingsStore.actionError }
 }
 
 /** Closed set of the page's tabs; the strings are the tab values kept in the address. */
@@ -434,7 +421,7 @@ onMounted(() => Promise.all([
 
     <!-- Browse -->
     <template v-if="tab === PluginsTab.Browse">
-      <PluginRegistryTrustCard :settings="settingsStore.settings" :save="saveSetting" />
+      <PluginRegistryTrustCard :settings="settingsStore.settings" :save="settingsStore.saveSetting" />
       <PluginRegistryInstanceCard
         :instance="store.registryInstance"
         :busy="store.registryInstanceBusy"
@@ -488,7 +475,7 @@ onMounted(() => Promise.all([
       :settings="settingsStore.settings"
       :error="settingsStore.error"
       :loading="settingsStore.loading"
-      :save="saveSetting"
+      :save="settingsStore.saveSetting"
       :kept-data-ids="store.keptDataIds"
       :purging-id="purgingId"
       @retry="settingsStore.fetchSettings()"

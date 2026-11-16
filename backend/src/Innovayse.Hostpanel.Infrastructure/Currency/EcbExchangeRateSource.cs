@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml;
 using System.Xml.Linq;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
@@ -49,6 +50,9 @@ public sealed class EcbExchangeRateSource : IExchangeRateSource
     /// <summary>The currency every quote is expressed in, and the only one the document omits.</summary>
     private const string PivotCode = "EUR";
 
+    /// <summary>How the document writes the day a set is published for, such as 2026-11-13.</summary>
+    private const string PublishedDateFormat = "yyyy-MM-dd";
+
     /// <summary>The XML namespace of the reference rates document.</summary>
     private static readonly XNamespace Eurofxref = "http://www.ecb.int/vocabulary/2002-08-01/eurofxref";
 
@@ -99,7 +103,7 @@ public sealed class EcbExchangeRateSource : IExchangeRateSource
         try
         {
             using var text = new StringReader(body);
-            using var reader = XmlReader.Create(text, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit });
+            using var reader = XmlReader.Create(text, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null });
             document = XDocument.Load(reader);
         }
         catch (XmlException ex)
@@ -115,7 +119,15 @@ public sealed class EcbExchangeRateSource : IExchangeRateSource
             return null;
         }
 
-        _logger.LogInformation("Read the European Central Bank reference rates published for {Date}.", dated.Attribute("time")?.Value);
+        // The date is parsed before it is logged: a set without a real publication date is not the published
+        // document, and nothing the bank sent is written to the log as it arrived.
+        if (!DateOnly.TryParseExact(dated.Attribute("time")?.Value, PublishedDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var published))
+        {
+            _logger.LogWarning("The exchange rate document held a set without a publication date.");
+            return null;
+        }
+
+        _logger.LogInformation("Read the European Central Bank reference rates published for {Date}.", published);
 
         var quotes = new Dictionary<string, decimal>(StringComparer.Ordinal);
         foreach (var cube in dated.Elements(Eurofxref + "Cube"))

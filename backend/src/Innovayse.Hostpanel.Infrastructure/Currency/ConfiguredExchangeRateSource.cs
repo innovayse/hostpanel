@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
@@ -16,12 +15,13 @@ namespace Innovayse.Hostpanel.Infrastructure.Currency;
 /// <remarks>
 /// The choice is read on every call, so a change in the admin currencies page applies to the next refresh,
 /// the daily job included, without a restart. A missing or invalid row reads as the seeded default
-/// (<see cref="ExchangeRateProvider.Cba"/>) with a warning, through <see cref="SettingSource"/>.
+/// (<see cref="ExchangeRateProvider.Cba"/>) with a warning, in <see cref="ExchangeRateSettingsReader"/>; this class
+/// only picks the adapter.
 /// </remarks>
 public sealed class ConfiguredExchangeRateSource : IExchangeRateSource
 {
     /// <summary>Reads the chosen bank from the settings catalogue.</summary>
-    private readonly SettingSource _settings;
+    private readonly ExchangeRateSettingsReader _settings;
 
     /// <summary>The Central Bank of Armenia's bulletin.</summary>
     private readonly CbaExchangeRateSource _cba;
@@ -33,7 +33,7 @@ public sealed class ConfiguredExchangeRateSource : IExchangeRateSource
     /// <param name="settings">Reads the chosen bank from the settings catalogue.</param>
     /// <param name="cba">The Central Bank of Armenia's bulletin.</param>
     /// <param name="ecb">The European Central Bank's reference rates.</param>
-    public ConfiguredExchangeRateSource(SettingSource settings, CbaExchangeRateSource cba, EcbExchangeRateSource ecb)
+    public ConfiguredExchangeRateSource(ExchangeRateSettingsReader settings, CbaExchangeRateSource cba, EcbExchangeRateSource ecb)
     {
         _settings = settings;
         _cba = cba;
@@ -43,11 +43,7 @@ public sealed class ConfiguredExchangeRateSource : IExchangeRateSource
     /// <inheritdoc/>
     public async Task<Result<ExchangeRateQuotes>> QuoteAsync(ExchangeRateLookup lookup, CancellationToken ct)
     {
-        var rows = await _settings.ReadRowsAsync([BillingSettingKeys.RateProvider], ct);
-
-        // The value is already in the canonical spelling of an enum member: a stored one is checked
-        // against the key's pattern, and anything else came back as the seeded default.
-        var provider = Enum.Parse<ExchangeRateProvider>(_settings.Value(rows, BillingSettingKeys.RateProvider));
+        var provider = await _settings.ProviderAsync(ct);
 
         IExchangeRateSource source = provider switch
         {

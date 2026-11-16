@@ -36,7 +36,6 @@ import { formatAffixed } from '@/lib/money'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { useSettingsStore } from '@/stores/settings'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
-import type { SettingSaveResult } from '@/types/setting'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
 
@@ -92,18 +91,6 @@ const nonBaseCurrencies = computed<CurrencyDto[]>(() => store.currencies.filter(
  */
 const formatSample = (currency: CurrencyDto): string =>
   `2.99 → ${formatAffixed(2.99, currency)}`
-
-/**
- * Persists the rate source row and reports how it went to the card that asked.
- *
- * @param id - Setting ID.
- * @param value - New value, an exchange rate provider name.
- * @returns Whether the value was stored, and the API's sentence when it was refused.
- */
-const saveSetting = async (id: number, value: string): Promise<SettingSaveResult> => {
-  const saved = await settingsStore.updateSetting(id, value)
-  return { saved, error: saved ? null : settingsStore.actionError }
-}
 
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
@@ -277,10 +264,18 @@ onMounted(() => Promise.all([store.fetchAll(), settingsStore.fetchSettings()]))
       {{ banner.message.value }}
     </UiAlert>
 
+    <!-- A refused settings load is said, never hidden: the card would otherwise claim the row is not seeded. -->
+    <UiErrorState
+      v-if="settingsStore.error"
+      :message="settingsStore.error"
+      :loading="settingsStore.loading"
+      testid="currencies-settings-error"
+      @retry="settingsStore.fetchSettings()"
+    />
     <ExchangeRateProviderCard
-      v-if="settingsStore.settings.length > 0"
+      v-else-if="!settingsStore.loading || settingsStore.settings.length > 0"
       :settings="settingsStore.settings"
-      :save="saveSetting"
+      :save="settingsStore.saveSetting"
     />
 
     <UiErrorState

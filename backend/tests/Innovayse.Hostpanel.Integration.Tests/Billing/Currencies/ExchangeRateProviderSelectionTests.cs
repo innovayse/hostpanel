@@ -179,6 +179,35 @@ public sealed class ExchangeRateProviderSelectionTests(IntegrationTestFactory fa
         }
     }
 
+    /// <summary>A row written in another case than the member name, as an import or a hand edit would leave it, still picks that bank.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AProviderStoredInAnotherCase_StillPicksThatBankAsync()
+    {
+        var client = await AdminClientAsync();
+        await EnsureEuroAsync();
+        ecb.Enqueue(HttpStatusCode.OK, EcbReplies.Daily, EcbReplies.ContentType);
+
+        try
+        {
+            using (var scope = factory.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+                await context.Settings.Where(s => s.Key == BillingSettingKeys.RateProvider)
+                    .ExecuteUpdateAsync(set => set.SetProperty(s => s.Value, "ecb"));
+            }
+
+            (await client.PostAsync("/api/admin/currencies/update-rates", content: null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            ecb.Requests.Should().ContainSingle();
+            cba.Requests.Should().BeEmpty();
+        }
+        finally
+        {
+            await SetProviderAsync(client, nameof(ExchangeRateProvider.Cba));
+        }
+    }
+
     /// <summary>An outage at the chosen bank is the fixed 503 with <c>Retry-After</c>, and no stored rate moves.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

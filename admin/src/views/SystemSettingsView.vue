@@ -31,7 +31,6 @@ import { useRouteTab } from '@/composables/useRouteTab'
 import { AppRoute } from '@/lib/routes'
 import { DEFAULT_SETTINGS_TAB, SETTINGS_TABS, SettingsTab } from '@/lib/settingsTabs'
 import { useSettingsStore } from '@/stores/settings'
-import type { SettingSaveResult } from '@/types/setting'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
 const { t } = useI18n()
@@ -63,27 +62,12 @@ const initialLoading = computed<boolean>(() => store.loading && store.settings.l
 onMounted(store.fetchSettings)
 
 /**
- * Persists one setting for a card, which shows the outcome next to the saved control.
- *
- * It is returned rather than swallowed, because the caller has to know whether it may drop the
- * operator's text.
- *
- * @param id - Setting ID.
- * @param value - New value.
- * @returns Whether the value was stored, and the API's sentence when it was refused.
- */
-const onSave = async (id: number, value: string): Promise<SettingSaveResult> => {
-  const ok = await store.updateSetting(id, value)
-  return { saved: ok, error: ok ? null : store.actionError }
-}
-
-/**
  * Props a card needs beyond the settings list: only the branding card uploads files and saves them itself.
  *
  * @param card - The card about to render.
  * @returns The extra props of that card.
  */
-const extraPropsOf = (card: Component): Record<string, unknown> => (card === BrandingCard ? { save: onSave } : {})
+const extraPropsOf = (card: Component): Record<string, unknown> => (card === BrandingCard ? { save: store.saveSetting } : {})
 
 /**
  * Selects the tab the strip reports.
@@ -124,7 +108,7 @@ const onSelect = (value: string): void => {
           v-for="definition in SETTINGS_TABS"
           v-show="definition.tab === tab"
           :key="definition.tab"
-          :save="onSave"
+          :save="store.saveSetting"
           :loading="initialLoading"
           :data-testid="`settings-panel-${definition.tab}`"
         >

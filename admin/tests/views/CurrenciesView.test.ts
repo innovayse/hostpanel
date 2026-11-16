@@ -54,6 +54,30 @@ describe('CurrenciesView', () => {
     expect(requestsOf(mock)).toContain('PUT /admin/settings/7')
   })
 
+  it('says the rate source row is not seeded instead of hiding the card', async () => {
+    stubRouteTable({
+      'GET /admin/currencies': () => json([usd, eur]),
+      'GET /admin/settings': () => json([]),
+    })
+    const { wrapper } = await mountScreen(CurrenciesView)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="exchange-rate-provider-not-seeded"]').exists()).toBe(true)
+  })
+
+  it('shows the refusal of the settings load with a retry instead of hiding the card', async () => {
+    stubRouteTable({
+      'GET /admin/currencies': () => json([usd, eur]),
+      'GET /admin/settings': () => problem('Settings are unavailable.', 503),
+    })
+    const { wrapper } = await mountScreen(CurrenciesView)
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="currencies-settings-error"]').text()).toContain('Settings are unavailable.')
+    expect(wrapper.find('[data-testid="exchange-rate-provider"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="currencies-settings-error-retry"]').exists()).toBe(true)
+  })
+
   it('opens the edit dialog with the stored values and closes it again', async () => {
     stubRouteTable({ 'GET /admin/currencies': () => json([usd, eur]) })
     const { wrapper } = await mountScreen(CurrenciesView)

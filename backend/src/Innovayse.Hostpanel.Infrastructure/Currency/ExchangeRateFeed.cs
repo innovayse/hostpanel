@@ -10,21 +10,30 @@ namespace Innovayse.Hostpanel.Infrastructure.Currency;
 /// </summary>
 public static class ExchangeRateFeed
 {
+    /// <summary>
+    /// The most bytes of a document the feed reads. A published set is a few kilobytes; a body past this is not
+    /// one, and reading it whole would let a hostile or broken answer fill the process memory.
+    /// </summary>
+    public const long MaxBodyBytes = 1024 * 1024;
+
     /// <summary>Downloads the document at <paramref name="path"/> and returns its text.</summary>
     /// <param name="http">The typed client, with the bank's origin as its base address.</param>
     /// <param name="path">The document, relative to the client's base address.</param>
     /// <param name="logger">Records why the download failed.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The body, or <see langword="null"/> when the bank did not answer, answered with an error status
-    /// or the resilience pipeline gave up; the cause is logged.
+    /// The body, or <see langword="null"/> when the bank did not answer, answered with an error status,
+    /// answered with more than <see cref="MaxBodyBytes"/> or the resilience pipeline gave up; the cause is logged.
     /// </returns>
     public static async Task<string?> TryReadAsync(HttpClient http, string path, ILogger logger, CancellationToken ct)
     {
         try
         {
-            using var response = await http.GetAsync(path, ct);
+            // Headers first, then a bounded buffering: an oversized body is refused as a failed download
+            // (an HttpRequestException) instead of being read whole.
+            using var response = await http.GetAsync(path, HttpCompletionOption.ResponseHeadersRead, ct);
             response.EnsureSuccessStatusCode();
+            await response.Content.LoadIntoBufferAsync(MaxBodyBytes, ct);
             return await response.Content.ReadAsStringAsync(ct);
         }
         catch (HttpRequestException ex)

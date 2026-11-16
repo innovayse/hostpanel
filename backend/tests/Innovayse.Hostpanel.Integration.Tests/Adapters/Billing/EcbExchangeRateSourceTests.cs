@@ -165,6 +165,56 @@ public sealed class EcbExchangeRateSourceTests : IAsyncLifetime
         result.ErrorCode.Should().Be(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
     }
 
+    /// <summary>A set whose publication date is not a date, or is not written as one, is not the published document.</summary>
+    /// <param name="date">What the stub bank writes as the day of the set.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("")]
+    [InlineData("yesterday")]
+    [InlineData("2026-13-45")]
+    [InlineData("13/11/2026")]
+    public async Task QuoteAsync_UnreadableDateIsUnavailable(string date)
+    {
+        http.Enqueue(HttpStatusCode.OK, EcbReplies.Document(date, ("USD", "1.25")), EcbReplies.ContentType);
+
+        var result = await QuoteAsync("EUR", "USD");
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
+    }
+
+    /// <summary>A body past the size the feed reads is refused unread, as the source being unavailable.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task QuoteAsync_OversizedBodyIsUnavailable()
+    {
+        var padding = new string(' ', (int)ExchangeRateFeed.MaxBodyBytes);
+        http.Enqueue(HttpStatusCode.OK, EcbReplies.Daily + padding, EcbReplies.ContentType);
+
+        var result = await QuoteAsync("EUR", "USD");
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
+    }
+
+    /// <summary>
+    /// A rate so large that one unit rounds to nothing in the euro is an unusable feed when it is the base (it
+    /// would be the divisor), and is left out when it is only a wanted currency.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task QuoteAsync_RateThatRoundsToZeroIsUnusable()
+    {
+        const string Huge = "30000000000000000000000000000";
+        var document = EcbReplies.Document("2026-11-13", ("USD", "1.25"), ("JPY", Huge));
+        http.Enqueue(HttpStatusCode.OK, document, EcbReplies.ContentType);
+        http.Enqueue(HttpStatusCode.OK, document, EcbReplies.ContentType);
+
+        var asBase = await QuoteAsync("JPY", "USD");
+        var asCode = await QuoteAsync("EUR", "USD", "JPY");
+
+        asBase.ErrorCode.Should().Be(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE);
+        asCode.Value!.RatesToBase.Keys.Should().BeEquivalentTo(["USD"]);
+    }
+
     /// <summary>A bank that holds the request past the client's timeout is the source being unavailable.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

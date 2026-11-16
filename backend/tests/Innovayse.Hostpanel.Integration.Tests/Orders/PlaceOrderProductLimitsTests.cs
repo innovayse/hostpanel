@@ -156,7 +156,7 @@ public sealed class PlaceOrderProductLimitsTests(IntegrationTestFactory factory)
     /// </remarks>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task PlaceOrder_OrderSaveFailsInThePlacesTransaction_LeavesNoInvoiceAndSurfacesTheOriginalErrorAsync()
+    public async Task PlaceOrder_OrderSaveFailsInThePlacesTransaction_CancelsTheInvoiceAndSurfacesTheOriginalErrorAsync()
     {
         var productId = await OrdersTestSeeds.SeedLimitedProductAsync(factory, max: 5, onePerClient: false);
         var (client, clientId, _) = await ClientsTestSeeds.RegisterClientAsync(factory, "save-fails");

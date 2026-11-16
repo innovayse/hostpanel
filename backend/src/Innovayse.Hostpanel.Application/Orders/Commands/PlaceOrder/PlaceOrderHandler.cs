@@ -651,6 +651,8 @@ public sealed class PlaceOrderHandler
         }
         catch (Exception)
         {
+            // The invoice was raised through the bus in its own scope and committed on its own connection,
+            // so rolling back the place transaction does not remove it; it must be cancelled here too.
             // Not the request's token: a cancelled request is exactly when the invoice must
             // still be withdrawn. The original failure is what the caller sees.
             var cancelled = await _bus.InvokeAsync<Result>(new CancelInvoiceCommand(invoiceId), CancellationToken.None);

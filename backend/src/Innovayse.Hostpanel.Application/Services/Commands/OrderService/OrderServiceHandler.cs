@@ -2,6 +2,8 @@ using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Application.Products.Extensions;
+using Innovayse.Hostpanel.Application.Products.Queries.CheckProductLimits;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductCyclePrices;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -60,7 +62,8 @@ public sealed class OrderServiceHandler
     /// product, <c>CLIENT_NOT_FOUND</c> when it names no client, or <c>PRODUCT_NOT_AVAILABLE</c> when the product is not active or an amount was
     /// left for this handler to price and the product has no price for that cycle in the
     /// client's currency, or <c>ORDER_LINE_SERVICE_CONFLICT</c> when the service already stored for the order line belongs to another
-    /// client or product.
+    /// client or product, or, for a service ordered with no order line, <c>ORDER_PRODUCT_SOLD_OUT</c> or
+    /// <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the product's cap on live services or its one-per-client rule refuses it.
     /// </returns>
     public async Task<Result<int>> HandleAsync(OrderServiceCommand cmd, CancellationToken ct)
     {
@@ -113,6 +116,21 @@ public sealed class OrderServiceHandler
         var firstPayment = cmd.FirstPaymentAmount ?? cyclePriceOutcome.Value;
         var recurring = cmd.RecurringAmount ?? cyclePriceOutcome.Value;
 
+        // A line of an order already took its place when the order was placed, so only a service ordered with no line is
+        // checked, and a refusal there would never strand a paid order. The count and the save that takes the place
+        // run under the product's lock, so a parallel order waits for this one and counts it.
+        var placeLimited = cmd.OrderItemId is null && (product.MaxActiveServices is not null || product.OnePerClient);
+        await using var placesTransaction = placeLimited ? await _context.BeginTransactionAsync(ct) : null;
+        if (placesTransaction is not null)
+        {
+            await _context.LockProductPlacesAsync([product.Id], ct);
+            var room = await _bus.InvokeAsync<Result>(new CheckProductLimitsQuery([product.Id], cmd.ClientId), ct);
+            if (room.IsFailure)
+            {
+                return Result<int>.FailureCode(room.ErrorCode!);
+            }
+        }
+
         var service = ClientService.CreateOrdered(
             cmd.ClientId, cmd.ProductId, cmd.BillingCycle, cmd.Domain, firstPayment, recurring, cmd.PaymentMethod, cmd.FirstInvoiceId, _clock.UtcNow, cmd.OrderItemId);
 
@@ -133,6 +151,11 @@ public sealed class OrderServiceHandler
             }
 
             return winner;
+        }
+
+        if (placesTransaction is not null)
+        {
+            await placesTransaction.CommitAsync(ct);
         }
 
         return Result<int>.Success(service.Id);

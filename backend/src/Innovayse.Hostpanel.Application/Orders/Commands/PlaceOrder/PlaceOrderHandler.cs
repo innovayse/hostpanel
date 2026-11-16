@@ -23,6 +23,8 @@ using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Extensions;
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Application.Products.Extensions;
+using Innovayse.Hostpanel.Application.Products.Queries.CheckProductLimits;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProducts;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductBundle;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
@@ -35,6 +37,7 @@ using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wolverine;
@@ -154,7 +157,8 @@ public sealed class PlaceOrderHandler
     /// <c>ORDER_GUEST_DETAILS_REQUIRED</c> when a guest checkout reached the handler without its
     /// registration fields, <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already has an
     /// account, <c>PRODUCT_NOT_FOUND</c> or <c>PRODUCT_NOT_AVAILABLE</c> when a line item names a
-    /// product that does not exist or is not active, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c> when a
+    /// product that does not exist or is not active, <c>ORDER_PRODUCT_SOLD_OUT</c> when a product's cap on live
+    /// services is reached, <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the client already holds a one-per-client product, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c> when a
     /// product has no price for the requested currency and cycle, <c>ORDER_DOMAIN_PRICING_INVALID</c>
     /// when a domain line cannot be priced (see the private pricing helpers below for the causes
     /// that one code covers), <c>PRODUCT_BUNDLE_NOT_FOUND</c> or <c>PRODUCT_BUNDLE_NOT_AVAILABLE</c> when the bundle does
@@ -331,6 +335,22 @@ public sealed class PlaceOrderHandler
             lines = ApplyBundleDiscount(bundle, bundleDiscount, lines, currency.Value!);
         }
 
+        // A product with a cap or a one-per-client rule is counted and then taken by this order's save, two steps that a
+        // parallel order would interleave with and both pass. Its places are locked from before the count until the order
+        // is committed, so the second order waits and counts the first. The client exists by now, so a refusal here
+        // leaves nothing but what a guest's checkout created for them.
+        await using var placesTransaction = lines.Any(l => l.PlaceLimited) ? await _context.BeginTransactionAsync(ct) : null;
+        if (placesTransaction is not null)
+        {
+            await _context.LockProductPlacesAsync(lines.Where(l => l.PlaceLimited).Select(l => l.Item.ProductId), ct);
+            var productIds = lines.Where(l => l.Item.DomainAction is null).Select(l => l.Item.ProductId).ToList();
+            var room = await _bus.InvokeAsync<Result>(new CheckProductLimitsQuery(productIds, clientId.Value), ct);
+            if (room.IsFailure)
+            {
+                return Result<PlaceOrderResultDto>.FailureCode(room.ErrorCode!);
+            }
+        }
+
         // Taken from a database sequence, not derived from the stored maximum: reading the maximum
         // and claiming max + 1 are two steps, so two concurrent orders claimed the same number and
         // the second hit the unique index. A sequence also never frees a number for reuse, so a
@@ -379,7 +399,7 @@ public sealed class PlaceOrderHandler
         }
 
         order.LinkInvoice(invoice.Value);
-        await SaveOrCancelInvoiceAsync(order, invoice.Value, ct);
+        await SaveOrCancelInvoiceAsync(order, invoice.Value, placesTransaction, ct);
 
         // Logged once the order has its id; nothing was logged when fraud detection is off.
         if (verdict.Checked)
@@ -464,7 +484,8 @@ public sealed class PlaceOrderHandler
 
             // A domain line charges for a domain, not for the catalogue product it names, so it keeps no snapshot.
             var snapshot = item.DomainAction is null ? product.Fulfilment.ToSnapshot(item.BillingCycle) : null;
-            lines.Add(new PricedOrderLine(item, product.Name, priceOutcome.Value, snapshot));
+            var placeLimited = item.DomainAction is null && (product.MaxActiveServices is not null || product.OnePerClient);
+            lines.Add(new PricedOrderLine(item, product.Name, priceOutcome.Value, snapshot, PlaceLimited: placeLimited));
         }
 
         return Result<IReadOnlyList<PricedOrderLine>>.Success(lines);
@@ -613,14 +634,19 @@ public sealed class PlaceOrderHandler
     /// </summary>
     /// <param name="order">The order to save.</param>
     /// <param name="invoiceId">The invoice raised for it.</param>
+    /// <param name="transaction">The transaction holding the product place locks, committed with the order, or null when the order holds none.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes once the order is saved; the save's own exception otherwise.</returns>
-    private async Task SaveOrCancelInvoiceAsync(Order order, int invoiceId, CancellationToken ct)
+    /// <returns>A task that completes once the order is saved and committed; the failure's own exception otherwise.</returns>
+    private async Task SaveOrCancelInvoiceAsync(Order order, int invoiceId, IDbContextTransaction? transaction, CancellationToken ct)
     {
         try
         {
             _context.Orders.Add(order);
             await _context.SaveChangesAsync(ct);
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(ct);
+            }
         }
         catch (Exception)
         {

@@ -76,7 +76,8 @@ public sealed class OrdersController : BaseApiController
     /// <c>CLIENT_PERMISSION_DENIED</c> when they lack the ordering permission or the enabled identity plugin refuses them;
     /// 404 with <c>PRODUCT_NOT_FOUND</c>, <c>PRODUCT_BUNDLE_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
     /// the client does not hold; 409 with <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already
-    /// has an account; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an
+    /// has an account, or with <c>ORDER_PRODUCT_SOLD_OUT</c> or <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when a product's cap on
+    /// live services or its one-per-client rule refuses the order; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an
     /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>, or with
     /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>) when the identity plugin cannot say who the caller is.
     /// </returns>

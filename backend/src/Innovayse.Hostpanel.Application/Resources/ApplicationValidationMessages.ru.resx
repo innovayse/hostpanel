@@ -1771,4 +1771,7 @@
   <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
     <value>Значение параметра возврата слишком длинное.</value>
   </data>
+  <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
+    <value>Максимальное число активных услуг должно быть 0 или пустым (без ограничений) либо положительным числом.</value>
+  </data>
 </root>

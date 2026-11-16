@@ -1,4 +1,5 @@
 using FluentValidation;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Extensions;
@@ -54,5 +55,8 @@ public sealed class UpdateProductValidator : LocalizedValidator<UpdateProductCom
             L["ProductMetadataTooLarge", Product.MaxMetadataBytes], L["ProductMetadataInvalid"]);
         RuleFor(x => x.GracePeriodDays).MustBeGracePeriod(
             L["ProductGracePeriodOutOfRange", Product.MinGracePeriodDays, Product.MaxGracePeriodDays]);
+        RuleFor(x => x.MaxActiveServices).GreaterThanOrEqualTo(0).When(x => x.MaxActiveServices is not null)
+            .WithErrorCode(HostpanelErrorCodes.PRODUCT_MAX_ACTIVE_SERVICES_INVALID)
+            .WithMessage(L["ProductMaxActiveServicesInvalid"]);
     }
 }

@@ -449,6 +449,62 @@ public class ProductTests
         product.IsDigitalService.Should().BeFalse();
     }
 
+    /// <summary>A new product is unlimited and not limited to one per client.</summary>
+    [Fact]
+    public void Create_StartsUnlimited_AndNotOnePerClient()
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+
+        Assert.Null(product.MaxActiveServices);
+        Assert.False(product.OnePerClient);
+    }
+
+    /// <summary>SetMaxActiveServices stores a cap of one or more, and null clears it to unlimited.</summary>
+    /// <param name="max">A valid cap.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(50)]
+    [InlineData(null)]
+    public void SetMaxActiveServices_Valid_StoresIt(int? max)
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+        product.SetMaxActiveServices(7);
+
+        product.SetMaxActiveServices(max);
+
+        Assert.Equal(max, product.MaxActiveServices);
+    }
+
+    /// <summary>SetMaxActiveServices refuses zero or a negative cap and keeps the one it had.</summary>
+    /// <param name="max">An invalid cap.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(int.MinValue)]
+    public void SetMaxActiveServices_ZeroOrNegative_ThrowsAndKeepsTheOldCap(int max)
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+        product.SetMaxActiveServices(50);
+
+        var ex = Assert.Throws<DomainRuleException>(() => product.SetMaxActiveServices(max));
+
+        Assert.Equal(ProductsErrors.ProductMaxActiveServicesInvalid, ex.Code);
+        Assert.Equal(50, product.MaxActiveServices);
+    }
+
+    /// <summary>SetOnePerClient turns the rule on and off.</summary>
+    [Fact]
+    public void SetOnePerClient_TogglesTheRule()
+    {
+        var product = NewProduct(ProductType.SharedHosting);
+
+        product.SetOnePerClient(true);
+        Assert.True(product.OnePerClient);
+
+        product.SetOnePerClient(false);
+        Assert.False(product.OnePerClient);
+    }
+
     /// <summary>Creates a product of the given type with fixed, irrelevant values.</summary>
     /// <param name="type">The product type.</param>
     /// <returns>A new active product.</returns>

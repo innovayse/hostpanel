@@ -100,6 +100,8 @@ public sealed class MyServicesController : BaseApiController
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>PlaceNewOrders</c>, or with <c>CLIENT_SUSPENDED</c> or
     /// <c>CLIENT_CLOSED</c> when the account may not order; 404 with
     /// <c>CLIENT_PROFILE_NOT_FOUND</c> or <c>PRODUCT_NOT_FOUND</c>;
+    /// 409 with <c>ORDER_PRODUCT_SOLD_OUT</c> or <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the product's cap on live
+    /// services or its one-per-client rule refuses the order;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost]
@@ -110,6 +112,7 @@ public sealed class MyServicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> OrderAsync([FromBody] OrderMyServiceCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<int>>(command, ct);

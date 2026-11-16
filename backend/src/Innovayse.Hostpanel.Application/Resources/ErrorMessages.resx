@@ -1534,4 +1534,13 @@
   <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
     <value>The block list entry was not found.</value>
   </data>
+  <data name="ORDER_PRODUCT_SOLD_OUT" xml:space="preserve">
+    <value>Sorry, this product is sold out.</value>
+  </data>
+  <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
+    <value>You already have this product; it can be ordered once per customer.</value>
+  </data>
+  <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
+    <value>The maximum number of active services must be 0 or empty for unlimited, or a positive number.</value>
+  </data>
 </root>

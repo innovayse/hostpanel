@@ -73,6 +73,9 @@ public sealed class CreateProductHandler
         }
 
         product.SetDigitalService(cmd.IsDigitalService);
+        // 0 and null both mean unlimited, which the aggregate stores as null.
+        product.SetMaxActiveServices(cmd.MaxActiveServices is > 0 ? cmd.MaxActiveServices : null);
+        product.SetOnePerClient(cmd.OnePerClient);
 
         // Hidden is the Inactive status: the public catalogue and order paths only take active products.
         if (cmd.IsHidden)

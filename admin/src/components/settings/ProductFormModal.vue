@@ -169,6 +169,12 @@ const metadata = ref('')
 /** Grace period in days. */
 const gracePeriodDays = ref(DEFAULT_GRACE_PERIOD_DAYS)
 
+/** Cap on live services of the product; empty or 0 means unlimited. */
+const maxActiveServices = ref<number | null>(null)
+
+/** Whether a client may hold only one live service of the product. */
+const onePerClient = ref(false)
+
 /** Available server groups (owned by the servers store). */
 const serverGroups = computed(() => serversStore.groups)
 
@@ -221,6 +227,8 @@ watch(() => props.product, (p) => {
     sku.value = p.sku ?? ''
     metadata.value = p.metadata ?? ''
     gracePeriodDays.value = p.gracePeriodDays
+    maxActiveServices.value = p.maxActiveServices
+    onePerClient.value = p.onePerClient
     resetPriceRows(p.prices)
   } else {
     type.value = ProductType.SharedHosting
@@ -238,6 +246,8 @@ watch(() => props.product, (p) => {
     sku.value = ''
     metadata.value = ''
     gracePeriodDays.value = DEFAULT_GRACE_PERIOD_DAYS
+    maxActiveServices.value = null
+    onePerClient.value = false
     resetPriceRows()
   }
 }, { immediate: true })
@@ -342,6 +352,7 @@ useFieldErrorClear(
     [ProductField.Sku, sku],
     [ProductField.Metadata, metadata],
     [ProductField.GracePeriodDays, gracePeriodDays],
+    [ProductField.MaxActiveServices, maxActiveServices],
   ],
 )
 
@@ -368,6 +379,9 @@ const handleSubmit = (): void => {
     gracePeriodDays: Number(gracePeriodDays.value),
     isHidden: isHidden.value,
     isDigitalService: isDigitalService.value,
+    // 0 is unlimited: always sent, so clearing the field on update clears the stored cap.
+    maxActiveServices: Math.max(0, Math.trunc(Number(maxActiveServices.value)) || 0),
+    onePerClient: onePerClient.value,
   })
 }
 </script>
@@ -516,6 +530,17 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
+      <UiField :label="t('settings.productForm.maxActiveServices')" :hint="t('settings.productForm.maxActiveServicesHint')" :error="props.fieldErrors[ProductField.MaxActiveServices]">
+        <UiNumberInput
+          v-model="maxActiveServices"
+          nullable
+          :min="0"
+          :step="1"
+          :placeholder="t('settings.productForm.maxActiveServicesPlaceholder')"
+          data-testid="product-form-max-active-services"
+        />
+      </UiField>
+
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
         <UiCard class="overflow-hidden">
@@ -580,6 +605,15 @@ const handleSubmit = (): void => {
           <UiText tone="muted" size="sm">{{ t('settings.productForm.hideThisProductFromThe') }}</UiText>
         </UiStack>
         <UiToggle v-model="isHidden" data-testid="product-form-hidden" />
+      </UiStack>
+
+      <!-- One-per-client toggle -->
+      <UiStack direction="row" align="center" justify="between">
+        <UiStack gap="xs">
+          <UiText tone="primary" size="md">{{ t('settings.productForm.onePerClient') }}</UiText>
+          <UiText tone="muted" size="sm">{{ t('settings.productForm.onePerClientHint') }}</UiText>
+        </UiStack>
+        <UiToggle v-model="onePerClient" data-testid="product-form-one-per-client" />
       </UiStack>
 
       <UiStatusMessage :message="error ?? null" :tone="UiTone.Danger" data-testid="product-form-error" />

@@ -3355,6 +3355,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("MaxActiveServices")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Metadata")
                         .HasColumnType("jsonb");
 
@@ -3365,6 +3368,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("OnePerClient")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PackageName")
                         .HasMaxLength(100)
@@ -3409,6 +3415,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Products", t =>
                         {
                             t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
+
+                            t.HasCheckConstraint("CK_Products_MaxActiveServices", "\"MaxActiveServices\" IS NULL OR \"MaxActiveServices\" >= 1");
                         });
                 });
 
@@ -4186,11 +4194,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasDatabaseName("IX_ClientServices_OrderItemId")
                         .HasFilter("\"OrderItemId\" IS NOT NULL");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("ClientId", "ExternalId")
                         .IsUnique()
                         .HasFilter("\"ExternalId\" IS NOT NULL");
+
+                    b.HasIndex("ProductId", "Status");
 
                     b.HasIndex("Status", "NextRenewalAt");
 

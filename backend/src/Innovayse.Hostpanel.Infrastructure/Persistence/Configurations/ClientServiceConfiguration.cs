@@ -30,6 +30,10 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.HasIndex(x => x.ClientId);
         builder.HasIndex(x => new { x.Status, x.NextRenewalAt });
 
+        // How many services of a product are live: the count a product's cap and its one-per-client rule are checked
+        // against on every order, and by the catalogue for every capped product.
+        builder.HasIndex(x => new { x.ProductId, x.Status });
+
         // The source system's service id, kept for migration de-duplication. A source id is unique
         // only within one source, so it is unique per client, and only where one is set.
         builder.HasIndex(x => new { x.ClientId, x.ExternalId })

@@ -2,13 +2,14 @@
  * Unit tests for FloatingActions: the fan opens and closes, each action appears only when the
  * operator configured it, and Escape or an outside click closes the fan.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import FloatingActions from '~/components/ui/UiFloatingActions.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
-import { openLiveChat } from '~/utils/liveChat'
+import { LIVE_CHAT_API_GLOBAL, openLiveChat } from '~/utils/liveChat'
+import { LiveChatPanelState } from '~/types/livechatpanelstate'
 import { ChatProvider } from '~/types/chatprovider'
 
 /** What the stub answers, by route; the hooks start the stub before each test and close it after. */
@@ -22,6 +23,11 @@ const { replies } = usePortalSettingsServer({ openLiveChat })
 const mountAttached = () => mountWithKit(FloatingActions, { attachToBody: true })
 
 describe('FloatingActions', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    Reflect.deleteProperty(window, LIVE_CHAT_API_GLOBAL)
+  })
+
   it('starts closed with only the toggle button', async () => {
     await loadPortalSettings(replies, { [PortalSettingKey.ContactWhatsapp]: '37410123456' })
 
@@ -65,17 +71,30 @@ describe('FloatingActions', () => {
     wrapper.unmount()
   })
 
-  it('closes the fan after choosing live chat, and says so when the widget is not running yet', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    await loadPortalSettings(replies, { [PortalSettingKey.ChatProvider]: 'innochat' })
+  it('opens the widget and closes the fan after choosing live chat', async () => {
+    const toggle = vi.fn()
+    Reflect.set(window, LIVE_CHAT_API_GLOBAL, { toggle })
+    await loadPortalSettings(replies, { [PortalSettingKey.ChatProvider]: ChatProvider.Innochat })
+    const wrapper = mountAttached()
+    await wrapper.find('[data-testid="floating-toggle"]').trigger('click')
+
+    await wrapper.find('[data-testid="floating-live-chat"]').trigger('click')
+
+    expect(toggle).toHaveBeenCalledWith(LiveChatPanelState.Open)
+    expect(wrapper.find('[data-testid="floating-toggle"]').attributes('aria-expanded')).toBe('false')
+    wrapper.unmount()
+  })
+
+  it('closes the fan after choosing live chat even when the widget is not running yet', async () => {
+    // The component logs that the widget is not running; the log is silenced here, not what this test is about.
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await loadPortalSettings(replies, { [PortalSettingKey.ChatProvider]: ChatProvider.Innochat })
     const wrapper = mountAttached()
     await wrapper.find('[data-testid="floating-toggle"]').trigger('click')
 
     await wrapper.find('[data-testid="floating-live-chat"]').trigger('click')
 
     expect(wrapper.find('[data-testid="floating-toggle"]').attributes('aria-expanded')).toBe('false')
-    expect(warn).toHaveBeenCalledTimes(1)
-    warn.mockRestore()
     wrapper.unmount()
   })
 

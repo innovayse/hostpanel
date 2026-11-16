@@ -79,7 +79,7 @@ describe('color-mode plugin', () => {
     await loadPlugin()
 
     const head = useHeadMock.mock.calls[0]![0] as HeadInput
-    expect(head.htmlAttrs.class()).toBe('dark')
+    expect(head.htmlAttrs.class()).toBe(ColorMode.Dark)
   })
 
   it('writes the template page colour into theme-color', async () => {
@@ -120,7 +120,7 @@ describe('color-mode plugin', () => {
   })
 
   it('migrates a legacy stored choice and removes the key', async () => {
-    localStorage.setItem('color-mode', 'light')
+    localStorage.setItem('color-mode', ColorMode.Light)
 
     await loadPlugin()
 
@@ -130,11 +130,11 @@ describe('color-mode plugin', () => {
 
   it('reads the class the bootstrap script set when nothing was applied yet', async () => {
     settings[PortalSettingKey.ThemeDefault] = ColorModeSystem.System
-    document.documentElement.classList.add('light')
+    document.documentElement.classList.add(ColorMode.Light)
 
     await loadPlugin()
 
     expect(applied.value).toBe(ColorMode.Light)
-    document.documentElement.classList.remove('light')
+    document.documentElement.classList.remove(ColorMode.Light)
   })
 })

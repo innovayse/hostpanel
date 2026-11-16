@@ -4,8 +4,12 @@
  * @module tests/helpers/runtimeStubs.test
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { localized, stubLocale, stubLocalePath, stubRoute, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('stubRoute', () => {
   it('answers with the given parameters, query and path', () => {

@@ -9,6 +9,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref, unref } from 'vue'
 import type { Ref } from 'vue'
+import { documentHead } from '~/tests/helpers/documentHead'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import App from '~/app.vue'
@@ -61,7 +62,7 @@ const marker = (testid: string) => defineComponent({ setup: () => () => h('div',
  * @param options.favicon - The favicon setting.
  * @returns The locale ref, so a test can change it.
  */
-const stubComposables = async (options: { locale?: string, tagline?: string, favicon?: string } = {}): Promise<{ locale: Ref<string> }> => {
+const loadSettingsAndStubHead = async (options: { locale?: string, tagline?: string, favicon?: string } = {}): Promise<{ locale: Ref<string> }> => {
   /** The active UI locale. */
   const locale = ref(options.locale ?? 'en')
   await loadPortalSettings(replies, {
@@ -88,18 +89,20 @@ const mountApp = () => mountWithKit(App, {
   stubs: { UiCookieBanner: marker('cookie-banner') },
 })
 
+/** What the app passes to `useHead` for the document: the language and the icon links. */
+interface AppHead {
+  /** The attributes of `<html>`. */
+  htmlAttrs: { lang: () => string }
+  /** The icon links. */
+  link: Ref<Array<Record<string, string>>>
+}
+
 /**
  * Reads the object the app passed to `useHead` for the document: the language and the icon links.
  *
  * @returns The head input.
  */
-const headInput = () => {
-  const input = useHead.mock.calls.map(([argument]) => argument).find((argument) => typeof argument === 'object')
-  return input as {
-    htmlAttrs: { lang: () => string }
-    link: Ref<Array<Record<string, string>>>
-  }
-}
+const headInput = () => documentHead<AppHead>(useHead)
 
 /**
  * Reads the structured data the app injected: the `@type` of each JSON-LD document, per injection.
@@ -126,7 +129,7 @@ describe('app.vue', () => {
   })
 
   it('renders the layout around the page and leaves the cookie banner to the layouts', async () => {
-    await stubComposables()
+    await loadSettingsAndStubHead()
 
     const wrapper = mountApp()
 
@@ -135,7 +138,7 @@ describe('app.vue', () => {
   })
 
   it('injects the organization, local business and website schemas once', async () => {
-    await stubComposables()
+    await loadSettingsAndStubHead()
 
     mountApp()
 
@@ -143,7 +146,7 @@ describe('app.vue', () => {
   })
 
   it.each(['en', 'ru', 'hy'])('sets the document language to %s', async (code) => {
-    await stubComposables({ locale: code })
+    await loadSettingsAndStubHead({ locale: code })
 
     mountApp()
 
@@ -151,7 +154,7 @@ describe('app.vue', () => {
   })
 
   it('falls back to the default language for an unknown locale', async () => {
-    await stubComposables({ locale: 'xx' })
+    await loadSettingsAndStubHead({ locale: 'xx' })
 
     mountApp()
 
@@ -159,7 +162,7 @@ describe('app.vue', () => {
   })
 
   it('follows the locale when it changes', async () => {
-    const { locale } = await stubComposables({ locale: 'en' })
+    const { locale } = await loadSettingsAndStubHead({ locale: 'en' })
 
     mountApp()
     locale.value = 'hy'
@@ -168,7 +171,7 @@ describe('app.vue', () => {
   })
 
   it('sets the site name as og:site_name and author', async () => {
-    await stubComposables()
+    await loadSettingsAndStubHead()
 
     mountApp()
 
@@ -178,7 +181,7 @@ describe('app.vue', () => {
   })
 
   it('leaves the description alone when there is no tagline', async () => {
-    await stubComposables({ tagline: '' })
+    await loadSettingsAndStubHead({ tagline: '' })
 
     mountApp()
 
@@ -188,7 +191,7 @@ describe('app.vue', () => {
   })
 
   it('sets the description and og:description from the tagline', async () => {
-    await stubComposables({ tagline: 'Hosting that stays up' })
+    await loadSettingsAndStubHead({ tagline: 'Hosting that stays up' })
 
     mountApp()
 
@@ -198,7 +201,7 @@ describe('app.vue', () => {
   })
 
   it('builds the favicon links from the favicon setting', async () => {
-    await stubComposables({ favicon: '/uploads/branding/favicon/abc/favicon.png' })
+    await loadSettingsAndStubHead({ favicon: '/uploads/branding/favicon/abc/favicon.png' })
 
     mountApp()
 
@@ -208,7 +211,7 @@ describe('app.vue', () => {
   })
 
   it('passes neither type nor sizes for a pasted icon that has none', async () => {
-    await stubComposables({ favicon: 'https://cdn.example.test/bare.png' })
+    await loadSettingsAndStubHead({ favicon: 'https://cdn.example.test/bare.png' })
 
     mountApp()
 
@@ -216,7 +219,7 @@ describe('app.vue', () => {
   })
 
   it('passes type and sizes for the icons of an uploaded favicon', async () => {
-    await stubComposables({ favicon: '/uploads/branding/favicon/abc/favicon.png' })
+    await loadSettingsAndStubHead({ favicon: '/uploads/branding/favicon/abc/favicon.png' })
 
     mountApp()
 

@@ -110,6 +110,14 @@ describe('live-chat plugin', () => {
     expect(scripts()).toEqual([])
   })
 
+  it('emits no script when the token key is absent from the settings', async () => {
+    configureChat()
+    Reflect.deleteProperty(settings, PortalSettingKey.ChatWebsiteToken)
+    await loadPlugin()
+
+    expect(scripts()).toEqual([])
+  })
+
   it('emits the loader at the end of the body when fully configured', async () => {
     configureChat()
     await loadPlugin()

@@ -14,6 +14,9 @@
  * is not replacing code of ours and is always allowed, and so is registering the real composable under its own
  * name (`vi.stubGlobal('useX', useX)`), which only makes the real one reachable as the global it is in the app.
  *
+ * `usePortalSettingsServer` registers its argument by a dynamic name, which the `stubGlobal` scan cannot see, so
+ * the guard reads the argument itself: every entry must be a bare imported identifier (`{ useX }`), the real one.
+ *
  * @module tests/config/noOwnMocks.test
  */
 
@@ -42,6 +45,12 @@ const MOCK_CALL = /\bvi\.(?:mock|doMock)\(\s*(['"`])([^'"`]+)\1/g
  * its auto-import name; any other value (a function, a spy, an object) leaves group 3 undefined.
  */
 const STUB_GLOBAL_CALL = /\bvi\.stubGlobal\(\s*(['"`])([^'"`]+)\1\s*(?:,\s*([A-Za-z0-9_$]+)\s*\))?/g
+
+/** A call of the portal settings helper, up to the first character of its argument (an object, a name or `)`). */
+const SERVER_SETUP_CALL = /\busePortalSettingsServer\(\s*/g
+
+/** One entry of the helper's argument that is the real thing: a bare identifier, or `name: name`, captured in group 1. */
+const REAL_ENTRY = /^([A-Za-z0-9_$]+)(?:\s*:\s*\1)?$/
 
 /** An exported function or constant of a client source file, captured in group 1. */
 const EXPORTED_NAME = /export\s+(?:const|function|async function)\s+([A-Za-z0-9_$]+)/g
@@ -112,6 +121,60 @@ const ownGlobalStubs = (text: string, ownNames: ReadonlySet<string>): string[] =
     .map((match) => match[2] ?? '')
     .filter((name) => ownNames.has(name))
 
+/**
+ * Reads the body of the object literal that opens at an index.
+ *
+ * @param text - File contents.
+ * @param start - Index of the opening brace.
+ * @returns What lies between the braces, or null when the object never closes.
+ */
+const objectBody = (text: string, start: number): string | null => {
+  let depth = 0
+  for (let index = start; index < text.length; index++) {
+    if (text[index] === '{') {
+      depth++
+    } else if (text[index] === '}') {
+      depth--
+      if (depth === 0) {
+        return text.slice(start + 1, index)
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Finds what `usePortalSettingsServer(...)` registers that is not a real, imported composable or helper. The helper
+ * stubs each entry as a global by a dynamic name, so a fake would pass the `vi.stubGlobal` scan unseen; here every
+ * entry of the argument must be a bare identifier that the file imports. The argument may be an object literal or
+ * the name of a `const` object literal in the same file.
+ *
+ * @param text - File contents.
+ * @returns The entries (or the whole argument) that are not a bare imported identifier, empty when all are real.
+ */
+const fakedRegistrations = (text: string): string[] =>
+  [...text.matchAll(SERVER_SETUP_CALL)].flatMap((call) => {
+    const start = (call.index ?? 0) + call[0].length
+    if (text[start] === ')') {
+      return []
+    }
+    let body: string | null
+    if (text[start] === '{') {
+      body = objectBody(text, start)
+    } else {
+      const name = /^([A-Za-z0-9_$]+)\s*\)/.exec(text.slice(start))?.[1]
+      const declaration = name ? new RegExp(String.raw`\bconst\s+${name}\s*=\s*\{`).exec(text) : null
+      body = declaration ? objectBody(text, declaration.index + declaration[0].length - 1) : null
+    }
+    if (body === null) {
+      return [text.slice(start, text.indexOf(')', start))]
+    }
+    return body.split(',').map((entry) => entry.trim()).filter((entry) => entry !== '').filter((entry) => {
+      const name = REAL_ENTRY.exec(entry)?.[1]
+      return !name || !new RegExp(String.raw`^import\s.*\b${name}\b.*\sfrom\s`, 'm').test(text)
+    })
+  })
+
 /** Every name the client's composables, stores and utils export, which Nuxt hands to every file as a global. */
 const OWN_AUTO_IMPORTS: ReadonlySet<string> = new Set(
   AUTO_IMPORT_FOLDERS.flatMap(tsFiles).flatMap((path) =>
@@ -147,6 +210,10 @@ describe('no mocks of our own modules in the client tests', () => {
     }
   )
 
+  it.each(SOURCES.map((path) => [testPath(path), path]))('%s registers only real composables through the portal settings helper', (_name, path) => {
+    expect(fakedRegistrations(readFileSync(path, 'utf8'))).toEqual([])
+  })
+
   it.each(KNOWN_REMAINDER.map((name) => [name]))('%s still fakes one, so it stays on the known list', (name) => {
     const path = join(TESTS_ROOT, name)
     expect(existsSync(path)).toBe(true)
@@ -180,5 +247,23 @@ describe('no mocks of our own modules in the client tests', () => {
     expect(ownGlobalStubs(`vi.stubGlobal("useClientStore", store)`, own)).toEqual(['useClientStore'])
     expect(ownGlobalStubs(`vi.stubGlobal('useRoute', () => ({}))`, own)).toEqual([])
     expect(ownGlobalStubs(`vi.stubGlobal('fetch', vi.fn())`, own)).toEqual([])
+  })
+
+  it('accepts the helper called with no argument or with imported identifiers only', () => {
+    const imports = "import { useX } from '~/composables/useX'\nimport { useY } from '~/composables/useY'\n"
+
+    expect(fakedRegistrations('usePortalSettingsServer()')).toEqual([])
+    expect(fakedRegistrations(`${imports}usePortalSettingsServer({ useX, useY: useY })`)).toEqual([])
+    expect(fakedRegistrations(`${imports}const REAL = { useX, useY }\nusePortalSettingsServer(REAL)`)).toEqual([])
+  })
+
+  it('catches a fake, a local stand-in or an unreadable argument passed to the helper', () => {
+    const imports = "import { useX } from '~/composables/useX'\n"
+
+    expect(fakedRegistrations(`${imports}usePortalSettingsServer({ useX: () => ({ a: 1, b: 2 }) })`)).not.toEqual([])
+    expect(fakedRegistrations(`${imports}usePortalSettingsServer({ useX: useOther })`)).toEqual(['useX: useOther'])
+    expect(fakedRegistrations('usePortalSettingsServer({ useLocal })')).toEqual(['useLocal'])
+    expect(fakedRegistrations(`${imports}const FAKES = { useX: vi.fn() }\nusePortalSettingsServer(FAKES)`)).toEqual(['useX: vi.fn()'])
+    expect(fakedRegistrations('usePortalSettingsServer(fakes.all)')).toEqual(['fakes.all'])
   })
 })

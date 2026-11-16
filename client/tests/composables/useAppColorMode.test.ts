@@ -10,6 +10,7 @@ import { ref } from 'vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SETTING_OFF } from '~/constants/settingValue'
 import { ColorMode } from '~/types/colormode'
+import { ColorModeSystem } from '~/types/colormodesystem'
 import { COLOR_MODE_COOKIE } from '~/utils/colorMode'
 import { useAppColorMode } from '~/composables/useAppColorMode'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
@@ -58,17 +59,17 @@ describe('useAppColorMode', () => {
   })
 
   it('leaves the applied mode unresolved under system and renders it as dark', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.ThemeDefault]: 'system' })
+    await loadPortalSettings(replies, { [PortalSettingKey.ThemeDefault]: ColorModeSystem.System })
 
     const { applied, mode, isDark } = useAppColorMode()
 
     expect(applied.value).toBeNull()
-    expect(mode.value).toBe('system')
+    expect(mode.value).toBe(ColorModeSystem.System)
     expect(isDark.value).toBe(true)
   })
 
   it('lets the visitor cookie win over the operator default', async () => {
-    cookie.value = 'light'
+    cookie.value = ColorMode.Light
     await loadPortalSettings(replies, { [PortalSettingKey.ThemeDefault]: ColorMode.Dark })
 
     const { applied, mode, isDark } = useAppColorMode()
@@ -87,14 +88,14 @@ describe('useAppColorMode', () => {
   })
 
   it('choose applies the mode and remembers it in the cookie', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.ThemeDefault]: 'system' })
+    await loadPortalSettings(replies, { [PortalSettingKey.ThemeDefault]: ColorModeSystem.System })
     const { choose, applied, mode } = useAppColorMode()
 
     choose(ColorMode.Light)
 
     expect(applied.value).toBe(ColorMode.Light)
     expect(mode.value).toBe(ColorMode.Light)
-    expect(cookie.value).toBe('light')
+    expect(cookie.value).toBe(ColorMode.Light)
   })
 
   it('toggle flips dark to light and back, writing the cookie each time', async () => {
@@ -103,11 +104,11 @@ describe('useAppColorMode', () => {
 
     toggle()
     expect(isDark.value).toBe(false)
-    expect(cookie.value).toBe('light')
+    expect(cookie.value).toBe(ColorMode.Light)
 
     toggle()
     expect(isDark.value).toBe(true)
-    expect(cookie.value).toBe('dark')
+    expect(cookie.value).toBe(ColorMode.Dark)
   })
 
   it('toggle does nothing when the operator disabled the switch', async () => {

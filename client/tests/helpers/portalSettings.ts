@@ -69,13 +69,14 @@ export interface PortalSettingsServer {
 
 /**
  * Registers the hooks every test of a section that reads the operator's settings needs: a stub server under
- * `$fetch` and a localised-path stand-in before each test, and the stub closed and the globals restored after it.
+ * `$fetch` and a localised-path stand-in before each test, and the stub closed, its replies cleared and the globals restored after it.
  *
  * Call it once at the top of the test file, then load the settings with {@link loadPortalSettings}.
  *
  * @param composables - The real composables the section calls, by the auto-import name Nuxt gives them. Registering
- * the real composable under its own name replaces nothing (the `noOwnMocks` guard allows it), it only makes it
- * reachable as the global it is in the app.
+ * the real composable under its own name replaces nothing, it only makes it reachable as the global it is in the app.
+ * The name is dynamic here, so the `noOwnMocks` guard reads the argument at each call site and refuses any entry that
+ * is not a bare imported identifier.
  * @returns The reply table and the accessor of the stub the hooks start.
  */
 export const usePortalSettingsServer = (composables: Record<string, unknown> = {}): PortalSettingsServer => {
@@ -95,6 +96,9 @@ export const usePortalSettingsServer = (composables: Record<string, unknown> = {
   afterEach(async () => {
     await running?.close()
     running = undefined
+    for (const route of Object.keys(replies)) {
+      Reflect.deleteProperty(replies, route)
+    }
     vi.unstubAllGlobals()
   })
 

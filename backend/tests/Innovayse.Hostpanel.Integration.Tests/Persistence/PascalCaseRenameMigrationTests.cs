@@ -89,15 +89,19 @@ public sealed partial class PascalCaseRenameMigrationTests(IntegrationTestFactor
         namesDown.Should().NotContain("InvoiceItems");
 
         // Tables created by migrations after the rename are dropped by going down past them, so they are not
-        // expected in the Down snapshot; they are empty in the demo data, so nothing is lost.
+        // expected in the Down snapshot; they are empty in the demo data, so nothing is lost (the VAT rates are the exception, see the Up comparison).
         // Every later migration that creates a table must add it here, or going Down past it fails the comparison.
-        var createdAfterTheRename = new[] { "invoicereminders", "serversshsettings", "sshkeys", "jobruns", "dataprotectionkeys", "fulfilmentrecords", "latestreleases", "plugindataentries", "plugindatascopes", "pluginslotproductbindings", "cardchargeconsents", "gatewaycustomers", "invoicepaymentclaims", "creditnotes", "creditnoteitems", "domainlinerenewals", "statuscomponentgroups", "statuscomponents", "statusincidents", "statusincidentupdates", "clientgroups", "servicechangerequests", "emailcampaigns", "emailcampaignsegments", "emailcampaignrecipients", "kbarticletranslations", "productbundles", "productbundleitems", "productoptiongroups", "productoptions", "taxrules", "statuschecks", "blocklistentries", "fraudlogentries" };
+        var createdAfterTheRename = new[] { "invoicereminders", "serversshsettings", "sshkeys", "jobruns", "dataprotectionkeys", "fulfilmentrecords", "latestreleases", "plugindataentries", "plugindatascopes", "pluginslotproductbindings", "cardchargeconsents", "gatewaycustomers", "invoicepaymentclaims", "creditnotes", "creditnoteitems", "domainlinerenewals", "statuscomponentgroups", "statuscomponents", "statusincidents", "statusincidentupdates", "clientgroups", "servicechangerequests", "emailcampaigns", "emailcampaignsegments", "emailcampaignrecipients", "kbarticletranslations", "productbundles", "productbundleitems", "productoptiongroups", "productoptions", "taxrules", "statuschecks", "blocklistentries", "fraudlogentries", "vatrates" };
         var rowsExpectedDown = rowsBefore.Where(row => !createdAfterTheRename.Contains(row.Key)).ToDictionary(row => row.Key, row => row.Value);
         (await RowCountsAsync(connectionString)).Should().Equal(rowsExpectedDown, "Down renames in place and copies nothing");
 
         await migrator.MigrateAsync();
 
-        (await RowCountsAsync(connectionString)).Should().Equal(rowsBefore, "Up renames in place and copies nothing");
+        // The VAT rates are the one table created after the rename that holds rows in the demo data (the reset imports the
+        // shipped rates). Down drops it and Up creates it empty; the import fills it again at the next start, so it is the only
+        // count that legitimately differs.
+        var rowsExpectedUp = new Dictionary<string, long>(rowsBefore) { ["vatrates"] = 0 };
+        (await RowCountsAsync(connectionString)).Should().Equal(rowsExpectedUp, "Up renames in place and copies nothing");
         (await RelationNamesAsync(connectionString)).Should().BeEquivalentTo(namesBefore, "Up restores exactly the names the model expects");
     }
 

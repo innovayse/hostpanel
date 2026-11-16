@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -7,9 +8,9 @@ using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Innovayse.Hostpanel.Application.Reports.Queries.GetVatMoss;
+namespace Innovayse.Hostpanel.Application.Reports.Queries.GetOssReport;
 
-/// <summary>Handles <see cref="GetVatMossQuery"/>.</summary>
+/// <summary>Handles <see cref="GetOssReportQuery"/>.</summary>
 /// <remarks>
 /// A quarter is the half-open UTC window <c>[first day, first day of the next quarter)</c>. Sales
 /// are the taxed invoices paid in it, summed per member state, VAT rate and invoice currency in
@@ -22,7 +23,7 @@ namespace Innovayse.Hostpanel.Application.Reports.Queries.GetVatMoss;
 /// refund rows. A Refunded invoice with no refund recorded here (imported history) took and
 /// returned its money elsewhere, so it is not counted as a sale.
 /// </remarks>
-public sealed class GetVatMossHandler
+public sealed class GetOssReportHandler
 {
     /// <summary>Calendar months in a quarter.</summary>
     private const int MonthsPerQuarter = 3;
@@ -36,7 +37,7 @@ public sealed class GetVatMossHandler
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="clock">The source of the current moment.</param>
-    public GetVatMossHandler(IHostpanelDbContext context, IClock clock)
+    public GetOssReportHandler(IHostpanelDbContext context, IClock clock)
     {
         _context = context;
         _clock = clock;
@@ -46,7 +47,7 @@ public sealed class GetVatMossHandler
     /// <param name="query">Year and quarter to report on; either may be omitted.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>VAT collected per member state, rate and currency for the quarter, net of the refunds made and the account credit notes issued in it. Never refuses.</returns>
-    public async Task<Result<VatMossDto>> HandleAsync(GetVatMossQuery query, CancellationToken ct)
+    public async Task<Result<OssReportDto>> HandleAsync(GetOssReportQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
@@ -132,7 +133,7 @@ public sealed class GetVatMossHandler
             {
                 var sold = sales.Where(s => s.Country == key.Country && s.TaxRate == key.TaxRate && s.Currency == key.Currency).ToList();
                 var given = givenBack.Where(r => r.Country == key.Country && r.TaxRate == key.TaxRate && r.Currency == key.Currency).ToList();
-                return new VatMossRowDto(
+                return new OssReportRowDto(
                     key.Country,
                     key.TaxRate,
                     sold.Sum(s => s.Invoices),
@@ -145,6 +146,6 @@ public sealed class GetVatMossHandler
             .ThenBy(r => r.Currency, StringComparer.Ordinal)
             .ToList();
 
-        return Result<VatMossDto>.Success(new VatMossDto(periodStart, nextPeriodStart.AddDays(-1), rows));
+        return Result<OssReportDto>.Success(new OssReportDto(periodStart, nextPeriodStart.AddDays(-1), rows));
     }
 }

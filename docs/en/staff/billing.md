@@ -336,6 +336,27 @@ To change a rule, use its edit action in the list, change the fields and click *
 Deleting a rule does not change invoices already issued. They keep the rate they were taxed at.
 </Callout>
 
+### VAT rates and digital services {#vat-rates-and-digital-services}
+
+A consumer in an EU member state other than yours is taxed on electronic services at the VAT rate of their own country, not at yours. The panel keeps the rates for this and picks one on the invoice when a new invoice is raised.
+
+Go to **Settings → VAT Rates** to see the rates, ordered by country and then by the day each applies from. Each row has a **Member state**, a **Kind** (standard or reduced), a **Rate (%)** and a **Valid from** date. A rate stays in force until a later row of the same country and kind starts, so an invoice keeps the rate that applied on its invoice date. To change a rate, add a row with the new start day instead of editing the old one; edit a row only to correct a mistake. There is at most one row per country, kind and start day (`VAT_RATE_ALREADY_EXISTS`), the country must be an EU member state, and the rate is from 0 to 100 with up to three decimals (`VAT_RATE_INVALID`). Deleting a row does not change invoices already issued.
+
+The standard rates of the 27 member states ship with the application and are imported when it starts: a row that is missing is added, and a row that is there is never changed, so a rate you edited survives every restart and a new release brings a changed rate as a new row. A shipped row you delete comes back at the next start. A reduced rate depends on what is sold, so none ships; the panel does not apply a reduced rate on its own.
+
+The destination rate is used when all of these hold:
+
+1. **billing.tax.seller_country** in System Settings holds your country as a two-letter code, for example `DE`. It is empty by default, which turns destination rates off, and the tax rules alone decide the rate.
+2. The client's country is a different country, and the client has no **Tax ID**. A client with a Tax ID is a business; the panel does not decide anything for businesses here, so such a client keeps the rate of the tax rules.
+3. Every line of the invoice is a **digital service**. Tick **Digital service** on a product that counts as an electronic service for VAT (hosting, a licence, a domain that counts as one). It is a different switch from the product type Digital, which says how the product is delivered. An invoice with any other line, such as a manual line, keeps the rate of the tax rules, because one invoice carries one rate.
+4. The VAT rates hold a standard rate for the client's country that started on or before the invoice date.
+
+A client in your own country keeps the rate of the tax rules. The rate is fixed on the invoice when it is raised, as for any other rate.
+
+### The OSS report {#the-oss-report}
+
+**Reports → OSS (One Stop Shop)** lists, for a quarter, the value invoiced and the VAT collected per EU member state, VAT rate and invoice currency, which is the data of the quarterly One Stop Shop VAT return. A rate that changed inside the quarter gives the country one row per rate, because each invoice is reported at the rate it was issued with. A refund and an account credit note are taken off the quarter they were made or issued in. The API route is `GET /api/reports/oss`.
+
 ### What is not covered yet
 
 - Tax per line item. One rate applies to the whole invoice.

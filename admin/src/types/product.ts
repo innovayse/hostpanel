@@ -39,6 +39,8 @@ export interface Product {
   metadata: string | null
   /** Days a service stays usable after its due date before it is suspended, 0 to 365. */
   gracePeriodDays: number
+  /** Whether the product is an electronic service for VAT, taxed at the client's country rate when sold to a consumer in another EU member state. */
+  isDigitalService: boolean
 }
 
 /** What narrows the product list: the search text, the group, the type and the status; each member left out means no narrowing. */
@@ -125,6 +127,8 @@ export interface CreateProductPayload {
   gracePeriodDays?: number
   /** Hides the product (Inactive status) from the storefront and order form; omitted keeps the stored status on update. */
   isHidden?: boolean
+  /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
+  isDigitalService?: boolean
 }
 
 /** Payload for updating an existing product. */
@@ -155,4 +159,6 @@ export interface UpdateProductPayload {
   gracePeriodDays?: number
   /** Hides the product (Inactive status) from the storefront and order form; omitted keeps the stored status on update. */
   isHidden?: boolean
+  /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
+  isDigitalService?: boolean
 }

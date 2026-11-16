@@ -47,6 +47,9 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 /// Whether the product is created hidden (<see cref="ProductStatus.Inactive"/>): left off the public
 /// catalogue and the order form. <c>false</c> by default, which creates it active.
 /// </param>
+/// <param name="IsDigitalService">
+/// Whether the product is an electronic service for VAT (see <see cref="Product.IsDigitalService"/>). <c>false</c> by default.
+/// </param>
 public sealed record CreateProductCommand(
     int GroupId,
     string Name,
@@ -64,4 +67,5 @@ public sealed record CreateProductCommand(
     string? Sku = null,
     string? Metadata = null,
     int? GracePeriodDays = null,
-    bool IsHidden = false);
+    bool IsHidden = false,
+    bool IsDigitalService = false);

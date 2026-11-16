@@ -43,6 +43,7 @@ const stored: Product = {
   sku: 'PRO-1',
   metadata: '{"tier":"pro"}',
   gracePeriodDays: 30,
+  isDigitalService: false,
 }
 
 /** Answers for the two lists the dialog loads on mount. */
@@ -140,6 +141,7 @@ describe('ProductFormModal', () => {
       metadata: '',
       gracePeriodDays: 7,
       isHidden: false,
+      isDigitalService: false,
     }]])
   })
 
@@ -284,6 +286,21 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
     expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ sku: '', metadata: '' })
+  })
+
+  it('carries the digital service switch: off for a new product, the stored value on edit, and the new value on save', async () => {
+    stubRouteTable(lists)
+    const created = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+    expect(created.wrapper.get('[data-testid="product-form-digital-service"]').attributes('aria-checked')).toBe('false')
+
+    const edited = await mountScreen(ProductFormModal, { product: { ...stored, isDigitalService: true }, groups, saving: false })
+    const toggle = edited.wrapper.get('[data-testid="product-form-digital-service"]')
+    expect(toggle.attributes('aria-checked')).toBe('true')
+
+    await toggle.trigger('click')
+    await edited.wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(edited.wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isDigitalService: false })
   })
 
   it('shows the API field errors under the SKU, metadata and grace period inputs', async () => {

@@ -1,9 +1,9 @@
-namespace Innovayse.Hostpanel.Application.Reports.Common;
+namespace Innovayse.Hostpanel.Application.Billing.Common;
 
 /// <summary>
 /// The member states of the European Union, by ISO 3166-1 alpha-2 code as client records store
-/// them (Greece is <c>GR</c> here, though VAT returns write <c>EL</c>). The VAT MOSS settlement
-/// covers only these countries, so the report lists nothing else.
+/// them (Greece is <c>GR</c> here, though VAT returns write <c>EL</c>). The OSS report
+/// covers only these countries, and the VAT rate table (<c>VatRate</c>) holds only these countries.
 /// </summary>
 public static class EuMemberStates
 {

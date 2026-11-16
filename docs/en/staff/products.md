@@ -108,6 +108,11 @@ Go to **Settings → Products → Create Product** and fill in the form.
 </li>
 <li>
 
+**Digital service**: turn it on for a product that counts as an electronic service for VAT (hosting, a licence, a domain that counts as one). A consumer in another EU member state is invoiced for such a product at the VAT rate of their own country; see [VAT rates and digital services](/staff/billing#vat-rates-and-digital-services). It is not the same as the product type Digital.
+
+</li>
+<li>
+
 **Hidden**: tick to set the product Inactive and hide it from the order form. An inactive product cannot be ordered (`PRODUCT_NOT_AVAILABLE`).
 
 </li>

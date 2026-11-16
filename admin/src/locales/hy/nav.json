@@ -61,7 +61,8 @@
     "emailTemplates": "Նամակների ձևանմուշներ",
     "gateways": "Վճարային համակարգեր",
     "currencies": "Արժույթներ",
-    "taxRules": "Հարկային կանոններ"
+    "taxRules": "Հարկային կանոններ",
+    "vatRates": "ԱԱՀ դրույքներ"
   },
   "storefront": "Հանրային կայքի բովանդակություն",
   "storefrontChildren": {

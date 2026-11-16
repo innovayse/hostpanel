@@ -1517,6 +1517,15 @@ public static class HostpanelErrorCodes
     /// <summary>The rate of a tax rule is outside 0 to 100 percent (400).</summary>
     public const string TAX_RULE_RATE_INVALID = Domain.Billing.BillingErrors.TaxRuleRateInvalid;
 
+    /// <summary>The id names no VAT rate row (404).</summary>
+    public const string VAT_RATE_NOT_FOUND = "VAT_RATE_NOT_FOUND";
+
+    /// <summary>A VAT rate row for the same country, kind and first day exists already (409, the <c>ALREADY</c> arm of <c>StatusMapping</c>).</summary>
+    public const string VAT_RATE_ALREADY_EXISTS = "VAT_RATE_ALREADY_EXISTS";
+
+    /// <summary>The rate of a VAT rate row is outside 0 to 100 percent (400).</summary>
+    public const string VAT_RATE_INVALID = Domain.Billing.BillingErrors.VatRateInvalid;
+
     /// <summary>
     /// The account owner cannot be removed as an additional user (409, an exact <c>StatusMapping</c> row):
     /// <see cref="Domain.Clients.Client.RemoveUser"/>.

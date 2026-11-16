@@ -1492,6 +1492,15 @@
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>A tax rate must be between 0 and 100 percent.</value>
   </data>
+  <data name="VAT_RATE_NOT_FOUND" xml:space="preserve">
+    <value>No such VAT rate exists.</value>
+  </data>
+  <data name="VAT_RATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>A VAT rate for this country, kind and start date already exists.</value>
+  </data>
+  <data name="VAT_RATE_INVALID" xml:space="preserve">
+    <value>A VAT rate must be between 0 and 100 percent.</value>
+  </data>
   <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
     <value>This order is not waiting for a fraud review.</value>
   </data>

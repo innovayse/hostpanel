@@ -29,6 +29,7 @@ const product: Product = {
   sku: null,
   metadata: null,
   gracePeriodDays: 7,
+  isDigitalService: false,
 }
 
 /** Two stored lines. */

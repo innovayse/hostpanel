@@ -61,7 +61,8 @@
     "emailTemplates": "Email Templates",
     "gateways": "Payment Gateways",
     "currencies": "Currencies",
-    "taxRules": "Tax Rules"
+    "taxRules": "Tax Rules",
+    "vatRates": "VAT Rates"
   },
   "storefront": "Storefront content",
   "storefrontChildren": {

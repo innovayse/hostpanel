@@ -282,6 +282,27 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         invoice.HasDigitalItems.Should().Be(digital);
     }
 
+    /// <summary>A service's renewal line keeps the product's VAT digital service flag, so the invoice can be taxed at the client's country rate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ServiceRenewalLine_CarriesTheDigitalServiceFlag()
+    {
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var (clientId, service, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10), BillingCycle.Annual);
+        var product = await context.Products.SingleAsync(p => p.Id == service.ProductId);
+        product.SetDigitalService(true);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var result = await RaiseAsync(bus, clientId);
+
+        result.IsSuccess.Should().BeTrue();
+        var invoice = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject;
+        invoice.Items.Should().ContainSingle().Which.IsDigitalService.Should().BeTrue();
+    }
+
     /// <summary>A service outside the lead time is not invoiced yet.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -419,6 +440,41 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         var invoice = (await InvoicesOfAsync(context, client.Id)).Single();
         invoice.TaxRate.Should().Be(18m);
         invoice.Tax.Should().Be(Math.Round(invoice.SubTotal * 0.18m, 2, MidpointRounding.AwayFromZero));
+        invoice.Total.Should().Be(invoice.SubTotal + invoice.Tax);
+    }
+
+    /// <summary>
+    /// The renewal invoice of a digital service for a consumer in another EU member state is taxed at that country's standard
+    /// VAT rate in force on the invoice date, not at a tax rule, and the rate is fixed on the invoice.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DigitalService_ForAConsumerInAnotherMemberState_IsTaxedAtTheirCountrysVatRate()
+    {
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var client = await SeedClientAsync(context);
+        client.UpdateAddress(null, null, null, null, null, "LU");
+        var (_, service, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(5), clientId: client.Id);
+        (await context.Products.SingleAsync(p => p.Id == service.ProductId)).SetDigitalService(true);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        await VatRateTestSeeds.SetSellerCountryAsync(factory, "DE");
+        try
+        {
+            var result = await RaiseAsync(bus, client.Id);
+
+            result.Value.Should().Be(1);
+        }
+        finally
+        {
+            await VatRateTestSeeds.SetSellerCountryAsync(factory, string.Empty);
+        }
+
+        var invoice = (await InvoicesOfAsync(context, client.Id)).Single();
+        invoice.TaxRate.Should().Be(17m);
         invoice.Total.Should().Be(invoice.SubTotal + invoice.Tax);
     }
 

@@ -263,9 +263,9 @@
     "noTransactionsFound": "No transactions found.",
     "userId": "User ID"
   },
-  "vatMoss": {
-    "vatMossSettlementData": "VAT MOSS Settlement Data",
-    "thisReportProvidesTheInformation": "This report provides the information needed to complete a VATMOSS return. Please check with your tax authority to confirm how you can upload your settlement data into the MOSS portal.",
+  "oss": {
+    "ossReport": "OSS Report (One Stop Shop)",
+    "thisReportProvidesTheInformation": "This report provides the information needed for the quarterly One Stop Shop (OSS) VAT return: the value invoiced and the VAT collected per EU member state and VAT rate. A refund and a credit note are taken off the quarter they were made in. Check with your tax authority how to submit the figures.",
     "selectQuarter": "Select Quarter",
     "countryName": "Country Name",
     "countryCode": "Country Code",
@@ -295,7 +295,7 @@
       "supportTicketReplies": "Support Ticket Replies",
       "ticketRatingsReviewer": "Ticket Ratings Reviewer",
       "ticketTags": "Ticket Tags",
-      "vatMoss": "Vat Moss"
+      "oss": "OSS (One Stop Shop)"
     },
     "incomeByProductFor": "Income by Product for {month} {year}",
     "salesByProductFor": "Sales by Product for {month} {year}",

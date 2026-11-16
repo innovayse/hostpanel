@@ -47,6 +47,7 @@ const productRow = (id: number, name: string, type: ProductType, status: Product
   sku: null,
   metadata: null,
   gracePeriodDays: 7,
+  isDigitalService: false,
 })
 
 /** An active shared hosting plan. */

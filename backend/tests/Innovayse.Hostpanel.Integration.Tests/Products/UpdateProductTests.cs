@@ -607,4 +607,33 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StateAsync()).Should().Be((nameof(ProductStatus.Active), true, 1));
     }
+
+    /// <summary>
+    /// <c>isDigitalService</c> on update turns the VAT electronic service flag on or off, and an update that omits it keeps
+    /// whatever is stored, so a caller that does not know the field never changes it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_DigitalService_TogglesTheFlagAndKeepsItWhenOmitted()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        async Task<bool> FlagAsync() =>
+            (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("isDigitalService").GetBoolean();
+
+        (await FlagAsync()).Should().BeFalse();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag", monthlyPrice = 3m, annualPrice = 30m, isDigitalService = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeTrue();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag Renamed", monthlyPrice = 3m, annualPrice = 30m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeTrue();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag", monthlyPrice = 3m, annualPrice = 30m, isDigitalService = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeFalse();
+    }
 }

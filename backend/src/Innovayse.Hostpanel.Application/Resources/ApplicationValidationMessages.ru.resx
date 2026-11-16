@@ -1690,6 +1690,21 @@
   <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
     <value>Налоговая ставка может иметь не более трёх знаков после запятой.</value>
   </data>
+  <data name="VatRateCountryInvalid" xml:space="preserve">
+    <value>Укажите двухбуквенный код страны ЕС.</value>
+  </data>
+  <data name="VatRateKindInvalid" xml:space="preserve">
+    <value>Выберите стандартную или пониженную ставку.</value>
+  </data>
+  <data name="VatRateRateInvalid" xml:space="preserve">
+    <value>Ставка НДС должна быть от 0 до 100 процентов.</value>
+  </data>
+  <data name="VatRateRateDecimalsInvalid" xml:space="preserve">
+    <value>Ставка НДС может иметь не более трёх знаков после запятой.</value>
+  </data>
+  <data name="VatRateValidFromInvalid" xml:space="preserve">
+    <value>Укажите дату начала от 1993 до 2100 года.</value>
+  </data>
   <data name="FraudBlockListTypeInvalid" xml:space="preserve">
     <value>Недопустимый тип чёрного списка.</value>
   </data>

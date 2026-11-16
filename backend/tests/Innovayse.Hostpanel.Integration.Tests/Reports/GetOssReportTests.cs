@@ -11,11 +11,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
 /// <summary>
-/// <c>GET /api/reports/vat-moss</c> against Postgres: VAT collected per member state, rate and
+/// <c>GET /api/reports/oss</c> against Postgres: VAT collected per member state, rate and
 /// invoice currency for the quarter, net of the refunds made and the account credit notes issued in it.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
-public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
+public sealed class GetOssReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A paid, taxed invoice for a member-state client appears by country code, with the quarter's bounds.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -28,7 +28,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
 
         using var host = new ClockedHost(factory);
         var client = await AuthTestSeeds.AdminClientAsync(factory, host);
-        var response = await client.GetAsync("/api/reports/vat-moss");
+        var response = await client.GetAsync("/api/reports/oss");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -40,7 +40,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         body.GetProperty("periodEnd").GetString().Should().Be(quarterStart.AddMonths(3).AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
     }
 
-    /// <summary>A client outside the EU is not part of the VAT MOSS settlement.</summary>
+    /// <summary>A client outside the EU is not part of the OSS.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LeavesOutCountriesOutsideTheEu()
@@ -50,7 +50,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
 
         using var host = new ClockedHost(factory);
         var client = await AuthTestSeeds.AdminClientAsync(factory, host);
-        var response = await client.GetAsync("/api/reports/vat-moss");
+        var response = await client.GetAsync("/api/reports/oss");
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("rows").EnumerateArray().Should().NotContain(r => r.GetProperty("countryCode").GetString() == "US");
@@ -77,7 +77,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         }
 
         var client = await AuthTestSeeds.AdminClientAsync(factory, host);
-        var response = await client.GetAsync("/api/reports/vat-moss");
+        var response = await client.GetAsync("/api/reports/oss");
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         var row = body.GetProperty("rows").EnumerateArray().Single(r => r.GetProperty("countryCode").GetString() == "LU");
@@ -93,7 +93,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     {
         var client = await ReportsTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.GetAsync("/api/reports/vat-moss?year=2024&quarter=5");
+        var response = await client.GetAsync("/api/reports/oss?year=2024&quarter=5");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -109,7 +109,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     {
         var client = await ReportsTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.GetAsync($"/api/reports/vat-moss?year={year}&quarter=1");
+        var response = await client.GetAsync($"/api/reports/oss?year={year}&quarter=1");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -119,7 +119,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     [Fact]
     public async Task RefusesAnonymous()
     {
-        var response = await factory.CreateClient().GetAsync("/api/reports/vat-moss");
+        var response = await factory.CreateClient().GetAsync("/api/reports/oss");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -129,9 +129,9 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     [Fact]
     public async Task RefusesTheClientRole()
     {
-        var client = await ReportsTestSeeds.ClientRoleClientAsync(factory, "vat-moss");
+        var client = await ReportsTestSeeds.ClientRoleClientAsync(factory, "oss");
 
-        var response = await client.GetAsync("/api/reports/vat-moss");
+        var response = await client.GetAsync("/api/reports/oss");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -193,6 +193,30 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         row.GetProperty("numberOfInvoices").GetInt32().Should().Be(1);
         row.GetProperty("totalExclVat").GetDecimal().Should().Be(150m);
         row.GetProperty("totalVatCollected").GetDecimal().Should().Be(30m);
+    }
+
+    /// <summary>
+    /// A rate that changes inside a quarter gives the country one row per rate: each invoice is reported at the rate it was issued
+    /// with, so the earlier sales are not restated at the new rate.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GroupsARateChangeInsideTheQuarterIntoOneRowPerRate()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatPt{Guid.NewGuid():N}", country: "PT");
+        await SeedPaidInvoiceAsync(clientId, "USD", 23m, 100m, At(2038, 1, 15));
+        await SeedPaidInvoiceAsync(clientId, "USD", 23m, 200m, At(2038, 2, 15));
+        await SeedPaidInvoiceAsync(clientId, "USD", 22m, 100m, At(2038, 3, 15));
+
+        var before = await RowAsync(2038, 1, "PT", 23m, "USD");
+        var after = await RowAsync(2038, 1, "PT", 22m, "USD");
+
+        before.GetProperty("numberOfInvoices").GetInt32().Should().Be(2);
+        before.GetProperty("totalExclVat").GetDecimal().Should().Be(300m);
+        before.GetProperty("totalVatCollected").GetDecimal().Should().Be(69m);
+        after.GetProperty("numberOfInvoices").GetInt32().Should().Be(1);
+        after.GetProperty("totalExclVat").GetDecimal().Should().Be(100m);
+        after.GetProperty("totalVatCollected").GetDecimal().Should().Be(22m);
     }
 
     /// <summary>Each note reduces only the row of its own country and rate, also when one country sold at two rates.</summary>
@@ -414,7 +438,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     private async Task<JsonElement> RowAsync(int year, int quarter, string country, decimal rate, string currency)
     {
         var admin = await ReportsTestSeeds.AdminClientAsync(factory);
-        var body = await admin.GetFromJsonAsync<JsonElement>($"/api/reports/vat-moss?year={year}&quarter={quarter}");
+        var body = await admin.GetFromJsonAsync<JsonElement>($"/api/reports/oss?year={year}&quarter={quarter}");
         return body.GetProperty("rows").EnumerateArray().Single(r =>
             r.GetProperty("countryCode").GetString() == country
             && r.GetProperty("vatRate").GetDecimal() == rate

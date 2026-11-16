@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * VAT MOSS report: the invoiced value and VAT collected per EU member state, VAT rate and invoice
+ * OSS report (One Stop Shop): the invoiced value and VAT collected per EU member state, VAT rate and invoice
  * currency for a quarter, net of the refunds made in it. Each amount is shown in its own currency;
  * the footer sums the money only when every row shares one currency.
  */
@@ -17,10 +17,10 @@ import { formatDate } from '@/lib/format'
 import { formatCurrencyCode } from '@/lib/money'
 import { reportCountryName } from '@/lib/reportsCountry'
 import { reportPath } from '@/lib/reportsQuery'
-import { vatRowKey } from '@/lib/reportsRows'
+import { ossRowKey } from '@/lib/reportsRows'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportVat } from '@/types/reportvat'
+import type { ReportOss } from '@/types/reportoss'
 import { UiAlign } from '@/utils/ui/table'
 
 const { t, locale } = useI18n()
@@ -41,16 +41,16 @@ const quarterOptions = computed(() => {
     for (let number = 4; number >= 1; number--) {
       options.push({
         value: `${year}-${number}`,
-        label: t('reports.vatMoss.quarterOption', { year, quarter: number, months: t(`reports.vatMoss.quarter${number}`) }),
+        label: t('reports.oss.quarterOption', { year, quarter: number, months: t(`reports.oss.quarter${number}`) }),
       })
     }
   }
   return options
 })
 
-const { data, load } = useReport<ReportVat>(() => {
+const { data, load } = useReport<ReportOss>(() => {
   const [year = '', number = ''] = quarter.value.split('-')
-  return reportPath('/reports/vat-moss', { year, quarter: number })
+  return reportPath('/reports/oss', { year, quarter: number })
 })
 
 /** The rows with the country named in the reader's language. */
@@ -66,12 +66,12 @@ const sharedCurrency = computed<string | null>(() => {
 
 /** Table columns; every amount is written in its row's currency. */
 const columns = computed<ReportColumn[]>(() => [
-  { key: 'countryName', label: t('reports.vatMoss.countryName') },
-  { key: 'countryCode', label: t('reports.vatMoss.countryCode') },
-  { key: 'vatRate', label: t('reports.vatMoss.vatRate'), align: UiAlign.Right, format: ReportCellFormat.Percent },
-  { key: 'numberOfInvoices', label: t('reports.vatMoss.numberOfInvoices'), align: UiAlign.Right },
-  { key: 'totalExclVat', label: t('reports.vatMoss.totalValueInvoicedExclVat'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
-  { key: 'totalVatCollected', label: t('reports.vatMoss.totalVatCollected'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
+  { key: 'countryName', label: t('reports.oss.countryName') },
+  { key: 'countryCode', label: t('reports.oss.countryCode') },
+  { key: 'vatRate', label: t('reports.oss.vatRate'), align: UiAlign.Right, format: ReportCellFormat.Percent },
+  { key: 'numberOfInvoices', label: t('reports.oss.numberOfInvoices'), align: UiAlign.Right },
+  { key: 'totalExclVat', label: t('reports.oss.totalValueInvoicedExclVat'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
+  { key: 'totalVatCollected', label: t('reports.oss.totalVatCollected'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
   { key: 'currency', label: t('shared.currency') },
 ])
 
@@ -98,12 +98,12 @@ const formatTotal = (amount: number): string => formatCurrencyCode(amount, share
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.vatMoss.vatMossSettlementData')" :description="t('reports.vatMoss.thisReportProvidesTheInformation')">
+  <ReportPage :retry="load" :title="t('reports.oss.ossReport')" :description="t('reports.oss.thisReportProvidesTheInformation')">
     <template #filters>
       <ReportFilterBar :generate-label="t('shared.generateReport')" @generate="load">
         <template #fields>
-          <ReportField :label="t('reports.vatMoss.selectQuarter')" width="lg">
-            <UiSelect v-model="quarter" :options="quarterOptions" :placeholder="t('reports.vatMoss.selectQuarter')" data-testid="report-quarter" />
+          <ReportField :label="t('reports.oss.selectQuarter')" width="lg">
+            <UiSelect v-model="quarter" :options="quarterOptions" :placeholder="t('reports.oss.selectQuarter')" data-testid="report-quarter" />
           </ReportField>
         </template>
       </ReportFilterBar>
@@ -111,19 +111,19 @@ const formatTotal = (amount: number): string => formatCurrencyCode(amount, share
 
     <template v-if="data">
       <UiText tone="secondary" size="md" data-testid="report-period-label">
-        {{ t('reports.vatMoss.period', { from: formatDate(data.periodStart), to: formatDate(data.periodEnd) }) }}
+        {{ t('reports.oss.period', { from: formatDate(data.periodStart), to: formatDate(data.periodEnd) }) }}
       </UiText>
       <ReportTable
         :columns="columns"
         :rows="rows"
-        :row-key="vatRowKey"
+        :row-key="ossRowKey"
         :totals="totals"
-        :totals-label="t('reports.vatMoss.totals')"
+        :totals-label="t('reports.oss.totals')"
         :format-money="formatTotal"
         :empty-text="t('shared.noDataFoundForThis2')"
       />
       <UiText tone="muted" size="sm">
-        {{ t('reports.vatMoss.ifACountryDoesNot') }}
+        {{ t('reports.oss.ifACountryDoesNot') }}
       </UiText>
     </template>
   </ReportPage>

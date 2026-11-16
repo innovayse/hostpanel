@@ -394,4 +394,28 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
         body.RootElement.EnumerateArray().Select(p => p.GetProperty("id").GetInt32())
             .Should().Contain(visibleId).And.NotContain(hiddenId);
     }
+
+    /// <summary>A product created with <c>isDigitalService</c> keeps the VAT electronic service flag; one created without it is not one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_DigitalService_StoresTheFlagAndDefaultsToOff()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var flagged = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Flagged", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m, isDigitalService = true,
+        });
+        var plain = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Plain", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m,
+        });
+
+        flagged.StatusCode.Should().Be(HttpStatusCode.Created);
+        (await ProductsTestSeeds.GetProductAsync(client, await flagged.Content.ReadFromJsonAsync<int>()))
+            .GetProperty("isDigitalService").GetBoolean().Should().BeTrue();
+        (await ProductsTestSeeds.GetProductAsync(client, await plain.Content.ReadFromJsonAsync<int>()))
+            .GetProperty("isDigitalService").GetBoolean().Should().BeFalse();
+    }
 }

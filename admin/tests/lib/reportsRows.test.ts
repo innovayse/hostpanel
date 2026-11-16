@@ -2,7 +2,7 @@
  * Tests for the composite row keys of the report tables without a row id.
  */
 import { describe, expect, it } from 'vitest'
-import { renewalEmailKey, statementLineKey, vatRowKey } from '@/lib/reportsRows'
+import { ossRowKey, renewalEmailKey, statementLineKey } from '@/lib/reportsRows'
 import { ReportStatementLineType } from '@/types/reportclientstatement'
 import type { ReportStatementLine } from '@/types/reportclientstatement'
 import { DomainReminderType } from '@/types/domain'
@@ -35,11 +35,11 @@ describe('renewalEmailKey', () => {
   })
 })
 
-describe('vatRowKey', () => {
+describe('ossRowKey', () => {
   it('separates the same country at two rates', () => {
     const row = { countryCode: 'DE', vatRate: 19, numberOfInvoices: 1, totalExclVat: 1, totalVatCollected: 1, currency: 'EUR' }
 
-    expect(vatRowKey(row)).toBe('DE|19|EUR')
-    expect(vatRowKey(row)).not.toBe(vatRowKey({ ...row, vatRate: 7 }))
+    expect(ossRowKey(row)).toBe('DE|19|EUR')
+    expect(ossRowKey(row)).not.toBe(ossRowKey({ ...row, vatRate: 7 }))
   })
 })

@@ -229,6 +229,11 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
         // write against.
         await Innovayse.Hostpanel.Application.Admin.Seeding.PortalSettingsSeeder.EnsureSeededAsync(
             scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>());
+
+        // The VAT rates that ship with the application, imported at startup everywhere but Testing: the rate lookup
+        // and the VAT rate list read them.
+        await Innovayse.Hostpanel.Application.Billing.Seeding.VatRateSeeder.EnsureSeededAsync(
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(), CancellationToken.None);
     }
 
     /// <summary>

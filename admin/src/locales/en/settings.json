@@ -387,6 +387,8 @@
     "hideThisProductFromThe": "Hide this product from the order form",
     "featured": "Recommended plan",
     "featuredHint": "Show this product with a \"Recommended\" badge on the storefront. Only one product per group can be recommended; saving this clears the others.",
+    "digitalService": "Digital service",
+    "digitalServiceHint": "The product is an electronic service for VAT (hosting, a licence, a domain that counts as one). A consumer in another EU member state is invoiced for it at the VAT rate of their own country. Not the same as a digital product delivered by a plugin.",
     "sortOrder": "Sort order",
     "sortOrderHint": "Position inside the group, lowest first. Products with the same number are sorted by name.",
     "sortOrderPlaceholder": "e.g. 1",
@@ -670,6 +672,10 @@
       "taxRules": {
         "title": "Tax rules",
         "description": "Tax rates by country and region."
+      },
+      "vatRates": {
+        "title": "VAT rates",
+        "description": "The VAT rate of each EU member state, used for digital services sold to consumers."
       },
       "emailTemplates": {
         "title": "Email templates",

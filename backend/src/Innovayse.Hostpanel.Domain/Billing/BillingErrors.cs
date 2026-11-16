@@ -18,6 +18,9 @@ public static class BillingErrors
     /// <summary>The rate of a tax rule is outside 0 to 100 percent (400): <see cref="TaxRule.Create"/> and <see cref="TaxRule.Update"/>.</summary>
     public const string TaxRuleRateInvalid = "TAX_RULE_RATE_INVALID";
 
+    /// <summary>The rate of a VAT rate row is outside 0 to 100 percent (400): <see cref="VatRate.Create"/> and <see cref="VatRate.Update"/>.</summary>
+    public const string VatRateInvalid = "VAT_RATE_INVALID";
+
     /// <summary>Only a Draft invoice may be published (400): <see cref="Invoice.Publish"/>.</summary>
     public const string InvoiceNotDraft = "INVOICE_NOT_DRAFT";
 

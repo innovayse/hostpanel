@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The European Central Bank can be chosen as the exchange rate source per installation on the Currencies page. The choice is stored in the `billing.exchange_rates.provider` setting, defaults to the current bank so nothing changes for existing installations, and applies to the daily update and the Update Exchange Rates button from the next refresh. Rates are converted to the base currency, a base the bank does not publish is refused with `EXCHANGE_RATE_BASE_NOT_QUOTED`, and an unavailable source keeps the stored rates.
+
 ### Changed
 
 - Docs: the quick start page now walks from install to the first provisioned service, and a new migration in fifteen minutes guide covers moving from another billing system, in English, Russian and Armenian.

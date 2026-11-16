@@ -75,6 +75,28 @@ describe('settingsStore.updateSetting', () => {
   })
 })
 
+describe('settingsStore.saveSetting', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('answers that the value was stored, with no sentence', async () => {
+    stubFetch(json({}), json([{ id: 1, key: 'a', value: 'b' }]))
+
+    expect(await useSettingsStore().saveSetting(1, 'b')).toEqual({ saved: true, error: null })
+  })
+
+  it('answers the API sentence of a refusal', async () => {
+    stubFetch(problem('Allowed values: Cba, Ecb.'))
+
+    expect(await useSettingsStore().saveSetting(1, 'Boe')).toEqual({ saved: false, error: 'Allowed values: Cba, Ecb.' })
+  })
+})
+
 describe('settingsStore.saveEmailTemplateVersion', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

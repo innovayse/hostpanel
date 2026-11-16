@@ -373,7 +373,7 @@ public sealed class HttpResilienceOptions
 
     /// <summary>
     /// The Central Bank of Armenia's daily rate bulletin, for "update exchange rates". One
-    /// idempotent GET, triggered by an operator, so it is registered read-only with retries.
+    /// idempotent GET, made by the daily job or an operator, so it is registered read-only with retries.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -389,6 +389,24 @@ public sealed class HttpResilienceOptions
     /// </para>
     /// </remarks>
     public ResilienceProfileOptions Cba { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(5),
+        TotalTimeout = TimeSpan.FromSeconds(15),
+        MaxRetryAttempts = 2,
+        RetryDelay = TimeSpan.FromSeconds(1),
+        CircuitBreakerEnabled = false,
+    };
+
+    /// <summary>
+    /// The European Central Bank's daily reference rates, for "update exchange rates". One idempotent
+    /// GET, made by the daily job or an operator, so it is registered read-only with retries.
+    /// </summary>
+    /// <remarks>
+    /// The same budget as <see cref="Cba"/>, for the same reasons: 5 seconds an attempt and 15 in total, two
+    /// retries with backoff, and no breaker because the call is made too rarely for one to ever open. A failure
+    /// is answered as a failure and the stored rates are left as they were.
+    /// </remarks>
+    public ResilienceProfileOptions Ecb { get; set; } = new()
     {
         AttemptTimeout = TimeSpan.FromSeconds(5),
         TotalTimeout = TimeSpan.FromSeconds(15),
@@ -444,6 +462,7 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(Namecheap), Namecheap);
         yield return new NamedResilienceProfile(nameof(Plugin), Plugin);
         yield return new NamedResilienceProfile(nameof(Cba), Cba);
+        yield return new NamedResilienceProfile(nameof(Ecb), Ecb);
         yield return new NamedResilienceProfile(nameof(Default), Default);
     }
 }

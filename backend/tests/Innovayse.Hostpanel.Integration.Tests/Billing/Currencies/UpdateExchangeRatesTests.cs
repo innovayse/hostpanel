@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -89,6 +90,19 @@ public sealed class UpdateExchangeRatesTests(IntegrationTestFactory factory) : I
         source.RequestedBase.Should().NotBeNullOrEmpty();
         source.RequestedCodes.Should().NotContain(source.RequestedBase!);
         source.RequestedCodes.Should().Contain("AMD");
+    }
+
+    /// <summary>The handler names the bank the settings choose in the lookup, the seeded default when nothing was changed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateRatesNamesTheConfiguredProviderInTheLookup()
+    {
+        var source = new FakeExchangeRateSource(new Dictionary<string, decimal> { ["AMD"] = QuotedAmdRate });
+        var client = await AdminClientAsync(source);
+
+        await client.PostAsync("/api/admin/currencies/update-rates", content: null);
+
+        source.RequestedProvider.Should().Be(ExchangeRateProvider.Cba);
     }
 
     /// <summary>

@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Time;
 
@@ -82,7 +83,7 @@ public sealed class DemoAdaptersTests
     {
         var source = new DemoExchangeRateSource();
 
-        var result = await source.QuoteAsync(new ExchangeRateLookup("USD", ["AMD", "EUR", "XXX"]), CancellationToken.None);
+        var result = await source.QuoteAsync(new ExchangeRateLookup(ExchangeRateProvider.Cba, "USD", ["AMD", "EUR", "XXX"]), CancellationToken.None);
 
         var rates = result.Value!.RatesToBase;
         rates["EUR"].Should().Be(Math.Round(1m / DemoCatalogueSeeder.EurosPerDollar, 8));

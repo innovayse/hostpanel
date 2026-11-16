@@ -10,6 +10,7 @@ using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
 using Innovayse.Hostpanel.Infrastructure.Authorization;
 using Innovayse.Hostpanel.Infrastructure.Currency;
+using Innovayse.Hostpanel.Infrastructure.Currency.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
@@ -473,15 +474,13 @@ public static class DependencyInjection
         // Billing services
         services.AddScoped<IPayerCurrencyResolver, PayerCurrencyResolver>();
 
-        // Exchange rates come from the Central Bank of Armenia's bulletin. The URL and its shape
-        // are argued on CbaExchangeRateSource; the read-only profile with retries is argued on
-        // HttpResilienceOptions.Cba. The interface is what the handler depends on, so another
-        // bank is another class here and nothing in Application moves.
-        services.AddHttpClient<IExchangeRateSource, CbaExchangeRateSource>(client =>
-        {
-            client.BaseAddress = new Uri(CbaExchangeRateSource.BaseAddress);
-        })
-            .AddReadOnlyResilience(o => o.Cba);
+        // Exchange rates come from the bank the operator chose in billing.exchange_rates.provider: the
+        // Central Bank of Armenia's bulletin or the European Central Bank's reference rates. Each URL and
+        // shape is argued on its source class. The handler reads the choice and names it in the lookup;
+        // ConfiguredExchangeRateSource only picks the adapter, so another bank is another class and one
+        // more arm there.
+        services.AddExchangeRateHttpClients();
+        services.AddScoped<IExchangeRateSource, ConfiguredExchangeRateSource>();
 
         // Payment plugins (hosted-gateway providers)
         services.AddHttpClient();

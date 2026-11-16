@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 
 namespace Innovayse.Hostpanel.Domain.Settings;
 
@@ -24,6 +25,16 @@ public static class BillingSettingKeys
     /// <summary>Days a service suspended for non-payment may stay suspended before it is terminated automatically.</summary>
     public const string TerminateAfterSuspendedDays = "billing.renewal.terminate_after_suspended_days";
 
+    /// <summary>The five renewal settings the billing engine reads together.</summary>
+    public static readonly IReadOnlyList<string> RenewalKeys =
+    [
+        InvoiceDaysBefore,
+        ReminderDays,
+        AutoApplyCredit,
+        SuspendAfterOverdueDays,
+        TerminateAfterSuspendedDays,
+    ];
+
     /// <summary>The least a client may add to their credit balance in one top-up, in the client's billing currency.</summary>
     public const string CreditTopUpMinimum = "billing.credit.topup_min";
 
@@ -38,6 +49,13 @@ public static class BillingSettingKeys
 
     /// <summary>Whether tax is added to new invoices from the tax rules; when off, no invoice is taxed automatically.</summary>
     public const string TaxEnabled = "billing.tax.enabled";
+
+    /// <summary>
+    /// Which bank the exchange rates come from: the name of an <see cref="ExchangeRateProvider"/>. Seeded
+    /// <see cref="ExchangeRateProvider.Cba"/>, so an installation keeps its source until the operator picks another.
+    /// Read on every refresh, by the admin button and by the daily job alike.
+    /// </summary>
+    public const string RateProvider = "billing.exchange_rates.provider";
 
     /// <summary>
     /// The largest day count any of these settings accepts (the day-count and reminder patterns
@@ -106,6 +124,12 @@ public static class BillingSettingKeys
             [AutoApplyCredit] = TrueOrFalse,
             [AutoApproveDowngrades] = TrueOrFalse,
             [TaxEnabled] = TrueOrFalse,
+            [RateProvider] = new(
+                new Regex(
+                    "^(" + string.Join("|", Enum.GetNames<ExchangeRateProvider>()) + ")$",
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+                string.Join(", ", Enum.GetNames<ExchangeRateProvider>()),
+                v => Enum.GetNames<ExchangeRateProvider>().First(n => string.Equals(n, v, StringComparison.OrdinalIgnoreCase))),
         };
 
     /// <summary>Every key with its seeded value and the description shown in System Settings.</summary>
@@ -121,6 +145,7 @@ public static class BillingSettingKeys
         new(CreditTopUpMaxOpen, "3", "Most unpaid top-up invoices a client can hold at once; they pay or cancel one before raising another."),
         new(AutoApproveDowngrades, "false", "Approve a client's downgrade to a cheaper plan at once and credit the rest of the billing cycle to their balance (true/false). When off, staff approve each downgrade."),
         new(TaxEnabled, "true", "Add tax to new invoices from the tax rules of the client's country (true/false). When off, no invoice is taxed automatically."),
+        new(RateProvider, nameof(ExchangeRateProvider.Cba), "Bank the currency exchange rates are taken from: Cba (Central Bank of Armenia) or Ecb (European Central Bank). Cba by default."),
     ];
 
     /// <summary>Keys that may be saved empty although they seed with a value.</summary>

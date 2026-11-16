@@ -1,6 +1,7 @@
 using System.Net;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Currency;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,7 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Billing;
 
 /// <summary>
 /// The Central Bank of Armenia publishes "1 unit = X AMD" as strings; the source turns that
-/// into "1 unit = X base" for whatever the base is, without touching the network.
+/// into "1 unit = X base" for whatever the base is, over a real client aimed at a stub bank server.
 /// </summary>
 public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
 {
@@ -50,7 +51,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
     /// <param name="codes">The codes to quote.</param>
     /// <returns>The source's answer.</returns>
     private Task<Result<ExchangeRateQuotes>> QuoteAsync(string baseCode, params string[] codes) =>
-        Source().QuoteAsync(new ExchangeRateLookup(baseCode, codes), CancellationToken.None);
+        Source().QuoteAsync(new ExchangeRateLookup(ExchangeRateProvider.Cba, baseCode, codes), CancellationToken.None);
 
     /// <summary>With base USD, one AMD is 1/363.28 USD and one EUR is 421.11/363.28 USD.</summary>
     /// <returns>A task that completes when the test has run.</returns>

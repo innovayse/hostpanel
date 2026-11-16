@@ -134,6 +134,21 @@ public sealed class StubHttpServer : IAsyncDisposable
             context.Response.Headers[name] = value;
         }
 
+        if (lastReply.BodyDelay is { } bodyDelay)
+        {
+            // Flushing sends the status and headers; the body then follows late, like a bank that stalls mid-answer.
+            await context.Response.Body.FlushAsync();
+            try
+            {
+                await Task.Delay(bodyDelay, context.RequestAborted);
+            }
+            catch (OperationCanceledException)
+            {
+                // The caller gave up (cancelled or timed out), which is what a stalled body is for.
+                return;
+            }
+        }
+
         await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(lastReply.Body));
     }
 }

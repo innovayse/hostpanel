@@ -1583,6 +1583,17 @@ addresses. Module `Products`; this slice stores and serves the options and does 
 
 ### Recurring billing
 
+- Exchange rates come from the bank in the `billing.exchange_rates.provider` setting (`ExchangeRateProvider`, `Cba` by
+  default, or `Ecb`). `UpdateExchangeRatesHandler` reads the provider on every refresh through `ExchangeRateSettingsReader`
+  (Application, on `SettingSource`; the stored name matched without regard to case, a missing or invalid row read as `Cba`
+  with a warning) and names it in the `ExchangeRateLookup`. `IExchangeRateSource` resolves to `ConfiguredExchangeRateSource`,
+  which only picks `CbaExchangeRateSource` or `EcbExchangeRateSource` by that name and reads no setting. Both adapters are typed
+  clients registered by `AddExchangeRateHttpClients`, each with its own read only resilience profile and the client's
+  `MaxResponseContentBufferSize` set to `ExchangeRateFeed.MaxBodyBytes` (an oversized body fails the call) and the client timeout
+  `HttpBackstopTimeouts.ExchangeRate` (the only bound on a body that stalls: the pipeline ends with the headers). They share `PivotRates` (the conversion to the requested base, a quotient too large for a decimal left out) and
+  `ExchangeRateFeed` (the download and its failure handling). The ECB feed is
+  read with DTD processing prohibited and no resolver and is published on working days only, so a weekend refresh keeps the last set.
+  The admin Currencies page edits the row through `ExchangeRateProviderCard`, so the key is card owned.
 `UpdateExchangeRatesCron` (03:00 UTC, `ScheduledJobsOptions.UpdateExchangeRatesHour`) refreshes the currency rates by running the same `UpdateExchangeRatesCommand` as the admin button, so the update has one implementation. A refusal (source down, no base currency) is logged and the next run is scheduled all the same; `ScheduledJobs:DisableExchangeRateUpdates` turns the outbound call off. It changes rates only: product prices are recomputed by `UpdateProductPricesCommand`, an operator's decision.
 
 Renewal invoicing, payment and suspension run as four crons (UTC, the default hours of `ScheduledJobsOptions`):

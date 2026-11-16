@@ -26,8 +26,11 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
     /// <summary>The short limit of the cases that never answer, in seconds; the least the options allow.</summary>
     private const int ShortLimitSeconds = 1;
 
-    /// <summary>The limit of the cases that answer in time or keep streaming, in seconds; room for a slow runner.</summary>
+    /// <summary>The limit of the cases that keep streaming or go silent, in seconds; room for a slow runner.</summary>
     private const int LongLimitSeconds = 3;
+
+    /// <summary>The limit of the case that answers in time, in seconds; far above what a slow runner needs to reach the answer.</summary>
+    private const int InTimeLimitSeconds = 30;
 
     /// <summary>The instant the test clock starts at: nothing here depends on the real date.</summary>
     private static readonly DateTimeOffset ClockStart = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -296,19 +299,29 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
         }
     }
 
-    /// <summary>A plugin that answers just inside the limit is answered normally.</summary>
+    /// <summary>
+    /// A plugin that answers while its call is still inside the limit is answered normally. The plugin answers on a signal the
+    /// test gives once it has seen the plugin running, never after a fixed delay, and the limit is far above the few
+    /// milliseconds that takes, so how fast the runner is cannot push the answer past the limit.
+    /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task APluginThatAnswersJustInTime_IsAnsweredNormally()
     {
-        using var http = await OwnerAsync(Timed(LongLimitSeconds), "timeout-in-time");
+        using var http = await OwnerAsync(Timed(InTimeLimitSeconds), "timeout-in-time");
+        var running = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _fixture.Probe.AsyncBehaviour = async (_, ct) =>
         {
-            await Task.Delay(TimeSpan.FromSeconds(2), ct);
+            running.TrySetResult();
+            await answer.Task.WaitAsync(ct);
             return PluginReply.Json(new { ok = true });
         };
 
-        using var response = await ClientCallAsync(http, HttpMethod.Get, "ping");
+        var call = ClientCallAsync(http, HttpMethod.Get, "ping");
+        await running.Task.WaitAsync(Patience);
+        answer.SetResult();
+        using var response = await call;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await response.Content.ReadAsStringAsync()).Should().Contain("true");

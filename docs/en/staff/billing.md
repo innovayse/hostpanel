@@ -342,7 +342,11 @@ A consumer in an EU member state other than yours is taxed on electronic service
 
 Go to **Settings → VAT Rates** to see the rates, ordered by country and then by the day each applies from. Each row has a **Member state**, a **Kind** (standard or reduced), a **Rate (%)** and a **Valid from** date. A rate stays in force until a later row of the same country and kind starts, so an invoice keeps the rate that applied on its invoice date. To change a rate, add a row with the new start day instead of editing the old one; edit a row only to correct a mistake. There is at most one row per country, kind and start day (`VAT_RATE_ALREADY_EXISTS`), the country must be an EU member state, and the rate is from 0 to 100 with up to three decimals (`VAT_RATE_INVALID`). Deleting a row does not change invoices already issued.
 
-The standard rates of the 27 member states ship with the application and are imported when it starts: a row that is missing is added, and a row that is there is never changed, so a rate you edited survives every restart and a new release brings a changed rate as a new row. A shipped row you delete comes back at the next start. A reduced rate depends on what is sold, so none ships; the panel does not apply a reduced rate on its own.
+The standard rates of the 27 member states ship with the application and are imported when it starts. A shipped rate is added only when the country holds no standard row that starts on the same day or later, and a row that is there is never changed. So a rate you edited survives every restart, a row whose start day you moved later is not brought back beside it (that would leave two rates in force), and a new release brings a changed rate as a new row. A shipped row you delete comes back at the next start unless the country holds a newer row. A reduced rate depends on what is sold, so none ships. A reduced rate you enter is stored for reference only: the panel never applies it to an invoice on its own, and only the standard rate is used.
+
+<Callout type="note">
+The panel does not track the EU threshold of 10,000 euro a year for cross-border sales to consumers. Below it a seller may charge the VAT of their own country, so while you are below it leave **billing.tax.seller_country** empty and let the tax rules decide. Once you pass it, set the setting.
+</Callout>
 
 The destination rate is used when all of these hold:
 

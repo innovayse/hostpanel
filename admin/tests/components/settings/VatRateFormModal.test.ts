@@ -32,6 +32,16 @@ describe('VatRateFormModal', () => {
     expect(wrapper.get('[data-testid="vat-rate-form-save"]').text()).toBe('Save')
   })
 
+  it('limits the member state picker to the EU member states', async () => {
+    const { wrapper } = await mountScreen(VatRateFormModal, { rate: null, saving: false, error: null })
+
+    const only = wrapper.getComponent(UiCountrySelect).props('only')
+
+    expect(only).toHaveLength(27)
+    expect(only).toContain('DE')
+    expect(only).not.toContain('US')
+  })
+
   it('emits the fields on submit, a standard rate by default', async () => {
     const { wrapper } = await mountScreen(VatRateFormModal, { rate: null, saving: false, error: null })
 

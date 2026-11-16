@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Hostpanel.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261116063358_AddVatRatesAndDigitalServiceFlag")]
+    [Migration("20261116094807_AddVatRatesAndDigitalServiceFlag")]
     partial class AddVatRatesAndDigitalServiceFlag
     {
         /// <inheritdoc />
@@ -5640,7 +5640,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                                 .HasColumnName("IsDigital");
 
                             b1.Property<bool>("IsDigitalService")
+                                .ValueGeneratedOnAdd()
                                 .HasColumnType("boolean")
+                                .HasDefaultValue(false)
                                 .HasColumnName("IsDigitalService");
 
                             b1.Property<string>("Metadata")

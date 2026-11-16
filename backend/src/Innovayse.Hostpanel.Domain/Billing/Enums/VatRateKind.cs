@@ -6,6 +6,6 @@ public enum VatRateKind
     /// <summary>The standard rate, the one charged on electronic services to consumers.</summary>
     Standard = 0,
 
-    /// <summary>A reduced rate the member state applies to a narrower class of supplies.</summary>
+    /// <summary>A reduced rate the member state applies to a narrower class of supplies; stored for reference only, never applied to an invoice automatically.</summary>
     Reduced = 1,
 }

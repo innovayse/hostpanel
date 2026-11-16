@@ -66,6 +66,55 @@ public sealed class VatRateSeederTests(IntegrationTestFactory factory) : IClassF
         }
     }
 
+    /// <summary>
+    /// A shipped row whose first day staff moved later is not brought back beside it: that would put two standard rates in
+    /// force for the country, so the import adds nothing and the country keeps its one edited row.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task EnsureSeeded_DoesNotBringBackAShippedRowWhoseDayWasMoved()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var shipped = VatRateCatalogue.Rates.First(r => r.Country == "LU");
+        var row = await context.VatRates.SingleAsync(r => r.Country == "LU" && r.Kind == VatRateKind.Standard && r.ValidFrom == shipped.ValidFrom);
+        var moved = shipped.ValidFrom.AddMonths(6);
+        row.Update("LU", VatRateKind.Standard, row.RatePercent, moved);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        try
+        {
+            var added = await VatRateSeeder.EnsureSeededAsync(context, CancellationToken.None);
+
+            added.Should().Be(0);
+            var rows = await context.VatRates.AsNoTracking().Where(r => r.Country == "LU" && r.Kind == VatRateKind.Standard).ToListAsync();
+            rows.Select(r => r.ValidFrom).Should().Equal(moved);
+        }
+        finally
+        {
+            row.Update("LU", VatRateKind.Standard, row.RatePercent, shipped.ValidFrom);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
+    /// <summary>A later shipped rate is still brought by a release when the country holds only its earlier row.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task EnsureSeeded_AddsALaterShippedRateToACountryHoldingOnlyTheEarlierRow()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var later = VatRateCatalogue.Rates.Where(r => r.Country == "FI").MaxBy(r => r.ValidFrom)!;
+        var row = await context.VatRates.SingleAsync(r => r.Country == "FI" && r.Kind == VatRateKind.Standard && r.ValidFrom == later.ValidFrom);
+        context.VatRates.Remove(row);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var added = await VatRateSeeder.EnsureSeededAsync(context, CancellationToken.None);
+
+        added.Should().Be(1);
+        (await context.VatRates.AsNoTracking().AnyAsync(r => r.Country == "FI" && r.ValidFrom == later.ValidFrom && r.RatePercent == later.RatePercent)).Should().BeTrue();
+    }
+
     /// <summary>A shipped row that was removed is brought back by the next import, which is how a release restores a missing rate.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

@@ -18,12 +18,14 @@ import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { EU_MEMBER_STATES } from '@/lib/euMemberStates'
 import { MAX_PERCENT, TAX_RATE_STEP } from '@/lib/limits'
 import { VatRateKind } from '@/types/vatrate'
 import type { SaveVatRatePayload, VatRateDto } from '@/types/vatrate'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { UiTone } from '@/utils/ui/tone'
 
+/** Translates the dialog's text into the operator's language. */
 const { t } = useI18n()
 
 /** Props for VatRateFormModal. */
@@ -104,6 +106,7 @@ const handleSubmit = (): void => {
       <UiField :label="t('vatRates.form.country.label')" required>
         <UiCountrySelect
           v-model="country"
+          :only="EU_MEMBER_STATES"
           :placeholder="t('vatRates.form.country.placeholder')"
           data-testid="vat-rate-form-country"
         />

@@ -6,7 +6,7 @@
 export enum VatRateKind {
   /** The standard rate, the one a digital service is taxed at. */
   Standard = 'Standard',
-  /** A reduced rate for a narrower class of supplies. */
+  /** A reduced rate for a narrower class of supplies; stored for reference, never applied to an invoice automatically. */
   Reduced = 'Reduced',
 }
 

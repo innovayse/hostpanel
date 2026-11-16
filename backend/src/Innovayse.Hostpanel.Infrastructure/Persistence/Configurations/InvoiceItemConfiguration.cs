@@ -70,7 +70,11 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
             snapshot.Property(x => x.Sku).HasColumnName("Sku").HasMaxLength(ProductSku.MaxLength);
             snapshot.Property(x => x.Metadata).HasColumnName("ProductMetadata").HasColumnType("jsonb");
             snapshot.Property(x => x.GracePeriodDays).HasColumnName("GracePeriodDays");
-            snapshot.Property(x => x.IsDigitalService).HasColumnName("IsDigitalService");
+
+            // The column is nullable like every snapshot column (a line with no snapshot leaves it empty), but a line
+            // that has a snapshot always has a value: a line snapshotted before the flag existed was never a digital
+            // service for VAT, so the column default fills it for those rows when the migration adds the column.
+            snapshot.Property(x => x.IsDigitalService).HasColumnName("IsDigitalService").HasDefaultValue(false);
         });
         builder.Navigation(x => x.ProductSnapshot).IsRequired(false);
 

@@ -122,7 +122,7 @@ public sealed class ClientTaxRateResolver
     /// <param name="day">The day the rate is wanted for.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The rate in percent, or <see langword="null"/> when the country has no standard rate that started on or before the day.</returns>
-    public async Task<decimal?> StandardVatRateAsync(string country, DateOnly day, CancellationToken ct)
+    private async Task<decimal?> StandardVatRateAsync(string country, DateOnly day, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(country);
 

@@ -23,7 +23,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 name: "IsDigitalService",
                 table: "InvoiceItems",
                 type: "boolean",
-                nullable: true);
+                nullable: true,
+                defaultValue: false);
 
             migrationBuilder.CreateTable(
                 name: "VatRates",

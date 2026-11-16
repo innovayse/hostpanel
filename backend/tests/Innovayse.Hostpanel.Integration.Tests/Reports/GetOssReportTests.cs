@@ -40,6 +40,21 @@ public sealed class GetOssReportTests(IntegrationTestFactory factory) : IClassFi
         body.GetProperty("periodEnd").GetString().Should().Be(quarterStart.AddMonths(3).AddDays(-1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
     }
 
+    /// <summary>The old route <c>vat-moss</c> still answers the same report as <c>oss</c>, for the one release it is kept as an alias.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TheDeprecatedVatMossRoute_AnswersTheSameReport()
+    {
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
+
+        var current = await client.GetAsync("/api/reports/oss?year=2024&quarter=1");
+        var alias = await client.GetAsync("/api/reports/vat-moss?year=2024&quarter=1");
+
+        alias.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await alias.Content.ReadAsStringAsync()).Should().Be(await current.Content.ReadAsStringAsync());
+    }
+
     /// <summary>A client outside the EU is not part of the OSS.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

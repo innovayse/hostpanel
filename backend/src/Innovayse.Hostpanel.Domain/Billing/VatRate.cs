@@ -6,9 +6,10 @@ namespace Innovayse.Hostpanel.Domain.Billing;
 
 /// <summary>
 /// The VAT rate of one EU member state from a given day on. A rate change is a new row with a later
-/// <see cref="ValidFrom"/>, never an edit of the old one, so the rate in force on any day can be read back. A new invoice
-/// for a consumer in another member state takes the standard row in force on the day the invoice is issued.
-/// At most one row exists per country, kind and valid-from day.
+/// <see cref="ValidFrom"/>, so the rate in force on any day can be read back; <see cref="Update"/> exists to correct a row
+/// entered by mistake, not to change a rate. A new invoice for a consumer in another member state takes the standard row
+/// in force on the day the invoice is issued. A <see cref="VatRateKind.Reduced"/> row is stored for reference only: no
+/// invoice is taxed at it automatically. At most one row exists per country, kind and valid-from day.
 /// Stored in the <c>VatRates</c> table.
 /// </summary>
 public sealed class VatRate : BaseEntity, IAggregateRoot
@@ -49,7 +50,7 @@ public sealed class VatRate : BaseEntity, IAggregateRoot
         return rate;
     }
 
-    /// <summary>Replaces the row's country, kind, rate and first day.</summary>
+    /// <summary>Replaces the row's country, kind, rate and first day, to correct a row entered by mistake; a rate change is a new row, not an edit.</summary>
     /// <param name="country">The ISO 3166-1 alpha-2 country code; normalised to upper case.</param>
     /// <param name="kind">Which of the country's rates the row holds.</param>
     /// <param name="ratePercent">The rate in percent, from 0 to <see cref="MaxRatePercent"/>.</param>

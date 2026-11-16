@@ -3,8 +3,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Seeding;
 /// <summary>
 /// The standard VAT rate of each EU member state that ships with the application, with the day each rate applies from.
 /// A rate change is a new entry with a later day; an entry already shipped is never edited, because an installation that
-/// imported it would keep the old rate. <see cref="VatRateSeeder"/> adds whatever an installation lacks at startup, so
-/// installing a release that carries a changed rate brings the change. Only the standard rate is shipped: a reduced rate
+/// imported it would keep the old rate. <see cref="VatRateSeeder"/> adds a rate an installation lacks at startup, unless the
+/// country already holds a standard row that starts on or after it, so installing a release that carries a changed rate
+/// brings the change. Only the standard rate is shipped: a reduced rate
 /// depends on what is sold, so staff enter those on the VAT rates screen.
 /// </summary>
 /// <remarks>

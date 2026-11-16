@@ -84,11 +84,10 @@ public sealed class DestinationVatRateTests(IntegrationTestFactory factory) : IC
     {
         var admin = await BillingTestSeeds.AdminClientAsync(factory);
         await VatRateTestSeeds.CreateAsync(admin, "HR", "Standard", 26m, new DateOnly(2050, 1, 1));
-        using var scope = factory.Services.CreateScope();
-        var resolver = scope.ServiceProvider.GetRequiredService<ClientTaxRateResolver>();
+        var clientId = await VatRateTestSeeds.SeedClientAsync(factory, "HR");
 
-        var before = await resolver.StandardVatRateAsync("HR", new DateOnly(2049, 12, 31), CancellationToken.None);
-        var onTheDay = await resolver.StandardVatRateAsync("HR", new DateOnly(2050, 1, 1), CancellationToken.None);
+        var before = await RateAsync("DE", VatRateTestSeeds.InvoiceOf(clientId, new DateTimeOffset(2049, 12, 31, 12, 0, 0, TimeSpan.Zero), true));
+        var onTheDay = await RateAsync("DE", VatRateTestSeeds.InvoiceOf(clientId, new DateTimeOffset(2050, 1, 1, 12, 0, 0, TimeSpan.Zero), true));
 
         before.Should().Be(25m);
         onTheDay.Should().Be(26m);
@@ -99,14 +98,10 @@ public sealed class DestinationVatRateTests(IntegrationTestFactory factory) : IC
     [Fact]
     public async Task ADateBeforeTheFirstRate_HasNoVatRate()
     {
-        using var scope = factory.Services.CreateScope();
-        var resolver = scope.ServiceProvider.GetRequiredService<ClientTaxRateResolver>();
         var clientId = await VatRateTestSeeds.SeedClientAsync(factory, "HU");
 
-        var lookup = await resolver.StandardVatRateAsync("HU", new DateOnly(2020, 1, 1), CancellationToken.None);
         var rate = await RateAsync("DE", VatRateTestSeeds.InvoiceOf(clientId, new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero), true));
 
-        lookup.Should().BeNull();
         rate.Should().Be(0m);
     }
 

@@ -16,6 +16,7 @@ import type { SaveVatRatePayload, VatRateDto, VatRateFilter } from '@/types/vatr
  * @returns One typed function per endpoint.
  */
 export const useVatRatesApi = () => {
+  /** The shared request function every endpoint below sends through. */
   const { request } = useApi()
 
   /**

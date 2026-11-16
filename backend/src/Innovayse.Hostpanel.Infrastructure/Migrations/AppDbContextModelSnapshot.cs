@@ -5637,7 +5637,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                                 .HasColumnName("IsDigital");
 
                             b1.Property<bool>("IsDigitalService")
+                                .ValueGeneratedOnAdd()
                                 .HasColumnType("boolean")
+                                .HasDefaultValue(false)
                                 .HasColumnName("IsDigitalService");
 
                             b1.Property<string>("Metadata")

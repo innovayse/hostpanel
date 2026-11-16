@@ -68,6 +68,12 @@ export const useClientsStore = defineStore('clients', () => {
   /** Per-field messages of the last refused external account link save, keyed by camelCase field name. */
   const externalAccountFieldErrors = ref<Record<string, string>>({})
 
+  /** True while a VAT number check is in flight. */
+  const vatChecking = ref(false)
+
+  /** Sentence for the last refused VAT number check (the service gave no verdict included), null when none. */
+  const vatError = ref<string | null>(null)
+
   /** Sentence for the last failed contact add/update/remove, null when none. */
   const contactError = ref<string | null>(null)
 
@@ -110,6 +116,7 @@ export const useClientsStore = defineStore('clients', () => {
     // A refusal of the link save belongs to the client it was typed for, not to the next one opened.
     externalAccountError.value = null
     externalAccountFieldErrors.value = {}
+    vatError.value = null
     const result = await runAction(error, () => api.get(id))
     loading.value = false
     if (result.ok) {
@@ -204,6 +211,23 @@ export const useClientsStore = defineStore('clients', () => {
       externalAccountFieldErrors,
     )
     externalAccountSaving.value = false
+    return result.ok
+  }
+
+  /**
+   * Runs the VAT number check of a client and reads the detail again, so the card shows the status the API now holds. The
+   * API is the only judge: a number the service could not decide leaves the status as it was and answers a sentence.
+   *
+   * @param id - The client identifier.
+   * @returns True when a verdict was recorded; false when refused (see `vatError`).
+   */
+  const checkVat = async (id: number | string): Promise<boolean> => {
+    vatChecking.value = true
+    const result = await runAction(vatError, async () => {
+      await api.checkVat(id)
+      current.value = await api.get(id)
+    })
+    vatChecking.value = false
     return result.ok
   }
 
@@ -385,6 +409,8 @@ export const useClientsStore = defineStore('clients', () => {
     externalAccountSaving,
     externalAccountError,
     externalAccountFieldErrors,
+    vatChecking,
+    vatError,
     contactError,
     exportError,
     countries,
@@ -395,6 +421,7 @@ export const useClientsStore = defineStore('clients', () => {
     updateClient,
     saveAdminNotes,
     saveExternalAccount,
+    checkVat,
     clearExternalAccountFieldError,
     fetchClientOptions,
     fetchClientCurrency,

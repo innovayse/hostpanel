@@ -15,7 +15,8 @@
   },
   "invoiceOptionsTab": {
     "thisIsADraftInvoice": "This is a Draft Invoice. The client is not able to see or access this invoice until it is published.",
-    "taxRate": "Tax Rate"
+    "taxRate": "Tax Rate",
+    "reverseCharge": "This invoice was raised under the reverse charge: no VAT is added and the client accounts for it. Client VAT number: {vatNumber}."
   },
   "invoicePaymentTab": {
     "publishTheInvoiceBeforeAdding": "Publish the invoice before adding payments.",

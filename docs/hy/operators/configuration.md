@@ -197,6 +197,8 @@ SMTP_ENCRYPTION-ի բացակայությունը կամ սխալ գրված լ�
   { name: 'DEPARTMENT_GENERAL_EMAIL', type: 'string', default: 'hello@example.com', description: 'Ընդհանուր բաժնի էլ. փոստը առաջին տեղադրման ժամանակ։ Մակարդակներ՝ բոլորը։' },
   { name: 'TELEGRAM_BOT_TOKEN', type: 'secret', default: '', description: 'Telegram բոտի թոքենը կապի ձևի ծանուցումների համար։ Կամ երկուսը, կամ ոչ մեկը. զույգի կեսը մերժում է գործարկումը։ Մակարդակներ՝ բոլորը։' },
   { name: 'TELEGRAM_CHAT_ID', type: 'string', default: '', description: 'Telegram չատի ID-ն, կամընտիր զույգ։ Սահմանեք երկուսը կամ ոչ մեկը։ Մակարդակներ՝ բոլորը։' },
+  { name: 'HMRC_VAT_CLIENT_ID', type: 'string', default: '', description: 'Մեծ Բրիտանիայի հարկային ծառայությունում գրանցված հավելվածի հաճախորդի ID-ն՝ բրիտանական ԱԱՀ համարները ստուգելու համար (ԵՄ համարները ստուգվում են առանց կարգավորման)։ Սահմանեք այն գաղտնիքի հետ միասին կամ թողեք երկուսն էլ դատարկ. զույգի կեսը կասեցնում է գործարկումը։ Մակարդակներ՝ բոլորը։' },
+  { name: 'HMRC_VAT_CLIENT_SECRET', type: 'secret', default: '', description: 'Այդ հավելվածի գաղտնիքը։ Մակարդակներ՝ բոլորը։' },
 ]" />
 
 ## Հակադարձ պրոքսի և վստահելի պրոքսիներ {#reverse-proxy-and-trusted-proxies}

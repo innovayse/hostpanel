@@ -65,6 +65,7 @@ public sealed class DemoServiceRegistrationTests
         ImplementationOf<IProvisioningProviderFactory>(services).Should().Be<DemoProvisioningProviderFactory>();
         ImplementationOf<IServerConnectionTester>(services).Should().Be<DemoServerConnectionTester>();
         ImplementationOf<IExchangeRateSource>(services).Should().Be<DemoExchangeRateSource>();
+        ImplementationOf<IVatNumberChecker>(services).Should().Be<DemoVatNumberChecker>();
         ImplementationOf<IContactNotifier>(services).Should().Be<DemoContactNotifier>();
         ImplementationOf<IHostingProbe>(services).Should().Be<DemoHostingProbe>();
         ImplementationOf<IDemoDataManager>(services).Should().Be<DemoDataManager>();

@@ -134,6 +134,8 @@ export default defineEventHandler(async (event): Promise<ClientUser> => {
       currency: null,
       paymentMethod: null,
       notifications: null,
+      vatNumber: null,
+      vat: { status: null, checkedAt: null, name: null, address: null },
       twoFactorEnabled,
       contacts: [],
       ...access,

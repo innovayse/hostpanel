@@ -40,6 +40,8 @@ export interface ProfileUpdate {
   language?: string
   /** Default payment method. */
   paymentMethod?: string
+  /** VAT number, with or without its country prefix; empty clears it. It is checked against the VAT number service once saved. */
+  vatNumber?: string
   /** Email notification flags, replaced as a group. */
   notifications?: ContactNotifications
 }

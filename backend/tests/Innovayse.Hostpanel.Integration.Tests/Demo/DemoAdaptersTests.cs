@@ -1,7 +1,9 @@
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
+using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Domains.Common;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
@@ -89,5 +91,21 @@ public sealed class DemoAdaptersTests
         rates["EUR"].Should().Be(Math.Round(1m / DemoCatalogueSeeder.EurosPerDollar, 8));
         rates["AMD"].Should().Be(Math.Round(1m / 385m, 8));
         rates.Should().NotContainKey("XXX");
+    }
+
+    /// <summary>A demo VAT number check never reaches a register: most numbers are registered, one ending in zero is not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task VatNumbers_AreJudgedByTheirLastDigitAsync()
+    {
+        var checker = new DemoVatNumberChecker();
+
+        var registered = await checker.CheckAsync(new VatNumberLookup("DE", "123456789"), CancellationToken.None);
+        var unregistered = await checker.CheckAsync(new VatNumberLookup("DE", "123456780"), CancellationToken.None);
+
+        registered.Outcome.Should().Be(VatCheckOutcome.Valid);
+        registered.Name.Should().NotBeNullOrEmpty();
+        unregistered.Outcome.Should().Be(VatCheckOutcome.Invalid);
+        unregistered.Name.Should().BeNull();
     }
 }

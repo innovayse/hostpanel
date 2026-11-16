@@ -89,6 +89,18 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <summary>Gets the tax rate percentage applied to the invoice.</summary>
     public decimal TaxRate { get; private set; }
 
+    /// <summary>
+    /// Gets whether the reverse charge applies: the client is a business registered for VAT in another country, so the
+    /// invoice carries no VAT and the client accounts for it. Fixed when the invoice is raised, with the rate.
+    /// </summary>
+    public bool ReverseCharge { get; private set; }
+
+    /// <summary>
+    /// Gets the client's VAT number as it stood when the reverse charge was applied, printed on the invoice;
+    /// <see langword="null"/> when the reverse charge does not apply.
+    /// </summary>
+    public string? ClientVatNumber { get; private set; }
+
     /// <summary>Gets the computed tax amount (SubTotal × TaxRate / 100).</summary>
     public decimal Tax { get; private set; }
 
@@ -798,7 +810,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// Fixes the tax percentage of the invoice and recomputes its totals. The new-invoice handlers call it once the lines are added,
     /// with the rate the client's country is due at that moment, so the rate stays on the invoice when the rules change later.
     /// </summary>
-    /// <param name="taxRate">Tax percentage applied to the subtotal.</param>
+    /// <param name="taxRate">Tax percentage applied to the subtotal. A rate above zero ends the reverse charge on the invoice, which would otherwise state that no tax was charged on a taxed invoice.</param>
     /// <exception cref="DomainRuleException">
     /// The invoice is no longer editable, or the rate would make it charge less than the payments it already took.
     /// </exception>
@@ -808,7 +820,30 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         EnsureChargeCoversPayments(SubTotal, taxRate);
 
         TaxRate = taxRate;
+        if (taxRate > 0)
+        {
+            ReverseCharge = false;
+            ClientVatNumber = null;
+        }
+
         RecalculateTotals();
+    }
+
+    /// <summary>
+    /// Raises the invoice under the reverse charge: no tax is added and the invoice records the client's VAT number, so
+    /// it can state that the client accounts for the VAT. Like <see cref="ApplyTaxRate"/> it is called once the lines are
+    /// added, and it fixes the answer for good, whatever happens later to the client's number.
+    /// </summary>
+    /// <param name="clientVatNumber">The client's VAT number, as it stands on the client; not blank.</param>
+    /// <exception cref="ArgumentException"><paramref name="clientVatNumber"/> is blank.</exception>
+    /// <exception cref="DomainRuleException">The invoice is no longer editable.</exception>
+    public void ApplyReverseCharge(string clientVatNumber)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(clientVatNumber);
+
+        ApplyTaxRate(0m);
+        ReverseCharge = true;
+        ClientVatNumber = clientVatNumber.Trim();
     }
 
     /// <summary>

@@ -504,6 +504,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ClientVatNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -594,6 +598,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("RefundStartedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("ReverseCharge")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1445,6 +1454,21 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("character varying(450)");
+
+                    b.Property<string>("VatAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("VatCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VatName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("VatStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()

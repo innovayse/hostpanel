@@ -69,6 +69,14 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.BillingContact).HasMaxLength(256);
         builder.Property(x => x.TaxId).HasMaxLength(Client.TaxIdMaxLength);
         builder.Property(x => x.TaxExemptionReason).HasMaxLength(Client.TaxExemptionReasonMaxLength);
+
+        // The last completed check of the tax identification number against the VAT number service. The status is
+        // Valid or Invalid and null while the number is unchecked or was changed since; the check is never stored as unavailable.
+        builder.Property(x => x.VatStatus)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+        builder.Property(x => x.VatName).HasMaxLength(Client.VatNameMaxLength);
+        builder.Property(x => x.VatAddress).HasMaxLength(Client.VatAddressMaxLength);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
 
         builder.Property(x => x.CreditBalance).HasColumnType("numeric(18,4)").HasDefaultValue(0m);

@@ -61,6 +61,11 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         // The sum of the account credit notes issued and not voided; defaults to nothing for every invoice raised before credit notes.
         builder.Property(x => x.CreditNotedAmount).HasColumnType("numeric(18,4)").IsRequired().HasDefaultValue(0m);
         builder.Property(x => x.TaxRate).HasColumnType("numeric(5,2)").IsRequired();
+
+        // Raised under the reverse charge: no tax, and the client's VAT number as it stood, printed on the document.
+        // Existing invoices were not.
+        builder.Property(x => x.ReverseCharge).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.ClientVatNumber).HasMaxLength(Client.TaxIdMaxLength);
         builder.Property(x => x.Tax).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.SubTotal).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.Credit).HasColumnType("numeric(18,4)").IsRequired();

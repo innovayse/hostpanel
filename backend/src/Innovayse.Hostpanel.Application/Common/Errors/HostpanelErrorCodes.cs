@@ -1502,6 +1502,21 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string CLIENT_TAX_EXEMPT = Domain.Clients.ClientsErrors.ClientTaxExempt;
 
+    /// <summary>The account is invoiced under the reverse charge, so a tax rate cannot be set on its invoices by hand (409).</summary>
+    public const string CLIENT_REVERSE_CHARGE_APPLIES = Domain.Clients.ClientsErrors.ClientReverseChargeApplies;
+
+    /// <summary>The client holds no VAT number to check (400).</summary>
+    public const string CLIENT_VAT_NUMBER_MISSING = Domain.Clients.ClientsErrors.ClientVatNumberMissing;
+
+    /// <summary>The client's billing country has no VAT number register to ask: it is neither an EU member state nor the United Kingdom (400).</summary>
+    public const string CLIENT_VAT_COUNTRY_NOT_SUPPORTED = Domain.Clients.ClientsErrors.ClientVatCountryNotSupported;
+
+    /// <summary>The VAT number service, or the member state behind it, gave no verdict; nothing was changed (503).</summary>
+    public const string VAT_SERVICE_UNAVAILABLE = Domain.Clients.ClientsErrors.VatServiceUnavailable;
+
+    /// <summary>The register of the client's country is not set up on this installation, so no check can be made (503).</summary>
+    public const string VAT_CHECK_NOT_CONFIGURED = Domain.Clients.ClientsErrors.VatCheckNotConfigured;
+
     /// <summary>The discount of a client group is outside 0 to 100 percent (400).</summary>
     public const string CLIENT_GROUP_DISCOUNT_INVALID = Domain.Clients.ClientsErrors.ClientGroupDiscountInvalid;
 

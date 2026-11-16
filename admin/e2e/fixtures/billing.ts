@@ -24,6 +24,8 @@ export const createdInvoice: InvoiceDetail = {
   amountDue: 240,
   creditableAmount: 0,
   isCreditTopUp: false,
+  reverseCharge: false,
+  clientVatNumber: null,
   payment: { method: null, gatewayTransactionId: null },
   notes: null,
   items: [{ id: 1, description: 'Managed hosting', unitPrice: 120, quantity: 2, amount: 240, sku: null }],

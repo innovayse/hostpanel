@@ -85,6 +85,8 @@ public sealed class GetInvoicePdfHandler
                 i.SubTotal,
                 i.TaxRate,
                 i.Tax,
+                i.ReverseCharge,
+                i.ClientVatNumber,
                 i.Credit,
                 i.Total,
                 i.Currency,
@@ -127,6 +129,7 @@ public sealed class GetInvoicePdfHandler
             SubTotal: invoice.SubTotal,
             TaxRate: invoice.TaxRate,
             Tax: invoice.Tax,
+            ClientVatNumber: invoice.ReverseCharge ? invoice.ClientVatNumber : null,
             Credit: invoice.Credit,
             Total: invoice.Total,
             // A currency with no row still prints, with its code after each amount so the reader

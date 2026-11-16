@@ -14,6 +14,7 @@ import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
 import ClientExternalAccountCard from '@/components/clients/ClientExternalAccountCard.vue'
+import ClientVatCard from '@/components/clients/ClientVatCard.vue'
 import PluginSlot from '@/components/plugins/PluginSlot.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -420,6 +421,23 @@ const saveExternalAccount = (payload: SetClientExternalAccountPayload): Promise<
 const clearExternalAccount = (): Promise<void> =>
   writeExternalAccount({ provider: null, accountId: null }, 'clients.externalAccount.cleared')
 
+/** The outcome line of the last VAT number check, shown inside its card. */
+const vatNotice = useResultBanner()
+
+/**
+ * Runs the VAT number check again and, once the API recorded a verdict, reports it; a refusal (the service gave no verdict
+ * included) shows as the card's error and the status stays as it was.
+ *
+ * @returns Promise that resolves when the call finishes.
+ */
+const checkVat = async (): Promise<void> => {
+  vatNotice.clear()
+  const checked = await clientsStore.checkVat(clientId.value)
+  if (checked) {
+    vatNotice.show(t('clients.vat.checked'), false)
+  }
+}
+
 /**
  * Opens a service of this client.
  *
@@ -752,6 +770,17 @@ onMounted(() => {
           @save="saveExternalAccount"
           @clear="clearExternalAccount"
           @clear-field-error="clientsStore.clearExternalAccountFieldError"
+        />
+
+        <ClientVatCard
+          v-if="client || initialLoading"
+          :tax-id="client?.settings.taxId ?? null"
+          :vat="client?.vat ?? null"
+          :loading="initialLoading"
+          :checking="clientsStore.vatChecking"
+          :error="clientsStore.vatError"
+          :notice="vatNotice.message.value"
+          @check="checkVat"
         />
       </UiGrid>
 

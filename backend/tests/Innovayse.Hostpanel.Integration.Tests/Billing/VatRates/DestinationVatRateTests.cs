@@ -27,7 +27,8 @@ public sealed class DestinationVatRateTests(IntegrationTestFactory factory) : IC
             var resolver = scope.ServiceProvider.GetRequiredService<ClientTaxRateResolver>();
             var result = await resolver.ForInvoiceAsync(invoice, CancellationToken.None);
             result.IsSuccess.Should().BeTrue();
-            return result.Value;
+            result.Value!.ReverseCharge.Should().BeFalse("no client here has a number that checked valid");
+            return result.Value.Rate;
         }
         finally
         {

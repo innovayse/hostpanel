@@ -47,6 +47,8 @@ const billing = {
     marketingOptIn: false,
     statusUpdate: false,
   },
+  vatNumber: null,
+  vat: { status: null, checkedAt: null, name: null, address: null },
   twoFactorEnabled: true,
   contacts: [],
 }
@@ -189,6 +191,8 @@ describe('GET /api/portal/client/me in single sign-on mode', () => {
       currency: null,
       paymentMethod: null,
       notifications: null,
+      vatNumber: null,
+      vat: { status: null, checkedAt: null, name: null, address: null },
       twoFactorEnabled: true,
       contacts: [],
       permissions: granted,

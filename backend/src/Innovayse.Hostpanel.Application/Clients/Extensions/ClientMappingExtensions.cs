@@ -35,6 +35,7 @@ public static class ClientMappingExtensions
             new ClientPreferencesDto(language, client.Currency, client.PaymentMethod, client.BillingContact, client.AdminNotes),
             client.ToNotifications(),
             client.ToSettings(),
+            client.ToVat(),
             twoFactorEnabled,
             client.CreatedAt,
             client.Contacts.Select(ToContactDto).ToList(),
@@ -77,6 +78,8 @@ public static class ClientMappingExtensions
                 client.NotifyAffiliate,
                 client.MarketingOptIn,
                 client.StatusUpdate),
+            client.TaxId,
+            client.ToVat(),
             twoFactorEnabled,
             client.Contacts.Select(ToContactDto).ToList());
 
@@ -125,4 +128,10 @@ public static class ClientMappingExtensions
         new(
             client.OverdueNotices, client.TaxExempt, client.TaxId, client.TaxExemptionReason, client.SeparateInvoices, client.DisableCcProcessing,
             client.MarketingOptIn, client.StatusUpdate, client.AllowSso);
+
+    /// <summary>Reads the last completed VAT number check off a client.</summary>
+    /// <param name="client">The client record read from.</param>
+    /// <returns>The status, its date and the name and address the service returned.</returns>
+    public static ClientVatDto ToVat(this Client client) =>
+        new(client.VatStatus, client.VatCheckedAt, client.VatName, client.VatAddress);
 }

@@ -83,7 +83,7 @@ On the **Options** tab you can change:
 
 - **Invoice Date** and **Due Date**
 - **Payment Method**
-- **Tax Rate**: cannot be set on a tax-exempt client's invoice (`CLIENT_TAX_EXEMPT`)
+- **Tax Rate**: cannot be set on a tax-exempt client's invoice (`CLIENT_TAX_EXEMPT`), nor on the invoice of a client invoiced under the reverse charge (`CLIENT_REVERSE_CHARGE_APPLIES`)
 
 ## Record a payment
 
@@ -291,12 +291,35 @@ When a new invoice is raised for a client, the panel picks one rate for it:
 1. If **billing.tax.enabled** is off in System Settings, the invoice is not taxed. The setting is on by default and switches automatic tax off for everyone.
 2. If the client is **Tax Exempt**, the invoice is never taxed.
 3. If the client has no country, the invoice is not taxed.
-4. Otherwise the panel looks for an enabled rule for the client's country and region first, and then for an enabled rule for the whole country. The rate of the first one found is used.
-5. If there is no such rule, the invoice is not taxed.
+4. If the client is a business with a valid VAT number in an EU country other than the seller's country, or in the United Kingdom, the invoice is raised under the reverse charge: no tax is added (see [VAT numbers and the reverse charge](#vat-numbers-and-the-reverse-charge)).
+5. Otherwise the panel looks for an enabled rule for the client's country and region first, and then for an enabled rule for the whole country. The rate of the first one found is used.
+6. If there is no such rule, the invoice is not taxed.
 
 This applies to order invoices, renewal invoices, invoices for billable items, invoices converted from a quote and invoices created by staff. Credit top-up invoices are never taxed.
 
 The rate is fixed on the invoice when it is raised. Changing or deleting a rule later, or changing the client, does not change an invoice that was already issued.
+
+### VAT numbers and the reverse charge
+
+A business that is registered for VAT in another EU country, or in the United Kingdom, is not charged VAT by a seller abroad. It accounts for the VAT itself. The panel does this on its own for a client whose VAT number it has checked.
+
+**The client's number.** The client's **Tax ID** is its VAT number. Staff enter it on the client's Profile, and the client can enter it in the portal on the Account Details tab. It may be typed with or without its country prefix, with spaces or dots (`DE 123.456.789`, `DE123456789` and `123456789` are the same number). The country it is checked for is the client's billing country.
+
+**The check.** The number is checked against the European Commission's VIES service for an EU member state (Greece is checked as `EL`) and against the UK tax authority's VAT number lookup for a United Kingdom number. The service answers one of three things:
+
+- **Valid.** The client page shows the status, the date of the check and the registered name and address the service returned, when it returns them.
+- **Not valid.** The number is not registered.
+- **No answer.** The service, or the member state behind it, could not be reached. This is never stored as not valid: the client keeps the status it had and the date of the check that gave it, and the check is tried again later. The **Check again** button shows the refusal `VAT_SERVICE_UNAVAILABLE`.
+
+The check runs by itself in the background when the number or the billing country is saved, by staff or by the client, so the person saving never waits for the service. Staff can run it again at any time from the **VAT number** card on the client's Summary. A change of the number or of the country clears the earlier status until the new number is checked. A number cannot be checked while the client has no number (`CLIENT_VAT_NUMBER_MISSING`) or a billing country with no register, that is any country other than the EU member states and the United Kingdom (`CLIENT_VAT_COUNTRY_NOT_SUPPORTED`). A United Kingdom number cannot be checked until the operator has set the UK tax authority credentials (`HMRC_VAT_CLIENT_ID` and `HMRC_VAT_CLIENT_SECRET`): the **Check again** button then shows the refusal `VAT_CHECK_NOT_CONFIGURED`, which no waiting will cure, and the daily re-check leaves United Kingdom clients out.
+
+**The daily re-check.** Every day at 02:00 UTC the panel checks again the numbers that were never judged and the numbers whose last check is more than 7 days old, up to 500 clients a day, oldest first. A number that has stopped being valid is therefore found, and the reverse charge stops for new invoices. If the register of one country gives no answer several times in a row, the run stops asking about that country and carries on with the others, and tries that country again the next day. Operators can change the hour, the age, the size of a run, or switch the re-check off for a server with no outbound internet, in the `ScheduledJobs` settings (`RecheckVatNumbersHour`, `VatRecheckAfterDays`, `VatRecheckBatchSize`, `VatRecheckStopAfterUnavailable`, `VatCheckValidForDays`, `DisableVatRechecks`). A UK client's verdict is only refreshed when the UK tax authority credentials (`HMRC_VAT_CLIENT_ID`, `HMRC_VAT_CLIENT_SECRET`) are set; without them the re-check leaves UK clients out, and their valid check stops keeping the reverse charge once it is older than `VatCheckValidForDays`. A run checks at most `VatRecheckBatchSize` clients, so a large client base may need a bigger value: about `VatRecheckBatchSize` x (`VatCheckValidForDays` - `VatRecheckAfterDays`) clients fit in one validity window. `VatCheckValidForDays` must be greater than `VatRecheckAfterDays`, or the panel refuses to start.
+
+**When the reverse charge applies.** A new invoice is raised under the reverse charge when all of these hold: automatic tax is on, the client is not **Tax Exempt**, the client's last completed check of its VAT number is **Valid** and no older than 30 days (`VatCheckValidForDays`, so a number that went invalid while the re-check was not running cannot keep the reverse charge for ever), the client's billing country is an EU member state or the United Kingdom, and it is not the seller's country. A client in the seller's own country is taxed as usual, and so is a client in any other country, a client with no number, and a client whose number is not valid or was never judged. The invoice then carries no tax. Its detail page, the portal and the PDF say that the reverse charge applies and show the client's VAT number. The manual **Tax Exempt** switch keeps working as the override: such a client is never taxed, and the invoice states no reverse charge. The rate cannot be typed by hand for a client invoiced under the reverse charge (`CLIENT_REVERSE_CHARGE_APPLIES`); the invoice keeps what it was raised with, and a number that stops being valid changes only invoices raised afterwards.
+
+**The seller's country and VAT number.** Set the seller's country in System Settings, **billing.tax.seller_country**, as a two-letter code such as `DE`. It is empty by default, and while it is empty the reverse charge never applies. The seller's own tax number is the existing setting **portal.legal.tax_id**, which the invoice PDF prints.
+
+**The UK check.** The UK tax authority asks for the credentials of an application you register on its developer hub. Set `HMRC_VAT_CLIENT_ID` and `HMRC_VAT_CLIENT_SECRET` (see [Configuration](../operators/configuration.md)). Without them a UK number is never judged: its client stays taxed. EU numbers need nothing.
 
 ### Add, edit and delete a rule
 
@@ -350,8 +373,8 @@ The panel does not track the EU threshold of 10,000 euro a year for cross-border
 
 The destination rate is used when all of these hold:
 
-1. **billing.tax.seller_country** in System Settings holds your country as a two-letter code, for example `DE`. It is empty by default, which turns destination rates off, and the tax rules alone decide the rate.
-2. The client's country is a different country, and the client has no **Tax ID**. A client with a Tax ID is a business; the panel does not decide anything for businesses here, so such a client keeps the rate of the tax rules.
+1. **billing.tax.seller_country** in System Settings holds your country as a two-letter code, for example `DE`. It is empty by default, which turns destination rates and the reverse charge off, and the tax rules alone decide the rate.
+2. The client's country is a different country, and the client has no **Tax ID**. A client with a Tax ID is a business and never gets a destination rate: if its VAT number is valid in another EU country or in the United Kingdom it is invoiced under the reverse charge (see [VAT numbers and the reverse charge](#vat-numbers-and-the-reverse-charge)), otherwise it keeps the rate of the tax rules.
 3. Every line of the invoice is a **digital service**. Tick **Digital service** on a product that counts as an electronic service for VAT (hosting, a licence, a domain that counts as one). It is a different switch from the product type Digital, which says how the product is delivered. An invoice with any other line, such as a manual line, keeps the rate of the tax rules, because one invoice carries one rate.
 4. The VAT rates hold a standard rate for the client's country that started on or before the invoice date.
 
@@ -364,7 +387,8 @@ A client in your own country keeps the rate of the tax rules. The rate is fixed 
 ### What is not covered yet
 
 - Tax per line item. One rate applies to the whole invoice.
-- VAT number validation. The client's **Tax ID** is stored as you enter it and is not checked.
+- VAT numbers outside the EU and the United Kingdom (for example Norway or Switzerland) are not checked, and the reverse charge does not apply to them.
+- Northern Ireland numbers with the `XI` prefix.
 - Tax included pricing. Tax is always added on top of the prices.
 
 ## Cancel and delete

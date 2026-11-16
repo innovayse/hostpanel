@@ -107,6 +107,10 @@
         </UiTableFoot>
       </UiTable>
 
+      <UiAlert v-if="invoice.reverseCharge" variant="info" data-testid="invoice-reverse-charge">
+        {{ $t('client.invoices.reverseCharge', { vatNumber: invoice.clientVatNumber ?? '' }) }}
+      </UiAlert>
+
       <UiAlert v-if="isOutstanding" variant="info" data-testid="invoice-unpaid-banner">
         {{ $t('client.invoices.unpaidBanner') }}
         <template #action>

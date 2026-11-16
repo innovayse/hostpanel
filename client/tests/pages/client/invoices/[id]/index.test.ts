@@ -47,6 +47,7 @@ let table: StubRouteTable
 const invoice = (overrides: Record<string, unknown> = {}) => ({
   id: 41, status: InvoiceStatus.Unpaid, currency: 'USD', invoiceDate: '2026-01-01', dueDate: '2099-01-15', paidAt: null, paymentMethod: 'card',
   subTotal: 90, tax: 10, credit: 0, total: 100, amountDue: 100, isCreditTopUp: false, isBankTransferPending: false,
+  reverseCharge: false, clientVatNumber: null,
   items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 0 }], transactions: [],
   ...overrides
 })
@@ -92,6 +93,24 @@ describe('invoice page', () => {
 
     expect(requestsTo(stub.requests, PATHS.bankTransfer).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(false)
+  })
+
+  it('states the reverse charge with the VAT number only on an invoice raised under it', async () => {
+    table[readOf(PATHS.invoice)] = { body: invoice({ tax: 0, subTotal: 100, reverseCharge: true, clientVatNumber: 'DE123456789' }) }
+
+    const wrapper = await mountPage(InvoicePage)
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-reverse-charge"]').exists()).toBe(true))
+
+    expect(wrapper.get('[data-testid="invoice-reverse-charge"]').text()).toContain('client.invoices.reverseCharge')
+  })
+
+  it('shows no reverse charge statement on an ordinary invoice', async () => {
+    table[readOf(PATHS.invoice)] = { body: invoice() }
+
+    const wrapper = await mountPage(InvoicePage)
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-unpaid-banner"]').exists()).toBe(true))
+
+    expect(wrapper.find('[data-testid="invoice-reverse-charge"]').exists()).toBe(false)
   })
 
   it('shows no bank details for an invoice that owes money and waits for nothing', async () => {

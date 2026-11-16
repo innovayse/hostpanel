@@ -50,6 +50,8 @@ using Innovayse.Hostpanel.Infrastructure.Security.Settings;
 using Innovayse.Hostpanel.Infrastructure.Storage;
 using Innovayse.Hostpanel.Infrastructure.Storage.Settings;
 using Innovayse.Hostpanel.Infrastructure.Time;
+using Innovayse.Hostpanel.Infrastructure.Vat;
+using Innovayse.Hostpanel.Infrastructure.Vat.Settings;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP7;
@@ -481,6 +483,34 @@ public static class DependencyInjection
         // more arm there.
         services.AddExchangeRateHttpClients();
         services.AddScoped<IExchangeRateSource, ConfiguredExchangeRateSource>();
+
+        // VAT number checks: one port, one adapter per register. The EU register needs no credentials; the UK one is
+        // asked with the credentials of an application registered with its authority, left unset by a deployment that
+        // serves no UK clients (its numbers then answer unavailable). Both are idempotent lookups, so both are registered
+        // read-only with retries (HttpResilienceOptions.Vat). The UK base address is the API root and ends in a slash so a
+        // relative path extends it.
+        services.AddOptions<HmrcVatOptions>()
+            .Bind(configuration.GetSection(HmrcVatOptions.SectionName))
+            .Validate(
+                o => Uri.TryCreate(o.BaseUrl, UriKind.Absolute, out _) && o.BaseUrl.EndsWith('/'),
+                $"{HmrcVatOptions.SectionName}:{nameof(HmrcVatOptions.BaseUrl)} must be an absolute URL ending in a slash.")
+            .Validate(
+                o => o.IsUsable,
+                $"{HmrcVatOptions.SectionName} is partly configured: ClientId and ClientSecret must either both be set or the whole section left unset.")
+            .ValidateOnStart();
+        services.AddHttpClient<ViesVatClient>(client =>
+        {
+            client.BaseAddress = new Uri(ViesVatClient.BaseAddress);
+            client.Timeout = HttpBackstopTimeouts.VatRegister;
+        })
+            .AddReadOnlyResilience(o => o.Vat);
+        services.AddHttpClient<HmrcVatClient>((sp, client) =>
+        {
+            client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<HmrcVatOptions>>().Value.BaseUrl);
+            client.Timeout = HttpBackstopTimeouts.VatRegister;
+        })
+            .AddReadOnlyResilience(o => o.Vat);
+        services.AddScoped<IVatNumberChecker, VatNumberChecker>();
 
         // Payment plugins (hosted-gateway providers)
         services.AddHttpClient();

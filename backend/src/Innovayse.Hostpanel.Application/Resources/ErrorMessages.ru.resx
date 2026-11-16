@@ -1183,6 +1183,21 @@
   <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
     <value>Клиент освобождён от налога, поэтому для его счетов нельзя задать налоговую ставку.</value>
   </data>
+  <data name="CLIENT_REVERSE_CHARGE_APPLIES" xml:space="preserve">
+    <value>Счета этого клиента выставляются по механизму обратного начисления, поэтому налоговую ставку для них нельзя задать вручную.</value>
+  </data>
+  <data name="CLIENT_VAT_NUMBER_MISSING" xml:space="preserve">
+    <value>У клиента нет номера плательщика НДС для проверки.</value>
+  </data>
+  <data name="CLIENT_VAT_COUNTRY_NOT_SUPPORTED" xml:space="preserve">
+    <value>Номер плательщика НДС можно проверить только для стран ЕС и Великобритании. Сначала укажите страну клиента для выставления счетов.</value>
+  </data>
+  <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Сервис проверки номеров плательщиков НДС сейчас не отвечает. Прежний результат сохранён. Повторите попытку позже.</value>
+  </data>
+  <data name="VAT_CHECK_NOT_CONFIGURED" xml:space="preserve">
+    <value>Номера НДС этой страны пока нельзя проверить: реестр не настроен на этом сервере. Попросите администратора настроить его (для номеров Великобритании нужны учётные данные HMRC).</value>
+  </data>
   <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
     <value>Этот SKU уже используется другим продуктом. Выберите другой.</value>
   </data>

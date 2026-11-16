@@ -3,6 +3,7 @@
  */
 
 import type { ClientExternalAccount } from '@/types/clientexternalaccount'
+import type { ClientVat } from '@/types/clientvat'
 import type { Contact } from '@/types/contact'
 import type { ContactNotifications } from '@/types/contactnotifications'
 import type { CurrencyAmount } from '@/types/currency'
@@ -97,6 +98,8 @@ export interface ClientDetail extends ClientListItem {
   twoFactorEnabled: boolean
   /** Associated contacts. */
   contacts: Contact[]
+  /** The last completed check of the client's VAT number (the tax ID); read only. */
+  vat?: ClientVat
   /** The account in another system the client is linked to; null or absent when there is no link. */
   externalAccount?: ClientExternalAccount | null
   /** Credit held on the account in its billing currency; while it is not zero the currency cannot be changed. */

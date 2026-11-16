@@ -675,7 +675,7 @@ deploy:staging:
 # DEPLOY_DIR: the demo's own checkout on the host, never production's.
 deploy:demo:
   extends: .deploy-staging
-  tags: [prod]
+  tags: [prod-b]
   variables:
     # The demo has a checkout of its own (DEPLOY_DIR, scoped to demo/hostpanel): this job runs
     # `git checkout -f`, which in production's directory would swap the files under the running
@@ -731,7 +731,7 @@ deploy:demo:
 # disk stopped the deploy of 2026-10-30 and its rollback alike.
 maintenance:prod-free-disk:
   stage: deploy
-  tags: [prod]
+  tags: [prod-a]
   variables:
     GIT_STRATEGY: none
   script:
@@ -747,7 +747,7 @@ maintenance:prod-free-disk:
 
 deploy:prod:
   stage: deploy
-  tags: [prod]
+  tags: [prod-a]
   variables:
     GIT_STRATEGY: none
     # DEPLOY_DIR is the CI/CD variable scoped to production/hostpanel.

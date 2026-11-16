@@ -311,10 +311,20 @@ public sealed class WhmApiClientTests : IAsyncLifetime
     public async Task Call_CancelledWhileWaiting_ThrowsRatherThanUnreadableAsync()
     {
         whm.Enqueue(new StubReply(HttpStatusCode.OK, WhmReplies.Ok, Delay: TimeSpan.FromSeconds(30)));
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+        using var cts = new CancellationTokenSource();
 
-        var act = () => Client().UnsuspendAccountAsync(Connection(), "testuser", cts.Token);
+        var call = Client().UnsuspendAccountAsync(Connection(), "testuser", cts.Token);
+        try
+        {
+            await whm.FirstRequestReceived.WaitAsync(TimeSpan.FromSeconds(30));
+        }
+        finally
+        {
+            // Cancel even when the request never arrived, so the held call does not outlive a failed test.
+            await cts.CancelAsync();
+        }
 
+        var act = () => call;
         await act.Should().ThrowAsync<OperationCanceledException>();
         whm.Requests.Should().ContainSingle();
     }

@@ -101,6 +101,7 @@ public sealed class PlaceOrderProductLimitsTests(IntegrationTestFactory factory)
     /// <returns>The product id.</returns>
     private async Task<int> SeedLimitedProductAsync(int? max, bool onePerClient)
     {
+        await OrdersTestSeeds.EnableBankTransferAsync(factory);
         var productId = await OrdersTestSeeds.SeedProductAsync(factory);
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

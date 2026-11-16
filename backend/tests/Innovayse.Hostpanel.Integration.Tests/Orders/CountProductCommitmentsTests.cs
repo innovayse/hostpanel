@@ -20,6 +20,7 @@ public sealed class CountProductCommitmentsTests(IntegrationTestFactory factory)
     [Fact]
     public async Task HandleAsync_CountsAnOpenOrderLineAsync()
     {
+        await OrdersTestSeeds.EnableBankTransferAsync(factory);
         var productId = await OrdersTestSeeds.SeedProductAsync(factory);
         var (client, clientId, _) = await ClientsTestSeeds.RegisterClientAsync(factory, "commitments-a");
         var (_, otherClientId, _) = await ClientsTestSeeds.RegisterClientAsync(factory, "commitments-b");

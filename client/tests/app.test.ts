@@ -86,7 +86,6 @@ const mountApp = () => mountWithKit(App, {
     NuxtLayout: slotMarker('layout'),
     NuxtPage: marker(PAGE_TESTID),
   },
-  stubs: { UiCookieBanner: marker('cookie-banner') },
 })
 
 /** What the app passes to `useHead` for the document: the language and the icon links. */

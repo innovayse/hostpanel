@@ -9,14 +9,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
 import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, publishedSchemas, registerPageComponents, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { until } from '~/tests/helpers/settle'
-import { requestsTo } from '~/tests/helpers/stubRoutes'
+import { faqFixture } from '~/tests/helpers/storefrontFixtures'
+import { StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { readOf, requestsTo } from '~/tests/helpers/stubRoutes'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import SectionsFAQ from '~/components/sections/SectionsFAQ.vue'
 import UiDropdown from '~/components/ui/UiDropdown.vue'
+import { useTemplate } from '~/composables/useTemplate'
 import { ContactService } from '~/types/contactservice'
 
 const { default: Page } = await import('~/pages/contact.vue')
@@ -25,14 +29,7 @@ const { default: Page } = await import('~/pages/contact.vue')
 const CONTACT_PATH = '/api/contact'
 
 /** What the stub answers, by route, and the accessor of the stub the hooks start and close around each test; a test changes the replies before it submits. */
-const { replies, stub } = usePortalSettingsServer()
-
-/** Stands in for the FAQ preview section. */
-const SectionsFaqStub = defineComponent({
-  name: 'SectionsFAQ',
-  props: { limit: { type: Number, default: undefined } },
-  setup: props => () => h('div', { 'data-testid': 'sections-faq', 'data-limit': String(props.limit) }),
-})
+const { replies, stub } = usePortalSettingsServer({ useTemplate })
 
 /** Spies of the stood-in runtime, renewed before each test. */
 let spies: PublicPageSpies
@@ -76,7 +73,8 @@ const submit = async (wrapper: VueWrapper): Promise<void> => {
 describe('pages/contact', () => {
   beforeEach(() => {
     spies = stubPublicPageRuntime()
-    registerPageComponents({ SectionsFAQ: SectionsFaqStub })
+    registerPageComponents({ ...CLASSIC_COMPONENTS, SectionsFAQ })
+    replies[readOf(StorefrontPath.Faqs)] = { body: [1, 2, 3, 4, 5, 6].map((id) => faqFixture(id)) }
     replies[`POST ${CONTACT_PATH}`] = { status: 204 }
   })
 
@@ -97,7 +95,8 @@ describe('pages/contact', () => {
 
     expect(wrapper.find('h1').text()).toContain('contact.hero.title')
     expect(wrapper.find('h1').text()).toContain('contact.hero.titleHighlight')
-    expect(wrapper.find('[data-testid="sections-faq"]').attributes('data-limit')).toBe('4')
+    await until(() => wrapper.find('[data-testid="sections-faq"]').exists(), 'the FAQ preview to load')
+    expect(wrapper.findAll('[data-testid^="ui-accordion-toggle-"]')).toHaveLength(4)
   })
 
   it('gives every text field its placeholder', async () => {

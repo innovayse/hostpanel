@@ -8,7 +8,8 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { settle } from '~/tests/helpers/settle'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -38,7 +39,7 @@ describe('client confirm-email page', () => {
   it('confirms the address from the link and offers sign-in', async () => {
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.ConfirmEmail)[0])).toEqual({ email: 'ada@example.com', token: 'tok' })
@@ -49,7 +50,7 @@ describe('client confirm-email page', () => {
     table[writeOf(AccountEndpoint.ConfirmEmail)] = { status: 400, body: { detail: 'This link has expired.' } }
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="confirm-failed"]').text()).toContain('This link has expired.')
@@ -59,7 +60,7 @@ describe('client confirm-email page', () => {
   it('reports an incomplete link without calling the API', async () => {
     stubAuthRuntime({ query: { email: 'ada@example.com' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
     await settle()
 
@@ -70,7 +71,7 @@ describe('client confirm-email page', () => {
   it('has no logo or heading of its own, only the outcome', async () => {
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
-    const wrapper = await mountAuthPage(ConfirmEmailPage)
+    const wrapper = await mountPage(ConfirmEmailPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="auth-logo"]').exists()).toBe(false)

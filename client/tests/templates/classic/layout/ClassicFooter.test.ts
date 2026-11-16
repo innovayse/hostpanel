@@ -1,22 +1,37 @@
 /**
  * Unit tests for ClassicFooter: the classic template's footer slot renders the shared site
  * footer and nothing else.
+ *
+ * The real site footer runs with the real catalogue and currency stores, the pickers, the domain search and the
+ * operator's settings composables against a stub server playing the BFF.
  */
-import { describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { AMD_CURRENCY, USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
+import { readOf, requestsTo } from '~/tests/helpers/stubRoutes'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { waitUntil } from '~/tests/helpers/waitUntil'
+import LayoutFooter from '~/components/layout/Footer.vue'
+import SectionsDomainSearch from '~/components/sections/SectionsDomainSearch.vue'
 import ClassicFooter from '~/templates/classic/layout/ClassicFooter.vue'
 
-/** Stand-in for the shared footer so the test only proves the slot wires it in. */
-const LayoutFooterStub = defineComponent({
-  name: 'LayoutFooter',
-  setup: () => () => h('footer', { 'data-testid': 'layout-footer-stub' }),
-})
+/** The stub server and the loader of the operator's settings; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useTemplateGlobals()
 
 describe('ClassicFooter', () => {
-  it('renders the shared site footer', () => {
-    const wrapper = mountWithKit(ClassicFooter, { components: { LayoutFooter: LayoutFooterStub } })
+  beforeEach(async () => {
+    replies[readOf(CatalogPath.ProductGroups)] = { body: [] }
+    replies[readOf(CatalogPath.BillingCurrencies)] = { body: [USD_CURRENCY, AMD_CURRENCY] }
+    await loadGlobals()
+  })
 
-    expect(wrapper.find('[data-testid="layout-footer-stub"]').exists()).toBe(true)
+  it('renders the shared site footer', async () => {
+    const wrapper = mountWithKit(ClassicFooter, { components: { LayoutFooter, SectionsDomainSearch } })
+    await waitUntil(() => expect(requestsTo(stub().requests, CatalogPath.ProductGroups).length).toBeGreaterThan(0))
+    await awaitCatalogue()
+
+    expect(wrapper.find('[data-testid="layout-footer"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="sections-domain-search"]').exists()).toBe(true)
   })
 })

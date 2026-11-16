@@ -18,6 +18,9 @@ import type { BillingCurrency } from '~/types/currency'
 /** The one currency the stub's billing-currencies endpoint offers: it is the base, so it becomes the payer's. */
 export const USD_CURRENCY: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
 
+/** A second enabled currency, so the currency switcher has a choice to offer. */
+export const AMD_CURRENCY: BillingCurrency = { code: 'AMD', numeric: '051', prefix: '', suffix: ' AMD', decimals: 0, isBase: false }
+
 /**
  * Waits until the currencies are loaded and the catalogue is idle, in the active Pinia.
  *

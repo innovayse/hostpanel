@@ -30,8 +30,8 @@ const buildAccountComponents = (): Record<string, Component> => {
   return registry
 }
 
-/** The account components, built once for every mount. */
-const ACCOUNT_COMPONENTS = buildAccountComponents()
+/** The account components, built once for every mount; a page that renders the tabs registers them too. */
+export const ACCOUNT_COMPONENTS = buildAccountComponents()
 
 /**
  * Mounts an account component with the kit and its sibling components registered.

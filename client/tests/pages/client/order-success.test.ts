@@ -8,7 +8,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { invoicePath } from '~/tests/helpers/billingPaths'
@@ -47,7 +48,7 @@ describe('client order-success page', () => {
   it('shows the order number from the link and the amount from the order invoice', async () => {
     stubAuthRuntime({ query: { order: 'A-1001', invoice: '7' } })
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('$25.00'))
 
     expect(requestsTo(stub.requests, INVOICE_PATH).map(request => request.method)).toEqual(['GET'])
@@ -57,7 +58,7 @@ describe('client order-success page', () => {
   it('shows dashes and reads no invoice when the link carries neither an order nor an invoice', async () => {
     stubAuthRuntime({ query: { amount: '$9.00' } })
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     expect(stub.requests).toHaveLength(0)
     expect(wrapper.find('[data-testid="order-success-number"]').text()).toContain('—')
@@ -67,7 +68,7 @@ describe('client order-success page', () => {
   it('hides the domain rows and the manage-domain button for a hosting-only order', async () => {
     stubAuthRuntime({ query: { order: '1' } })
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     expect(wrapper.find('[data-testid="order-success-domain"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="order-success-action"]').exists()).toBe(false)
@@ -77,7 +78,7 @@ describe('client order-success page', () => {
   it('shows the domain, its action and the manage-domain button when a domain was bought', async () => {
     stubAuthRuntime({ query: { order: '1', domain: 'example.com', action: 'transfer' } })
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     expect(wrapper.find('[data-testid="order-success-domain"]').text()).toContain('example.com')
     expect(wrapper.find('[data-testid="order-success-action"]').text()).toContain('checkout.success.transfer')
@@ -87,7 +88,7 @@ describe('client order-success page', () => {
   it('names a registration as such', async () => {
     stubAuthRuntime({ query: { domain: 'example.com', action: 'register' } })
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     expect(wrapper.find('[data-testid="order-success-action"]').text()).toContain('checkout.success.registration')
   })
@@ -95,7 +96,7 @@ describe('client order-success page', () => {
   it('links to the invoices', async () => {
     stubAuthRuntime()
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     expect(wrapper.find('[data-testid="order-success-invoices"]').attributes('href')).toBe(CLIENT_INVOICES_PATH)
   })
@@ -103,7 +104,7 @@ describe('client order-success page', () => {
   it('offers the hosting setup after an order that held a hosting service', async () => {
     stubAuthRuntime({ query: { order: '1' } })
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     expect(wrapper.find('[data-testid="order-success-setup-service"]').exists()).toBe(true)
   })
@@ -111,7 +112,7 @@ describe('client order-success page', () => {
   it('offers no hosting setup after an order of digital goods only, but still links to the invoices', async () => {
     stubAuthRuntime({ query: { order: '1', digital: '1' } })
 
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     expect(wrapper.find('[data-testid="order-success-setup-service"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="order-success-invoices"]').exists()).toBe(true)
@@ -119,7 +120,7 @@ describe('client order-success page', () => {
 
   it('reloads the services before opening the services page', async () => {
     stubAuthRuntime()
-    const wrapper = await mountAuthPage(OrderSuccessPage)
+    const wrapper = await mountPage(OrderSuccessPage)
 
     await wrapper.find('[data-testid="order-success-setup-service"]').trigger('click')
     await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(CLIENT_SERVICES_PATH))

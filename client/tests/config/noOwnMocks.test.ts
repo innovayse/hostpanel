@@ -4,7 +4,13 @@
  * stubbed below `$fetch` through the stub-server helpers. The admin has the same guard for its tests in
  * `admin/tests/lint/noOwnMocks.test.ts`: the two apps cannot read each other's files, so each reads its own.
  *
- * Two forms of replacing are caught. `vi.mock` and `vi.doMock` of a module of ours are refused outright.
+ * A component of ours is replaced no less than a module: every component from `client/components` runs for real in
+ * every test. A `stubs` option (`{ UiThemeToggle: true }`, a marker component), a `components` option or a
+ * `registerPageComponents` call that registers anything but the real, imported component under the name of one of ours
+ * is refused, and so is `shallowMount`, which stubs every child. Framework and third-party components (`NuxtLink`,
+ * `i18n-t`, `Swiper`) are not ours and may be stood in for.
+ *
+ * Two forms of replacing a module are caught. `vi.mock` and `vi.doMock` of a module of ours are refused outright.
  * `vi.stubGlobal` of one of our own auto-imported composables or stores is the same replacement by
  * another API (a Nuxt auto-import is a global under test), and it is refused too, in every file: a test that
  * needs one uses the real composable. The one global stand-in file, `vitest.setup.ts`, is read as well and may
@@ -24,6 +30,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { nuxtComponentName } from '~/tests/helpers/nuxtComponentName'
 
 /** The client root. */
 const CLIENT_ROOT = resolve(import.meta.dirname, '..', '..')
@@ -65,6 +72,30 @@ const REAL_SOURCE = /^[~@]\/(?:composables|stores|utils)\//
 /** An exported function or constant of a client source file, captured in group 1. */
 const EXPORTED_NAME = /export\s+(?:const|function|async function)\s+([A-Za-z0-9_$]+)/g
 
+/** The client's own components, which Nuxt registers globally under the name its path gives them. */
+const COMPONENTS_ROOT = join(CLIENT_ROOT, 'components')
+
+/**
+ * The place a test puts a component under a name: a `stubs:` or `components:` option, whose value is an object
+ * literal or the name of a `const` one, or a `registerPageComponents(` call. The text after the match is the value.
+ */
+const REGISTRATION = /\b(?:stubs|components)\s*:\s*|\bregisterPageComponents\(\s*/g
+
+/** A `shallowMount` call or a `shallow: true` option, which stubs every child component of the mounted one. */
+const SHALLOW_MOUNT = /\bshallowMount\(|\bshallow\s*:\s*true\b/
+
+/** One entry of a registration object: a quoted or bare key, and the value after its colon (absent for the shorthand `{ Name }`). */
+const REGISTRATION_ENTRY = /^(?:(['"`])([^'"`]+)\1|([A-Za-z0-9_$]+))\s*(?::\s*([\s\S]+))?$/
+
+/** A default import of a component file, the name in group 1 and the source in group 3. */
+const DEFAULT_COMPONENT_IMPORT = /\bimport\s+([A-Za-z0-9_$]+)\s+from\s+(['"])([^'"]+\.vue)\2/g
+
+/** A destructured dynamic import of a component file (`const { default: X } = await import('x.vue')`), the name in group 1 and the source in group 3. */
+const DYNAMIC_COMPONENT_IMPORT = /\{\s*default\s*:\s*([A-Za-z0-9_$]+)\s*\}\s*=\s*await\s+import\(\s*(['"])([^'"]+\.vue)\2/g
+
+/** The source of a real component of ours, a file under `components/` by the alias or a relative path; the path below `components/` is group 1. */
+const REAL_COMPONENT_SOURCE = /^(?:[~@]\/|(?:\.\.?\/)+)components\/(.+\.vue)$/
+
 /** The start of a specifier that names a module of ours: an alias, a relative path or an import map entry. */
 const OWN_MODULE = /^(?:~|@\/|\.|#)/
 
@@ -78,12 +109,13 @@ const SETUP_DEFINITION = /\bdefine\(\s*(['"`])([^'"`]+)\1/g
 const GLOBAL_ASSIGNMENT = /\bglobalThis(?:\.([A-Za-z0-9_$]+)|\[\s*(['"`])([^'"`]+)\2\s*\])\s*=(?!=)/g
 
 /**
- * Lists every `.ts` file under a folder, skipping dependencies and build output.
+ * Lists every file with an extension under a folder, skipping dependencies and build output.
  *
  * @param dir - Absolute folder to walk.
+ * @param extension - File extension to keep, with its dot.
  * @returns Absolute paths of the files found.
  */
-const tsFiles = (dir: string): string[] => {
+const filesUnder = (dir: string, extension: string): string[] => {
   if (!existsSync(dir)) {
     return []
   }
@@ -93,11 +125,19 @@ const tsFiles = (dir: string): string[] => {
     }
     const path = join(dir, name)
     if (statSync(path).isDirectory()) {
-      return tsFiles(path)
+      return filesUnder(path, extension)
     }
-    return name.endsWith('.ts') ? [path] : []
+    return name.endsWith(extension) ? [path] : []
   })
 }
+
+/**
+ * Lists every `.ts` file under a folder.
+ *
+ * @param dir - Absolute folder to walk.
+ * @returns Absolute paths of the files found.
+ */
+const tsFiles = (dir: string): string[] => filesUnder(dir, '.ts')
 
 /**
  * Finds the mocks of our own modules in one file's text.
@@ -178,6 +218,69 @@ const objectBody = (text: string, start: number): string | null => {
 }
 
 /**
+ * Reads the object literal an option or call argument names: the literal itself, or the `const` object literal of
+ * that name in the same file.
+ *
+ * @param text - File contents.
+ * @param start - Index of the first character of the argument.
+ * @returns The body of the object, or null when the argument is anything else (a member access, a call, an import).
+ */
+const objectArgument = (text: string, start: number): string | null => {
+  if (text[start] === '{') {
+    return objectBody(text, start)
+  }
+  const name = /^([A-Za-z0-9_$]+)\s*(?=[,)}])/.exec(text.slice(start))?.[1]
+  const declaration = name ? new RegExp(String.raw`\bconst\s+${name}\s*=\s*\{`).exec(text) : null
+  return declaration ? objectBody(text, declaration.index + declaration[0].length - 1) : null
+}
+
+/**
+ * Splits the body of an object literal into its entries at the commas that are not inside brackets, strings or
+ * comments.
+ *
+ * @param body - What lies between the braces of the object.
+ * @returns The trimmed, non-empty entries, spreads included.
+ */
+const topLevelEntries = (body: string): string[] => {
+  const entries: string[] = []
+  let current = ''
+  let depth = 0
+  let quote = ''
+  for (let index = 0; index < body.length; index++) {
+    const char = body.charAt(index)
+    if (quote !== '') {
+      current += char
+      if (char === '\\') {
+        index++
+        current += body.charAt(index)
+      } else if (char === quote) {
+        quote = ''
+      }
+    } else if (char === '/' && body.charAt(index + 1) === '/') {
+      const end = body.indexOf('\n', index)
+      index = end === -1 ? body.length : end
+    } else if (char === '/' && body.charAt(index + 1) === '*') {
+      const end = body.indexOf('*/', index)
+      index = end === -1 ? body.length : end + 1
+    } else if (char === ',' && depth === 0) {
+      entries.push(current)
+      current = ''
+    } else {
+      if (char === '\'' || char === '"' || char === '`') {
+        quote = char
+      } else if ('([{'.includes(char)) {
+        depth++
+      } else if (')]}'.includes(char)) {
+        depth--
+      }
+      current += char
+    }
+  }
+  entries.push(current)
+  return entries.map((entry) => entry.trim()).filter((entry) => entry !== '')
+}
+
+/**
  * Finds what `usePortalSettingsServer(...)` registers that is not a real, imported composable or helper. The helper
  * stubs each entry as a global by a dynamic name, so a fake would pass the `vi.stubGlobal` scan unseen; here every
  * entry of the argument must be a bare identifier that the file imports under its own name from a composable,
@@ -193,22 +296,82 @@ const fakedRegistrations = (text: string): string[] =>
     if (text[start] === ')') {
       return []
     }
-    let body: string | null
-    if (text[start] === '{') {
-      body = objectBody(text, start)
-    } else {
-      const name = /^([A-Za-z0-9_$]+)\s*\)/.exec(text.slice(start))?.[1]
-      const declaration = name ? new RegExp(String.raw`\bconst\s+${name}\s*=\s*\{`).exec(text) : null
-      body = declaration ? objectBody(text, declaration.index + declaration[0].length - 1) : null
-    }
+    const body = objectArgument(text, start)
     if (body === null) {
       return [text.slice(start, text.indexOf(')', start))]
     }
-    return body.split(',').map((entry) => entry.trim()).filter((entry) => entry !== '').filter((entry) => {
+    return topLevelEntries(body).filter((entry) => {
       const name = REAL_ENTRY.exec(entry)?.[1]
       return !name || !importsRealModule(text, name)
     })
   })
+
+/**
+ * The auto-import name Nuxt gives the component file at a path below `components/`.
+ *
+ * @param path - For example `layout/DemoBanner.vue`.
+ * @returns For example `LayoutDemoBanner`.
+ */
+const componentNameAt = (path: string): string => {
+  const folders = path.replace(/\.vue$/, '').split('/')
+  const file = folders.pop() ?? ''
+  return nuxtComponentName(folders, file)
+}
+
+/**
+ * Finds the components of ours a file binds to an identifier, by a default import of a component file or by a
+ * destructured dynamic import of one. A local value, a test helper's export and a renamed named import bind none.
+ *
+ * @param text - File contents.
+ * @param identifier - The identifier a registration uses as its value.
+ * @returns The auto-import names of the component files `identifier` is the default export of.
+ */
+const importedComponentNames = (text: string, identifier: string): string[] =>
+  [...text.matchAll(DEFAULT_COMPONENT_IMPORT), ...text.matchAll(DYNAMIC_COMPONENT_IMPORT)].flatMap((statement) => {
+    const path = REAL_COMPONENT_SOURCE.exec(statement[3] ?? '')?.[1]
+    return statement[1] === identifier && path !== undefined ? [componentNameAt(path)] : []
+  })
+
+/**
+ * The PascalCase name a registration key stands for, so a kebab-case key (`ui-button`) is read as the component it names.
+ *
+ * @param key - The key of a `stubs` or `components` entry.
+ * @returns The key in PascalCase.
+ */
+const pascalName = (key: string): string =>
+  key.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('')
+
+/**
+ * Finds the components of ours that one file's text replaces. An entry of a `stubs` or `components` option or of
+ * `registerPageComponents` replaces a component of ours unless its value is the default import of that very component
+ * file: `{ UiX }`, `{ UiX: UiX }` or `{ CatalogCard: Card }` with `Card` imported from `components/catalog/Card.vue`.
+ * `shallowMount` replaces them all.
+ *
+ * @param text - File contents.
+ * @param ownComponents - The auto-import names of the components under `client/components`.
+ * @returns The names replaced (`shallowMount` for a shallow mount), empty when the file replaces no component of ours.
+ */
+const ownComponentStubs = (text: string, ownComponents: ReadonlySet<string>): string[] => [
+  ...(SHALLOW_MOUNT.test(text) ? ['shallowMount'] : []),
+  ...[...text.matchAll(REGISTRATION)].flatMap((registration) => {
+    const body = objectArgument(text, (registration.index ?? 0) + registration[0].length)
+    return topLevelEntries(body ?? '').flatMap((entry) => {
+      const match = REGISTRATION_ENTRY.exec(entry)
+      const key = match?.[2] ?? match?.[3] ?? ''
+      if (!ownComponents.has(pascalName(key))) {
+        return []
+      }
+      // The shorthand `{ UiX }` registers the identifier `UiX`; `{ UiX: Other }` registers `Other`.
+      const value = match?.[4]?.trim() ?? key
+      return importedComponentNames(text, value).includes(pascalName(key)) ? [] : [key]
+    })
+  }),
+]
+
+/** The auto-import name of every component under `client/components`, the names a test may not replace. */
+const OWN_COMPONENTS: ReadonlySet<string> = new Set(
+  filesUnder(COMPONENTS_ROOT, '.vue').map((path) => componentNameAt(relative(COMPONENTS_ROOT, path).replace(/\\/g, '/')))
+)
 
 /** Every name the client's composables, stores and utils export, which Nuxt hands to every file as a global. */
 const OWN_AUTO_IMPORTS: ReadonlySet<string> = new Set(
@@ -247,6 +410,17 @@ describe('no mocks of our own modules in the client tests', () => {
 
   it.each(SOURCES.map((path) => [testPath(path), path]))('%s registers only real composables through the portal settings helper', (_name, path) => {
     expect(fakedRegistrations(readFileSync(path, 'utf8'))).toEqual([])
+  })
+
+  it.each(SOURCES.map((path) => [testPath(path), path]))('%s stubs no component of ours', (_name, path) => {
+    expect(ownComponentStubs(readFileSync(path, 'utf8'), OWN_COMPONENTS)).toEqual([])
+  })
+
+  it('knows the components Nuxt auto-imports under their path names', () => {
+    for (const name of ['Logo', 'LogoLockup', 'UiThemeToggle', 'LayoutDemoBanner', 'LayoutCartDrawer', 'SectionsFAQ', 'ClientAuthShell']) {
+      expect(OWN_COMPONENTS.has(name)).toBe(true)
+    }
+    expect(OWN_COMPONENTS.has('NuxtLink')).toBe(false)
   })
 
   it('stands in for no composable or store of ours in the global test setup', () => {
@@ -364,5 +538,83 @@ describe('no mocks of our own modules in the client tests', () => {
     expect(fakedRegistrations('usePortalSettingsServer({ useLocal })')).toEqual(['useLocal'])
     expect(fakedRegistrations(`${imports}const FAKES = { useX: vi.fn() }\nusePortalSettingsServer(FAKES)`)).toEqual(['useX: vi.fn()'])
     expect(fakedRegistrations('usePortalSettingsServer(fakes.all)')).toEqual(['fakes.all'])
+  })
+
+  it('catches a component of ours stubbed by a flag, a marker component or an inline template', () => {
+    const own = new Set(['UiThemeToggle', 'LayoutCartDrawer', 'Logo'])
+
+    expect(ownComponentStubs('mount(X, { stubs: { UiThemeToggle: true } })', own)).toEqual(['UiThemeToggle'])
+    expect(ownComponentStubs("mount(X, { global: { stubs: { LayoutCartDrawer: marker('cart-drawer') } } })", own)).toEqual(['LayoutCartDrawer'])
+    expect(ownComponentStubs(`mount(X, { stubs: { Logo: { template: '<img />' } } })`, own)).toEqual(['Logo'])
+    expect(ownComponentStubs('mount(X, { stubs: { UiThemeToggle: false } })', own)).toEqual(['UiThemeToggle'])
+  })
+
+  it('reads a kebab-case or quoted key as the component it names', () => {
+    const own = new Set(['UiThemeToggle'])
+
+    expect(ownComponentStubs("mount(X, { stubs: { 'ui-theme-toggle': true } })", own)).toEqual(['ui-theme-toggle'])
+    expect(ownComponentStubs('mount(X, { stubs: { "UiThemeToggle": true } })', own)).toEqual(['UiThemeToggle'])
+  })
+
+  it('catches a fake registered under the name of one of ours as a component or a page component', () => {
+    const own = new Set(['Logo', 'LayoutFooter'])
+
+    expect(ownComponentStubs('mountWithKit(X, { components: { Logo: LogoStub } })', own)).toEqual(['Logo'])
+    expect(ownComponentStubs("registerPageComponents({ LayoutFooter: marker('footer') })", own)).toEqual(['LayoutFooter'])
+    expect(ownComponentStubs('mountWithKit(X, { components: { Logo: Other } })\nimport Logo from "~/components/Logo.vue"', own)).toEqual(['Logo'])
+  })
+
+  it('reads the entries of a named constant and skips commas inside strings, calls and comments', () => {
+    const own = new Set(['UiThemeToggle', 'Logo'])
+    const stubs = "const STUBS = {\n  // the toggle, which needs the colour mode\n  UiThemeToggle: stub('a, b'),\n  Logo: true,\n}\n"
+
+    expect(ownComponentStubs(`${stubs}mount(X, { stubs: STUBS })`, own)).toEqual(['UiThemeToggle', 'Logo'])
+  })
+
+  it('lets the real component be registered under its own name', () => {
+    const own = new Set(['LayoutFooter', 'LayoutHeader', 'Logo'])
+    const imports = "import LayoutFooter from '~/components/layout/Footer.vue'\nimport LayoutHeader from '../../components/layout/Header.vue'\n"
+    const dynamic = "const { default: Logo } = await import('~/components/Logo.vue')\n"
+
+    expect(ownComponentStubs(`${imports}mountWithKit(X, { components: { LayoutFooter, LayoutHeader } })`, own)).toEqual([])
+    expect(ownComponentStubs(`${imports}mountWithKit(X, { components: { LayoutFooter: LayoutFooter } })`, own)).toEqual([])
+    expect(ownComponentStubs(`${dynamic}mountWithKit(X, { components: { Logo } })`, own)).toEqual([])
+  })
+
+  it('lets the real component be registered under the name Nuxt gives its file, whatever the import is called', () => {
+    const own = new Set(['CatalogProductFamilyCard'])
+    const card = "import ProductFamilyCard from '~/components/catalog/ProductFamilyCard.vue'\n"
+
+    expect(ownComponentStubs(`${card}mountPage(X, { components: { CatalogProductFamilyCard: ProductFamilyCard } })`, own)).toEqual([])
+  })
+
+  it('counts the real component of another file registered under the name of one of ours as a stub', () => {
+    const own = new Set(['UiButton', 'LayoutFooter'])
+    const footer = "import LayoutFooter from '~/components/layout/Footer.vue'\n"
+
+    expect(ownComponentStubs(`${footer}mountWithKit(X, { components: { UiButton: LayoutFooter } })`, own)).toEqual(['UiButton'])
+  })
+
+  it('counts a same-named value that is not the real component import as a stub', () => {
+    const own = new Set(['Logo'])
+
+    expect(ownComponentStubs('const Logo = defineComponent({})\nmountWithKit(X, { components: { Logo } })', own)).toEqual(['Logo'])
+    expect(ownComponentStubs("import Logo from '~/tests/helpers/fakeLogo'\nmountWithKit(X, { components: { Logo } })", own)).toEqual(['Logo'])
+    expect(ownComponentStubs("import { Logo } from '~/components/Logo.vue'\nmountWithKit(X, { components: { Logo } })", own)).toEqual(['Logo'])
+  })
+
+  it('leaves framework and third-party components, spreads and unreadable options alone', () => {
+    const own = new Set(['UiThemeToggle'])
+
+    expect(ownComponentStubs("mount(X, { stubs: { 'i18n-t': true, NuxtLink: true, Swiper: stub, teleport: true } })", own)).toEqual([])
+    expect(ownComponentStubs('mount(X, { components: { ...KIT, ...options.components } })', own)).toEqual([])
+    expect(ownComponentStubs('mount(X, { stubs: options.stubs, components: CLIENT_COMPONENTS })', own)).toEqual([])
+    expect(ownComponentStubs('const row = { UiThemeToggle: 1 }', own)).toEqual([])
+  })
+
+  it('catches a shallow mount, which stubs every child component', () => {
+    expect(ownComponentStubs('shallowMount(X)', new Set())).toEqual(['shallowMount'])
+    expect(ownComponentStubs('mount(X, { shallow: true })', new Set())).toEqual(['shallowMount'])
+    expect(ownComponentStubs('mount(X)', new Set())).toEqual([])
   })
 })

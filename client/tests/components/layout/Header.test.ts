@@ -3,10 +3,10 @@
  * shared controls, the signed-out and signed-in states, the drawer and the scroll shadow.
  *
  * The real catalogue and auth stores, API composables, transport and the operator's settings composables run
- * against a stub server playing the BFF; only the two pickers are stood in for.
+ * against a stub server playing the BFF; the language and currency pickers and the theme toggle run for real too.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick } from 'vue'
+import { nextTick } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
@@ -20,6 +20,8 @@ import { useAuthStore } from '~/stores/auth'
 import { useCatalogStore } from '~/stores/catalog'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { AMD_CURRENCY, USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
+import { stubSwitchLocalePath } from '~/tests/helpers/runtimeStubs'
 import { readOf, requestsTo } from '~/tests/helpers/stubRoutes'
 import type { StubReply } from '~/tests/helpers/stubServer'
 import type { PortalProduct } from '~/types/portalproduct'
@@ -53,35 +55,26 @@ const NAMED_SITE: Record<string, string> = { [PortalSettingKey.SiteName]: 'Acme 
 /** What the stub answers the product groups read with; a test changes it before it mounts. */
 let groupsReply: StubReply = { body: GROUPS }
 
-/** Stand-in for the language switcher, which needs the i18n runtime. */
-const LanguageSwitcherStub = defineComponent({
-  name: 'UiLanguageSwitcher',
-  setup: () => () => h('div', { 'data-testid': 'language-switcher-stub' }),
-})
-
-/** Stand-in for the currency switcher, which has its own test. */
-const CurrencySwitcherStub = defineComponent({
-  name: 'UiCurrencySwitcher',
-  setup: () => () => h('div', { 'data-testid': 'currency-switcher-stub' }),
-})
-
 /** A signed-in client. */
 const client = makeClientUser()
 
 /**
- * Mounts the header with the pickers stood in for and waits until the catalogue read has settled.
+ * Mounts the header with its real pickers and waits until the catalogue and the currencies have been read.
  *
  * @param settings The operator's settings by their dotted key.
+ * @param rereadForPayer Whether to read the families again once the payer's currency is known, as a page does.
  * @returns The wrapper.
  */
-const mountHeader = async (settings: Record<string, string> = NAMED_SITE) => {
+const mountHeader = async (settings: Record<string, string> = NAMED_SITE, rereadForPayer = true) => {
   await loadPortalSettings(replies, settings)
-  const wrapper = mountWithKit(LayoutHeader, {
-    components: { UiLanguageSwitcher: LanguageSwitcherStub, UiCurrencySwitcher: CurrencySwitcherStub },
-    attachToBody: true,
-  })
+  const wrapper = mountWithKit(LayoutHeader, { attachToBody: true })
   await waitUntil(() => expect(requestsTo(stub().requests, CatalogPath.ProductGroups).length).toBeGreaterThan(0))
-  await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
+  await awaitCatalogue()
+  // The header reads the families once, before the payer's currency is known. A page reads them again when the
+  // currency resolves (it watches the payer's code), which the real currency switcher's load sets off here.
+  if (rereadForPayer) {
+    await useCatalogStore().loadFamilies()
+  }
   return wrapper
 }
 
@@ -100,6 +93,8 @@ describe('LayoutHeader', () => {
     groupsReply = { body: GROUPS }
     replies[readOf(CatalogPath.ProductGroups)] = () => groupsReply
     replies[readOf(CatalogPath.Products)] = { body: PRODUCTS }
+    replies[readOf(CatalogPath.BillingCurrencies)] = { body: [USD_CURRENCY, AMD_CURRENCY] }
+    stubSwitchLocalePath()
     window.localStorage.clear()
   })
 
@@ -178,8 +173,8 @@ describe('LayoutHeader', () => {
       expect(classes).toContain('rounded-lg')
       expect(classes).toContain('border-classic-border-strong')
     }
-    expect(wrapper.find('[data-testid="language-switcher-stub"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="currency-switcher-stub"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="language-switcher"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="currency-switcher"]').exists()).toBe(true)
   })
 
   it('offers sign in and get started to a visitor', async () => {
@@ -224,7 +219,7 @@ describe('LayoutHeader', () => {
   })
 
   it('loads the catalogue families once, during setup, not after mount', async () => {
-    await mountHeader()
+    await mountHeader(NAMED_SITE, false)
 
     expect(requestsTo(stub().requests, CatalogPath.ProductGroups)).toHaveLength(1)
   })

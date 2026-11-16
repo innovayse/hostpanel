@@ -1,9 +1,13 @@
 /**
- * Mount tests for TransactionsListView: the ledger totals and rows render, the description
- * filter narrows the page, a delete asks first, and a refused load shows the API sentence.
+ * Mount tests for TransactionsListView: the ledger totals and rows render, the search text, the client, direction,
+ * payment method, period and amount filters and the page are kept in the address, sent to the API (which narrows the
+ * rows and their totals before it pages) and shown as removable chips, a delete asks first, and a refused load shows
+ * the API sentence.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import TransactionsListView from '@/views/TransactionsListView.vue'
 import { transactionFixture } from '../helpers/billingFixtures'
 import { json, problem } from '../helpers/fetch'
@@ -39,6 +43,62 @@ const mountLedger = async () => {
   const { wrapper } = await mountRouted(TransactionsListView, '/billing/transactions', '/billing/transactions')
   await flushPromises()
   return wrapper
+}
+
+/**
+ * Stubs the endpoints the ledger calls.
+ *
+ * @param answer - The answer of the transactions endpoint.
+ * @returns The mock, for asserting the requests made.
+ */
+const stubLedger = (answer: () => Response = ledger): ReturnType<typeof vi.fn> =>
+  stubRoutes({
+    'GET /api/transactions?': answer,
+    'GET /api/clients': () =>
+      json({
+        items: [{ id: 7, firstName: 'Ada', lastName: 'Lovelace', companyName: null, email: 'ada@example.test', status: 'Active' }],
+        totalCount: 1,
+      }),
+  })
+
+/**
+ * Mounts the ledger at an address and waits for its first load.
+ *
+ * @param query - The query string to open, with its leading question mark or empty.
+ * @returns The wrapper and the router.
+ */
+const mountLedgerAt = async (query = '') => {
+  const screen = await mountRouted(TransactionsListView, '/billing/transactions', `/billing/transactions${query}`)
+  await flushPromises()
+  return screen
+}
+
+/**
+ * Lists the requests the mock has seen for the ledger.
+ *
+ * @param mock - The stubbed fetch.
+ * @returns The request URLs that went to the list endpoint.
+ */
+const listUrls = (mock: ReturnType<typeof vi.fn>): string[] =>
+  mock.mock.calls.map(([url]) => url as string).filter((url) => url.startsWith('/api/transactions?'))
+
+/**
+ * Opens the filter dialog, chooses a value in one of its selects and applies it.
+ *
+ * @param wrapper - The mounted ledger.
+ * @param testid - The `data-testid` of the select to use.
+ * @param value - The option value to choose.
+ */
+const applyFilter = async (wrapper: VueWrapper, testid: string, value: string) => {
+  await wrapper.get('[data-testid="billing-transactions-filter"]').trigger('click')
+  await flushPromises()
+  wrapper
+    .findAllComponents(UiSelect)
+    .find((select) => select.attributes('data-testid') === testid)
+    ?.vm.$emit('update:modelValue', value)
+  await flushPromises()
+  await wrapper.get('[data-testid="filter-apply"]').trigger('click')
+  await flushPromises()
 }
 
 afterEach(() => {
@@ -93,22 +153,102 @@ describe('TransactionsListView', () => {
     expect(wrapper.get('[data-testid="billing-transactions-total-fees"]').text()).toContain('0.25 EUR')
   })
 
-  it('narrows the page by the search text', async () => {
-    stubRoutes({ 'GET /api/transactions?': ledger })
-    const wrapper = await mountLedger()
+  it('asks the API for the first page with no filter when the address holds none', async () => {
+    const mock = stubLedger()
+    await mountLedger()
 
-    await wrapper.get('[data-testid="billing-transactions-search"]').setValue('refund')
-
-    expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(1)
+    expect(listUrls(mock)).toEqual(['/api/transactions?page=1&pageSize=25'])
   })
 
-  it('narrows the page by the direction in the address and shows it as a chip', async () => {
-    stubRoutes({ 'GET /api/transactions?': ledger })
-    const { wrapper } = await mountRouted(TransactionsListView, '/billing/transactions', '/billing/transactions?direction=out')
+  it('puts the typed search in the address and sends it to the API after the pause, not narrowing the page itself', async () => {
+    const mock = stubLedger()
+    const { wrapper, router } = await mountLedgerAt()
+
+    await wrapper.get('[data-testid="billing-transactions-search"]').setValue('refund')
+    await new Promise((resolve) => setTimeout(resolve, 450))
     await flushPromises()
 
-    expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(1)
-    expect(wrapper.find('[data-testid="filter-chip-direction"]').exists()).toBe(true)
+    expect(router.currentRoute.value.query).toEqual({ search: 'refund' })
+    expect(listUrls(mock).at(-1)).toBe('/api/transactions?page=1&pageSize=25&search=refund')
+    // The API answered with both rows, so the screen shows both: it does not filter what it was sent.
+    expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(2)
+  })
+
+  it('shows the totals the API answered for the filters, not the totals of the whole ledger', async () => {
+    stubLedger(() =>
+      json({
+        transactions: { items: [transactionFixture({ id: 10, amountIn: 0, amountOut: 20 })], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 },
+        totalIn: 0,
+        totalOut: 20,
+        totalFees: 0,
+        balance: -20,
+        currency: 'EUR',
+      }),
+    )
+    const { wrapper } = await mountLedgerAt('?direction=Out')
+
+    expect(wrapper.get('[data-testid="billing-transactions-total-out"]').text()).toContain('20.00 EUR')
+    expect(wrapper.get('[data-testid="billing-transactions-total-in"]').text()).toContain('0.00 EUR')
+    expect(wrapper.get('[data-testid="billing-transactions-balance"]').text()).toContain('-20.00 EUR')
+  })
+
+  it('sends the direction and the payment method picked in the filter dialog on Apply and shows them as chips', async () => {
+    const mock = stubLedger()
+    const { wrapper, router } = await mountLedgerAt()
+
+    await applyFilter(wrapper, 'billing-transactions-filter-direction', 'Out')
+    await applyFilter(wrapper, 'billing-transactions-filter-method', 'Credit/Debit Card')
+
+    expect(router.currentRoute.value.query).toEqual({ direction: 'Out', paymentMethod: 'Credit/Debit Card' })
+    expect(listUrls(mock).at(-1)).toBe('/api/transactions?page=1&pageSize=25&direction=Out&paymentMethod=Credit%2FDebit+Card')
+    expect(wrapper.get('[data-testid="filter-chip-direction"]').text()).toContain('Payments Sent')
+    expect(wrapper.get('[data-testid="filter-chip-paymentMethod"]').text()).toContain('Credit/Debit Card')
+  })
+
+  it('restores the search, the client, the filters and the page from the address and sends them together', async () => {
+    const mock = stubLedger()
+    const { wrapper } = await mountLedgerAt(
+      '?search=refund&clientId=7&direction=In&paymentMethod=Bank%20Transfer&from=2026-03-01&to=2026-03-31&amount=12.5&page=2',
+    )
+
+    expect(listUrls(mock)[0]).toBe(
+      '/api/transactions?page=2&pageSize=25&search=refund&clientId=7&direction=In&paymentMethod=Bank+Transfer&from=2026-03-01&to=2026-03-31&amount=12.5',
+    )
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('6')
+    expect(wrapper.get('[data-testid="filter-chip-clientId"]').text()).toContain('Ada Lovelace')
+    expect(wrapper.get('[data-testid="filter-chip-amount"]').text()).toContain('12.5')
+  })
+
+  it('does not send a filter the address holds that is not a known value', async () => {
+    const mock = stubLedger()
+    const { wrapper } = await mountLedgerAt('?direction=Sideways&clientId=abc&from=soon&amount=-3')
+
+    expect(listUrls(mock)[0]).toBe('/api/transactions?page=1&pageSize=25')
+    expect(wrapper.find('[data-testid="filter-chips"]').exists()).toBe(false)
+  })
+
+  it('removes a filter from the address and reloads when its chip is removed', async () => {
+    const mock = stubLedger()
+    const { wrapper, router } = await mountLedgerAt('?direction=Out&amount=20')
+
+    await wrapper.get('[data-testid="filter-chip-remove-direction"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ amount: '20' })
+    expect(listUrls(mock).at(-1)).toBe('/api/transactions?page=1&pageSize=25&amount=20')
+  })
+
+  it('keeps the chosen page in the address and loads it', async () => {
+    const mock = stubLedger(() =>
+      json({ transactions: { items: [transactionFixture()], pageNumber: 1, pageSize: 25, totalCount: 60, totalPages: 3 }, totalIn: 0, totalOut: 0, totalFees: 0, balance: 0, currency: 'EUR' }),
+    )
+    const { wrapper, router } = await mountLedgerAt()
+
+    await wrapper.get('[data-testid="billing-transactions-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+    expect(listUrls(mock).at(-1)).toBe('/api/transactions?page=2&pageSize=25')
   })
 
   it('deletes a transaction only after the confirmation', async () => {
@@ -174,5 +314,14 @@ describe('TransactionsListView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="billing-transactions-error"]').exists()).toBe(false)
+  })
+
+  it('hands the revenue chart its loading state and draws a bar for the count while the first load is pending', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountLedger()
+
+    expect(wrapper.get('[data-testid="billing-transaction-chart"]').find('[data-testid="chart-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-result-count-skeleton"]').text()).toBe('')
+    expect(wrapper.find('[data-testid="billing-transactions-count"]').exists()).toBe(false)
   })
 })

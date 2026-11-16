@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import AddFundsForm from '~/components/client/credit/AddFundsForm.vue'
+import { CLIENT_CREDIT_PATH } from '~/constants/clientRoutes'
 
 /** Props every case starts from: limits 5 to 100 in dollars. */
 const base = { minimum: 5, maximum: 100, currency: 'USD' }
@@ -79,6 +80,6 @@ describe('ClientCreditAddFundsForm', () => {
   it('lets the client back out to the credit page', () => {
     const wrapper = mountClient(AddFundsForm, { props: base })
 
-    expect(wrapper.get('[data-testid="credit-add-cancel"]').attributes('href')).toBe('/client/credit')
+    expect(wrapper.get('[data-testid="credit-add-cancel"]').attributes('href')).toBe(CLIENT_CREDIT_PATH)
   })
 })

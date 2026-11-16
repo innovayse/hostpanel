@@ -26,13 +26,11 @@ An invoice moves through these statuses during its life:
 | Collections | Sent to a collections agency |
 | Payment Pending | An online payment is awaiting confirmation from the gateway |
 
-<Callout type="note">
-The invoice list status filter shows Draft, Unpaid, Overdue, Paid, Partially Refunded, Refunded, and Cancelled only. Collections and Payment Pending are not included in the filter dropdown.
-</Callout>
-
 ## The invoice list
 
-Go to **Invoices** to see all invoices. Use **Search/Filter** to narrow by client, status, date range, or amount.
+Go to **Invoices** to see all invoices, newest first. The search box looks at the invoice number and the payment method; a `%` or `_` you type is an ordinary character. **Filters** opens a dialog with the client, the status (any of the statuses above) and the invoice date range. The client is chosen from the list, because client names are not searched. The last day of the date range is included to its end.
+
+The search, the filters and the page stay in the address, so a reload or a shared link shows the same list, and every applied filter is a chip you can remove. The server applies them before it pages, so a match is found on any page. A page size over 100, a search longer than the limit, an unknown status or a client id that is not positive is refused instead of cut. The **Invoices** tab of a client has the same search, status and date range.
 
 **Bulk actions (With Selected:):** Mark Paid, Mark Unpaid, Mark Cancelled, Duplicate Invoice, Delete.
 
@@ -272,7 +270,7 @@ An issued credit note is never deleted. It can only be voided, and a voided note
 
 ### List, open, void and PDF
 
-**Billing, Credit Notes** lists every note, newest first, with a status filter. Open a note to see its lines, its totals, the refund reference of a gateway refund note and, for a voided one, why it was voided.
+**Billing, Credit Notes** lists every note, newest first. The search box looks at the number, the reason, the refund reference and the id (a whole number matches the id), and **Filters** narrows by client, status and method. The search, the filters and the page stay in the address, and the server applies them before it pages. Open a note to see its lines, its totals, the refund reference of a gateway refund note and, for a voided one, why it was voided.
 
 - **Void credit note** asks for a reason. For a note given as account credit, the value comes off the client's balance and off the invoice's credited amount, so the invoice can be credited or refunded again. If the client has already spent the credit and the balance is short, the void is refused whole (`CLIENT_CREDIT_INSUFFICIENT`).
 - A note paid out as a gateway refund cannot be voided (`CREDIT_NOTE_REFUND_NOT_VOIDABLE`): the refund cannot be taken back.
@@ -302,7 +300,7 @@ The rate is fixed on the invoice when it is raised. Changing or deleting a rule 
 
 ### Add, edit and delete a rule
 
-Go to **Settings → Tax Rules** to see the rules.
+Go to **Settings → Tax Rules** to see the rules, a country's whole-country rule first and then its regions. Type part of a name, a country code or a region in the search box to find a rule. The **Filters** button narrows the list to the rules that are enabled or switched off; an applied filter shows as a chip you can remove. The list is paged, 20 rules to a page, and the search, the filter and the page stay in the address. Search treats `%` and `_` as ordinary characters.
 
 <Steps>
 <li>
@@ -337,6 +335,31 @@ To change a rule, use its edit action in the list, change the fields and click *
 <Callout type="note">
 Deleting a rule does not change invoices already issued. They keep the rate they were taxed at.
 </Callout>
+
+### VAT rates and digital services {#vat-rates-and-digital-services}
+
+A consumer in an EU member state other than yours is taxed on electronic services at the VAT rate of their own country, not at yours. The panel keeps the rates for this and picks one on the invoice when a new invoice is raised.
+
+Go to **Settings → VAT Rates** to see the rates, ordered by country and then by the day each applies from. Each row has a **Member state**, a **Kind** (standard or reduced), a **Rate (%)** and a **Valid from** date. A rate stays in force until a later row of the same country and kind starts, so an invoice keeps the rate that applied on its invoice date. To change a rate, add a row with the new start day instead of editing the old one; edit a row only to correct a mistake. There is at most one row per country, kind and start day (`VAT_RATE_ALREADY_EXISTS`), the country must be an EU member state, and the rate is from 0 to 100 with up to three decimals (`VAT_RATE_INVALID`). Deleting a row does not change invoices already issued.
+
+The standard rates of the 27 member states ship with the application and are imported when it starts. A shipped rate is added only when the country holds no standard row that starts on the same day or later, and a row that is there is never changed. So a rate you edited survives every restart, a row whose start day you moved later is not brought back beside it (that would leave two rates in force), and a new release brings a changed rate as a new row. A shipped row you delete comes back at the next start unless the country holds a newer row. A reduced rate depends on what is sold, so none ships. A reduced rate you enter is stored for reference only: the panel never applies it to an invoice on its own, and only the standard rate is used.
+
+<Callout type="note">
+The panel does not track the EU threshold of 10,000 euro a year for cross-border sales to consumers. Below it a seller may charge the VAT of their own country, so while you are below it leave **billing.tax.seller_country** empty and let the tax rules decide. Once you pass it, set the setting.
+</Callout>
+
+The destination rate is used when all of these hold:
+
+1. **billing.tax.seller_country** in System Settings holds your country as a two-letter code, for example `DE`. It is empty by default, which turns destination rates off, and the tax rules alone decide the rate.
+2. The client's country is a different country, and the client has no **Tax ID**. A client with a Tax ID is a business; the panel does not decide anything for businesses here, so such a client keeps the rate of the tax rules.
+3. Every line of the invoice is a **digital service**. Tick **Digital service** on a product that counts as an electronic service for VAT (hosting, a licence, a domain that counts as one). It is a different switch from the product type Digital, which says how the product is delivered. An invoice with any other line, such as a manual line, keeps the rate of the tax rules, because one invoice carries one rate.
+4. The VAT rates hold a standard rate for the client's country that started on or before the invoice date.
+
+A client in your own country keeps the rate of the tax rules. The rate is fixed on the invoice when it is raised, as for any other rate.
+
+### The OSS report {#the-oss-report}
+
+**Reports → OSS (One Stop Shop)** lists, for a quarter, the value invoiced and the VAT collected per EU member state, VAT rate and invoice currency, which is the data of the quarterly One Stop Shop VAT return. A rate that changed inside the quarter gives the country one row per rate, because each invoice is reported at the rate it was issued with. A refund and an account credit note are taken off the quarter they were made or issued in. The API route is `GET /api/reports/oss`.
 
 ### What is not covered yet
 

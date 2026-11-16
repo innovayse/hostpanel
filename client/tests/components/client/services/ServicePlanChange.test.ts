@@ -21,12 +21,14 @@ import { settle } from '~/tests/helpers/settle'
 import { ServiceChangeStatus } from '~/types/servicechangestatus'
 import { ServiceChangeType } from '~/types/servicechangetype'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
+import { clientInvoicePayPath } from '~/constants/clientRoutes'
 
 /** The BFF path that lists the plans service 4 can move to. */
-const OPTIONS_PATH = '/api/portal/client/services/4/plan-change-options'
+const OPTIONS_PATH = servicePath(4, ServiceAction.PlanChangeOptions)
 
 /** The BFF path that takes the move of service 4 to another plan. */
-const CHANGE_PATH = '/api/portal/client/services/4/plan-change'
+const CHANGE_PATH = servicePath(4, ServiceAction.PlanChange)
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -141,7 +143,7 @@ describe('ServicePlanChange', () => {
 
     await submitPro(wrapper)
 
-    await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-pay"]').attributes('href')).toBe('/client/invoices/8/pay'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-pay"]').attributes('href')).toBe(clientInvoicePayPath(8)))
     expect(wrapper.find('[data-testid="service-plan-change-success"]').text()).toContain('client.services.planChangeInvoiced')
   })
 

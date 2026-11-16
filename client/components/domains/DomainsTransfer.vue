@@ -11,7 +11,7 @@
         <div>
           <!-- Breadcrumb -->
           <div class="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
-            <UiLink :to="localePath('/domains')" tone="muted" :underline="false" class="hover:text-primary-600 dark:hover:text-primary-400" testid="domains-transfer-crumb">
+            <UiLink :to="localePath(SITE_DOMAINS_PATH)" tone="muted" :underline="false" class="hover:text-primary-600 dark:hover:text-primary-400" testid="domains-transfer-crumb">
               {{ $t('domains.card.name') }}
             </UiLink>
             <span>/</span>
@@ -34,7 +34,7 @@
 
           <!-- Tab switcher -->
           <div class="flex justify-center gap-2 mb-6">
-            <UiButton variant="subtle" size="sm" :to="localePath('/domains')" data-testid="domains-tab-register">
+            <UiButton variant="subtle" size="sm" :to="localePath(SITE_DOMAINS_PATH)" data-testid="domains-tab-register">
               <Globe :size="14" :stroke-width="2" class="mr-1.5" />
               {{ $t('domains.tabRegister') }}
             </UiButton>
@@ -93,7 +93,7 @@
             <div>
               <UiHeading :level="2" size="subsection" class="mb-1">{{ $t('domains.title') }} {{ $t('domains.titleHighlight') }}</UiHeading>
               <UiText tone="muted" size="sm" class="mb-4">{{ $t('domains.card.description') }}</UiText>
-              <UiButton variant="outline" size="sm" :to="localePath('/domains')" data-testid="domains-transfer-search">
+              <UiButton variant="outline" size="sm" :to="localePath(SITE_DOMAINS_PATH)" data-testid="domains-transfer-search">
                 <Globe :size="14" :stroke-width="2" class="mr-1.5" />
                 {{ $t('domains.search') }} {{ $t('domains.card.name') }}
               </UiButton>
@@ -115,6 +115,7 @@
  * the page decides what a transfer request does.
  */
 import { ArrowLeftRight, Globe, HelpCircle } from 'lucide-vue-next'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 /** The domain name to transfer. */
 const domain = defineModel<string>('domain', { required: true })

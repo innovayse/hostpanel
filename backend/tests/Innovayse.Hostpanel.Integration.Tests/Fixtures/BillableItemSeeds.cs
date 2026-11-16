@@ -14,7 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// Seeds billable items through the real invoicing run, for the tests of deleting the invoice an item
 /// was put on.
 /// </summary>
-internal static class BillableItemSeeds
+public static class BillableItemSeeds
 {
     /// <summary>
     /// Seeds a client with one due one-time item, lets the invoicing run put it on an invoice, and
@@ -30,7 +30,7 @@ internal static class BillableItemSeeds
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var item = BillableItem.Create(
-                clientId, "Consulting", 40m, "USD", BillableItemType.OneTime, nextDueDate: DateTimeOffset.UtcNow.AddDays(-1));
+                clientId, "Consulting", 40m, "USD", BillableItemType.OneTime, nextDueDate: TestMoments.Seeded.AddDays(-1));
             context.BillableItems.Add(item);
             await context.SaveChangesAsync(CancellationToken.None);
             itemId = item.Id;
@@ -44,6 +44,58 @@ internal static class BillableItemSeeds
         var cancelled = await bus.InvokeAsync<Result>(new CancelInvoiceCommand(invoiceId), CancellationToken.None);
         cancelled.IsSuccess.Should().BeTrue();
         return new ItemOnInvoice(itemId, invoiceId);
+    }
+
+    /// <summary>
+    /// Seeds billable items of one client straight into the database, one save each so every item has its own creation
+    /// moment and the first given is the oldest.
+    /// </summary>
+    /// <param name="factory">The host to seed through.</param>
+    /// <param name="clientId">The owning client.</param>
+    /// <param name="items">The description and type of each item, and the invoice it sits on, or <see langword="null"/> for an uninvoiced one.</param>
+    /// <returns>The primary keys of the new items, in the order given.</returns>
+    public static async Task<List<int>> SeedItemsAsync(
+        IntegrationTestFactory factory, int clientId, IReadOnlyList<(string Description, BillableItemType Type, int? InvoiceId)> items)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var ids = new List<int>();
+        foreach (var (description, type, invoiceId) in items)
+        {
+            var item = BillableItem.Create(clientId, description, 10m, "USD", type, type == BillableItemType.Recurring ? "monthly" : null);
+            if (invoiceId is { } invoice)
+            {
+                item.MarkInvoiced(invoice);
+            }
+
+            context.BillableItems.Add(item);
+            await context.SaveChangesAsync(CancellationToken.None);
+            ids.Add(item.Id);
+        }
+
+        return ids;
+    }
+
+    /// <summary>
+    /// Seeds <paramref name="count"/> uninvoiced one-time items of one client in a single save, more than a page holds.
+    /// </summary>
+    /// <param name="factory">The host to seed through.</param>
+    /// <param name="clientId">The owning client.</param>
+    /// <param name="description">The description every item carries.</param>
+    /// <param name="count">How many items to seed.</param>
+    /// <returns>The primary keys of the new items, in the order created.</returns>
+    public static async Task<List<int>> SeedManyItemsAsync(IntegrationTestFactory factory, int clientId, string description, int count)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var items = Enumerable.Range(0, count)
+            .Select(_ => BillableItem.Create(clientId, description, 10m, "USD", BillableItemType.OneTime))
+            .ToList();
+        context.BillableItems.AddRange(items);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return items.Select(i => i.Id).ToList();
     }
 
     /// <summary>Runs the daily billable-items invoicing.</summary>

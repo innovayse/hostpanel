@@ -74,10 +74,11 @@ describe('PluginInstalledList', () => {
     expect(wrapper.find('[data-testid="plugin-update-button-example-pay"]').exists()).toBe(false)
   })
 
-  it('draws card placeholders while the first load runs', async () => {
+  it('keeps the toolbar and draws card placeholders while the first load runs', async () => {
     const { wrapper } = await mountList({ plugins: [], loading: true })
 
-    expect(wrapper.get('[data-testid="plugins-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('[data-testid="plugins-list"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="plugins-installed-search"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="plugin-card-skeleton"]')).toHaveLength(6)
   })
 

@@ -17,7 +17,8 @@
     "createYourFirstAnnouncementTo": "Create your first announcement to get started.",
     "deleteAnnouncement": "Delete Announcement",
     "areYouSureYouWant": "Are you sure you want to delete this announcement? This action cannot be undone.",
-    "announcementDeleted": "Announcement deleted."
+    "announcementDeleted": "Announcement deleted.",
+    "searchAnnouncements": "Search announcements"
   },
   "downloads": {
     "downloads": "Downloads",
@@ -80,7 +81,8 @@
     "noArticlesFound": "No Articles Found",
     "createYourFirstArticleAbove": "Create your first article above.",
     "englishRequired": "English is required; the other languages are optional.",
-    "draft": "Draft"
+    "draft": "Draft",
+    "searchArticles": "Search articles"
   },
   "networkIssueForm": {
     "updateTheNetworkIssueDetails": "Update the network issue details below",
@@ -114,15 +116,9 @@
     "createNew": "(+) Create New",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "noTolowercaseAtTheMoment": "Nothing under “{heading}” at the moment.",
     "deleteNetworkIssue": "Delete Network Issue",
     "areYouSureYouWant": "Are you sure you want to delete this network issue? This action cannot be undone.",
-    "open": "Open",
-    "openIssues": "Open Issues",
-    "scheduled": "Scheduled",
-    "scheduledIssues": "Scheduled Issues",
-    "resolved": "Resolved",
-    "resolvedIssues": "Resolved Issues"
+    "searchNetworkIssues": "Search network issues"
   },
   "predefinedReplies": {
     "predefinedReplies": "Predefined Replies",
@@ -194,7 +190,9 @@
     "unflag": "Unflag",
     "requestor": "Requestor",
     "noTicketsFound": "No tickets found",
+    "noTicketsMatchYourFilters": "No tickets match your filters",
     "tryAdjustingYourFiltersOr": "Try adjusting your filters or search query.",
+    "clearFilters": "Clear filters",
     "confirmBulkDeleteTitle": "Delete the selected tickets?",
     "confirmBulkDeleteMessage": "{count} tickets will be deleted permanently. This cannot be undone."
   }

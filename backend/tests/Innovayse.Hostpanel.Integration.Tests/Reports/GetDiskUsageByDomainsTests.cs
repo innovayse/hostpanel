@@ -19,7 +19,7 @@ public sealed class GetDiskUsageByDomainsTests(IntegrationTestFactory factory) :
     {
         var domain = $"usage-{Guid.NewGuid():N}.test";
         var server = $"Server-{Guid.NewGuid():N}";
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

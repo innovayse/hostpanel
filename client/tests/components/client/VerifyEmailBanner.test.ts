@@ -17,11 +17,12 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import VerifyEmailBanner from '~/components/client/VerifyEmailBanner.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 
 /** The BFF paths the banner uses. */
 const PATHS = {
-  status: '/api/portal/auth/email-verified',
-  resend: '/api/portal/auth/resend-verification',
+  status: AccountEndpoint.EmailVerified,
+  resend: AccountEndpoint.ResendVerification,
 } as const
 
 /** The stub playing the BFF. */

@@ -119,7 +119,7 @@ public sealed class CompleteSaveStoredMethodRaceTests(IntegrationTestFactory fac
         var sessionId = string.Empty;
         var race = new ConsentRaceInterceptor(() => sessionId, (db, id) => db.Set<CardChargeConsent>()
             .Where(c => c.Id == id)
-            .ExecuteUpdateAsync(set => set.SetProperty(c => c.RevokedAt, (DateTimeOffset?)DateTimeOffset.UtcNow)));
+            .ExecuteUpdateAsync(set => set.SetProperty(c => c.RevokedAt, (DateTimeOffset?)TestMoments.Seeded)));
         using var scenario = new StoredCredentialScenario(factory, saveInterceptor: race);
         var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, scenario.Host, "complete-revoked-race");
         sessionId = await OpenSessionAsync(scenario, signedIn.Client);

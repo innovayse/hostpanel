@@ -96,8 +96,8 @@ public sealed class OrdersController : BaseApiController
         return HandleResult(outcome, result => CreatedResult($"/api/orders/{result.OrderId}", result));
     }
 
-    /// <summary>Returns a paginated, optionally filtered list of all orders.</summary>
-    /// <param name="query">The page, page size and status filter to list by.</param>
+    /// <summary>Returns a paginated list of all orders, narrowed by a search and a status filter.</summary>
+    /// <param name="query">The page, page size, search text and status filter to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 400 with <c>VALIDATION_ERROR</c> for a bad paging window or filter; 401 without a session

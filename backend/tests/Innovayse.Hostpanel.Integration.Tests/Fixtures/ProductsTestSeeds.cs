@@ -114,13 +114,13 @@ public static class ProductsTestSeeds
         return product.Id;
     }
 
-    /// <summary>Reads back a created product's admin-grid view, including unsellable rows.</summary>
+    /// <summary>Reads back a created product's admin-grid view, including unsellable and inactive rows, as the admin grid asks.</summary>
     /// <param name="client">An authenticated admin client.</param>
     /// <param name="productId">The product to find.</param>
     /// <returns>The product's JSON element from the admin list.</returns>
     public static async Task<JsonElement> GetProductAsync(HttpClient client, int productId)
     {
-        var list = await client.GetFromJsonAsync<JsonElement[]>("/api/products?includeUnsellable=true");
+        var list = await client.GetFromJsonAsync<JsonElement[]>("/api/products?activeOnly=false&includeUnsellable=true");
         return list!.Single(p => p.GetProperty("id").GetInt32() == productId);
     }
 

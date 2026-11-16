@@ -100,7 +100,7 @@ public static class FraudTestSeeds
         if (paid)
         {
             var invoice = await db.Invoices.Include(i => i.Items).SingleAsync(i => i.Id == seeded.InvoiceId);
-            db.Transactions.Add(invoice.Settle("bank-gateway", $"paid-{Guid.NewGuid():N}", DateTimeOffset.UtcNow, TransactionSource.Manual)!);
+            db.Transactions.Add(invoice.Settle("bank-gateway", $"paid-{Guid.NewGuid():N}", TestMoments.Seeded, TransactionSource.Manual)!);
         }
 
         await db.SaveChangesAsync();

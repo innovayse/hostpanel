@@ -76,7 +76,8 @@ public sealed class ReconcileInvoicePaymentClaimsTests(IntegrationTestFactory fa
 
         var claim = (await scenario.ClaimsOfAsync(invoiceId)).Single();
         claim.Status.Should().Be(InvoicePaymentClaimStatus.Pending);
-        claim.IsStale(DateTimeOffset.UtcNow).Should().BeFalse("the pass just looked at it, so it waits before the next lookup");
+        // Real time: the pass stamped its check with the shared host's system clock.
+        claim.IsStale(TestMoments.Present()).Should().BeFalse("the pass just looked at it, so it waits before the next lookup");
         (await scenario.InvoiceAsync(invoiceId)).IsPaid.Should().BeFalse();
     }
 

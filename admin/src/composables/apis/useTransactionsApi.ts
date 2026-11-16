@@ -10,6 +10,7 @@ import type {
   CreateClientTransactionPayload,
   CreateTransactionPayload,
   Transaction,
+  TransactionFilters,
   TransactionsResult,
   UpdateTransactionPayload,
 } from '@/types/transaction'
@@ -29,10 +30,11 @@ export const useTransactionsApi = () => {
    *
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
-   * @returns One page of transactions and the totals.
+   * @param filters - The search text and the client, direction, payment method, period and amount filters; a member left out is not sent.
+   * @returns One page of transactions and the totals of the rows the filters keep.
    */
-  const list = (page: number, pageSize: number): Promise<TransactionsResult> =>
-    request<TransactionsResult>(`${ApiPath.Transactions}${buildQuery({ page, pageSize })}`)
+  const list = (page: number, pageSize: number, filters: TransactionFilters = {}): Promise<TransactionsResult> =>
+    request<TransactionsResult>(`${ApiPath.Transactions}${buildQuery({ page, pageSize, ...filters })}`)
 
   /**
    * Lists the transactions of one client, with summary totals.
@@ -40,10 +42,16 @@ export const useTransactionsApi = () => {
    * @param clientId - The client id.
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
-   * @returns One page of transactions and the totals.
+   * @param filters - The search text and the direction, payment method, period and amount filters; a member left out is not sent.
+   * @returns One page of transactions and the totals of the rows the filters keep.
    */
-  const listByClient = (clientId: number | string, page: number, pageSize: number): Promise<TransactionsResult> =>
-    request<TransactionsResult>(`${ApiPath.Transactions}/client/${clientId}${buildQuery({ page, pageSize })}`)
+  const listByClient = (
+    clientId: number | string,
+    page: number,
+    pageSize: number,
+    filters: TransactionFilters = {},
+  ): Promise<TransactionsResult> =>
+    request<TransactionsResult>(`${ApiPath.Transactions}/client/${clientId}${buildQuery({ page, pageSize, ...filters })}`)
 
   /**
    * Loads one transaction.

@@ -14,6 +14,7 @@ import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ClientService } from '~/types/clientservice'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { ServiceStatus } from '~/types/servicestatus'
+import { CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH } from '~/constants/clientRoutes'
 
 /** One day in milliseconds. */
 const DAY_MS = 86_400_000
@@ -42,7 +43,7 @@ describe('ClientDashboardAlerts', () => {
 
     const alert = wrapper.find('[data-testid="dashboard-alert-setup"]')
     expect(alert.text()).toContain('client.dashboard.setupAlertSingle')
-    expect(wrapper.find('[data-testid="dashboard-alert-setup-action"]').attributes('href')).toBe('/client/services')
+    expect(wrapper.find('[data-testid="dashboard-alert-setup-action"]').attributes('href')).toBe(CLIENT_SERVICES_PATH)
   })
 
   it('uses the plural title for several services', async () => {
@@ -59,7 +60,7 @@ describe('ClientDashboardAlerts', () => {
     await nextTick()
 
     expect(wrapper.find('[data-testid="dashboard-alert-unpaid"]').text()).toContain('client.dashboard.unpaidSingle')
-    expect(wrapper.find('[data-testid="dashboard-alert-unpaid-action"]').attributes('href')).toBe('/client/invoices')
+    expect(wrapper.find('[data-testid="dashboard-alert-unpaid-action"]').attributes('href')).toBe(CLIENT_INVOICES_PATH)
   })
 
   it('flags domains close to expiry, singular for one', async () => {
@@ -68,7 +69,7 @@ describe('ClientDashboardAlerts', () => {
     await nextTick()
 
     expect(wrapper.find('[data-testid="dashboard-alert-expiring"]').text()).toContain('client.dashboard.expiringSoonSingle')
-    expect(wrapper.find('[data-testid="dashboard-alert-expiring-action"]').attributes('href')).toBe('/client/domains')
+    expect(wrapper.find('[data-testid="dashboard-alert-expiring-action"]').attributes('href')).toBe(CLIENT_DOMAINS_PATH)
   })
 
   it('uses the plural sentence for several domains', async () => {

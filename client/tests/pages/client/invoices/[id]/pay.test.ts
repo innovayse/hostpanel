@@ -15,6 +15,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 import PayPage from '~/pages/client/invoices/[id]/pay.vue'
 import { InvoiceStatus } from '~/types/invoicestatus'
+import { clientInvoicePath } from '~/constants/clientRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -147,6 +148,6 @@ describe('invoice payment page', () => {
     table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
-    await waitUntil(() => expect(wrapper.find('nav a[href="/client/invoices/41"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find(`nav a[href="${clientInvoicePath(41)}"]`).exists()).toBe(true))
   })
 })

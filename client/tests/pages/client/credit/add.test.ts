@@ -12,19 +12,15 @@ import { stubClientRuntime } from '~/tests/helpers/mountClient'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { settle } from '~/tests/helpers/settle'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { CLIENT_CREDIT_PATH, clientInvoicePayPath } from '~/constants/clientRoutes'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import AddFundsPage from '~/pages/client/credit/add.vue'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF paths the page uses. */
-const PATHS = {
-  credit: '/api/portal/client/credit',
-  topUps: '/api/portal/client/credit/top-ups',
-} as const
 
 /** The `data-testid` of the page's root, on screen once its read has ended. */
 const PAGE_ROOT = 'client-credit-add'
@@ -52,13 +48,13 @@ const credit = {
  *
  * @returns The requests, oldest first.
  */
-const topUps = () => requestsTo(stub.requests, PATHS.topUps)
+const topUps = () => requestsTo(stub.requests, BillingEndpoint.CreditTopUps)
 
 beforeEach(async () => {
   navigate.mockReset()
   stubClientRuntime()
   vi.stubGlobal('navigateTo', navigate)
-  table = { [`GET ${PATHS.credit}`]: { body: credit } }
+  table = { [readOf(BillingEndpoint.Credit)]: { body: credit } }
   stub = await startTransport(routeTable(table))
 })
 
@@ -75,12 +71,12 @@ describe('add funds page', () => {
   })
 
   it('raises the top-up invoice for the amount and sends the client to pay it', async () => {
-    table[`POST ${PATHS.topUps}`] = { body: 88 }
+    table[writeOf(BillingEndpoint.CreditTopUps)] = { body: 88 }
     const wrapper = await mountRenderedClientPage(AddFundsPage, PAGE_ROOT)
 
     await wrapper.get('[data-testid="credit-add-amount"]').setValue('40')
     await wrapper.get('form').trigger('submit')
-    await waitUntil(() => expect(navigate).toHaveBeenCalledWith('/client/invoices/88/pay'))
+    await waitUntil(() => expect(navigate).toHaveBeenCalledWith(clientInvoicePayPath(88)))
 
     expect(topUps()).toHaveLength(1)
     expect(bodyOf(topUps()[0])).toEqual({ amount: 40 })
@@ -98,7 +94,7 @@ describe('add funds page', () => {
   })
 
   it('stays on the page and shows the sentence when the backend refuses the amount', async () => {
-    table[`POST ${PATHS.topUps}`] = { status: 422, body: { detail: 'The amount is outside the limits.' } }
+    table[writeOf(BillingEndpoint.CreditTopUps)] = { status: 422, body: { detail: 'The amount is outside the limits.' } }
     const wrapper = await mountRenderedClientPage(AddFundsPage, PAGE_ROOT)
 
     await wrapper.get('[data-testid="credit-add-amount"]').setValue('40')
@@ -110,7 +106,7 @@ describe('add funds page', () => {
   })
 
   it('shows the failure instead of a form that cannot know its limits', async () => {
-    table[`GET ${PATHS.credit}`] = { status: 404, body: { type: PortalErrorCode.ClientProfileNotFound, detail: 'No client profile.' } }
+    table[readOf(BillingEndpoint.Credit)] = { status: 404, body: { type: PortalErrorCode.ClientProfileNotFound, detail: 'No client profile.' } }
 
     const wrapper = await mountRenderedClientPage(AddFundsPage, PAGE_ROOT)
 
@@ -121,6 +117,6 @@ describe('add funds page', () => {
   it('links back to the credit page', async () => {
     const wrapper = await mountRenderedClientPage(AddFundsPage, PAGE_ROOT)
 
-    expect(wrapper.get('[data-testid="credit-add-back"]').attributes('href')).toBe('/client/credit')
+    expect(wrapper.get('[data-testid="credit-add-back"]').attributes('href')).toBe(CLIENT_CREDIT_PATH)
   })
 })

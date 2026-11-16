@@ -133,7 +133,7 @@ public sealed class CleanArchitectureSweepMigrationTests
     /// <returns>The ids of the client and the product.</returns>
     private static async Task<(int ClientId, int ProductId)> SeedClientAndProductAsync(string connectionString)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var clientId = await InsertAsync(
             connectionString,
             """
@@ -184,7 +184,7 @@ public sealed class CleanArchitectureSweepMigrationTests
             ("product", productId),
             ("cycle", billingCycle),
             ("amount", recurringAmount),
-            ("now", DateTimeOffset.UtcNow));
+            ("now", TestMoments.Seeded));
 
     /// <summary>Inserts a pending order with one pending item on the given cycle and recurring amount.</summary>
     /// <param name="connectionString">The connection string of the test database.</param>
@@ -203,7 +203,7 @@ public sealed class CleanArchitectureSweepMigrationTests
             """,
             ("number", $"FA-{Guid.NewGuid():N}"[..20]),
             ("client", clientId),
-            ("now", DateTimeOffset.UtcNow),
+            ("now", TestMoments.Seeded),
             ("token", Guid.NewGuid().ToString("N")));
 
         return await InsertAsync(

@@ -33,11 +33,11 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
         var service = await context.ClientServices.SingleAsync(s => s.Id == owned.ServiceId);
         if (target == ServiceStatus.Suspended)
         {
-            service.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true);
         }
         else if (target == ServiceStatus.Terminated)
         {
-            service.Terminate(DateTimeOffset.UtcNow, "closed", hostingAlreadyUpdated: true);
+            service.Terminate(TestMoments.Seeded, "closed", hostingAlreadyUpdated: true);
         }
 
         await context.SaveChangesAsync(CancellationToken.None);
@@ -119,9 +119,9 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
             context.Clients.Add(newOwner);
             await context.SaveChangesAsync(CancellationToken.None);
 
-            var live = ClientService.Create(newOwner.Id, old.ProductId, old.BillingCycle, DateTimeOffset.UtcNow);
+            var live = ClientService.Create(newOwner.Id, old.ProductId, old.BillingCycle, TestMoments.Seeded);
             await ServicesTestSeeds.AddActivatedAsync(
-                context, live, old.ProvisioningRef!, DateTimeOffset.UtcNow, old.ServerId);
+                context, live, old.ProvisioningRef!, TestMoments.Seeded, old.ServerId);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

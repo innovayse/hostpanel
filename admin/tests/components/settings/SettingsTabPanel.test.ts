@@ -4,12 +4,14 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
+import { inject } from 'vue'
 import { mount } from '@vue/test-utils'
 import SettingsTabPanel from '@/components/settings/SettingsTabPanel.vue'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import type { SettingDraft } from '@/composables/useSettingDraft'
 import type { Setting, SettingSave } from '@/types/setting'
 import { createTestI18n } from '../../helpers/i18n'
+import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 
 /**
  * Mounts the panel around one control with a draft.
@@ -88,5 +90,27 @@ describe('SettingsTabPanel', () => {
 
     expect(wrapper.find('[data-testid="settings-form-save"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="slot-content"]').exists()).toBe(true)
+  })
+
+  it('has every field below it draw its placeholder while it loads', () => {
+    /** A control that reads the flag the panel provides. */
+    const Probe = defineComponent({
+      /**
+       * Reads the loading flag the panel provides.
+       *
+       * @returns The render function of the probe.
+       */
+      setup: () => {
+        const loading = inject(UI_FIELD_LOADING, ref(false))
+        return () => h('p', { 'data-testid': 'probe' }, String(loading.value))
+      },
+    })
+    const wrapper = mount(SettingsTabPanel, {
+      props: { save: vi.fn(async () => ({ saved: true, error: null })), loading: true },
+      slots: { default: () => h(Probe) },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    expect(wrapper.get('[data-testid="probe"]').text()).toBe('true')
   })
 })

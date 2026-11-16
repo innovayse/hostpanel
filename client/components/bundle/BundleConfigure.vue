@@ -2,7 +2,7 @@
   <UiStack gap="none" class="bg-ui-page py-10 md:py-16" data-testid="bundle-configure">
     <UiContainer>
       <div>
-        <UiLink :to="localePath('/products')" tone="muted" :underline="false" class="mb-8 inline-flex items-center gap-2 text-sm" testid="bundle-back">
+        <UiLink :to="localePath(SITE_PRODUCTS_PATH)" tone="muted" :underline="false" class="mb-8 inline-flex items-center gap-2 text-sm" testid="bundle-back">
           <ArrowLeft :size="16" :stroke-width="2" />
           {{ $t('bundles.back') }}
         </UiLink>
@@ -15,7 +15,7 @@
 
         <!-- Not found -->
         <UiEmptyState v-else-if="!bundle" :icon="AlertCircle" :title="$t('bundles.notFound')" data-testid="bundle-missing">
-          <UiLink :to="localePath('/products')" testid="bundle-missing-back">{{ $t('bundles.back') }}</UiLink>
+          <UiLink :to="localePath(SITE_PRODUCTS_PATH)" testid="bundle-missing-back">{{ $t('bundles.back') }}</UiLink>
         </UiEmptyState>
 
         <div v-else class="grid items-start gap-8 md:grid-cols-[1fr_360px]">
@@ -109,6 +109,7 @@ import type { BundleComponentRow } from '~/types/bundlecomponentrow'
 import type { BundleSummaryLine } from '~/types/bundlesummaryline'
 import type { CatalogBundle } from '~/types/catalogbundle'
 import type { PricingCycle } from '~/types/pricingcycle'
+import { SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
 
 /** Props of BundleConfigure. */
 interface Props {

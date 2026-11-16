@@ -66,7 +66,7 @@ Go to **Settings → TLD Pricing**. Subtitle: "Configure domain extension pricin
 
 **Columns:** TLD, Provider, Status, Cost (1yr), Sell (1yr), Margin, Categories, Last Synced.
 
-Use the search and filter controls to find a specific extension.
+Type part of an extension in the search box to find it. The **Filters** button narrows the list by registrar and by enabled state (on sale or switched off); applied filters show as chips you can remove. The list is paged, 20 extensions to a page, and the search, the filters and the page stay in the address, so a link or a reload opens the same list. Search treats `%` and `_` as ordinary characters.
 
 Attempting to look up a TLD configuration that does not exist returns `TLD_CONFIG_NOT_FOUND`. Adding a TLD that already exists returns `TLD_CONFIG_ALREADY_EXISTS`. Selecting a registrar provider that the system does not recognise returns `TLD_REGISTRAR_MODULE_UNKNOWN`.
 

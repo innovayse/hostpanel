@@ -42,15 +42,15 @@ public sealed class InvoicesReportTests(IntegrationTestFactory factory) : IClass
         var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"InvoiceRefund{Guid.NewGuid():N}");
         var unrefundedId = await ReportsTestSeeds.CreatePaidInvoiceAsync(factory, clientId, 0m, 10m);
         int refundedId;
-        var refundedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        var refundedAt = TestMoments.Seeded.AddDays(-1);
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Hosting", 50m, 1);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
-            db.Transactions.Add(invoice.AddPayment(DateTimeOffset.UtcNow.AddDays(-2), "Manual", $"tx-{Guid.NewGuid():N}", 50m, 0m, null, TransactionSource.Manual));
+            db.Transactions.Add(invoice.AddPayment(TestMoments.Seeded.AddDays(-2), "Manual", $"tx-{Guid.NewGuid():N}", 50m, 0m, null, TransactionSource.Manual));
             await db.SaveChangesAsync();
             db.Transactions.Add(invoice.AddRefund(
                 refundedAt, PaymentMethodNames.CreditBalance, $"rf-{Guid.NewGuid():N}", 20m, 0m, null, addedToCredit: true, source: TransactionSource.Manual));

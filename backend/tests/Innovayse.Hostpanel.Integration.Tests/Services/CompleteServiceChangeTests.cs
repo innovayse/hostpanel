@@ -203,7 +203,7 @@ public sealed class CompleteServiceChangeTests(IntegrationTestFactory factory) :
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            (await context.ClientServices.FirstAsync(s => s.Id == seeded.ServiceId)).Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            (await context.ClientServices.FirstAsync(s => s.Id == seeded.ServiceId)).Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

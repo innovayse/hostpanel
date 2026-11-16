@@ -56,7 +56,7 @@ test('adding a knowledgebase category posts it and shows it in the grid', async 
     signedIn: true,
     routes: [
       { method: HttpMethod.Get, path: '/api/admin/knowledgebase/categories', respond: () => ({ body: stored }) },
-      json(HttpMethod.Get, '/api/admin/knowledgebase', []),
+      json(HttpMethod.Get, '/api/admin/knowledgebase', { items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }),
       {
         method: HttpMethod.Post,
         path: '/api/admin/knowledgebase/categories',
@@ -109,7 +109,11 @@ test('a knowledgebase article is written in two languages, listed, and edited to
     signedIn: true,
     routes: [
       { method: HttpMethod.Get, path: '/api/admin/knowledgebase/categories', respond: () => ({ body: categories }) },
-      { method: HttpMethod.Get, path: '/api/admin/knowledgebase', respond: () => ({ body: articles }) },
+      {
+        method: HttpMethod.Get,
+        path: '/api/admin/knowledgebase',
+        respond: () => ({ body: { items: articles, pageNumber: 1, pageSize: 20, totalCount: articles.length, totalPages: 1 } }),
+      },
       {
         method: HttpMethod.Post,
         path: '/api/admin/knowledgebase',

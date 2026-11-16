@@ -7,11 +7,11 @@
         <UiText size="lg" class="mb-8 max-w-[75ch] mx-auto text-classic-muted">{{ $t('cta.subtitle') }}</UiText>
 
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <UiButton :to="localePath('/hosting')" size="lg" data-testid="cta-plans">
+          <UiButton :to="localePath(SITE_HOSTING_PATH)" size="lg" data-testid="cta-plans">
             <span>{{ $t('cta.button') }}</span>
             <ArrowRight :size="18" :stroke-width="2" class="ml-2" />
           </UiButton>
-          <UiButton :to="localePath('/contact')" variant="outline" size="lg" data-testid="cta-contact">
+          <UiButton :to="localePath(SITE_CONTACT_PATH)" variant="outline" size="lg" data-testid="cta-contact">
             <span>{{ $t('cta.secondary') }}</span>
           </UiButton>
         </div>
@@ -27,6 +27,7 @@
  * a scroll-triggered directive, so it is visible in server HTML and in both themes.
  */
 import { ArrowRight } from 'lucide-vue-next'
+import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Prefixes a path with the active language. */
 const localePath = useLocalePath()

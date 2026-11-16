@@ -67,7 +67,7 @@
     {
       "key": "migration",
       "icon": "arrow-left-right",
-      "links": ["/migration/", "/migration/from-another-system", "/migration/import-report"]
+      "links": ["/migration/", "/migration/fifteen-minutes", "/migration/from-another-system", "/migration/import-report"]
     },
     {
       "key": "developers",

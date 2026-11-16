@@ -45,9 +45,9 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
     /// <returns>The consent as last read.</returns>
     private static async Task<CardChargeConsent> WaitForRevocationAsync(SavingGatewayScenario scenario, int clientId, int consentId)
     {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var consent = await ConsentAsync(scenario, clientId, consentId);
-        while (!consent.IsRevoked && DateTimeOffset.UtcNow < deadline)
+        while (!consent.IsRevoked && !deadline.IsCancellationRequested)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(100));
             consent = await ConsentAsync(scenario, clientId, consentId);
@@ -103,7 +103,7 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-settled");
         var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         await BillingTestSeeds.MarkPaidAsync(admin, invoiceId, 10m);
 
@@ -155,7 +155,7 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-cancel");
         var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
 
@@ -171,7 +171,7 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-bulk");
         var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.PostAsJsonAsync("/api/billing/bulk", new { invoiceIds = new[] { invoiceId }, action = "MarkCancelled" });
 
@@ -235,7 +235,7 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync($"revoke-replace-{saveAgain}");
         var old = await StartSavingAsync(scenario, signedIn, invoiceId);
-        await scenario.BackdateSessionAsync(invoiceId, DateTimeOffset.UtcNow.AddHours(-1));
+        await scenario.BackdateSessionAsync(invoiceId, scenario.Clock.GetUtcNow().AddHours(-1));
 
         var second = await scenario.StartAsync(signedIn.Client, invoiceId, saveAgain);
 

@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -9,7 +10,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListClientBillableItems;
 
-/// <summary>Returns uninvoiced items (all) and invoiced items (paginated) for a client.</summary>
+/// <summary>
+/// Returns uninvoiced items (all) and invoiced items (paginated) for a client, both narrowed by the search text and the
+/// type filter in SQL.
+/// </summary>
 public sealed class ListClientBillableItemsHandler
 {
     /// <summary>The module's data context.</summary>
@@ -23,7 +27,7 @@ public sealed class ListClientBillableItemsHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="qry">The list billable items query.</param>
+    /// <param name="qry">The client, the search and type filters and the invoiced list's paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success with uninvoiced items, their totals per currency, and paginated invoiced items. Never refuses.
@@ -33,10 +37,16 @@ public sealed class ListClientBillableItemsHandler
     {
         ArgumentNullException.ThrowIfNull(qry);
 
-        var uninvoicedDtos = await _context.BillableItems
+        // One narrowing for both lists, so the search and the type can never leave one of them out.
+        var clientItems = _context.BillableItems
             .AsNoTracking()
-            .Where(x => x.ClientId == qry.ClientId && !x.IsInvoiced)
+            .Where(x => x.ClientId == qry.ClientId)
+            .Matching(qry);
+
+        var uninvoicedDtos = await clientItems
+            .Where(x => !x.IsInvoiced)
             .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
             .Select(MapProjection())
             .ToListAsync(ct);
         // Amounts in different currencies are never added together: one total per currency.
@@ -46,18 +56,19 @@ public sealed class ListClientBillableItemsHandler
             .Select(g => new CurrencyAmountDto(g.Sum(x => x.Amount), g.Key))
             .ToList();
 
-        var invoicedQuery = _context.BillableItems
-            .AsNoTracking()
-            .Where(x => x.ClientId == qry.ClientId && x.IsInvoiced)
-            .OrderByDescending(x => x.CreatedAt);
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var invoicedQuery = clientItems
+            .Where(x => x.IsInvoiced)
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id);
         var totalCount = await invoicedQuery.CountAsync(ct);
         var invoicedDtos = await invoicedQuery
-            .Paginate(qry.InvoicedPage, qry.InvoicedPageSize)
+            .Paginate(qry.Page, qry.PageSize)
             .Select(MapProjection())
             .ToListAsync(ct);
 
         var pagedInvoiced = new PaginatedList<ClientBillableItemDto>(
-            invoicedDtos, totalCount, qry.InvoicedPage, qry.InvoicedPageSize);
+            invoicedDtos, totalCount, qry.Page, qry.PageSize);
 
         return Result<ClientBillableItemsResultDto>.Success(
             new ClientBillableItemsResultDto(uninvoicedDtos, uninvoicedTotal, pagedInvoiced));

@@ -32,11 +32,13 @@ public sealed class GetLinkedDomainNamesHandler
             return Result<IReadOnlyList<LinkedDomainNameDto>>.Success([]);
         }
 
-        // Read-only, so no tracking is needed.
+        // Read-only, so no tracking is needed. A service can have several registered domains linked, and it shows one:
+        // the first by name, so the same domain is shown on every read.
         IReadOnlyList<LinkedDomainNameDto> links = await _context.Domains
             .AsNoTracking()
             .Where(d => d.LinkedServiceId != null && query.ServiceIds.Contains(d.LinkedServiceId.Value))
-            .Select(d => new LinkedDomainNameDto(d.LinkedServiceId!.Value, d.Name))
+            .GroupBy(d => d.LinkedServiceId!.Value)
+            .Select(g => new LinkedDomainNameDto(g.Key, g.Min(d => d.Name)!))
             .ToListAsync(ct);
 
         return Result<IReadOnlyList<LinkedDomainNameDto>>.Success(links);

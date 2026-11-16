@@ -5,17 +5,26 @@
  * the floating `UiBulkBar`). Invoicing and deleting
  * are confirmed first; every action reports its outcome (success, or the API's sentence) above the
  * lists, and a refused load shows the sentence with a Retry.
+ *
+ * The search text (matched against the description and the item id), the type filter and the page of the
+ * invoiced items live in the address (`useListQuery`), so a reload or a shared link restores the same lists;
+ * the API narrows both lists before it pages the invoiced one.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientBillableItemsStore } from '@/stores/clientBillableItems'
+import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useRowSelection } from '@/composables/useRowSelection'
+import { BILLABLE_ITEM_TYPE_OPTIONS } from '@/lib/constants'
 import { formatPlainAmount } from '@/lib/money'
+import { statusLabel } from '@/lib/tones'
 import AddBillableItemModal from '@/components/clients/AddBillableItemModal.vue'
 import AddTimeBillingModal from '@/components/clients/AddTimeBillingModal.vue'
-import type { ClientBillableItem, CurrencyAmount } from '@/types/billableitem'
+import BillableItemTypeField from '@/components/billing/BillableItemTypeField.vue'
+import { BillableItemType } from '@/types/billableitem'
+import type { ClientBillableItem, ClientBillableItemFilters, CurrencyAmount } from '@/types/billableitem'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiBulkBar from '@/components/ui/UiBulkBar.vue'
@@ -23,6 +32,7 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
@@ -69,6 +79,33 @@ const loadError = ref<string | null>(null)
 /** The outcome line of the last action. */
 const feedback = useResultBanner()
 
+/** The filter fields the dialog edits; each is one query key and one `ClientBillableItemFilters` member. */
+const FilterKey = {
+  Type: 'type',
+} as const
+
+/** The search text, the type filter and the invoiced page of the lists, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
+
+/** The type in the address as a billable item type, undefined when none is set or the value is not one. */
+const typeOfAddress = enumOf(FilterKey.Type, BillableItemType)
+
+/** What the address narrows both lists by, as the store sends it to the API. */
+const filters = computed<ClientBillableItemFilters>(() => ({
+  search: appliedSearch.value,
+  type: typeOfAddress.value,
+}))
+
+/** The applied type as a removable chip, none while the lists are not filtered. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Type,
+    label: t('shared.type'),
+    value: typeOfAddress.value === undefined ? undefined : statusLabel(BILLABLE_ITEM_TYPE_OPTIONS, typeOfAddress.value),
+  },
+])
+
 /** Tone of the outcome line: danger for a refusal, success otherwise. */
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
@@ -106,11 +143,8 @@ const uninvoicedTotal = ref<CurrencyAmount[]>([])
 const uninvoicedTotalLabel = computed(() =>
   uninvoicedTotal.value.map((entry) => formatPlainAmount(entry.amount, entry.currency)).join(', '))
 
-/** Current invoiced items page (1-based). */
-const invoicedPage = ref(1)
-
 /** Invoiced items per page. */
-const invoicedPageSize = ref(DEFAULT_PAGE_SIZE)
+const invoicedPageSize = DEFAULT_PAGE_SIZE
 
 /** Total number of invoiced items across all pages. */
 const invoicedTotalCount = ref(0)
@@ -137,12 +171,13 @@ const invoicing = ref(false)
 const deleting = ref(false)
 
 /**
- * Fetches billable items for this client from the backend.
+ * Fetches billable items for this client from the backend: the page of invoiced items the address names, with the
+ * search and type filter it holds applied to both lists.
  *
  * @returns Promise that resolves when data is loaded.
  */
 const fetchBillableItems = async (): Promise<void> => {
-  const result = await store.fetchItems(clientId.value, invoicedPage.value, invoicedPageSize.value)
+  const result = await store.fetchItems(clientId.value, page.value, invoicedPageSize, filters.value)
   loadError.value = result ? null : store.error
   if (result) {
     uninvoicedItems.value = result.uninvoicedItems
@@ -232,17 +267,6 @@ const handleDeleteSelected = (): void => {
 }
 
 /**
- * Navigate to a specific invoiced items page and re-fetch.
- *
- * @param p - Target page number.
- * @returns Nothing.
- */
-const goToInvoicedPage = (p: number): void => {
-  invoicedPage.value = p
-  fetchBillableItems()
-}
-
-/**
  * Handles successful save from the add billable item modal.
  *
  * @returns Nothing.
@@ -287,8 +311,8 @@ const billableItemActions = (item: ClientBillableItem): UiMenuAction[] => [
   },
 ]
 
-/** Loads the items. */
-onMounted(() => fetchBillableItems())
+// Every change of the search, the type filter or the page loads the lists the address names.
+loadOnChange(fetchBillableItems)
 </script>
 
 <template>
@@ -315,6 +339,23 @@ onMounted(() => fetchBillableItems())
       </template>
     </UiSectionHeader>
 
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="client-billable-search"
+      :search-placeholder="t('clients.clientBillableItems.searchItems')"
+      filter-testid="client-billable-filter"
+      :active-count="activeCount"
+      :chips="chips"
+      :loading="initialLoading"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <BillableItemTypeField v-model="draft.type" testid="client-billable-filter-type" />
+    </UiListToolbar>
+
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-billable-feedback" />
 
     <UiErrorState
@@ -334,11 +375,10 @@ onMounted(() => fetchBillableItems())
             : t('clients.clientBillableItems.uninvoicedItemsLength', { length: uninvoicedItems.length }) }}
         </UiHeading>
 
-        <UiCard v-if="initialLoading" loading :skeleton-lines="4" data-testid="client-billable-loading" />
-
-        <UiCard v-else-if="uninvoicedItems.length > 0" class="overflow-x-auto">
+        <UiCard v-if="initialLoading || uninvoicedItems.length > 0" class="overflow-x-auto">
           <UiTable
             :density="UiTableDensity.Comfortable"
+            :loading="initialLoading"
             :selection="selection"
             select-all-testid="client-billable-select-all"
             data-testid="client-billable-uninvoiced-table"
@@ -371,17 +411,18 @@ onMounted(() => fetchBillableItems())
         </UiCard>
 
         <UiCard v-else>
-          <UiEmptyState :title="t('clients.clientBillableItems.noUninvoicedBillableItems')" />
+          <UiEmptyState
+            :title="narrowed ? t('clients.clientBillableItems.noUninvoicedItemsMatchYourFilters') : t('clients.clientBillableItems.noUninvoicedBillableItems')"
+            data-testid="client-billable-uninvoiced-empty"
+          />
         </UiCard>
       </UiStack>
 
       <UiStack>
         <UiHeading :level="2" variant="card">{{ t('clients.clientBillableItems.invoicedItems') }}</UiHeading>
 
-        <UiCard v-if="initialLoading" loading :skeleton-lines="4" />
-
-        <UiCard v-else-if="invoicedItems.length > 0" class="overflow-x-auto">
-          <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-invoiced-table">
+        <UiCard v-if="initialLoading || invoicedItems.length > 0" class="overflow-x-auto">
+          <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-billable-invoiced-table">
             <UiTableHead>
               <UiTableRow>
                 <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
@@ -403,26 +444,31 @@ onMounted(() => fetchBillableItems())
             </UiTableBody>
           </UiTable>
           <UiStack
-            v-if="invoicedTotalCount > invoicedPageSize"
+            v-if="initialLoading || invoicedTotalCount > invoicedPageSize"
             direction="row"
             :justify="UiJustify.Between"
             :align="UiAlignItems.Center"
           >
-            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+            <UiSkeletonBar v-if="initialLoading" class="h-3 w-36 rounded" aria-hidden="true" />
+            <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
               {{ t('clients.clientBillableItems.invoicedtotalcountItemValue', { invoicedTotalCount }) }}
             </UiText>
             <UiPagination
-              :page="invoicedPage"
+              :page="page"
               :total="invoicedTotalCount"
               :page-size="invoicedPageSize"
+              :loading="initialLoading"
               testid="client-billable-pagination"
-              @update:page="goToInvoicedPage"
+              @update:page="setPage"
             />
           </UiStack>
         </UiCard>
 
         <UiCard v-else>
-          <UiEmptyState :title="t('clients.clientBillableItems.noInvoicedBillableItems')" />
+          <UiEmptyState
+            :title="narrowed ? t('clients.clientBillableItems.noInvoicedItemsMatchYourFilters') : t('clients.clientBillableItems.noInvoicedBillableItems')"
+            data-testid="client-billable-invoiced-empty"
+          />
         </UiCard>
       </UiStack>
     </template>

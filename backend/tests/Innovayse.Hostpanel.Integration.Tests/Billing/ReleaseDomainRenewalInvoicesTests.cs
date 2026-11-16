@@ -78,7 +78,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
             i =>
             {
                 AddRenewal(i, seeded.DomainId);
-                i.SetGatewaySession(module, orderId, DateTimeOffset.UtcNow);
+                i.SetGatewaySession(module, orderId, TestMoments.Seeded);
             });
         var unbound = await SeedConsentAsync(seeded.ClientId, module, orderId, methodRef: null);
         var bound = await SeedConsentAsync(seeded.ClientId, module, $"{orderId}-other", methodRef: "pm-1");
@@ -101,7 +101,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var consent = CardChargeConsent.Grant(clientId, module, sessionId, DateTimeOffset.UtcNow);
+        var consent = CardChargeConsent.Grant(clientId, module, sessionId, TestMoments.Seeded);
         if (methodRef is not null)
         {
             consent.AttachMethod(methodRef);
@@ -159,7 +159,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
         {
             AddRenewal(i, seeded.DomainId);
             AddRenewal(i, seeded.OtherDomainId);
-            i.AddPayment(DateTimeOffset.UtcNow, PaymentMethodNames.Manual, "part", 20m, 0m, null, TransactionSource.Manual);
+            i.AddPayment(TestMoments.Seeded, PaymentMethodNames.Manual, "part", 20m, 0m, null, TransactionSource.Manual);
         });
 
         var result = await ReleaseAsync(seeded.DomainId);
@@ -191,9 +191,9 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         var other = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: true, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         context.Domains.AddRange(domain, other);
         await context.SaveChangesAsync(CancellationToken.None);
         return new SeededDomains(clientId, domain.Id, other.Id);
@@ -208,7 +208,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(10), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(10), "USD", TestMoments.Seeded);
         build(invoice);
         if (clientCredit > 0)
         {
@@ -228,7 +228,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
     /// <param name="domainId">The domain.</param>
     private static void AddRenewal(Invoice invoice, int domainId)
     {
-        var start = DateTimeOffset.UtcNow.AddDays(10);
+        var start = TestMoments.Seeded.AddDays(10);
         invoice.AddDomainRenewal("Domain renewal", 12m, domainId, start, start.AddYears(1));
     }
 

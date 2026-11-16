@@ -19,12 +19,12 @@ public sealed class GetServiceBillingStatesTests(IntegrationTestFactory factory)
     public async Task HandleAsync_SuspendedAndUnknown_AnswersOnlyTheKnownStateAsync()
     {
         await using var host = RenewalTestSeeds.SuppressedHost(factory);
-        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host, DateTimeOffset.UtcNow.AddDays(10));
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, TestMoments.Seeded.AddDays(10));
         using (var scope = host.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var service = await context.ClientServices.SingleAsync(s => s.Id == seeded.ServiceId);
-            service.Suspend(DateTimeOffset.UtcNow, "Overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
+            service.Suspend(TestMoments.Seeded, "Overdue", hostingAlreadyUpdated: true, source: SuspensionSource.Overdue);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

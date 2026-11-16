@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Campaigns.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
@@ -94,6 +95,7 @@ public static class DependencyInjection
         services.AddScoped<ServicePlanChangeQuoter>();
         services.AddScoped<ServicePlanChangeSettingsReader>();
         services.AddScoped<SettingSource>();
+        services.AddScoped<ExchangeRateSettingsReader>();
 
         // The rate a new invoice is raised at: the one answer every invoice-creating use case asks.
         services.AddScoped<ClientTaxRateResolver>();

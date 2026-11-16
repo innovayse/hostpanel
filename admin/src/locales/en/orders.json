@@ -35,7 +35,7 @@
   "ordersList": {
     "orders": "Orders",
     "manageCustomerOrders": "Manage customer orders",
-    "filterByStatus": "Filter by status",
+    "searchOrders": "Search orders by number or id",
     "order": "Order #",
     "items": "Items",
     "accept": "Accept",

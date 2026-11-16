@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text.Json;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
@@ -110,19 +109,7 @@ public sealed class PluginUiFixture : IAsyncLifetime
     /// <returns>The client, to dispose when the test ends.</returns>
     public async Task<HttpClient> AdminClientAsync()
     {
-        return await AdminClientOfAsync(Host, Factory);
-    }
-
-    /// <summary>Makes a client of a host carrying an administrator's bearer token.</summary>
-    /// <param name="host">The host to talk to.</param>
-    /// <param name="factory">The shared factory that signs the administrator in.</param>
-    /// <returns>The client, to dispose when the test ends.</returns>
-    public static async Task<HttpClient> AdminClientOfAsync(WebApplicationFactory<Program> host, IntegrationTestFactory factory)
-    {
-        var http = host.CreateClient();
-        var token = await factory.GetAdminTokenAsync();
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return http;
+        return await AuthTestSeeds.AdminClientAsync(Factory, Host);
     }
 
     /// <summary>Registers an account holder and makes their client of <see cref="Host"/>.</summary>

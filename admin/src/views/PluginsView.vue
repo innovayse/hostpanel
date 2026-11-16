@@ -7,7 +7,7 @@
  * has a newer version of. The Upload plugin button in the header opens a dialog with the ZIP uploader: a newer
  * upload is staged until the restart, an upload older than the installed version is refused and the operator
  * can force it after a confirmation. Browse lists the plugin registry (search, category filter and page live
- * in the address through useFilterQuery) with the registry trust card, and installs or updates from it; the tab
+ * in the address through useListQuery) with the registry trust card, and installs or updates from it; the tab
  * is not offered when the server answers that the registry is switched off. Settings holds what applies to
  * every plugin: the "Allow unsigned plugins" switch and the data removed plugins kept, which can be purged
  * behind a danger prompt. An update, from the installed list or from a registry card, opens a prompt that lists
@@ -15,10 +15,11 @@
  * banner shows while pending changes need a restart; a purge's outcome shows above the tabs, and every install, update and upload runs behind the processing dialog.
  * Removing a plugin is done on its own page.
  */
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useFilterQuery } from '@/composables/useFilterQuery'
+import { useListQuery } from '@/composables/useListQuery'
 import { enumValueOf } from '@/lib/enumValue'
 import { pluginPath } from '@/lib/routes'
 import { usePluginsStore } from '@/stores/plugins'
@@ -47,10 +48,8 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
-import type { SettingSaveResult } from '@/types/setting'
 import { PluginCategory, PluginCategoryAll, PluginProcessingStep } from '@/types/plugin'
-import type { PluginActionOutcome, PluginCategoryFilter } from '@/types/plugin'
-import type { UiFilterChip } from '@/utils/ui/filter'
+import type { PluginActionOutcome } from '@/types/plugin'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
 /** Translation function. */
@@ -189,18 +188,6 @@ const handleConfirmInstall = async (): Promise<void> => {
      */
     handsOff: () => store.downgradeFile !== null,
   })
-}
-
-/**
- * Persists the signing switch and reports how it went to the control that asked.
- *
- * @param id - Setting ID.
- * @param value - New value, `true` or `false`.
- * @returns Whether the value was stored, and the API's sentence when it was refused.
- */
-const saveSetting = async (id: number, value: string): Promise<SettingSaveResult> => {
-  const saved = await settingsStore.updateSetting(id, value)
-  return { saved, error: saved ? null : settingsStore.actionError }
 }
 
 /** Closed set of the page's tabs; the strings are the tab values kept in the address. */
@@ -346,26 +333,11 @@ const handleRegistryInstall = async (id: string, version: string): Promise<void>
   })
 }
 
-/** The registry list's search text, category and page, kept in the address so a reload or a shared link restores the same list. */
-const registry = reactive(useFilterQuery(['category'] as const))
+/** The registry list's search text, category and page, kept in the address so a reload or a shared link restores the same list; separate from the tab's own query. */
+const registry = reactive(useListQuery(['category'] as const))
 
-/** The category in the address as the registry filter: a value that is no registry category means every category. */
-const registryCategory = computed<PluginCategoryFilter>(
-  () => enumValueOf(PluginCategory, registry.applied.category) ?? PluginCategoryAll,
-)
-
-/**
- * Reads the filter in the address into the store and loads the registry page it names.
- *
- * @returns Promise that resolves when the registry page is loaded.
- */
-const loadRegistry = (): Promise<void> =>
-  store.setRegistryFilter({ q: registry.appliedSearch, category: registryCategory.value, page: registry.page })
-
-// A filter or page changed in the address (typing after its pause, the filter dialog, the pager, the back button) reloads the list.
-watch([() => registry.appliedSearch, registryCategory, () => registry.page], () => {
-  void loadRegistry()
-})
+/** The category in the address as a registry category, undefined when none is set or the value is not one. */
+const categoryOfAddress = registry.enumOf('category', PluginCategory)
 
 /** Options of the registry category filter: every category, then one per registry category. */
 const registryCategoryOptions = computed<{ value: string; label: string }[]>(() => [
@@ -374,12 +346,33 @@ const registryCategoryOptions = computed<{ value: string; label: string }[]>(() 
 ])
 
 /** The chip of the applied registry category, none while every category is shown. */
-const registryChips = computed<UiFilterChip[]>(() => {
-  const label = registryCategoryOptions.value.find(option => option.value === registry.applied.category)?.label
-  return registry.applied.category === ''
-    ? []
-    : [{ key: 'category', label: t('plugins.pluginRegistry.categoryPlaceholder'), value: label ?? registry.applied.category }]
-})
+const registryChips = registry.chipsOf(() => [
+  {
+    key: 'category',
+    label: t('plugins.pluginRegistry.categoryPlaceholder'),
+    value: categoryOfAddress.value === undefined ? undefined : t(`plugins.pluginRegistry.category.${categoryOfAddress.value}`),
+  },
+])
+
+/**
+ * Reads the filter in the address into the store and loads the registry page it names. The registration card is
+ * read once, after the first page, because it exists only while the registry is on, which that page decides.
+ *
+ * @returns Promise that resolves when the registry page (and the registration card, on the first load) is loaded.
+ */
+const loadRegistry = async (): Promise<void> => {
+  await store.setRegistryFilter({
+    search: registry.appliedSearch,
+    category: categoryOfAddress.value ?? PluginCategoryAll,
+    page: registry.page,
+  })
+  if (!store.registryDisabled && store.registryInstance === null) {
+    await store.fetchRegistryInstance()
+  }
+}
+
+// Every change of the search, the category or the page in the address (typing after its pause, the filter dialog, the pager, the back button) loads the list.
+registry.loadOnChange(loadRegistry)
 
 /**
  * Moves the registry list to a page through the address.
@@ -390,10 +383,8 @@ const handleRegistryPage = (next: number): void => {
   void registry.setPage(next)
 }
 
-/** Loads the installed plugins, the settings the signing switch reads, and the registry (its first page decides whether the Browse tab exists; its updates feed the badges). */
+/** Loads the installed plugins, the settings the signing switch reads and the registry updates that feed the badges; the registry page loads through the address. */
 onMounted(() => Promise.all([
-  // The registration card exists only while the registry is on, which the first page decides.
-  loadRegistry().then(() => (store.registryDisabled ? undefined : store.fetchRegistryInstance())),
   store.fetchRegistryUpdates(),
   store.fetchAll(),
   settingsStore.fetchSettings(),
@@ -430,7 +421,7 @@ onMounted(() => Promise.all([
 
     <!-- Browse -->
     <template v-if="tab === PluginsTab.Browse">
-      <PluginRegistryTrustCard :settings="settingsStore.settings" :save="saveSetting" />
+      <PluginRegistryTrustCard :settings="settingsStore.settings" :save="settingsStore.saveSetting" />
       <PluginRegistryInstanceCard
         :instance="store.registryInstance"
         :busy="store.registryInstanceBusy"
@@ -484,7 +475,7 @@ onMounted(() => Promise.all([
       :settings="settingsStore.settings"
       :error="settingsStore.error"
       :loading="settingsStore.loading"
-      :save="saveSetting"
+      :save="settingsStore.saveSetting"
       :kept-data-ids="store.keptDataIds"
       :purging-id="purgingId"
       @retry="settingsStore.fetchSettings()"

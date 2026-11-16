@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
 import { MessageLanguage } from '@/locales/messages'
+import { ProductStatus, ProductType } from '@/types/productenums'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -57,6 +58,16 @@ describe('useSettingsApi', () => {
     await api.listProductGroups()
     expect(callOf(mock, 0).url).toBe('/api/products?activeOnly=false&includeUnsellable=true')
     expect(callOf(mock, 1).url).toBe('/api/products/groups?activeOnly=false')
+  })
+
+  it('listProductsPage reads one page of /admin/products with the page, its size and the filters', async () => {
+    const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 }))
+    const api = useSettingsApi()
+
+    expect((await api.listProductsPage({ page: 1, pageSize: 20, search: 'plan', groupId: 5, type: ProductType.Vps, status: ProductStatus.Inactive })).items).toEqual([{ id: 1 }])
+    await api.listProductsPage({ page: 3, pageSize: 20 })
+    expect(callOf(mock, 0).url).toBe('/api/admin/products?page=1&pageSize=20&search=plan&groupId=5&type=Vps&status=Inactive')
+    expect(callOf(mock, 1).url).toBe('/api/admin/products?page=3&pageSize=20')
   })
 
   it('createProduct POSTs the payload and returns the id', async () => {

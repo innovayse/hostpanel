@@ -32,8 +32,8 @@ public sealed class CreditNotesController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Lists credit notes, newest first, optionally of one invoice, one client or one status.</summary>
-    /// <param name="query">The filters and the page.</param>
+    /// <summary>Lists credit notes, newest first, narrowed by a search and by invoice, client, status and method.</summary>
+    /// <param name="query">The paging window, the optional search and the optional invoice, client, status and method filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 400 when a filter is refused; 401 without a session; 403 for a caller who is not staff;

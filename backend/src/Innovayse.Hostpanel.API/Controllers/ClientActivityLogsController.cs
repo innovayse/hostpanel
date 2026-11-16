@@ -27,7 +27,7 @@ public sealed class ClientActivityLogsController : BaseApiController
 
     /// <summary>Returns a paginated, filtered list of activity log entries for a specific client.</summary>
     /// <param name="clientId">FK to the client; wins over any client id in the query.</param>
-    /// <param name="query">The page, page size and optional filters to list by.</param>
+    /// <param name="query">The page, page size, search and period to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page of activity log entries; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not staff;

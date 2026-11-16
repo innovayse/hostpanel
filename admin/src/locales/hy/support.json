@@ -17,7 +17,8 @@
     "createYourFirstAnnouncementTo": "Սկսելու համար ստեղծեք առաջին հայտարարությունը։",
     "deleteAnnouncement": "Ջնջել հայտարարությունը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս հայտարարությունը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
-    "announcementDeleted": "Հայտարարությունը ջնջվեց։"
+    "announcementDeleted": "Հայտարարությունը ջնջվեց։",
+    "searchAnnouncements": "Որոնել հայտարարություններ"
   },
   "downloads": {
     "downloads": "Ներբեռնումներ",
@@ -80,7 +81,8 @@
     "noArticlesFound": "Հոդվածներ չեն գտնվել",
     "createYourFirstArticleAbove": "Ստեղծեք առաջին հոդվածը վերևում։",
     "englishRequired": "Անգլերենը պարտադիր է, մյուս լեզուները՝ ըստ ցանկության։",
-    "draft": "Սևագիր"
+    "draft": "Սևագիր",
+    "searchArticles": "Որոնել հոդվածներ"
   },
   "networkIssueForm": {
     "updateTheNetworkIssueDetails": "Թարմացրեք ցանցային խնդրի տվյալները ստորև",
@@ -114,15 +116,9 @@
     "createNew": "(+) Ստեղծել",
     "startDate": "Սկզբի ամսաթիվ",
     "endDate": "Ավարտի ամսաթիվ",
-    "noTolowercaseAtTheMoment": "Այս պահին «{heading}» բաժնում ոչինչ չկա։",
     "deleteNetworkIssue": "Ջնջել ցանցային խնդիրը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս ցանցային խնդիրը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
-    "open": "Բաց",
-    "openIssues": "Բաց խնդիրներ",
-    "scheduled": "Պլանավորված",
-    "scheduledIssues": "Պլանավորված խնդիրներ",
-    "resolved": "Լուծված",
-    "resolvedIssues": "Լուծված խնդիրներ"
+    "searchNetworkIssues": "Որոնել ցանցային խնդիրներ"
   },
   "predefinedReplies": {
     "predefinedReplies": "Պատրաստի պատասխաններ",
@@ -194,7 +190,9 @@
     "unflag": "Հանել դրոշակը",
     "requestor": "Հայտատու",
     "noTicketsFound": "Տոմսեր չեն գտնվել",
+    "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",
     "tryAdjustingYourFiltersOr": "Փորձեք փոխել ֆիլտրերը կամ որոնման հարցումը։",
+    "clearFilters": "Մաքրել ֆիլտրերը",
     "confirmBulkDeleteTitle": "Ջնջե՞լ ընտրված տոմսերը",
     "confirmBulkDeleteMessage": "Ընդմիշտ կջնջվի {count} տոմս։ Այս գործողությունը հնարավոր չէ հետարկել։"
   }

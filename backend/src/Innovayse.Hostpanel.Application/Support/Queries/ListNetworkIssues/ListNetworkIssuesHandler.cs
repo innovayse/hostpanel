@@ -1,4 +1,4 @@
-using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Application.Support.Extensions;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListNetworkIssues;
 
-/// <summary>Returns a paged list of network issues, optionally filtered by status.</summary>
+/// <summary>Returns a page of network issues, narrowed by the search text and the status, type and priority filters, newest first.</summary>
 public sealed class ListNetworkIssuesHandler
 {
     /// <summary>The module's data context.</summary>
@@ -22,30 +22,40 @@ public sealed class ListNetworkIssuesHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The paging window and optional status filter.</param>
+    /// <param name="query">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with the page. This use case answers no refusal code.</returns>
     public async Task<Result<PaginatedList<NetworkIssueDto>>> HandleAsync(ListNetworkIssuesQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
+        var issues = _context.NetworkIssues
+            .AsNoTracking()
+            .Search(query.Search, n => n.Title, n => n.Server, n => n.Description);
 
-        var filtered = _context.NetworkIssues.AsNoTracking();
-        if (query.Statuses is { Length: > 0 } statuses)
+        if (query.Status is { } status)
         {
-            filtered = filtered.Where(n => statuses.Contains(n.Status));
+            issues = issues.Where(n => n.Status == status);
         }
 
-        var baseQuery = filtered.OrderByDescending(n => n.CreatedAt);
+        if (query.Type is { } type)
+        {
+            issues = issues.Where(n => n.Type == type);
+        }
 
-        var totalCount = await baseQuery.CountAsync(ct);
-        var items = await baseQuery
-            .Paginate(page, pageSize)
+        if (query.Priority is { } priority)
+        {
+            issues = issues.Where(n => n.Priority == priority);
+        }
+
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = issues.OrderByDescending(n => n.CreatedAt).ThenByDescending(n => n.Id);
+        var totalCount = await ordered.CountAsync(ct);
+        var items = await ordered
+            .Paginate(query.Page, query.PageSize)
             .SelectDto()
             .ToListAsync(ct);
 
-        return Result.Success(new PaginatedList<NetworkIssueDto>(items, totalCount, page, pageSize));
+        return Result.Success(new PaginatedList<NetworkIssueDto>(items, totalCount, query.Page, query.PageSize));
     }
 }

@@ -8,9 +8,6 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useGatewayLogStore } from '@/stores/gatewayLog'
 import { json, problem, stubFetch } from '../helpers/fetch'
 
-/** No filters. */
-const NO_FILTERS = { from: '', to: '', gateway: '', debugData: '', result: '' } as const
-
 beforeEach(() => {
   setActivePinia(createPinia())
 })
@@ -24,7 +21,7 @@ describe('gatewayLogStore', () => {
     stubFetch(json({ items: [{ id: 'tx-1' }], pageNumber: 1, pageSize: 20, totalCount: 7, totalPages: 1 }))
     const store = useGatewayLogStore()
 
-    await store.fetchPage(NO_FILTERS, 1, 20)
+    await store.fetchPage(1)
 
     expect(store.entries).toEqual([{ id: 'tx-1' }])
     expect(store.totalCount).toBe(7)
@@ -33,12 +30,12 @@ describe('gatewayLogStore', () => {
   })
 
   it('fetchPage keeps the sentence of a refusal', async () => {
-    stubFetch(problem('Page size must be between 1 and 100.'))
+    stubFetch(problem('The log is not available.', 403))
     const store = useGatewayLogStore()
 
-    await store.fetchPage(NO_FILTERS, 1, 500)
+    await store.fetchPage(1)
 
-    expect(store.error).toBe('Page size must be between 1 and 100.')
+    expect(store.error).toBe('The log is not available.')
     expect(store.entries).toEqual([])
   })
 })

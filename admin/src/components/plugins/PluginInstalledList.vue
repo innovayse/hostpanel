@@ -4,7 +4,8 @@
  * keys), then a three-column grid of shared plugin cards. A card opens the plugin's page by its name; its
  * footer holds a gear that opens the same page, or an Update button while the registry offers a newer
  * version. A plugin the host refused explains the broken rule in the card's notice. A failed load offers a
- * retry, an empty server an empty state, and the grid shows card placeholders while the first load runs.
+ * retry, an empty server an empty state, and while the first load runs the same toolbar and grid are drawn with card
+ * placeholders.
  * The component owns no data: the screen hands it the list and reacts to the update request.
  */
 import { computed, reactive } from 'vue'
@@ -64,6 +65,9 @@ const emit = defineEmits<{
   /** Emitted when the admin asks to retry a failed load. */
   retry: []
 }>()
+
+/** True until the first read of the installed plugins has answered: the toolbar and grid are drawn with placeholder cards. */
+const initialLoading = computed<boolean>(() => props.loading && props.plugins.length === 0)
 
 /** Closed set of the filter fields; the strings are their keys in the address. */
 const InstalledFilterKey = {
@@ -149,23 +153,19 @@ const openPlugin = (id: string): void => {
 <template>
   <UiErrorState v-if="error" :message="error" :loading="loading" testid="plugins-error" @retry="emit('retry')" />
 
-  <UiGrid v-else-if="loading && plugins.length === 0" :columns="3" gap="md" aria-busy="true" data-testid="plugins-loading">
-    <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
-    <PluginCardSkeleton v-for="placeholder in PLUGIN_CARD_PLACEHOLDERS" :key="placeholder" />
-  </UiGrid>
-
   <UiEmptyState
-    v-else-if="!loading && plugins.length === 0"
+    v-else-if="!initialLoading && plugins.length === 0"
     :title="t('plugins.plugins.noPluginsInstalledYet')"
     :description="t('plugins.plugins.noPluginsInstalledHint')"
     data-testid="plugins-empty"
   />
 
-  <UiStack v-else gap="sm" data-testid="plugins-list">
+  <UiStack v-else gap="sm" :aria-busy="initialLoading ? 'true' : undefined" data-testid="plugins-list">
     <UiListToolbar
       v-model:search="filters.search"
       :active-count="filters.activeCount"
       :chips="chips"
+      :loading="initialLoading"
       search-testid="plugins-installed-search"
       :search-placeholder="t('plugins.plugins.searchInstalled')"
       @apply="filters.apply()"
@@ -199,8 +199,12 @@ const openPlugin = (id: string): void => {
         </UiField>
       </UiStack>
     </UiListToolbar>
-    <UiEmptyState v-if="cards.length === 0" :title="t('plugins.plugins.noPluginsMatch')" data-testid="plugins-no-match" />
+    <UiEmptyState v-if="!initialLoading && cards.length === 0" :title="t('plugins.plugins.noPluginsMatch')" data-testid="plugins-no-match" />
     <UiGrid v-else :columns="3" gap="md">
+      <template v-if="initialLoading">
+        <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
+        <PluginCardSkeleton v-for="placeholder in PLUGIN_CARD_PLACEHOLDERS" :key="placeholder" />
+      </template>
       <PluginCard v-for="card in cards" :key="card.id" :plugin="card" :to="pluginPath(card.id)">
         <template v-if="card.refusal" #notice>
           <UiStack gap="xs" :data-testid="`plugin-refusal-${card.id}`">

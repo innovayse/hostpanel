@@ -27,15 +27,15 @@ describe('ReportChartCard', () => {
     expect(mountCard({ title: 'Income' }).text()).toContain('Income')
   })
 
-  it('keeps the title and draws a skeleton instead of the chart while the report loads', () => {
+  it('keeps the title and hands the chart its loading state while the report loads', () => {
     const wrapper = mount(ReportChartCard, {
       props: { type: UiChartType.Bar, labels: ['Jan'], series: [{ label: 'Income', data: [3] }], title: 'Income' },
       global: { plugins: [createTestI18n()], stubs: { UiChart: true }, provide: { [REPORT_LOADING as symbol]: ref(true) } },
     })
 
     expect(wrapper.text()).toContain('Income')
-    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(true)
-    expect(wrapper.findComponent(UiChart).exists()).toBe(false)
+    expect(wrapper.attributes('aria-busy')).toBe('true')
+    expect(wrapper.findComponent(UiChart).props('loading')).toBe(true)
   })
 
   it('has no heading without a title', () => {

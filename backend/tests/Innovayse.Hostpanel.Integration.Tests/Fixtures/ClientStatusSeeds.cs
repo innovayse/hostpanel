@@ -23,7 +23,7 @@ internal static class ClientStatusSeeds
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var client = await context.Clients.FirstAsync(c => c.Id == clientId, CancellationToken.None);
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
 
         switch (status)
         {

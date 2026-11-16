@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import CreditNotesTable from '~/components/client/creditnotes/Table.vue'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
+import { clientInvoicePath } from '~/constants/clientRoutes'
 
 /**
  * Builds a note.
@@ -45,7 +46,7 @@ describe('CreditNotesTable', () => {
   it('links the invoice the note credits and names where the value went and the state', () => {
     const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ method: 'GatewayRefund', status: 'Voided' })], downloadingId: null } })
 
-    expect(wrapper.get('[data-testid="credit-note-invoice-3"]').attributes('href')).toBe('/client/invoices/12')
+    expect(wrapper.get('[data-testid="credit-note-invoice-3"]').attributes('href')).toBe(clientInvoicePath(12))
     expect(wrapper.get('[data-testid="credit-note-method-3"]').text()).toBe('client.creditNotes.method.GatewayRefund')
     expect(wrapper.get('[data-testid="credit-note-status-3"]').text()).toBe('client.creditNotes.status.Voided')
   })

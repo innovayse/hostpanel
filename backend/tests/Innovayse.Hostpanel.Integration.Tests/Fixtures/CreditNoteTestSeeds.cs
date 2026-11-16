@@ -33,7 +33,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = NewInvoice(clientId, price, taxRate, now);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -53,7 +53,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = NewInvoice(clientId, price, 0m, now);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -72,7 +72,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = NewInvoice(clientId, 100m, 0m, DateTimeOffset.UtcNow);
+        var invoice = NewInvoice(clientId, 100m, 0m, TestMoments.Seeded);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
         return invoice.Id;
@@ -86,7 +86,7 @@ public static class CreditNoteTestSeeds
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestMoments.Seeded;
         var invoice = Invoice.CreateCreditTopUp(clientId, 50m, "USD", now, now.AddDays(7));
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -180,19 +180,19 @@ public static class CreditNoteTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
         var note = CreditNote.Create(
-            invoice, [CreditNoteItem.Create("Draft line", 5m, 1, invoice.Currency)], CreditNoteMethod.AccountCredit, Reason, DateTimeOffset.UtcNow);
+            invoice, [CreditNoteItem.Create("Draft line", 5m, 1, invoice.Currency)], CreditNoteMethod.AccountCredit, Reason, TestMoments.Seeded);
         context.CreditNotes.Add(note);
         await context.SaveChangesAsync(CancellationToken.None);
         return note.Id;
     }
 
-    /// <summary>Reads the page of notes the staff list answers with.</summary>
+    /// <summary>Reads the first page of 100 notes the staff list answers with for the given filters.</summary>
     /// <param name="admin">An admin HTTP client.</param>
-    /// <param name="query">The query string such as <c>?invoiceId=3</c>.</param>
+    /// <param name="filters">The filters after the paging, such as <c>invoiceId=3&amp;status=Applied</c>.</param>
     /// <returns>The body.</returns>
-    public static async Task<JsonElement> ListAsync(HttpClient admin, string query)
+    public static async Task<JsonElement> ListAsync(HttpClient admin, string filters)
     {
-        var response = await admin.GetAsync($"/api/billing/credit-notes{query}");
+        var response = await admin.GetAsync($"/api/billing/credit-notes?page=1&pageSize=100&{filters}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         return await response.Content.ReadFromJsonAsync<JsonElement>();
     }

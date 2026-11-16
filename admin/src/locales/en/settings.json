@@ -387,6 +387,8 @@
     "hideThisProductFromThe": "Hide this product from the order form",
     "featured": "Recommended plan",
     "featuredHint": "Show this product with a \"Recommended\" badge on the storefront. Only one product per group can be recommended; saving this clears the others.",
+    "digitalService": "Digital service",
+    "digitalServiceHint": "The product is an electronic service for VAT (hosting, a licence, a domain that counts as one). A consumer in another EU member state is invoiced for it at the VAT rate of their own country. Not the same as a digital product delivered by a plugin.",
     "sortOrder": "Sort order",
     "sortOrderHint": "Position inside the group, lowest first. Products with the same number are sorted by name.",
     "sortOrderPlaceholder": "e.g. 1",
@@ -440,6 +442,10 @@
     "editSpecification": "Edit specification",
     "editProduct": "Edit product",
     "noProductsFoundCreateYour": "No products found. Create your first product to get started.",
+    "searchPlaceholder": "Search by name, SKU or slug",
+    "noProductsMatchYourFilters": "No products match your filters",
+    "clearFilters": "Clear filters",
+    "totalCount": "Products: {totalCount}",
     "typeSharedHosting": "Shared Hosting",
     "typeDedicated": "Dedicated",
     "typeDomain": "Domain",
@@ -628,10 +634,10 @@
     "editTld": "Edit TLD",
     "deleteTld": "Delete TLD",
     "noTldConfigurationsFoundAdd": "No TLD configurations found. Add your first TLD or import from a provider.",
-    "showingValueValue2OfLength": "Showing {value}-{value2} of {length} TLDs",
+    "noTldsMatchYourFilters": "No TLDs match your filters",
+    "clearFilters": "Clear filters",
+    "totalcountTldValue": "TLDs: {totalCount}",
     "deleteTldConfiguration": "Delete TLD Configuration",
-    "allProviders": "All Providers",
-    "allStatus": "All Status",
     "priceSyncComplete": "Price sync complete.",
     "deleteMessage": "Delete \".{tld}\" TLD configuration? This action cannot be undone.",
     "importComplete": "Import complete: {imported} imported, {updated} updated.",
@@ -678,6 +684,10 @@
       "taxRules": {
         "title": "Tax rules",
         "description": "Tax rates by country and region."
+      },
+      "vatRates": {
+        "title": "VAT rates",
+        "description": "The VAT rate of each EU member state, used for digital services sold to consumers."
       },
       "emailTemplates": {
         "title": "Email templates",

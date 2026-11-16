@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 
@@ -41,11 +40,8 @@ public sealed class ListRegistryPluginsHandler
     /// </returns>
     public async Task<Result<RegistryPluginPageDto>> HandleAsync(ListRegistryPluginsQuery query, CancellationToken ct)
     {
-        var pageSize = Math.Clamp(query.PageSize, PagingLimits.MinPageSize, PagingLimits.MaxPageSize);
-        var page = Math.Max(1, query.Page);
-
         var listing = await _registry.SearchAsync(
-            new RegistryPluginSearch(NullIfBlank(query.Q), query.Category, page, pageSize), ct);
+            new RegistryPluginSearch(NullIfBlank(query.Search), query.Category, query.Page, query.PageSize), ct);
         if (listing.IsFailure)
         {
             return Result<RegistryPluginPageDto>.FailureCode(listing.ErrorCode!);
@@ -60,7 +56,7 @@ public sealed class ListRegistryPluginsHandler
             rows.Add(installed.TryGetValue(entry.Id, out var package) ? await _offer.MarkAsync(entry, package, ct) : entry);
         }
 
-        return Result<RegistryPluginPageDto>.Success(new RegistryPluginPageDto(rows, listing.Value.Total, page, pageSize));
+        return Result<RegistryPluginPageDto>.Success(new RegistryPluginPageDto(rows, listing.Value.Total, query.Page, query.PageSize));
     }
 
     /// <summary>Turns a blank filter into no filter.</summary>

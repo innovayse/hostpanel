@@ -93,7 +93,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     private WebApplicationFactory<Program> CrashingHost(
         CapturingLogger<RequestMyServicePlanChangeHandler> logger, Func<ChangeTracker, bool> alsoRefuses) =>
         FailingSaveHost
-            .Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), tracker => LinksTheInvoice(tracker) || alsoRefuses(tracker))
+            .Create(factory, new ManualTimeProvider(TestMoments.Seeded), tracker => LinksTheInvoice(tracker) || alsoRefuses(tracker))
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
                 services.AddSingleton<ILogger<RequestMyServicePlanChangeHandler>>(logger)));
 
@@ -502,7 +502,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     {
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-crash");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
-        using var host = FailingSaveHost.Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), LinksTheInvoice);
+        using var host = FailingSaveHost.Create(factory, new ManualTimeProvider(TestMoments.Seeded), LinksTheInvoice);
         using var crashing = host.CreateClient();
         crashing.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
 
@@ -558,7 +558,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var logger = new CapturingLogger<RequestMyServicePlanChangeHandler>();
 
         using var host = FailingSaveHost
-            .Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), tracker => LinksAfterTheInvoiceIsGone(tracker, clientId))
+            .Create(factory, new ManualTimeProvider(TestMoments.Seeded), tracker => LinksAfterTheInvoiceIsGone(tracker, clientId))
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
                 services.AddSingleton<ILogger<RequestMyServicePlanChangeHandler>>(logger)));
         using var crashing = host.CreateClient();
@@ -618,6 +618,6 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.AsNoTracking().FirstAsync(i => i.Id == invoiceId);
-        invoice.DueDate.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(21), TimeSpan.FromMinutes(10));
+        invoice.DueDate.Should().BeCloseTo(TestMoments.Present().AddDays(21), TimeSpan.FromMinutes(10));
     }
 }

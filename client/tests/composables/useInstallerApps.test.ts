@@ -4,33 +4,24 @@
  * @module tests/composables/useInstallerApps.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { InstallerAppCategory } from '~/constants/installerAppCategory'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useInstallerApps } from '~/composables/useInstallerApps'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 
-/**
- * Stubs the settings reader with a fixed set of values.
- *
- * @param values Setting key to value.
- */
-const stubSettings = (values: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('useInstallerApps', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('reads the count as the operator wrote it', () => {
-    stubSettings({ [PortalSettingKey.InstallerAppCount]: '150+' })
+  it('reads the count as the operator wrote it', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.InstallerAppCount]: '150+' })
 
     expect(useInstallerApps().value.count).toBe('150+')
   })
 
-  it('has an empty count when unset, but still every category', () => {
-    stubSettings({})
+  it('has an empty count when unset, but still every category', async () => {
+    await loadPortalSettings(replies)
 
     const apps = useInstallerApps().value
 

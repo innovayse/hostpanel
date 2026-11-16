@@ -8,7 +8,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 /// has claimed its lines but recorded nothing yet. Top-level and public so Wolverine's generated handler code can name it;
 /// the probe is static because the registrar is scoped and a fresh instance serves every handler.
 /// </summary>
-public sealed class ProbingRegistrar : TestRegistrar
+/// <param name="time">The clock of the host the registrar answers for.</param>
+public sealed class ProbingRegistrar(TimeProvider time) : TestRegistrar(time)
 {
     /// <summary>What the running test does while the registration call is in flight; set by the test before it dispatches.</summary>
     public static Func<Task>? Probe { get; set; }

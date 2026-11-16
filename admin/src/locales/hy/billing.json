@@ -103,15 +103,14 @@
   "billableItems": {
     "billableItems": "Վճարվող դիրքեր",
     "manageUninvoicedAndRecurringCharges": "Չհաշվարկված և կրկնվող գանձումների կառավարում",
-    "searchDescription": "Որոնում ըստ նկարագրության",
+    "searchItems": "Որոնում ըստ նկարագրության կամ համարի",
     "lengthRecordsFound": "Գտնվել է գրառում՝ {length}",
     "invoiced": "Հաշվարկված",
     "typeOneTime": "Միանվագ",
     "typeRecurring": "Կրկնվող",
     "noItemsFound": "Դիրքեր չեն գտնվել։",
-    "uninvoiced": "Չհաշվարկված",
-    "activeRecurring": "Ակտիվ կրկնվող",
-    "completedRecurring": "Ավարտված կրկնվող",
+    "noItemsMatchYourFilters": "Ֆիլտրերին համապատասխան դիրքեր չկան։",
+    "clearFilters": "Մաքրել ֆիլտրերը",
     "deleteItems": "Ջնջել հաշվեգրվող կետերը",
     "deleteItemsMessage": "Ջնջե՞լ ընտրված {count} հաշվեգրվող կետը։ Այս գործողությունը հնարավոր չէ չեղարկել։ | Ջնջե՞լ ընտրված {count} հաշվեգրվող կետերը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
     "itemsDeleted": "Վճարովի կետերը ջնջվեցին։"
@@ -131,13 +130,13 @@
     "gatewayTransactionLog": "Դարպասի գործարքների մատյան",
     "viewPaymentGatewayTransactionLogs": "Վճարային դարպասների գործարքների մատյանների դիտում",
     "debugData": "Վրիպազերծման տվյալներ",
-    "searchInDebugData": "Որոնում վրիպազերծման տվյալներում",
     "gateway": "Դարպաս",
     "result": "Արդյունք",
     "payment": "Վճարում",
     "refund": "Վերադարձ",
     "credit": "Կրեդիտ",
-    "pending": "Սպասվում է"
+    "pending": "Սպասվում է",
+    "searchPlaceholder": "Որոնել դարպասով կամ վրիպազերծման տվյալներով"
   },
   "renewals": {
     "heading": "Առաջիկա երկարացումներ",
@@ -224,8 +223,6 @@
     "manageBillingInvoices": "Վճարման հաշիվների կառավարում",
     "due": "Վճարման ենթակա",
     "summaryHint": "{count} հաշիվ այս էջում | {count} հաշիվ այս էջում",
-    "dateFrom": "Ամսաթիվ սկսած",
-    "dateTo": "Ամսաթիվ մինչև",
     "dateRefunded": "Վերադարձի ամսաթիվ",
     "totalcountRecordsFoundShowingValue": "Գտնվել է գրառում՝ {totalCount}, ցուցադրված են {value}-{value2}",
     "markPaid": "Նշել որպես վճարված",
@@ -233,6 +230,7 @@
     "duplicateInvoice": "Կրկնօրինակել հաշիվը",
     "collections": "Բռնագանձում",
     "paymentPending": "Սպասում է վճարման",
+    "searchInvoices": "Որոնել ըստ հաշվի համարի կամ վճարման եղանակի",
     "deleteInvoice": "Ջնջել հաշիվը",
     "deleteInvoiceMessage": "Ջնջե՞լ №{id} հաշիվը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
     "deleteInvoices": "Ջնջել հաշիվները",
@@ -280,7 +278,8 @@
     "created": "Ստեղծվել է",
     "noQuotesFound": "Առաջարկներ չեն գտնվել։",
     "expired": "Ժամկետանց",
-    "valid": "Վավեր"
+    "valid": "Վավեր",
+    "searchQuotes": "Որոնել ըստ թեմայի կամ առաջարկի համարի"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Վճարային գործարքներ և գրառումներ",
@@ -296,7 +295,8 @@
     "paymentsReceived": "Ստացված վճարումներ",
     "paymentsSent": "Ուղարկված վճարումներ",
     "deleteTransaction": "Ջնջել գործարքը",
-    "deleteTransactionMessage": "Ջնջե՞լ №{id} գործարքը։ Այս գործողությունը հնարավոր չէ չեղարկել։"
+    "deleteTransactionMessage": "Ջնջե՞լ №{id} գործարքը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
+    "searchTransactions": "Որոնել ըստ նկարագրության, հղման կամ վճարման եղանակի"
   },
   "invoiceItems": {
     "removeItem": "Հեռացնել տողը",
@@ -368,9 +368,7 @@
     "voidedAt": "Չեղարկվել է",
     "empty": "Կրեդիտ-նոտաներ չեն գտնվել։",
     "emptyForInvoice": "Այս հաշիվ-ապրանքագրի գծով կրեդիտ-նոտա չի տրվել։",
-    "allStatuses": "Բոլոր կարգավիճակները",
-    "statusFilter": "Կարգավիճակ",
-    "statusFilterPlaceholder": "Զտել ըստ կարգավիճակի",
+    "searchCreditNotes": "Որոնել ըստ համարի, պատճառի, վերադարձի հղման կամ նույնացուցիչի",
     "status": {
       "Draft": "Սևագիր",
       "Issued": "Տրված",

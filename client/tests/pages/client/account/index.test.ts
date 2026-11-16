@@ -14,7 +14,10 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { stubRoute } from '~/tests/helpers/runtimeStubs'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { useClientStore } from '~/stores/client'
@@ -22,16 +25,6 @@ import { AccountTab } from '~/types/accounttab'
 import { Permission } from '~/types/permission'
 
 const { default: AccountPage } = await import('~/pages/client/account/index.vue')
-
-/** The BFF paths the page reads. */
-const PATHS = {
-  me: '/api/portal/client/me',
-  countries: '/api/portal/public/countries',
-  gatewayMethods: '/api/portal/order/payment-methods',
-  users: '/api/portal/client/users',
-  contacts: '/api/portal/client/contacts',
-  emails: '/api/portal/client/emails',
-} as const
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -74,12 +67,12 @@ const reads = (path: string): number => requestsTo(stub.requests, path).length
 const mountAccountPage = async (permissions: number, query: Record<string, string> = {}): Promise<VueWrapper> => {
   const person = makeClientUser({ permissions })
   stub = await startTransport(routeTable({
-    [`GET ${PATHS.me}`]: { body: person },
-    [`GET ${PATHS.countries}`]: { body: [] },
-    [`GET ${PATHS.gatewayMethods}`]: { body: [] },
-    [`GET ${PATHS.users}`]: { body: [] },
-    [`GET ${PATHS.contacts}`]: { body: [] },
-    [`GET ${PATHS.emails}`]: { body: { items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 } },
+    [readOf(AccountEndpoint.Me)]: { body: person },
+    [readOf(CatalogPath.Countries)]: { body: [] },
+    [readOf(BillingEndpoint.OrderPaymentMethods)]: { body: [] },
+    [readOf(AccountEndpoint.Users)]: { body: [] },
+    [readOf(AccountEndpoint.Contacts)]: { body: [] },
+    [readOf(AccountEndpoint.Emails)]: { body: { items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 } },
   }))
   stubRoute({ query })
   const pinia = createPinia()
@@ -117,7 +110,16 @@ describe('client account page', () => {
   it('loads the profile and everything the tabs read', async () => {
     await mountAccountPage(Permission.All)
 
-    for (const path of Object.values(PATHS)) {
+    const paths = [
+      AccountEndpoint.Me,
+      CatalogPath.Countries,
+      BillingEndpoint.OrderPaymentMethods,
+      AccountEndpoint.Users,
+      AccountEndpoint.Contacts,
+      AccountEndpoint.Emails,
+    ]
+
+    for (const path of paths) {
       expect(reads(path)).toBe(1)
     }
   })

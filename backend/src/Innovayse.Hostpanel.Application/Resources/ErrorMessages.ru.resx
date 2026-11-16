@@ -1495,6 +1495,15 @@
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>Налоговая ставка должна быть от 0 до 100 процентов.</value>
   </data>
+  <data name="VAT_RATE_NOT_FOUND" xml:space="preserve">
+    <value>Такой ставки НДС не существует.</value>
+  </data>
+  <data name="VAT_RATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Ставка НДС для этой страны, вида и даты начала уже существует.</value>
+  </data>
+  <data name="VAT_RATE_INVALID" xml:space="preserve">
+    <value>Ставка НДС должна быть от 0 до 100 процентов.</value>
+  </data>
   <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
     <value>Этот заказ не ожидает проверки на мошенничество.</value>
   </data>

@@ -37,9 +37,9 @@ There is no admin screen to create or edit departments yet. The API has endpoint
 
 Go to **Support → Support Tickets**. Subtitle: "Manage all client support requests."
 
-**Filters:** All Active Tickets, Flagged, Open, Awaiting Reply, Closed.
+**Filters:** the Filters button narrows the list by Status (Open, Awaiting Reply, Closed), Priority (Low, Medium, High), Department and Flag (flagged tickets only). Each applied filter shows as a chip you can remove, and Clear all removes them at once.
 
-**Search:** by ticket subject.
+**Search:** by ticket subject. The search, the filters and the page stay in the address, so a link or a reload opens the same list. The same search and the Status, Priority and Department filters are on the Tickets tab of a client's profile.
 
 **Columns:** Subject, Department, Requestor, Status, Last Reply.
 
@@ -136,6 +136,10 @@ Go to **Reports** and select the report you need:
 | Ticket Feedback Scores | Average rating per staff member for a date range |
 | Ticket Feedback Comments | Individual feedback comments submitted by clients |
 | Support Ticket Replies | Breakdown of tickets handled per admin for a selected month |
+
+## Email campaigns
+
+**Support → Email campaigns** lists the campaigns with their status, send times and delivery counters, newest first. Type part of a subject in the search box to find a campaign. The **Filters** button narrows the list by status (draft, scheduled, sending or sent); an applied filter shows as a chip you can remove. The list is paged, 20 campaigns to a page, and the search, the filter and the page stay in the address. Search treats `%` and `_` as ordinary characters.
 
 ## What is not built in
 

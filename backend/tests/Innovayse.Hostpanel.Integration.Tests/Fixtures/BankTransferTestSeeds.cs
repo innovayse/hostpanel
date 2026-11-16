@@ -142,7 +142,7 @@ public static class BankTransferTestSeeds
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var order = Order.Create(
-            $"ORD-{Guid.NewGuid():N}"[..12], clientId, "bank_transfer", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+            $"ORD-{Guid.NewGuid():N}"[..12], clientId, "bank_transfer", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         context.Orders.Add(order);
         await context.SaveChangesAsync(CancellationToken.None);
         order.LinkInvoice(invoiceId);

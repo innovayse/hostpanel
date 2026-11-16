@@ -120,7 +120,7 @@ public sealed class InvoiceTaxAtIssueTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.BillableItems.Add(BillableItem.Create(
-            clientId, "Consulting", 100m, "USD", BillableItemType.OneTime, recurringPeriod: null, nextDueDate: DateTimeOffset.UtcNow.AddDays(-1)));
+            clientId, "Consulting", 100m, "USD", BillableItemType.OneTime, recurringPeriod: null, nextDueDate: TestMoments.Seeded.AddDays(-1)));
         await context.SaveChangesAsync(CancellationToken.None);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 

@@ -17,9 +17,10 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     [Fact]
     public async Task Schedule_AtAFutureMoment_QueuesTheCampaign()
     {
-        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
-        var at = DateTimeOffset.UtcNow.AddDays(2);
+        var at = host.Clock.GetUtcNow().AddDays(2);
 
         var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at });
 
@@ -34,16 +35,16 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     [Fact]
     public async Task Schedule_WithoutAMoment_IsDueNow()
     {
-        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
-        var before = DateTimeOffset.UtcNow;
 
         var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = (DateTimeOffset?)null });
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         var stored = await client.GetFromJsonAsync<JsonElement>($"{CampaignTestSeeds.Route}/{id}");
         stored.GetProperty("status").GetString().Should().Be("Scheduled");
-        stored.GetProperty("scheduledAt").GetDateTimeOffset().Should().BeOnOrAfter(before).And.BeOnOrBefore(DateTimeOffset.UtcNow);
+        stored.GetProperty("scheduledAt").GetDateTimeOffset().Should().Be(host.Clock.GetUtcNow());
     }
 
     /// <summary>A moment that has passed is refused with 400 and the in-the-past code; the draft stays a draft.</summary>
@@ -51,10 +52,11 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     [Fact]
     public async Task Schedule_AtAPastMoment_RefusesWithSchedulePastCode()
     {
-        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
 
-        var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = DateTimeOffset.UtcNow.AddDays(-1) });
+        var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = host.Clock.GetUtcNow().AddDays(-1) });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await StorefrontContentTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CAMPAIGN_SCHEDULE_IN_PAST);
@@ -67,10 +69,11 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     [Fact]
     public async Task Schedule_WithoutSegment_RefusesWithNoSegmentCode()
     {
-        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client, segments: []);
 
-        var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = DateTimeOffset.UtcNow.AddDays(1) });
+        var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = host.Clock.GetUtcNow().AddDays(1) });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await StorefrontContentTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CAMPAIGN_NO_SEGMENT);
@@ -94,11 +97,12 @@ public sealed class ScheduleEmailCampaignTests(IntegrationTestFactory factory) :
     [Fact]
     public async Task Schedule_AlreadyScheduled_RefusesWithNotDraftCode()
     {
-        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
         await CampaignTestSeeds.ScheduleAsync(client, id);
 
-        var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = DateTimeOffset.UtcNow.AddDays(3) });
+        var response = await client.PostAsJsonAsync($"{CampaignTestSeeds.Route}/{id}/schedule", new { at = host.Clock.GetUtcNow().AddDays(3) });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await StorefrontContentTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CAMPAIGN_NOT_DRAFT);

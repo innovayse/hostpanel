@@ -1495,6 +1495,15 @@
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>Հարկի դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
   </data>
+  <data name="VAT_RATE_NOT_FOUND" xml:space="preserve">
+    <value>Այդպիսի ԱԱՀ դրույք գոյություն չունի։</value>
+  </data>
+  <data name="VAT_RATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Այս երկրի, տեսակի և սկզբի ամսաթվի համար ԱԱՀ դրույք արդեն կա։</value>
+  </data>
+  <data name="VAT_RATE_INVALID" xml:space="preserve">
+    <value>ԱԱՀ դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
   <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
     <value>Այս պատվերը չի սպասում խարդախության ստուգման։</value>
   </data>

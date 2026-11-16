@@ -122,7 +122,7 @@
             <UiText size="lg" tone="muted" class="mb-8 max-w-[75ch] [.tpl-classic_&]:text-classic-muted">{{ $t('products.help.subtitle') }}</UiText>
             <UiStack direction="row" wrap justify="center" gap="md">
               <UiButton :to="compareHref" size="lg" data-testid="product-compare-link">{{ $t('products.help.compare') }}</UiButton>
-              <UiButton :to="localePath('/contact')" :variant="UiButtonVariant.Outline" size="lg" data-testid="product-contact">
+              <UiButton :to="localePath(SITE_CONTACT_PATH)" :variant="UiButtonVariant.Outline" size="lg" data-testid="product-contact">
                 {{ $t('products.help.contact') }}
               </UiButton>
             </UiStack>
@@ -147,12 +147,12 @@
  */
 import { CheckCircle } from 'lucide-vue-next'
 import { PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
+import { SITE_CONTACT_PATH, SITE_HOSTING_PATH, SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
 import type { ComparisonRow } from '~/types/comparisonrow'
 import type { PricingCycle } from '~/types/pricingcycle'
 import type { ProductDetail } from '~/types/productdetail'
 import type { ProductPlan } from '~/types/productplan'
 import type { SegmentedOption } from '~/types/segmentedoption'
-import { HOSTING_FAMILY_URL } from '~/utils/catalogGroups'
 import { isComparable } from '~/utils/comparisonRows'
 import { recommendedPlanId } from '~/utils/productFamilies'
 import { revealDelay } from '~/utils/reveal'
@@ -232,9 +232,9 @@ const compareHref = computed(() => {
   if (comparable.value) {
     return `#${COMPARE_PLANS_ANCHOR}`
   }
-  if (props.product.learnMoreUrl === HOSTING_FAMILY_URL) {
-    return `${localePath(HOSTING_FAMILY_URL)}#${COMPARE_PLANS_ANCHOR}`
+  if (props.product.learnMoreUrl === SITE_HOSTING_PATH) {
+    return `${localePath(SITE_HOSTING_PATH)}#${COMPARE_PLANS_ANCHOR}`
   }
-  return localePath('/products')
+  return localePath(SITE_PRODUCTS_PATH)
 })
 </script>

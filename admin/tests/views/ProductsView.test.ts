@@ -1,12 +1,15 @@
 /**
- * Smoke tests for ProductsView: the products table with the base-currency prices and the "+other
- * currencies" hint, the create and edit dialogs, the specification dialog, and save at network level.
+ * Smoke tests for ProductsView: the paged products table with the base-currency prices and the "+other
+ * currencies" hint, the search, group, type and status filters and the page kept in the address and sent to the API,
+ * the create and edit dialogs, the specification dialog, and save at network level.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import ProductsView from '@/views/ProductsView.vue'
 import type { CurrencyDto } from '@/types/currency'
 import type { Product, ProductGroup } from '@/types/product'
 import { invalid, json, problem } from '../helpers/fetch'
+import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted, mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 
@@ -43,12 +46,31 @@ const plan: Product = {
   sku: null,
   metadata: null,
   gracePeriodDays: 7,
+  isDigitalService: false,
   trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 }
 
+/** The address the screen is registered under. */
+const PATH = '/settings/products'
+
+/**
+ * Wraps rows in the page shape the list endpoint answers with.
+ *
+ * @param items - The rows of the page.
+ * @param totalCount - Matches across all pages; the page length by default.
+ * @returns The JSON body.
+ */
+const page = (items: unknown[], totalCount = items.length) => ({
+  items,
+  pageNumber: 1,
+  pageSize: 20,
+  totalCount,
+  totalPages: Math.max(1, Math.ceil(totalCount / 20)),
+})
+
 /** Answers for everything the screen and its dialogs load. */
 const routes = {
-  'GET /products': () => json([plan, { ...plan, id: 2, name: 'Hidden one', status: 'Inactive', slug: null, type: 'Vps' }]),
+  'GET /admin/products': () => json(page([plan, { ...plan, id: 2, name: 'Hidden one', status: 'Inactive', slug: null, type: 'Vps' }])),
   'GET /products/groups': () => json(groups),
   'GET /admin/currencies': () => json([usd, eur]),
   'GET /admin/server-groups': () => json([]),
@@ -98,7 +120,7 @@ describe('ProductsView', () => {
   })
 
   it('labels a digital product with its type', async () => {
-    stubRouteTable({ ...routes, 'GET /products': () => json([{ ...plan, type: 'Digital' }]) })
+    stubRouteTable({ ...routes, 'GET /admin/products': () => json(page([{ ...plan, type: 'Digital' }])) })
     const { wrapper } = await mountScreen(ProductsView)
 
     expect(wrapper.get('[data-testid="product-row-1"]').text()).toContain('Digital')
@@ -221,7 +243,7 @@ describe('ProductsView', () => {
   })
 
   it('says so when there are no products', async () => {
-    stubRouteTable({ ...routes, 'GET /products': () => json([]) })
+    stubRouteTable({ ...routes, 'GET /admin/products': () => json(page([])) })
     const { wrapper } = await mountScreen(ProductsView)
 
     expect(wrapper.text()).toContain('No products found')
@@ -231,9 +253,9 @@ describe('ProductsView', () => {
     let calls = 0
     stubRouteTable({
       ...routes,
-      'GET /products': () => {
+      'GET /admin/products': () => {
         calls += 1
-        return calls === 1 ? problem('Not allowed.', 403) : json([])
+        return calls === 1 ? problem('Not allowed.', 403) : json(page([]))
       },
     })
     const { wrapper } = await mountScreen(ProductsView)
@@ -246,5 +268,123 @@ describe('ProductsView', () => {
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('No products found')
     })
+  })
+})
+
+describe('ProductsView list', () => {
+  /**
+   * Mounts the list at an address and waits for its first load.
+   *
+   * @param url - The address to open, with its query.
+   * @returns The wrapper, the router and the stubbed fetch.
+   */
+  const mountListAt = async (url: string = PATH) => {
+    const mock = stubRouteTable(routes)
+    const screen = await mountRouted(ProductsView, PATH, url)
+    await vi.waitFor(() => {
+      expect(screen.wrapper.find('[data-testid="product-row-1"]').exists()).toBe(true)
+    })
+    return { ...screen, mock }
+  }
+
+  /**
+   * Lists the list requests the mock has seen.
+   *
+   * @param mock - The stubbed fetch.
+   * @returns The requests that went to the paged list endpoint.
+   */
+  const listRequests = (mock: ReturnType<typeof vi.fn>): string[] =>
+    requestsOf(mock).filter((request) => request.startsWith('GET /admin/products?'))
+
+  it('restores the search, the group, the type, the status and the page from the address and sends them together', async () => {
+    const { wrapper, mock } = await mountListAt(`${PATH}?search=starter&group=5&type=Vps&status=Active&page=2`)
+
+    expect(listRequests(mock)[0]).toBe('GET /admin/products?page=2&pageSize=20&search=starter&groupId=5&type=Vps&status=Active')
+    expect((wrapper.get('[data-testid="products-search"]').element as HTMLInputElement).value).toBe('starter')
+    await vi.waitFor(() => {
+      expect(wrapper.get('[data-testid="filter-chip-group"]').text()).toContain('Shared')
+    })
+    expect(wrapper.get('[data-testid="filter-chip-type"]').text()).toContain('VPS')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Active')
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('3')
+  })
+
+  it('does not send a group, a type or a status the address holds that is not a known value', async () => {
+    const { mock } = await mountListAt(`${PATH}?group=abc&type=Nonsense&status=Sideways`)
+
+    expect(listRequests(mock)[0]).toBe('GET /admin/products?page=1&pageSize=20')
+  })
+
+  it('puts the typed search in the address and sends it after the pause', async () => {
+    const { wrapper, router, mock } = await mountListAt()
+
+    await wrapper.get('[data-testid="products-search"]').setValue('start')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ search: 'start' })
+    expect(listRequests(mock).at(-1)).toBe('GET /admin/products?page=1&pageSize=20&search=start')
+  })
+
+  it('sends the group, type and status picked in the filter dialog on Apply', async () => {
+    const { wrapper, router, mock } = await mountListAt()
+
+    await applyListFilter(wrapper, { 'products-filter-group': '5', 'products-filter-type': 'Digital', 'products-filter-status': 'Inactive' })
+
+    expect(router.currentRoute.value.query).toEqual({ group: '5', type: 'Digital', status: 'Inactive' })
+    expect(listRequests(mock).at(-1)).toBe('GET /admin/products?page=1&pageSize=20&groupId=5&type=Digital&status=Inactive')
+  })
+
+  it('removes a filter from the address and reloads when its chip is removed', async () => {
+    const { wrapper, router, mock } = await mountListAt(`${PATH}?type=Vps&status=Active`)
+
+    await wrapper.get('[data-testid="filter-chip-remove-type"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ status: 'Active' })
+    expect(listRequests(mock).at(-1)).toBe('GET /admin/products?page=1&pageSize=20&status=Active')
+  })
+
+  it('keeps the chosen page in the address and reads it', async () => {
+    const mock = stubRouteTable({ ...routes, 'GET /admin/products': () => json(page([plan], 45)) })
+    const { wrapper, router } = await mountRouted(ProductsView, PATH, PATH)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="products-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+    expect(requestsOf(mock).filter((request) => request.startsWith('GET /admin/products?')).at(-1)).toBe('GET /admin/products?page=2&pageSize=20')
+    expect(wrapper.text()).toContain('Products: 45')
+  })
+
+  it('says so when no product matches the filters and offers to clear them', async () => {
+    stubRouteTable({ ...routes, 'GET /admin/products': () => json(page([])) })
+    const { wrapper, router } = await mountRouted(ProductsView, PATH, `${PATH}?status=Inactive`)
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="products-empty"]').text()).toContain('No products match your filters')
+    await wrapper.get('[data-testid="products-clear-empty"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({})
+  })
+
+  it('reads the page the address names again after a product is saved', async () => {
+    const mock = stubRouteTable({ ...routes, 'POST /products': () => json(3) })
+    const { wrapper } = await mountRouted(ProductsView, PATH, `${PATH}?status=Active`)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="products-create"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-name"]').setValue('New plan')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+    await vi.waitFor(() => {
+      expect(wrapper.find('[data-testid="product-form"]').exists()).toBe(false)
+    })
+    await flushPromises()
+
+    const reads = requestsOf(mock).filter((request) => request.startsWith('GET /admin/products?'))
+    expect(reads).toHaveLength(2)
+    expect(reads.at(-1)).toBe('GET /admin/products?page=1&pageSize=20&status=Active')
   })
 })

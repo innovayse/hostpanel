@@ -26,24 +26,24 @@ public sealed class EmailLogsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a page of email log entries, newest first.</summary>
-    /// <param name="query">The requested page and page size.</param>
+    /// <summary>Returns a page of email log entries, narrowed by the search and filters, newest first.</summary>
+    /// <param name="query">The page, page size, search, outcome and period to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the page; 401 without a session; 403 for a caller who is not an admin; 400 when the body, query or route fails validation; 429 when the rate limit is hit.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<EmailLogDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedList<EmailLogDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ListAsync([FromQuery] ListEmailLogsQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<EmailLogDto>>>(query, ct);
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<EmailLogDto>>>(query, ct);
         return HandleResult(outcome);
     }
 
     /// <summary>Returns a page of email logs sent to a specific client.</summary>
     /// <param name="clientId">Client primary key; wins over any id in the query string.</param>
-    /// <param name="query">The requested page and page size.</param>
+    /// <param name="query">The page, page size, search, outcome and period to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the page, empty when the client id names nobody; 401 without a session; 403 for a caller who is not an admin; 400 when the body, query or route fails validation; 429 when the rate limit is hit.</returns>
     [HttpGet("client/{clientId:int}")]

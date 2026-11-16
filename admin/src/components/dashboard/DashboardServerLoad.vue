@@ -11,14 +11,14 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiProgress from '@/components/ui/UiProgress.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { serverLoadPercent } from '@/lib/dashboardOverview'
-import type { ServerDto } from '@/types/server'
+import { serverLoadPercent } from '@/lib/servers'
+import type { ServerOptionDto } from '@/types/server'
 import { UiCardRadius } from '@/utils/ui/card'
 
 /** One bar of the card. */
 interface ServerLoadRow {
   /** The server. */
-  server: ServerDto
+  server: ServerOptionDto
   /** Share of its capacity in use, in percent. */
   percent: number
 }
@@ -26,7 +26,7 @@ interface ServerLoadRow {
 /** Props for DashboardServerLoad. */
 const props = defineProps<{
   /** Servers with their capacity and last test result. */
-  servers: ServerDto[]
+  servers: ServerOptionDto[]
   /** Whether the servers are still loading. */
   loading: boolean
 }>()

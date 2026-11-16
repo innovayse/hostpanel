@@ -25,6 +25,7 @@ import { useCurrencyStore } from '~/stores/currency'
 import { PricingCycle } from '~/types/pricingcycle'
 import { SeoPageType } from '~/types/seopagetype'
 import { TemplateSlot } from '~/types/templateslot'
+import { SITE_HOSTING_PATH, siteConfigurePath } from '~/constants/siteRoutes'
 
 /** Translation helpers and the active language. */
 const { t, locale } = useI18n()
@@ -45,7 +46,7 @@ useSeo({
   description: t('seo.hosting.description', { site: siteName.value }),
   keywords: t('seo.hosting.keywords', { site: siteName.value }),
   type: SeoPageType.Website,
-  path: '/hosting'
+  path: SITE_HOSTING_PATH
 })
 
 /** The payer's currency and the currencies prices can be shown in. */
@@ -68,7 +69,7 @@ await Promise.all([
 ])
 
 /** The hosting plans as the storefront cards, each linking to its configure page. */
-const plans = computed(() => catalogStore.planCards(id => localePath(`/configure/${id}`), catalogStore.featuresFor(HOSTING_GROUP_ID)))
+const plans = computed(() => catalogStore.planCards(id => localePath(siteConfigurePath(id)), catalogStore.featuresFor(HOSTING_GROUP_ID)))
 /** The billing cycle the visitor chose; the template reports changes through `update:cycle`. */
 const cycle = ref(PricingCycle.Monthly)
 

@@ -270,7 +270,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
         var sku = ProductsTestSeeds.UniqueSku();
         var race = new SkuRaceSaveInterceptor(sku.ToUpperInvariant());
         using var host = SkuRaceHost.Create(factory, race);
-        var client = await SkuRaceHost.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
 
         var response = await client.PostAsJsonAsync("/api/products", DigitalBody(groupId, "Loser", sku));
@@ -360,4 +360,62 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
             metadata,
             gracePeriodDays,
         };
+
+    /// <summary>
+    /// A product created with <c>isHidden</c> is stored <see cref="ProductStatus.Inactive"/> and left off the
+    /// anonymous public catalogue; one created without it stays active and listed.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_Hidden_IsInactiveAndOffThePublicCatalogue()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var hidden = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Hidden", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m, isHidden = true,
+        });
+        var visible = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Visible", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m,
+        });
+        hidden.StatusCode.Should().Be(HttpStatusCode.Created);
+        var hiddenId = await hidden.Content.ReadFromJsonAsync<int>();
+        var visibleId = await visible.Content.ReadFromJsonAsync<int>();
+
+        (await ProductsTestSeeds.GetProductAsync(client, hiddenId)).GetProperty("status").GetString()
+            .Should().Be(nameof(ProductStatus.Inactive));
+        (await ProductsTestSeeds.GetProductAsync(client, visibleId)).GetProperty("status").GetString()
+            .Should().Be(nameof(ProductStatus.Active));
+
+        using var body = JsonDocument.Parse(
+            await factory.CreateClient().GetStringAsync($"/api/public/products?groupId={groupId}"));
+        body.RootElement.EnumerateArray().Select(p => p.GetProperty("id").GetInt32())
+            .Should().Contain(visibleId).And.NotContain(hiddenId);
+    }
+
+    /// <summary>A product created with <c>isDigitalService</c> keeps the VAT electronic service flag; one created without it is not one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_DigitalService_StoresTheFlagAndDefaultsToOff()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var flagged = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Flagged", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m, isDigitalService = true,
+        });
+        var plain = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Plain", type = ProductType.SharedHosting, monthlyPrice = 1m, annualPrice = 10m,
+        });
+
+        flagged.StatusCode.Should().Be(HttpStatusCode.Created);
+        (await ProductsTestSeeds.GetProductAsync(client, await flagged.Content.ReadFromJsonAsync<int>()))
+            .GetProperty("isDigitalService").GetBoolean().Should().BeTrue();
+        (await ProductsTestSeeds.GetProductAsync(client, await plain.Content.ReadFromJsonAsync<int>()))
+            .GetProperty("isDigitalService").GetBoolean().Should().BeFalse();
+    }
 }

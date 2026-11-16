@@ -29,6 +29,7 @@ import { tldOf } from '~/utils/domainTld'
 import { detailTitle } from '~/utils/seoTitle'
 import { formatMoney } from '~/utils/formatMoney'
 import { cycleAmount } from '~/utils/productFamilies'
+import { SITE_CHECKOUT_PATH, siteBundlePath } from '~/constants/siteRoutes'
 
 /**
  * Wires the bundle page. Call it once at the top of the page's `<script setup>` and `await` it: it
@@ -223,13 +224,13 @@ export const useBundlePage = async (id: number) => {
       return
     }
     cart.startBundle(toCartBundle(current), bundleCartItems(current, rows.value, domainLine.value, currency))
-    navigateTo(localePath('/checkout'))
+    navigateTo(localePath(SITE_CHECKOUT_PATH))
   }
 
   useSeo(() => ({
     title: detailTitle(t('bundles.title'), bundle.value?.name ?? siteName.value),
     description: bundle.value?.description ?? t('bundles.subtitle'),
-    path: `/bundles/${id}`,
+    path: siteBundlePath(id),
   }))
 
   return {

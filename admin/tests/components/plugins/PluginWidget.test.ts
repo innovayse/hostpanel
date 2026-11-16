@@ -87,7 +87,11 @@ describe('PluginWidget', () => {
     const wrapper = mountWithBody(Never)
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="plugin-widget-loading-sites-usage"]').exists()).toBe(true)
+    const region = wrapper.get('[data-testid="plugin-widget-loading-sites-usage"]')
+
+    expect(region.attributes('aria-busy')).toBe('true')
+    expect(region.attributes('aria-hidden')).toBeUndefined()
+    expect(region.findAll('[data-testid="ui-skeleton-bar"][aria-hidden="true"]')).toHaveLength(2)
   })
 
   it('replaces a throwing body with a note and keeps the title', async () => {

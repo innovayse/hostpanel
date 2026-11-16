@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { ActivityEventType } from '@/types/activityevent'
 import { LogoutScope } from '@/types/auth'
-import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
+import { BillableItemInvoiced, BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { ClientStatus, ExternalAccountField } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { CurrencyCode } from '@/types/currency'
@@ -18,7 +18,6 @@ import { InvoiceOpenAction, InvoiceStatus } from '@/types/invoice'
 import { MigrationEntityType } from '@/types/migration'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { BillingCycle, ServiceStatus } from '@/types/service'
-import { ServerRefresh } from '@/types/server'
 import { PaymentMethod } from '@/types/transaction'
 import { BrandingImageKind } from '@/types/upload'
 
@@ -66,6 +65,7 @@ describe('billing value sets', () => {
     expect(PaymentGateway.BankTransfer).toBe('BankTransfer')
     expect(Object.values(BillingCycle)).toEqual(['Monthly', 'Quarterly', 'SemiAnnual', 'Annual', 'Biennial'])
     expect(Object.values(BillableItemType)).toEqual(['OneTime', 'Recurring'])
+    expect(Object.values(BillableItemInvoiced)).toEqual(['true', 'false'])
     expect(Object.values(RecurringPeriod)).toEqual(['weekly', 'monthly', 'quarterly', 'annually'])
     expect(Object.values(DnsRecordType)).toEqual(['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV'])
     expect(Object.values(CurrencyCode)).toEqual(['AMD', 'USD', 'EUR', 'GBP', 'RUB'])
@@ -79,7 +79,6 @@ describe('screen value sets', () => {
     expect(Object.values(LogoutScope)).toEqual(['this', 'all'])
     expect(Object.values(IntegrationFieldType)).toEqual(['Text', 'Password', 'Secret', 'Select', 'TextArea', 'Toggle', 'Url', 'Number'])
     expect(Object.values(BrandingImageKind)).toEqual(['logo', 'logodark', 'logomark', 'favicon'])
-    expect(Object.values(ServerRefresh)).toEqual(['servers', 'both'])
     expect(MigrationEntityType.TicketReplies).toBe('TicketReplies')
     expect(Object.values(MigrationEntityType)).toHaveLength(15)
   })

@@ -20,7 +20,7 @@ export const useGatewayLogApi = () => {
   /**
    * Lists one page of the gateway log, newest first.
    *
-   * @param filters - Date range, gateway, debug text and result; empty values are not sent.
+   * @param filters - The search text, the period as bare days and the result; a member left out does not narrow.
    * @param page - Page number (1-based).
    * @param pageSize - Entries per page.
    * @returns One page of log entries.
@@ -30,10 +30,9 @@ export const useGatewayLogApi = () => {
       `/gateway-logs${buildQuery({
         page,
         pageSize,
-        from: filters.from === '' ? '' : `${filters.from}T00:00:00Z`,
-        to: filters.to === '' ? '' : `${filters.to}T23:59:59.999Z`,
-        gateway: filters.gateway,
-        debugData: filters.debugData,
+        search: filters.search,
+        from: filters.from,
+        to: filters.to,
         result: filters.result,
       })}`,
     )

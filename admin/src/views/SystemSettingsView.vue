@@ -21,7 +21,6 @@ import RawSettingsTable from '@/components/settings/RawSettingsTable.vue'
 import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsTabPanel from '@/components/settings/SettingsTabPanel.vue'
 import VersionLabel from '@/components/layout/VersionLabel.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
@@ -32,7 +31,6 @@ import { useRouteTab } from '@/composables/useRouteTab'
 import { AppRoute } from '@/lib/routes'
 import { DEFAULT_SETTINGS_TAB, SETTINGS_TABS, SettingsTab } from '@/lib/settingsTabs'
 import { useSettingsStore } from '@/stores/settings'
-import type { SettingSaveResult } from '@/types/setting'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
 const { t } = useI18n()
@@ -58,25 +56,10 @@ const tabItems = computed<UiTabItem[]>(() =>
   })),
 )
 
-/** True while the settings are read for the first time: the tab keeps its place as placeholders. */
+/** True while the settings are read for the first time: every card keeps its place with its fields as placeholders. */
 const initialLoading = computed<boolean>(() => store.loading && store.settings.length === 0)
 
 onMounted(store.fetchSettings)
-
-/**
- * Persists one setting for a card, which shows the outcome next to the saved control.
- *
- * It is returned rather than swallowed, because the caller has to know whether it may drop the
- * operator's text.
- *
- * @param id - Setting ID.
- * @param value - New value.
- * @returns Whether the value was stored, and the API's sentence when it was refused.
- */
-const onSave = async (id: number, value: string): Promise<SettingSaveResult> => {
-  const ok = await store.updateSetting(id, value)
-  return { saved: ok, error: ok ? null : store.actionError }
-}
 
 /**
  * Props a card needs beyond the settings list: only the branding card uploads files and saves them itself.
@@ -84,7 +67,7 @@ const onSave = async (id: number, value: string): Promise<SettingSaveResult> => 
  * @param card - The card about to render.
  * @returns The extra props of that card.
  */
-const extraPropsOf = (card: Component): Record<string, unknown> => (card === BrandingCard ? { save: onSave } : {})
+const extraPropsOf = (card: Component): Record<string, unknown> => (card === BrandingCard ? { save: store.saveSetting } : {})
 
 /**
  * Selects the tab the strip reports.
@@ -125,7 +108,7 @@ const onSelect = (value: string): void => {
           v-for="definition in SETTINGS_TABS"
           v-show="definition.tab === tab"
           :key="definition.tab"
-          :save="onSave"
+          :save="store.saveSetting"
           :loading="initialLoading"
           :data-testid="`settings-panel-${definition.tab}`"
         >
@@ -140,9 +123,7 @@ const onSelect = (value: string): void => {
             </UiStack>
             <RawSettingsTable :settings="store.settings" :loading="initialLoading" />
           </template>
-          <UiStack v-else-if="initialLoading" gap="none" data-testid="system-settings-loading">
-            <UiCard v-for="(card, index) in definition.cards" :key="index" loading :skeleton-lines="4" padding="md" class="mb-5" />
-          </UiStack>
+          <!-- The real cards also while the settings load: their fields draw as placeholders (the panel provides the flag) -->
           <template v-else>
             <component
               :is="card"

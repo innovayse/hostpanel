@@ -133,6 +133,9 @@
     "deleteRequest": "Ջնջել հայտը",
     "totalcountRequestValue": "Հայտեր՝ {totalCount}",
     "noCancellationRequestsFound": "Չեղարկման հայտեր չեն գտնվել",
+    "searchRequests": "Որոնում ըստ պատճառի կամ համարի",
+    "noRequestsMatchYourFilters": "Ֆիլտրերին համապատասխան չեղարկման հայտեր չկան",
+    "clearFilters": "Մաքրել ֆիլտրերը",
     "deleteCancellationRequest": "Ջնջել չեղարկման հայտը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս չեղարկման հայտը։",
     "requestDeleted": "Չեղարկման հայտը ջնջվեց։"
@@ -148,6 +151,9 @@
     "invoicedItems": "Հաշվարկված դիրքեր",
     "invoicedtotalcountItemValue": "Դիրքեր՝ {invoicedTotalCount}",
     "noInvoicedBillableItems": "Հաշվարկված վճարվող դիրքեր չկան։",
+    "searchItems": "Որոնում ըստ նկարագրության կամ համարի",
+    "noUninvoicedItemsMatchYourFilters": "Ֆիլտրերին համապատասխան չհաշվարկված վճարվող դիրքեր չկան։",
+    "noInvoicedItemsMatchYourFilters": "Ֆիլտրերին համապատասխան հաշվարկված վճարվող դիրքեր չկան։",
     "confirmInvoice": "Հաստատեք հաշվի դուրսգրումը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք անմիջապես հաշիվ դուրս գրել ընտրված դիրքերի համար։",
     "confirmDelete": "Հաստատեք ջնջումը",
@@ -230,7 +236,8 @@
       "recipientRejected": "Ստացողի հասցեն մերժվեց",
       "senderRejected": "Ուղարկողի հասցեն մերժվեց",
       "messageRejected": "Նամակը մերժվեց"
-    }
+    },
+    "searchEmails": "Որոնել նամակներում"
   },
   "clientInvoices": {
     "createInvoice": "+ Ստեղծել հաշիվ",
@@ -240,8 +247,6 @@
     "addItem": "+ Ավելացնել դիրք",
     "createInvoice2": "Ստեղծել հաշիվ",
     "allStatuses": "Բոլոր կարգավիճակները",
-    "from": "Սկսած",
-    "filter": "Ֆիլտր",
     "clientinvoicestotalInvoiceValue": "Հաշիվներ՝ {clientInvoicesTotal}",
     "deleteInvoice": "Ջնջել հաշիվը",
     "confirmDeleteInvoice": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} հաշիվ-ապրանքագիրը։",
@@ -256,11 +261,10 @@
   },
   "clientLog": {
     "activityLog": "Գործունեության մատյան",
-    "filterLog": "Մատյանի ֆիլտր",
-    "selectDate": "Ընտրեք ամսաթիվը",
     "logEntry": "Մատյանի գրառում",
     "user": "Օգտատեր",
-    "totalcountEntrValue": "Գրառումներ՝ {totalCount}"
+    "totalcountEntrValue": "Գրառումներ՝ {totalCount}",
+    "searchLog": "Որոնել գործունեության մատյանում"
   },
   "clientOpenTicket": {
     "ticketSubject": "Տոմսի թեմա",
@@ -301,7 +305,9 @@
     "clientquotestotalQuoteValue": "Առաջարկներ՝ {clientQuotesTotal}",
     "deleteQuote": "Ջնջել առաջարկը",
     "confirmDeleteQuote": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} առաջարկը։",
-    "quoteDeleted": "Առաջարկը ջնջվեց։"
+    "quoteDeleted": "Առաջարկը ջնջվեց։",
+    "noQuotesMatchYourFilters": "Ձեր զտիչներին համապատասխան առաջարկներ չկան",
+    "clearFilters": "Մաքրել զտիչները"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Ծառայություն №{id}՝ {productName}",
@@ -362,7 +368,10 @@
   "clientServicesList": {
     "nextDue": "Հաջորդ վճարում",
     "totalcountServiceValue": "Ծառայություններ՝ {totalCount}",
-    "noServicesFoundForThis": "Այս հաճախորդի համար ծառայություններ չեն գտնվել"
+    "noServicesFoundForThis": "Այս հաճախորդի համար ծառայություններ չեն գտնվել",
+    "searchServices": "Որոնում ըստ դոմենի, արտադրանքի կամ ID-ի",
+    "noServicesMatchYourFilters": "Ֆիլտրերին համապատասխան ծառայություններ չկան",
+    "clearFilters": "Մաքրել ֆիլտրերը"
   },
   "clientsList": {
     "manageYourClientAccounts": "Հաճախորդների հաշիվների կառավարում",
@@ -452,9 +461,10 @@
     "openedLastMonth": "Բացվել է անցյալ ամիս",
     "openedThisYear": "Բացվել է այս տարի",
     "openedLastYear": "Բացվել է անցյալ տարի",
-    "searchSubject": "Որոնում ըստ թեմայի՝",
     "dateOpened": "Բացման ամսաթիվ",
     "noDataAvailableInTable": "Աղյուսակում տվյալներ չկան",
+    "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",
+    "clearFilters": "Մաքրել ֆիլտրերը",
     "totalcountTicketValue": "Տոմսեր՝ {totalCount}"
   },
   "clientTransactions": {
@@ -466,7 +476,9 @@
     "deleteTransaction": "Ջնջել գործարքը",
     "confirmDeleteTransaction": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} գործարքը։",
     "transactionAdded": "Գործարքը ավելացվեց։",
-    "transactionDeleted": "Գործարքը ջնջվեց։"
+    "transactionDeleted": "Գործարքը ջնջվեց։",
+    "noTransactionsMatchYourFilters": "Ձեր զտիչներին համապատասխան գործարքներ չկան",
+    "clearFilters": "Մաքրել զտիչները"
   },
   "clientUsers": {
     "usersLength": "Օգտատերեր ({length})",
@@ -498,12 +510,6 @@
     "invitationSentTo": "Հրավերն ուղարկվել է {email}-ին",
     "never": "Երբեք"
   },
-  "domainRegistrations": {
-    "domainRegistrations": "Դոմեյնների գրանցումներ",
-    "viewAndManageClientDomain": "Հաճախորդների դոմեյնների գրանցումների դիտում և կառավարում",
-    "regPeriod": "Գրանցման ժամկետ",
-    "noDomainRegistrationsFound": "Դոմեյնների գրանցումներ չեն գտնվել"
-  },
   "manageAffiliates": {
     "manageAffiliates": "Գործընկերների կառավարում",
     "viewAndManageTheAffiliate": "Գործընկերային ծրագրի դիտում և կառավարում",
@@ -520,6 +526,7 @@
     "sendPasswordResetEmail": "Ուղարկել գաղտնաբառի վերականգնման նամակ",
     "totalcountUserValue": "Օգտատերեր՝ {totalCount}",
     "noUsersFound": "Օգտատերեր չեն գտնվել",
+    "noUsersMatchYourSearch": "Որոնմանը համապատասխան օգտատերեր չկան",
     "passwordResetEmailSent": "Գաղտնաբառի վերականգնման նամակը ուղարկվեց։",
     "never": "Երբեք",
     "userSaved": "Օգտատերը պահպանվեց։",

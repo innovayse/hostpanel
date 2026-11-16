@@ -36,7 +36,7 @@ public sealed class StartMyGatewayPaymentTests(IntegrationTestFactory factory) :
         resolver.Register("bank-gateway", plugin);
         var host = BuildHost(resolver);
         var (owner, ownerClientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "owner-gw-start");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, ownerClientId, 10m);
 
         var response = await owner.PostAsJsonAsync(

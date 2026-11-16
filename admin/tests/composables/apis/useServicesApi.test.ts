@@ -46,6 +46,16 @@ describe('useServicesApi', () => {
     expect(callOf(mock, 1).url).toBe('/api/services?clientId=7&page=2&pageSize=100')
   })
 
+  it('listServices sends the search, the status, the product and the billing cycle when given', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+
+    await useServicesApi().listServices({
+      page: 1, pageSize: 20, search: 'shop', status: ServiceStatus.Active, productId: 3, billingCycle: BillingCycle.Biennial,
+    })
+
+    expect(callOf(mock).url).toBe('/api/services?page=1&pageSize=20&search=shop&status=Active&productId=3&billingCycle=Biennial')
+  })
+
   it('getService reads the detail', async () => {
     const mock = stubFetch(json({ id: 4 }))
 

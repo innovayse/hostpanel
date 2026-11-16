@@ -61,7 +61,7 @@ public sealed class RetireTerminatedServiceTests(IntegrationTestFactory factory)
         await SshTestSeeds.AddKeyAsync(http, serviceId, 1);
         await SshTestSeeds.AddKeyAsync(http, serviceId, 2);
         await SshTestSeeds.AddKeyAsync(http, other, 3);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Terminate(DateTimeOffset.UtcNow, "test", hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Terminate(TestMoments.Seeded, "test", hostingAlreadyUpdated: true));
         var agent = SshTestSeeds.Agents(factory).AgentFor(serverId);
         using var scope = factory.Services.CreateScope();
 
@@ -83,7 +83,7 @@ public sealed class RetireTerminatedServiceTests(IntegrationTestFactory factory)
     {
         var (http, _, serverId, serviceId) = await SshTestSeeds.OwnerWithServiceAsync(factory, "ssh-term-down");
         await SshTestSeeds.AddKeyAsync(http, serviceId, 1);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Terminate(DateTimeOffset.UtcNow, "test", hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Terminate(TestMoments.Seeded, "test", hostingAlreadyUpdated: true));
         SshTestSeeds.Agents(factory).AgentFor(serverId).FailWith = SshProviderFailure.Unreachable;
         using var scope = factory.Services.CreateScope();
 

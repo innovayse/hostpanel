@@ -12,7 +12,7 @@
     </UiStack>
 
     <UiEmptyState v-else-if="!store.domains.length" :icon="Globe" :title="$t('client.dashboard.noDomains')" class="!py-6" data-testid="dashboard-domains-empty">
-      <UiButton size="sm" variant="subtle" to="/domains" data-testid="dashboard-domains-search">{{ $t('client.domains.searchDomains') }}</UiButton>
+      <UiButton size="sm" variant="subtle" :to="SITE_DOMAINS_PATH" data-testid="dashboard-domains-search">{{ $t('client.domains.searchDomains') }}</UiButton>
     </UiEmptyState>
 
     <UiStack v-else gap="sm">
@@ -45,6 +45,7 @@ import { ArrowRight, Globe } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import type { ClientDomain } from '~/types/clientdomain'
 import { EMPTY_DATE, formatDate } from '~/utils/formatDate'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the strings this file builds itself. */
 const { t } = useI18n()

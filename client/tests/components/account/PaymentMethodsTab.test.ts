@@ -9,7 +9,7 @@ import { mountAccount } from '~/tests/helpers/mountAccount'
 import PaymentMethodsTab from '~/components/account/PaymentMethodsTab.vue'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { grantPermissions } from '~/tests/helpers/grantPermissions'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { stubLocalePath, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -21,7 +21,7 @@ import { waitUntil } from '~/tests/helpers/waitUntil'
 let stub: StubServer
 
 beforeEach(async () => {
-  stubLocalePath('/en')
+  stubLocalePath(TEST_LOCALE_PREFIX)
   stub = await startTransport(routeTable({ [`${HttpMethod.Get} ${AccountEndpoint.StoredMethods}`]: { body: [] } }))
 })
 

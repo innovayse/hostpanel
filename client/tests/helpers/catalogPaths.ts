@@ -5,7 +5,7 @@
  * @module tests/helpers/catalogPaths
  */
 
-/** The public reads of the catalogue, its bundles, the billing currencies and the TLD prices, and the availability check. */
+/** The public reads of the catalogue, its bundles, the billing currencies and the TLD prices, the availability check and the countries. */
 export const CatalogPath = {
   Products: '/api/portal/public/products',
   ProductGroups: '/api/portal/public/product-groups',
@@ -15,4 +15,5 @@ export const CatalogPath = {
   BillingCurrencies: '/api/portal/public/billing-currencies',
   TldPricing: '/api/portal/public/tld-pricing',
   DomainCheck: '/api/portal/public/domain-check',
+  Countries: '/api/portal/public/countries',
 } as const

@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -57,7 +58,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     {
         using var scope = await SeededScopeAsync();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var tickets = await db.Tickets.Include(t => t.Replies).ToListAsync();
 
@@ -98,11 +99,12 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     {
         using var scope = await SeededScopeAsync();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var dates = await db.Announcements.Select(a => a.CreatedAt).ToListAsync();
 
         dates.Select(d => d.Date).Distinct().Should().HaveCount(dates.Count);
-        dates.Should().OnlyContain(d => d < DateTimeOffset.UtcNow);
+        dates.Should().OnlyContain(d => d < now);
     }
 
     /// <summary>A resolved incident ends after it started, within a day, and nothing ends in the future.</summary>
@@ -112,11 +114,12 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     {
         using var scope = await SeededScopeAsync();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var resolved = await db.NetworkIssues.Where(n => n.Status == NetworkIssueStatus.Resolved).ToListAsync();
 
         resolved.Should().NotBeEmpty().And.OnlyContain(n =>
-            n.EndDate != null && n.EndDate > n.StartDate && n.EndDate - n.StartDate < TimeSpan.FromDays(1) && n.EndDate < DateTimeOffset.UtcNow);
+            n.EndDate != null && n.EndDate > n.StartDate && n.EndDate - n.StartDate < TimeSpan.FromDays(1) && n.EndDate < now);
     }
 
     /// <summary>A server never holds more accounts than the limit it is set up with.</summary>
@@ -139,11 +142,12 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     {
         using var scope = await SeededScopeAsync();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var signups = await db.Clients.ToDictionaryAsync(c => c.Id, c => c.CreatedAt);
 
         signups.Values.Select(v => v.Date).Distinct().Count().Should().BeGreaterThan(5, "customers did not all sign up on one day");
-        signups.Values.Should().OnlyContain(v => v < DateTimeOffset.UtcNow);
+        signups.Values.Should().OnlyContain(v => v < now);
         (await db.ClientServices.Select(s => new { s.ClientId, s.CreatedAt }).ToListAsync())
             .Should().OnlyContain(s => s.CreatedAt >= signups[s.ClientId]);
         (await db.Orders.Select(o => new { o.ClientId, o.CreatedAt }).ToListAsync())
@@ -164,7 +168,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     {
         using var scope = await SeededScopeAsync();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         (await db.Domains.Where(d => d.Status == DomainStatus.Active).Select(d => new { d.RegisteredAt, d.ExpiresAt }).ToListAsync())
             .Should().NotBeEmpty().And.OnlyContain(d => d.RegisteredAt < d.ExpiresAt && d.RegisteredAt < now);
@@ -182,7 +186,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     {
         using var scope = await SeededScopeAsync();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
 
         var sent = await db.EmailLogs.Select(e => e.SentAt).ToListAsync();
         var performed = await db.ActivityLogs.Select(a => a.CreatedAt).ToListAsync();

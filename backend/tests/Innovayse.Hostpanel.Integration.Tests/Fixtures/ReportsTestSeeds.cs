@@ -86,10 +86,10 @@ public static class ReportsTestSeeds
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Hosting", itemAmount, 1);
         invoice.UpdateOptions(invoice.InvoiceDate, invoice.DueDate, null, taxRate);
-        invoice.RecordPaidHistory($"tx-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        invoice.RecordPaidHistory($"tx-{Guid.NewGuid():N}", TestMoments.Seeded);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();
         return invoice.Id;

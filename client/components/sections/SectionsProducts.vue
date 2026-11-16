@@ -15,7 +15,7 @@
 
       <!-- View all -->
       <div class="mt-12 text-center">
-        <UiButton variant="primary" :to="localePath('/products')" data-testid="home-products-all">
+        <UiButton variant="primary" :to="localePath(SITE_PRODUCTS_PATH)" data-testid="home-products-all">
           <span>{{ $t('hostingSections.plans.viewAll') }}</span>
           <ArrowRight :size="20" :stroke-width="2" class="ml-2" />
         </UiButton>
@@ -44,6 +44,7 @@ import { ArrowRight } from 'lucide-vue-next'
 import { HOME_PRODUCT_FAMILY_LIMIT } from '~/constants/homeProducts'
 import { FAMILY_BULLET_LIMIT } from '~/constants/planFeatureLimit'
 import { productTypeIcon } from '~/constants/productTypeIcon'
+import { SITE_DOMAINS_PATH, SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import type { ProductFamily } from '~/types/productfamily'
@@ -59,9 +60,6 @@ const DOMAINS_CARD_ICON = productTypeIcon(ProductType.Domain)
 
 /** Accent of the domains card. */
 const DOMAINS_CARD_COLOR = '#3b82f6'
-
-/** Page the domains card links to. */
-const DOMAINS_CARD_URL = '/domains'
 
 /** How many feature lines a card lists. */
 const CARD_FEATURE_LIMIT = FAMILY_BULLET_LIMIT
@@ -92,7 +90,7 @@ const allFamilies = computed<ProductFamily[]>(() => {
     features: [t('domains.card.f1'), t('domains.card.f2'), t('domains.card.f3')],
     icon: DOMAINS_CARD_ICON,
     color: DOMAINS_CARD_COLOR,
-    learnMoreUrl: DOMAINS_CARD_URL,
+    learnMoreUrl: SITE_DOMAINS_PATH,
     pricing: [],
     type: ProductType.Domain,
     image: null,

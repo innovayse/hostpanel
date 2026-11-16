@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import GroupFormModal from '@/components/servers/GroupFormModal.vue'
 import { createTestI18n } from '../../helpers/i18n'
-import { serverDto, serverGroupDto } from '../../helpers/serverFixtures'
+import { serverDto, serverGroupDto, serverOptionDto } from '../../helpers/serverFixtures'
 
 /** Two servers to choose from. */
-const servers = [serverDto({ id: 1, name: 'host1' }), serverDto({ id: 2, name: 'host2' })]
+const servers = [serverOptionDto({ id: 1, name: 'host1' }), serverOptionDto({ id: 2, name: 'host2' })]
 
 /**
  * Mounts the dialog with the teleport inlined.
@@ -34,7 +34,7 @@ describe('GroupFormModal', () => {
   })
 
   it('loads an edited group with its servers in the group list', () => {
-    const wrapper = mountModal({ group: serverGroupDto({ servers: [servers[0]!] }) })
+    const wrapper = mountModal({ group: serverGroupDto({ servers: [serverDto({ id: 1, name: 'host1' })] }) })
 
     expect(wrapper.text()).toContain('Edit Group')
     expect(wrapper.find('[data-testid="group-form-remove-1"]').exists()).toBe(true)

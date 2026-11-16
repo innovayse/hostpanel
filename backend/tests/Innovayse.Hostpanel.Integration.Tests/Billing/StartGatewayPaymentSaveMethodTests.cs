@@ -100,7 +100,7 @@ public sealed class StartGatewayPaymentSaveMethodTests(IntegrationTestFactory fa
     {
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-twice");
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         var secondInvoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, signedIn.ClientId, 12m);
 
         (await scenario.StartAsync(signedIn.Client, invoiceId, savePaymentMethod: true)).StatusCode.Should().Be(HttpStatusCode.OK);

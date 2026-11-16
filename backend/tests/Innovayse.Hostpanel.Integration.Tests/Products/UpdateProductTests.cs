@@ -485,7 +485,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         var sku = ProductsTestSeeds.UniqueSku();
         var race = new SkuRaceSaveInterceptor(sku.ToUpperInvariant());
         using var host = SkuRaceHost.Create(factory, race);
-        var client = await SkuRaceHost.AdminClientAsync(factory, host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await ProductsTestSeeds.CreateProductAsync(client);
 
         var updated = await client.PutAsJsonAsync($"/api/products/{id}", FulfilmentBody(sku, null, 3));
@@ -568,4 +568,72 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
         metadata,
         gracePeriodDays,
     };
+
+    /// <summary>
+    /// <c>isHidden: true</c> on update makes the product <see cref="ProductStatus.Inactive"/> and drops it from
+    /// the public catalogue, an update that omits the field keeps it hidden, and <c>isHidden: false</c> makes it
+    /// active and listed again; the prices are untouched throughout.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_Hidden_TogglesTheStatusAndThePublicListing()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Toggle", type = ProductType.SharedHosting, monthlyPrice = 3m, annualPrice = 30m,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        async Task<(string? Status, bool Listed, int Prices)> StateAsync()
+        {
+            var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+            using var body = JsonDocument.Parse(
+                await factory.CreateClient().GetStringAsync($"/api/public/products?groupId={groupId}"));
+            var listed = body.RootElement.EnumerateArray().Any(p => p.GetProperty("id").GetInt32() == id);
+            return (dto.GetProperty("status").GetString(), listed, dto.GetProperty("prices").GetArrayLength());
+        }
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Toggle", monthlyPrice = 3m, annualPrice = 30m, isHidden = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be((nameof(ProductStatus.Inactive), false, 1));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Toggle Renamed", monthlyPrice = 3m, annualPrice = 30m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be((nameof(ProductStatus.Inactive), false, 1));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Toggle", monthlyPrice = 3m, annualPrice = 30m, isHidden = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be((nameof(ProductStatus.Active), true, 1));
+    }
+
+    /// <summary>
+    /// <c>isDigitalService</c> on update turns the VAT electronic service flag on or off, and an update that omits it keeps
+    /// whatever is stored, so a caller that does not know the field never changes it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_DigitalService_TogglesTheFlagAndKeepsItWhenOmitted()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var id = await ProductsTestSeeds.CreateProductAsync(client);
+
+        async Task<bool> FlagAsync() =>
+            (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("isDigitalService").GetBoolean();
+
+        (await FlagAsync()).Should().BeFalse();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag", monthlyPrice = 3m, annualPrice = 30m, isDigitalService = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeTrue();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag Renamed", monthlyPrice = 3m, annualPrice = 30m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeTrue();
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Flag", monthlyPrice = 3m, annualPrice = 30m, isDigitalService = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await FlagAsync()).Should().BeFalse();
+    }
 }

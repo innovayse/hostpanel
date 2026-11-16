@@ -2,21 +2,16 @@
  * Unit tests for SectionsHero: the hosting headline, the domain search as the main action, the
  * secondary plans action, the operator badge and the operator-set figures (hidden while empty).
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import SectionsHero from '~/components/sections/SectionsHero.vue'
 import SectionsDomainSearch from '~/components/sections/SectionsDomainSearch.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 
-/**
- * Stands in for the operator settings the hero reads.
- *
- * @param settings Setting values by key; a key that is absent reads as empty.
- */
-const stubSettings = (settings: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 /** All three figures set. */
 const ALL_FIGURES: Record<string, string> = {
@@ -29,9 +24,9 @@ const ALL_FIGURES: Record<string, string> = {
 const mountHero = () => mountWithKit(SectionsHero, { components: { SectionsDomainSearch } })
 
 describe('SectionsHero', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     stubPublicPageRuntime()
-    stubSettings(ALL_FIGURES)
+    await loadPortalSettings(replies, ALL_FIGURES)
   })
 
   it('shows the headline as the page heading, with the badge and subtitle', () => {
@@ -42,8 +37,8 @@ describe('SectionsHero', () => {
     expect(wrapper.text()).toContain('hero.subtitle')
   })
 
-  it('prefers the operator badge line over the translated default', () => {
-    stubSettings({ [PortalSettingKey.HeroBadge]: 'Hosting since 2010' })
+  it('prefers the operator badge line over the translated default', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.HeroBadge]: 'Hosting since 2010' })
 
     expect(mountHero().find('[data-testid="hero-badge"]').text()).toBe('Hosting since 2010')
   })
@@ -65,14 +60,14 @@ describe('SectionsHero', () => {
     expect(group.text()).toContain('hero.stats.regions')
   })
 
-  it('leaves out a figure whose setting is empty and hides the block when none is set', () => {
-    stubSettings({ [PortalSettingKey.StatsUptime]: '99.9%' })
+  it('leaves out a figure whose setting is empty and hides the block when none is set', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.StatsUptime]: '99.9%' })
     const partial = mountHero()
 
     expect(partial.findAll('[data-testid="ui-stat-group-item"]')).toHaveLength(1)
     expect(partial.text()).not.toContain('hero.stats.clients')
 
-    stubSettings({})
+    await loadPortalSettings(replies, {})
 
     expect(mountHero().find('[data-testid="hero-stats"]').exists()).toBe(false)
   })

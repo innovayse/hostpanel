@@ -10,7 +10,7 @@
           <UiStack direction="row" wrap class="mt-8">
             <UiButton
               variant="bare"
-              :to="localePath('/contact')"
+              :to="localePath(SITE_CONTACT_PATH)"
               data-testid="faq-contact"
               :class="[BRAND_BUTTON, 'px-6 py-3 text-[15px]']"
             >
@@ -33,7 +33,7 @@
         <UiStack v-if="hasMore" direction="row" class="mt-8">
           <UiButton
             variant="bare"
-            :to="localePath('/faq')"
+            :to="localePath(SITE_FAQ_PATH)"
             data-testid="faq-view-all"
             :class="[LINE_BUTTON, 'px-6 py-3 text-[15px]']"
           >
@@ -58,6 +58,7 @@ import { STICKY_COLUMN_CLASS } from '~/templates/aurora/layoutClasses'
 import { BLOCK_TITLE_CLASS } from '~/templates/aurora/typography'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
 import { useStorefrontStore } from '~/stores/storefront'
+import { SITE_CONTACT_PATH, SITE_FAQ_PATH } from '~/constants/siteRoutes'
 
 /** Translator and the active language. */
 const { t, locale } = useI18n()

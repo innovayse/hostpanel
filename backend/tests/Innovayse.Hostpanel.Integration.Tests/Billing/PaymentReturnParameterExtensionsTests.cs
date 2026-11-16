@@ -6,8 +6,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
 /// <summary>
 /// The parameters a payment plugin receives from the return request: names compared ordinally, the first value of a name
-/// wins, a name without text or a missing value is not a parameter, and a set over a limit of <see cref="PaymentReturnLimits"/>
-/// is dropped whole.
+/// wins, and a name without text or a missing value is not a parameter. The limits of <see cref="PaymentReturnLimits"/> are held
+/// by the validators of the complete routes, not here.
 /// </summary>
 public sealed class PaymentReturnParameterExtensionsTests
 {
@@ -68,47 +68,12 @@ public sealed class PaymentReturnParameterExtensionsTests
         returned.ToPluginParameters().Should().BeEquivalentTo(new Dictionary<string, string> { ["kept"] = string.Empty });
     }
 
-    /// <summary>The limits are inclusive: a set at them is passed on whole.</summary>
+    /// <summary>A set at the limits is passed on whole.</summary>
     [Fact]
     public void ASetAtTheLimits_IsPassedOnWhole()
     {
         var pairs = FullSet();
         pairs[0] = (new string('n', PaymentReturnLimits.MaxNameLength), new string('v', PaymentReturnLimits.MaxValueLength));
-
-        Pass([.. pairs]).Should().HaveCount(PaymentReturnLimits.MaxParameters);
-    }
-
-    /// <summary>A set over a limit is not passed in part: the plugin sees none.</summary>
-    /// <param name="overLimit">Which limit is broken.</param>
-    [Theory]
-    [InlineData("count")]
-    [InlineData("name")]
-    [InlineData("value")]
-    public void ASetOverALimit_IsDroppedWhole(string overLimit)
-    {
-        var pairs = FullSet();
-        switch (overLimit)
-        {
-            case "count":
-                pairs.Add(("one-more", "v"));
-                break;
-            case "name":
-                pairs[0] = (new string('n', PaymentReturnLimits.MaxNameLength + 1), "v");
-                break;
-            default:
-                pairs[0] = ("p0", new string('v', PaymentReturnLimits.MaxValueLength + 1));
-                break;
-        }
-
-        Pass([.. pairs]).Should().BeEmpty();
-    }
-
-    /// <summary>A repeated name does not count twice against the limit, and a dropped duplicate is not measured.</summary>
-    [Fact]
-    public void ADroppedDuplicate_DoesNotCountAgainstTheLimits()
-    {
-        var pairs = FullSet();
-        pairs.Add(("p0", new string('v', PaymentReturnLimits.MaxValueLength + 1)));
 
         Pass([.. pairs]).Should().HaveCount(PaymentReturnLimits.MaxParameters);
     }

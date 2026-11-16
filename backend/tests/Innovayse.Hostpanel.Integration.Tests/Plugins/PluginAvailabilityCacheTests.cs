@@ -190,7 +190,7 @@ public sealed class PluginAvailabilityCacheTests : IClassFixture<IntegrationTest
     /// <returns>The client, to dispose when the test ends.</returns>
     private async Task<HttpClient> AdminClientAsync(WebApplicationFactory<Program> host)
     {
-        return await PluginUiFixture.AdminClientOfAsync(host, _factory);
+        return await AuthTestSeeds.AdminClientAsync(_factory, host);
     }
 
     /// <summary>Reads the admin index and returns its pages as <c>pluginId/id</c>.</summary>

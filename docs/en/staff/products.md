@@ -22,6 +22,8 @@ Go to **Settings → Products**. Subtitle: "Manage hosting plans and services av
 
 **Columns:** Name, Group, Type, Monthly price, Annual price (both in the base currency), a "+" count of other currencies the product is priced in, and Status.
 
+Type part of a name, SKU or slug in the search box to find a product. The **Filters** button narrows the list by group, type and status (active or hidden); applied filters show as chips you can remove. The list is paged, 20 products to a page, in the order you set with the sort order, and the search, the filters and the page stay in the address, so a link or a reload opens the same list. Search treats `%` and `_` as ordinary characters.
+
 ## Product types
 
 | Type | What it represents |
@@ -102,6 +104,11 @@ Go to **Settings → Products → Create Product** and fill in the form.
 <li>
 
 **Grace period (days)**: days a service stays usable after its due date before it is suspended.
+
+</li>
+<li>
+
+**Digital service**: turn it on for a product that counts as an electronic service for VAT (hosting, a licence, a domain that counts as one). A consumer in another EU member state is invoiced for such a product at the VAT rate of their own country; see [VAT rates and digital services](/staff/billing#vat-rates-and-digital-services). It is not the same as the product type Digital.
 
 </li>
 <li>

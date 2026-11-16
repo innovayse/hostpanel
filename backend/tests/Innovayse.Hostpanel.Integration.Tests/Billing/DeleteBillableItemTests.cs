@@ -33,7 +33,7 @@ public sealed class DeleteBillableItemTests(IntegrationTestFactory factory) : IC
         var response = await admin.DeleteAsync($"/api/clients/{clientId}/billable-items/{itemId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items");
+        var list = await admin.GetAsync($"/api/clients/{clientId}/billable-items?page=1&pageSize=20");
         using var body = JsonDocument.Parse(await list.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("uninvoicedItems").EnumerateArray()
             .Should().NotContain(item => item.GetProperty("id").GetInt32() == itemId);

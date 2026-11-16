@@ -8,8 +8,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useClientHistoryApi } from '@/composables/apis/useClientHistoryApi'
+import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
-import type { EmailLog } from '@/types/emaillog'
+import type { EmailLog, EmailLogFilters } from '@/types/emaillog'
 
 /** Loads the e-mails sent to a client. */
 export const useClientEmailStore = defineStore('clientEmail', () => {
@@ -21,6 +22,9 @@ export const useClientEmailStore = defineStore('clientEmail', () => {
   /** Total number of matching e-mail log entries. */
   const totalCount = ref(0)
 
+  /** Items per page. */
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
+
   /** True while an API request is in flight. */
   const loading = ref(false)
 
@@ -28,16 +32,19 @@ export const useClientEmailStore = defineStore('clientEmail', () => {
   const error = ref<string | null>(null)
 
   /**
-   * Fetches a paginated list of e-mail logs sent to a client.
+   * Fetches one page of the e-mails sent to a client, narrowed by the server. The page, the search, the outcome and the
+   * period come from the list's address, so the store keeps no copy of them.
    *
    * @param clientId - The client primary key.
    * @param page - 1-based page number.
-   * @param pageSize - Number of entries per page.
+   * @param filters - The search text, the outcome and the period; a member left out does not narrow.
    * @returns Promise that resolves when e-mails are loaded.
    */
-  const fetchClientEmails = async (clientId: number, page: number, pageSize: number): Promise<void> => {
+  const fetchClientEmails = async (clientId: number, page: number, filters: EmailLogFilters = {}): Promise<void> => {
     loading.value = true
-    const result = await runAction(error, () => api.emailLogs(clientId, page, pageSize))
+    const result = await runAction(error, () =>
+      api.emailLogs(clientId, page, pageSize.value, { ...filters, search: filters.search?.trim() }),
+    )
     loading.value = false
     if (result.ok) {
       emails.value = result.value.items
@@ -57,5 +64,5 @@ export const useClientEmailStore = defineStore('clientEmail', () => {
     error.value = null
   }
 
-  return { emails, totalCount, loading, error, fetchClientEmails, reset }
+  return { emails, totalCount, pageSize, loading, error, fetchClientEmails, reset }
 })

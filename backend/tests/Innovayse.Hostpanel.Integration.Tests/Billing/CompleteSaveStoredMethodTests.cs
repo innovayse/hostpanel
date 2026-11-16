@@ -185,7 +185,7 @@ public sealed class CompleteSaveStoredMethodTests(IntegrationTestFactory factory
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var older = CardChargeConsent.Grant(
-                signedIn.ClientId, scenario.Module, $"older-{Guid.NewGuid():N}", DateTimeOffset.UtcNow.AddDays(-1));
+                signedIn.ClientId, scenario.Module, $"older-{Guid.NewGuid():N}", TestMoments.Seeded.AddDays(-1));
             older.AttachMethod(methodRef);
             older.SetDefault([]);
             context.CardChargeConsents.Add(older);

@@ -3,6 +3,12 @@
  * accounts linked to it, and the detail that joins the two.
  */
 
+/** What narrows the user list: the search text, which the identity provider matches itself. */
+export interface UserListFilters {
+  /** Search text matched against name and email; empty or missing for every user. */
+  search?: string
+}
+
 /** Summary DTO for user list rows. */
 export interface UserListItem {
   /** Identity user ID. */

@@ -29,6 +29,7 @@ const product: Product = {
   sku: null,
   metadata: null,
   gracePeriodDays: 7,
+  isDigitalService: false,
   trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 }
 

@@ -4,10 +4,11 @@
  * No state lives here; every function rejects with an `ApiError` carrying the problem+json body.
  */
 
-import { useApi } from '@/composables/useApi'
-import type { KbArticle, KbArticlePayload, KbArticleUpdatePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
+import { buildQuery, useApi } from '@/composables/useApi'
+import type { KbArticle, KbArticleFilter, KbArticlePayload, KbArticleUpdatePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
+import type { PaginatedList } from '@/types/paginatedlist'
 
 /**
  * Endpoint functions for `/admin/knowledgebase`.
@@ -54,11 +55,21 @@ export const useKnowledgebaseApi = () => {
     request<void>(`${ApiPath.AdminKnowledgebaseCategories}/${id}`, { method: HttpMethod.Delete })
 
   /**
-   * Lists every article, unpublished ones included.
+   * Lists the articles, unpublished ones included, one page.
    *
-   * @returns Every article.
+   * @param filter - Page, page size, search, category and published state.
+   * @returns The page and the total count.
    */
-  const listArticles = (): Promise<KbArticle[]> => request<KbArticle[]>(ApiPath.AdminKnowledgebase)
+  const listArticles = (filter: KbArticleFilter): Promise<PaginatedList<KbArticle>> =>
+    request<PaginatedList<KbArticle>>(
+      `${ApiPath.AdminKnowledgebase}${buildQuery({
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        categoryId: filter.categoryId,
+        isPublished: filter.isPublished,
+      })}`,
+    )
 
   /**
    * Creates an article.

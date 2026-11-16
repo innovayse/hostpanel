@@ -273,7 +273,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
         (await db.Domains.Select(d => d.Status).Distinct().ToListAsync()).Should().Contain(
             [DomainStatus.Active, DomainStatus.PendingRegistration, DomainStatus.PendingTransfer, DomainStatus.Expired,
              DomainStatus.Redemption, DomainStatus.Transferred, DomainStatus.Cancelled]);
-        var soon = DateTimeOffset.UtcNow.AddDays(30);
+        var soon = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow.AddDays(30);
         (await db.Domains.AnyAsync(d => d.Status == DomainStatus.Active && d.ExpiresAt < soon)).Should().BeTrue("one is expiring soon");
         (await db.Domains.Include(d => d.DnsRecords).AnyAsync(d => d.DnsRecords.Count >= 4)).Should().BeTrue();
         (await db.Domains.AnyAsync(d => d.EmailForwarding)).Should().BeTrue();
@@ -455,7 +455,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
         await db.SaveChangesAsync();
         var before = (await db.Testimonials.CountAsync(), await db.Partners.CountAsync(), await db.ServerLocations.CountAsync(), await db.Projects.CountAsync(), await db.Faqs.CountAsync());
 
-        await new DemoStorefrontSeeder(db, DemoAnchor.Today(DateTimeOffset.UtcNow)).SeedContentAsync(CancellationToken.None);
+        await new DemoStorefrontSeeder(db, DemoAnchor.Today(scope.ServiceProvider.GetRequiredService<IClock>().UtcNow)).SeedContentAsync(CancellationToken.None);
 
         (await db.Testimonials.CountAsync(), await db.Partners.CountAsync(), await db.ServerLocations.CountAsync(), await db.Projects.CountAsync(), await db.Faqs.CountAsync())
             .Should().Be(before);

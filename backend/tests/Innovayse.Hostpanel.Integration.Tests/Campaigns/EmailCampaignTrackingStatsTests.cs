@@ -85,14 +85,15 @@ public sealed class EmailCampaignTrackingStatsTests(IntegrationTestFactory facto
     public async Task List_CarriesTheTrackingFigures()
     {
         var client = await ClientsTestSeeds.AdminClientAsync(factory);
-        var id = await CampaignTestSeeds.CreateAsync(client, subject: "Tracked list " + Guid.NewGuid().ToString("N"));
+        var subject = "Tracked list " + Guid.NewGuid().ToString("N");
+        var id = await CampaignTestSeeds.CreateAsync(client, subject: subject);
         await CampaignTestSeeds.ScheduleAsync(client, id);
         await CampaignTestSeeds.SeedSendingWithRecipientsAsync(factory, id);
         await RecordResponsesAsync(id);
 
-        var rows = await client.GetFromJsonAsync<JsonElement>(CampaignTestSeeds.Route);
+        var page = await client.GetFromJsonAsync<JsonElement>($"{CampaignTestSeeds.Route}?page=1&pageSize=20&search={subject}");
 
-        var row = rows.EnumerateArray().Single(r => r.GetProperty("id").GetInt32() == id);
+        var row = page.GetProperty("items").EnumerateArray().Single(r => r.GetProperty("id").GetInt32() == id);
         var stats = row.GetProperty("stats");
         stats.GetProperty("opened").GetInt32().Should().Be(3);
         stats.GetProperty("uniqueClicked").GetInt32().Should().Be(1);

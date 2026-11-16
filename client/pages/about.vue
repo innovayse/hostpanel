@@ -18,6 +18,7 @@
  * contact page instead.
  */
 import type { LegalSection } from '~/types/legalsection'
+import { SITE_CONTACT_PATH } from '~/constants/siteRoutes'
 
 /** Translates a key in the active language. */
 const { t } = useI18n()
@@ -32,7 +33,7 @@ const { name: siteName, tagline } = useSiteIdentity()
 const { paragraphs } = useAboutText()
 
 if (paragraphs.value.length === 0) {
-  await navigateTo(localePath('/contact'), { redirectCode: 302 })
+  await navigateTo(localePath(SITE_CONTACT_PATH), { redirectCode: 302 })
 }
 
 /** The one section the page shows: the story. */

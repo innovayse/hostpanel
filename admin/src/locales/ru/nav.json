@@ -7,7 +7,6 @@
     "groups": "Группы клиентов",
     "sharedHostings": "Общий хостинг",
     "addons": "Дополнения к услугам",
-    "domainRegistrations": "Регистрации доменов",
     "cancellations": "Заявки на отмену",
     "planChanges": "Смена тарифа",
     "affiliates": "Управление партнёрами"
@@ -62,7 +61,8 @@
     "emailTemplates": "Шаблоны писем",
     "gateways": "Платёжные шлюзы",
     "currencies": "Валюты",
-    "taxRules": "Налоговые правила"
+    "taxRules": "Налоговые правила",
+    "vatRates": "Ставки НДС"
   },
   "storefront": "Контент витрины",
   "storefrontChildren": {

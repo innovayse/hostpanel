@@ -59,7 +59,7 @@
                 {{ t('error.goBack') }}
               </UiButton>
               <UiButton
-                :to="localePath('/')"
+                :to="localePath(SITE_HOME_PATH)"
                 variant="subtle"
                 size="lg"
                 data-testid="error-go-home"
@@ -79,7 +79,7 @@
           :class="revealDelay(400)"
         >
           {{ t('error.helpText') }}
-          <UiLink :to="localePath('/contact')" testid="error-contact">
+          <UiLink :to="localePath(SITE_CONTACT_PATH)" testid="error-contact">
             {{ t('error.contactUs') }}
           </UiLink>
         </UiText>
@@ -110,6 +110,7 @@ import { revealDelay } from '~/utils/reveal'
 import type { Component } from 'vue'
 import { ArrowLeft, Home, Search, AlertTriangle, Lock, XCircle } from 'lucide-vue-next'
 import { ErrorStatus } from '~/types/errorstatus'
+import { SITE_CONTACT_PATH, SITE_HOME_PATH } from '~/constants/siteRoutes'
 
 /** The error Nuxt hands the page. */
 interface ErrorDetails {
@@ -156,7 +157,7 @@ const handleGoBack = (): void => {
   if (window.history.length > 1) {
     window.history.back()
   } else {
-    navigateTo(localePath('/'))
+    navigateTo(localePath(SITE_HOME_PATH))
   }
 }
 </script>

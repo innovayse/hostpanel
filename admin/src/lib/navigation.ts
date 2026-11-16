@@ -100,7 +100,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           { to: AppRoute.ClientsGroups, labelKey: 'nav.clientsChildren.groups' },
           { to: AppRoute.ClientsSharedHostings, labelKey: 'nav.clientsChildren.sharedHostings' },
           { to: AppRoute.ClientsAddons, labelKey: 'nav.clientsChildren.addons' },
-          { to: AppRoute.ClientsDomainRegistrations, labelKey: 'nav.clientsChildren.domainRegistrations' },
           { to: AppRoute.ClientsCancellations, labelKey: 'nav.clientsChildren.cancellations' },
           { to: AppRoute.ClientsPlanChanges, labelKey: 'nav.clientsChildren.planChanges' },
           { to: AppRoute.ClientsAffiliates, labelKey: 'nav.clientsChildren.affiliates' },
@@ -216,6 +215,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           { to: AppRoute.IntegrationsPayments, labelKey: 'nav.settingsChildren.gateways' },
           { to: AppRoute.SettingsCurrencies, labelKey: 'nav.settingsChildren.currencies' },
           { to: AppRoute.SettingsTaxRules, labelKey: 'nav.settingsChildren.taxRules' },
+          { to: AppRoute.SettingsVatRates, labelKey: 'nav.settingsChildren.vatRates' },
         ],
       },
       {

@@ -2,9 +2,11 @@
 /**
  * Products settings view: list and manage all products/plans.
  *
- * Shows the products in a table with create, edit and specification actions; fetches the products,
- * the groups and (when needed) the currencies on mount. A refused load offers a retry; a refused save
- * shows inside the product dialog next to its save button, a finished one above the table.
+ * Shows one page of the products in a table with create, edit and specification actions, behind a search box and a
+ * filter dialog (group, type, status) with its removable chips. The search, the filters and the page live in the address
+ * (`useListQuery`), so a reload, a shared link and the back button restore the same list, and the API applies them before
+ * it pages. A refused load offers a retry; a refused save shows inside the product dialog next to its save button, a
+ * finished one above the table, and the page the address names is read again.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,9 +17,16 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiField from '@/components/ui/UiField.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiPagination from '@/components/ui/UiPagination.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -28,24 +37,39 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { formatAffixed } from '@/lib/money'
+import { Icon } from '@/lib/icons'
 import { useSettingsStore } from '@/stores/settings'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
-import type { CreateProductPayload, Product } from '@/types/product'
+import type { CreateProductPayload, Product, ProductListFilters } from '@/types/product'
 import { ProductStatus, ProductType } from '@/types/productenums'
+import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiTextSize } from '@/utils/ui/text'
 import { EMPTY_VALUE } from '@/lib/format'
 
 const { t } = useI18n()
+
+/** The filter fields the dialog edits; each is one query key and one `ProductListFilters` member. */
+const FilterKey = {
+  Group: 'group',
+  Type: 'type',
+  Status: 'status',
+} as const
 
 /** Settings store: owns the products and product groups. */
 const store = useSettingsStore()
 
 /** Currencies store: owns the base currency the price columns are written in. */
 const currenciesStore = useCurrenciesStore()
+
+/** The group, type and status filters, the search text and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, idOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
 
 /** Whether the product form dialog is visible. */
 const showModal = ref(false)
@@ -76,20 +100,102 @@ const typeLabels = computed<Record<string, string>>(() => ({
   [ProductType.Other]: t('settings.products.typeOther'),
 }))
 
+/** Status display labels. */
+const statusLabels = computed<Record<ProductStatus, string>>(() => ({
+  [ProductStatus.Active]: t('shared.active'),
+  [ProductStatus.Inactive]: t('shared.inactive'),
+}))
+
+/** Group filter options: "any" first, then every product group. */
+const groupOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...store.productGroups.map((group) => ({ value: String(group.id), label: group.name })),
+])
+
+/** Type filter options: "any" first, then every product type. */
+const typeOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...Object.values(ProductType).map((type) => ({ value: type, label: typeLabels.value[type] ?? type })),
+])
+
+/** Status filter options: "any" first, then both statuses. */
+const statusOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...Object.values(ProductStatus).map((status) => ({ value: status, label: statusLabels.value[status] })),
+])
+
+/** The group in the address as a group id, undefined when none is set or the value is not an id. */
+const groupOfAddress = idOf(FilterKey.Group)
+
+/** The type in the address as a product type, undefined when none is set or the value is not one. */
+const typeOfAddress = enumOf(FilterKey.Type, ProductType)
+
+/** The status in the address as a product status, undefined when none is set or the value is not one. */
+const statusOfAddress = enumOf(FilterKey.Status, ProductStatus)
+
+/** What the address narrows the list by, as the store sends it to the API. */
+const filters = computed<ProductListFilters>(() => ({
+  search: appliedSearch.value,
+  groupId: groupOfAddress.value,
+  type: typeOfAddress.value,
+  status: statusOfAddress.value,
+}))
+
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Group,
+    label: t('settings.products.group'),
+    value: store.productGroups.find((group) => group.id === groupOfAddress.value)?.name,
+  },
+  {
+    key: FilterKey.Type,
+    label: t('shared.type'),
+    value: typeOfAddress.value === undefined ? undefined : typeLabels.value[typeOfAddress.value],
+  },
+  {
+    key: FilterKey.Status,
+    label: t('shared.status'),
+    value: statusOfAddress.value === undefined ? undefined : statusLabels.value[statusOfAddress.value],
+  },
+])
+
 /**
- * Loads the products, their groups and (once) the currencies.
+ * Loads the page the address names with the filters and search it holds.
+ *
+ * @returns True when loaded; false when refused (see `store.error`).
+ */
+const load = (): Promise<boolean> => store.fetchProductsPage(page.value, filters.value)
+
+/**
+ * Loads the page, the groups (the filter and the group column read them) and (once) the currencies.
  *
  * @returns Resolves when every load has settled.
  */
 const loadAll = async (): Promise<void> => {
   await Promise.all([
-    store.fetchProducts(),
+    load(),
     store.fetchProductGroups(),
     currenciesStore.currencies.length === 0 ? currenciesStore.fetchAll() : Promise.resolve(),
   ])
 }
 
-onMounted(loadAll)
+// Every change of a filter, the search or the page loads the list the address names.
+loadOnChange(load)
+
+// The page itself loads with the address; the groups and the currencies are read once.
+onMounted(() => {
+  void store.fetchProductGroups()
+  if (currenciesStore.currencies.length === 0) {
+    void currenciesStore.fetchAll()
+  }
+})
+
+/** Whether the current page has any product to list. */
+const hasRows = computed<boolean>(() => store.productPage.length > 0)
+
+/** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
+const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
 /** The success line of the last save, shown above the table; a refusal shows inside the dialog. */
 const feedback = useResultBanner()
@@ -152,7 +258,7 @@ const openEdit = (product: Product): void => {
 }
 
 /**
- * Handles the save event from the dialog: updates the edited product, or creates a new one.
+ * Handles the save event from the dialog: updates the edited product, or creates a new one, then reads the page again.
  *
  * @param payload - The product data to save.
  */
@@ -174,6 +280,8 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       sku: payload.sku,
       metadata: payload.metadata,
       gracePeriodDays: payload.gracePeriodDays,
+      isHidden: payload.isHidden,
+      isDigitalService: payload.isDigitalService,
       trial: payload.trial,
     })
   } else {
@@ -183,6 +291,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
   if (saved) {
     showModal.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
+    await load()
   }
 }
 
@@ -223,18 +332,66 @@ const productActions = (product: Product): UiMenuAction[] => {
       </template>
     </UiPageHeader>
 
+    <UiListToolbar
+      v-model:search="search"
+      search-testid="products-search"
+      :search-placeholder="t('settings.products.searchPlaceholder')"
+      :active-count="activeCount"
+      :chips="chips"
+      :loading="initialLoading"
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <UiStack>
+        <UiField :label="t('settings.products.group')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.group"
+              :options="groupOptions"
+              :placeholder="t('shared.any')"
+              data-testid="products-filter-group"
+            />
+          </template>
+        </UiField>
+        <UiField :label="t('shared.type')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.type"
+              :options="typeOptions"
+              :placeholder="t('shared.any')"
+              data-testid="products-filter-type"
+            />
+          </template>
+        </UiField>
+        <UiField :label="t('shared.status')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.status"
+              :options="statusOptions"
+              :placeholder="t('shared.any')"
+              data-testid="products-filter-status"
+            />
+          </template>
+        </UiField>
+      </UiStack>
+    </UiListToolbar>
+
     <UiErrorState
       v-if="store.error"
       :message="store.error"
+      :loading="store.loading"
       testid="products-error"
       @retry="loadAll"
     />
 
-    <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="store.products.length === 0" :loading="store.loading">
-        <template #empty>
-          {{ t('settings.products.noProductsFoundCreateYour') }}
-        </template>
+    <UiCard v-else-if="hasRows || store.loading" class="overflow-hidden">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="products-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
@@ -247,7 +404,7 @@ const productActions = (product: Product): UiMenuAction[] => {
         </UiTableHead>
         <UiTableBody divided>
           <UiTableRow
-            v-for="product in store.products"
+            v-for="product in store.productPage"
             :key="product.id"
             hoverable
             :data-testid="`product-row-${product.id}`"
@@ -275,6 +432,37 @@ const productActions = (product: Product): UiMenuAction[] => {
           </UiTableRow>
         </UiTableBody>
       </UiTable>
+
+      <template #footer>
+        <UiStack direction="row" justify="between" align="center" wrap>
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
+            {{ t('settings.products.totalCount', { totalCount: store.productTotalCount }) }}
+          </UiResultCount>
+          <UiPagination
+            :page="page"
+            :total="store.productTotalCount"
+            :page-size="store.productPageSize"
+            testid="products-pagination"
+            @update:page="setPage"
+          />
+        </UiStack>
+      </template>
+    </UiCard>
+
+    <UiCard v-else>
+      <UiEmptyState
+        :title="narrowed ? t('settings.products.noProductsMatchYourFilters') : t('settings.products.noProductsFoundCreateYour')"
+        data-testid="products-empty"
+      >
+        <template #icon>
+          <UiIcon :markup="Icon.Box" size="lg" />
+        </template>
+        <template v-if="activeCount > 0" #actions>
+          <UiButton :variant="UiButtonVariant.Link" data-testid="products-clear-empty" @click="clearAll">
+            {{ t('settings.products.clearFilters') }}
+          </UiButton>
+        </template>
+      </UiEmptyState>
     </UiCard>
 
     <!-- Product form dialog -->

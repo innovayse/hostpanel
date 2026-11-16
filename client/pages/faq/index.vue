@@ -22,6 +22,7 @@
  */
 import { useStorefrontStore } from '~/stores/storefront'
 import { SeoPageType } from '~/types/seopagetype'
+import { SITE_FAQ_PATH } from '~/constants/siteRoutes'
 
 /** Translates a key in the active language. */
 const { t, locale } = useI18n()
@@ -34,7 +35,7 @@ useSeo({
   description: t('seo.faq.description', { site: siteName.value }),
   keywords: t('seo.faq.keywords', { site: siteName.value }),
   type: SeoPageType.Website,
-  path: '/faq'
+  path: SITE_FAQ_PATH
 })
 
 /** The storefront content: testimonials, partners, projects and FAQs. */

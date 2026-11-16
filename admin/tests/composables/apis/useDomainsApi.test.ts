@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useDomainsApi } from '@/composables/apis/useDomainsApi'
 import { DomainStatus } from '@/types/domain'
+import { RegistrarModule } from '@/types/registrarmodule'
 import { json, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -26,6 +27,20 @@ describe('useDomainsApi', () => {
     expect(callOf(mock, 0).url).toBe('/api/domains?clientId=7&page=2&pageSize=20')
     expect(callOf(mock, 1).url).toBe('/api/domains?page=1&pageSize=20&search=exa')
     expect(callOf(mock, 2).url).toBe('/api/domains?page=1&pageSize=20')
+  })
+
+  it('listDomains sends the status and the registrar module as their enum names', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const api = useDomainsApi()
+
+    await api.listDomains({
+      page: 1,
+      pageSize: 20,
+      search: 'exa',
+      status: DomainStatus.Expired,
+      registrarModule: RegistrarModule.Namecheap,
+    })
+    expect(callOf(mock, 0).url).toBe('/api/domains?page=1&pageSize=20&search=exa&status=Expired&registrarModule=Namecheap')
   })
 
   it('getDomain reads the detail and updateDomain PUTs the fields', async () => {

@@ -25,7 +25,7 @@
           :title="t('faq.noResults')"
           data-testid="faq-empty"
         >
-          <UiButton :to="localePath('/faq')" variant="ghost" data-testid="faq-view-all">
+          <UiButton :to="localePath(SITE_FAQ_PATH)" variant="ghost" data-testid="faq-view-all">
             {{ t('faq.viewAll') }}
           </UiButton>
         </UiEmptyState>
@@ -41,7 +41,7 @@
         <!-- Back to all FAQs -->
         <UiStack align="center">
           <UiButton
-            :to="localePath('/faq')"
+            :to="localePath(SITE_FAQ_PATH)"
             variant="subtle"
             size="lg"
             data-testid="faq-back-to-all"
@@ -65,6 +65,7 @@ import { useStorefrontStore } from '~/stores/storefront'
 import type { FaqCategory } from '~/types/faqcategory'
 import { SeoPageType } from '~/types/seopagetype'
 import { faqCategoryFromParam, faqCategorySlug } from '~/utils/faqCategory'
+import { SITE_FAQ_PATH, siteFaqCategoryPath } from '~/constants/siteRoutes'
 
 /** The current route. */
 const route = useRoute()
@@ -104,7 +105,7 @@ await useAsyncData('storefront:faqs', () => storefront.loadFaqs(), { watch: [loc
 
 /** The trail above the title: the FAQ landing page, then this topic. */
 const breadcrumbs = computed(() => [
-  { label: t('faq.title'), to: localePath('/faq') },
+  { label: t('faq.title'), to: localePath(SITE_FAQ_PATH) },
   { label: t(`faq.categories.${slug.value}`) }
 ])
 
@@ -123,7 +124,7 @@ useSeo({
   description: t(`seo.faqCategory.${slug.value}.description`, { site: siteName.value }),
   keywords: t(`seo.faqCategory.${slug.value}.keywords`, { site: siteName.value }),
   type: SeoPageType.Website,
-  path: `/faq/${slug.value}`
+  path: siteFaqCategoryPath(slug.value)
 })
 
 // FAQ schema.org for this category only

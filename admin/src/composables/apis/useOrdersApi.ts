@@ -21,12 +21,17 @@ export const useOrdersApi = () => {
   /**
    * Lists orders, one page.
    *
-   * @param filter - Page, page size and status.
+   * @param filter - Page, page size, search text and status.
    * @returns The page and the total count.
    */
   const listOrders = (filter: OrderFilter): Promise<PaginatedList<OrderListItem>> =>
     request<PaginatedList<OrderListItem>>(
-      `${ApiPath.Orders}${buildQuery({ page: filter.page, pageSize: filter.pageSize, status: filter.status })}`,
+      `${ApiPath.Orders}${buildQuery({
+        page: filter.page,
+        pageSize: filter.pageSize,
+        search: filter.search,
+        status: filter.status,
+      })}`,
     )
 
   /**

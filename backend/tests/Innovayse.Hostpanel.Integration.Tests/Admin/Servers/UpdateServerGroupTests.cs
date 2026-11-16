@@ -22,7 +22,8 @@ public sealed class UpdateServerGroupTests(IntegrationTestFactory factory) : ICl
     public async Task RemovingAServer_ClearsItsGroupAsync()
     {
         var client = await ServersTestSeeds.AdminClientAsync(factory);
-        var serverId = await ServersTestSeeds.CreateServerAsync(client, $"GroupServer-{Guid.NewGuid():N}");
+        var serverName = $"GroupServer-{Guid.NewGuid():N}";
+        var serverId = await ServersTestSeeds.CreateServerAsync(client, serverName);
         var groupName = $"Group-{Guid.NewGuid():N}";
         var groupId = await ServersTestSeeds.CreateServerGroupAsync(client, groupName, serverId);
 
@@ -34,8 +35,7 @@ public sealed class UpdateServerGroupTests(IntegrationTestFactory factory) : ICl
         });
         update.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var servers = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/servers");
-        var server = servers!.Single(s => s.GetProperty("id").GetInt32() == serverId);
+        var server = (await ServersTestSeeds.SearchServersAsync(client, serverName)).Single(s => s.GetProperty("id").GetInt32() == serverId);
         server.GetProperty("serverGroupId").ValueKind.Should().Be(System.Text.Json.JsonValueKind.Null);
     }
 

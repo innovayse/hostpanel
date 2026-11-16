@@ -294,9 +294,10 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
         var host = HostWithFakeRelay(emailSender);
         var (slug, to, key) = await KeyedScenarioAsync();
         var lease = host.Services.GetRequiredService<IOptions<NotificationOptions>>().Value.DeliveryClaimLease;
+        var now = host.Services.GetRequiredService<IClock>().UtcNow;
         var claimedAt = outsideLease
-            ? DateTimeOffset.UtcNow - lease - TimeSpan.FromMinutes(1)
-            : DateTimeOffset.UtcNow;
+            ? now - lease - TimeSpan.FromMinutes(1)
+            : now;
         using (var seedScope = host.Services.CreateScope())
         {
             var seedContext = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();

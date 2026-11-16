@@ -35,7 +35,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [InlineData(1, true)]
     public async Task GraceBoundary_DecidesWhetherTheInvoiceLapses(int secondsAfterGraceEnd, bool lapsed)
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         using var host = Host(now);
         var due = now.AddDays(-Grace).AddSeconds(-secondsAfterGraceEnd);
         var invoiceId = await SeedAsync(host, due, i => AddDigitalRenewal(i, 1, due, Grace));
@@ -52,7 +52,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task RepeatedRuns_LapseTheInvoiceOnce()
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         var clock = new ManualTimeProvider(now);
         using var host = FailingSaveHost.Create(factory, clock, _ => false);
         var due = now.AddDays(-Grace - 1);
@@ -75,7 +75,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task MixedInvoice_LapsesOnItsDigitalLineAndLeavesTheHostingLineAlone()
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         using var host = Host(now);
         var due = now.AddDays(-Grace - 1);
         var invoiceId = await SeedAsync(host, due, i =>
@@ -98,7 +98,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task MixedInvoice_WithDigitalLineWithinGrace_DoesNotLapse()
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         using var host = Host(now);
         var due = now.AddDays(-3);
         var invoiceId = await SeedAsync(host, due, i =>
@@ -117,7 +117,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task TwoDigitalLines_LapseOnlyWhenBothArePastGrace()
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         using var host = Host(now);
         var due = now.AddDays(-5);
         var invoiceId = await SeedAsync(host, due, i =>
@@ -136,7 +136,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task GraceComesFromTheLineSnapshot()
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         using var host = Host(now);
         var due = now.AddDays(-1);
         var invoiceId = await SeedAsync(host, due, i => AddDigitalRenewal(i, 1, due, 0));
@@ -151,7 +151,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task InvoicesWithoutADigitalRenewalLine_NeverLapse()
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         using var host = Host(now);
         var due = now.AddDays(-400);
         var hosting = await SeedAsync(host, due, i =>
@@ -175,7 +175,7 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
     [Fact]
     public async Task PaidInvoice_IsNotLapsed()
     {
-        var now = WholeMicroseconds();
+        var now = TestMoments.Seeded;
         using var host = Host(now);
         var due = now.AddDays(-Grace - 1);
         var invoiceId = await SeedAsync(host, due, i => AddDigitalRenewal(i, 1, due, Grace));
@@ -190,14 +190,6 @@ public sealed class LapseOverdueInvoiceTests(IntegrationTestFactory factory) : I
         await RunCronAsync(host);
 
         (await LoadAsync(host, invoiceId)).LapsedAt.Should().BeNull();
-    }
-
-    /// <summary>The current moment cut to whole microseconds, so a date written to Postgres reads back equal.</summary>
-    /// <returns>The moment.</returns>
-    private static DateTimeOffset WholeMicroseconds()
-    {
-        var now = DateTimeOffset.UtcNow;
-        return new DateTimeOffset(now.Ticks - (now.Ticks % 10), TimeSpan.Zero);
     }
 
     /// <summary>Builds a host whose clock reads <paramref name="now"/>.</summary>

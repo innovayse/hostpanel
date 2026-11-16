@@ -106,7 +106,7 @@
               <UiLinkCard
                 v-for="cat in categories"
                 :key="cat.name"
-                :to="localePath(`/knowledgebase/category/${kbCategorySlug(cat.name)}`)"
+                :to="localePath(siteKnowledgebaseCategoryPath(kbCategorySlug(cat.name)))"
                 :testid="`kb-category-card-${kbCategorySlug(cat.name)}`"
               >
                 <UiStack direction="row" justify="between" align="center">
@@ -172,6 +172,7 @@ import { useContentStore } from '~/stores/content'
 import type { KbArticleSummary } from '~/types/kbarticlesummary'
 import type { KbCategory } from '~/types/kbcategory'
 import { kbCategorySlug } from '~/utils/kbCategory'
+import { siteKnowledgebaseCategoryPath } from '~/constants/siteRoutes'
 
 /** Localised path builder from the i18n module. */
 const localePath = useLocalePath()

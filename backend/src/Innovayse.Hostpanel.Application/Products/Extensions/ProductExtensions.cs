@@ -35,6 +35,7 @@ public static class ProductExtensions
             product.Sku,
             product.Metadata,
             product.GracePeriodDays,
+            product.IsDigitalService,
             product.Trial.ToDto());
     }
 
@@ -45,7 +46,7 @@ public static class ProductExtensions
     {
         ArgumentNullException.ThrowIfNull(product);
 
-        return new ProductFulfilmentDto(product.Id, product.IsDigital, product.Sku, product.Metadata, product.GracePeriodDays);
+        return new ProductFulfilmentDto(product.Id, product.IsDigital, product.Sku, product.Metadata, product.GracePeriodDays, product.IsDigitalService);
     }
 
     /// <summary>Maps a product to its storefront catalogue DTO, pricing it in the caller's currency.</summary>

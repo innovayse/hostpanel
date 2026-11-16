@@ -4,8 +4,11 @@ using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Notifications.Queries.ListClientEmailLogs;
 
-/// <summary>Validates <see cref="ListClientEmailLogsQuery"/> before it reaches the handler.</summary>
-public sealed class ListClientEmailLogsValidator : LocalizedValidator<ListClientEmailLogsQuery>
+/// <summary>
+/// Validates <see cref="ListClientEmailLogsQuery"/>: the client id, and the page, page size, search and period every list
+/// shares (<see cref="PeriodListQueryValidator{T}"/>).
+/// </summary>
+public sealed class ListClientEmailLogsValidator : PeriodListQueryValidator<ListClientEmailLogsQuery>
 {
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>

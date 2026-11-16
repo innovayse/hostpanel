@@ -5,27 +5,18 @@
  * @module tests/composables/useHomeSections.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { HomeSection } from '~/constants/homeSection'
-import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { SETTING_OFF, SETTING_ON } from '~/constants/settingValue'
 import { useHomeSections } from '~/composables/useHomeSections'
+import { homeSectionSettings, loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 
-/**
- * Stubs the settings reader with a fixed set of values.
- *
- * @param values Setting key to value.
- */
-const stubSettings = (values: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('useHomeSections', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('shows every section but projects when nothing is set', () => {
-    stubSettings({})
+  it('shows every section but projects when nothing is set', async () => {
+    await loadPortalSettings(replies)
     const { isVisible } = useHomeSections()
 
     expect(isVisible(HomeSection.Faq)).toBe(true)
@@ -33,14 +24,14 @@ describe('useHomeSections', () => {
     expect(isVisible(HomeSection.Projects)).toBe(false)
   })
 
-  it('hides a section the operator switched off', () => {
-    stubSettings({ [PortalSettingKey.SectionFaq]: 'false' })
+  it('hides a section the operator switched off', async () => {
+    await loadPortalSettings(replies, homeSectionSettings([HomeSection.Faq], SETTING_OFF))
 
     expect(useHomeSections().isVisible(HomeSection.Faq)).toBe(false)
   })
 
-  it('shows projects once the operator switched them on', () => {
-    stubSettings({ [PortalSettingKey.SectionProjects]: 'true' })
+  it('shows projects once the operator switched them on', async () => {
+    await loadPortalSettings(replies, homeSectionSettings([HomeSection.Projects], SETTING_ON))
 
     expect(useHomeSections().isVisible(HomeSection.Projects)).toBe(true)
   })

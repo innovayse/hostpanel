@@ -25,7 +25,7 @@ public sealed class GetDomainsReportTests(IntegrationTestFactory factory) : ICla
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var domain = RegisteredDomain.Register(
-                clientId, $"{marker}.com", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+                clientId, $"{marker}.com", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             db.Domains.Add(domain);
             await db.SaveChangesAsync();
         }

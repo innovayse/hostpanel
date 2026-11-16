@@ -59,7 +59,7 @@ describe('isSafeGatewayStart', () => {
   const formPost = (action: string): GatewayStart => ({
     redirectUrl: action,
     kind: GatewaySessionKind.FormPost,
-    formPost: { action, fields: [] }
+    formPost: { fields: [] }
   })
 
   it('accepts a redirect and a browser step by their page address', () => {
@@ -69,7 +69,7 @@ describe('isSafeGatewayStart', () => {
     }
   })
 
-  it('judges a form post by the action of its form', () => {
+  it('judges a form post by its page address, which is where the fields are sent', () => {
     expect(isSafeGatewayStart(formPost('https://bank.example/hosted'))).toBe(true)
     expect(isSafeGatewayStart(formPost('javascript:alert(1)'))).toBe(false)
     expect(isSafeGatewayStart({ redirectUrl: 'https://bank.example/hosted', kind: GatewaySessionKind.FormPost, formPost: null })).toBe(false)
@@ -106,7 +106,7 @@ describe('redirectToGateway', () => {
     const handed = redirectToGateway({
       redirectUrl: 'https://bank.example/hosted',
       kind: GatewaySessionKind.FormPost,
-      formPost: { action: 'https://bank.example/hosted', fields }
+      formPost: { fields }
     })
 
     expect(handed).toBe(true)
@@ -129,9 +129,9 @@ describe('redirectToGateway', () => {
 
     expect(redirectToGateway({ redirectUrl: 'javascript:alert(1)', kind: GatewaySessionKind.Redirect, formPost: null })).toBe(false)
     expect(redirectToGateway({
-      redirectUrl: 'http://x',
+      redirectUrl: 'javascript:alert(1)',
       kind: GatewaySessionKind.FormPost,
-      formPost: { action: 'javascript:alert(1)', fields: [] }
+      formPost: { fields: [] }
     })).toBe(false)
 
     expect(location.href).toBe('https://app.example/')

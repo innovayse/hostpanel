@@ -44,6 +44,9 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasDefaultValue(Product.DefaultGracePeriodDays)
             .HasSentinel(int.MinValue);
 
+        // Existing products are not electronic services until an operator says so.
+        builder.Property(x => x.IsDigitalService).IsRequired().HasDefaultValue(false);
+
         builder.ToTable(table => table.HasCheckConstraint(
             "CK_Products_GracePeriodDays",
             $"\"GracePeriodDays\" BETWEEN {Product.MinGracePeriodDays} AND {Product.MaxGracePeriodDays}"));

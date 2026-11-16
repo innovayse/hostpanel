@@ -58,7 +58,7 @@ export interface FilterQuery<K extends string> {
   page: ComputedRef<number>
   /** How many filter fields are set in the address (the search text is not counted). */
   activeCount: ComputedRef<number>
-  /** Writes the draft to the address and returns to the first page; does nothing when nothing changed. */
+  /** Writes the draft and the text of the search box to the address and returns to the first page; does nothing when nothing changed. */
   apply: () => Promise<void>
   /** Empties the draft; the address changes only on Apply. */
   reset: () => void
@@ -171,11 +171,14 @@ export const useFilterQuery = <K extends string>(
     Object.fromEntries(keys.map(key => [key, values[key].trim()]))
 
   /**
-   * Writes the draft to the address (a new history entry) and returns to the first page.
+   * Writes the draft to the address (a new history entry) and returns to the first page. The text of the search box
+   * goes with it, so a search typed a moment ago and a filter chosen now reach the address together (one load, not
+   * two), and a screen that sets the draft and empties the box in one step (a tab that has its own search) changes
+   * the list once.
    *
    * @returns A promise that settles when the navigation has finished.
    */
-  const apply = (): Promise<void> => commit(patchOf(draft.value), FilterHistory.Push)
+  const apply = (): Promise<void> => commit({ ...patchOf(draft.value), [searchKey]: search.value.trim() }, FilterHistory.Push)
 
   /**
    * Empties every field of the draft; the address changes only when the reader applies.

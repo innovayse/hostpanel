@@ -94,13 +94,14 @@ internal static class NotificationsTestSeeds
     /// <param name="to">The recipient address the row is addressed to.</param>
     /// <param name="subject">The subject the row carries.</param>
     /// <param name="failure">Why delivery failed; <see langword="null"/> records a successful send.</param>
+    /// <param name="sentAt">The moment the row is stamped with; now when not given.</param>
     /// <returns>The written row's primary key.</returns>
     public static async Task<int> SeedLogAsync(
-        IntegrationTestFactory factory, string to, string subject, EmailSendFailure? failure = null)
+        IntegrationTestFactory factory, string to, string subject, EmailSendFailure? failure = null, DateTimeOffset? sentAt = null)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var log = EmailLog.Create(to, subject, "<p>Body</p>", failure, scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        var log = EmailLog.Create(to, subject, "<p>Body</p>", failure, sentAt ?? scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
         db.EmailLogs.Add(log);
         await db.SaveChangesAsync();
         return log.Id;
@@ -177,7 +178,7 @@ internal static class NotificationsTestSeeds
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
         return service.Id;

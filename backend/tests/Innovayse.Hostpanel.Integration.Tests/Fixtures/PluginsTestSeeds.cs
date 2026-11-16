@@ -4,7 +4,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -196,18 +195,6 @@ internal static class PluginsTestSeeds
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), ManifestJson(pluginId));
         return folder;
-    }
-
-    /// <summary>A client of <paramref name="host"/> carrying the seeded admin's bearer token.</summary>
-    /// <param name="factory">The shared API + PostgreSQL host, which issues the token.</param>
-    /// <param name="host">A host derived from <paramref name="factory"/> with its own settings.</param>
-    /// <returns>An authenticated client of the derived host.</returns>
-    public static async Task<HttpClient> AdminClientAsync(IntegrationTestFactory factory, WebApplicationFactory<Program> host)
-    {
-        var client = host.CreateClient();
-        var token = await factory.GetAdminTokenAsync();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
     }
 
     /// <summary>Posts a multipart install request carrying the given ZIP bytes.</summary>

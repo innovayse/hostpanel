@@ -12,16 +12,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import CreditCard from '~/components/client/dashboard/CreditCard.vue'
 import { CREDIT_PAGE_SIZE, useCreditStore } from '~/stores/credit'
-import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { queryOf, readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { FAILED_READ_REQUESTS } from '~/tests/helpers/failedRead'
 import { settle } from '~/tests/helpers/settle'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF path that answers the credit balance and its history. */
-const CREDIT_PATH = '/api/portal/client/credit'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -37,7 +35,7 @@ let table: StubRouteTable
  */
 const mountCard = async (requests = 1) => {
   const wrapper = mountClient(CreditCard)
-  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(requests))
+  await waitUntil(() => expect(requestsTo(stub.requests, BillingEndpoint.Credit)).toHaveLength(requests))
   await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
@@ -54,7 +52,7 @@ describe('ClientDashboardCreditCard', () => {
   })
 
   it('reads the first page of the credit and shows the balance', async () => {
-    table[`GET ${CREDIT_PATH}`] = {
+    table[readOf(BillingEndpoint.Credit)] = {
       body: {
         balance: 25,
         currency: 'USD',
@@ -66,14 +64,14 @@ describe('ClientDashboardCreditCard', () => {
 
     const wrapper = await mountCard()
 
-    expect(requestsTo(stub.requests, CREDIT_PATH).map((request) => queryOf(request))).toEqual([{ page: '1', pageSize: String(CREDIT_PAGE_SIZE) }])
+    expect(requestsTo(stub.requests, BillingEndpoint.Credit).map((request) => queryOf(request))).toEqual([{ page: '1', pageSize: String(CREDIT_PAGE_SIZE) }])
     expect(wrapper.get('[data-testid="credit-balance"]').text()).toContain('25.00')
     expect(wrapper.find('[data-testid="credit-add-funds"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="credit-view"]').exists()).toBe(true)
   })
 
   it('shows nothing when the credit cannot be read', async () => {
-    table[`GET ${CREDIT_PATH}`] = { status: 500, body: { detail: 'down' } }
+    table[readOf(BillingEndpoint.Credit)] = { status: 500, body: { detail: 'down' } }
 
     const wrapper = await mountCard(FAILED_READ_REQUESTS)
 
@@ -81,11 +79,11 @@ describe('ClientDashboardCreditCard', () => {
   })
 
   it('asks for the credit once more after a server failure, and no more', async () => {
-    table[`GET ${CREDIT_PATH}`] = { status: 500, body: { detail: 'down' } }
+    table[readOf(BillingEndpoint.Credit)] = { status: 500, body: { detail: 'down' } }
 
     await mountCard(FAILED_READ_REQUESTS)
     await settle()
 
-    expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(FAILED_READ_REQUESTS)
+    expect(requestsTo(stub.requests, BillingEndpoint.Credit)).toHaveLength(FAILED_READ_REQUESTS)
   })
 })

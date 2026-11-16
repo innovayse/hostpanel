@@ -11,7 +11,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useUsersApi } from '@/composables/apis/useUsersApi'
 import { runAction } from '@/lib/runAction'
-import type { UpdateUserPayload, UserDetail, UserListItem } from '@/types/useraccount'
+import type { UpdateUserPayload, UserDetail, UserListFilters, UserListItem } from '@/types/useraccount'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 
 /** Lists, opens and changes Identity users. */
@@ -23,9 +23,6 @@ export const useUsersStore = defineStore('clientAccounts', () => {
 
   /** Total users matching the current query. */
   const totalCount = ref(0)
-
-  /** Current page number (1-based). */
-  const page = ref(1)
 
   /** Items per page. */
   const pageSize = ref(DEFAULT_PAGE_SIZE)
@@ -46,19 +43,22 @@ export const useUsersStore = defineStore('clientAccounts', () => {
   const fieldErrors = ref<Record<string, string>>({})
 
   /**
-   * Fetches a paginated user list.
+   * Fetches one page of the user list. The page and the search text come from the list's address, so the store
+   * keeps no copy of them.
    *
-   * @param search - Optional search term.
-   * @returns Promise that resolves when data is loaded.
+   * @param page - Page to load, 1-based.
+   * @param filters - The search text; empty for every user.
+   * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (search?: string): Promise<void> => {
+  const fetchAll = async (page: number, filters: UserListFilters = {}): Promise<boolean> => {
     loading.value = true
-    const result = await runAction(error, () => api.list(page.value, pageSize.value, search))
+    const result = await runAction(error, () => api.list(page, pageSize.value, filters.search))
     loading.value = false
     if (result.ok) {
       users.value = result.value.items
       totalCount.value = result.value.totalCount
     }
+    return result.ok
   }
 
   /**
@@ -126,7 +126,6 @@ export const useUsersStore = defineStore('clientAccounts', () => {
   return {
     users,
     totalCount,
-    page,
     pageSize,
     current,
     loading,

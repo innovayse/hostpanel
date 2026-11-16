@@ -1,25 +1,34 @@
 <script setup lang="ts">
 /**
- * Client transactions page: displays financial ledger entries with summary cards and allows adding
- * new transactions and deleting existing ones. A delete is confirmed first; adding and deleting
- * report their outcome (success, or the API's sentence) above the ledger, and a refused load shows
- * the sentence with a Retry.
+ * Client transactions page: displays financial ledger entries with summary cards, a search box and the filter dialog
+ * (direction, payment method, date range, amount) with its removable chips, and allows adding new transactions and
+ * deleting existing ones. The search text, the filters and the page live in the address (`useListQuery`), so a reload,
+ * a shared link and the back button restore the same ledger, and the API narrows the rows and their summary totals
+ * before it pages. A delete is confirmed first; adding and deleting report their outcome (success, or the API's
+ * sentence) above the ledger, and a refused load shows the sentence with a Retry.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientTransactionsStore } from '@/stores/clientTransactions'
+import { useFilterDateRange } from '@/composables/useFilterDateRange'
+import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { TransactionFilterKey, useTransactionFilters } from '@/composables/useTransactionFilters'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import AddTransactionModal from '@/components/clients/AddTransactionModal.vue'
+import TransactionFilterFields from '@/components/billing/TransactionFilterFields.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
+import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
+import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -48,17 +57,24 @@ const route = useRoute()
 /** Client transactions store, the only caller of the transaction endpoints. */
 const store = useClientTransactionsStore()
 
+/** The filters, the search text and the page of the ledger, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, dateOf, applied, chipsOf }
+  = useListQuery(Object.values(TransactionFilterKey))
+
+/** The applied direction, payment method, period and amount, and their chips. */
+const transactionFilters = useTransactionFilters({ enumOf, dateOf, applied })
+
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(transactionFilters.chipSources)
+
+/** The date range of the filter draft; the picker edits the pair, the address keeps its two ends. */
+const draftRange = useFilterDateRange(draft, TransactionFilterKey.From, TransactionFilterKey.To)
+
 /** True while the first load is in flight and there are no transactions yet; the tiles and the table then draw their placeholders. */
 const initialLoading = computed<boolean>(() => store.loading && store.transactions.length === 0)
 
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
-
-/** Current page (1-based). */
-const page = ref(1)
-
-/** Items per page. */
-const pageSize = ref(LEDGER_PAGE_SIZE)
 
 /** Whether the add transaction modal is visible. */
 const showAddModal = ref(false)
@@ -82,25 +98,17 @@ const feedback = useResultBanner()
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /**
- * Fetches transactions for the current client.
+ * Loads the page of the ledger the address names with the filters and search it holds.
  *
  * @returns Promise that resolves when data is loaded.
  */
-const fetchTransactions = async (): Promise<void> => {
-  await store.fetchByClient(clientId.value, page.value, pageSize.value)
+const load = async (): Promise<void> => {
+  await store.fetchByClient(clientId.value, page.value, { search: appliedSearch.value, ...transactionFilters.filters.value })
   loadError.value = store.error
 }
 
-/**
- * Navigates to a specific page and re-fetches.
- *
- * @param p - Target page number.
- * @returns Nothing.
- */
-const goToPage = (p: number): void => {
-  page.value = p
-  fetchTransactions()
-}
+// Every change of a filter, the search or the page loads the ledger the address names.
+loadOnChange(load)
 
 /**
  * Handles successful save from the add transaction modal.
@@ -110,7 +118,7 @@ const goToPage = (p: number): void => {
 const onTransactionSaved = (): void => {
   showAddModal.value = false
   feedback.show(t('clients.clientTransactions.transactionAdded'), false)
-  void fetchTransactions()
+  void load()
 }
 
 /**
@@ -141,7 +149,7 @@ const executeDelete = async (): Promise<void> => {
   deleteTargetId.value = null
   if (ok) {
     feedback.show(t('clients.clientTransactions.transactionDeleted'), false)
-    await fetchTransactions()
+    await load()
   } else {
     feedback.show(store.error ?? t('errors.noAnswer'), true)
   }
@@ -177,9 +185,6 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
     disabled: store.loading,
   },
 ]
-
-/** Loads the first page. */
-onMounted(() => fetchTransactions())
 </script>
 
 <template>
@@ -205,7 +210,7 @@ onMounted(() => fetchTransactions())
       :message="loadError"
       :loading="store.loading"
       testid="client-transactions-error"
-      @retry="fetchTransactions()"
+      @retry="load()"
     />
 
     <template v-else>
@@ -235,6 +240,29 @@ onMounted(() => fetchTransactions())
           :loading="initialLoading"
         />
       </UiGrid>
+
+      <UiListToolbar
+        v-model:search="search"
+        search-testid="client-transactions-search"
+        :search-placeholder="t('billing.transactionsList.searchTransactions')"
+        filter-testid="client-transactions-filter"
+        :active-count="activeCount"
+        :chips="chips"
+        :loading="initialLoading"
+        @apply="apply"
+        @reset="reset"
+        @cancel="cancel"
+        @remove="remove"
+        @clear="clearAll"
+      >
+        <TransactionFilterFields
+          v-model:direction="draft.direction"
+          v-model:payment-method="draft.paymentMethod"
+          v-model:period="draftRange"
+          v-model:amount="draft.amount"
+          testid-prefix="client-transactions-filter"
+        />
+      </UiListToolbar>
 
       <UiCard class="overflow-x-auto">
         <UiTable
@@ -272,25 +300,34 @@ onMounted(() => fetchTransactions())
             </UiTableRow>
           </UiTableBody>
           <template #empty>
-            {{ t('shared.noRecordsFound') }}
+            <UiEmptyState
+              :title="narrowed ? t('clients.clientTransactions.noTransactionsMatchYourFilters') : t('shared.noRecordsFound')"
+              data-testid="client-transactions-empty"
+            >
+              <template v-if="activeCount > 0" #actions>
+                <UiButton :variant="UiButtonVariant.Link" data-testid="client-transactions-clear-empty" @click="clearAll">
+                  {{ t('clients.clientTransactions.clearFilters') }}
+                </UiButton>
+              </template>
+            </UiEmptyState>
           </template>
         </UiTable>
         <UiStack
-          v-if="initialLoading || store.totalCount > pageSize"
+          v-if="initialLoading || store.totalCount > LEDGER_PAGE_SIZE"
           direction="row"
           :justify="UiJustify.Between"
           :align="UiAlignItems.Center"
         >
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
             {{ t('clients.clientTransactions.totalcountTransactionValue', { totalCount: store.totalCount }) }}
-          </UiText>
+          </UiResultCount>
           <UiPagination
             :page="page"
             :total="store.totalCount"
-            :page-size="pageSize"
+            :page-size="LEDGER_PAGE_SIZE"
             :loading="initialLoading"
             testid="client-transactions-pagination"
-            @update:page="goToPage"
+            @update:page="setPage"
           />
         </UiStack>
       </UiCard>

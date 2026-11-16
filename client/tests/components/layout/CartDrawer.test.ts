@@ -9,7 +9,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { localized } from '~/tests/helpers/runtimeStubs'
+import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import CartDrawer from '~/components/layout/CartDrawer.vue'
@@ -21,9 +23,7 @@ import type { CartItem } from '~/types/cartitem'
 import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** Path of the endpoint that lists the enabled billing currencies. */
-const CURRENCIES_PATH = '/api/portal/public/billing-currencies'
+import { SITE_CHECKOUT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -65,7 +65,7 @@ const mountOpen = async (items: CartItem[] = []) => {
   const cart = useCartStore()
   cart.items = items
   cart.isOpen = true
-  await waitUntil(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, CatalogPath.BillingCurrencies)).toHaveLength(1))
   await waitUntil(() => expect(useCurrencyStore().loaded).toBe(true))
   await nextTick()
   return wrapper
@@ -77,7 +77,7 @@ describe('CartDrawer', () => {
     vi.stubGlobal('useRouter', () => router)
     router.push.mockClear()
     window.localStorage.clear()
-    stub = await startTransport(routeTable({ [`GET ${CURRENCIES_PATH}`]: { body: currencies } }))
+    stub = await startTransport(routeTable({ [readOf(CatalogPath.BillingCurrencies)]: { body: currencies } }))
   })
 
   afterEach(async () => {
@@ -98,7 +98,7 @@ describe('CartDrawer', () => {
 
     await wrapper.find('[data-testid="cart-drawer-browse"]').trigger('click')
 
-    expect(router.push).toHaveBeenCalledWith('/en/hosting')
+    expect(router.push).toHaveBeenCalledWith(localized(SITE_HOSTING_PATH))
     expect(useCartStore().isOpen).toBe(false)
   })
 
@@ -152,7 +152,7 @@ describe('CartDrawer', () => {
 
     await wrapper.find('[data-testid="cart-drawer-checkout"]').trigger('click')
 
-    expect(router.push).toHaveBeenCalledWith('/en/checkout')
+    expect(router.push).toHaveBeenCalledWith(localized(SITE_CHECKOUT_PATH))
     expect(useCartStore().isOpen).toBe(false)
   })
 

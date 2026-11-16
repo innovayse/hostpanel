@@ -44,7 +44,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var service = await context.ClientServices.FirstOrDefaultAsync(
                 s => s.Id == serviceId, CancellationToken.None);
-            service!.Activate("panel-ref-admin-test", service.CreatedAt, DateTimeOffset.UtcNow);
+            service!.Activate("panel-ref-admin-test", service.CreatedAt, TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -67,7 +67,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var seeded = await context.ClientServices.FirstOrDefaultAsync(
                 s => s.Id == serviceId, CancellationToken.None);
-            seeded!.Activate("panel-ref-source-test", seeded.CreatedAt, DateTimeOffset.UtcNow);
+            seeded!.Activate("panel-ref-source-test", seeded.CreatedAt, TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -202,7 +202,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
         (await setupHttp.PostAsync($"/api/provisioning/{serviceId}/provision", null)).EnsureSuccessStatusCode();
         var provider = new FakeProvisioningProvider();
         var host = ProvisioningTestSeeds.HostWithFakeProvider(factory, provider);
-        var http = await ProvisioningTestSeeds.AdminClientOnAsync(factory, host);
+        var http = await AuthTestSeeds.AdminClientAsync(factory, host);
         HttpResponseMessage? response = null;
 
         await host.Services.GetRequiredService<IHost>().TrackActivity()

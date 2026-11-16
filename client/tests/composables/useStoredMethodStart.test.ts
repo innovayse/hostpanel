@@ -15,7 +15,7 @@ import { useStoredMethodStart } from '~/composables/useStoredMethodStart'
 import { ConsentTextVersion } from '~/types/consenttextversion'
 import { SaveMethodMode } from '~/types/savemethodmode'
 import { readPendingStoredSession } from '~/utils/pendingStoredSession'
-import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { stubLocalePath, TEST_LOCALE_PREFIX } from '~/tests/helpers/runtimeStubs'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -36,7 +36,7 @@ let table: StubRouteTable
 beforeEach(async () => {
   setActivePinia(createPinia())
   window.sessionStorage.clear()
-  stubLocalePath('/en')
+  stubLocalePath(TEST_LOCALE_PREFIX)
   browserLocation = { origin: 'https://panel.test', href: '' }
   vi.stubGlobal('location', browserLocation)
   table = {}

@@ -20,7 +20,7 @@ const CREATE_LINE = 'POST /api/services/existing'
 /** The catalogue and the server list the selects offer. */
 const lookups = {
   'GET /api/products': () => json([{ id: 4, name: 'Business Hosting' }]),
-  'GET /api/admin/servers': () => json([{ id: 2, name: 'srv4', endpoint: { hostname: 'srv4.example.test' } }]),
+  'GET /api/admin/servers/options': () => json([{ id: 2, name: 'srv4', hostname: 'srv4.example.test' }]),
 }
 
 /** The Pinia the modal and the test share. */

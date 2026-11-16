@@ -22,8 +22,8 @@ internal sealed class TwoFactorHost : IDisposable
     /// <param name="factory">The shared API + PostgreSQL host the clocked host is derived from.</param>
     public TwoFactorHost(IntegrationTestFactory factory)
     {
-        var now = DateTimeOffset.UtcNow;
-        var stepStart = now.ToUnixTimeSeconds() / StepSeconds * StepSeconds;
+        // Real time on purpose: the sign-in tokens the tests mint against the shared host carry real expiry, so the clocked host starts near it.
+        var stepStart = TestMoments.Present().ToUnixTimeSeconds() / StepSeconds * StepSeconds;
         _host = new ClockedHost(factory, DateTimeOffset.FromUnixTimeSeconds(stepStart + OffsetIntoStepSeconds));
     }
 

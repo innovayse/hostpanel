@@ -30,7 +30,7 @@
 
     <UiStack v-if="hasMore" direction="row" class="mt-6">
       <UiLink
-        :to="localePath('/faq')"
+        :to="localePath(SITE_FAQ_PATH)"
         tone="inherit"
         :underline="false"
         class="inline-flex items-center gap-2 text-[15px] font-semibold text-nova-brand"
@@ -59,6 +59,7 @@
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
 import { useStorefrontStore } from '~/stores/storefront'
+import { SITE_FAQ_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the section copy, and the active language. */
 const { t, locale } = useI18n()

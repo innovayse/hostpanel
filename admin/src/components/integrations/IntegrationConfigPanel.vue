@@ -3,7 +3,7 @@
  * The config panel of one integration, shared by the integration page and the Settings tab of a plugin.
  *
  * Loads the integration by its slug through the integrations store and draws the config form beside the status
- * sidebar. While the integration loads it draws placeholders of both cards; a refused load shows the API's sentence
+ * sidebar. While the integration loads the same two cards are drawn with bars where their values go; a refused load shows the API's sentence
  * with a Retry; a save reports its outcome (success, or the API's sentence) above the form.
  */
 import { computed, onMounted, ref, watch } from 'vue'
@@ -15,11 +15,7 @@ import { INTEGRATION_META } from '@/types/integrationmeta'
 import type { IntegrationConfigPayload, IntegrationSlug } from '@/types/integration'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatusSidebar.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -32,9 +28,6 @@ const props = defineProps<{
 
 /** Translation function. */
 const { t } = useI18n()
-
-/** Placeholder fields the form card draws while the integration loads; the real fields come from the API, so only their count is a guess. */
-const LOADING_FIELD_COUNT = 4
 
 /** Integrations store: the detail, the test state and the refusal sentence. */
 const store = useIntegrationsStore()
@@ -111,32 +104,9 @@ onMounted(load)
 
 <template>
   <UiStack gap="md" class="w-full" data-testid="integration-config-panel">
-    <!-- Loading -->
-    <UiSplit v-if="store.loading && !store.current" aria-busy="true" data-testid="integration-loading">
-      <UiCard padding="md">
-        <UiStack gap="lg" aria-hidden="true">
-          <UiStack direction="row" align="center" gap="md">
-            <UiSkeletonBar class="h-10 w-10 shrink-0 rounded-control" />
-            <UiStack gap="xs" class="min-w-0 flex-1">
-              <UiSkeletonBar class="h-5 w-40 rounded-md" />
-              <UiSkeletonBar class="h-3.5 w-64 max-w-full rounded-md" />
-            </UiStack>
-            <UiSkeletonBar class="h-6 w-24 shrink-0 rounded-full" />
-          </UiStack>
-          <UiGrid :columns="2" gap="md">
-            <UiField v-for="field in LOADING_FIELD_COUNT" :key="field" loading />
-          </UiGrid>
-          <UiStack direction="row" gap="sm">
-            <UiSkeletonBar class="h-10 w-32 rounded-control" />
-          </UiStack>
-        </UiStack>
-      </UiCard>
-      <IntegrationStatusSidebar :test-result="null" loading />
-    </UiSplit>
-
     <!-- Error -->
     <UiErrorState
-      v-else-if="loadError !== null"
+      v-if="loadError !== null"
       :message="loadError"
       :loading="store.loading"
       testid="integration-error"
@@ -146,8 +116,8 @@ onMounted(load)
     <!-- Outcome of the last save -->
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="integration-feedback" />
 
-    <!-- Content -->
-    <UiSplit v-if="store.current && loadError === null">
+    <!-- Content: the same split while the integration is read, with placeholders where its values go -->
+    <UiSplit v-if="loadError === null" :aria-busy="store.current === null ? 'true' : undefined">
       <IntegrationConfigForm
         :integration="store.current"
         :loading="store.loading"
@@ -156,9 +126,10 @@ onMounted(load)
         @test="handleTest"
       />
       <IntegrationStatusSidebar
+        :loading="store.current === null"
         :test-result="store.testResult"
         :testing="store.testing"
-        :connection="store.current.connection"
+        :connection="store.current?.connection"
         :endpoint-host="endpointHost"
         :hint="hint"
       />

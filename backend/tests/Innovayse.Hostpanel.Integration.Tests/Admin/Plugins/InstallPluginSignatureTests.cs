@@ -192,7 +192,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
             services.AddSingleton(PluginSigningTestSeeds.Verifier(enforced: true));
         }));
 
-        return await PluginsTestSeeds.AdminClientAsync(factory, host);
+        return await AuthTestSeeds.AdminClientAsync(factory, host);
     }
 
     /// <summary>Builds a plugin archive with one flaw.</summary>

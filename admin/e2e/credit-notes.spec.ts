@@ -1,7 +1,7 @@
 /**
  * Credit note flows: issuing a note from the Credit notes tab of a paid invoice (the form totals the lines at the invoice rate,
  * posts them and lists the new note), a note above what the invoice can take keeps the form open with the API sentence, the list
- * filters by status, and the page of a note voids it only with a reason and shows it voided.
+ * filters by status and searches, and the page of a note voids it only with a reason and shows it voided.
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
@@ -90,7 +90,7 @@ test('a form that credits more than the invoice can take is stopped before the c
   expect(api.callsTo(HttpMethod.Post, '/api/billing/1/credit-notes')).toHaveLength(0)
 })
 
-test('the list filters by status and opens a note', async ({ page }) => {
+test('the list filters by status, searches and opens a note', async ({ page }) => {
   const api = await stubApi(page, {
     signedIn: true,
     routes: [
@@ -108,10 +108,20 @@ test('the list filters by status and opens a note', async ({ page }) => {
   await expect(page.getByTestId('billing-credit-notes-table')).toContainText('CN-0003')
   await expect(page.getByTestId('billing-credit-notes-table')).toContainText('CN-0004')
 
-  await page.getByTestId('billing-credit-notes-status-filter').getByTestId('ui-select-trigger').click()
+  await page.getByTestId('billing-credit-notes-filter').click()
+  await page.getByTestId('billing-credit-notes-filter-status').getByTestId('ui-select-trigger').click()
   await page.getByTestId('ui-select-option').filter({ hasText: 'Voided' }).click()
+  await page.getByTestId('filter-apply').click()
+  await expect(page).toHaveURL(/status=Voided/)
+  await expect(page.getByTestId('filter-chip-status')).toContainText('Voided')
   await expect(page.getByTestId('billing-credit-notes-table')).not.toContainText('Applied')
   expect(api.callsTo(HttpMethod.Get, '/api/billing/credit-notes').some((call) => call.search.includes('status=Voided'))).toBe(true)
+
+  // The search box writes to the address after a pause and the list reloads from it.
+  await page.getByTestId('filter-chip-remove-status').click()
+  await fieldOf(page, 'billing-credit-notes-search').fill('CN-0004')
+  await expect(page).toHaveURL(/search=CN-0004/)
+  await expect.poll(() => api.callsTo(HttpMethod.Get, '/api/billing/credit-notes').at(-1)?.search).toContain('search=CN-0004')
 
   await page.goto('/billing/credit-notes/3')
   await expect(page.getByTestId('billing-credit-note-view')).toContainText('Credit note CN-0003')

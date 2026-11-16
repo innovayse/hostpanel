@@ -3,28 +3,31 @@
  * from the catalogue), the brand block with the operator's contact details and trust marks, and
  * the bottom row with the pickers and theme toggle.
  *
- * The real catalogue store, API composable, transport and logo lockup run against a stub server
- * playing the BFF; only the pickers, the theme toggle and the domain search are stood in for.
+ * The real catalogue store, API composable, transport, logo lockup and the operator's settings composables run
+ * against a stub server playing the BFF; only the pickers, the theme toggle and the domain search are stood in for.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { TEST_LOCALE_PREFIX, localized, stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { readOf, requestsTo } from '~/tests/helpers/stubRoutes'
 import LayoutFooter from '~/components/layout/Footer.vue'
+import { useAppColorMode } from '~/composables/useAppColorMode'
+import { useBrandLogo } from '~/composables/useBrandLogo'
+import { useContactDetails } from '~/composables/useContactDetails'
+import { useLocalizedSetting } from '~/composables/useLocalizedSetting'
+import { useSiteIdentity } from '~/composables/useSiteIdentity'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useCatalogStore } from '~/stores/catalog'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { SITE_ABOUT_PATH, SITE_COOKIE_POLICY_PATH, SITE_DOMAINS_PATH, SITE_DOMAINS_TRANSFER_PATH, SITE_FAQ_PATH, SITE_KNOWLEDGEBASE_PATH, SITE_PRIVACY_PATH, SITE_PRODUCTS_PATH, SITE_REFUND_POLICY_PATH, SITE_TERMS_PATH } from '~/constants/siteRoutes'
 
-/** Path of the endpoint that lists the product groups. */
-const GROUPS_PATH = '/api/portal/public/product-groups'
-
-/** The stub playing the BFF. */
-let stub: StubServer
+/** What the stub answers, by route, and the accessor of the stub the hooks start and close around each test. */
+const { replies, stub } = usePortalSettingsServer({ useAppColorMode, useBrandLogo, useContactDetails, useLocalizedSetting, useSiteIdentity })
 
 /** The plan groups the stub answers the catalogue read with; a test sets them before it mounts. */
 let groupsOnOffer: PortalProductGroup[] = []
@@ -41,8 +44,14 @@ const stubFor = (name: string, testid: string) => defineComponent({
   setup: () => () => h('div', { 'data-testid': testid }),
 })
 
-/** Contact details the stood-in `useContactDetails` answers with. */
-let contact = { email: '', phone: '', phoneLink: '', address: '' }
+/** The contact settings the operator has entered, by their dotted key; a test replaces them before it mounts. */
+let contact: Record<string, string> = {}
+
+/** An operator who has entered an e-mail address and a phone number, and no address. */
+const CONTACT_SET: Record<string, string> = {
+  [PortalSettingKey.ContactEmail]: 'hello@portal.test',
+  [PortalSettingKey.ContactPhone]: '+1 555 010 200',
+}
 
 /**
  * Mounts the footer and waits until the catalogue groups it loads on mount are in the store.
@@ -52,6 +61,8 @@ let contact = { email: '', phone: '', phoneLink: '', address: '' }
  */
 const mountFooter = async (groups: PortalProductGroup[] = []) => {
   groupsOnOffer = groups
+  replies[readOf(CatalogPath.ProductGroups)] = () => ({ body: groupsOnOffer })
+  await loadPortalSettings(replies, contact)
   const pinia = createPinia()
   setActivePinia(pinia)
   const wrapper = mountWithKit(LayoutFooter, {
@@ -63,27 +74,15 @@ const mountFooter = async (groups: PortalProductGroup[] = []) => {
       SectionsDomainSearch: stubFor('SectionsDomainSearch', 'footer-domain-search'),
     },
   })
-  await waitUntil(() => expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub().requests, CatalogPath.ProductGroups)).toHaveLength(1))
   await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
   return wrapper
 }
 
 describe('LayoutFooter', () => {
-  beforeEach(async () => {
-    stubTemplateGlobals()
-    stubPublicPageRuntime()
-    contact = { email: 'hello@portal.test', phone: '+1 555 010 200', phoneLink: '+1555010200', address: '' }
-    vi.stubGlobal('useContactDetails', () => ({
-      email: ref(contact.email),
-      phone: ref(contact.phone),
-      phoneLink: ref(contact.phoneLink),
-      address: ref(contact.address),
-    }))
-    stub = await startTransport(routeTable({ [`GET ${GROUPS_PATH}`]: () => ({ body: groupsOnOffer }) }))
-  })
-
-  afterEach(async () => {
-    await stub.close()
+  beforeEach(() => {
+    stubLocalePath(TEST_LOCALE_PREFIX)
+    contact = CONTACT_SET
   })
 
   it('sits on the classic footer surface with a visible top border', async () => {
@@ -105,7 +104,7 @@ describe('LayoutFooter', () => {
     const wrapper = await mountFooter()
 
     expect(wrapper.find('[data-testid="footer-cta"] [data-testid="footer-domain-search"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="footer-cta-plans"]').attributes('href')).toBe('/en/products')
+    expect(wrapper.find('[data-testid="footer-cta-plans"]').attributes('href')).toBe(localized(SITE_PRODUCTS_PATH))
   })
 
   it('renders the five link columns in order', async () => {
@@ -133,7 +132,7 @@ describe('LayoutFooter', () => {
     expect(labels).toContain('Shared hosting')
     expect(labels).toContain('Cloud servers')
     expect(labels).not.toContain('Empty')
-    expect(column.find('[data-testid="footer-hosting-all"]').attributes('href')).toBe('/en/products')
+    expect(column.find('[data-testid="footer-hosting-all"]').attributes('href')).toBe(localized(SITE_PRODUCTS_PATH))
   })
 
   it('links the domain, company, support and legal pages', async () => {
@@ -146,15 +145,15 @@ describe('LayoutFooter', () => {
      * @returns Its `href`, or undefined when it has none.
      */
     const href = (testid: string): string | undefined => wrapper.find(`[data-testid="${testid}"]`).attributes('href')
-    expect(href('footer-domains-register')).toBe('/en/domains')
-    expect(href('footer-domains-transfer')).toBe('/en/domains/transfer')
-    expect(href('footer-company-about')).toBe('/en/about')
-    expect(href('footer-support-help')).toBe('/en/knowledgebase')
-    expect(href('footer-support-faq')).toBe('/en/faq')
-    expect(href('footer-legal-privacy')).toBe('/en/privacy')
-    expect(href('footer-legal-cookies')).toBe('/en/cookie-policy')
-    expect(href('footer-legal-terms')).toBe('/en/terms')
-    expect(href('footer-legal-refund')).toBe('/en/refund-policy')
+    expect(href('footer-domains-register')).toBe(localized(SITE_DOMAINS_PATH))
+    expect(href('footer-domains-transfer')).toBe(localized(SITE_DOMAINS_TRANSFER_PATH))
+    expect(href('footer-company-about')).toBe(localized(SITE_ABOUT_PATH))
+    expect(href('footer-support-help')).toBe(localized(SITE_KNOWLEDGEBASE_PATH))
+    expect(href('footer-support-faq')).toBe(localized(SITE_FAQ_PATH))
+    expect(href('footer-legal-privacy')).toBe(localized(SITE_PRIVACY_PATH))
+    expect(href('footer-legal-cookies')).toBe(localized(SITE_COOKIE_POLICY_PATH))
+    expect(href('footer-legal-terms')).toBe(localized(SITE_TERMS_PATH))
+    expect(href('footer-legal-refund')).toBe(localized(SITE_REFUND_POLICY_PATH))
   })
 
   it('shows the logo lockup and the tagline in the brand block', async () => {
@@ -172,7 +171,7 @@ describe('LayoutFooter', () => {
   })
 
   it('hides the contact rows that are not configured', async () => {
-    contact = { email: '', phone: '', phoneLink: '', address: '' }
+    contact = {}
     const wrapper = await mountFooter()
 
     expect(wrapper.find('[data-testid="footer-email"]').exists()).toBe(false)
@@ -181,7 +180,7 @@ describe('LayoutFooter', () => {
   })
 
   it('shows the address when one is configured', async () => {
-    contact = { ...contact, address: '1 Example Street' }
+    contact = { ...CONTACT_SET, [PortalSettingKey.ContactAddress]: '1 Example Street' }
 
     expect((await mountFooter()).find('[data-testid="footer-address"]').text()).toBe('1 Example Street')
   })

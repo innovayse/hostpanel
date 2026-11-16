@@ -17,6 +17,7 @@ import type { ClientInvoice } from '~/types/clientinvoice'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { Permission } from '~/types/permission'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { clientInvoicePath } from '~/constants/clientRoutes'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -69,7 +70,7 @@ describe('invoice list page', () => {
     await waitUntil(() => expect(rowIds(wrapper)).toEqual(['1', '2']))
 
     expect(wrapper.text()).toContain('$25.00')
-    expect(wrapper.find('[data-testid="invoice-view-1"]').attributes('href')).toBe('/client/invoices/1')
+    expect(wrapper.find('[data-testid="invoice-view-1"]').attributes('href')).toBe(clientInvoicePath(1))
   })
 
   it('counts both owing statuses under the unpaid tab', async () => {

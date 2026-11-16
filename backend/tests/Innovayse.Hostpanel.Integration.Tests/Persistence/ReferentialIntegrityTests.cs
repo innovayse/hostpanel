@@ -100,7 +100,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        context.Invoices.Add(Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), TestCurrencies.Base, DateTimeOffset.UtcNow));
+        context.Invoices.Add(Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), TestCurrencies.Base, TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         // The invoice is forgotten so the delete reaches the database, whose key is what is proven here;
@@ -123,7 +123,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        context.Invoices.Add(Invoice.Create(int.MaxValue, DateTimeOffset.UtcNow.AddDays(7), TestCurrencies.Base, DateTimeOffset.UtcNow));
+        context.Invoices.Add(Invoice.Create(int.MaxValue, TestMoments.Seeded.AddDays(7), TestCurrencies.Base, TestMoments.Seeded));
 
         var act = () => context.SaveChangesAsync(CancellationToken.None);
 
@@ -138,7 +138,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), TestCurrencies.Base, DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), TestCurrencies.Base, TestMoments.Seeded);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
         var ledgerRow = Transaction.Create(
@@ -164,7 +164,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        context.ClientServices.Add(ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow));
+        context.ClientServices.Add(ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         // The service is forgotten so the delete reaches the database, whose key is what is proven here;
@@ -189,13 +189,13 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
         var request = CancellationRequest.Create(service.Id, CancellationType.Immediate, null);
         context.CancellationRequests.Add(request);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1),
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
             autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.LinkService(service.Id);
         context.Domains.Add(domain);
@@ -245,7 +245,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
         var slide = Slide.Create(
             new SlideSettings("server", "#336699", "/slides/a.png", null, null, productId, 1, true, SlideAudience.All, null, null),
-            DateTimeOffset.UtcNow);
+            TestMoments.Seeded);
         context.Slides.Add(slide);
         await context.SaveChangesAsync(CancellationToken.None);
 

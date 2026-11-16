@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useBillingStore } from '@/stores/billing'
 import { PaymentGateway } from '@/types/gateway'
-import { InvoiceRefundType } from '@/types/invoice'
+import { InvoiceRefundType, InvoiceStatus } from '@/types/invoice'
 import { invalid, json, problem, stubFetch, stubOffline, callOf } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 
@@ -27,11 +27,19 @@ describe('billingStore loads', () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 1, pageSize: 25, totalCount: 7, totalPages: 1 }))
     const store = useBillingStore()
 
-    await store.fetchAll(1, 25, 'Paid')
+    await store.fetchAll(1, { status: InvoiceStatus.Paid, search: '', clientId: undefined })
     expect(store.invoices).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(7)
     expect(store.loading).toBe(false)
     expect(callOf(mock).url).toBe('/api/billing?page=1&pageSize=25&status=Paid')
+  })
+
+  it('fetchAll sends the search, the client and the period to the server', async () => {
+    const mock = stubFetch(json({ items: [], pageNumber: 2, pageSize: 25, totalCount: 0, totalPages: 0 }))
+    const store = useBillingStore()
+
+    await store.fetchAll(2, { search: 'wire', clientId: 7, status: InvoiceStatus.Unpaid, from: '2026-10-01', to: '2026-10-31' })
+    expect(callOf(mock).url).toBe('/api/billing?page=2&pageSize=25&search=wire&clientId=7&status=Unpaid&from=2026-10-01&to=2026-10-31')
   })
 
   it('fetchAll keeps the API sentence on refusal', async () => {
@@ -62,6 +70,14 @@ describe('billingStore loads', () => {
     expect(store.clientInvoices).toEqual([{ id: 2 }])
     expect(store.clientInvoicesTotal).toBe(1)
     expect(callOf(mock).url).toBe('/api/billing/client/9?page=1&pageSize=25')
+  })
+
+  it('fetchClientInvoices sends the search, the status and the period to the server', async () => {
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    const store = useBillingStore()
+
+    await store.fetchClientInvoices(9, 3, { search: 'card', status: InvoiceStatus.Paid, from: '2026-10-01' })
+    expect(callOf(mock).url).toBe('/api/billing/client/9?page=3&pageSize=25&search=card&status=Paid&from=2026-10-01')
   })
 })
 

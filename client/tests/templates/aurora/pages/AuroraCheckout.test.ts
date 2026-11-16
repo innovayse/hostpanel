@@ -23,7 +23,7 @@ import AuroraCheckout from '~/templates/aurora/pages/AuroraCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SaveOption from '~/components/checkout/SaveOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
-import { clientInvoicePayPath } from '~/constants/clientRoutes'
+import { CLIENT_LOGIN_PATH, clientInvoicePayPath } from '~/constants/clientRoutes'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
@@ -32,6 +32,7 @@ import type { CartItem } from '~/types/cartitem'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import { PaymentModule } from '~/types/paymentmodule'
 import { Permission } from '~/types/permission'
+import { localized } from '~/tests/helpers/runtimeStubs'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -115,7 +116,7 @@ describe('AuroraCheckout', () => {
     for (const id of ['firstname', 'lastname', 'email', 'password']) {
       expect(wrapper.find(`[data-testid="checkout-${id}"]`).attributes('placeholder')).toBe(`checkout.placeholders.${id}`)
     }
-    expect(wrapper.find('[data-testid="checkout-sign-in"]').attributes('href')).toBe('/en/client/login')
+    expect(wrapper.find('[data-testid="checkout-sign-in"]').attributes('href')).toBe(localized(CLIENT_LOGIN_PATH))
   })
 
   it('shows the signed-in account line instead of the guest form, and signs out on "not you"', async () => {

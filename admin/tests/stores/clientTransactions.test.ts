@@ -20,11 +20,19 @@ describe('clientTransactionsStore', () => {
     }))
     const store = useClientTransactionsStore()
 
-    await store.fetchByClient(7, 2, 10)
+    await store.fetchByClient(7, 2, {}, 10)
     expect(store.transactions).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(2)
     expect(store.summary).toEqual({ totalIn: 5, totalOut: 1, totalFees: 0, balance: 4 })
     expect(callOf(mock).url).toBe('/api/transactions/client/7?page=2&pageSize=10')
+  })
+
+  it('fetchByClient sends the search and the filters the screen holds', async () => {
+    const mock = stubFetch(json({ transactions: { items: [], totalCount: 0 }, totalIn: 0, totalOut: 0, totalFees: 0, balance: 0 }))
+    const store = useClientTransactionsStore()
+
+    await store.fetchByClient(7, 1, { search: 'refund', direction: 'Out', to: '2026-03-31' })
+    expect(callOf(mock).url).toBe('/api/transactions/client/7?page=1&pageSize=25&search=refund&direction=Out&to=2026-03-31')
   })
 
   it('fetchByClient shows the API sentence on refusal', async () => {

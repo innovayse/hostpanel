@@ -12,9 +12,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { AccountEndpoint } from '../helpers/accountPaths'
 import { BillingEndpoint } from '../helpers/billingPaths'
-import { DOMAIN_ID, DomainAction, domainPath } from '../helpers/domainPanelPaths'
+import { CatalogPath } from '../helpers/catalogPaths'
+import { DOMAIN_ID, DomainAction, domainPath, DomainEndpoint } from '../helpers/domainPanelPaths'
 import { bodyOf } from '../helpers/requestBody'
-import { readOf, refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable, writeOf } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
 import type { StubRequest, StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
@@ -36,13 +37,13 @@ let stub: StubServer
 let table: StubRouteTable
 
 /** The availability check. */
-const CHECK_ROUTE = 'POST /api/portal/public/domain-check'
+const CHECK_ROUTE = writeOf(CatalogPath.DomainCheck)
 
 /** The catalogue read. */
-const PRODUCTS_ROUTE = readOf('/api/portal/public/products')
+const PRODUCTS_ROUTE = readOf(CatalogPath.Products)
 
 /** The placing of a transfer order. */
-const TRANSFER_ROUTE = 'POST /api/portal/client/domains/transfer-order'
+const TRANSFER_ROUTE = writeOf(DomainEndpoint.TransferOrder)
 
 /**
  * The key of an action on the domain every test opens in a stub route table.
@@ -74,7 +75,7 @@ describe('useDomainsStore', () => {
     const outcome = await store.checkAvailability('a.com')
 
     expect(outcome).toBe(DomainActionOutcome.Done)
-    expect(bodyOf(requestsTo(stub.requests, '/api/portal/public/domain-check')[0])).toEqual({ domain: 'a.com' })
+    expect(bodyOf(requestsTo(stub.requests, CatalogPath.DomainCheck)[0])).toEqual({ domain: 'a.com' })
     expect(store.searchResult).toMatchObject({ domain: 'a.com' })
     expect(store.searchError).toBe('')
     expect(store.searching).toBe(false)
@@ -108,7 +109,7 @@ describe('useDomainsStore', () => {
     const outcome = await store.placeTransfer({ domain: 'a.com' })
 
     expect(outcome).toBe(DomainActionOutcome.Done)
-    expect(bodyOf(requestsTo(stub.requests, '/api/portal/client/domains/transfer-order')[0])).toEqual({ domain: 'a.com' })
+    expect(bodyOf(requestsTo(stub.requests, DomainEndpoint.TransferOrder)[0])).toEqual({ domain: 'a.com' })
     expect(store.transferResult).toEqual({ orderId: 1, invoiceId: 2 })
     expect(store.transferSaving).toBe(false)
   })
@@ -308,7 +309,7 @@ describe('useDomainsStore storefront lookup', () => {
       { name: 'my-site.org', price: EMPTY_AMOUNT, status: 'taken' },
       { name: 'my-site.io', price: EMPTY_AMOUNT, status: 'taken' }
     ])
-    expect(requestsTo(stub.requests, '/api/portal/public/domain-check')).toHaveLength(4)
+    expect(requestsTo(stub.requests, CatalogPath.DomainCheck)).toHaveLength(4)
     expect(store.lookupPending).toBe(false)
     expect(store.lookupTerm).toBe('My Site.xyz')
   })

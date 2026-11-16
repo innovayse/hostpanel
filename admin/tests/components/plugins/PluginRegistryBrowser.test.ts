@@ -212,11 +212,12 @@ describe('PluginRegistryBrowser', () => {
     expect(wrapper.find('[data-testid="plugin-registry-list"]').exists()).toBe(false)
   })
 
-  it('shows one card placeholder per page slot while the first page loads', async () => {
+  it('draws one card placeholder per page slot in the real grid while the first page loads', async () => {
     const wrapper = await mountBrowser({ items: [], total: 0, loading: true, pageSize: 6 })
 
-    expect(wrapper.get('[data-testid="plugin-registry-loading"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.findAll('[data-testid="plugin-card-skeleton"]')).toHaveLength(6)
+    expect(wrapper.get('[data-testid="plugin-registry-list"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('[data-testid="plugin-registry-list"]').findAll('[data-testid="plugin-card-skeleton"]')).toHaveLength(6)
+    expect(wrapper.find('[data-testid="plugin-registry-total"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-registry-empty"]').exists()).toBe(false)
   })
 

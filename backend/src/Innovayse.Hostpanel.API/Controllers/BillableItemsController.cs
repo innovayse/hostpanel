@@ -27,8 +27,8 @@ public sealed class BillableItemsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a paginated list of billable items with an optional type filter.</summary>
-    /// <param name="query">The page, page size and optional type filter to list by.</param>
+    /// <summary>Returns a paginated list of billable items, narrowed by a search, a client, a type and an invoiced filter.</summary>
+    /// <param name="query">The page, page size, search text and filters to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not an admin;

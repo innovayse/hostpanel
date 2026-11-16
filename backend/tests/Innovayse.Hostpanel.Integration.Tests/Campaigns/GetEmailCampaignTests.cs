@@ -17,7 +17,8 @@ public sealed class GetEmailCampaignTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task Get_ReturnsTheCampaignWithZeroStats()
     {
-        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, host);
         var id = await CampaignTestSeeds.CreateAsync(client);
 
         var campaign = await client.GetFromJsonAsync<JsonElement>($"{CampaignTestSeeds.Route}/{id}");
@@ -26,7 +27,7 @@ public sealed class GetEmailCampaignTests(IntegrationTestFactory factory) : ICla
         campaign.GetProperty("subject").GetString().Should().Be("Autumn offer");
         campaign.GetProperty("body").GetString().Should().Be("<p>Hello</p>");
         campaign.GetProperty("status").GetString().Should().Be("Draft");
-        campaign.GetProperty("createdAt").GetDateTimeOffset().Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
+        campaign.GetProperty("createdAt").GetDateTimeOffset().Should().Be(TestMoments.Seeded);
         campaign.GetProperty("sentAt").ValueKind.Should().Be(JsonValueKind.Null);
         campaign.GetProperty("segments").GetArrayLength().Should().Be(1);
         var stats = campaign.GetProperty("stats");

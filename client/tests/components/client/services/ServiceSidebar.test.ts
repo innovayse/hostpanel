@@ -9,6 +9,7 @@ import ServiceSidebar from '~/components/client/services/ServiceSidebar.vue'
 import { makeClientService as service } from '~/tests/helpers/clientServiceFixture'
 import { ServiceStatus } from '~/types/servicestatus'
 import { ServiceTab } from '~/types/servicetab'
+import { CLIENT_TICKET_NEW_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
 
 /**
  * Mounts the menu with defaults.
@@ -49,9 +50,9 @@ describe('ServiceSidebar', () => {
     const active = mountSidebar()
     const pending = mountSidebar({ service: service({ status: ServiceStatus.Pending }) })
 
-    expect(active.find('[data-testid="service-open-ticket"]').attributes('href')).toBe('/client/tickets/new')
+    expect(active.find('[data-testid="service-open-ticket"]').attributes('href')).toBe(CLIENT_TICKET_NEW_PATH)
     expect(active.find('[data-testid="service-nav-setup"]').exists()).toBe(false)
-    expect(pending.find('[data-testid="service-nav-setup"]').attributes('href')).toBe('/client/services/4/setup')
+    expect(pending.find('[data-testid="service-nav-setup"]').attributes('href')).toBe(clientServiceSetupPath(4))
   })
 
   it('does not offer the setup of a pending digital service', () => {

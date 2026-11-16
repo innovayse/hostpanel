@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Admin Currencies settings view: table of configured currencies with rate, base and enabled
- * state, plus the bulk exchange-rate and product-price actions.
+ * Admin Currencies settings view: the exchange rate source choice and the table of configured
+ * currencies with rate, base and enabled state, plus the bulk exchange-rate and product-price actions.
  *
  * A result banner reports the async actions, a confirmation dialog guards the destructive or global
  * ones, and each row has its own edit button.
@@ -9,6 +9,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CurrencyFormModal from '@/components/settings/CurrencyFormModal.vue'
+import ExchangeRateProviderCard from '@/components/settings/ExchangeRateProviderCard.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -33,6 +34,7 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { Icon } from '@/lib/icons'
 import { formatAffixed } from '@/lib/money'
 import { useCurrenciesStore } from '@/stores/currencies'
+import { useSettingsStore } from '@/stores/settings'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
@@ -41,6 +43,9 @@ const { t } = useI18n()
 
 /** Currencies store: the list, the loading flag and the refusal sentences. */
 const store = useCurrenciesStore()
+
+/** Settings store: the rows the rate source card reads and writes. */
+const settingsStore = useSettingsStore()
 
 /** The result banner for the bulk actions. */
 const banner = useResultBanner()
@@ -68,6 +73,12 @@ const showPricesConfirm = ref(false)
 
 /** Non-base currency codes selected for the product-price recompute. */
 const selectedPriceCurrencies = ref<string[]>([])
+
+/**
+ * Whether the first settings load has finished, with rows or with a refusal. The settings store starts with no rows and no
+ * request in flight, so without this the rate source card would claim its row is not seeded for the moment before the load starts.
+ */
+const settingsLoaded = ref(false)
 
 /** True while exchange rates are being refreshed. */
 const updatingRates = ref(false)
@@ -217,7 +228,13 @@ const currencyActions = (currency: CurrencyDto): UiMenuAction[] => [
   },
 ]
 
-onMounted(() => store.fetchAll())
+/** Loads the settings the rate source card reads and marks the first load finished. */
+const loadSettings = async (): Promise<void> => {
+  await settingsStore.fetchSettings()
+  settingsLoaded.value = true
+}
+
+onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
 </script>
 
 <template>
@@ -258,6 +275,20 @@ onMounted(() => store.fetchAll())
     >
       {{ banner.message.value }}
     </UiAlert>
+
+    <!-- A refused settings load is said, never hidden: the card would otherwise claim the row is not seeded. -->
+    <UiErrorState
+      v-if="settingsStore.error"
+      :message="settingsStore.error"
+      :loading="settingsStore.loading"
+      testid="currencies-settings-error"
+      @retry="settingsStore.fetchSettings()"
+    />
+    <ExchangeRateProviderCard
+      v-else-if="settingsLoaded"
+      :settings="settingsStore.settings"
+      :save="settingsStore.saveSetting"
+    />
 
     <UiErrorState
       v-if="store.error"

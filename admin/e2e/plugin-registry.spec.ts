@@ -46,6 +46,8 @@ test('browsing the registry and installing a plugin posts its version and shows 
   await expect(page.getByTestId(`plugin-card-${registryGateway.id}`)).toContainText(registryGateway.name)
   await expect(page.getByTestId(`plugin-card-verified-${registryGateway.id}`)).toBeVisible()
   await expect(page.getByTestId('plugin-registry-total')).toContainText('1')
+  // The registry list is asked for a page and a page size, which the server refuses to guess.
+  expect(api.callsTo(HttpMethod.Get, '/api/admin/plugins/registry')[0]?.search).toBe(`?page=1&pageSize=${pageSize}`)
 
   await page.getByTestId(`registry-install-${registryGateway.id}`).click()
 

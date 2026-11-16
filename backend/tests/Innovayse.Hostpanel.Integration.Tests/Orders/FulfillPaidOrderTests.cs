@@ -80,7 +80,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var holderId = await DomainsTestSeeds.SeedClientAsync(context);
         var domainProductId = await DomainsTestSeeds.SeedHostingProductAsync(context);
         context.Domains.Add(RegisteredDomain.Register(
-            holderId, domainName, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
+            holderId, domainName, TestMoments.Seeded, TestMoments.Seeded.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var orderId = await SeedPendingOrderAsync(
@@ -131,11 +131,11 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     private static async Task<int> SeedPendingOrderAsync(
         IHostpanelDbContext context, int clientId, Action<Order> configureItems)
     {
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], clientId, "bank-gateway", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], clientId, "bank-gateway", ipAddress: null, currency: "USD", now: TestMoments.Seeded);
         configureItems(order);
         context.Orders.Add(order);
 
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem("Order", 25m, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -192,7 +192,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
             context, clientId,
             order => order.AddItem(productId, "Starter Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null));
         var order = await context.Orders.FindAsync(orderId);
-        order!.Accept(DateTimeOffset.UtcNow);
+        order!.Accept(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var handler = BuildHandler(scope);
@@ -414,7 +414,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
         line.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_ALREADY_REGISTERED);
         order.Status.Should().Be(OrderStatus.Incomplete);
-        order.CanRetryLine(line.Id, DateTimeOffset.UtcNow, TimeSpan.FromMinutes(10)).Should().BeTrue();
+        order.CanRetryLine(line.Id, TestMoments.Seeded, TimeSpan.FromMinutes(10)).Should().BeTrue();
     }
 
     /// <summary>
@@ -510,7 +510,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var fulfilment = Task.Run(() => handler.HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None));
         await gateway.RefundStarted.Task.WaitAsync(TimeSpan.FromSeconds(60));
         await OrdersTestReads.ReleaseDomainAsync(host.Services, line.Domain!);
-        var admin = await OrdersTestReads.AdminOfAsync(host, factory);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var retry = await admin.PostAsync($"/api/orders/{orderId}/items/{line.Id}/retry", content: null);
 
         retry.StatusCode.Should().Be(HttpStatusCode.Conflict);

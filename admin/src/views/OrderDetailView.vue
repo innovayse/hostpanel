@@ -80,6 +80,9 @@ const route = useRoute()
 const router = useRouter()
 const store = useOrdersStore()
 
+/** The order on show; null while it is still being read, when the page draws its layout with placeholders. */
+const order = computed(() => store.currentOrder)
+
 /** The tab on show. */
 const tab = ref<OrderTab>(OrderTab.Overview)
 
@@ -88,22 +91,6 @@ const tabItems = computed<UiTabItem[]>(() => [
   { value: OrderTab.Overview, label: t('orders.orderDetail.overview'), testid: 'order-tab-overview' },
   { value: OrderTab.Items, label: t('orders.ordersList.items'), testid: 'order-tab-items' },
   { value: OrderTab.Notes, label: t('shared.adminNotes'), testid: 'order-tab-notes' },
-])
-
-/** Captions of the order-info facts, drawn as placeholders while the order loads. */
-const infoFactLabels = computed<string[]>(() => [
-  t('shared.client'),
-  t('shared.paymentMethod'),
-  t('shared.ipAddress'),
-  t('orders.orderDetail.created'),
-  t('orders.orderDetail.linesSubtotal'),
-])
-
-/** Captions of the invoice facts, drawn as placeholders while the order loads. */
-const invoiceFactLabels = computed<string[]>(() => [
-  t('shared.invoiceId'),
-  t('shared.status'),
-  t('orders.orderDetail.invoiceTotal'),
 ])
 
 /** The irreversible change waiting for confirmation, null when the prompt is closed. */
@@ -302,74 +289,45 @@ onMounted(async () => {
       {{ t('orders.orderDetail.backToOrders') }}
     </UiLink>
 
-    <UiStack v-if="store.loading && !store.currentOrder" aria-busy="true" data-testid="order-loading">
-      <UiCard padding="md" data-testid="order-header-loading">
-        <UiStack direction="row" justify="between" align="center" gap="md" wrap aria-hidden="true">
-          <UiStack gap="xs">
-            <UiSkeletonBar class="h-9 w-48 rounded-md" />
-            <UiStack direction="row" gap="sm" align="center">
-              <UiSkeletonBar class="h-5 w-20 rounded-full" />
-              <UiSkeletonBar class="h-3.5 w-32 rounded-md" />
-            </UiStack>
-          </UiStack>
-          <UiStack direction="row" gap="sm" align="center">
-            <UiSkeletonBar class="h-8 w-24 rounded-md" />
-            <UiSkeletonBar class="h-8 w-24 rounded-md" />
-          </UiStack>
-        </UiStack>
-      </UiCard>
-
-      <UiTabs v-model="tab" :items="tabItems" />
-
-      <UiGrid :columns="2">
-        <UiCard padding="md">
-          <UiStack>
-            <UiHeading :level="2" variant="section">
-              {{ t('orders.orderDetail.orderInfo') }}
-            </UiHeading>
-            <OrderFact v-for="label in infoFactLabels" :key="label" :label="label" loading />
-          </UiStack>
-        </UiCard>
-        <UiCard padding="md">
-          <UiStack>
-            <UiHeading :level="2" variant="section">
-              {{ t('orders.orderDetail.invoice') }}
-            </UiHeading>
-            <OrderFact v-for="label in invoiceFactLabels" :key="label" :label="label" loading />
-          </UiStack>
-        </UiCard>
-      </UiGrid>
-    </UiStack>
-
     <UiErrorState
-      v-else-if="store.error"
+      v-if="store.error"
       :message="store.error"
       :loading="store.loading"
       testid="order-error"
       @retry="store.fetchOne(orderId())"
     />
 
-    <template v-else-if="store.currentOrder">
+    <!-- The order, or while it is read the same layout with bars where its values go -->
+    <template v-else>
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="order-action-feedback" />
 
-      <UiCard padding="md" data-testid="order-header">
+      <UiCard padding="md" :aria-busy="order === null ? 'true' : undefined" data-testid="order-header">
         <UiStack direction="row" justify="between" align="center" gap="md" wrap>
           <UiStack gap="xs" class="min-w-0">
-            <UiHeading :level="1" variant="page">
-              {{ store.currentOrder.orderNumber }}
+            <UiSkeletonBar v-if="order === null" class="h-9 w-48 rounded-md" aria-hidden="true" data-testid="order-header-loading" />
+            <UiHeading v-else :level="1" variant="page">
+              {{ order.orderNumber }}
             </UiHeading>
-            <UiStack direction="row" gap="sm" align="center" wrap>
-              <UiBadge :tone="orderStatusTone(store.currentOrder.status)" data-testid="order-status">
-                {{ statusLabel(ORDER_STATUS_OPTIONS, store.currentOrder.status) }}
+            <UiStack v-if="order === null" direction="row" gap="sm" align="center" aria-hidden="true">
+              <UiSkeletonBar class="h-5 w-20 rounded-full" />
+              <UiSkeletonBar class="h-3.5 w-32 rounded-md" />
+            </UiStack>
+            <UiStack v-else direction="row" gap="sm" align="center" wrap>
+              <UiBadge :tone="orderStatusTone(order.status)" data-testid="order-status">
+                {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
               </UiBadge>
               <UiText tone="muted" size="sm">
-                {{ formatDateTime(store.currentOrder.createdAt) }}
+                {{ formatDateTime(order.createdAt) }}
               </UiText>
             </UiStack>
           </UiStack>
-          <UiStack direction="row" gap="sm" align="center" wrap>
+          <UiStack v-if="order === null" direction="row" gap="sm" align="center" aria-hidden="true">
+            <UiSkeletonBar class="h-8 w-24 rounded-md" />
+            <UiSkeletonBar class="h-8 w-24 rounded-md" />
+          </UiStack>
+          <UiStack v-else direction="row" gap="sm" align="center" wrap>
             <UiButton
-              v-if="store.currentOrder.status === OrderStatus.Pending"
+              v-if="order.status === OrderStatus.Pending"
               variant="secondary"
               size="sm"
               data-testid="order-accept"
@@ -379,7 +337,7 @@ onMounted(async () => {
               {{ t('orders.orderDetail.accept') }}
             </UiButton>
             <UiButton
-              v-if="store.currentOrder.status === OrderStatus.Pending"
+              v-if="order.status === OrderStatus.Pending"
               variant="danger"
               size="sm"
               data-testid="order-cancel"
@@ -389,7 +347,7 @@ onMounted(async () => {
               {{ t('shared.cancel') }}
             </UiButton>
             <UiButton
-              v-if="store.currentOrder.status === OrderStatus.Pending || store.currentOrder.status === OrderStatus.Cancelled"
+              v-if="order.status === OrderStatus.Pending || order.status === OrderStatus.Cancelled"
               variant="ghost"
               size="sm"
               data-testid="order-delete"
@@ -402,7 +360,7 @@ onMounted(async () => {
         </UiStack>
       </UiCard>
 
-      <UiTabs v-model="tab" :items="tabItems" :aria-label="store.currentOrder.orderNumber" />
+      <UiTabs v-model="tab" :items="tabItems" :aria-label="order?.orderNumber" />
 
       <UiStack v-if="tab === OrderTab.Overview">
         <UiGrid :columns="2">
@@ -411,26 +369,26 @@ onMounted(async () => {
               <UiHeading :level="2" variant="section">
                 {{ t('orders.orderDetail.orderInfo') }}
               </UiHeading>
-              <OrderFact :label="t('shared.client')">
-                <UiLink variant="link" :to="clientPath(store.currentOrder.clientId)" data-testid="order-client">
-                  {{ store.currentOrder.clientName }}
+              <OrderFact :label="t('shared.client')" :loading="order === null">
+                <UiLink v-if="order" variant="link" :to="clientPath(order.clientId)" data-testid="order-client">
+                  {{ order.clientName }}
                 </UiLink>
               </OrderFact>
-              <OrderFact :label="t('shared.paymentMethod')">
-                {{ store.currentOrder.paymentMethod }}
+              <OrderFact :label="t('shared.paymentMethod')" :loading="order === null">
+                {{ order?.paymentMethod }}
               </OrderFact>
-              <OrderFact :label="t('shared.ipAddress')">
-                {{ store.currentOrder.ipAddress ?? EMPTY_VALUE }}
+              <OrderFact :label="t('shared.ipAddress')" :loading="order === null">
+                {{ order?.ipAddress ?? EMPTY_VALUE }}
               </OrderFact>
-              <OrderFact :label="t('orders.orderDetail.created')">
-                {{ formatDateTime(store.currentOrder.createdAt) }}
+              <OrderFact :label="t('orders.orderDetail.created')" :loading="order === null">
+                {{ order ? formatDateTime(order.createdAt) : '' }}
               </OrderFact>
-              <OrderFact v-if="store.currentOrder.bundleName" :label="t('orders.orderDetail.bundle')">
-                <UiText :as="UiTextTag.Span" data-testid="order-bundle">{{ store.currentOrder.bundleName }}</UiText>
+              <OrderFact v-if="order?.bundleName" :label="t('orders.orderDetail.bundle')">
+                <UiText :as="UiTextTag.Span" data-testid="order-bundle">{{ order.bundleName }}</UiText>
               </OrderFact>
-              <OrderFact :label="t('orders.orderDetail.linesSubtotal')">
-                <UiText :as="UiTextTag.Span" data-testid="order-lines-subtotal">
-                  {{ formatPlainAmount(store.currentOrder.total, store.currentOrder.currency) }}
+              <OrderFact :label="t('orders.orderDetail.linesSubtotal')" :loading="order === null">
+                <UiText v-if="order" :as="UiTextTag.Span" data-testid="order-lines-subtotal">
+                  {{ formatPlainAmount(order.total, order.currency) }}
                 </UiText>
               </OrderFact>
             </UiStack>
@@ -441,30 +399,30 @@ onMounted(async () => {
               <UiHeading :level="2" variant="section">
                 {{ t('orders.orderDetail.invoice') }}
               </UiHeading>
-              <template v-if="store.currentOrder.invoiceId">
-                <OrderFact :label="t('shared.invoiceId')">
-                  <UiLink variant="link" :to="invoicePath(store.currentOrder.invoiceId)" data-testid="order-invoice-link">
-                    #{{ store.currentOrder.invoiceId }}
+              <template v-if="order === null || order.invoiceId">
+                <OrderFact :label="t('shared.invoiceId')" :loading="order === null">
+                  <UiLink v-if="order?.invoiceId" variant="link" :to="invoicePath(order.invoiceId)" data-testid="order-invoice-link">
+                    #{{ order.invoiceId }}
                   </UiLink>
                 </OrderFact>
-                <OrderFact :label="t('shared.status')">
+                <OrderFact :label="t('shared.status')" :loading="order === null">
                   <UiBadge
-                    v-if="store.currentOrder.invoiceStatus"
-                    :tone="invoiceStatusTone(store.currentOrder.invoiceStatus)"
+                    v-if="order?.invoiceStatus"
+                    :tone="invoiceStatusTone(order.invoiceStatus)"
                     small
                   >
-                    {{ statusLabel(INVOICE_STATUS_OPTIONS, store.currentOrder.invoiceStatus) }}
+                    {{ statusLabel(INVOICE_STATUS_OPTIONS, order.invoiceStatus) }}
                   </UiBadge>
                   <template v-else>
                     {{ EMPTY_VALUE }}
                   </template>
                 </OrderFact>
-                <OrderFact :label="t('orders.orderDetail.invoiceTotal')">
-                  <UiText :as="UiTextTag.Span" data-testid="order-invoice-total">
+                <OrderFact :label="t('orders.orderDetail.invoiceTotal')" :loading="order === null">
+                  <UiText v-if="order" :as="UiTextTag.Span" data-testid="order-invoice-total">
                     {{
-                      store.currentOrder.invoiceTotal === null
+                      order.invoiceTotal === null
                         ? EMPTY_VALUE
-                        : formatPlainAmount(store.currentOrder.invoiceTotal, store.currentOrder.currency)
+                        : formatPlainAmount(order.invoiceTotal, order.currency)
                     }}
                   </UiText>
                 </OrderFact>
@@ -477,8 +435,8 @@ onMounted(async () => {
         </UiGrid>
 
         <OrderFraudPanel
-          v-if="store.currentOrder.fraudScore !== null"
-          :order="store.currentOrder"
+          v-if="order && order.fraudScore !== null"
+          :order="order"
           :busy="processing"
           @approve="handleApproveReview"
           @reject="rejecting = true"
@@ -486,7 +444,7 @@ onMounted(async () => {
       </UiStack>
 
       <UiCard v-else-if="tab === OrderTab.Items" data-testid="order-items">
-        <UiTable :density="UiTableDensity.Comfortable">
+        <UiTable :density="UiTableDensity.Comfortable" :loading="order === null">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('orders.orderDetail.product') }}</UiTableHeader>
@@ -499,96 +457,98 @@ onMounted(async () => {
             </UiTableRow>
           </UiTableHead>
           <UiTableBody>
-            <UiTableRow
-              v-for="item in store.currentOrder.items"
-              :key="item.id"
-              hoverable
-              bordered
-              :data-testid="`order-item-${item.id}`"
-            >
-              <UiTableCell>{{ item.productName }}</UiTableCell>
-              <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
-              <UiTableCell>{{ item.domain ?? item.hostname ?? EMPTY_VALUE }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(item.firstPaymentAmount, store.currentOrder.currency) }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(item.recurringAmount, store.currentOrder.currency) }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge :tone="orderItemStatusTone(item.status)" small>
-                  {{ statusLabel(ORDER_STATUS_OPTIONS, item.status) }}
-                </UiBadge>
-              </UiTableCell>
-              <UiTableCell>
-                <UiStack gap="xs">
-                  <UiStack direction="row" gap="sm" align="center" wrap>
-                    <UiBadge
-                      :tone="orderLineFulfilmentTone(item.fulfilmentState)"
-                      small
-                      :data-testid="`order-item-fulfilment-${item.id}`"
+            <template v-if="order">
+              <UiTableRow
+                v-for="item in order.items"
+                :key="item.id"
+                hoverable
+                bordered
+                :data-testid="`order-item-${item.id}`"
+              >
+                <UiTableCell>{{ item.productName }}</UiTableCell>
+                <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
+                <UiTableCell>{{ item.domain ?? item.hostname ?? EMPTY_VALUE }}</UiTableCell>
+                <UiTableCell numeric>{{ formatPlainAmount(item.firstPaymentAmount, order.currency) }}</UiTableCell>
+                <UiTableCell numeric>{{ formatPlainAmount(item.recurringAmount, order.currency) }}</UiTableCell>
+                <UiTableCell>
+                  <UiBadge :tone="orderItemStatusTone(item.status)" small>
+                    {{ statusLabel(ORDER_STATUS_OPTIONS, item.status) }}
+                  </UiBadge>
+                </UiTableCell>
+                <UiTableCell>
+                  <UiStack gap="xs">
+                    <UiStack direction="row" gap="sm" align="center" wrap>
+                      <UiBadge
+                        :tone="orderLineFulfilmentTone(item.fulfilmentState)"
+                        small
+                        :data-testid="`order-item-fulfilment-${item.id}`"
+                      >
+                        {{ statusLabel(ORDER_LINE_FULFILMENT_OPTIONS, item.fulfilmentState) }}
+                      </UiBadge>
+                      <UiButton
+                        v-if="item.canRetry"
+                        variant="secondary"
+                        size="sm"
+                        :loading="store.retryingItemId === item.id"
+                        :disabled="store.retryingItemId !== null && store.retryingItemId !== item.id"
+                        :data-testid="`order-item-retry-${item.id}`"
+                        @click="handleRetryLine(item.id)"
+                      >
+                        {{ t('orders.orderDetail.retry') }}
+                      </UiButton>
+                    </UiStack>
+                    <UiStack
+                      v-if="item.canClose"
+                      direction="row"
+                      gap="sm"
+                      align="center"
+                      wrap
                     >
-                      {{ statusLabel(ORDER_LINE_FULFILMENT_OPTIONS, item.fulfilmentState) }}
-                    </UiBadge>
-                    <UiButton
-                      v-if="item.canRetry"
-                      variant="secondary"
-                      size="sm"
-                      :loading="store.retryingItemId === item.id"
-                      :disabled="store.retryingItemId !== null && store.retryingItemId !== item.id"
-                      :data-testid="`order-item-retry-${item.id}`"
-                      @click="handleRetryLine(item.id)"
-                    >
-                      {{ t('orders.orderDetail.retry') }}
-                    </UiButton>
-                  </UiStack>
-                  <UiStack
-                    v-if="item.canClose"
-                    direction="row"
-                    gap="sm"
-                    align="center"
-                    wrap
-                  >
+                      <UiText
+                        v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
+                        tone="warning"
+                        size="xs"
+                        :data-testid="`order-item-finish-refund-${item.id}`"
+                      >
+                        {{ t('orders.orderDetail.finishRefund') }}
+                      </UiText>
+                      <UiButton
+                        variant="secondary"
+                        size="sm"
+                        :data-testid="`order-item-close-refund-${item.id}`"
+                        @click="askCloseRefund(item.id)"
+                      >
+                        {{ t('orders.orderDetail.closeRefund') }}
+                      </UiButton>
+                    </UiStack>
                     <UiText
-                      v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
-                      tone="warning"
+                      v-if="item.fulfilmentErrorCode"
+                      tone="muted"
                       size="xs"
-                      :data-testid="`order-item-finish-refund-${item.id}`"
+                      :data-testid="`order-item-error-${item.id}`"
                     >
-                      {{ t('orders.orderDetail.finishRefund') }}
+                      {{ t(orderLineErrorKey(item.fulfilmentErrorCode)) }}
                     </UiText>
-                    <UiButton
-                      variant="secondary"
-                      size="sm"
-                      :data-testid="`order-item-close-refund-${item.id}`"
-                      @click="askCloseRefund(item.id)"
+                    <UiText
+                      v-if="store.lineErrors[item.id]"
+                      tone="danger"
+                      size="xs"
+                      :data-testid="`order-item-retry-error-${item.id}`"
                     >
-                      {{ t('orders.orderDetail.closeRefund') }}
-                    </UiButton>
+                      {{ store.lineErrors[item.id] }}
+                    </UiText>
+                    <UiText
+                      v-if="item.fulfilmentAttempts > 0 && item.lastFulfilmentAttemptAt"
+                      tone="muted"
+                      size="xs"
+                      :data-testid="`order-item-attempts-${item.id}`"
+                    >
+                      {{ t('orders.orderDetail.attempts', { count: item.fulfilmentAttempts, at: formatDateTime(item.lastFulfilmentAttemptAt) }) }}
+                    </UiText>
                   </UiStack>
-                  <UiText
-                    v-if="item.fulfilmentErrorCode"
-                    tone="muted"
-                    size="xs"
-                    :data-testid="`order-item-error-${item.id}`"
-                  >
-                    {{ t(orderLineErrorKey(item.fulfilmentErrorCode)) }}
-                  </UiText>
-                  <UiText
-                    v-if="store.lineErrors[item.id]"
-                    tone="danger"
-                    size="xs"
-                    :data-testid="`order-item-retry-error-${item.id}`"
-                  >
-                    {{ store.lineErrors[item.id] }}
-                  </UiText>
-                  <UiText
-                    v-if="item.fulfilmentAttempts > 0 && item.lastFulfilmentAttemptAt"
-                    tone="muted"
-                    size="xs"
-                    :data-testid="`order-item-attempts-${item.id}`"
-                  >
-                    {{ t('orders.orderDetail.attempts', { count: item.fulfilmentAttempts, at: formatDateTime(item.lastFulfilmentAttemptAt) }) }}
-                  </UiText>
-                </UiStack>
-              </UiTableCell>
-            </UiTableRow>
+                </UiTableCell>
+              </UiTableRow>
+            </template>
           </UiTableBody>
         </UiTable>
       </UiCard>
@@ -601,6 +561,7 @@ onMounted(async () => {
           <UiTextarea
             v-model="notesText"
             :rows="4"
+            :disabled="order === null"
             :placeholder="t('orders.orderDetail.addNotesAboutThisOrder')"
             data-testid="order-notes-input"
           />

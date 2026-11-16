@@ -151,7 +151,9 @@ describe('ClientCreditView', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountCredit()
 
-    expect(wrapper.get('[data-testid="client-credit-loading"]').findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(2)
-    expect(wrapper.get('[data-testid="client-credit-loading"]').findAll('[data-testid="ui-card-skeleton"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(2)
+    expect(wrapper.get('[data-testid="client-credit-form"]').findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(3)
+    expect(wrapper.get('[data-testid="client-credit-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="client-credit-submit"]').attributes('disabled')).toBeDefined()
   })
 })

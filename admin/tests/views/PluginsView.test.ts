@@ -151,11 +151,12 @@ describe('PluginsView', () => {
     vi.unstubAllGlobals()
   })
 
-  it('draws card placeholders while the list loads', async () => {
+  it('keeps the toolbar and draws card placeholders while the list loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountPlugins()
 
-    expect(wrapper.get('[data-testid="plugins-loading"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('[data-testid="plugins-list"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="plugins-installed-search"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="plugin-card-skeleton"]')).toHaveLength(6)
   })
 
@@ -708,10 +709,24 @@ describe('PluginsView registration card', () => {
     await openTab(wrapper, 'browse')
 
     const request = mock.mock.calls.map(([url]) => String(url)).find(url => url.startsWith('/api/admin/plugins/registry?'))
-    expect(request).toContain('q=pay')
+    expect(request).toContain('search=pay')
     expect(request).toContain('category=Payment')
     expect(request).toContain('page=2')
+    expect(request).toContain('pageSize=20')
     expect((wrapper.get('[data-testid="plugin-registry-search"]').element as HTMLInputElement).value).toBe('pay')
+  })
+  it('shows the category in the address as a chip', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const { wrapper } = await mountRouted(PluginsView, '/plugins', '/plugins?category=Payment')
+    await flushPromises()
+    await openTab(wrapper, 'browse')
+
+    expect(wrapper.get('[data-testid="filter-chip-category"]').text()).toContain('Payment')
   })
   it('narrows the installed list by the search text and the status in the address', async () => {
     const mailer = { ...plugin, id: 'example-mail', name: 'Mailer', description: 'Sends email', isLoaded: false }

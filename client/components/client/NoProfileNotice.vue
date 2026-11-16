@@ -14,7 +14,7 @@
           land here are new customers who have not ordered yet, so the way out is the catalogue.
           No admin panel link: this page cannot tell staff from customers, and staff know the way.
         -->
-        <UiButton size="sm" variant="subtle" to="/hosting" data-testid="no-profile-browse">
+        <UiButton size="sm" variant="subtle" :to="SITE_HOSTING_PATH" data-testid="no-profile-browse">
           {{ $t('client.noProfile.browseAction') }}
         </UiButton>
       </UiStack>
@@ -36,6 +36,7 @@
  * sentence is written in this template.
  */
 import { useClientStore } from '~/stores/client'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Translator for the strings this file builds itself. */
 const { t } = useI18n()

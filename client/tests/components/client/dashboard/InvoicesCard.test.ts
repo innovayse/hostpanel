@@ -11,6 +11,7 @@ import InvoicesCard from '~/components/client/dashboard/InvoicesCard.vue'
 import { useClientStore } from '~/stores/client'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import { InvoiceStatus } from '~/types/invoicestatus'
+import { CLIENT_INVOICES_PATH, clientInvoicePath } from '~/constants/clientRoutes'
 
 /**
  * Builds an invoice row.
@@ -43,7 +44,7 @@ describe('ClientDashboardInvoicesCard', () => {
 
     expect(wrapper.find('[data-testid="dashboard-invoice-5"]').exists()).toBe(false)
     const row = wrapper.find('[data-testid="dashboard-invoice-1"]')
-    expect(row.attributes('href')).toBe('/client/invoices/1')
+    expect(row.attributes('href')).toBe(clientInvoicePath(1))
     expect(row.text()).toContain('#1')
     expect(row.find('[data-testid="status-badge"]').exists()).toBe(true)
   })
@@ -51,6 +52,6 @@ describe('ClientDashboardInvoicesCard', () => {
   it('links the header button to the full list', () => {
     const wrapper = mountClient(InvoicesCard)
 
-    expect(wrapper.find('[data-testid="dashboard-invoices-all"]').attributes('href')).toBe('/client/invoices')
+    expect(wrapper.find('[data-testid="dashboard-invoices-all"]').attributes('href')).toBe(CLIENT_INVOICES_PATH)
   })
 })

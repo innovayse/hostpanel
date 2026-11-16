@@ -4,7 +4,8 @@
  *
  * Under Nuxt, `useLocalePath`, `useSwitchLocalePath`, `useAppColorMode`, `usePortalSettings`, `useAuthMode`, `useBrandLogo`,
  * `useSiteIdentity` and `useSecurityFeatures` (no claim switched on) are auto-imported. Vitest has no such step, so each is defined here as a
- * global. The settings map is what an operator would have entered under Admin > Settings.
+ * global, except `useLocalePath`, which {@link stubLocalePath} from `runtimeStubs` defines (this module only calls it).
+ * The settings map is what an operator would have entered under Admin > Settings.
  * Template-specific stand-ins (the aurora auth store, say) build on {@link stubTemplateGlobals}.
  *
  * @module tests/helpers/templateGlobals
@@ -12,6 +13,7 @@
 
 import { computed, ref } from 'vue'
 import { vi } from 'vitest'
+import { stubLocalePath } from './runtimeStubs'
 
 /** Site name the identity composable reports unless a test says otherwise. */
 export const DEFAULT_SITE_NAME = 'Acme Host'
@@ -37,7 +39,7 @@ export interface TemplateGlobalsOptions {
  */
 export const stubTemplateGlobals = (options: TemplateGlobalsOptions = {}): void => {
   const settings = options.settings ?? {}
-  vi.stubGlobal('useLocalePath', () => (path: string) => path)
+  stubLocalePath()
   vi.stubGlobal('useSwitchLocalePath', () => (code: string) => `/${code}`)
   vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
   vi.stubGlobal('useAppColorMode', () => ({ isDark: ref(true), applied: ref('dark'), userToggleEnabled: ref(true), toggle: vi.fn() }))

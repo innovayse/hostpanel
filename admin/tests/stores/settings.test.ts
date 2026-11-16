@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { MessageLanguage } from '@/locales/messages'
 import { useSettingsStore } from '@/stores/settings'
+import { ProductStatus, ProductType } from '@/types/productenums'
 import { callOf, invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { installStoreHooks, NO_ANSWER } from '../helpers/storeHooks'
 
@@ -74,6 +75,28 @@ describe('settingsStore.updateSetting', () => {
   })
 })
 
+describe('settingsStore.saveSetting', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('answers that the value was stored, with no sentence', async () => {
+    stubFetch(json({}), json([{ id: 1, key: 'a', value: 'b' }]))
+
+    expect(await useSettingsStore().saveSetting(1, 'b')).toEqual({ saved: true, error: null })
+  })
+
+  it('answers the API sentence of a refusal', async () => {
+    stubFetch(problem('Allowed values: Cba, Ecb.'))
+
+    expect(await useSettingsStore().saveSetting(1, 'Boe')).toEqual({ saved: false, error: 'Allowed values: Cba, Ecb.' })
+  })
+})
+
 describe('settingsStore.saveEmailTemplateVersion', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -119,12 +142,13 @@ describe('settingsStore products', () => {
     vi.unstubAllGlobals()
   })
 
-  it('createProduct returns the new id and refreshes', async () => {
-    stubFetch(json(12), json([]))
+  it('createProduct returns the new id and reads no list again', async () => {
+    const mock = stubFetch(json(12))
     const store = useSettingsStore()
 
     expect(await store.createProduct({} as never)).toBe(12)
     expect(store.actionError).toBeNull()
+    expect(mock).toHaveBeenCalledTimes(1)
   })
 
   it('createProduct returns null and sets actionError on refusal', async () => {
@@ -136,7 +160,7 @@ describe('settingsStore products', () => {
   })
 
   it('keeps the API field errors of a refused save and clears them on the next try', async () => {
-    stubFetch(invalid('Validation failed.', { Metadata: ['Not an object.'], GracePeriodDays: ['Out of range.'] }), json(12), json([]))
+    stubFetch(invalid('Validation failed.', { Metadata: ['Not an object.'], GracePeriodDays: ['Out of range.'] }), json(12))
     const store = useSettingsStore()
 
     expect(await store.createProduct({} as never)).toBeNull()
@@ -168,7 +192,7 @@ describe('settingsStore products', () => {
   })
 
   it('sends the SKU, metadata and grace period in the create body', async () => {
-    const mock = stubFetch(json(5), json([]))
+    const mock = stubFetch(json(5))
     const store = useSettingsStore()
 
     await store.createProduct({ sku: 'A-1', metadata: '{}', gracePeriodDays: 3 } as never)
@@ -222,12 +246,33 @@ describe('settingsStore loads', () => {
     expect(store.error).toBe(NO_ANSWER)
   })
 
-  it('createProduct returns the id and refreshes; a refusal returns null with actionError', async () => {
+  it('fetchProductsPage fills the page and the total, and sends the page, its size and the trimmed filters', async () => {
+    const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }))
     const store = useSettingsStore()
 
-    stubFetch(json(4), json([{ id: 4 }]))
+    expect(await store.fetchProductsPage(2, { search: ' plan ', groupId: 5, type: ProductType.Vps, status: ProductStatus.Active })).toBe(true)
+    expect(callOf(mock).url).toBe('/api/admin/products?page=2&pageSize=20&search=plan&groupId=5&type=Vps&status=Active')
+    expect(store.productPage).toEqual([{ id: 1 }])
+    expect(store.productTotalCount).toBe(21)
+    expect(store.loading).toBe(false)
+  })
+
+  it('fetchProductsPage reports the API sentence and keeps the page it had', async () => {
+    const store = useSettingsStore()
+    store.productPage.push({ id: 9 } as never)
+    stubFetch(problem('Catalogue locked.', 423))
+
+    expect(await store.fetchProductsPage(1)).toBe(false)
+    expect(store.error).toBe('Catalogue locked.')
+    expect(store.productPage).toHaveLength(1)
+    expect(store.products).toEqual([])
+  })
+
+  it('createProduct returns the id; a refusal returns null with actionError', async () => {
+    const store = useSettingsStore()
+
+    stubFetch(json(4))
     expect(await store.createProduct({} as never)).toBe(4)
-    expect(store.products).toEqual([{ id: 4 }])
 
     stubFetch(problem('Name taken.', 409))
     expect(await store.createProduct({} as never)).toBeNull()

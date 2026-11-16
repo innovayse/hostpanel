@@ -13,7 +13,9 @@ import { captureDownloads, PDF_REPLY } from '~/tests/helpers/captureDownloads'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { settle } from '~/tests/helpers/settle'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { bankTransferPath, BillingEndpoint, invoiceCreditPath, invoicePath, invoicePdfPath } from '~/tests/helpers/billingPaths'
+import { clientInvoicePayPath } from '~/constants/clientRoutes'
+import { readOf, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -24,11 +26,10 @@ import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads and writes for invoice 41. */
 const PATHS = {
-  invoice: '/api/portal/client/invoices/41',
-  bankTransfer: '/api/portal/client/invoices/41/bank-transfer',
-  pdf: '/api/portal/client/invoices/41/pdf',
-  applyCredit: '/api/portal/client/invoices/41/credit',
-  credit: '/api/portal/client/credit',
+  invoice: invoicePath(41),
+  bankTransfer: bankTransferPath(41),
+  pdf: invoicePdfPath(41),
+  applyCredit: invoiceCreditPath(41),
 } as const
 
 /** The stub playing the BFF. */
@@ -66,12 +67,12 @@ const credit = (balance: number) => ({
  *
  * @returns The count.
  */
-const creditReads = (): number => requestsTo(stub.requests, PATHS.credit).length
+const creditReads = (): number => requestsTo(stub.requests, BillingEndpoint.Credit).length
 
 beforeEach(async () => {
   stubClientRuntime({ params: { id: '41' } })
   table = {
-    [`GET ${PATHS.credit}`]: { body: credit(0) },
+    [readOf(BillingEndpoint.Credit)]: { body: credit(0) },
   }
   stub = await startTransport(routeTable(table))
 })
@@ -83,8 +84,8 @@ afterEach(async () => {
 
 describe('invoice page', () => {
   it('shows the bank details of an invoice that waits for a transfer and no pay button', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.PaymentPending, isBankTransferPending: true }) }
-    table[`GET ${PATHS.bankTransfer}`] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
+    table[readOf(PATHS.invoice)] = { body: invoice({ status: InvoiceStatus.PaymentPending, isBankTransferPending: true }) }
+    table[readOf(PATHS.bankTransfer)] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
@@ -94,7 +95,7 @@ describe('invoice page', () => {
   })
 
   it('shows no bank details for an invoice that owes money and waits for nothing', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[readOf(PATHS.invoice)] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
@@ -104,7 +105,7 @@ describe('invoice page', () => {
   })
 
   it('reads this invoice and shows its heading and line items', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[readOf(PATHS.invoice)] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-heading"]').exists()).toBe(true))
@@ -115,10 +116,10 @@ describe('invoice page', () => {
   })
 
   it('notes the client group discount on a discounted line only', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice({ items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 10 }] }) }
+    table[readOf(PATHS.invoice)] = { body: invoice({ items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 10 }] }) }
     const discounted = await mountPage(InvoicePage)
     await waitUntil(() => expect(discounted.find('[data-testid="invoice-items"]').exists()).toBe(true))
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[readOf(PATHS.invoice)] = { body: invoice() }
     const plain = await mountPage(InvoicePage)
     await waitUntil(() => expect(plain.find('[data-testid="invoice-items"]').exists()).toBe(true))
 
@@ -127,10 +128,10 @@ describe('invoice page', () => {
   })
 
   it('shows the amounts in the invoice currency, with tax only when there is some', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[readOf(PATHS.invoice)] = { body: invoice() }
     const taxed = await mountPage(InvoicePage)
     await waitUntil(() => expect(taxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
-    table[`GET ${PATHS.invoice}`] = { body: invoice({ tax: 0, total: 90, amountDue: 90 }) }
+    table[readOf(PATHS.invoice)] = { body: invoice({ tax: 0, total: 90, amountDue: 90 }) }
     const untaxed = await mountPage(InvoicePage)
     await waitUntil(() => expect(untaxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
 
@@ -140,17 +141,17 @@ describe('invoice page', () => {
   })
 
   it('offers payment for an owing invoice', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[readOf(PATHS.invoice)] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="invoice-pay-now"]').attributes('href')).toBe('/client/invoices/41/pay')
+    expect(wrapper.find('[data-testid="invoice-pay-now"]').attributes('href')).toBe(clientInvoicePayPath(41))
     expect(wrapper.find('[data-testid="invoice-unpaid-banner"]').exists()).toBe(true)
   })
 
   it('puts what is still owed on the pay button of a part-paid invoice, not the whole total', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice({ amountDue: 60, transactions: [{ id: 1, amount: 40, type: InvoiceTransactionType.Payment }] }) }
+    table[readOf(PATHS.invoice)] = { body: invoice({ amountDue: 60, transactions: [{ id: 1, amount: 40, type: InvoiceTransactionType.Payment }] }) }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-amount"]').exists()).toBe(true))
@@ -159,10 +160,10 @@ describe('invoice page', () => {
   })
 
   it('offers to pay with credit when the client has some, and reads the invoice again once it is applied', async () => {
-    table[`GET ${PATHS.credit}`] = { body: credit(30) }
-    table[`POST ${PATHS.applyCredit}`] = { body: {} }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(30) }
+    table[writeOf(PATHS.applyCredit)] = { body: {} }
     // The first read is the invoice as it was; every read after the credit was applied is the invoice as it is now.
-    table[`GET ${PATHS.invoice}`] = () => ({
+    table[readOf(PATHS.invoice)] = () => ({
       body: requestsTo(stub.requests, PATHS.invoice).length <= 1 ? invoice() : invoice({ credit: 30, total: 70, amountDue: 70 })
     })
     const wrapper = await mountPage(InvoicePage)
@@ -177,7 +178,7 @@ describe('invoice page', () => {
   })
 
   it('offers no credit payment when the client has no credit', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[readOf(PATHS.invoice)] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(creditReads()).toBe(1))
@@ -187,8 +188,8 @@ describe('invoice page', () => {
   })
 
   it('marks a credit top-up invoice and offers no credit for it', async () => {
-    table[`GET ${PATHS.credit}`] = { body: credit(30) }
-    table[`GET ${PATHS.invoice}`] = { body: invoice({ isCreditTopUp: true }) }
+    table[readOf(BillingEndpoint.Credit)] = { body: credit(30) }
+    table[readOf(PATHS.invoice)] = { body: invoice({ isCreditTopUp: true }) }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(creditReads()).toBe(1))
@@ -199,7 +200,7 @@ describe('invoice page', () => {
   })
 
   it('offers no payment for a paid invoice', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.Paid, paidAt: '2026-01-05T10:00:00Z' }) }
+    table[readOf(PATHS.invoice)] = { body: invoice({ status: InvoiceStatus.Paid, paidAt: '2026-01-05T10:00:00Z' }) }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))
@@ -210,7 +211,7 @@ describe('invoice page', () => {
   })
 
   it('says the invoice was not found when the read fails', async () => {
-    table[`GET ${PATHS.invoice}`] = { status: 404, body: { detail: 'No such invoice.' } }
+    table[readOf(PATHS.invoice)] = { status: 404, body: { detail: 'No such invoice.' } }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
@@ -219,8 +220,8 @@ describe('invoice page', () => {
   })
 
   it('downloads the invoice PDF and saves it under the invoice number', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
-    table[`GET ${PATHS.pdf}`] = PDF_REPLY
+    table[readOf(PATHS.invoice)] = { body: invoice() }
+    table[readOf(PATHS.pdf)] = PDF_REPLY
     const downloads = captureDownloads()
 
     const wrapper = await mountPage(InvoicePage)
@@ -238,8 +239,8 @@ describe('invoice page', () => {
   })
 
   it('shows the API sentence in an alert when the download fails', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice() }
-    table[`GET ${PATHS.pdf}`] = { status: 400, body: { detail: 'This invoice has too many lines to download as a PDF.' } }
+    table[readOf(PATHS.invoice)] = { body: invoice() }
+    table[readOf(PATHS.pdf)] = { status: 400, body: { detail: 'This invoice has too many lines to download as a PDF.' } }
     const downloads = captureDownloads()
 
     const wrapper = await mountPage(InvoicePage)
@@ -253,7 +254,7 @@ describe('invoice page', () => {
   })
 
   it('offers no PDF download for a draft', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.Draft }) }
+    table[readOf(PATHS.invoice)] = { body: invoice({ status: InvoiceStatus.Draft }) }
 
     const wrapper = await mountPage(InvoicePage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))

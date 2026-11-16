@@ -256,4 +256,25 @@ describe('IntegrationConfigForm', () => {
     expect(testable.find('[data-testid="integration-test"]').exists()).toBe(true)
     expect(untestable.find('[data-testid="integration-test"]').exists()).toBe(false)
   })
+
+  it('draws the card with bars, placeholder fields and a disabled Save while the detail is being read', () => {
+    const wrapper = mountForm({ integration: null })
+
+    expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-config-loading"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(4)
+    expect(wrapper.find('[data-testid="integration-enabled"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="integration-test"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="integration-save"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('fills the card from the detail once it arrives', async () => {
+    const wrapper = mountForm({ integration: null })
+
+    await wrapper.setProps({ integration: integrationDetail() })
+
+    expect(wrapper.find('[data-testid="ui-field-skeleton"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Bank Transfer')
+    expect(wrapper.find('[data-testid="integration-field-mode"]').exists()).toBe(true)
+  })
 })

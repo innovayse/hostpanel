@@ -9,6 +9,7 @@ import { Home } from 'lucide-vue-next'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import TopBar from '~/components/client/layout/TopBar.vue'
+import { CLIENT_DASHBOARD_PATH } from '~/constants/clientRoutes'
 
 /** The theme and language controls need runtime services this test does not provide. */
 const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, LogoLockup: true }
@@ -28,7 +29,7 @@ const MENU_PROPS = {
   firstName: 'Ada',
   lastName: 'Lovelace',
   email: 'ada@example.com',
-  navItems: [{ to: '/client/dashboard', label: 'Dashboard', icon: Home }],
+  navItems: [{ to: CLIENT_DASHBOARD_PATH, label: 'Dashboard', icon: Home }],
   sidebarOpen: false
 }
 
@@ -113,7 +114,7 @@ describe('ClientLayoutTopBar without the platform widget', () => {
 
     expect(wrapper.find('[data-testid="client-account-name"]').text()).toBe('Ada Lovelace')
     expect(wrapper.find('[data-testid="client-account-email"]').text()).toBe('ada@example.com')
-    expect(wrapper.find('[data-testid="client-account-link-/client/dashboard"]').attributes('href')).toBe('/client/dashboard')
+    expect(wrapper.find(`[data-testid="client-account-link-${CLIENT_DASHBOARD_PATH}"]`).attributes('href')).toBe(CLIENT_DASHBOARD_PATH)
     expect(wrapper.find('[data-testid="client-account-sign-out"]').exists()).toBe(true)
   })
 

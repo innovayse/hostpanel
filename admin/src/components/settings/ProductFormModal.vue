@@ -163,6 +163,9 @@ const isHidden = ref(false)
 /** Whether the product is the group's recommended plan. */
 const isFeatured = ref(false)
 
+/** Whether the product is an electronic service for VAT. */
+const isDigitalService = ref(false)
+
 /** Position inside the group, lowest first. */
 const sortOrder = ref(0)
 
@@ -237,6 +240,7 @@ watch(() => props.product, (p) => {
     serverGroupId.value = p.serverGroupId ?? null
     isHidden.value = p.status === ProductStatus.Inactive
     isFeatured.value = p.isFeatured
+    isDigitalService.value = p.isDigitalService
     sortOrder.value = p.sortOrder
     sku.value = p.sku ?? ''
     metadata.value = p.metadata ?? ''
@@ -258,6 +262,7 @@ watch(() => props.product, (p) => {
     serverGroupId.value = null
     isHidden.value = false
     isFeatured.value = false
+    isDigitalService.value = false
     sortOrder.value = 0
     sku.value = ''
     metadata.value = ''
@@ -417,6 +422,8 @@ const handleSubmit = (): void => {
     sku: sku.value.trim(),
     metadata: metadata.value.trim(),
     gracePeriodDays: Number(gracePeriodDays.value),
+    isHidden: isHidden.value,
+    isDigitalService: isDigitalService.value,
     trial: buildTrialPayload(),
   })
 }
@@ -666,6 +673,15 @@ const handleSubmit = (): void => {
           <UiText tone="muted" size="sm">{{ t('settings.productForm.featuredHint') }}</UiText>
         </UiStack>
         <UiToggle v-model="isFeatured" data-testid="product-form-featured" />
+      </UiStack>
+
+      <!-- Digital service (VAT) toggle -->
+      <UiStack direction="row" align="center" justify="between">
+        <UiStack gap="xs">
+          <UiText tone="primary" size="md">{{ t('settings.productForm.digitalService') }}</UiText>
+          <UiText tone="muted" size="sm">{{ t('settings.productForm.digitalServiceHint') }}</UiText>
+        </UiStack>
+        <UiToggle v-model="isDigitalService" data-testid="product-form-digital-service" />
       </UiStack>
 
       <!-- Hidden toggle -->

@@ -4,6 +4,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -160,19 +162,53 @@ public static class ServicesTestSeeds
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", productType, 2m, 20m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, "starter", productType, 2m, 20m, TestMoments.Seeded);
         product.SetSku(sku);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var service = domain is null
-            ? Domain.Services.ClientService.Create(clientId, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow)
+            ? Domain.Services.ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded)
             : Domain.Services.ClientService.CreateOrdered(
-                clientId, product.Id, BillingCycle.Monthly, domain, 0m, 0m, null, null, DateTimeOffset.UtcNow);
+                clientId, product.Id, BillingCycle.Monthly, domain, 0m, 0m, null, null, TestMoments.Seeded);
         context.ClientServices.Add(service);
         await context.SaveChangesAsync(CancellationToken.None);
 
         return service.Id;
+    }
+
+    /// <summary>
+    /// Seeds cancellation requests of one service straight into the database, each created a minute after the one given
+    /// before it, so the first given is the oldest.
+    /// </summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="serviceId">The service the requests are about.</param>
+    /// <param name="requests">The type, the reason and whether it is closed, for each request.</param>
+    /// <returns>The primary keys of the new requests, in the order given.</returns>
+    public static async Task<List<int>> SeedCancellationRequestsAsync(
+        IntegrationTestFactory factory, int serviceId, IReadOnlyList<(CancellationType Type, string? Reason, bool Closed)> requests)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var created = new List<Domain.Services.CancellationRequest>();
+        var moment = TestMoments.Seeded.AddHours(-1);
+        foreach (var (type, reason, closed) in requests)
+        {
+            var request = Domain.Services.CancellationRequest.Create(serviceId, type, reason);
+            request.Backdate(moment);
+            moment = moment.AddMinutes(1);
+            if (closed)
+            {
+                request.Close();
+            }
+
+            created.Add(request);
+        }
+
+        context.CancellationRequests.AddRange(created);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return created.Select(r => r.Id).ToList();
     }
 
     /// <summary>
@@ -188,24 +224,24 @@ public static class ServicesTestSeeds
         var (clientId, productId) = await SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
-        var service = Domain.Services.ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        var service = Domain.Services.ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
         if (status is ServiceStatus.Pending)
         {
             context.ClientServices.Add(service);
         }
         else
         {
-            await AddActivatedAsync(context, service, "acct1", DateTimeOffset.UtcNow);
+            await AddActivatedAsync(context, service, "acct1", TestMoments.Seeded);
         }
 
         if (status is ServiceStatus.Suspended)
         {
-            service.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true);
         }
 
         if (status is ServiceStatus.Terminated)
         {
-            service.Terminate(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service.Terminate(TestMoments.Seeded, hostingAlreadyUpdated: true);
         }
 
         await context.SaveChangesAsync(CancellationToken.None);
@@ -245,5 +281,88 @@ public static class ServicesTestSeeds
         {
             service.Activate(provisioningRef, activatedAt, activatedAt);
         }
+    }
+
+    /// <summary>
+    /// Seeds four services of one client that differ in status, product, billing cycle and domain: a pending one, an
+    /// active one, a suspended one that runs on a linked registered domain and a terminated one, created a minute apart.
+    /// </summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <returns>The mix, with the services created pending, active, suspended, terminated in that order.</returns>
+    public static async Task<ServiceListMix> SeedServiceMixAsync(IntegrationTestFactory factory)
+    {
+        var token = Guid.NewGuid().ToString("N")[..10];
+        using var scope = factory.Services.CreateScope();
+        var (clientId, _) = await SeedClientAndProductAsync(scope, monthlyPrice: 1m);
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var group = ProductGroup.Create($"service-mix-{token}", null);
+        context.ProductGroups.Add(group);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var alpha = Product.Create(group.Id, $"Alpha-{token}", null, null, null, $"alpha-{token}", ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
+        var beta = Product.Create(group.Id, $"Beta-{token}", null, null, null, $"beta-{token}", ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
+        context.Products.AddRange(alpha, beta);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var pending = Domain.Services.ClientService.CreateOrdered(
+            clientId, alpha.Id, BillingCycle.Monthly, $"pending-{token}.example", 0m, 0m, null, null, TestMoments.Seeded.AddMinutes(1));
+        context.ClientServices.Add(pending);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var active = Domain.Services.ClientService.CreateOrdered(
+            clientId, alpha.Id, BillingCycle.Annual, $"active-{token}.example", 0m, 0m, null, null, TestMoments.Seeded.AddMinutes(2));
+        await AddActivatedAsync(context, active, "mix-active", TestMoments.Seeded.AddMinutes(2));
+
+        var suspended = Domain.Services.ClientService.Create(clientId, beta.Id, BillingCycle.Monthly, TestMoments.Seeded.AddMinutes(3));
+        await AddActivatedAsync(context, suspended, "mix-suspended", TestMoments.Seeded.AddMinutes(3));
+        suspended.Suspend(TestMoments.Seeded.AddMinutes(4), hostingAlreadyUpdated: true);
+
+        var terminated = Domain.Services.ClientService.CreateOrdered(
+            clientId, beta.Id, BillingCycle.Quarterly, $"gone-{token}.example", 0m, 0m, null, null, TestMoments.Seeded.AddMinutes(5));
+        await AddActivatedAsync(context, terminated, "mix-terminated", TestMoments.Seeded.AddMinutes(5));
+        terminated.Terminate(TestMoments.Seeded.AddMinutes(6), hostingAlreadyUpdated: true);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        // The suspended service shows the registered domain linked to it, the way a service ordered with a domain does.
+        var linked = RegisteredDomain.Import(
+            clientId, $"linked-{token}.com", DomainStatus.Active, TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
+            autoRenew: false, TestCurrencies.Base, registrar: null, registrarModule: null);
+        linked.LinkService(suspended.Id);
+        context.Domains.Add(linked);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        return new ServiceListMix(token, clientId, alpha.Id, beta.Id, pending.Id, active.Id, suspended.Id, terminated.Id);
+    }
+
+    /// <summary>Reads one page of the admin service list.</summary>
+    /// <param name="admin">A client authenticated as Admin.</param>
+    /// <param name="queryString">The query string, without the leading question mark.</param>
+    /// <returns>The ids of the page in the order the list gave them, and the total count of matches.</returns>
+    public static async Task<(List<int> Ids, int TotalCount)> ListServiceIdsAsync(HttpClient admin, string queryString)
+    {
+        var response = await admin.GetAsync($"/api/services?{queryString}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var ids = body.RootElement.GetProperty("items").EnumerateArray().Select(s => s.GetProperty("id").GetInt32()).ToList();
+        return (ids, body.RootElement.GetProperty("totalCount").GetInt32());
+    }
+
+    /// <summary>Reads the sentences a refusal reports for one field of the request.</summary>
+    /// <param name="response">The 400 response.</param>
+    /// <param name="field">The field's name; the letter case does not matter.</param>
+    /// <returns>The field's sentences, empty when the refusal names no such field.</returns>
+    public static async Task<List<string>> FieldMessagesAsync(HttpResponseMessage response, string field)
+    {
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        if (!body.RootElement.TryGetProperty("errors", out var errors))
+        {
+            return [];
+        }
+
+        return errors.EnumerateObject()
+            .Where(e => string.Equals(e.Name, field, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(e => e.Value.EnumerateArray().Select(m => m.GetString()!))
+            .ToList();
     }
 }

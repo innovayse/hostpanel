@@ -23,6 +23,7 @@ using Innovayse.Hostpanel.Application.Reports.Queries.GetDomainsReport;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetIncomeByProductGrouped;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetIncomeForecast;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetMonthlyOrders;
+using Innovayse.Hostpanel.Application.Reports.Queries.GetOssReport;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetProductSuspensions;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetSalesTaxReport;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetServicesReport;
@@ -32,7 +33,6 @@ using Innovayse.Hostpanel.Application.Reports.Queries.GetTicketFeedbackComments;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetTicketFeedbackScores;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetTicketRatingsReviewer;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetTicketTags;
-using Innovayse.Hostpanel.Application.Reports.Queries.GetVatMoss;
 using Innovayse.Hostpanel.Application.Reports.Queries.InvoicesReport;
 using Innovayse.Hostpanel.Application.Reports.Queries.NewCustomers;
 using Innovayse.Hostpanel.Application.Reports.Queries.TopClientsByIncome;
@@ -568,18 +568,19 @@ public sealed class ReportingController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Returns VAT MOSS settlement data for the given quarter.</summary>
+    /// <summary>Returns OSS data for the given quarter. The old route <c>vat-moss</c> answers the same query for one release and is removed in the next.</summary>
     /// <param name="query">Year and quarter to report on; either may be omitted.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the quarter's bounds and its rows per member state, VAT rate and invoice currency; 400 when the quarter is out of range; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
-    [HttpGet("vat-moss")]
-    [ProducesResponseType(typeof(VatMossDto), StatusCodes.Status200OK)]
+    [HttpGet("oss")]
+    [HttpGet("vat-moss")] // Deprecated alias of "oss", kept for one release so existing callers keep working; remove it with the CHANGELOG note.
+    [ProducesResponseType(typeof(OssReportDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetVatMossAsync([FromQuery] GetVatMossQuery query, CancellationToken ct)
+    public async Task<IActionResult> GetOssReportAsync([FromQuery] GetOssReportQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<VatMossDto>>(query, ct);
+        var outcome = await _bus.InvokeAsync<Result<OssReportDto>>(query, ct);
         return HandleResult(outcome);
     }
 

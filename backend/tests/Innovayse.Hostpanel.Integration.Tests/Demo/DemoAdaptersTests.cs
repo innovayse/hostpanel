@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Time;
 
@@ -38,7 +39,7 @@ public sealed class DemoAdaptersTests
     [Fact]
     public async Task Registrar_RegistersDeterministicallyAndOffersAvailabilityBothWaysAsync()
     {
-        var registrar = new DemoRegistrarProvider(new SystemClock(TimeProvider.System));
+        var registrar = new DemoRegistrarProvider(new SystemClock(new ManualTimeProvider(TestMoments.Seeded)));
         var contact = new DomainContact(
             "Ani", "Hakobyan", null, "ani@example.test", "+374.10123456", "1 Main St", null, "Yerevan", "Yerevan", "0010", "AM");
         var order = new DomainRegistrationOrder("Example.COM", 1, true, true, null, null, contact);
@@ -48,7 +49,7 @@ public sealed class DemoAdaptersTests
 
         first.Success.Should().BeTrue();
         first.RegistrarRef.Should().Be("DEMO-example.com").And.Be(second.RegistrarRef);
-        first.ExpiresAt.Should().BeAfter(DateTimeOffset.UtcNow);
+        first.ExpiresAt.Should().BeAfter(TestMoments.Seeded);
         (await registrar.CheckAvailabilityAsync("free-name.com", CancellationToken.None)).Should().BeTrue();
         (await registrar.CheckAvailabilityAsync("taken-name.com", CancellationToken.None)).Should().BeFalse();
         (await registrar.GetDnsRecordsAsync(new DomainRef("example.com", "DEMO-example.com"), CancellationToken.None)).Should().HaveCount(3);
@@ -82,7 +83,7 @@ public sealed class DemoAdaptersTests
     {
         var source = new DemoExchangeRateSource();
 
-        var result = await source.QuoteAsync(new ExchangeRateLookup("USD", ["AMD", "EUR", "XXX"]), CancellationToken.None);
+        var result = await source.QuoteAsync(new ExchangeRateLookup(ExchangeRateProvider.Cba, "USD", ["AMD", "EUR", "XXX"]), CancellationToken.None);
 
         var rates = result.Value!.RatesToBase;
         rates["EUR"].Should().Be(Math.Round(1m / DemoCatalogueSeeder.EurosPerDollar, 8));

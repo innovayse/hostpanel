@@ -18,10 +18,12 @@ namespace Innovayse.Hostpanel.Domain.Billing;
 /// <param name="Sku">The product's normalised SKU at billing time, or <see langword="null"/> when it had none.</param>
 /// <param name="Metadata">The product's metadata at billing time, the JSON object text exactly as the product held it, or <see langword="null"/> when it had none.</param>
 /// <param name="GracePeriodDays">How many days past the due date the product stayed usable at billing time, or <see langword="null"/> on a line snapshotted before the grace period was kept; such a line is never judged lapsed, since no honest value can be invented for it.</param>
+/// <param name="IsDigitalService">Whether the product was an electronic service for VAT, taxed at the rate of the client's country when it is sold to a consumer in another member state; unrelated to <paramref name="IsDigital"/>, which is about how the product is delivered.</param>
 public sealed record ProductSnapshot(
     int ProductId,
     BillingCycle BillingCycle,
     bool IsDigital,
     string? Sku,
     string? Metadata,
-    int? GracePeriodDays = null);
+    int? GracePeriodDays = null,
+    bool IsDigitalService = false);

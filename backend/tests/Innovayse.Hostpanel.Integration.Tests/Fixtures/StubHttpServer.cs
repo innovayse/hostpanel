@@ -29,6 +29,9 @@ public sealed class StubHttpServer : IAsyncDisposable
     /// <summary>Every request received, in arrival order.</summary>
     private readonly ConcurrentQueue<RecordedCall> requests = new();
 
+    /// <summary>Completed when the first request has been recorded.</summary>
+    private readonly TaskCompletionSource firstRequestReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     /// <summary>The reply served when the queue is empty: the last one dequeued.</summary>
     private StubReply lastReply = new(HttpStatusCode.NotFound, string.Empty);
 
@@ -46,6 +49,9 @@ public sealed class StubHttpServer : IAsyncDisposable
 
     /// <summary>Gets the requests received so far, in arrival order.</summary>
     public IReadOnlyList<RecordedCall> Requests => [.. requests];
+
+    /// <summary>Gets a task that completes once the server has recorded its first request.</summary>
+    public Task FirstRequestReceived => firstRequestReceived.Task;
 
     /// <summary>Starts a server on a random free loopback port.</summary>
     /// <returns>The running server.</returns>
@@ -108,6 +114,7 @@ public sealed class StubHttpServer : IAsyncDisposable
             body,
             context.Request.Headers.Authorization.FirstOrDefault(),
             context.Request.Headers["Idempotency-Key"].FirstOrDefault()));
+        firstRequestReceived.TrySetResult();
 
         if (replies.TryDequeue(out var next))
         {
@@ -132,6 +139,21 @@ public sealed class StubHttpServer : IAsyncDisposable
         foreach (var (name, value) in lastReply.Headers ?? new Dictionary<string, string>())
         {
             context.Response.Headers[name] = value;
+        }
+
+        if (lastReply.BodyDelay is { } bodyDelay)
+        {
+            // Flushing sends the status and headers; the body then follows late, like a bank that stalls mid-answer.
+            await context.Response.Body.FlushAsync();
+            try
+            {
+                await Task.Delay(bodyDelay, context.RequestAborted);
+            }
+            catch (OperationCanceledException)
+            {
+                // The caller gave up (cancelled or timed out), which is what a stalled body is for.
+                return;
+            }
         }
 
         await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(lastReply.Body));

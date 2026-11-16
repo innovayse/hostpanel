@@ -71,3 +71,14 @@ export const CurrencyCode = {
 
 /** One of the currency codes. */
 export type CurrencyCode = (typeof CurrencyCode)[keyof typeof CurrencyCode]
+
+/** Closed set of values of the `billing.exchange_rates.provider` setting; the strings are the stored values. */
+export const ExchangeRateProvider = {
+  /** The Central Bank of Armenia's daily bulletin, the default. */
+  Cba: 'Cba',
+  /** The European Central Bank's daily reference rates. */
+  Ecb: 'Ecb',
+} as const
+
+/** One of the {@link ExchangeRateProvider} values. */
+export type ExchangeRateProvider = (typeof ExchangeRateProvider)[keyof typeof ExchangeRateProvider]

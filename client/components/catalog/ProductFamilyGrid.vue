@@ -39,6 +39,7 @@
 
 import { revealDelay } from '~/utils/reveal'
 import type { ProductFamily } from '~/types/productfamily'
+import { siteProductFamilyPath } from '~/constants/siteRoutes'
 
 /** Props of ProductFamilyGrid. */
 interface Props {
@@ -57,5 +58,5 @@ const localePath = useLocalePath()
  * @param product The family.
  * @returns Its learn-more page, or its detail page when it has none.
  */
-const hrefFor = (product: ProductFamily): string => localePath(product.learnMoreUrl || `/products/${product.id}`)
+const hrefFor = (product: ProductFamily): string => localePath(product.learnMoreUrl || siteProductFamilyPath(product.id))
 </script>

@@ -36,6 +36,7 @@ import { isHostedGatewayModule } from '~/utils/paymentModules'
 import { translate } from '~/utils/translate'
 import { CartItemType } from '~/types/cartitemtype'
 import { ConsentTextVersion } from '~/types/consenttextversion'
+import { SITE_PAYMENT_RESULT_PATH } from '~/constants/siteRoutes'
 
 /** Two amounts closer than this are the same price; it absorbs float rounding, not a real change. */
 const TOTAL_TOLERANCE = 0.005
@@ -376,7 +377,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
         // bank-transfer branch below. The order and invoice already exist, and the payer
         // returns via /payment/result, which verifies with the bank.
         const returnUrl = new URL(
-          input.localizePath(`/payment/result?order=${result.orderId}`),
+          input.localizePath(`${SITE_PAYMENT_RESULT_PATH}?order=${result.orderId}`),
           window.location.origin,
         ).toString()
         // Stored before we leave for the bank, not after: the payer returns as a fresh

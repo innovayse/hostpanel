@@ -28,7 +28,7 @@
                 <Globe :size="14" :stroke-width="2" class="mr-2" />
                 {{ $t('domains.tabRegister') }}
               </UiButton>
-              <UiButton variant="secondary" size="sm" :to="localePath('/domains/transfer')" data-testid="classic-domains-tab-transfer">
+              <UiButton variant="secondary" size="sm" :to="localePath(SITE_DOMAINS_TRANSFER_PATH)" data-testid="classic-domains-tab-transfer">
                 <ArrowLeftRight :size="14" :stroke-width="2" class="mr-2" />
                 {{ $t('domains.tabTransfer') }}
               </UiButton>
@@ -112,7 +112,7 @@
                     v-else
                     variant="outline"
                     full-width
-                    :to="localePath('/domains/transfer') + (result?.domain ? `?domain=${result.domain}` : '')"
+                    :to="localePath(SITE_DOMAINS_TRANSFER_PATH) + (result?.domain ? `?domain=${result.domain}` : '')"
                     data-testid="classic-domains-transfer"
                   >
                     <ArrowLeftRight :size="15" :stroke-width="2" class="mr-2" />
@@ -263,7 +263,7 @@
                 <UiText size="sm" tone="inherit" weight="medium" class="mb-3 text-classic-brand">{{ $t('domains.promoHostingSubtitle') }}</UiText>
                 <UiText tone="inherit" class="mb-6 leading-relaxed text-classic-muted">{{ $t('domains.promoHostingDesc') }}</UiText>
                 <UiButton
-                  :to="localePath('/hosting')"
+                  :to="localePath(SITE_HOSTING_PATH)"
                   variant="primary"
                   size="lg"
                   class="gap-3 px-8"
@@ -285,7 +285,7 @@
                 <UiText tone="inherit" class="mb-6 leading-relaxed flex-1 text-classic-muted">{{ $t('domains.promoTransferDesc') }}</UiText>
                 <UiStack gap="none" class="mt-auto items-start">
                   <UiButton
-                    :to="localePath('/domains/transfer')"
+                    :to="localePath(SITE_DOMAINS_TRANSFER_PATH)"
                     variant="outline"
                     size="lg"
                     class="gap-3 px-8"
@@ -334,6 +334,7 @@ import { DomainOrderAction } from '~/types/domainorderaction'
 import type { ChipTab } from '~/types/chiptab'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
 import { tldCategoryLabel, tldCategorySlug } from '~/utils/tldCategory'
+import { SITE_DOMAINS_TRANSFER_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** One extension's entry of the price table. */
 type TldEntry = TldPriceEntry

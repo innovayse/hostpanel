@@ -5,7 +5,7 @@
     :aria-label="$t('common.breadcrumb')"
   >
     <NuxtLink
-      :to="localePath('/')"
+      :to="localePath(SITE_HOME_PATH)"
       :class="[LINK_CLASSES, 'whitespace-nowrap']"
     >
       {{ $t('common.home') }}
@@ -42,6 +42,7 @@
  * current page and is not a link.
  */
 import { ChevronRight } from 'lucide-vue-next'
+import { SITE_HOME_PATH } from '~/constants/siteRoutes'
 import { FOCUS_RING } from '~/utils/ui/tones'
 
 /** One step of the trail. */

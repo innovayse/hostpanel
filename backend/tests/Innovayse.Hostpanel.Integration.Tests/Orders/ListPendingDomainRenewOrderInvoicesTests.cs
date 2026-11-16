@@ -52,12 +52,12 @@ public sealed class ListPendingDomainRenewOrderInvoicesTests(IntegrationTestFact
     /// <returns>The order's invoice id.</returns>
     private static async Task<int> SeedRenewOrderAsync(IHostpanelDbContext context, int clientId, string domainName, bool cancel)
     {
-        var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
         invoice.AddItem($"Domain renewal: {domainName}", 12m, 1);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..20], clientId, "bank-transfer", null, "USD", DateTimeOffset.UtcNow);
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..20], clientId, "bank-transfer", null, "USD", TestMoments.Seeded);
         order.AddItem(
             await DomainsTestSeeds.SeedHostingProductAsync(context), "Domain", BillingCycle.Annual, 12m, 12m, domainName, null, DomainAction.Renew, null, 1);
         order.LinkInvoice(invoice.Id);

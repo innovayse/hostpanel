@@ -94,7 +94,8 @@ const router = createRouter({
         { path: 'clients/groups', component: lazy('views/ClientGroupsView.vue') },
         { path: 'clients/shared-hostings', component: lazy('views/ServicesListView.vue') },
         { path: 'clients/addons', component: lazy('views/ServiceAddonsView.vue') },
-        { path: 'clients/domain-registrations', component: lazy('views/DomainRegistrationsView.vue') },
+        // The registrations table was the domain list under another address; a bookmark to it opens the domain list.
+        { path: 'clients/domain-registrations', redirect: AppRoute.Domains },
         { path: 'clients/cancellations', component: lazy('views/CancellationRequestsView.vue') },
         { path: 'clients/plan-changes', component: lazy('views/ServiceChangeRequestsView.vue') },
         { path: 'clients/affiliates', component: lazy('views/ManageAffiliatesView.vue') },
@@ -154,6 +155,8 @@ const router = createRouter({
           component: lazy('layouts/ReportsLayout.vue'),
           children: [
             { path: '', redirect: AppRoute.ReportsDailyPerformance },
+            // The report was named after the scheme it replaced; a saved link or bookmark to the old address lands on it.
+            { path: 'vat-moss', redirect: AppRoute.ReportsOss },
             /** One route per catalogued report. */
             ...REPORTS.map(r => ({ path: r.slug, component: withRetry(r.component) })),
           ],
@@ -214,6 +217,7 @@ const router = createRouter({
         { path: 'settings/gateways', redirect: AppRoute.IntegrationsPayments },
         { path: 'settings/currencies', component: lazy('views/CurrenciesView.vue') },
         { path: 'settings/tax-rules', component: lazy('views/TaxRulesView.vue') },
+        { path: 'settings/vat-rates', component: lazy('views/VatRatesView.vue') },
         { path: 'storefront/testimonials', component: lazy('views/TestimonialsView.vue') },
         { path: 'storefront/testimonials/create', component: lazy('views/TestimonialFormView.vue') },
         { path: 'storefront/testimonials/:id/edit', component: lazy('views/TestimonialFormView.vue') },

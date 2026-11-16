@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { translate } from '@/lib/translate'
 import { useEmailCampaignsStore } from '@/stores/emailCampaigns'
-import { CampaignFilterType } from '@/types/emailcampaign'
+import { CampaignFilterType, CampaignStatus } from '@/types/emailcampaign'
 import { callOf, invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 
 /** A valid campaign body. */
@@ -28,24 +28,25 @@ describe('emailCampaignsStore', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fetchAll fills the list', async () => {
-    const mock = stubFetch(json([{ id: 1 }]))
+  it('fetchAll fills the page and the total, and sends the page, its size and the trimmed filters', async () => {
+    const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }))
     const store = useEmailCampaignsStore()
 
-    expect(await store.fetchAll()).toBe(true)
-    expect(callOf(mock).url).toBe('/api/admin/email-campaigns')
+    expect(await store.fetchAll(2, { search: ' offer ', status: CampaignStatus.Sent })).toBe(true)
+    expect(callOf(mock).url).toBe('/api/admin/email-campaigns?page=2&pageSize=20&search=offer&status=Sent')
     expect(store.campaigns).toEqual([{ id: 1 }])
+    expect(store.totalCount).toBe(21)
     expect(store.loading).toBe(false)
   })
 
   it('fetchAll reports the API sentence, and the no-answer sentence offline', async () => {
     const store = useEmailCampaignsStore()
     stubFetch(problem('Not allowed.', 403))
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe('Not allowed.')
 
     stubOffline()
-    expect(await store.fetchAll()).toBe(false)
+    expect(await store.fetchAll(1)).toBe(false)
     expect(store.error).toBe(translate('errors.noAnswer'))
   })
 

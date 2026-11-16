@@ -97,7 +97,7 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
     public async Task GetPdf_AnswersBusyWhenNoRenderSlotFrees()
     {
         using var host = BillingTestSeeds.RenderBusyHost(factory);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var noteId = await CreditNoteTestSeeds.IssueOkAsync(
             admin, await CreditNoteTestSeeds.PaidInvoiceAsync(host, clientId, price: 50m), 50m);

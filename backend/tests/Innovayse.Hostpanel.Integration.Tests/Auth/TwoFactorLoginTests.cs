@@ -33,7 +33,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     {
         var account = await NewTwoFactorAccountAsync();
         var forged = Convert.ToBase64String(
-            Encoding.UTF8.GetBytes($"2fa:{account.UserId}:{DateTime.UtcNow.Ticks}"));
+            Encoding.UTF8.GetBytes($"2fa:{account.UserId}:{TestMoments.Seeded.Ticks}"));
 
         var response = await Client().PostAsJsonAsync(
             "/api/auth/2fa-login", new { pendingToken = forged, code = _two.CurrentCode(account.Secret) });

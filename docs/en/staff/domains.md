@@ -69,8 +69,7 @@ A domain that has no registrar reference returns `DOMAIN_NO_REGISTRAR_REF` when 
 
 ## All domains
 
-- **Domains**: shows all domain records across all clients. Use the search box to find a domain by name.
-- **Domain Registrations**: lists all registration and transfer orders, useful for monitoring pending domains.
+- **Domains**: shows all domain records across all clients. Use the search box to find a domain by name, and the Filters button to narrow the list by status (for example pending registrations or transfers) and by registrar. The search, the filters and the page stay in the address, so a link or a reload opens the same list. The registrar filter uses the registrar module, so older domains with no module set do not show when a registrar is chosen.
 
 ## Domain renewal
 

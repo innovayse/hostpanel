@@ -69,7 +69,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task NewerVersion_IsStagedAndLeavesTheInstalledPluginAndItsDataAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         await SeedSettingAndDataAsync(pluginId);
@@ -112,7 +112,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task SecondUpgrade_ReplacesTheStagedOneAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -134,7 +134,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task Downgrade_IsRefusedWithoutForceAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -158,7 +158,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task Downgrade_IsStagedWhenForcedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -182,7 +182,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task UpgradeBreakingAManifestRule_IsNeverStagedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         var broken = PluginsTestSeeds.BuildZip(new Dictionary<string, string>
@@ -210,7 +210,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task Remove_DropsTheStagedUpgradeAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
@@ -227,7 +227,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task ForcedDowngrade_IsAuditedExplicitlyAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -250,7 +250,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task RefusedDowngrade_IsAuditedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -275,7 +275,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task UploadOlderThanTheStagedOne_IsADowngradeAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "3.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
@@ -307,7 +307,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task UnparseableInstalledVersion_CountsAsADowngradeUnlessForcedAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         var manifestPath = Path.Combine(InstalledFolder(pluginId), "plugin.json");
@@ -337,7 +337,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [InlineData("99999999999.0.0")]
     public async Task InvalidVersion_IsRefusedAtInstallAsync(string version)
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
 
         var response = await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, version));
@@ -353,7 +353,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     [Fact]
     public async Task SameVersionAsTheStagedOne_IsAuditedAsAReplacementAsync()
     {
-        var client = await PluginsTestSeeds.AdminClientAsync(factory, Host);
+        var client = await AuthTestSeeds.AdminClientAsync(factory, Host);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "1.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);
         (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildVersionedPluginZip(pluginId, "2.0.0"))).StatusCode.Should().Be(HttpStatusCode.OK);

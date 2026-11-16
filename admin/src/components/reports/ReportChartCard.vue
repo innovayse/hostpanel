@@ -3,7 +3,7 @@
  * Card around a report chart, with an optional title.
  *
  * The chart itself is `UiChart`: this component only frames it, so a report never configures the
- * chart library.
+ * chart library. While the report loads the card keeps its title and the chart draws placeholder bars at its height.
  */
 import { inject } from 'vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -38,12 +38,12 @@ withDefaults(defineProps<{
   height: 'md',
 })
 
-/** True while the report loads: the card keeps its frame and draws a skeleton. */
+/** True while the report loads: the chart draws placeholder bars at its plot height. */
 const loading = inject(REPORT_LOADING, NOT_LOADING)
 </script>
 
 <template>
-  <UiCard padding="md" :loading="loading" :skeleton-lines="8" data-testid="report-chart">
+  <UiCard padding="md" :aria-busy="loading ? 'true' : undefined" data-testid="report-chart">
     <template v-if="title" #header>
       <UiHeading :level="2" variant="card" class="mb-4">
         {{ title }}
@@ -57,6 +57,7 @@ const loading = inject(REPORT_LOADING, NOT_LOADING)
       :legend="legend"
       :horizontal="horizontal"
       :height="height"
+      :loading="loading"
     />
   </UiCard>
 </template>

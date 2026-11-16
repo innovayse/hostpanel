@@ -85,6 +85,21 @@ public sealed class UpdateProductHandler
             product.SetGracePeriodDays(gracePeriodDays);
         }
 
+        if (cmd.IsDigitalService is { } isDigitalService)
+        {
+            product.SetDigitalService(isDigitalService);
+        }
+
+        // Hidden is the Inactive status; null leaves the status as stored.
+        if (cmd.IsHidden == true)
+        {
+            product.Deactivate();
+        }
+        else if (cmd.IsHidden == false)
+        {
+            product.Activate();
+        }
+
         // Null trial settings keep the stored ones, so a caller that does not know the field never changes them.
         if (cmd.Trial is { } trial)
         {

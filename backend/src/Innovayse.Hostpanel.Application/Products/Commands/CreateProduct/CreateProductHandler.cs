@@ -72,6 +72,14 @@ public sealed class CreateProductHandler
             product.SetGracePeriodDays(gracePeriodDays);
         }
 
+        product.SetDigitalService(cmd.IsDigitalService);
+
+        // Hidden is the Inactive status: the public catalogue and order paths only take active products.
+        if (cmd.IsHidden)
+        {
+            product.Deactivate();
+        }
+
         if (cmd.Trial is { } trial)
         {
             product.ConfigureTrial(trial.ToDomain());

@@ -4,13 +4,11 @@ using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListAnnouncements;
 
-/// <summary>Validator for <see cref="ListAnnouncementsQuery"/>.</summary>
-/// <remarks>
-/// No rule: the handler clamps <c>Page</c> to at least 1 and <c>PageSize</c> to [1, 100] itself,
-/// so there is no shape of input this validator could refuse that the handler would not already
-/// answer sensibly for.
-/// </remarks>
-public sealed class ListAnnouncementsValidator : LocalizedValidator<ListAnnouncementsQuery>
+/// <summary>
+/// Validates <see cref="ListAnnouncementsQuery"/>: the page, page size and search every list shares
+/// (<see cref="ListQueryValidator{T}"/>). The published state is a plain <c>bool?</c>, which the model binder refuses when it is not one.
+/// </summary>
+public sealed class ListAnnouncementsValidator : ListQueryValidator<ListAnnouncementsQuery>
 {
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>

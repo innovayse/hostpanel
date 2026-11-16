@@ -381,11 +381,13 @@ export interface PluginRegistryPageDto {
 /** Filter of the registry browser: the query string parameters of GET /api/admin/plugins/registry. */
 export interface PluginRegistryQuery {
   /** Search text; empty for no text filter. */
-  q: string
+  search: string
   /** Category filter; empty for every category. */
   category: PluginCategoryFilter
   /** Page, starting at 1. */
   page: number
+  /** Plugins per page. */
+  pageSize: number
 }
 
 /** Body of POST /api/admin/plugins/registry/{id}/install. */

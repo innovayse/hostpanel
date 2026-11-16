@@ -19,11 +19,11 @@ public sealed class SendDomainExpiryWarningTests(IntegrationTestFactory factory)
 {
     /// <summary>Seeds an active domain expiring in the given number of days.</summary>
     /// <param name="context">Data context.</param>
-    /// <param name="expiresInDays">Days from now until the domain expires.</param>
+    /// <param name="now">The moment the host clock stands at.</param>
+    /// <param name="expiresInDays">Days from <paramref name="now"/> until the domain expires.</param>
     /// <returns>The saved domain.</returns>
-    private static async Task<RegisteredDomain> SeedAsync(IHostpanelDbContext context, int expiresInDays)
+    private static async Task<RegisteredDomain> SeedAsync(IHostpanelDbContext context, DateTimeOffset now, int expiresInDays)
     {
-        var now = DateTimeOffset.UtcNow;
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
             clientId, $"{Guid.NewGuid():N}.test", now, now.AddDays(expiresInDays), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
@@ -37,10 +37,11 @@ public sealed class SendDomainExpiryWarningTests(IntegrationTestFactory factory)
     [Fact]
     public async Task DomainInsideTheWindow_IsWarnedOncePerCycle()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = new ClockedHost(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var domain = await SeedAsync(context, expiresInDays: 5);
+        var domain = await SeedAsync(context, host.Clock.GetUtcNow(), expiresInDays: 5);
 
         var first = await bus.InvokeAsync<Result>(new SendDomainExpiryWarningCommand(domain.Id), CancellationToken.None);
         var second = await bus.InvokeAsync<Result>(new SendDomainExpiryWarningCommand(domain.Id), CancellationToken.None);
@@ -57,10 +58,11 @@ public sealed class SendDomainExpiryWarningTests(IntegrationTestFactory factory)
     [Fact]
     public async Task DomainOutsideTheWindow_IsNotWarned()
     {
-        using var scope = factory.Services.CreateScope();
+        using var host = new ClockedHost(factory);
+        using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
-        var domain = await SeedAsync(context, expiresInDays: 200);
+        var domain = await SeedAsync(context, host.Clock.GetUtcNow(), expiresInDays: 200);
 
         var outcome = await bus.InvokeAsync<Result>(new SendDomainExpiryWarningCommand(domain.Id), CancellationToken.None);
 

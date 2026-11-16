@@ -63,9 +63,9 @@ public sealed class LiftDomainExpirySuspensionTests(IntegrationTestFactory facto
         var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 1m);
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
 
-        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "lift-ref", DateTimeOffset.UtcNow);
-        service.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true, source: source);
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "lift-ref", TestMoments.Seeded);
+        service.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true, source: source);
         await context.SaveChangesAsync(CancellationToken.None);
         return service.Id;
     }

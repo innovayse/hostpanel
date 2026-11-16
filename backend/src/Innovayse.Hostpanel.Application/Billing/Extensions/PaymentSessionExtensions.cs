@@ -50,7 +50,7 @@ public static class PaymentSessionExtensions
             return new RedirectDto(
                 form.Action,
                 GatewaySessionKind.FormPost,
-                new PaymentFormPostDto(form.Action, form.Fields.Select(f => new PaymentFormFieldDto(f.Key, f.Value)).ToList()));
+                new PaymentFormPostDto(form.Fields.Select(f => new PaymentFormFieldDto(f.Key, f.Value)).ToList()));
         }
 
         var kind = session.Kind == PaymentSessionKind.BrowserStep ? GatewaySessionKind.BrowserStep : GatewaySessionKind.Redirect;

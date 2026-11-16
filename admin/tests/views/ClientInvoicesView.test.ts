@@ -1,9 +1,12 @@
 /**
  * Mount tests for ClientInvoicesView: it renders against the real kit and settles on an API
- * refusal with a Retry, and a delete is confirmed first and reports its outcome next to the list.
+ * refusal with a Retry, a delete is confirmed first and reports its outcome next to the list, and the search, the
+ * status and period filters and the page are kept in the address, sent to the API and shown as removable chips.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import ClientInvoicesView from '@/views/ClientInvoicesView.vue'
 import { invoiceRowFixture } from '../helpers/billingFixtures'
 import { mountClientView } from '../helpers/clientViews'
@@ -24,6 +27,15 @@ const mountInvoices = async () => {
   await flushPromises()
   return wrapper
 }
+
+/**
+ * Lists the requests the mock has seen for the client's invoice list.
+ *
+ * @param mock - The stubbed fetch.
+ * @returns The request URLs that went to the list endpoint.
+ */
+const listUrls = (mock: ReturnType<typeof vi.fn>): string[] =>
+  mock.mock.calls.map(([url]) => url as string).filter((url) => url.startsWith('/api/billing/client/7?'))
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -110,5 +122,81 @@ describe('ClientInvoicesView', () => {
     const text = wrapper.text()
     expect(text).toContain('24000.00 AMD')
     expect(text).not.toContain('$')
+  })
+
+  it('restores the search, the filters and the page from the address and sends them together', async () => {
+    const mock = stubRoutes({ 'GET /api/billing/client/7': listPage })
+    const { wrapper } = await mountRouted(
+      ClientInvoicesView,
+      '/clients/:id/invoices',
+      '/clients/7/invoices?search=wire&status=Paid&from=2026-10-01&to=2026-10-31&page=2',
+    )
+    await flushPromises()
+
+    expect(listUrls(mock)[0]).toBe('/api/billing/client/7?page=2&pageSize=25&status=Paid&from=2026-10-01&to=2026-10-31&search=wire')
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('3')
+    expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Paid')
+  })
+
+  it('puts the typed search in the address and has the server narrow the list after the pause', async () => {
+    const mock = stubRoutes({ 'GET /api/billing/client/7': listPage })
+    const { wrapper, router } = await mountRouted(ClientInvoicesView, '/clients/:id/invoices', '/clients/7/invoices')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="client-invoices-search"]').setValue('card')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ search: 'card' })
+    expect(listUrls(mock).at(-1)).toBe('/api/billing/client/7?page=1&pageSize=25&search=card')
+  })
+
+  it('sends the status and the period picked in the filter dialog on Apply', async () => {
+    const mock = stubRoutes({ 'GET /api/billing/client/7': listPage })
+    const { wrapper, router } = await mountRouted(ClientInvoicesView, '/clients/:id/invoices', '/clients/7/invoices')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="client-invoices-filter"]').trigger('click')
+    await flushPromises()
+    wrapper.findComponent(UiSelect).vm.$emit('update:modelValue', 'Overdue')
+    wrapper.findComponent(UiDateRangePicker).vm.$emit('update:modelValue', ['2026-10-01', '2026-10-31'])
+    await flushPromises()
+    await wrapper.get('[data-testid="filter-apply"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ status: 'Overdue', from: '2026-10-01', to: '2026-10-31' })
+    expect(listUrls(mock).at(-1)).toBe('/api/billing/client/7?page=1&pageSize=25&status=Overdue&from=2026-10-01&to=2026-10-31')
+  })
+
+  it('does not send a status or a date the address holds that is not a known value', async () => {
+    const mock = stubRoutes({ 'GET /api/billing/client/7': listPage })
+    await mountRouted(ClientInvoicesView, '/clients/:id/invoices', '/clients/7/invoices?status=Gone&from=yesterday')
+    await flushPromises()
+
+    expect(listUrls(mock)[0]).toBe('/api/billing/client/7?page=1&pageSize=25')
+  })
+
+  it('removes a filter from the address and reloads when its chip is removed', async () => {
+    const mock = stubRoutes({ 'GET /api/billing/client/7': listPage })
+    const { wrapper, router } = await mountRouted(ClientInvoicesView, '/clients/:id/invoices', '/clients/7/invoices?status=Paid&from=2026-10-01')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="filter-chip-remove-status"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ from: '2026-10-01' })
+    expect(listUrls(mock).at(-1)).toBe('/api/billing/client/7?page=1&pageSize=25&from=2026-10-01')
+  })
+
+  it('keeps the chosen page in the address and loads it', async () => {
+    const mock = stubRoutes({ 'GET /api/billing/client/7': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 60, totalPages: 3 }) })
+    const { wrapper, router } = await mountRouted(ClientInvoicesView, '/clients/:id/invoices', '/clients/7/invoices')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="client-invoices-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query).toEqual({ page: '2' })
+    expect(listUrls(mock).at(-1)).toBe('/api/billing/client/7?page=2&pageSize=25')
   })
 })

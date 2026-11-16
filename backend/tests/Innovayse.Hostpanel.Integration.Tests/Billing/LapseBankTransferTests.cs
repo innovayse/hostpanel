@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -19,21 +18,30 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// passed), and <see cref="LapseBankTransferHandler"/> refuses an invoice that waits for no transfer.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
-public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
+public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>, IDisposable
 {
-    /// <summary>A host whose mail relay is a fake and whose domain events are not published, so only the state the job leaves is observed.</summary>
-    private readonly WebApplicationFactory<Program> _host = EventHandlerTestHost.WithFakeRelay(factory, new FakeEmailSender());
+    /// <summary>
+    /// The one host every step of a test runs on: its mail relay is a fake and its domain events are not published, so only the state the
+    /// job leaves is observed, and its clock stands at <see cref="TestMoments.Seeded"/>, which the rows are seeded relative to.
+    /// </summary>
+    private readonly ClockedHost _host = new(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, new FakeEmailSender()));
+
+    /// <summary>Disposes the host of the test.</summary>
+    public void Dispose()
+    {
+        _host.Dispose();
+    }
 
     /// <summary>Seeds an invoice whose client chose a bank transfer <paramref name="waitedDays"/> days ago.</summary>
     /// <param name="waitedDays">How many days ago the transfer was chosen.</param>
-    /// <param name="dueInDays">When the invoice falls due, counted from now (negative for already past).</param>
+    /// <param name="dueInDays">When the invoice falls due, counted from the moment the job runs at (negative for already past).</param>
     /// <returns>The invoice id.</returns>
     private async Task<int> SeedWaitingTransferAsync(int waitedDays, int dueInDays)
     {
-        var clientId = await BillingTestSeeds.SeedClientAsync(_host);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
         using var scope = _host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = _host.Clock.GetUtcNow();
         var invoice = Invoice.Create(clientId, now.AddDays(dueInDays), "USD", now.AddDays(-40));
         invoice.AddItem("Hosting", 25m, 1);
         context.Invoices.Add(invoice);
@@ -43,7 +51,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
         return invoice.Id;
     }
 
-    /// <summary>Runs one pass of the overdue job.</summary>
+    /// <summary>Runs one pass of the overdue job on the test's host.</summary>
     /// <returns>A task that completes once the pass has ended.</returns>
     private async Task RunOverdueJobAsync()
     {
@@ -99,7 +107,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     [Fact]
     public async Task TheAdminsNumberOfDays_DecidesWhenATransferLapses()
     {
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, _host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, _host);
         var invoiceId = await SeedWaitingTransferAsync(waitedDays: 5, dueInDays: 10);
         try
         {
@@ -124,7 +132,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     [InlineData("-4")]
     public async Task AnUnusableNumberOfDays_FallsBackToTheDefault(string typed)
     {
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, _host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, _host);
         var invoiceId = await SeedWaitingTransferAsync(waitedDays: 5, dueInDays: 10);
         try
         {
@@ -166,7 +174,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     [Fact]
     public async Task AStaffRejection_OfAnInvoicePastItsDueDate_ReturnsToOverdue()
     {
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, _host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, _host);
         var invoiceId = await SeedWaitingTransferAsync(waitedDays: 1, dueInDays: -2);
 
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/bank-transfer/reject", new { note = "Nothing arrived." });

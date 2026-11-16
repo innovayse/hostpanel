@@ -227,8 +227,8 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
-    /// cPanel servers, the "CPanelWhm" named client the provisioning factory and the connection
-    /// tester resolve per server. Registered with no retry stage and no breaker.
+    /// cPanel servers, the "CPanelWhm" named client the provisioning factory, the connection
+    /// tester and the disk usage report resolve per server. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
     /// The same reasons as <see cref="Plesk"/>: a retried <c>createacct</c> could race the first
@@ -373,7 +373,7 @@ public sealed class HttpResilienceOptions
 
     /// <summary>
     /// The Central Bank of Armenia's daily rate bulletin, for "update exchange rates". One
-    /// idempotent GET, triggered by an operator, so it is registered read-only with retries.
+    /// idempotent GET, made by the daily job or an operator, so it is registered read-only with retries.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -398,22 +398,39 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
+    /// The European Central Bank's daily reference rates, for "update exchange rates". One idempotent
+    /// GET, made by the daily job or an operator, so it is registered read-only with retries.
+    /// </summary>
+    /// <remarks>
+    /// The same budget as <see cref="Cba"/>, for the same reasons: 5 seconds an attempt and 15 in total, two
+    /// retries with backoff, and no breaker because the call is made too rarely for one to ever open. A failure
+    /// is answered as a failure and the stored rates are left as they were.
+    /// </remarks>
+    public ResilienceProfileOptions Ecb { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(5),
+        TotalTimeout = TimeSpan.FromSeconds(15),
+        MaxRetryAttempts = 2,
+        RetryDelay = TimeSpan.FromSeconds(1),
+        CircuitBreakerEnabled = false,
+    };
+
+    /// <summary>
     /// The factory's default, unnamed client. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
     /// <para>
     /// <b>Nobody knows what this one calls, which is the whole argument.</b> It is what
-    /// <c>IHttpClientFactory.CreateClient()</c> hands to <c>CpanelWhmApi</c> for per-server WHM
-    /// calls and to any payment plugin that asks the factory for a client without naming one. A
-    /// payment plugin's POST may well be a charge. An unknown request is treated as
-    /// non-repeatable: guessing wrong in that direction takes someone's money twice.
+    /// <c>IHttpClientFactory.CreateClient()</c> hands to any payment plugin that asks the factory
+    /// for a client without naming one. A payment plugin's POST may well be a charge. An unknown request is
+    /// treated as non-repeatable: guessing wrong in that direction takes someone's money twice.
     /// </para>
     /// <para>
     /// <b>No breaker</b>, because every caller of it addresses a different host.
     /// </para>
     /// <para>
-    /// <b>20 seconds an attempt, 25 in total.</b> Generous, because the callers are unknown and
-    /// one of them is per-server WHM; the point of the number is only that it is not 100.
+    /// <b>20 seconds an attempt, 25 in total.</b> Generous, because the callers are unknown;
+    /// the point of the number is only that it is not 100.
     /// </para>
     /// </remarks>
     public ResilienceProfileOptions Default { get; set; } = new()
@@ -445,6 +462,7 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(Namecheap), Namecheap);
         yield return new NamedResilienceProfile(nameof(Plugin), Plugin);
         yield return new NamedResilienceProfile(nameof(Cba), Cba);
+        yield return new NamedResilienceProfile(nameof(Ecb), Ecb);
         yield return new NamedResilienceProfile(nameof(Default), Default);
     }
 }

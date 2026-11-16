@@ -32,21 +32,23 @@ public sealed class TldConfigsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns all TLD configurations for the admin list view.</summary>
+    /// <summary>Returns a page of TLD configurations for the admin list view.</summary>
+    /// <param name="query">Pagination, optional TLD search and optional registrar and enabled filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the configurations; 401 when the caller is not signed in;
-    /// 403 when the caller's role is not allowed;
+    /// 200 with the page; 400 when the page, the page size, the search or a filter is refused;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpGet]
     [Authorize(Policy = Policies.Admin)]
-    [ProducesResponseType(typeof(List<TldConfigListItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedList<TldConfigListItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ListAsync(CancellationToken ct)
+    public async Task<IActionResult> ListAsync([FromQuery] ListTldConfigsQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<List<TldConfigListItemDto>>>(new ListTldConfigsQuery(), ct);
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<TldConfigListItemDto>>>(query, ct);
         return HandleResult(outcome);
     }
 

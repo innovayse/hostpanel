@@ -29,18 +29,6 @@ import { InviteOutcome } from '~/types/inviteoutcome'
 import { PricingCycle } from '~/types/pricingcycle'
 import { SignInOutcome } from '~/types/signinoutcome'
 
-/** The auth endpoints the store reaches; sign-in and sign-out are in {@link AccountEndpoint}. */
-const AuthPath = {
-  TwoFactorLogin: '/api/portal/auth/2fa-login',
-  Register: '/api/portal/auth/register',
-  ConfirmEmail: '/api/portal/auth/confirm-email',
-  EmailVerified: '/api/portal/auth/email-verified',
-  ResendVerification: '/api/portal/auth/resend-verification',
-  ForgotPassword: '/api/portal/auth/forgot-password',
-  ResetPassword: '/api/portal/auth/reset-password',
-  AcceptInvite: '/api/portal/auth/accept-invite'
-} as const
-
 /** The stub playing the BFF. */
 let stub: StubServer
 
@@ -145,13 +133,13 @@ describe('useAuthStore.signIn', () => {
 
   it('finishes a second-factor sign-in with the open challenge and the typed code', async () => {
     table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
-    table[writeOf(AuthPath.TwoFactorLogin)] = { body: { id: 7 } }
+    table[writeOf(AccountEndpoint.TwoFactorLogin)] = { body: { id: 7 } }
     const store = useAuthStore()
     await store.signIn('ada@example.com', 'pw')
 
     const outcome = await store.confirmTwoFactor('123456')
 
-    const finished = requestsTo(stub.requests, AuthPath.TwoFactorLogin)
+    const finished = requestsTo(stub.requests, AccountEndpoint.TwoFactorLogin)
     expect(finished.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(finished[0])).toEqual({ pendingToken: 't', code: '123456' })
     expect(outcome).toBe(SignInOutcome.SignedIn)
@@ -161,7 +149,7 @@ describe('useAuthStore.signIn', () => {
 
   it('keeps the challenge open and shows the sentence when the code is refused', async () => {
     table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
-    table[writeOf(AuthPath.TwoFactorLogin)] = refusal('Invalid code.')
+    table[writeOf(AccountEndpoint.TwoFactorLogin)] = refusal('Invalid code.')
     const store = useAuthStore()
     await store.signIn('ada@example.com', 'pw')
 
@@ -208,12 +196,12 @@ describe('useAuthStore.confirmEmail', () => {
   })
 
   it('reports Confirmed when the API accepts the link', async () => {
-    table[writeOf(AuthPath.ConfirmEmail)] = { body: {} }
+    table[writeOf(AccountEndpoint.ConfirmEmail)] = { body: {} }
     const store = useAuthStore()
 
     const status = await store.confirmEmail('ada@example.com', 'tok')
 
-    const confirmed = requestsTo(stub.requests, AuthPath.ConfirmEmail)
+    const confirmed = requestsTo(stub.requests, AccountEndpoint.ConfirmEmail)
     expect(confirmed.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(confirmed[0])).toEqual({ email: 'ada@example.com', token: 'tok' })
     expect(status).toBe(EmailConfirmationStatus.Confirmed)
@@ -222,7 +210,7 @@ describe('useAuthStore.confirmEmail', () => {
   })
 
   it('keeps the API sentence and reports Failed when the link is refused', async () => {
-    table[writeOf(AuthPath.ConfirmEmail)] = refusal('Link expired.')
+    table[writeOf(AccountEndpoint.ConfirmEmail)] = refusal('Link expired.')
     const store = useAuthStore()
 
     const status = await store.confirmEmail('ada@example.com', 'tok')
@@ -234,7 +222,7 @@ describe('useAuthStore.confirmEmail', () => {
 
 describe('useAuthStore email verification', () => {
   it('keeps the three-valued status the API answers with', async () => {
-    table[readOf(AuthPath.EmailVerified)] = { body: { verified: false } }
+    table[readOf(AccountEndpoint.EmailVerified)] = { body: { verified: false } }
     const store = useAuthStore()
 
     await store.loadEmailVerified()
@@ -243,7 +231,7 @@ describe('useAuthStore email verification', () => {
   })
 
   it('leaves the status unknown when the read fails', async () => {
-    table[readOf(AuthPath.EmailVerified)] = { status: 503, body: {} }
+    table[readOf(AccountEndpoint.EmailVerified)] = { status: 503, body: {} }
     const store = useAuthStore()
 
     await store.loadEmailVerified()
@@ -252,19 +240,19 @@ describe('useAuthStore email verification', () => {
   })
 
   it('reports Succeeded and a local sentence when the mail is sent', async () => {
-    table[writeOf(AuthPath.ResendVerification)] = { body: {} }
+    table[writeOf(AccountEndpoint.ResendVerification)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.resendVerification()
 
-    expect(requestsTo(stub.requests, AuthPath.ResendVerification).map(request => request.method)).toEqual([HttpMethod.Post])
+    expect(requestsTo(stub.requests, AccountEndpoint.ResendVerification).map(request => request.method)).toEqual([HttpMethod.Post])
     expect(outcome).toBe(ActionOutcome.Succeeded)
     expect(store.resendMessage).not.toBe('')
     expect(store.resending).toBe(false)
   })
 
   it('keeps the API sentence and reports Failed when the resend is refused', async () => {
-    table[writeOf(AuthPath.ResendVerification)] = refusal('Too many requests.')
+    table[writeOf(AccountEndpoint.ResendVerification)] = refusal('Too many requests.')
     const store = useAuthStore()
 
     const outcome = await store.resendVerification()
@@ -276,12 +264,12 @@ describe('useAuthStore email verification', () => {
 
 describe('useAuthStore.requestPasswordReset', () => {
   it('reports Succeeded and leaves no error', async () => {
-    table[writeOf(AuthPath.ForgotPassword)] = { body: {} }
+    table[writeOf(AccountEndpoint.ForgotPassword)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.requestPasswordReset('ada@example.com')
 
-    const asked = requestsTo(stub.requests, AuthPath.ForgotPassword)
+    const asked = requestsTo(stub.requests, AccountEndpoint.ForgotPassword)
     expect(asked.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(asked[0])).toEqual({ email: 'ada@example.com' })
     expect(outcome).toBe(ActionOutcome.Succeeded)
@@ -290,7 +278,7 @@ describe('useAuthStore.requestPasswordReset', () => {
   })
 
   it('keeps the API sentence and reports Failed when the request is refused', async () => {
-    table[writeOf(AuthPath.ForgotPassword)] = refusal('Too many requests.')
+    table[writeOf(AccountEndpoint.ForgotPassword)] = refusal('Too many requests.')
     const store = useAuthStore()
 
     const outcome = await store.requestPasswordReset('ada@example.com')
@@ -303,12 +291,12 @@ describe('useAuthStore.requestPasswordReset', () => {
 
 describe('useAuthStore.acceptInvite', () => {
   it('reports Accepted when the API accepts the token', async () => {
-    table[writeOf(AuthPath.AcceptInvite)] = { body: {} }
+    table[writeOf(AccountEndpoint.AcceptInvite)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
 
-    const accepted = requestsTo(stub.requests, AuthPath.AcceptInvite)
+    const accepted = requestsTo(stub.requests, AccountEndpoint.AcceptInvite)
     expect(accepted.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(accepted[0])).toEqual({ token: 'tok' })
     expect(outcome).toBe(InviteOutcome.Accepted)
@@ -317,7 +305,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('reports SignInRequired when the refusal carries the sign-in-required code', async () => {
-    table[writeOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED' } }
+    table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED' } }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
@@ -327,7 +315,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('keeps the API sentence and reports Failed for any other refusal', async () => {
-    table[writeOf(AuthPath.AcceptInvite)] = { status: 410, body: { type: 'INVITE_EXPIRED', detail: 'Invitation expired.' } }
+    table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 410, body: { type: 'INVITE_EXPIRED', detail: 'Invitation expired.' } }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
@@ -337,7 +325,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('forgets the last outcome and sentence on clearInvite', async () => {
-    table[writeOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED', detail: 'Sign in first.' } }
+    table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED', detail: 'Sign in first.' } }
     const store = useAuthStore()
     await store.acceptInvite('tok')
 
@@ -350,13 +338,13 @@ describe('useAuthStore.acceptInvite', () => {
 
 describe('useAuthStore.register', () => {
   it('reports Succeeded and leaves no error', async () => {
-    table[writeOf(AuthPath.Register)] = { body: {} }
+    table[writeOf(AccountEndpoint.Register)] = { body: {} }
     const store = useAuthStore()
     const payload = { firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' }
 
     const outcome = await store.register(payload)
 
-    const registered = requestsTo(stub.requests, AuthPath.Register)
+    const registered = requestsTo(stub.requests, AccountEndpoint.Register)
     expect(registered.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(registered[0])).toEqual(payload)
     expect(outcome).toBe(ActionOutcome.Succeeded)
@@ -365,7 +353,7 @@ describe('useAuthStore.register', () => {
   })
 
   it('keeps the API sentence and the field messages when the registration is refused', async () => {
-    table[writeOf(AuthPath.Register)] = fieldRefusal('Fix the form.', { email: ['Email is taken.'] })
+    table[writeOf(AccountEndpoint.Register)] = fieldRefusal('Fix the form.', { email: ['Email is taken.'] })
     const store = useAuthStore()
 
     const outcome = await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
@@ -377,12 +365,12 @@ describe('useAuthStore.register', () => {
   })
 
   it('clears the previous refusal when the next attempt starts', async () => {
-    table[writeOf(AuthPath.Register)] = refusal('No.')
+    table[writeOf(AccountEndpoint.Register)] = refusal('No.')
     const store = useAuthStore()
 
     await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
     expect(store.registerError).toBe('No.')
-    table[writeOf(AuthPath.Register)] = { body: {} }
+    table[writeOf(AccountEndpoint.Register)] = { body: {} }
     await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
 
     expect(store.registerError).toBe('')
@@ -392,12 +380,12 @@ describe('useAuthStore.register', () => {
 
 describe('useAuthStore.resetPassword', () => {
   it('sends the link values and the new password, and reports Succeeded', async () => {
-    table[writeOf(AuthPath.ResetPassword)] = { body: {} }
+    table[writeOf(AccountEndpoint.ResetPassword)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.resetPassword('a@b.c', 'tok', 'newpass123')
 
-    const reset = requestsTo(stub.requests, AuthPath.ResetPassword)
+    const reset = requestsTo(stub.requests, AccountEndpoint.ResetPassword)
     expect(reset.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(reset[0])).toEqual({ email: 'a@b.c', token: 'tok', newPassword: 'newpass123' })
     expect(outcome).toBe(ActionOutcome.Succeeded)
@@ -406,7 +394,7 @@ describe('useAuthStore.resetPassword', () => {
   })
 
   it('keeps the API sentence and the field messages when the reset is refused', async () => {
-    table[writeOf(AuthPath.ResetPassword)] = fieldRefusal('Weak.', { newPassword: ['Too short.'] })
+    table[writeOf(AccountEndpoint.ResetPassword)] = fieldRefusal('Weak.', { newPassword: ['Too short.'] })
     const store = useAuthStore()
 
     const outcome = await store.resetPassword('a@b.c', 'tok', 'x')

@@ -227,7 +227,7 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
-        var service = ClientService.Create(clientId, productId, billingCycle: BillingCycle.Monthly, now: DateTimeOffset.UtcNow);
+        var service = ClientService.Create(clientId, productId, billingCycle: BillingCycle.Monthly, now: TestMoments.Seeded);
         service.AssignHostingAccount("example.test", "someuser", password);
         context.Set<ClientService>().Add(service);
         await context.SaveChangesAsync();
@@ -258,7 +258,7 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
                 $"protected-{Guid.NewGuid():N}", "server.example.test", null, null, ServerModule.CPanel, "root",
                 new ServerCredentials(password, apiToken, accessHash), true, null, false, false, 0m, null, null,
                 ServerNameServers.None),
-            DateTimeOffset.UtcNow);
+            TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync();
         return server.Id;

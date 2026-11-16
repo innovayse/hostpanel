@@ -2,7 +2,7 @@
  * Fixtures of the servers and integrations tests: a provisioning server, a group, and a server's
  * SSH key management settings and installer setup, as the admin API returns them.
  */
-import type { ServerDto, ServerGroupDto } from '@/types/server'
+import type { ServerDto, ServerGroupDto, ServerOptionDto } from '@/types/server'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '@/types/serverssh'
 import { SshAgentProfile } from '@/types/sshenums'
 
@@ -39,6 +39,23 @@ export const serverDto = (overrides: Partial<ServerDto> = {}): ServerDto => ({
   lastTestedAt: null,
   accountsCount: 12,
   credentials: { hasPassword: true, hasApiToken: false, hasAccessHash: true },
+  ...overrides,
+})
+
+/**
+ * Builds a server as the unpaged option lookup returns it.
+ *
+ * @param overrides - Fields to change on the default option.
+ * @returns The option.
+ */
+export const serverOptionDto = (overrides: Partial<ServerOptionDto> = {}): ServerOptionDto => ({
+  id: 1,
+  name: 'host1',
+  hostname: 'host1.example.com',
+  ipAddress: '203.0.113.10',
+  isOnline: true,
+  accountsCount: 12,
+  limits: { maxAccounts: 100, isDefault: true, isDisabled: false },
   ...overrides,
 })
 

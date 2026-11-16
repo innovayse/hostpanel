@@ -188,6 +188,9 @@ variables:
     DOCKER_BUILDKIT: "1"
     # The version comes from the newest release tag, so the clone needs its whole history and its tags.
     GIT_DEPTH: "0"
+  # The build and the clone, then the two pushes at their worst case (62 minutes). The runner's own maximum job
+  # timeout must allow this limit, or the runner cuts the job short at its maximum.
+  timeout: 2h
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - apk add --no-cache git
@@ -211,43 +214,65 @@ variables:
     # proxy target; an unset CI/CD variable expands to empty (no proxy).
     - docker build "$@" --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
     # Both tags come from the one build above. A push that stalls would hold the job until the job
-    # timeout, so each push has its own limit and is retried a bounded number of times; layers
-    # already uploaded are skipped on a retry, but a layer cut off half way starts again from zero.
-    # The limit is 900 s because the builder's upload can drop below 1 MB/s: on 2026-11-13 the API's
-    # largest layer did not fit in 240 s and all three attempts were cut off ("context canceled").
-    # The second tag only re-links layers that are already there. Worst case (two attempts of
-    # 900 s plus a 10 s grace and the pause) is about 31 minutes on top of the build, inside the
-    # 60 minute job limit. Any failed push is retried, an authentication failure included.
+    # timeout, so each push goes through scripts/retry-bounded.sh: a limit per attempt and a bounded
+    # number of attempts. Layers already uploaded are skipped on a retry, but a layer cut off half way
+    # starts again from zero. The limit (900 s) is there because the builder's upload can drop below
+    # 1 MB/s: on 2026-11-13 the API's largest layer did not fit in 240 s and all three attempts were
+    # cut off ("context canceled"). The second tag only re-links layers that are already there. Worst
+    # case is about 31 minutes per tag, 62 minutes for both, on top of the build, which is why the job
+    # limit above is two hours. Any failed push is retried, an authentication failure included.
     - |
       for tag in "$TAG" "$CI_COMMIT_SHORT_SHA"; do
-        attempt=1
-        until timeout -k 10 900 docker push "$IMAGE:$tag"; do
-          if [ "$attempt" -ge 2 ]; then
-            echo "Pushing $IMAGE:$tag failed after $attempt attempts" >&2
-            exit 1
-          fi
-          attempt=$((attempt + 1))
-          echo "Push failed, attempt $attempt of 2 in 10 seconds"
-          sleep 10
-        done
+        sh scripts/retry-bounded.sh docker push "$IMAGE:$tag"
       done
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
 
 # Fetches only the commit being deployed into $DEPLOY_DIR, with no history, so the transfer stays small.
-# A long transfer can break on a flaky link, so the fetch is retried a bounded number of times.
+# A long transfer can break on a flaky link, so the fetch is retried a bounded number of times. The loop is
+# written out here and does not use scripts/retry-bounded.sh on purpose: the job has no checkout of its own
+# (GIT_STRATEGY none) and this fetch is what brings the repository to $DEPLOY_DIR, an empty directory on the
+# first deploy, so no script of the repository exists yet when it runs. Each attempt is wrapped in GNU `timeout`
+# (the host has it) for the same reason as the pushes: a fetch that hangs would otherwise hold the job for the
+# whole job timeout. 600 s per attempt, and the kill follows 10 s after the first signal.
+# A fetch that was killed (status 124 or 137) can leave a lock file of git behind, and so can an earlier job that
+# was cancelled during its fetch. Either makes every attempt fail at once with "File exists", so the named locks
+# (shallow.lock, index.lock, HEAD.lock) are removed before the first attempt and again after a killed one. Only
+# those names are removed, never every *.lock, so the lock of a background `git gc` stays. Clearing them is safe
+# because the deploy jobs that use this fetch run one at a time (resource_group). Status 125 to 127 means the
+# command cannot run at all (as in scripts/retry-bounded.sh), so the loop stops there instead of retrying.
 .fetch-target-commit:
   script:
     - |
+      clear_git_locks() {
+        for lock in shallow.lock index.lock HEAD.lock; do
+          rm -f "$DEPLOY_DIR/.git/$lock"
+        done
+      }
+      clear_git_locks
       attempt=1
-      until git -C "$DEPLOY_DIR" fetch --depth 1 "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"; do
+      while :; do
+        status=0
+        timeout -k 10 600 git -C "$DEPLOY_DIR" fetch --depth 1 "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA" || status=$?
+        if [ "$status" -eq 0 ]; then
+          break
+        fi
+        case "$status" in
+          125|126|127)
+            echo "Fetching $CI_COMMIT_SHA cannot run (status $status), not retried" >&2
+            exit 1
+            ;;
+          124|137)
+            clear_git_locks
+            ;;
+        esac
         if [ "$attempt" -ge 4 ]; then
           echo "Fetching $CI_COMMIT_SHA failed after $attempt attempts" >&2
           exit 1
         fi
         attempt=$((attempt + 1))
-        echo "Fetch failed, attempt $attempt of 4 in 10 seconds"
+        echo "Fetch failed (status $status), attempt $attempt of 4 in 10 seconds"
         sleep 10
       done
 
@@ -296,7 +321,9 @@ variables:
     # images are built here from the synced checkout and tagged hostpanel/<svc>:stage
     # (prod.yml carries both `image:` and `build:`); only the infrastructure images are pulled.
     - export IMAGE_TAG=stage
-    - docker compose pull --ignore-buildable
+    # The pull stalls or ends half way on a slow registry link: scripts/retry-bounded.sh limits each
+    # attempt and retries. Worst case about 31 minutes, then the build below, inside the job limit of two hours.
+    - sh scripts/retry-bounded.sh docker compose pull --ignore-buildable
     - docker compose build hostpanel-api hostpanel-client hostpanel-admin
     # Services named one by one to leave nginx out. It publishes 80 and 443, which
     # on this host belong to the shared reverse proxy, so it can never bind. The platform overlay parks it too.
@@ -313,6 +340,9 @@ variables:
   # stale entry would otherwise be left behind.
   after_script:
     - docker logout "$CI_REGISTRY" || true
+  # The pull at its worst case (31 minutes), the three image builds after it and, in the demo, the fetch. The
+  # runner's own maximum job timeout must allow this limit, or the runner cuts the job short at its maximum.
+  timeout: 2h
   rules:
     # Off with the job that extends this. A rule here is overridden by any job that
     # declares its own, so this is not what stops deploy:staging, it is what stops a
@@ -394,6 +424,22 @@ installer:test:backup:
       changes:
         - install.sh
         - scripts/test-install-backup.sh
+
+# Runs the deploy helper tests: the bounded retry and the rollback guard of deploy:prod.
+deploy-scripts:test:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - sh scripts/test-retry-bounded.sh
+    - sh scripts/test-deploy-rollback.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - .gitlab-ci.yml
+        - scripts/retry-bounded.sh
+        - scripts/test-retry-bounded.sh
+        - scripts/test-deploy-rollback.sh
 
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would
 # run nowhere), is in two, or when a shard names a folder that is gone. The same script checks the
@@ -637,6 +683,8 @@ admin:build:dev:
 deploy:staging:
   extends: .deploy-staging
   environment: { name: staging/hostpanel }
+  # Two staging deploys never run at once: both write the same checkout and the same containers.
+  resource_group: staging-deploy
   rules:
     # Staging deploys are off: that host filled its disk and this job fails in get_sources,
     # before the deploy script runs at all. Production is unaffected, it deploys from main,
@@ -676,6 +724,8 @@ deploy:staging:
 deploy:demo:
   extends: .deploy-staging
   tags: [prod]
+  # Two demo deploys never run at once: both write the same checkout and the same containers.
+  resource_group: demo-deploy
   variables:
     # The demo has a checkout of its own (DEPLOY_DIR, scoped to demo/hostpanel): this job runs
     # `git checkout -f`, which in production's directory would swap the files under the running
@@ -700,7 +750,8 @@ deploy:demo:
     # except the demo ones, so a demo container cannot reach production through the proxy. If the subnet changes here,
     # change the `deny` rule of that edge proxy to the same value.
     - docker network inspect hostpanel_demo_edge >/dev/null 2>&1 || docker network create --subnet "$DEMO_EDGE_NETWORK_SUBNET" hostpanel_demo_edge
-    - docker compose pull --ignore-buildable
+    # Bounded pull, see the stage deploy: worst case about 31 minutes, then the build below.
+    - sh scripts/retry-bounded.sh docker compose pull --ignore-buildable
     - docker compose build hostpanel-demo-api hostpanel-demo-client hostpanel-demo-admin
     # Services named one by one: nginx is parked, and the demo's broker, redis and mailhog come with the api.
     - docker compose up -d hostpanel-db hostpanel-demo-api hostpanel-demo-client hostpanel-demo-admin
@@ -763,11 +814,30 @@ deploy:prod:
     BACKUP_KEEP: "10"
     # The public health endpoint, waited for after the deploy.
     HEALTH_URL: $PROD_PUBLIC_URL/health
+  # The deploy leaves two markers in $DEPLOY_DIR/.deploy for the failure handler below: `fetched` once the target
+  # commit is fetched and `recreating` right before the containers are recreated. Markers of an earlier deploy
+  # must not count, so the very first thing this job does, before any check and before the registry login, is to
+  # remove them; one block, so the test of the handler can run it as it stands.
+  # The worst case, in seconds:
+  #   fetch   4 * (600 + 10) + 3 * 10                = 2470 (about 41 minutes)
+  #   pull    2 * (900 + 10) + 10                    = 1830 (about 31 minutes)
+  #   health  HEALTH_TIMEOUT_SECONDS                 =  180 (3 minutes)
+  #   total                                          = 4480 (about 75 minutes)
+  # That leaves 45 minutes of the two hours for the database dump, which has no limit of its own, and for the
+  # steps between. The runner's own maximum job timeout must allow this limit, or the runner cuts the job short
+  # at its maximum.
+  timeout: 2h
+  # Two production deploys never run at once: they share the checkout and the two markers, and one would clear
+  # the other's markers.
+  resource_group: production-deploy
   # The images are pulled from the project's registry with the job's own token, which dies with the job.
   before_script:
-    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
+    - |
+      test -n "$DEPLOY_DIR" || { echo "DEPLOY_DIR must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
+      mkdir -p "$DEPLOY_DIR/.deploy" || exit 1
+      rm -f "$DEPLOY_DIR/.deploy/fetched" "$DEPLOY_DIR/.deploy/recreating"
+      echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY" || exit 1
   script:
-    - test -n "$DEPLOY_DIR" || { echo "DEPLOY_DIR must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - test -n "$PROD_PUBLIC_URL" || { echo "PROD_PUBLIC_URL must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     # Checked before anything is touched: a non-numeric BACKUP_KEEP would otherwise break the
     # prune step only after the dump, with the deploy half done.
@@ -778,7 +848,6 @@ deploy:prod:
     # What is running now, recorded before anything changes, so that after_script can put it
     # back when this deploy fails: the commit the stack was started from and the image each
     # service's container was created from.
-    - mkdir -p "$DEPLOY_DIR/.deploy"
     - git -C "$DEPLOY_DIR" rev-parse HEAD > "$DEPLOY_DIR/.deploy/previous-commit"
     - |
       : > "$DEPLOY_DIR/.deploy/previous-images"
@@ -792,6 +861,9 @@ deploy:prod:
       done
       cat "$DEPLOY_DIR/.deploy/previous-images"
     - !reference [.fetch-target-commit, script]
+    # The failure handler restores the checkout only when this marker exists, and recreates nothing before the
+    # second marker below: a deploy that fails before the fetch changed nothing at all.
+    - touch "$DEPLOY_DIR/.deploy/fetched"
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
     - git -C "$DEPLOY_DIR" submodule sync --recursive
@@ -816,7 +888,11 @@ deploy:prod:
     # the admin is deployed with the others so that its container is replaced too.
     # The images are the ones this pipeline built, pulled by IMAGE_TAG. --no-build makes it impossible for
     # compose to fall back to building on this host when a pull has failed to leave an image behind.
-    - docker compose pull hostpanel-api hostpanel-client hostpanel-admin
+    # The pull is limited per attempt and retried by scripts/retry-bounded.sh: two attempts of 900 s, about 31 minutes
+    # at worst. A pull that fails changes no container, so the second marker is written after it, right before the
+    # containers are touched: from there on the failure handler also recreates the recorded ones.
+    - sh scripts/retry-bounded.sh docker compose pull hostpanel-api hostpanel-client hostpanel-admin
+    - touch "$DEPLOY_DIR/.deploy/recreating"
     - docker compose up -d --no-build hostpanel-api hostpanel-client hostpanel-admin
     # A deploy that reports success has not necessarily recreated a container. Compare the image
     # each container was created from against the one its tag points at now, and recreate only where
@@ -843,25 +919,52 @@ deploy:prod:
     # The job is green only when the site answers, not merely when its containers started.
     - sh scripts/wait-for-health.sh "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS"
   # A failed deploy left the site on whatever had half-started, and the reason was in the logs
-  # of a container the next deploy replaced. On failure: print the new containers' logs first,
-  # then put back the commit and images recorded above. Migrations the new API already applied
-  # stay applied; the dump taken above is the way back from those.
+  # of a container the next deploy replaced. On failure the handler looks at the two markers:
+  #   - no `fetched`: nothing changed, the checkout, the stack and the images are as they were;
+  #   - `fetched` only: the checkout may have moved but no container was touched, so only the checkout is put back;
+  #   - `recreating`: print the new containers' logs, then put back the commit and the images recorded above.
+  # Migrations the new API already applied stay applied; the dump taken above is the way back from those.
+  # The markers are removed on the way out, on success too.
   after_script:
     - |
       # The login in before_script wrote this runner user's real ~/.docker/config.json, see .deploy-staging.
       docker logout "$CI_REGISTRY" || true
-      [ "$CI_JOB_STATUS" = "failed" ] || exit 0
       state="$DEPLOY_DIR/.deploy"
-      [ -s "$state/previous-images" ] || { echo "Nothing recorded to roll back to."; exit 0; }
+      trap 'rm -f "$state/fetched" "$state/recreating"' EXIT
+      [ "$CI_JOB_STATUS" = "failed" ] || exit 0
+      [ -e "$state/fetched" ] || { echo "The deploy failed before the target commit was fetched; nothing changed, the running stack is left alone."; exit 0; }
       cd "$DEPLOY_DIR"
+      # Removes the leftover folders of a path that became a submodule, with the script of the commit now checked out.
+      # A commit from before the script existed has none and nothing to clear, so this is skipped, not an error.
+      clear_stale_submodule_dirs() {
+        if [ -f scripts/clear-stale-submodule-dirs.sh ]; then
+          sh scripts/clear-stale-submodule-dirs.sh .
+        else
+          echo "The commit being restored has no scripts/clear-stale-submodule-dirs.sh, clearing stale submodule folders is skipped."
+        fi
+      }
+      # Puts the checkout and its submodules back to the commit recorded before the deploy, the way the forward path
+      # sets them up. The first failing step stops it and prints a warning, so a restore that did not happen is
+      # never mistaken for one that did.
+      restore_checkout() {
+        git checkout -f "$(cat "$state/previous-commit")" \
+          && git submodule sync --recursive \
+          && clear_stale_submodule_dirs \
+          && git submodule update --init --recursive --force \
+          || echo "WARNING: the checkout could not be restored to $(cat "$state/previous-commit"); $DEPLOY_DIR may be left on the failed deploy's commit." >&2
+      }
+      if [ ! -e "$state/recreating" ]; then
+        echo "The deploy failed before any container was recreated; only the checkout is put back to $(cat "$state/previous-commit")."
+        restore_checkout
+        exit 0
+      fi
+      [ -s "$state/previous-images" ] || { echo "Nothing recorded to roll back to."; exit 0; }
       for svc in hostpanel-api hostpanel-client hostpanel-admin; do
         echo "──── last 80 log lines of $svc ────"
         docker logs --tail 80 "$svc" 2>&1 || true
       done
       echo "──── rolling back to $(cat "$state/previous-commit") ────"
-      git checkout -f "$(cat "$state/previous-commit")"
-      git submodule sync --recursive
-      git submodule update --init --recursive --force
+      restore_checkout
       # Compose runs each service on ${IMAGE_REGISTRY}/<name>:${IMAGE_TAG}, with <name> the service key without
       # its product prefix. Put the recorded image under that name, so the recreate below starts it.
       while read -r svc previous; do

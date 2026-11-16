@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Extensions;
@@ -8,15 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Notifications.Queries.ListEmailLogs;
 
-/// <summary>Returns a page of email log entries ordered by send time descending.</summary>
+/// <summary>Returns a page of the platform's email log, narrowed by the search text and the filters, newest first.</summary>
 public sealed class ListEmailLogsHandler
 {
-    /// <summary>Fewest items a page may hold, however the caller asked.</summary>
-    private const int MinPageSize = PagingLimits.MinPageSize;
-
-    /// <summary>Most items a page may hold, however the caller asked.</summary>
-    private const int MaxPageSize = PagingLimits.MaxPageSize;
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -28,24 +21,26 @@ public sealed class ListEmailLogsHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The requested page and page size.</param>
+    /// <param name="query">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The page of log entries, newest first. Never refuses.</returns>
-    public async Task<Result<IReadOnlyList<EmailLogDto>>> HandleAsync(
+    public async Task<Result<PaginatedList<EmailLogDto>>> HandleAsync(
         ListEmailLogsQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var page = Math.Max(1, query.Page);
-        var pageSize = Math.Clamp(query.PageSize, MinPageSize, MaxPageSize);
-
-        var logs = await _context.EmailLogs
+        // The id ends the order so a page never repeats or skips a row between requests.
+        var ordered = _context.EmailLogs
             .AsNoTracking()
+            .Matching(query)
             .OrderByDescending(l => l.SentAt)
-            .Paginate(page, pageSize)
+            .ThenByDescending(l => l.Id);
+        var total = await ordered.CountAsync(ct);
+        var items = await ordered
+            .Paginate(query.Page, query.PageSize)
             .SelectDto()
             .ToListAsync(ct);
 
-        return Result<IReadOnlyList<EmailLogDto>>.Success(logs);
+        return Result<PaginatedList<EmailLogDto>>.Success(new PaginatedList<EmailLogDto>(items, total, query.Page, query.PageSize));
     }
 }

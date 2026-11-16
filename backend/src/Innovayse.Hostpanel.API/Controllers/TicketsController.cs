@@ -46,8 +46,8 @@ public sealed class TicketsController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a paginated, optionally filtered list of all support tickets.</summary>
-    /// <param name="query">The filters and paging window.</param>
+    /// <summary>Returns a paginated list of all support tickets, narrowed by a subject search and by status, priority, department and flag.</summary>
+    /// <param name="query">The paging window, the optional subject search and the optional filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the page of tickets; 400 when a value is refused; 401 when the caller is not signed in;
@@ -348,7 +348,7 @@ public sealed class TicketsController : BaseApiController
 
     /// <summary>Returns a paginated list of tickets for a specific client.</summary>
     /// <param name="clientId">FK to the client; wins over any id in the query.</param>
-    /// <param name="query">The paging window and optional subject search term.</param>
+    /// <param name="query">The paging window, the optional subject search and the optional status, priority and department filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the paginated ticket list; 400 when a value is refused; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
     [HttpGet("client/{clientId:int}")]

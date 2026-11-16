@@ -34,7 +34,7 @@ public sealed class DomainReminderStorageTests(IntegrationTestFactory factory) :
         var domainId = await SeedDomainAsync(context);
 
         await context.Database.ExecuteSqlInterpolatedAsync(
-            $"""INSERT INTO "DomainReminders" ("DomainId", "ReminderType", "SentTo", "SentAt") VALUES ({domainId}, {storedText}, {"legacy@reminders.test"}, {DateTimeOffset.UtcNow})""",
+            $"""INSERT INTO "DomainReminders" ("DomainId", "ReminderType", "SentTo", "SentAt") VALUES ({domainId}, {storedText}, {"legacy@reminders.test"}, {TestMoments.Seeded})""",
             CancellationToken.None);
 
         var reminder = await context.Set<DomainReminder>()
@@ -52,7 +52,7 @@ public sealed class DomainReminderStorageTests(IntegrationTestFactory factory) :
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         domain.AddReminder(DomainReminderType.OneDayBeforeExpiry, "saved@reminders.test", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
@@ -70,7 +70,7 @@ public sealed class DomainReminderStorageTests(IntegrationTestFactory factory) :
     {
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         var domain = RegisteredDomain.Register(
-            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, DateTimeOffset.UtcNow.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddDays(10), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
         context.Domains.Add(domain);
         await context.SaveChangesAsync(CancellationToken.None);
         return domain.Id;

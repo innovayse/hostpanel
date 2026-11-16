@@ -9,7 +9,9 @@
 import { buildQuery, useApi } from '@/composables/useApi'
 import type {
   BillableItem,
+  BillableItemListFilters,
   BillableItemsResult,
+  ClientBillableItemFilters,
   CreateBillableItemPayload,
   CreateClientBillableItemPayload,
 } from '@/types/billableitem'
@@ -32,11 +34,11 @@ export const useBillableItemsApi = () => {
    *
    * @param page - Page number (1-based).
    * @param pageSize - Items per page.
-   * @param type - Optional type filter (`OneTime` or `Recurring`).
-   * @returns One page of items.
+   * @param filters - The search text, client, type and invoiced filters; empty for none.
+   * @returns One page of items and the total count of matches.
    */
-  const list = (page: number, pageSize: number, type?: string): Promise<PaginatedList<BillableItem>> =>
-    request<PaginatedList<BillableItem>>(`${ApiPath.BillingBillableItems}${buildQuery({ page, pageSize, type })}`)
+  const list = (page: number, pageSize: number, filters: BillableItemListFilters = {}): Promise<PaginatedList<BillableItem>> =>
+    request<PaginatedList<BillableItem>>(`${ApiPath.BillingBillableItems}${buildQuery({ page, pageSize, ...filters })}`)
 
   /**
    * Creates a billable item.
@@ -56,20 +58,22 @@ export const useBillableItemsApi = () => {
   const remove = (id: number): Promise<void> => request<void>(`${ApiPath.BillingBillableItems}/${id}`, { method: HttpMethod.Delete })
 
   /**
-   * Loads a client uninvoiced items and one page of invoiced items.
+   * Loads a client uninvoiced items and one page of invoiced items; the filters narrow both.
    *
    * @param clientId - The client id.
-   * @param invoicedPage - Invoiced page, 1-based.
-   * @param invoicedPageSize - Invoiced items per page.
+   * @param page - Invoiced page, 1-based.
+   * @param pageSize - Invoiced items per page.
+   * @param filters - The search text and type filter; empty for none.
    * @returns The client items.
    */
   const listByClient = (
     clientId: string,
-    invoicedPage: number,
-    invoicedPageSize: number,
+    page: number,
+    pageSize: number,
+    filters: ClientBillableItemFilters = {},
   ): Promise<BillableItemsResult> =>
     request<BillableItemsResult>(
-      `${ApiPath.Clients}/${clientId}/billable-items${buildQuery({ invoicedPage, invoicedPageSize })}`,
+      `${ApiPath.Clients}/${clientId}/billable-items${buildQuery({ page, pageSize, ...filters })}`,
     )
 
   /**
@@ -102,7 +106,7 @@ export const useBillableItemsApi = () => {
    * @returns One page of services (up to 100).
    */
   const listServices = (clientId: string): Promise<PaginatedList<ServiceListItem>> =>
-    request<PaginatedList<ServiceListItem>>(`${ApiPath.Services}${buildQuery({ clientId, pageSize: LOOKUP_PAGE_SIZE })}`)
+    request<PaginatedList<ServiceListItem>>(`${ApiPath.Services}${buildQuery({ clientId, page: 1, pageSize: LOOKUP_PAGE_SIZE })}`)
 
   /**
    * Adds one billable item to a client.

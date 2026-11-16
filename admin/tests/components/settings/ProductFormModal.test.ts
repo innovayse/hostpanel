@@ -43,6 +43,7 @@ const stored: Product = {
   sku: 'PRO-1',
   metadata: '{"tier":"pro"}',
   gracePeriodDays: 30,
+  isDigitalService: false,
   trial: { enabled: true, days: 30, autoConvert: false, reminderDays: [7, 2], gracePeriodDays: 5 },
 }
 
@@ -140,6 +141,8 @@ describe('ProductFormModal', () => {
       sku: '',
       metadata: '',
       gracePeriodDays: 7,
+      isHidden: false,
+      isDigitalService: false,
       trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
     }]])
   })
@@ -256,6 +259,28 @@ describe('ProductFormModal', () => {
     expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isFeatured: true, sortOrder: 7 })
   })
 
+  it('emits the hidden flag when the operator turns Hidden on for a new product', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: true })
+  })
+
+  it('opens an inactive product as hidden and emits isHidden false once the operator turns it off', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    expect(wrapper.get('[data-testid="product-form-hidden"]').attributes('aria-checked')).toBe('true')
+    await wrapper.get('[data-testid="product-form-hidden"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: false })
+  })
+
   it('opens an existing product with its recommended flag and sort order', async () => {
     stubRouteTable(lists)
     const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
@@ -317,6 +342,21 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
     expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ sku: '', metadata: '' })
+  })
+
+  it('carries the digital service switch: off for a new product, the stored value on edit, and the new value on save', async () => {
+    stubRouteTable(lists)
+    const created = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+    expect(created.wrapper.get('[data-testid="product-form-digital-service"]').attributes('aria-checked')).toBe('false')
+
+    const edited = await mountScreen(ProductFormModal, { product: { ...stored, isDigitalService: true }, groups, saving: false })
+    const toggle = edited.wrapper.get('[data-testid="product-form-digital-service"]')
+    expect(toggle.attributes('aria-checked')).toBe('true')
+
+    await toggle.trigger('click')
+    await edited.wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(edited.wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isDigitalService: false })
   })
 
   it('shows the API field errors under the SKU, metadata and grace period inputs', async () => {

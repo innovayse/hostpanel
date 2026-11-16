@@ -15,6 +15,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { TicketPriority } from '~/types/ticketpriority'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
 
 /** The path that opens a ticket. */
 const TICKETS_PATH = '/api/portal/client/tickets'
@@ -64,7 +65,7 @@ describe('new ticket page', () => {
 
     await waitUntil(() => expect(wrapper.find('[data-testid="ticket-success"]').exists()).toBe(true))
     expect(bodyOf(requestsTo(stub.requests, TICKETS_PATH)[0])).toMatchObject({ subject: 'Cannot log in', message: 'Please help', priority: TicketPriority.High })
-    expect(wrapper.find('[data-testid="ticket-view-all"]').attributes('href')).toBe('/client/tickets')
+    expect(wrapper.find('[data-testid="ticket-view-all"]').attributes('href')).toBe(CLIENT_TICKETS_PATH)
   })
 
   it('sends no department as null and shows the API field error under the department field', async () => {

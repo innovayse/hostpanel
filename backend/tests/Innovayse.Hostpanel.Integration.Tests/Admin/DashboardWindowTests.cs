@@ -33,7 +33,7 @@ public sealed class DashboardWindowTests
     [Fact]
     public void Create_RefusesAPeriodThatIsNotOffered()
     {
-        var act = () => DashboardWindow.Create((DashboardPeriod)45, DateTimeOffset.UtcNow, TimeZoneInfo.Utc);
+        var act = () => DashboardWindow.Create((DashboardPeriod)45, TestMoments.Seeded, TimeZoneInfo.Utc);
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }

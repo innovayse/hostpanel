@@ -46,7 +46,7 @@
           <UiButton
             variant="outline"
             size="lg"
-            :to="localePath('/hosting')"
+            :to="localePath(SITE_HOSTING_PATH)"
             class="w-full sm:w-auto md:px-8 md:py-4 font-semibold hover:scale-105 [.tpl-classic_&]:hover:scale-100"
             data-testid="products-hero-compare"
           >
@@ -91,6 +91,7 @@
 
 import { revealDelay } from '~/utils/reveal'
 import { ArrowDown, Headphones, Lock, Server, Trophy } from 'lucide-vue-next'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 /** Id of the catalogue section the first call to action scrolls to. */
 const CATALOG_SECTION_ID = 'products-section'

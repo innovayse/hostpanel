@@ -38,11 +38,11 @@ public sealed class AdminUsersController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns a paginated list of all users.</summary>
-    /// <param name="query">Search term and paging.</param>
+    /// <summary>Returns a paginated list of all users, optionally searched.</summary>
+    /// <param name="query">Search text and paging.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the page of user summaries; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not an admin;
+    /// 200 with the page of user summaries; 400 when the page or page size is missing or out of range or the search is too long; 401 without a session; 403 for a caller who is not an admin;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpGet]

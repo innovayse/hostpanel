@@ -23,6 +23,28 @@ describe('useTransactionsApi', () => {
     expect(callOf(mock, 1).url).toBe('/api/transactions/client/7?page=2&pageSize=10')
   })
 
+  it('list and listByClient send the search and the filters that are set and leave the others off', async () => {
+    const mock = stubFetch(json({ transactions: { items: [], totalCount: 0 } }))
+    const api = useTransactionsApi()
+
+    await api.list(1, 25, {
+      search: 'renewal',
+      clientId: 4,
+      direction: 'In',
+      paymentMethod: 'Credit/Debit Card',
+      from: '2026-03-01',
+      to: '2026-03-31',
+      amount: 12.5,
+    })
+    await api.list(1, 25, { search: '', direction: undefined })
+    await api.listByClient(7, 2, 10, { direction: 'Out', amount: 40 })
+    expect(callOf(mock, 0).url).toBe(
+      '/api/transactions?page=1&pageSize=25&search=renewal&clientId=4&direction=In&paymentMethod=Credit%2FDebit+Card&from=2026-03-01&to=2026-03-31&amount=12.5',
+    )
+    expect(callOf(mock, 1).url).toBe('/api/transactions?page=1&pageSize=25')
+    expect(callOf(mock, 2).url).toBe('/api/transactions/client/7?page=2&pageSize=10&direction=Out&amount=40')
+  })
+
   it('get reads one transaction', async () => {
     const mock = stubFetch(json({ id: 2 }))
 

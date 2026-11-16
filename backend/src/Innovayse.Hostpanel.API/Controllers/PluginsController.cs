@@ -170,13 +170,13 @@ public sealed class PluginsController : BaseApiController
     /// a newer one is published. The registry is a remote catalogue the operator configures; it is off until then.
     /// </summary>
     /// <param name="query">
-    /// The filters bound from the query string: <c>q</c> (free text), <c>category</c> (<c>Payment</c>, <c>Provisioning</c>,
+    /// The filters bound from the query string: <c>search</c> (free text), <c>category</c> (<c>Payment</c>, <c>Provisioning</c>,
     /// <c>Registrar</c>, <c>App</c> or <c>Other</c>), <c>page</c> and <c>pageSize</c>.
     /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with <c>items</c>, <c>total</c>, <c>page</c> and <c>pageSize</c>; 400 with <c>VALIDATION_ERROR</c> for a search
-    /// over 100 characters or an undefined category; 401 without a session; 403 for a caller who is not an administrator;
+    /// 200 with <c>items</c>, <c>total</c>, <c>page</c> and <c>pageSize</c>; 400 with <c>VALIDATION_ERROR</c> for a page below 1, a page
+    /// size outside 1 to 100, a search over 100 characters or an undefined category; 401 without a session; 403 for a caller who is not an administrator;
     /// 409 with <c>PLUGIN_REGISTRY_DISABLED</c> while the registry is off; 429 when the rate limit is hit; 502 with
     /// <c>PLUGIN_REGISTRY_UNAVAILABLE</c> or <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c> when the registry cannot be used; 504
     /// with <c>PLUGIN_REGISTRY_TIMED_OUT</c> when it does not answer in time.

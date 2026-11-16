@@ -15,7 +15,7 @@
     <UiAlert v-else-if="store.servicesError" variant="error" data-testid="services-error">{{ store.servicesError }}</UiAlert>
 
     <UiEmptyState v-else-if="!store.services.length" :icon="Server" :title="$t('client.services.empty')">
-      <UiButton to="/hosting" data-testid="services-browse-hosting">{{ $t('client.services.browseHosting') }}</UiButton>
+      <UiButton :to="SITE_HOSTING_PATH" data-testid="services-browse-hosting">{{ $t('client.services.browseHosting') }}</UiButton>
     </UiEmptyState>
 
     <template v-else>
@@ -44,6 +44,7 @@
 import { Server } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { serviceAwaitsSetup } from '~/utils/serviceSetup'
+import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

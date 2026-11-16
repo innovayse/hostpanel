@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
@@ -31,8 +30,7 @@ public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFi
         var delete = await client.DeleteAsync($"/api/admin/servers/{id}");
         delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/servers");
-        list!.Should().NotContain(r => r.GetProperty("name").GetString() == name);
+        (await ServersTestSeeds.SearchServersAsync(client, name)).Should().NotContain(r => r.GetProperty("name").GetString() == name);
 
         var deleteAgain = await client.DeleteAsync($"/api/admin/servers/{id}");
         deleteAgain.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -53,8 +51,7 @@ public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFi
 
         delete.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await ServersTestSeeds.AssertCodeAsync(delete, HostpanelErrorCodes.SERVER_IN_USE);
-        var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/servers");
-        list!.Should().Contain(r => r.GetProperty("name").GetString() == name);
+        (await ServersTestSeeds.SearchServersAsync(client, name)).Should().Contain(r => r.GetProperty("name").GetString() == name);
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>

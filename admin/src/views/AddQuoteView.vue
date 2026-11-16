@@ -72,9 +72,6 @@ const customerNotes = ref('')
 /** Notes only admins see. */
 const adminNotes = ref('')
 
-/** Stages the select offers (the "all stages" entry is for filters). */
-const stageOptions = computed(() => QUOTE_STAGE_OPTIONS.filter((option) => option.value !== ''))
-
 /** Creates the quote and opens it. */
 const submit = async (): Promise<void> => {
   const id = await store.createQuote({
@@ -129,7 +126,7 @@ onMounted(() => {
               </template>
             </UiField>
             <UiField :label="t('shared.stage')" :error="store.fieldErrors.stage">
-              <UiSelect v-model="stage" :options="stageOptions" :placeholder="t('billing.quoteDetail.selectStage')" />
+              <UiSelect v-model="stage" :options="QUOTE_STAGE_OPTIONS" :placeholder="t('billing.quoteDetail.selectStage')" />
             </UiField>
             <UiField :label="t('shared.client')" :error="store.fieldErrors.clientId">
               <UiClientSelect

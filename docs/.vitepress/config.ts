@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createSeo } from './seo'
+import { EDIT_LINK_PATTERN, repositoryPathOf } from './editLink'
 import { withNavBarClasses } from './navClasses'
 import { hasSitemap, readLatestPages, resolveVersion } from './versions'
 import { listEnglishPages, pageKey, readSettings, translatedKeys } from '../scripts/lib/localeFallbacks.mjs'
@@ -86,17 +87,6 @@ const pageLanguages: PageLanguages = {
 /** Per page description, canonical, social tags, JSON-LD, hreflang alternates and the sitemap filter, all built from `siteUrl`. */
 const seo = createSeo(siteUrl, version, pageLanguages)
 
-/**
- * Address of the page on GitHub, the same in every language. `filePath` is the real source (`en/staff/orders.md`,
- * `ru/staff/orders.md`), not the address the page is served at. A placeholder page has no file in the repository,
- * so its edit link goes to the path where the translation is to be created.
- * @param page The page data.
- * @returns The address.
- */
-const editLinkOf = (page: { filePath: string }): string => {
-  return `https://github.com/innovayse/hostpanel/edit/main/docs/${page.filePath.replace(/^_fallback\//, '')}`
-}
-
 /** Copyright line of the footer, the same in every language. */
 const COPYRIGHT = 'Copyright © 2024-present Innovayse Digital Agency'
 
@@ -110,7 +100,7 @@ const localeTheme = Object.fromEntries(
     buildLocaleThemeConfig(locale, stringsFor(locale), {
       demoUrl: DEMO_ADMIN_URL,
       generated: generatedApiSidebarItems,
-      editPattern: editLinkOf,
+      editPattern: EDIT_LINK_PATTERN,
       copyright: COPYRIGHT,
     }),
   ]),
@@ -226,8 +216,14 @@ export default defineConfig({
    */
   transformHtml: (code) => withNavBarClasses(code),
 
-  /** Gives every page its own description and records the stubs that must not be indexed. */
-  transformPageData: seo.transformPageData,
+  /**
+   * Gives every page its own description and records the stubs that must not be indexed, then points the page's
+   * source path at the repository, which is all the plain edit link pattern reads (see `editLink.ts`).
+   */
+  transformPageData: (pageData, ctx) => {
+    seo.transformPageData(pageData, ctx)
+    pageData.filePath = repositoryPathOf(pageData.filePath)
+  },
 
   /** Adds the per page canonical, Open Graph, Twitter, robots and JSON-LD tags. */
   transformHead: seo.transformHead,

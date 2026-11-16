@@ -36,19 +36,21 @@ public sealed class KnowledgeBaseAdminController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Returns all knowledge base articles, including unpublished ones.</summary>
+    /// <summary>Returns a page of the knowledge base articles, drafts included, narrowed by a search and filters.</summary>
+    /// <param name="query">The page, page size, search, category and published state to list by.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with every article; 401 without a session; 403 for a caller without access;
+    /// 200 with the page; 400 when the query fails validation; 401 without a session; 403 for a caller without access;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<KbArticleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedList<KbArticleDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ListAllAsync(CancellationToken ct)
+    public async Task<IActionResult> ListAllAsync([FromQuery] ListKbArticlesQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<KbArticleDto>>>(new ListKbArticlesQuery(), ct);
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<KbArticleDto>>>(query, ct);
         return HandleResult(outcome);
     }
 

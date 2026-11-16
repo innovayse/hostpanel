@@ -11,13 +11,30 @@ import { installStoreHooks } from '../helpers/storeHooks'
 describe('clientTicketStore', () => {
   installStoreHooks()
 
-  it('fetchClientTickets fills the list and passes the search', async () => {
+  it('fetchClientTickets fills the list and passes the page, the search and the filters', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], totalCount: 1 }))
     const store = useClientTicketsStore()
 
-    await store.fetchClientTickets(7, 1, 20, 'refund')
+    expect(await store.fetchClientTickets(7, 2, {
+      search: ' refund ',
+      status: TicketStatus.Closed,
+      priority: TicketPriority.Low,
+      departmentId: 4,
+    })).toBe(true)
     expect(store.tickets).toEqual([{ id: 1 }])
-    expect(callOf(mock).url).toBe('/api/tickets/client/7?page=1&pageSize=20&search=refund')
+    expect(store.totalCount).toBe(1)
+    expect(callOf(mock).url).toBe('/api/tickets/client/7?page=2&pageSize=20&search=refund&status=Closed&priority=Low&departmentId=4')
+  })
+
+  it('fetchClientTickets sends only the page when nothing narrows the list and keeps the sentence on refusal', async () => {
+    const store = useClientTicketsStore()
+    const mock = stubFetch(json({ items: [], totalCount: 0 }))
+    expect(await store.fetchClientTickets(7, 1)).toBe(true)
+    expect(callOf(mock).url).toBe('/api/tickets/client/7?page=1&pageSize=20')
+
+    stubFetch(problem('Not allowed.', 403))
+    expect(await store.fetchClientTickets(7, 1)).toBe(false)
+    expect(store.error).toBe('Not allowed.')
   })
 
   it('fetchById sets the open ticket and clears it on refusal', async () => {

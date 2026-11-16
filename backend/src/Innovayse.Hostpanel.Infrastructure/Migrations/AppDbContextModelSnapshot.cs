@@ -1084,6 +1084,41 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.VatRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("RatePercent")
+                        .HasColumnType("numeric(6,3)");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Country", "Kind", "ValidFrom")
+                        .IsUnique();
+
+                    b.ToTable("VatRates", t =>
+                        {
+                            t.HasCheckConstraint("CK_VatRates_RatePercent", "\"RatePercent\" >= 0 AND \"RatePercent\" <= 100");
+                        });
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaign", b =>
                 {
                     b.Property<int>("Id")
@@ -3288,6 +3323,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsDigitalService")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
 
@@ -3597,7 +3637,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_ProductOptionGroups_DisplayOrderNotNegative", "\"DisplayOrder\" >= 0");
 
-                            t.HasCheckConstraint("CK_ProductOptionGroups_QuantityRange", "(\"MinQuantity\" IS NULL AND \"MaxQuantity\" IS NULL) OR (\"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
+                            t.HasCheckConstraint("CK_ProductOptionGroups_QuantityRange", "(\"MinQuantity\" IS NULL AND \"MaxQuantity\" IS NULL) OR (\"MinQuantity\" IS NOT NULL AND \"MaxQuantity\" IS NOT NULL AND \"MinQuantity\" >= 0 AND \"MaxQuantity\" >= 1 AND \"MaxQuantity\" >= \"MinQuantity\")");
                         });
                 });
 
@@ -5622,6 +5662,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                             b1.Property<bool>("IsDigital")
                                 .HasColumnType("boolean")
                                 .HasColumnName("IsDigital");
+
+                            b1.Property<bool>("IsDigitalService")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(false)
+                                .HasColumnName("IsDigitalService");
 
                             b1.Property<string>("Metadata")
                                 .HasColumnType("jsonb")

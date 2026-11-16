@@ -27,7 +27,7 @@ public sealed class GetDomainRenewalEmailsTests(IntegrationTestFactory factory) 
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var domain = RegisteredDomain.Register(
-                clientId, $"{marker}.com", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+                clientId, $"{marker}.com", TestMoments.Seeded, TestMoments.Seeded.AddDays(30), autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
             domain.AddReminder(DomainReminderType.ThirtyDaysBeforeExpiry, $"{marker}@reports.test", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
             db.Domains.Add(domain);
             await db.SaveChangesAsync();

@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Settings;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Settings;
 
@@ -37,6 +38,46 @@ public sealed class BillingSettingKeysTests
         seeded.Value.Should().Be("true");
         pattern.Regex.IsMatch("FALSE").Should().BeTrue();
         pattern.Regex.IsMatch("off").Should().BeFalse();
+    }
+
+    /// <summary>The rate source is the national bank until the operator picks another, and every provider name in any case is accepted and stored as the member name.</summary>
+    [Fact]
+    public void RateProvider_IsTheNationalBankByDefault_AndTakesAProviderNameInAnyCase()
+    {
+        var seeded = BillingSettingKeys.Defaults.Single(d => d.Key == BillingSettingKeys.RateProvider);
+        var pattern = BillingSettingKeys.Patterns[BillingSettingKeys.RateProvider];
+
+        seeded.Value.Should().Be(nameof(ExchangeRateProvider.Cba));
+        foreach (var name in Enum.GetNames<ExchangeRateProvider>())
+        {
+            pattern.Regex.IsMatch(name.ToUpperInvariant()).Should().BeTrue(name);
+            pattern.Canonical(name.ToLowerInvariant()).Should().Be(name);
+        }
+
+        pattern.Regex.IsMatch("Boe").Should().BeFalse();
+        pattern.Regex.IsMatch(string.Empty).Should().BeFalse();
+        BillingSettingKeys.AllowsEmpty(BillingSettingKeys.RateProvider).Should().BeFalse();
+    }
+
+    /// <summary>The seller's country starts empty (destination rates off), may be cleared again, and takes a two-letter code in either case.</summary>
+    /// <param name="value">The setting value.</param>
+    /// <param name="ok">Whether the value is accepted.</param>
+    [Theory]
+    [InlineData("", true)]
+    [InlineData("DE", true)]
+    [InlineData("de", true)]
+    [InlineData("D", false)]
+    [InlineData("DEU", false)]
+    [InlineData("1A", false)]
+    public void SellerCountry_IsEmptyByDefault_AndTakesATwoLetterCode(string value, bool ok)
+    {
+        var seeded = BillingSettingKeys.Defaults.Single(d => d.Key == BillingSettingKeys.SellerCountry);
+        var pattern = BillingSettingKeys.Patterns[BillingSettingKeys.SellerCountry];
+
+        seeded.Value.Should().BeEmpty();
+        BillingSettingKeys.AllowsEmpty(BillingSettingKeys.SellerCountry).Should().BeTrue();
+        pattern.Regex.IsMatch(value).Should().Be(ok);
+        pattern.Canonical("de").Should().Be("DE");
     }
 
     /// <summary>The day lists accept what an operator types and refuse the rest.</summary>

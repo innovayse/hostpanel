@@ -4,8 +4,11 @@
  * marking a plugin with its declared type, an integration whose required fields are not all stored
  * as not configured, and a plugin that reports its connection state with that state.
  *
- * Clicking the card navigates to the integration's configuration page.
+ * Clicking the card navigates to the integration's configuration page. While `integration` is null (the list
+ * is still loading) the card draws the same layout with bars where the logo, status, name and description go,
+ * and is no link; the "Configure" caption is page text and stays.
  */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { INTEGRATION_META, PLUGIN_TYPE_LABELS } from '@/types/integrationmeta'
 import type { IntegrationDto, IntegrationSlug } from '@/types/integration'
@@ -15,6 +18,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { integrationConfigurePath } from '@/lib/routes'
@@ -26,22 +30,29 @@ import { integrationConnectionTone } from '@/lib/tones'
 const { t } = useI18n()
 
 /** Props for IntegrationCard. */
-const props = defineProps<{
-  /** The integration summary data from the store. */
-  integration: IntegrationDto
-}>()
+const props = withDefaults(defineProps<{
+  /** The integration summary data from the store; null while the list is loading. */
+  integration?: IntegrationDto | null
+}>(), {
+  integration: null,
+})
 
-/** Static metadata for this integration (logo, color, description). */
-const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
+/** Static metadata for this integration (logo, color, description); absent while loading. */
+const meta = computed(() => (props.integration === null ? undefined : INTEGRATION_META[props.integration.slug as IntegrationSlug]))
 </script>
 
 <template>
-  <UiLink :to="integrationConfigurePath(integration.slug)" class="block" :data-testid="`integration-card-${integration.slug}`">
-    <UiCard padding="md" class="h-full">
+  <UiLink
+    :to="integration ? integrationConfigurePath(integration.slug) : undefined"
+    class="block"
+    :data-testid="integration ? `integration-card-${integration.slug}` : 'integration-card-loading'"
+  >
+    <UiCard padding="md" class="h-full" :aria-busy="integration ? undefined : 'true'">
       <UiStack gap="md" class="h-full">
         <UiStack direction="row" align="start" justify="between">
+          <UiSkeletonBar v-if="integration === null" class="h-12 w-12 rounded-control" aria-hidden="true" />
           <UiPluginAvatar
-            v-if="integration.isPlugin"
+            v-else-if="integration.isPlugin"
             :name="integration.name"
             :icon-url="integration.iconUrl"
             :size="UiSize.Lg"
@@ -55,12 +66,14 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
               class="h-full w-full object-contain brightness-0 invert"
             />
           </UiStack>
-          <UiBadge :tone="integration.isEnabled ? 'success' : 'neutral'" small :data-testid="`integration-status-${integration.slug}`">
+          <UiSkeletonBar v-if="integration === null" class="h-5 w-16 rounded-full" aria-hidden="true" />
+          <UiBadge v-else :tone="integration.isEnabled ? 'success' : 'neutral'" small :data-testid="`integration-status-${integration.slug}`">
             {{ integration.isEnabled ? t('shared.active') : t('shared.inactive') }}
           </UiBadge>
         </UiStack>
 
-        <UiStack direction="row" align="center" gap="sm">
+        <UiSkeletonBar v-if="integration === null" class="h-5 w-40 rounded-md" aria-hidden="true" />
+        <UiStack v-else direction="row" align="center" gap="sm">
           <UiHeading :level="3" variant="card">{{ integration.name }}</UiHeading>
           <UiBadge v-if="integration.isPlugin" tone="primary" small>
             {{ t('integrations.integrationCard.plugin') }}
@@ -84,14 +97,18 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
         </UiStack>
 
         <!-- The plugin's own report (IPluginStatus), worded by the API; absent for built-ins and other plugins. -->
-        <UiStack v-if="integration.connection" gap="xs" :data-testid="`integration-connection-${integration.slug}`">
+        <UiStack v-if="integration?.connection" gap="xs" :data-testid="`integration-connection-${integration.slug}`">
           <UiBadge :tone="integrationConnectionTone[integration.connection.state]" dot small>
             {{ t(`integrations.connectionState.${integration.connection.state}`) }}
           </UiBadge>
           <UiText tone="muted" size="sm">{{ integration.connection.message }}</UiText>
         </UiStack>
 
-        <UiText tone="muted" size="md" class="flex-1">
+        <UiStack v-if="integration === null" gap="xs" class="flex-1" aria-hidden="true">
+          <UiSkeletonBar class="h-3.5 w-full rounded-md" />
+          <UiSkeletonBar class="h-3.5 w-2/3 rounded-md" />
+        </UiStack>
+        <UiText v-else tone="muted" size="md" class="flex-1">
           {{ meta?.shortDescription }}
         </UiText>
 

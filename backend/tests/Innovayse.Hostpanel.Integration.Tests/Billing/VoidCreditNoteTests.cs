@@ -123,7 +123,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     {
         var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-void" };
         var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
         var clientId = await BillingTestSeeds.SeedClientAsync(host);
         var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId);
         var noteId = await CreditNoteTestSeeds.IssueOkAsync(admin, invoiceId, 40m, nameof(CreditNoteMethod.GatewayRefund));

@@ -1,8 +1,11 @@
+using System.Runtime.CompilerServices;
+using System.Text;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
@@ -15,6 +18,9 @@ public sealed class EventStreamResultTests
 {
     /// <summary>How long a test waits for the request to end before it calls it stuck.</summary>
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(15);
+
+    /// <summary>The instant the test clock starts at: nothing here depends on the real date.</summary>
+    private static readonly DateTimeOffset ClockStart = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>A response body whose writes fail as a dropped connection's do.</summary>
     private sealed class DroppedConnectionStream : Stream
@@ -105,6 +111,17 @@ public sealed class EventStreamResultTests
         yield return new StreamedEvent("only", null, null);
     }
 
+    /// <summary>Builds the result of a reply over the given clock, with the logger that drops everything.</summary>
+    /// <param name="reply">The reply to write.</param>
+    /// <param name="time">The clock the result measures silence and waits on; the system clock when <see langword="null"/>.</param>
+    /// <param name="settleTimeout">How long to wait for a step in flight at the end; the default wait when <see langword="null"/>.</param>
+    /// <returns>The result.</returns>
+    private static EventStreamResult ResultOf(StreamedReply reply, TimeProvider? time = null, TimeSpan? settleTimeout = null)
+    {
+        return new EventStreamResult(
+            reply, time ?? TimeProvider.System, NullLogger<EventStreamResult>.Instance, settleTimeout ?? EventStreamResult.DefaultSettleTimeout);
+    }
+
     /// <summary>Runs a result against a fresh context whose body is kept in memory.</summary>
     /// <param name="result">The result to run.</param>
     /// <returns>A task that completes when the result has run.</returns>
@@ -123,7 +140,7 @@ public sealed class EventStreamResultTests
         var owner = new RecordingOwner();
         var reply = new StreamedReply(OneEvent(), TimeSpan.FromSeconds(1), null, owner);
 
-        await RunAsync(new EventStreamResult(reply)).WaitAsync(Patience);
+        await RunAsync(ResultOf(reply)).WaitAsync(Patience);
 
         owner.Disposed.IsCompleted.Should().BeTrue();
     }
@@ -141,7 +158,7 @@ public sealed class EventStreamResultTests
         var http = new DefaultHttpContext();
         http.Response.Body = new DroppedConnectionStream();
         var reply = new StreamedReply(IgnoresItsToken(release.Task), TimeSpan.FromMilliseconds(20), null, owner);
-        var result = new EventStreamResult(reply, TimeSpan.FromMilliseconds(100));
+        var result = ResultOf(reply, settleTimeout: TimeSpan.FromMilliseconds(100));
 
         var act = () => result.ExecuteResultAsync(new ActionContext(http, new RouteData(), new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor())).WaitAsync(Patience);
         await act.Should().ThrowAsync<IOException>();
@@ -173,7 +190,7 @@ public sealed class EventStreamResultTests
         var http = new DefaultHttpContext();
         http.Response.Body = new DroppedConnectionStream();
         var reply = new StreamedReply(IgnoresItsToken(release.Task), TimeSpan.FromMilliseconds(20));
-        var result = new EventStreamResult(reply, TimeSpan.FromMilliseconds(100));
+        var result = ResultOf(reply, settleTimeout: TimeSpan.FromMilliseconds(100));
 
         try
         {
@@ -185,5 +202,50 @@ public sealed class EventStreamResultTests
         {
             release.SetResult();
         }
+    }
+
+    /// <summary>A producer of one event that then says nothing until its token is cancelled.</summary>
+    /// <param name="ct">Cancelled when the response ends the stream.</param>
+    /// <returns>The event.</returns>
+    private static async IAsyncEnumerable<StreamedEvent> OneEventThenSilence([EnumeratorCancellation] CancellationToken ct)
+    {
+        yield return new StreamedEvent("first", null, null);
+        await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+    }
+
+    /// <summary>
+    /// A producer that stays silent is told by a heartbeat every heartbeat interval, but the heartbeats do not restart its
+    /// silence: once the idle limit has passed on the clock the stream is ended with the limit's events, and the producer is
+    /// cancelled. The clock is a test clock moved only once the response is waiting on it, so nothing here depends on speed.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ASilentProducer_IsCutAtTheIdleLimit_AndHeartbeatsDoNotRestartIt()
+    {
+        var clock = new TimerWatchingTimeProvider(ClockStart);
+        var expired = false;
+        var idle = new StreamIdleLimit(TimeSpan.FromSeconds(3), [new StreamedEvent("too slow", "error", null)], () => expired = true);
+        var reply = new StreamedReply(OneEventThenSilence(CancellationToken.None), TimeSpan.FromSeconds(1), idle);
+        var http = new DefaultHttpContext();
+        var body = new MemoryStream();
+        http.Response.Body = body;
+
+        var run = ResultOf(reply, clock).ExecuteResultAsync(new ActionContext(http, new RouteData(), new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()));
+
+        // The first wait is made before the first event is taken, the second after it: only then is the silence running.
+        await clock.NextTimerAsync(Patience);
+        await clock.NextTimerAsync(Patience);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await clock.NextTimerAsync(Patience);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await clock.NextTimerAsync(Patience);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await run.WaitAsync(Patience);
+
+        var written = Encoding.UTF8.GetString(body.ToArray());
+        expired.Should().BeTrue();
+        written.Should().StartWith("data: first");
+        written.Split(ServerSentEvent.Heartbeat).Should().HaveCount(3, "two heartbeats fit before the limit");
+        written.Should().EndWith("event: error\ndata: too slow\n\n");
     }
 }

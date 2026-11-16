@@ -227,12 +227,14 @@ describe('SystemSettingsView', () => {
     expect((wrapper.get('[data-testid="setting-value-90"]').element as HTMLInputElement).value).toBe('nope')
   })
 
-  it('keeps the tab strip and draws placeholders for the cards on the first load', async () => {
+  it('keeps the tab strip and draws the real cards with placeholder fields on the first load', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountScreen(SystemSettingsView, {}, SCREEN_PATH)
 
     expect(wrapper.findAll('[role="tab"]')).toHaveLength(4)
-    expect(wrapper.findAll('[data-testid="ui-card-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="setting-loading"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="setting-not-seeded"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="site-identity-name"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="settings-form-save"]').exists()).toBe(false)
   })

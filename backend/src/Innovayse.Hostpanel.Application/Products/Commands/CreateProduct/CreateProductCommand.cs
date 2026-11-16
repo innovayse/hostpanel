@@ -43,6 +43,13 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 /// <see cref="Product.MinGracePeriodDays"/> to <see cref="Product.MaxGracePeriodDays"/>; null keeps
 /// <see cref="Product.DefaultGracePeriodDays"/>.
 /// </param>
+/// <param name="IsHidden">
+/// Whether the product is created hidden (<see cref="ProductStatus.Inactive"/>): left off the public
+/// catalogue and the order form. <c>false</c> by default, which creates it active.
+/// </param>
+/// <param name="IsDigitalService">
+/// Whether the product is an electronic service for VAT (see <see cref="Product.IsDigitalService"/>). <c>false</c> by default.
+/// </param>
 /// <param name="Trial">
 /// Optional free-trial settings of the product. Null creates the product with the trial off and the
 /// default settings (<see cref="ProductTrial.Default"/>).
@@ -64,4 +71,6 @@ public sealed record CreateProductCommand(
     string? Sku = null,
     string? Metadata = null,
     int? GracePeriodDays = null,
+    bool IsHidden = false,
+    bool IsDigitalService = false,
     ProductTrialDto? Trial = null);

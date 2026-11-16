@@ -48,7 +48,7 @@
     "lengthServerValue": "Серверов: {length}",
     "noCwp7ServersConfiguredYet": "Серверы CWP7 пока не настроены.",
     "addYourFirstServer": "Добавьте первый сервер →",
-    "accountscountValueAccounts": "Аккаунтов: {accountsCount} / {value}"
+    "accountsUsage": "Аккаунтов: {usage}"
   },
   "cwpIntegration": {
     "centosWebPanel": "CentOS Web Panel"

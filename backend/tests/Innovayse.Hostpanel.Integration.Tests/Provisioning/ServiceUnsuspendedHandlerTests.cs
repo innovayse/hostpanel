@@ -54,7 +54,7 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
         using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
         {
             var service = await context.ClientServices.FindAsync([serviceId], CancellationToken.None);
-            service!.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true);
+            service!.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -115,10 +115,10 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
     /// <returns>A task that completes once the keys are suspended and the service is active.</returns>
     private async Task SuspendKeysThenUnsuspendQuietlyAsync(int clientId, int serviceId)
     {
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         await PublishAsync(factory.Services, new ClientServiceSuspendedEvent(serviceId, clientId, TestMoments.Seeded));
         (await StatesAsync(serviceId)).Should().OnlyContain(state => state == SshKeySyncState.Suspended);
-        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+        await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
     }
 
     /// <summary>Publishes an event through the real bus of the given host and waits until it and every message it cascades to were handled.</summary>

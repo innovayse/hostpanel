@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models;
@@ -310,10 +311,20 @@ public sealed class WhmApiClientTests : IAsyncLifetime
     public async Task Call_CancelledWhileWaiting_ThrowsRatherThanUnreadableAsync()
     {
         whm.Enqueue(new StubReply(HttpStatusCode.OK, WhmReplies.Ok, Delay: TimeSpan.FromSeconds(30)));
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+        using var cts = new CancellationTokenSource();
 
-        var act = () => Client().UnsuspendAccountAsync(Connection(), "testuser", cts.Token);
+        var call = Client().UnsuspendAccountAsync(Connection(), "testuser", cts.Token);
+        try
+        {
+            await whm.FirstRequestReceived.WaitAsync(TimeSpan.FromSeconds(30));
+        }
+        finally
+        {
+            // Cancel even when the request never arrived, so the held call does not outlive a failed test.
+            await cts.CancelAsync();
+        }
 
+        var act = () => call;
         await act.Should().ThrowAsync<OperationCanceledException>();
         whm.Requests.Should().ContainSingle();
     }
@@ -346,12 +357,12 @@ public sealed class WhmApiClientTests : IAsyncLifetime
             o.CPanelWhm.AttemptTimeout = TimeSpan.FromMilliseconds(300);
             o.CPanelWhm.TotalTimeout = TimeSpan.FromSeconds(2);
         });
-        var started = DateTimeOffset.UtcNow;
+        var stopwatch = Stopwatch.StartNew();
 
         var reply = await host.Client().ChangePasswordAsync(WhmTestHost.ConnectionTo(held), "testuser", "S3cret-pass", CancellationToken.None);
 
         reply.Should().Be(WhmReply.Unreadable);
-        (DateTimeOffset.UtcNow - started).Should().BeLessThan(TimeSpan.FromSeconds(10));
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
         held.Requests.Should().ContainSingle("a timed out call is not repeated");
         var line = host.Logs.Entries.Should().Contain(e => e.Message.Contains("could not be sent")).Subject;
         line.Message.Should().Contain("TimeoutRejectedException").And.NotContain("S3cret-pass").And.NotContain("api-token-value");

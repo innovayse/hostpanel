@@ -62,7 +62,8 @@ public sealed class RecordEmailCampaignClickTests(IntegrationTestFactory factory
         response.Headers.CacheControl!.NoStore.Should().BeTrue();
         var recipient = await RecipientAsync(seeded.CampaignId);
         recipient.ClickCount.Should().Be(1);
-        recipient.FirstClickedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
+        // Real time: the click is stamped by the shared host on the system clock, and the client must stop at the redirect.
+        recipient.FirstClickedAt.Should().BeCloseTo(TestMoments.Present(), TimeSpan.FromMinutes(5));
         recipient.OpenCount.Should().Be(0);
     }
 

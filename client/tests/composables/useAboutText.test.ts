@@ -4,52 +4,45 @@
  * @module tests/composables/useAboutText.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { describe, expect, it } from 'vitest'
 import { useAboutText } from '~/composables/useAboutText'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { stubLocale } from '~/tests/helpers/runtimeStubs'
 
-/**
- * Stubs the settings reader and the active language.
- *
- * @param values Setting key to value.
- * @param locale The visitor's language.
- */
-const stub = (values: Record<string, string>, locale = 'en'): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-  vi.stubGlobal('useI18n', () => ({ locale: ref(locale) }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('useAboutText', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('splits the story at blank lines and trims each paragraph', () => {
-    stub({ 'portal.about.text': ' First.\n\n  \nSecond line\nstill second. ' })
+  it('splits the story at blank lines and trims each paragraph', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: ' First.\n\n  \nSecond line\nstill second. ' })
 
     expect(useAboutText().paragraphs.value).toEqual(['First.', 'Second line\nstill second.'])
   })
 
-  it('reads the Russian story for a Russian visitor', () => {
-    stub({ 'portal.about.text': 'English.', 'portal.about.text.ru': 'Русский.' }, 'ru')
+  it('reads the Russian story for a Russian visitor', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.', [PortalSettingKey.AboutTextRu]: 'Русский.' })
+    stubLocale('ru')
 
     expect(useAboutText().paragraphs.value).toEqual(['Русский.'])
   })
 
-  it('reads the Armenian story for an Armenian visitor', () => {
-    stub({ 'portal.about.text': 'English.', 'portal.about.text.hy': 'Հայերեն։' }, 'hy')
+  it('reads the Armenian story for an Armenian visitor', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.', [PortalSettingKey.AboutTextHy]: 'Հայերեն։' })
+    stubLocale('hy')
 
     expect(useAboutText().paragraphs.value).toEqual(['Հայերեն։'])
   })
 
-  it('falls back to the default story when the language has none', () => {
-    stub({ 'portal.about.text': 'English.' }, 'hy')
+  it('falls back to the default story when the language has none', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.' })
+    stubLocale('hy')
 
     expect(useAboutText().paragraphs.value).toEqual(['English.'])
   })
 
-  it('is empty when no story is set', () => {
-    stub({})
+  it('is empty when no story is set', async () => {
+    await loadPortalSettings(replies)
 
     expect(useAboutText().paragraphs.value).toEqual([])
   })

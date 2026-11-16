@@ -7,7 +7,10 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import DomainSearch from '~/templates/aurora/sections/DomainSearch.vue'
 import { DomainResultStatus } from '~/types/domainresultstatus'
 import type { TldPriceRow } from '~/types/tldpricerow'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 /**
  * Builds one price row for the hint list.
@@ -29,7 +32,7 @@ const hint = (tld: string, registerAmount: number): TldPriceRow => ({
 
 describe('DomainSearch', () => {
   it('emits the typed term when the form is submitted', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearch)
 
     await wrapper.find('[data-testid="home-domain-search-input"]').setValue('my-site')
@@ -38,16 +41,16 @@ describe('DomainSearch', () => {
     expect(wrapper.emitted('search')).toEqual([['my-site']])
   })
 
-  it('starts with the initial query and gives the field a placeholder', () => {
-    stubAuroraGlobals()
+  it('starts with the initial query and gives the field a placeholder', async () => {
+    await loadGlobals()
     const input = mountWithKit(DomainSearch, { props: { initialQuery: 'abc' } }).find('[data-testid="home-domain-search-input"]')
 
     expect((input.element as HTMLInputElement).value).toBe('abc')
     expect(input.attributes('placeholder')).toBe('aurora.domainSearch.placeholder')
   })
 
-  it('disables the field and the button, and says why, when nothing is priced', () => {
-    stubAuroraGlobals()
+  it('disables the field and the button, and says why, when nothing is priced', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearch, { props: { hasZones: false } })
 
     expect(wrapper.find('[data-testid="home-domain-search-input"]').attributes('disabled')).toBeDefined()
@@ -55,8 +58,8 @@ describe('DomainSearch', () => {
     expect(wrapper.text()).toContain('aurora.domainSearch.noZones')
   })
 
-  it('shows starting prices only for extensions that have one', () => {
-    stubAuroraGlobals()
+  it('shows starting prices only for extensions that have one', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearch, { props: { priceHints: [hint('.com', 10), hint('.free', 0)] } })
     const hints = wrapper.find('[data-testid="price-hints"]')
 
@@ -64,8 +67,8 @@ describe('DomainSearch', () => {
     expect(hints.text()).not.toContain('.free')
   })
 
-  it('renders one row per result with its status label and price', () => {
-    stubAuroraGlobals()
+  it('renders one row per result with its status label and price', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearch, {
       props: { results: [{ name: 'x.com', price: '$10', status: DomainResultStatus.Available }] },
     })
@@ -76,8 +79,8 @@ describe('DomainSearch', () => {
     expect(row.text()).toContain('$10')
   })
 
-  it('shows the loading skeleton while a lookup runs', () => {
-    stubAuroraGlobals()
+  it('shows the loading skeleton while a lookup runs', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearch, { props: { pending: true } })
 
     expect(wrapper.find('[data-testid="domain-search-pending"]').exists()).toBe(true)

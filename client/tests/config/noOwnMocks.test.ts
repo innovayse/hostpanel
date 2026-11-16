@@ -6,16 +6,17 @@
  *
  * Two forms of replacing are caught. `vi.mock` and `vi.doMock` of a module of ours are refused outright.
  * `vi.stubGlobal` of one of our own auto-imported composables or stores is the same replacement by
- * another API (a Nuxt auto-import is a global under test), and it is refused too, except in the files of
- * {@link KNOWN_REMAINDER}: the tests written before this guard existed that still fake a composable of
- * ours. That list may only shrink. A file that no longer fakes one fails the guard until it is removed
- * from the list, and a new file that fakes one fails until it uses the real composable instead.
+ * another API (a Nuxt auto-import is a global under test), and it is refused too, in every file: a test that
+ * needs one uses the real composable. The one global stand-in file, `vitest.setup.ts`, is read as well and may
+ * define no composable or store of ours, by `define`, by `vi.stubGlobal` or by assigning to `globalThis`.
  * Stubbing a Nuxt or Vue framework global (`useRoute`, `useHead`, `useCookie`, `navigateTo`, `fetch` and so on)
- * is not replacing code of ours and is always allowed, and so is registering the real composable under its own
- * name (`vi.stubGlobal('useX', useX)`), which only makes the real one reachable as the global it is in the app.
+ * is not replacing code of ours and is always allowed. So is registering the real composable under its own
+ * name (`vi.stubGlobal('useX', useX)`), which only makes the real one reachable as the global it is in the app:
+ * the bare identifier must be bound in the file by an import of that name from a composable, store or util of the
+ * client (a static import or a destructured `await import(...)`), never a local value or a test helper's export.
  *
  * `usePortalSettingsServer` registers its argument by a dynamic name, which the `stubGlobal` scan cannot see, so
- * the guard reads the argument itself: every entry must be a bare imported identifier (`{ useX }`), the real one.
+ * the guard reads the argument itself: every entry must be a bare identifier bound the same way, the real one.
  *
  * @module tests/config/noOwnMocks.test
  */
@@ -52,8 +53,11 @@ const SERVER_SETUP_CALL = /\busePortalSettingsServer\(\s*/g
 /** One entry of the helper's argument that is the real thing: a bare identifier, or `name: name`, captured in group 1. */
 const REAL_ENTRY = /^([A-Za-z0-9_$]+)(?:\s*:\s*\1)?$/
 
-/** A named import statement, which may span several lines: its specifier list is group 1, its source group 3. */
-const NAMED_IMPORT = /\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*(['"])([^'"]+)\2/g
+/**
+ * A named import statement or a destructured dynamic import, which may span several lines: its specifier list
+ * is group 1 or group 2, its source group 4.
+ */
+const NAMED_IMPORT = /(?:\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*|\{([^}]*)\}\s*=\s*await\s+import\(\s*)(['"])([^'"]+)\3/g
 
 /** The source of a real client module the helper may register: a composable, store or util under the `~` or `@` alias. */
 const REAL_SOURCE = /^[~@]\/(?:composables|stores|utils)\//
@@ -64,23 +68,14 @@ const EXPORTED_NAME = /export\s+(?:const|function|async function)\s+([A-Za-z0-9_
 /** The start of a specifier that names a module of ours: an alias, a relative path or an import map entry. */
 const OWN_MODULE = /^(?:~|@\/|\.|#)/
 
-/**
- * The client tests that still replace a composable or store of ours with `vi.stubGlobal`, relative to
- * `client/tests`. Each one is a test to convert to the real composable; the list may only shrink.
- */
-const KNOWN_REMAINDER: readonly string[] = [
-  'helpers/authScreens.ts',
-  'helpers/publicPage.ts',
-  'helpers/templateGlobals.ts',
-  'pages/about.test.ts',
-  'pages/checkout/index.test.ts',
-  'pages/contact.test.ts',
-  'pages/cookie-policy.test.ts',
-  'pages/domains/index.test.ts',
-  'pages/hosting/index.test.ts',
-  'pages/index.test.ts',
-  'templates/aurora/auroraGlobals.ts',
-]
+/** The global test setup, which defines the Nuxt auto-imports a unit test lacks. */
+const SETUP_FILE = join(CLIENT_ROOT, 'vitest.setup.ts')
+
+/** A stand-in the setup defines as a global by name (`define('useX', ...)`), the name captured in group 2. */
+const SETUP_DEFINITION = /\bdefine\(\s*(['"`])([^'"`]+)\1/g
+
+/** An assignment to a property of `globalThis` (`globalThis.useX = ...`, `globalThis['useX'] = ...`), the name in group 1 or group 3. */
+const GLOBAL_ASSIGNMENT = /\bglobalThis(?:\.([A-Za-z0-9_$]+)|\[\s*(['"`])([^'"`]+)\2\s*\])\s*=(?!=)/g
 
 /**
  * Lists every `.ts` file under a folder, skipping dependencies and build output.
@@ -114,8 +109,26 @@ const ownMocks = (text: string): string[] =>
   [...text.matchAll(MOCK_CALL)].map((match) => match[2] ?? '').filter((specifier) => OWN_MODULE.test(specifier))
 
 /**
+ * Tells whether a file binds a name, under that same name, from one of our real modules, by a named import or a
+ * destructured `await import(...)`. This is the one check of what counts as the real thing, shared by the
+ * `stubGlobal` scan and the portal settings helper scan.
+ *
+ * A name imported from a test helper, or renamed on import (`import { fake as useX }`), is not the real thing.
+ *
+ * @param text - File contents.
+ * @param name - The identifier being registered.
+ * @returns True when an import binds `name` to an export of the same name in a composable, store or util.
+ */
+const importsRealModule = (text: string, name: string): boolean =>
+  [...text.matchAll(NAMED_IMPORT)].some((statement) =>
+    REAL_SOURCE.test(statement[4] ?? '') &&
+    (statement[1] ?? statement[2] ?? '').split(',').some((specifier) => specifier.trim().replace(/^type\s+/, '') === name)
+  )
+
+/**
  * Finds the globals of ours that one file's text replaces with `vi.stubGlobal`. Registering the real composable
- * under its own name (`vi.stubGlobal('useX', useX)`) replaces nothing, so it is not counted.
+ * under its own name (`vi.stubGlobal('useX', useX)`) replaces nothing, so it is not counted, but only when `useX`
+ * is bound in the file by an import of the real module: a local value of that name is a fake.
  *
  * @param text - File contents.
  * @param ownNames - The auto-imported names the client defines itself.
@@ -123,24 +136,24 @@ const ownMocks = (text: string): string[] =>
  */
 const ownGlobalStubs = (text: string, ownNames: ReadonlySet<string>): string[] =>
   [...text.matchAll(STUB_GLOBAL_CALL)]
-    .filter((match) => match[3] !== match[2])
+    .filter((match) => !(match[3] === match[2] && importsRealModule(text, match[2] ?? '')))
     .map((match) => match[2] ?? '')
     .filter((name) => ownNames.has(name))
 
 /**
- * Tells whether a file imports a name, under that same name, from one of our real modules.
+ * Finds the globals of ours that the setup file stands in for, by `define`, by `vi.stubGlobal` or by assigning to
+ * `globalThis`.
  *
- * A name imported from a test helper, or renamed on import (`import { fake as useX }`), is not the real thing.
- *
- * @param text - File contents.
- * @param name - The identifier the helper's argument registers.
- * @returns True when a named import binds `name` to an export of the same name in a composable, store or util.
+ * @param text - Contents of the setup file.
+ * @param ownNames - The auto-imported names the client defines itself.
+ * @returns The names defined, empty when the setup stands in for nothing of ours.
  */
-const importsRealModule = (text: string, name: string): boolean =>
-  [...text.matchAll(NAMED_IMPORT)].some((statement) =>
-    REAL_SOURCE.test(statement[3] ?? '') &&
-    (statement[1] ?? '').split(',').some((specifier) => specifier.trim().replace(/^type\s+/, '') === name)
-  )
+const ownSetupDefinitions = (text: string, ownNames: ReadonlySet<string>): string[] =>
+  [
+    ...[...text.matchAll(SETUP_DEFINITION)].map((match) => match[2] ?? ''),
+    ...[...text.matchAll(GLOBAL_ASSIGNMENT)].map((match) => match[1] ?? match[3] ?? ''),
+    ...ownGlobalStubs(text, ownNames),
+  ].filter((name) => ownNames.has(name))
 
 /**
  * Reads the body of the object literal that opens at an index.
@@ -208,7 +221,7 @@ const OWN_AUTO_IMPORTS: ReadonlySet<string> = new Set(
  * The path of a test relative to the tests folder, with forward slashes.
  *
  * @param path - Absolute path of a test file.
- * @returns The path as the known list spells it.
+ * @returns The path as the test names spell it.
  */
 const testPath = (path: string): string => relative(TESTS_ROOT, path).replace(/\\/g, '/')
 
@@ -225,7 +238,7 @@ describe('no mocks of our own modules in the client tests', () => {
     expect(ownMocks(readFileSync(path, 'utf8'))).toEqual([])
   })
 
-  it.each(SOURCES.filter((path) => !KNOWN_REMAINDER.includes(testPath(path))).map((path) => [testPath(path), path]))(
+  it.each(SOURCES.map((path) => [testPath(path), path]))(
     '%s fakes no composable or store of ours as a global',
     (_name, path) => {
       expect(ownGlobalStubs(readFileSync(path, 'utf8'), OWN_AUTO_IMPORTS)).toEqual([])
@@ -236,10 +249,28 @@ describe('no mocks of our own modules in the client tests', () => {
     expect(fakedRegistrations(readFileSync(path, 'utf8'))).toEqual([])
   })
 
-  it.each(KNOWN_REMAINDER.map((name) => [name]))('%s still fakes one, so it stays on the known list', (name) => {
-    const path = join(TESTS_ROOT, name)
-    expect(existsSync(path)).toBe(true)
-    expect(ownGlobalStubs(readFileSync(path, 'utf8'), OWN_AUTO_IMPORTS)).not.toEqual([])
+  it('stands in for no composable or store of ours in the global test setup', () => {
+    expect(ownSetupDefinitions(readFileSync(SETUP_FILE, 'utf8'), OWN_AUTO_IMPORTS)).toEqual([])
+  })
+
+  it('catches a composable of ours defined as a setup stand-in and leaves the Nuxt ones alone', () => {
+    const own = new Set(['useSiteIdentity'])
+
+    expect(ownSetupDefinitions(`define('useSiteIdentity', () => ({}))`, own)).toEqual(['useSiteIdentity'])
+    expect(ownSetupDefinitions(`define("useSiteIdentity", () => ({}))`, own)).toEqual(['useSiteIdentity'])
+    expect(ownSetupDefinitions(`define('useRoute', () => ({}))`, own)).toEqual([])
+  })
+
+  it('catches a composable of ours stubbed or assigned as a global in the setup', () => {
+    const own = new Set(['useSiteIdentity'])
+    const real = "import { useSiteIdentity } from '~/composables/useSiteIdentity'\n"
+
+    expect(ownSetupDefinitions(`vi.stubGlobal('useSiteIdentity', () => ({}))`, own)).toEqual(['useSiteIdentity'])
+    expect(ownSetupDefinitions(`${real}vi.stubGlobal('useSiteIdentity', useSiteIdentity)`, own)).toEqual([])
+    expect(ownSetupDefinitions('globalThis.useSiteIdentity = () => ({})', own)).toEqual(['useSiteIdentity'])
+    expect(ownSetupDefinitions(`globalThis['useSiteIdentity'] = () => ({})`, own)).toEqual(['useSiteIdentity'])
+    expect(ownSetupDefinitions('globalThis.ResizeObserver = Observer', own)).toEqual([])
+    expect(ownSetupDefinitions('globalThis.useSiteIdentity === undefined', own)).toEqual([])
   })
 
   it('catches a store, a composable and a relative module being mocked', () => {
@@ -256,10 +287,32 @@ describe('no mocks of our own modules in the client tests', () => {
   it('does not count the real composable registered under its own name as a fake', () => {
     const own = new Set(['useAuthMode', 'useClientStore'])
 
-    expect(ownGlobalStubs(`vi.stubGlobal('useAuthMode', useAuthMode)`, own)).toEqual([])
-    expect(ownGlobalStubs(`vi.stubGlobal( "useClientStore" , useClientStore )`, own)).toEqual([])
-    expect(ownGlobalStubs(`vi.stubGlobal('useAuthMode', useOtherMode)`, own)).toEqual(['useAuthMode'])
-    expect(ownGlobalStubs(`vi.stubGlobal('useAuthMode', useAuthMode.bind(null))`, own)).toEqual(['useAuthMode'])
+    const imports = "import { useAuthMode } from '~/composables/useAuthMode'\nimport { useClientStore } from '~/stores/client'\n"
+
+    expect(ownGlobalStubs(`${imports}vi.stubGlobal('useAuthMode', useAuthMode)`, own)).toEqual([])
+    expect(ownGlobalStubs(`${imports}vi.stubGlobal( "useClientStore" , useClientStore )`, own)).toEqual([])
+    expect(ownGlobalStubs(`${imports}vi.stubGlobal('useAuthMode', useOtherMode)`, own)).toEqual(['useAuthMode'])
+    expect(ownGlobalStubs(`${imports}vi.stubGlobal('useAuthMode', useAuthMode.bind(null))`, own)).toEqual(['useAuthMode'])
+  })
+
+  it('counts a same-named value that is not the real import as a fake global', () => {
+    const own = new Set(['useAuthMode'])
+    const stub = "\nvi.stubGlobal('useAuthMode', useAuthMode)"
+    const local = `const useAuthMode = () => ({})${stub}`
+    const helper = `import { useAuthMode } from '~/tests/helpers/fakes'${stub}`
+    const renamed = `import { fake as useAuthMode } from '~/composables/useAuthMode'${stub}`
+    const real = `import { useAuthMode } from '~/composables/useAuthMode'${stub}`
+    const dynamic = `const { useAuthMode } = await import('~/composables/useAuthMode')${stub}`
+    const dynamicHelper = `const { useAuthMode } = await import('~/tests/helpers/fakes')${stub}`
+    const dynamicRenamed = `const { fake: useAuthMode } = await import('~/composables/useAuthMode')${stub}`
+
+    expect(ownGlobalStubs(local, own)).toEqual(['useAuthMode'])
+    expect(ownGlobalStubs(helper, own)).toEqual(['useAuthMode'])
+    expect(ownGlobalStubs(renamed, own)).toEqual(['useAuthMode'])
+    expect(ownGlobalStubs(real, own)).toEqual([])
+    expect(ownGlobalStubs(dynamic, own)).toEqual([])
+    expect(ownGlobalStubs(dynamicHelper, own)).toEqual(['useAuthMode'])
+    expect(ownGlobalStubs(dynamicRenamed, own)).toEqual(['useAuthMode'])
   })
 
   it('catches a composable of ours being faked as a global and leaves framework globals alone', () => {
@@ -293,6 +346,14 @@ describe('no mocks of our own modules in the client tests', () => {
 
     expect(fakedRegistrations(`${real}usePortalSettingsServer({ useX, useY })`)).toEqual([])
     expect(fakedRegistrations(`${renamed}usePortalSettingsServer({ useX, useY })`)).toEqual(['useY'])
+  })
+
+  it('reads a destructured dynamic import as a real binding for the helper too', () => {
+    const real = "const { useX } = await import('~/composables/useX')\n"
+    const helper = "const { useX } = await import('~/tests/helpers/fakes')\n"
+
+    expect(fakedRegistrations(`${real}usePortalSettingsServer({ useX })`)).toEqual([])
+    expect(fakedRegistrations(`${helper}usePortalSettingsServer({ useX })`)).toEqual(['useX'])
   })
 
   it('catches a fake, a local stand-in or an unreadable argument passed to the helper', () => {

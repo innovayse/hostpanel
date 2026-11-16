@@ -6,12 +6,15 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraSupport from '~/templates/aurora/sections/AuroraSupport.vue'
 import { CLIENT_TICKET_NEW_PATH } from '~/constants/clientRoutes'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
 import { balancedColumns } from '~/utils/balancedGrid'
 
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
+
 describe('AuroraSupport', () => {
-  it('links a channel that has an address and shows its value and response time', () => {
-    stubAuroraGlobals({
+  it('links a channel that has an address and shows its value and response time', async () => {
+    await loadGlobals({
       settings: {
         [PortalSettingKey.ChatProvider]: 'widget',
         [PortalSettingKey.SupportResponseChat]: '2 min',
@@ -28,8 +31,8 @@ describe('AuroraSupport', () => {
     expect(wrapper.find('[data-testid="support-response-email"]').exists()).toBe(false)
   })
 
-  it('always offers the ticket form, so the section renders without any other channel', () => {
-    stubAuroraGlobals()
+  it('always offers the ticket form, so the section renders without any other channel', async () => {
+    await loadGlobals()
 
     const wrapper = mountWithKit(AuroraSupport)
 
@@ -37,8 +40,8 @@ describe('AuroraSupport', () => {
     expect(wrapper.find('[data-testid="support-ticket"]').attributes('href')).toBe(CLIENT_TICKET_NEW_PATH)
   })
 
-  it('lays the cards out in the balanced grid', () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.ContactPhone]: '+1 555 0100' } })
+  it('lays the cards out in the balanced grid', async () => {
+    await loadGlobals({ settings: { [PortalSettingKey.ContactPhone]: '+1 555 0100' } })
 
     const grid = mountWithKit(AuroraSupport).find('[data-testid="aurora-support-grid"]')
 

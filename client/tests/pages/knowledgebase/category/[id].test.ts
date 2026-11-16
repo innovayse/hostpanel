@@ -12,7 +12,7 @@ import { ref } from 'vue'
 import KbArticleRow from '~/components/kb/ArticleRow.vue'
 import Page from '~/pages/knowledgebase/category/[id].vue'
 import { ContentPath } from '~/tests/helpers/contentPaths'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, publishedSchemas, registerPageComponents, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -187,13 +187,12 @@ describe('pages/knowledgebase/category/[id]', () => {
 
     await mountRenderedPage(Page, ROOT)
 
-    expect(spies.useSeo).toHaveBeenCalledTimes(1)
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({
+    expect(spies.useSeoMeta).toHaveBeenCalledTimes(1)
+    expect(seoTags(spies)).toMatchObject({
       title: 'kb.categorySeoTitle',
       description: 'kb.categorySeoDescription',
-      path: '/knowledgebase/category/billing',
-    }))
-    expect(spies.useSeoMeta).not.toHaveBeenCalled()
+    })
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/knowledgebase/category/billing`)
   })
 
   it('publishes the breadcrumb trail as structured data', async () => {
@@ -201,13 +200,13 @@ describe('pages/knowledgebase/category/[id]', () => {
 
     await mountRenderedPage(Page, ROOT)
 
-    expect(spies.injectSchema).toHaveBeenCalledWith({
+    expect(publishedSchemas(spies)).toMatchObject([{
       '@type': 'BreadcrumbList',
-      items: [
-        { name: 'kb.title', url: '/en/knowledgebase' },
-        { name: 'Billing', url: '/en/knowledgebase/category/billing' },
+      itemListElement: [
+        { position: 1, name: 'kb.title', item: `${PUBLIC_PAGE_BASE_URL}/en/knowledgebase` },
+        { position: 2, name: 'Billing', item: `${PUBLIC_PAGE_BASE_URL}/en/knowledgebase/category/billing` },
       ],
-    })
+    }])
   })
 
   it('shows placeholders while the articles load', async () => {

@@ -10,9 +10,11 @@
  */
 
 import type { VueWrapper } from '@vue/test-utils'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h } from 'vue'
 import type { Component } from 'vue'
 import { vi } from 'vitest'
+import { useAuthMode } from '~/composables/useAuthMode'
+import { AuthMode } from '~/types/authmode'
 import { mountClient, mountPage } from '~/tests/helpers/mountClient'
 import type { MountWithKitOptions } from '~/tests/helpers/mountWithKit'
 import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
@@ -33,7 +35,7 @@ export interface AuthRuntimeOptions {
   fullPath?: string
   /** Whether the deployment signs in through the platform SSO. */
   isSso?: boolean
-  /** The public runtime config. */
+  /** The public runtime config; its `authMode` wins over {@link AuthRuntimeOptions.isSso}. */
   publicConfig?: Record<string, unknown>
 }
 
@@ -44,7 +46,8 @@ export interface AuthRuntimeSpies {
 }
 
 /**
- * Stands in for the auto-imports the auth screens use that `vitest.setup.ts` does not cover.
+ * Stands in for the auto-imports the auth screens use that `vitest.setup.ts` does not cover, and registers the real
+ * `useAuthMode`, which reads the authentication mode from the stood-in runtime config.
  *
  * @param options - Route, SSO flag and public config for this test.
  * @returns The router spy.
@@ -54,8 +57,8 @@ export const stubAuthRuntime = (options: AuthRuntimeOptions = {}): AuthRuntimeSp
   stubRoute(options)
   vi.stubGlobal('useRouter', () => ({ push, replace: vi.fn(), back: vi.fn() }))
   stubLocalePath()
-  vi.stubGlobal('useRuntimeConfig', () => ({ public: options.publicConfig ?? {} }))
-  vi.stubGlobal('useAuthMode', () => ({ mode: ref(options.isSso ? 'sso' : 'local'), isSso: ref(Boolean(options.isSso)), signInHref: ref('/x') }))
+  vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: options.isSso ? AuthMode.Sso : AuthMode.Local, ...options.publicConfig } }))
+  vi.stubGlobal('useAuthMode', useAuthMode)
   vi.mocked(navigateTo).mockClear()
   return { push }
 }

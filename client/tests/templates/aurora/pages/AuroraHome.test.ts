@@ -2,29 +2,22 @@
  * Unit tests for AuroraHome: every section is composed in, the optional ones can be switched off,
  * and the search and billing events travel up to the page that owns the data.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { faqFixture, partnerFixture, testimonialFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { requestsTo, routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { requestsTo, readOf } from '~/tests/helpers/stubRoutes'
 import AuroraHome from '~/templates/aurora/pages/AuroraHome.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SETTING_OFF, SETTING_ON } from '~/constants/settingValue'
 import { PricingCycle } from '~/types/pricingcycle'
-import { stubAuroraGlobals, PLANS } from '../auroraGlobals'
+import { useAuroraGlobals, PLANS } from '../auroraGlobals'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** What the stub answers, by route, so the FAQ and testimonials sections have content to show. */
-const replies: StubRouteTable = {}
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useAuroraGlobals()
 
 describe('AuroraHome', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
+  beforeEach(() => {
     Object.assign(replies, {
       [readOf(StorefrontPath.Partners)]: { body: [] },
       [readOf(StorefrontPath.Projects)]: { body: [] },
@@ -34,15 +27,10 @@ describe('AuroraHome', () => {
     })
   })
 
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
-  })
-
   it('composes the hero, search, trust bar, plans, services, process, testimonials, FAQ and call to action', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = await mountAfterReads(
-      stub,
+      stub(),
       [StorefrontPath.Partners, StorefrontPath.Locations, StorefrontPath.Testimonials, StorefrontPath.Faqs],
       () => mountWithKit(AuroraHome, { props: { plans: PLANS } }),
     )
@@ -58,15 +46,15 @@ describe('AuroraHome', () => {
     expect(wrapper.find('[data-testid="aurora-cta"]').exists()).toBe(true)
   })
 
-  it('sets a brand glow behind the hero search card', () => {
-    stubAuroraGlobals()
+  it('sets a brand glow behind the hero search card', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraHome)
 
     expect(wrapper.find('[data-testid="hero-search-glow"]').exists()).toBe(true)
   })
 
-  it('leaves out the process and FAQ sections when they are switched off', () => {
-    stubAuroraGlobals()
+  it('leaves out the process and FAQ sections when they are switched off', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraHome, { props: { showProcess: false, showFaq: false } })
 
     expect(wrapper.find('#process').exists()).toBe(false)
@@ -74,9 +62,9 @@ describe('AuroraHome', () => {
   })
 
   it('hides a section whose homepage switch is off and keeps the others', async () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionStats]: SETTING_OFF, [PortalSettingKey.SectionFaq]: SETTING_OFF, [PortalSettingKey.SectionCta]: SETTING_OFF } })
+    await loadGlobals({ settings: { [PortalSettingKey.SectionStats]: SETTING_OFF, [PortalSettingKey.SectionFaq]: SETTING_OFF, [PortalSettingKey.SectionCta]: SETTING_OFF } })
     const wrapper = await mountAfterReads(
-      stub,
+      stub(),
       [StorefrontPath.Partners, StorefrontPath.Locations, StorefrontPath.Testimonials],
       () => mountWithKit(AuroraHome, { props: { plans: PLANS } }),
     )
@@ -99,10 +87,10 @@ describe('AuroraHome', () => {
     replies[readOf(StorefrontPath.Partners)] = { body: [partnerFixture(1), partnerFixture(2)] }
 
     for (const [settings, count] of cases) {
-      stubAuroraGlobals({ settings })
+      await loadGlobals({ settings })
       // The partners are only read while their section is on; the testimonials always are.
       const reads = count > 0 ? [StorefrontPath.Partners, StorefrontPath.Testimonials] : [StorefrontPath.Testimonials]
-      const wrapper = await mountAfterReads(stub, reads, () => mountWithKit(AuroraHome))
+      const wrapper = await mountAfterReads(stub(), reads, () => mountWithKit(AuroraHome))
 
       expect(wrapper.findAll('[data-testid="aurora-partners"]')).toHaveLength(count)
       expect(wrapper.find('[data-testid="aurora-trusted"]').exists()).toBe(false)
@@ -110,11 +98,11 @@ describe('AuroraHome', () => {
   })
 
   it('needs both the prop and the switch for the process section', async () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionProcess]: SETTING_OFF } })
+    await loadGlobals({ settings: { [PortalSettingKey.SectionProcess]: SETTING_OFF } })
     const switchedOff = mountWithKit(AuroraHome)
     expect(switchedOff.find('#process').exists()).toBe(false)
 
-    stubAuroraGlobals()
+    await loadGlobals()
     const propOff = mountWithKit(AuroraHome, { props: { showProcess: false } })
     expect(propOff.find('#process').exists()).toBe(false)
 
@@ -123,15 +111,15 @@ describe('AuroraHome', () => {
   })
 
   it('shows the portfolio projects only when their switch is on', async () => {
-    stubAuroraGlobals({ settings: { [PortalSettingKey.SectionProjects]: SETTING_ON } })
-    const wrapper = await mountAfterReads(stub, [StorefrontPath.Projects], () => mountWithKit(AuroraHome))
+    await loadGlobals({ settings: { [PortalSettingKey.SectionProjects]: SETTING_ON } })
+    const wrapper = await mountAfterReads(stub(), [StorefrontPath.Projects], () => mountWithKit(AuroraHome))
 
     expect(wrapper.exists()).toBe(true)
-    expect(requestsTo(stub.requests, StorefrontPath.Projects)).toHaveLength(1)
+    expect(requestsTo(stub().requests, StorefrontPath.Projects)).toHaveLength(1)
   })
 
   it('passes the search term of the card up to the page', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraHome)
 
     await wrapper.find('[data-testid="home-domain-search-input"]').setValue('acme')
@@ -141,7 +129,7 @@ describe('AuroraHome', () => {
   })
 
   it('passes the billing cycle up to the page', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraHome, { props: { plans: PLANS } })
 
     await wrapper.find('[data-testid="billing-annual"]').trigger('click')
@@ -149,8 +137,8 @@ describe('AuroraHome', () => {
     expect(wrapper.emitted('update:cycle')).toEqual([[PricingCycle.Annual]])
   })
 
-  it('spans the full width with the aurora backdrop and keeps the content in the shared page container', () => {
-    stubAuroraGlobals()
+  it('spans the full width with the aurora backdrop and keeps the content in the shared page container', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraHome)
 
     expect(wrapper.classes()).not.toContain('container-custom')

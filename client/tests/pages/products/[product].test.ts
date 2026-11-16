@@ -9,7 +9,7 @@
  * @module tests/pages/products/[product].test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { mountPage, publishedSchemas, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
 import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -45,6 +45,9 @@ const specifications: ProductFeature[] = [
   { id: 4, productId: 12, label: 'Sites', value: '2', sortOrder: 2 },
 ]
 
+/** The deployment's public address, which every absolute SEO URL of the page starts with. */
+const SITE_URL = 'https://panel.test'
+
 /** The spies of the latest mount, so a test reads the SEO tags the page published. */
 let spies: ReturnType<typeof stubPublicPageRuntime>
 
@@ -58,10 +61,11 @@ let table: StubRouteTable
  * Mounts the page for one product address and waits until the catalogue has been read in the payer currency.
  *
  * @param product The `product` route parameter.
+ * @param publicConfig Further public runtime config of the deployment.
  * @returns The wrapper.
  */
-const mountProduct = async (product = 'alpha-suite') => {
-  spies = stubPublicPageRuntime({ params: { product } })
+const mountProduct = async (product = 'alpha-suite', publicConfig: Record<string, unknown> = {}) => {
+  spies = stubPublicPageRuntime({ params: { product }, baseUrl: SITE_URL, publicConfig })
   const wrapper = await mountPage(ProductPage, { components: { CatalogProductDetail, CatalogProductPlanCard, CatalogProductPlansTable, CatalogProductSectionHeader }, stubs: { 'i18n-t': true, SectionsFAQ: true } })
   await awaitCatalogue()
   return wrapper
@@ -71,7 +75,6 @@ describe('product detail page', () => {
   beforeEach(async () => {
     window.localStorage.clear()
     vi.stubGlobal('open', vi.fn())
-    vi.stubGlobal('useRuntimeConfig', () => ({ public: { baseUrl: 'https://panel.test' } }))
     table = {
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`GET ${CatalogPath.ProductGroups}`]: { body: groups },
@@ -89,7 +92,7 @@ describe('product detail page', () => {
     await mountProduct()
 
     const tags = spies.useSeoMeta.mock.calls.at(-1)?.[0] as { ogImage: string, ogUrl: string }
-    expect(tags.ogImage).toBe('https://panel.test/og-image.jpg')
+    expect(tags.ogImage).toBe(`${SITE_URL}/og-image.jpg`)
     expect(tags.ogUrl).toMatch(/^https:\/\/panel\.test\//)
   })
 
@@ -149,14 +152,20 @@ describe('product detail page', () => {
     const wrapper = await mountProduct()
     expect(wrapper.exists()).toBe(true)
 
-    const documents = spies.injectSchema.mock.calls.at(-1)?.[0] as Array<{ '@type': string, family?: { name: string, url: string, offers: unknown[] } }>
-    const family = documents.find((document) => document['@type'] === 'Product')?.family
+    const family = publishedSchemas(spies).find((document) => document['@type'] === 'Product')
 
-    expect(family).toMatchObject({ name: 'Alpha Suite', url: 'https://panel.test/products/alpha-suite' })
+    expect(family).toMatchObject({ name: 'Alpha Suite', url: `${SITE_URL}/products/alpha-suite` })
     expect(family?.offers).toEqual([
-      { name: 'Starter', price: 10, priceCurrency: 'USD', billingDuration: 'P1M', url: 'https://panel.test/products/alpha-suite' },
-      { name: 'Pro', price: 20, priceCurrency: 'USD', billingDuration: 'P1M', url: 'https://panel.test/products/alpha-suite' },
-    ])
+      { name: 'Starter', price: 10 },
+      { name: 'Pro', price: 20 },
+    ].map(({ name, price }) => ({
+      '@type': 'Offer',
+      name,
+      url: `${SITE_URL}/products/alpha-suite`,
+      price,
+      priceCurrency: 'USD',
+      priceSpecification: { '@type': 'UnitPriceSpecification', price, priceCurrency: 'USD', billingDuration: 'P1M' },
+    })))
   })
 
   it('adds a plan to the cart with the selected cycle and the payer currency', async () => {
@@ -193,8 +202,7 @@ describe('product detail page', () => {
   })
 
   it('opens the billing-portal order page in a new tab when the deployment has one', async () => {
-    vi.stubGlobal('useRuntimeConfig', () => ({ public: { billingPortalUrl: 'https://billing.test' } }))
-    const wrapper = await mountProduct()
+    const wrapper = await mountProduct('alpha-suite', { billingPortalUrl: 'https://billing.test' })
 
     await wrapper.find('[data-testid="product-trial-11"]').trigger('click')
 

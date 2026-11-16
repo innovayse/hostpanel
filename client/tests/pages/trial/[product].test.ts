@@ -7,7 +7,7 @@
  * @module tests/pages/trial/[product].test
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { awaitCatalogue } from '~/tests/helpers/payerCatalogue'
@@ -110,6 +110,6 @@ describe('trial page', () => {
   it('sets the head for the product', async () => {
     await mountTrial()
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ path: '/trial/gamma-tool' }))
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/trial/gamma-tool`)
   })
 })

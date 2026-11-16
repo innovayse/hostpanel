@@ -6,24 +6,25 @@
  *
  * @module tests/pages/index.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, publishedSchemas, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { stubTemplateSlots } from '~/tests/helpers/templateSlots'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { USD_CURRENCY } from '~/tests/helpers/payerCatalogue'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import { until } from '~/tests/helpers/settle'
-import { pathOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { pathOf, requestsTo } from '~/tests/helpers/stubRoutes'
 import { useCurrencyStore } from '~/stores/currency'
 import { useDomainsStore } from '~/stores/domains'
+import { useTemplate } from '~/composables/useTemplate'
 import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
 import { PricingCycle } from '~/types/pricingcycle'
+import { TemplateSlot } from '~/types/templateslot'
 import type { ProductFeature } from '~/types/productfeature'
 import { buildComparisonRows } from '~/utils/comparisonRows'
 
@@ -66,11 +67,8 @@ const HomeStub = defineComponent({
 /** Spies of the stood-in runtime, renewed before each test. */
 let spies: PublicPageSpies
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** The replies of the current test; a test changes them before it mounts. */
-let table: StubRouteTable
+/** What the stub answers, by route, and the accessor of the stub the hooks start and close around each test; a test changes the replies before it mounts. */
+const { replies, stub } = usePortalSettingsServer({ useTemplate })
 
 /**
  * Mounts the page and waits until the template's home component is on screen, which is after the
@@ -84,39 +82,32 @@ describe('pages/index', () => {
   beforeEach(async () => {
     spies = stubPublicPageRuntime()
     window.localStorage.clear()
-    vi.stubGlobal('useTemplate', () => ({ name: 'aurora', slot: () => HomeStub }))
+    stubTemplateSlots({ [TemplateSlot.Home]: HomeStub })
     vi.stubGlobal('buildComparisonRows', buildComparisonRows)
-    table = {
-      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
-      [`GET ${CatalogPath.TldPricing}`]: { body: TLD_PRICING },
-      [`GET ${CatalogPath.Products}`]: { body: [PLAN] },
-      [`GET ${CatalogPath.ProductFeatures}`]: { body: [FEATURE] },
-      [`POST ${CatalogPath.DomainCheck}`]: request => ({
-        body: { domain: (bodyOf(request) as { domain: string }).domain, available: true, status: DomainAvailabilityStatus.Available },
-      }),
-    }
-    stub = await startTransport(routeTable(table))
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
+    replies[`GET ${CatalogPath.BillingCurrencies}`] = { body: [USD_CURRENCY] }
+    replies[`GET ${CatalogPath.TldPricing}`] = { body: TLD_PRICING }
+    replies[`GET ${CatalogPath.Products}`] = { body: [PLAN] }
+    replies[`GET ${CatalogPath.ProductFeatures}`] = { body: [FEATURE] }
+    replies[`POST ${CatalogPath.DomainCheck}`] = request => ({
+      body: { domain: (bodyOf(request) as { domain: string }).domain, available: true, status: DomainAvailabilityStatus.Available },
+    })
+    await loadPortalSettings(replies)
   })
 
   it('sets the home tags and publishes organisation, business and site structured data', async () => {
     await mountHome()
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ title: 'seo.home.title', path: '/' }))
-    const published = spies.injectSchema.mock.calls[0]?.[0] as Array<Record<string, unknown>>
-    expect(published.map(entry => entry['@type'])).toEqual(['Organization', 'LocalBusiness', 'WebSite'])
+    expect(seoTags(spies)).toMatchObject({ title: 'seo.home.title' })
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/`)
+    expect(publishedSchemas(spies).map(entry => entry['@type'])).toEqual(['Organization', 'LocalBusiness', 'WebSite'])
   })
 
   it('reads the TLD prices, the hosting plans and the hosting features', async () => {
     await mountHome()
 
-    expect(requestsTo(stub.requests, CatalogPath.TldPricing)).toHaveLength(1)
-    expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(1)
-    expect(requestsTo(stub.requests, CatalogPath.ProductFeatures)).toHaveLength(1)
+    expect(requestsTo(stub().requests, CatalogPath.TldPricing)).toHaveLength(1)
+    expect(requestsTo(stub().requests, CatalogPath.Products)).toHaveLength(1)
+    expect(requestsTo(stub().requests, CatalogPath.ProductFeatures)).toHaveLength(1)
   })
 
   it('restores the guest currency once mounted', async () => {
@@ -130,8 +121,8 @@ describe('pages/index', () => {
   it('loads the billing currencies during the server render, before the plans', async () => {
     await mountHome()
 
-    expect(requestsTo(stub.requests, CatalogPath.BillingCurrencies)).toHaveLength(1)
-    const order = stub.requests.map(pathOf)
+    expect(requestsTo(stub().requests, CatalogPath.BillingCurrencies)).toHaveLength(1)
+    const order = stub().requests.map(pathOf)
     expect(order.indexOf(CatalogPath.BillingCurrencies)).toBeGreaterThanOrEqual(0)
     expect(order.indexOf(CatalogPath.BillingCurrencies)).toBeLessThan(order.indexOf(CatalogPath.Products))
   })
@@ -164,10 +155,10 @@ describe('pages/index', () => {
     const wrapper = await mountHome()
 
     wrapper.findComponent(HomeStub).vm.$emit('search', 'example')
-    await until(() => requestsTo(stub.requests, CatalogPath.DomainCheck).length === OFFERED_TLDS.length && !useDomainsStore().lookupPending, 'the lookup to finish')
+    await until(() => requestsTo(stub().requests, CatalogPath.DomainCheck).length === OFFERED_TLDS.length && !useDomainsStore().lookupPending, 'the lookup to finish')
     await flushPromises()
 
-    const checked = requestsTo(stub.requests, CatalogPath.DomainCheck).map(request => bodyOf(request))
+    const checked = requestsTo(stub().requests, CatalogPath.DomainCheck).map(request => bodyOf(request))
     expect(checked).toEqual(OFFERED_TLDS.map(tld => ({ domain: `example.${tld}` })))
     const results = wrapper.findComponent(HomeStub).props('domainResults') as Array<{ name: string }>
     expect(results.map(result => result.name)).toEqual(OFFERED_TLDS.map(tld => `example.${tld}`))

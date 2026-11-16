@@ -14,6 +14,8 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import SetupPage from '~/pages/client/services/[id]/setup.vue'
+import { usePortalSettings } from '~/composables/usePortalSettings'
+import { useSiteIdentity } from '~/composables/useSiteIdentity'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
 import { waitUntil } from '~/tests/helpers/waitUntil'
@@ -46,6 +48,8 @@ const pendingService = (overrides: Partial<ClientService> = {}): ClientService =
 beforeEach(async () => {
   navigate.mockReset()
   vi.stubGlobal('navigateTo', navigate)
+  vi.stubGlobal('usePortalSettings', usePortalSettings)
+  vi.stubGlobal('useSiteIdentity', useSiteIdentity)
   table = {}
   stub = await startTransport(routeTable(table))
 })

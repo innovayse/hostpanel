@@ -17,6 +17,8 @@ export interface RouteStubOptions {
   params?: Record<string, string>
   /** The route query (`route.query`). */
   query?: Record<string, string | string[]>
+  /** The path (`route.path`), which the SEO composable builds canonical URLs from; the root unless given. */
+  path?: string
   /** The full path (`route.fullPath`). */
   fullPath?: string
 }
@@ -24,13 +26,13 @@ export interface RouteStubOptions {
 /**
  * Defines `useRoute` as a global returning a fixed route.
  *
- * @param options - Parameters, query and full path of the route.
+ * @param options - Parameters, query, path and full path of the route.
  */
 export const stubRoute = (options: RouteStubOptions = {}): void => {
   vi.stubGlobal('useRoute', () => ({
     params: options.params ?? {},
     query: options.query ?? {},
-    path: '/',
+    path: options.path ?? '/',
     fullPath: options.fullPath ?? '/',
     meta: {},
   }))

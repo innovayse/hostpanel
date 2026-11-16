@@ -1,23 +1,17 @@
 /**
  * Unit tests for AuroraLocations: the locations come from the storefront store, optional lines show only when set, and the section hides when there are none.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import AuroraLocations from '~/templates/aurora/sections/AuroraLocations.vue'
 import type { ServerLocation } from '~/types/serverlocation'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** What the stub answers, by route; the tests below change the locations it serves. */
-const replies: StubRouteTable = {}
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useAuroraGlobals()
 
 /**
  * Makes the stub serve these locations.
@@ -50,19 +44,13 @@ const location = (id: number, overrides: Partial<ServerLocation> = {}): ServerLo
  * @returns The wrapper.
  */
 const mountSection = async () => {
-  stubAuroraGlobals()
-  return mountAfterReads(stub, [StorefrontPath.Locations], () => mountWithKit(AuroraLocations))
+  await loadGlobals()
+  return mountAfterReads(stub(), [StorefrontPath.Locations], () => mountWithKit(AuroraLocations))
 }
 
 describe('AuroraLocations', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
+  beforeEach(() => {
     serve([location(1, { city: 'Frankfurt', latencyNote: '20 ms to Europe' }), location(2)])
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('shows the country code, name, city and latency note of a location', async () => {

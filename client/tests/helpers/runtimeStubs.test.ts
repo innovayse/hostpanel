@@ -22,10 +22,17 @@ describe('stubRoute', () => {
     expect(route.fullPath).toBe('/a?tab=x')
   })
 
+  it('answers with the path it was given', () => {
+    stubRoute({ path: '/announcements/11' })
+
+    expect(useRoute().path).toBe('/announcements/11')
+  })
+
   it('defaults to an empty route at the root', () => {
     stubRoute()
 
     expect(useRoute().fullPath).toBe('/')
+    expect(useRoute().path).toBe('/')
   })
 })
 

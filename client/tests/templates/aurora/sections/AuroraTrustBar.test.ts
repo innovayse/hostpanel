@@ -4,11 +4,14 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import TrustBar from '~/templates/aurora/sections/AuroraTrustBar.vue'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 describe('TrustBar', () => {
-  it('renders the three guarantees', () => {
-    stubAuroraGlobals()
+  it('renders the three guarantees', async () => {
+    await loadGlobals()
     const text = mountWithKit(TrustBar).text()
 
     expect(text).toContain('aurora.trust.ssl')
@@ -16,8 +19,8 @@ describe('TrustBar', () => {
     expect(text).toContain('aurora.trust.noHidden')
   })
 
-  it('centres the guarantees in one card, each icon in a tinted chip, without a shadow', () => {
-    stubAuroraGlobals()
+  it('centres the guarantees in one card, each icon in a tinted chip, without a shadow', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(TrustBar)
 
     expect(wrapper.find('[data-testid="trust-bar"]').classes()).toEqual(expect.arrayContaining(['w-full', 'border-line']))
@@ -26,8 +29,8 @@ describe('TrustBar', () => {
     expect(wrapper.findAll('[data-testid="trust-chip"]')).toHaveLength(3)
   })
 
-  it('names no payment brand', () => {
-    stubAuroraGlobals()
+  it('names no payment brand', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(TrustBar)
 
     expect(wrapper.find('[data-testid="trust-payment"]').exists()).toBe(false)

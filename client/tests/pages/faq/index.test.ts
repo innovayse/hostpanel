@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, publishedSchemas, registerPageComponents, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import { StorefrontPath } from '~/tests/helpers/storefrontSection'
@@ -95,10 +95,11 @@ describe('pages/faq/index', () => {
   it('publishes one structured-data question per FAQ item', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    expect(spies.injectSchema).toHaveBeenCalledTimes(1)
-    const schema = spies.injectSchema.mock.calls[0]?.[0] as { items: Array<{ question: string }> }
-    expect(schema.items).toHaveLength(FAQS.length)
-    expect(schema.items[0]?.question).toBe('Example question 1?')
+    const [schema, ...others] = publishedSchemas(spies)
+    expect(others).toEqual([])
+    const questions = schema?.mainEntity as Array<{ name: string }>
+    expect(questions).toHaveLength(FAQS.length)
+    expect(questions[0]?.name).toBe('Example question 1?')
   })
 
   it('publishes no questions in the structured data when there are none', async () => {
@@ -106,13 +107,13 @@ describe('pages/faq/index', () => {
 
     await mountRenderedPage(Page, ROOT)
 
-    const schema = spies.injectSchema.mock.calls[0]?.[0] as { items: unknown[] }
-    expect(schema.items).toEqual([])
+    expect(publishedSchemas(spies)[0]?.mainEntity).toEqual([])
   })
 
   it('sets the page tags for /faq', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ title: 'seo.faq.title', path: '/faq' }))
+    expect(seoTags(spies)).toMatchObject({ title: 'seo.faq.title' })
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/faq`)
   })
 })

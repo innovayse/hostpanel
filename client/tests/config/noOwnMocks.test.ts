@@ -52,6 +52,12 @@ const SERVER_SETUP_CALL = /\busePortalSettingsServer\(\s*/g
 /** One entry of the helper's argument that is the real thing: a bare identifier, or `name: name`, captured in group 1. */
 const REAL_ENTRY = /^([A-Za-z0-9_$]+)(?:\s*:\s*\1)?$/
 
+/** A named import statement, which may span several lines: its specifier list is group 1, its source group 3. */
+const NAMED_IMPORT = /\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*(['"])([^'"]+)\2/g
+
+/** The source of a real client module the helper may register: a composable, store or util under the `~` or `@` alias. */
+const REAL_SOURCE = /^[~@]\/(?:composables|stores|utils)\//
+
 /** An exported function or constant of a client source file, captured in group 1. */
 const EXPORTED_NAME = /export\s+(?:const|function|async function)\s+([A-Za-z0-9_$]+)/g
 
@@ -122,6 +128,21 @@ const ownGlobalStubs = (text: string, ownNames: ReadonlySet<string>): string[] =
     .filter((name) => ownNames.has(name))
 
 /**
+ * Tells whether a file imports a name, under that same name, from one of our real modules.
+ *
+ * A name imported from a test helper, or renamed on import (`import { fake as useX }`), is not the real thing.
+ *
+ * @param text - File contents.
+ * @param name - The identifier the helper's argument registers.
+ * @returns True when a named import binds `name` to an export of the same name in a composable, store or util.
+ */
+const importsRealModule = (text: string, name: string): boolean =>
+  [...text.matchAll(NAMED_IMPORT)].some((statement) =>
+    REAL_SOURCE.test(statement[3] ?? '') &&
+    (statement[1] ?? '').split(',').some((specifier) => specifier.trim().replace(/^type\s+/, '') === name)
+  )
+
+/**
  * Reads the body of the object literal that opens at an index.
  *
  * @param text - File contents.
@@ -146,7 +167,8 @@ const objectBody = (text: string, start: number): string | null => {
 /**
  * Finds what `usePortalSettingsServer(...)` registers that is not a real, imported composable or helper. The helper
  * stubs each entry as a global by a dynamic name, so a fake would pass the `vi.stubGlobal` scan unseen; here every
- * entry of the argument must be a bare identifier that the file imports. The argument may be an object literal or
+ * entry of the argument must be a bare identifier that the file imports under its own name from a composable,
+ * store or util of the client, not from a test helper. The argument may be an object literal or
  * the name of a `const` object literal in the same file.
  *
  * @param text - File contents.
@@ -171,7 +193,7 @@ const fakedRegistrations = (text: string): string[] =>
     }
     return body.split(',').map((entry) => entry.trim()).filter((entry) => entry !== '').filter((entry) => {
       const name = REAL_ENTRY.exec(entry)?.[1]
-      return !name || !new RegExp(String.raw`^import\s.*\b${name}\b.*\sfrom\s`, 'm').test(text)
+      return !name || !importsRealModule(text, name)
     })
   })
 
@@ -255,6 +277,22 @@ describe('no mocks of our own modules in the client tests', () => {
     expect(fakedRegistrations('usePortalSettingsServer()')).toEqual([])
     expect(fakedRegistrations(`${imports}usePortalSettingsServer({ useX, useY: useY })`)).toEqual([])
     expect(fakedRegistrations(`${imports}const REAL = { useX, useY }\nusePortalSettingsServer(REAL)`)).toEqual([])
+  })
+
+  it('catches a name imported under a rename or from a test helper instead of the real module', () => {
+    const renamed = "import { fake as useX } from '~/composables/useX'\n"
+    const helper = "import { useX } from '~/tests/helpers/fakes'\n"
+
+    expect(fakedRegistrations(`${renamed}usePortalSettingsServer({ useX })`)).toEqual(['useX'])
+    expect(fakedRegistrations(`${helper}usePortalSettingsServer({ useX })`)).toEqual(['useX'])
+  })
+
+  it('reads an import block that spans several lines', () => {
+    const real = "import {\n  useX,\n  useY,\n} from '~/composables/useX'\n"
+    const renamed = "import {\n  useX,\n  fake as useY,\n} from '~/composables/useX'\n"
+
+    expect(fakedRegistrations(`${real}usePortalSettingsServer({ useX, useY })`)).toEqual([])
+    expect(fakedRegistrations(`${renamed}usePortalSettingsServer({ useX, useY })`)).toEqual(['useY'])
   })
 
   it('catches a fake, a local stand-in or an unreadable argument passed to the helper', () => {

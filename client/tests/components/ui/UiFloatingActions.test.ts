@@ -25,6 +25,7 @@ const mountAttached = () => mountWithKit(FloatingActions, { attachToBody: true }
 describe('FloatingActions', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    // The widget API is set on the real window by the tests; drop it so the next test starts without one.
     Reflect.deleteProperty(window, LIVE_CHAT_API_GLOBAL)
   })
 

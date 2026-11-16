@@ -2760,7 +2760,9 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   app because an app's container cannot read the other's files) fail on a `vi.mock` or `vi.doMock` of
   any module of ours; the client one also fails on a test that fakes a composable or store of ours with
   `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed), and its `KNOWN_REMAINDER` list of
-  tests that still do so may only shrink.
+  tests that still do so may only shrink. The guard also reads the argument of `usePortalSettingsServer`:
+  each entry must be a bare name imported from a composable, store or util of the client, never renamed on
+  import and never from a test helper.
   On this laptop vitest needs `--maxWorkers=2`.
 - **e2e.** `admin/e2e/`: Playwright, one spec per flow, `data-testid` selectors only (`fieldOf` for
   inputs), against `vite preview` of a production build with the API replaced by `page.route`

@@ -7,6 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Ref } from 'vue'
+import { documentHead } from '~/tests/helpers/documentHead'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { useAppColorMode } from '~/composables/useAppColorMode'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
@@ -78,7 +79,7 @@ describe('color-mode plugin', () => {
   it('writes the applied mode as the class on html', async () => {
     await loadPlugin()
 
-    const head = useHeadMock.mock.calls[0]![0] as HeadInput
+    const head = documentHead<HeadInput>(useHeadMock)
     expect(head.htmlAttrs.class()).toBe(ColorMode.Dark)
   })
 
@@ -87,7 +88,7 @@ describe('color-mode plugin', () => {
     settings[PortalSettingKey.Template] = TemplateName.Nova
     await loadPlugin()
 
-    const head = useHeadMock.mock.calls[0]![0] as HeadInput
+    const head = documentHead<HeadInput>(useHeadMock)
     const themeColors = head.meta.filter(tag => tag.name === 'theme-color')
     expect(themeColors).toHaveLength(2)
     // A chosen mode wins whatever the device scheme.
@@ -99,7 +100,7 @@ describe('color-mode plugin', () => {
     settings[PortalSettingKey.ThemeDefault] = ColorMode.Light
     await loadPlugin()
 
-    const light = (useHeadMock.mock.calls[0]![0] as HeadInput).meta.filter(tag => tag.name === 'theme-color')
+    const light = documentHead<HeadInput>(useHeadMock).meta.filter(tag => tag.name === 'theme-color')
     expect(light.map(tag => (tag.content as Ref<string>).value)).toEqual(['#f4f5fa', '#f4f5fa'])
 
     applied.value = ColorMode.Dark
@@ -112,7 +113,7 @@ describe('color-mode plugin', () => {
     // The browser half reads a mode back from <html>; clear it to stand for the server render.
     applied.value = null
 
-    const head = useHeadMock.mock.calls[0]![0] as HeadInput
+    const head = documentHead<HeadInput>(useHeadMock)
     const byMedia = Object.fromEntries(head.meta
       .filter(tag => tag.name === 'theme-color')
       .map(tag => [tag.media, (tag.content as Ref<string>).value]))

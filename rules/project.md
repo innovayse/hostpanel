@@ -2123,14 +2123,17 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   `RETRY_PAUSE_SECONDS`. The image pushes of `.build-image` and every `docker compose pull` of the stage, demo and
   production deploys go through it; the fetch of the target commit in `.fetch-target-commit` keeps its own small
   loop, because that job has no checkout of the repository yet (and `$DEPLOY_DIR` is empty on the first deploy);
-  each of its attempts is wrapped in `timeout -k 10 600`, so a hung fetch cannot hold the job.
+  each of its attempts is wrapped in `timeout -k 10 600`, so a hung fetch cannot hold the job. After a killed attempt
+  (status 124 or 137) it removes the lock files git leaves in `.git` (`shallow.lock`, `index.lock`), and a status of 125
+  to 127 stops it at once, like in the retry script.
   A command that cannot run (status 125 to 127) is not retried. The last message of a failure says whether the final
   attempt timed out or was killed (status 124 or 137), could not run, or exited with another status.
   `scripts/test-retry-bounded.sh` tests it, and `scripts/test-deploy-rollback.sh` runs the real
   `before_script` and `after_script` of `deploy:prod` against a fake docker and git, in the GitLab
   `deploy-scripts:test` job and the GitHub `deploy-scripts` job. The deploy jobs have an explicit `timeout:`
-  (`.build-image` and the stage and demo deploys 2 hours, `deploy:prod` 90 minutes) that covers those worst cases;
-  the runner's maximum job timeout must allow it. `deploy:prod` and `deploy:demo` each have a `resource_group`, so
+  (`.build-image` and the stage and demo deploys 2 hours, `deploy:prod` 2 hours: fetch about 41 minutes, pull about 31, health 3, the rest for the database dump) that covers
+  those worst cases;
+  the runner's maximum job timeout must allow it. `deploy:prod`, `deploy:staging` and `deploy:demo` each have a `resource_group`, so
   two deploys of one kind never run at once and never clear each other's markers.
 - `scripts/check-client-owner-ids.sh [container]`: read-only check of what `clients.UserId` points at
   (the local `AspNetUsers.Id` or the external identity provider's subject), run before and after switching
@@ -2208,7 +2211,9 @@ in `before_script` (before any check and before the registry login, so a stale m
 counts), writes `fetched` once the target commit is fetched and `recreating` right before `up -d`. The failure
 handler leaves the running stack alone without `fetched` (the deploy changed nothing), only puts the checkout back
 with `fetched` alone (a pull failed, no container was touched), and rolls back checkout and containers when
-`recreating` exists. It removes both markers on the way out, on success too.
+`recreating` exists. It removes both markers on the way out, on success too. Restoring the checkout runs
+`scripts/clear-stale-submodule-dirs.sh` only when the commit being restored has it (an older commit does not, and
+the rollback goes on, printing that the step is skipped), and prints a `WARNING` when the restore itself fails.
 
 **The host version is the release tag, never the Dockerfile placeholder.** The API image takes its version from the
 `VERSION` build argument (`HostVersion` in `backend/src/Directory.Build.props`), and the host reports it as its own

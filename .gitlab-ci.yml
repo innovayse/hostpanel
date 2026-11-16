@@ -236,17 +236,34 @@ variables:
 # first deploy, so no script of the repository exists yet when it runs. Each attempt is wrapped in GNU `timeout`
 # (the host has it) for the same reason as the pushes: a fetch that hangs would otherwise hold the job for the
 # whole job timeout. 600 s per attempt, and the kill follows 10 s after the first signal.
+# A fetch that was killed (status 124 or 137) can leave a lock file of git (shallow.lock, index.lock, HEAD.lock)
+# that makes the next attempt fail at once, so those are removed before the next attempt. Status 125 to 127 means
+# the command cannot run at all (as in scripts/retry-bounded.sh), so the loop stops there instead of retrying.
 .fetch-target-commit:
   script:
     - |
       attempt=1
-      until timeout -k 10 600 git -C "$DEPLOY_DIR" fetch --depth 1 "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"; do
+      while :; do
+        status=0
+        timeout -k 10 600 git -C "$DEPLOY_DIR" fetch --depth 1 "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA" || status=$?
+        if [ "$status" -eq 0 ]; then
+          break
+        fi
+        case "$status" in
+          125|126|127)
+            echo "Fetching $CI_COMMIT_SHA cannot run (status $status), not retried" >&2
+            exit 1
+            ;;
+          124|137)
+            find "$DEPLOY_DIR/.git" -maxdepth 1 -name '*.lock' -type f -delete
+            ;;
+        esac
         if [ "$attempt" -ge 4 ]; then
           echo "Fetching $CI_COMMIT_SHA failed after $attempt attempts" >&2
           exit 1
         fi
         attempt=$((attempt + 1))
-        echo "Fetch failed, attempt $attempt of 4 in 10 seconds"
+        echo "Fetch failed (status $status), attempt $attempt of 4 in 10 seconds"
         sleep 10
       done
 
@@ -657,6 +674,8 @@ admin:build:dev:
 deploy:staging:
   extends: .deploy-staging
   environment: { name: staging/hostpanel }
+  # Two staging deploys never run at once: both write the same checkout and the same containers.
+  resource_group: staging-deploy
   rules:
     # Staging deploys are off: that host filled its disk and this job fails in get_sources,
     # before the deploy script runs at all. Production is unaffected, it deploys from main,
@@ -790,10 +809,15 @@ deploy:prod:
   # commit is fetched and `recreating` right before the containers are recreated. Markers of an earlier deploy
   # must not count, so the very first thing this job does, before any check and before the registry login, is to
   # remove them; one block, so the test of the handler can run it as it stands.
-  # The worst case is the fetch (four attempts of at most 10 minutes), the database dump, the pull (about 31 minutes)
-  # and the health wait, inside the job limit of 90 minutes. The runner's own maximum job timeout must allow this
-  # limit, or the runner cuts the job short at its maximum.
-  timeout: 90m
+  # The worst case, in seconds:
+  #   fetch   4 * (600 + 10) + 3 * 10                = 2470 (about 41 minutes)
+  #   pull    2 * (900 + 10) + 10                    = 1830 (about 31 minutes)
+  #   health  HEALTH_TIMEOUT_SECONDS                 =  180 (3 minutes)
+  #   total                                          = 4480 (about 75 minutes)
+  # That leaves 45 minutes of the two hours for the database dump, which has no limit of its own, and for the
+  # steps between. The runner's own maximum job timeout must allow this limit, or the runner cuts the job short
+  # at its maximum.
+  timeout: 2h
   # Two production deploys never run at once: they share the checkout and the two markers, and one would clear
   # the other's markers.
   resource_group: production-deploy
@@ -901,13 +925,24 @@ deploy:prod:
       [ "$CI_JOB_STATUS" = "failed" ] || exit 0
       [ -e "$state/fetched" ] || { echo "The deploy failed before the target commit was fetched; nothing changed, the running stack is left alone."; exit 0; }
       cd "$DEPLOY_DIR"
+      # Removes the leftover folders of a path that became a submodule, with the script of the commit now checked out.
+      # A commit from before the script existed has none and nothing to clear, so this is skipped, not an error.
+      clear_stale_submodule_dirs() {
+        if [ -f scripts/clear-stale-submodule-dirs.sh ]; then
+          sh scripts/clear-stale-submodule-dirs.sh .
+        else
+          echo "The commit being restored has no scripts/clear-stale-submodule-dirs.sh, clearing stale submodule folders is skipped."
+        fi
+      }
       # Puts the checkout and its submodules back to the commit recorded before the deploy, the way the forward path
-      # sets them up.
+      # sets them up. The first failing step stops it and prints a warning, so a restore that did not happen is
+      # never mistaken for one that did.
       restore_checkout() {
-        git checkout -f "$(cat "$state/previous-commit")"
-        git submodule sync --recursive
-        sh scripts/clear-stale-submodule-dirs.sh .
-        git submodule update --init --recursive --force
+        git checkout -f "$(cat "$state/previous-commit")" \
+          && git submodule sync --recursive \
+          && clear_stale_submodule_dirs \
+          && git submodule update --init --recursive --force \
+          || echo "WARNING: the checkout could not be restored to $(cat "$state/previous-commit"); $DEPLOY_DIR may be left on the failed deploy's commit." >&2
       }
       if [ ! -e "$state/recreating" ]; then
         echo "The deploy failed before any container was recreated; only the checkout is put back to $(cat "$state/previous-commit")."

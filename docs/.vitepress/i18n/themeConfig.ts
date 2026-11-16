@@ -49,8 +49,8 @@ export interface LocaleThemeOptions {
   demoUrl: string
   /** The endpoint groups the generator wrote; empty in a checkout without them. */
   generated: GeneratedGroup[]
-  /** Edit link: a pattern with `:path`, or a function that gets the page and returns the address. */
-  editPattern: string | ((page: { filePath: string }) => string)
+  /** Edit link: a pattern with `:path`. Never a function, see `editLink.ts`. */
+  editPattern: string
   /** The copyright line of the footer. */
   copyright: string
 }

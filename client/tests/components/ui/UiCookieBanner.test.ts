@@ -5,22 +5,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { TEST_LOCALE_PREFIX, localized, stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import CookieBanner from '~/components/ui/UiCookieBanner.vue'
+import { useCookieConsent } from '~/composables/useCookieConsent'
 import { CookieConsent } from '~/types/cookieconsent'
 import { COOKIE_BANNER_HEIGHT_VAR } from '~/utils/ui/cookieBanner'
 
-/** The consent state the stubbed composable exposes. */
-const consent = ref<CookieConsent | null>(null)
-
-/** Spy for the composable's accept action. */
-const accept = vi.fn()
+/** The browser's cookie the real consent composable reads and writes; `useCookie` is the Nuxt global that hands it out. */
+const cookie = ref<string | null>(null)
 
 describe('CookieBanner', () => {
   beforeEach(() => {
-    consent.value = null
-    accept.mockClear()
-    vi.stubGlobal('useCookieConsent', () => ({ consent, accept }))
-    vi.stubGlobal('useLocalePath', () => (path: string) => '/en' + path)
+    cookie.value = null
+    vi.stubGlobal('useCookie', () => cookie)
+    vi.stubGlobal('useCookieConsent', useCookieConsent)
+    stubLocalePath(TEST_LOCALE_PREFIX)
   })
 
   it('shows after mount when no choice was made', async () => {
@@ -54,7 +53,7 @@ describe('CookieBanner', () => {
   })
 
   it('stays hidden when a choice already exists', async () => {
-    consent.value = CookieConsent.All
+    cookie.value = CookieConsent.All
 
     const wrapper = mountWithKit(CookieBanner)
     await nextTick()
@@ -66,7 +65,7 @@ describe('CookieBanner', () => {
     const wrapper = mountWithKit(CookieBanner)
     await nextTick()
 
-    expect(wrapper.find('[data-testid="cookie-banner-learn-more"]').attributes('href')).toBe('/en/cookie-policy')
+    expect(wrapper.find('[data-testid="cookie-banner-learn-more"]').attributes('href')).toBe(localized('/cookie-policy'))
   })
 
   it('records essential-only and hides', async () => {
@@ -75,7 +74,7 @@ describe('CookieBanner', () => {
 
     await wrapper.find('[data-testid="cookie-banner-essential"]').trigger('click')
 
-    expect(accept).toHaveBeenCalledWith(CookieConsent.Essential)
+    expect(cookie.value).toBe(CookieConsent.Essential)
     expect(wrapper.find('[data-testid="cookie-banner"]').exists()).toBe(false)
   })
 
@@ -85,7 +84,7 @@ describe('CookieBanner', () => {
 
     await wrapper.find('[data-testid="cookie-banner-accept-all"]').trigger('click')
 
-    expect(accept).toHaveBeenCalledWith(CookieConsent.All)
+    expect(cookie.value).toBe(CookieConsent.All)
     expect(wrapper.find('[data-testid="cookie-banner"]').exists()).toBe(false)
   })
 

@@ -8,7 +8,13 @@
 import { nextTick, ref } from 'vue'
 import type { Ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { useCookieConsent } from '~/composables/useCookieConsent'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { CookieConsent } from '~/types/cookieconsent'
+
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useCookieConsent })
 
 /** The plugin definition. */
 interface PluginDefinition {
@@ -20,10 +26,10 @@ interface PluginDefinition {
   setup: () => void
 }
 
-/** The consent state. */
+/** The browser's cookie the real consent composable reads; `useCookie` is the Nuxt global that hands it out. */
 let consent: Ref<CookieConsent | null>
 
-/** The settings the stubbed store answers with. */
+/** The operator's settings the stub answers with, by their dotted key. */
 let settings: Record<string, string> = {}
 
 /**
@@ -32,9 +38,9 @@ let settings: Record<string, string> = {}
  * @returns The plugin definition.
  */
 const loadPlugin = async (): Promise<PluginDefinition> => {
+  await loadPortalSettings(replies, settings)
   vi.stubGlobal('defineNuxtPlugin', (definition: PluginDefinition) => definition)
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
-  vi.stubGlobal('useCookieConsent', () => ({ consent }))
+  vi.stubGlobal('useCookie', () => consent)
   vi.stubGlobal('watch', (await import('vue')).watch)
   const plugin = (await import('~/plugins/tracking.client')).default as unknown as PluginDefinition
   plugin.setup()
@@ -52,7 +58,7 @@ const injected = (): HTMLScriptElement[] => {
 
 beforeEach(() => {
   consent = ref<CookieConsent | null>(null)
-  settings = { 'portal.analytics.gtm_id': 'GTM-TEST' }
+  settings = { [PortalSettingKey.AnalyticsGtmId]: 'GTM-TEST' }
   vi.resetModules()
 })
 

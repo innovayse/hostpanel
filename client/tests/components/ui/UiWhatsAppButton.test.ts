@@ -2,33 +2,27 @@
  * Unit tests for WhatsAppButton: each channel renders only when the operator configured it, with
  * the right link.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import WhatsAppButton from '~/components/ui/UiWhatsAppButton.vue'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 
-/**
- * Stubs the portal settings composable with the given values.
- *
- * @param values Setting values by key.
- */
-const stubSettings = (values: Record<string, string>): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('WhatsAppButton', () => {
-  beforeEach(() => {
-    stubSettings({})
-  })
+  it('renders nothing when no channel is configured', async () => {
+    await loadPortalSettings(replies)
 
-  it('renders nothing when no channel is configured', () => {
     const wrapper = mountWithKit(WhatsAppButton)
 
     expect(wrapper.find('[data-testid="contact-whatsapp"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="contact-telegram"]').exists()).toBe(false)
   })
 
-  it('links WhatsApp with the digits of the number and the encoded greeting', () => {
-    stubSettings({ 'portal.contact.whatsapp': '+374 (10) 123-456' })
+  it('links WhatsApp with the digits of the number and the encoded greeting', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactWhatsapp]: '+374 (10) 123-456' })
 
     const wrapper = mountWithKit(WhatsAppButton)
 
@@ -39,8 +33,8 @@ describe('WhatsAppButton', () => {
     expect(link.attributes('aria-label')).toBe('whatsapp.contactUs')
   })
 
-  it('links Telegram with the handle', () => {
-    stubSettings({ 'portal.contact.telegram': 'hostpanel_support' })
+  it('links Telegram with the handle', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactTelegram]: 'hostpanel_support' })
 
     const wrapper = mountWithKit(WhatsAppButton)
 
@@ -48,8 +42,8 @@ describe('WhatsAppButton', () => {
     expect(wrapper.find('[data-testid="contact-whatsapp"]').exists()).toBe(false)
   })
 
-  it('shows both channels when both are configured', () => {
-    stubSettings({ 'portal.contact.whatsapp': '37410123456', 'portal.contact.telegram': 'support' })
+  it('shows both channels when both are configured', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactWhatsapp]: '37410123456', [PortalSettingKey.ContactTelegram]: 'support' })
 
     const wrapper = mountWithKit(WhatsAppButton)
 

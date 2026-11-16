@@ -4,34 +4,24 @@
  *
  * @module tests/composables/useContactDetails.test
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { describe, expect, it } from 'vitest'
 import { useContactDetails } from '~/composables/useContactDetails'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { stubLocale } from '~/tests/helpers/runtimeStubs'
 
-/**
- * Stubs the settings reader with a fixed set of values.
- *
- * @param values Setting key to value.
- * @param locale The visitor's language.
- */
-const stubSettings = (values: Record<string, string>, locale = 'en'): void => {
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => values[key] ?? '' }))
-  vi.stubGlobal('useI18n', () => ({ locale: ref(locale) }))
-}
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
 
 describe('useContactDetails', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('builds the phone, Telegram and WhatsApp links from the configured values', () => {
-    stubSettings({
-      'portal.contact.email': 'hello@acme.test',
-      'portal.contact.phone': '+1 (555) 010-200',
-      'portal.contact.telegram': '@acme',
-      'portal.contact.whatsapp': '+1 555 010 200',
-      'portal.contact.address': '1 Example Street',
-      'portal.contact.map_url': 'https://maps.example.test/embed',
+  it('builds the phone, Telegram and WhatsApp links from the configured values', async () => {
+    await loadPortalSettings(replies, {
+      [PortalSettingKey.ContactEmail]: 'hello@acme.test',
+      [PortalSettingKey.ContactPhone]: '+1 (555) 010-200',
+      [PortalSettingKey.ContactTelegram]: '@acme',
+      [PortalSettingKey.ContactWhatsapp]: '+1 555 010 200',
+      [PortalSettingKey.ContactAddress]: '1 Example Street',
+      [PortalSettingKey.ContactMapUrl]: 'https://maps.example.test/embed',
     })
 
     const details = useContactDetails()
@@ -45,8 +35,8 @@ describe('useContactDetails', () => {
     expect(details.mapUrl.value).toBe('https://maps.example.test/embed')
   })
 
-  it('answers empty strings when nothing is configured', () => {
-    stubSettings({})
+  it('answers empty strings when nothing is configured', async () => {
+    await loadPortalSettings(replies)
 
     const details = useContactDetails()
 
@@ -58,17 +48,22 @@ describe('useContactDetails', () => {
     expect(details.mapUrl.value).toBe('')
   })
 
-  it('refuses a map address that is not https', () => {
-    stubSettings({ 'portal.contact.map_url': 'http://maps.example.test/embed' })
+  it('refuses a map address that is not https', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactMapUrl]: 'http://maps.example.test/embed' })
 
     expect(useContactDetails().mapUrl.value).toBe('')
   })
 
-  it('reads the address in the visitor language and falls back to the default one', () => {
-    stubSettings({ 'portal.contact.address': '1 Example Street', 'portal.contact.address.ru': 'ул. Примерная, 1' }, 'ru')
+  it('reads the address in the visitor language and falls back to the default one', async () => {
+    await loadPortalSettings(replies, {
+      [PortalSettingKey.ContactAddress]: '1 Example Street',
+      [PortalSettingKey.ContactAddressRu]: 'ул. Примерная, 1',
+    })
+
+    stubLocale('ru')
     expect(useContactDetails().address.value).toBe('ул. Примерная, 1')
 
-    stubSettings({ 'portal.contact.address': '1 Example Street', 'portal.contact.address.ru': 'ул. Примерная, 1' }, 'hy')
+    stubLocale('hy')
     expect(useContactDetails().address.value).toBe('1 Example Street')
   })
 })

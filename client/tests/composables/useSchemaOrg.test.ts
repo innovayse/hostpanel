@@ -5,28 +5,38 @@
  * @module tests/composables/useSchemaOrg.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import { useContactDetails } from '~/composables/useContactDetails'
 import { useSchemaOrg } from '~/composables/useSchemaOrg'
+import { useSiteIdentity } from '~/composables/useSiteIdentity'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 
 /** The base URL of the stood-in site. */
 const BASE = 'https://host.test'
+
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useSiteIdentity, useContactDetails })
 
 /** Spy for `useHead`, to read the scripts that were injected. */
 const useHead = vi.fn()
 
 /**
- * Stubs the Nuxt globals `useSchemaOrg` reads.
+ * Loads the operator's settings and stubs the Nuxt globals `useSchemaOrg` reads. The operator is called
+ * Acme Hosting unless the settings say otherwise.
  *
  * @param settings Operator setting key to value.
  * @param baseUrl The configured public base URL; empty selects the built-in fallback.
- * @param tagline The operator's tagline.
+ * @returns Resolves once the settings are loaded.
  */
-const stubRuntime = (settings: Record<string, string> = {}, baseUrl = BASE, tagline = ''): void => {
+const stubRuntime = async (settings: Record<string, string> = {}, baseUrl = BASE): Promise<void> => {
   vi.stubGlobal('useRuntimeConfig', () => ({ public: { baseUrl } }))
-  vi.stubGlobal('usePortalSettings', () => ({ get: (key: string) => settings[key] ?? '' }))
-  vi.stubGlobal('useSiteIdentity', () => ({ name: ref('Acme Hosting'), tagline: ref(tagline) }))
   vi.stubGlobal('useHead', useHead)
+  await loadPortalSettings(replies, {
+    [PortalSettingKey.SiteName]: 'Acme Hosting',
+    ...settings,
+  })
 }
 
 describe('useSchemaOrg', () => {
@@ -34,20 +44,16 @@ describe('useSchemaOrg', () => {
     useHead.mockClear()
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('exposes the configured base URL and invents no host when none is set', () => {
-    stubRuntime()
+  it('exposes the configured base URL and invents no host when none is set', async () => {
+    await stubRuntime()
     expect(useSchemaOrg().baseUrl).toBe(BASE)
 
-    stubRuntime({}, '')
+    await stubRuntime({}, '')
     expect(useSchemaOrg().baseUrl).toBe('')
   })
 
-  it('describes a product family as a Product with one priced Offer per plan', () => {
-    stubRuntime()
+  it('describes a product family as a Product with one priced Offer per plan', async () => {
+    await stubRuntime()
     const { productFamilySchema } = useSchemaOrg()
 
     const schema = productFamilySchema({
@@ -73,15 +79,15 @@ describe('useSchemaOrg', () => {
     expect(schema.offers?.[1]?.priceSpecification.billingDuration).toBe('P1Y')
   })
 
-  it('publishes no offers for a family with no priced plan', () => {
-    stubRuntime()
+  it('publishes no offers for a family with no priced plan', async () => {
+    await stubRuntime()
     const schema = useSchemaOrg().productFamilySchema({ name: 'Web Hosting', description: 'd', url: '/p', offers: [] })
 
     expect(schema).not.toHaveProperty('offers')
   })
 
-  it('publishes no offer, rating or served area the operator never stated', () => {
-    stubRuntime()
+  it('publishes no offer, rating or served area the operator never stated', async () => {
+    await stubRuntime()
     const { productSchema, serviceSchema } = useSchemaOrg()
 
     const product = productSchema({ name: 'P', description: 'd', url: '/p' })
@@ -92,8 +98,8 @@ describe('useSchemaOrg', () => {
     expect(service).not.toHaveProperty('areaServed')
   })
 
-  it('names the organisation after the operator and uses their tagline when set', () => {
-    stubRuntime({}, BASE, 'Calm hosting')
+  it('names the organisation after the operator and uses their tagline when set', async () => {
+    await stubRuntime({ [PortalSettingKey.SiteTagline]: 'Calm hosting' })
 
     const schema = useSchemaOrg().organizationSchema()
 
@@ -103,8 +109,8 @@ describe('useSchemaOrg', () => {
     expect(schema['@id']).toBe(`${BASE}/#organization`)
   })
 
-  it('omits the description when the operator set no tagline', () => {
-    stubRuntime()
+  it('omits the description when the operator set no tagline', async () => {
+    await stubRuntime()
 
     const schema = useSchemaOrg()
 
@@ -112,15 +118,13 @@ describe('useSchemaOrg', () => {
     expect(schema.websiteSchema()).not.toHaveProperty('description')
   })
 
-  it('builds sameAs and the contact fields from the operator settings', () => {
-    stubRuntime()
-    vi.stubGlobal('useContactDetails', () => ({
-      email: ref('hello@acme.test'),
-      phone: ref('+1 555 0100'),
-      telegramUrl: ref('https://t.me/acme'),
-      whatsappUrl: ref(''),
-      address: ref('1 Example Street'),
-    }))
+  it('builds sameAs and the contact fields from the operator settings', async () => {
+    await stubRuntime({
+      [PortalSettingKey.ContactEmail]: 'hello@acme.test',
+      [PortalSettingKey.ContactPhone]: '+1 555 0100',
+      [PortalSettingKey.ContactTelegram]: '@acme',
+      [PortalSettingKey.ContactAddress]: '1 Example Street',
+    })
 
     const schema = useSchemaOrg().organizationSchema()
 
@@ -130,11 +134,8 @@ describe('useSchemaOrg', () => {
     expect(schema.address?.streetAddress).toBe('1 Example Street')
   })
 
-  it('omits every operator field that is not set and publishes no invented facts', () => {
-    stubRuntime()
-    vi.stubGlobal('useContactDetails', () => ({
-      email: ref(''), phone: ref(''), telegramUrl: ref(''), whatsappUrl: ref(''), address: ref(''),
-    }))
+  it('omits every operator field that is not set and publishes no invented facts', async () => {
+    await stubRuntime()
 
     const schema = useSchemaOrg().organizationSchema() as Record<string, unknown>
     const business = useSchemaOrg().localBusinessSchema() as Record<string, unknown>
@@ -148,8 +149,8 @@ describe('useSchemaOrg', () => {
     }
   })
 
-  it('links the website schema to the organisation and lists every language', () => {
-    stubRuntime()
+  it('links the website schema to the organisation and lists every language', async () => {
+    await stubRuntime()
 
     const schema = useSchemaOrg().websiteSchema()
 
@@ -158,8 +159,8 @@ describe('useSchemaOrg', () => {
     expect(schema.inLanguage).toEqual(['en', 'ru', 'hy'])
   })
 
-  it('names the local business after the operator', () => {
-    stubRuntime()
+  it('names the local business after the operator', async () => {
+    await stubRuntime()
 
     const schema = useSchemaOrg().localBusinessSchema()
 
@@ -167,8 +168,8 @@ describe('useSchemaOrg', () => {
     expect(schema.name).toBe('Acme Hosting')
   })
 
-  it('makes a relative service URL absolute and keeps an absolute one', () => {
-    stubRuntime()
+  it('makes a relative service URL absolute and keeps an absolute one', async () => {
+    await stubRuntime()
     const { serviceSchema } = useSchemaOrg()
     const service = { name: 'S', description: 'D', serviceType: 'Hosting' }
 
@@ -176,8 +177,8 @@ describe('useSchemaOrg', () => {
     expect(serviceSchema({ ...service, url: 'https://other.test/x' }).url).toBe('https://other.test/x')
   })
 
-  it('makes a relative product URL absolute and keeps an absolute one', () => {
-    stubRuntime()
+  it('makes a relative product URL absolute and keeps an absolute one', async () => {
+    await stubRuntime()
     const { productSchema } = useSchemaOrg()
     const product = { name: 'P', description: 'D' }
 
@@ -185,8 +186,8 @@ describe('useSchemaOrg', () => {
     expect(productSchema({ ...product, url: 'https://other.test/p' }).url).toBe('https://other.test/p')
   })
 
-  it('numbers breadcrumb steps from one and absolutises their URLs', () => {
-    stubRuntime()
+  it('numbers breadcrumb steps from one and absolutises their URLs', async () => {
+    await stubRuntime()
 
     const schema = useSchemaOrg().breadcrumbSchema([
       { name: 'Home', url: '/' },
@@ -199,8 +200,8 @@ describe('useSchemaOrg', () => {
     ])
   })
 
-  it('maps FAQ entries to questions with accepted answers', () => {
-    stubRuntime()
+  it('maps FAQ entries to questions with accepted answers', async () => {
+    await stubRuntime()
 
     const schema = useSchemaOrg().faqSchema([{ question: 'Q?', answer: 'A.' }])
 
@@ -210,8 +211,8 @@ describe('useSchemaOrg', () => {
     ])
   })
 
-  it('describes an article with an absolute URL and only the fields it was given', () => {
-    stubRuntime()
+  it('describes an article with an absolute URL and only the fields it was given', async () => {
+    await stubRuntime()
     const { articleSchema } = useSchemaOrg()
 
     expect(articleSchema({ headline: 'H', url: '/announcements/3', description: 'D', datePublished: '2026-03-15T12:00:00Z' })).toEqual({
@@ -230,8 +231,8 @@ describe('useSchemaOrg', () => {
     expect(bare.url).toBe('https://other.test/a')
   })
 
-  it('reads a getter again each time the head renders', () => {
-    stubRuntime()
+  it('reads a getter again each time the head renders', async () => {
+    await stubRuntime()
     const schema = ref<object[]>([])
 
     useSchemaOrg().injectSchema(() => schema.value)
@@ -242,8 +243,8 @@ describe('useSchemaOrg', () => {
     expect(render().script).toHaveLength(1)
   })
 
-  it('injects one JSON-LD script per schema into the head', () => {
-    stubRuntime()
+  it('injects one JSON-LD script per schema into the head', async () => {
+    await stubRuntime()
     const { injectSchema } = useSchemaOrg()
     const first = { '@type': 'A' }
     const second = { '@type': 'B' }
@@ -257,8 +258,8 @@ describe('useSchemaOrg', () => {
     ])
   })
 
-  it('accepts a single schema object as well as a list', () => {
-    stubRuntime()
+  it('accepts a single schema object as well as a list', async () => {
+    await stubRuntime()
 
     useSchemaOrg().injectSchema({ '@type': 'A' })
 

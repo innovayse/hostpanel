@@ -68,6 +68,18 @@ internal static class VatTestSeeds
         return client.Id;
     }
 
+    /// <summary>Removes a client's VAT number, bypassing HTTP, as if the client had changed it meanwhile.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="clientId">The client.</param>
+    /// <returns>A task that completes when the number is gone.</returns>
+    public static async Task RemoveTaxIdAsync(IntegrationTestFactory factory, int clientId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        await context.Clients.Where(c => c.Id == clientId)
+            .ExecuteUpdateAsync(set => set.SetProperty(c => c.TaxId, (string?)null), CancellationToken.None);
+    }
+
     /// <summary>Reads what a client holds of its VAT number check.</summary>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <param name="clientId">The client.</param>

@@ -136,6 +136,33 @@ public sealed class RecheckVatNumbersCronTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>
+    /// "In a row" means in a row: an answer with no verdict, then one that is not "no verdict" (here a client whose number was
+    /// removed after the queue was read), then two more with none, stops the country only at the second of those two, so the
+    /// count started again after the answer in between.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnswerOtherThanNoVerdict_StartsTheCountOfUnavailableAgain()
+    {
+        var ids = new List<int>();
+        for (var i = 0; i < 4; i++)
+        {
+            ids.Add(await VatTestSeeds.SeedClientAsync(factory, "ES", "ES" + UniqueDigits()));
+        }
+
+        // Asking about the first removes the second's number, so the check of the second fails for another reason than no verdict.
+        var checker = new FakeVatNumberChecker(lookup =>
+        {
+            VatTestSeeds.RemoveTaxIdAsync(factory, ids[1]).GetAwaiter().GetResult();
+            return new VatNumberCheck(VatCheckOutcome.Unavailable);
+        });
+
+        await RunAsync(HostWith(checker, stopAfterUnavailable: 2));
+
+        checker.Lookups.Count(l => l.Country == "ES").Should().Be(3);
+    }
+
+    /// <summary>
     /// Clients of a country whose register is not set up are never asked about, so they cannot take the queue, and the other
     /// countries are checked as usual.
     /// </summary>

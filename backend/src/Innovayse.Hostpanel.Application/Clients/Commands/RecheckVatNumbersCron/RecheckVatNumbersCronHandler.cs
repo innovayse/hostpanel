@@ -135,16 +135,16 @@ public sealed class RecheckVatNumbersCronHandler
 
                 attemptedIds.Add(client.Id);
                 var outcome = await _bus.InvokeAsync<Result>(new CheckClientVatCommand(client.Id), ct);
-                if (outcome.IsSuccess)
-                {
-                    checkedCount++;
-                    unavailableInARow.Remove(client.Country);
-                    continue;
-                }
-
                 if (outcome.ErrorCode != HostpanelErrorCodes.VAT_SERVICE_UNAVAILABLE)
                 {
-                    // A client that changed since the query (number removed, country moved) is simply not due any more.
+                    // Any answer but "no verdict" breaks the run, so the count is of answers in a row. A client that changed
+                    // since the query (number removed, country moved) is simply not due any more.
+                    unavailableInARow.Remove(client.Country);
+                    if (outcome.IsSuccess)
+                    {
+                        checkedCount++;
+                    }
+
                     continue;
                 }
 

@@ -2122,12 +2122,16 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   worst) and a call overrides them for itself with `RETRY_ATTEMPTS`, `RETRY_TIMEOUT_SECONDS` (at least 1) and
   `RETRY_PAUSE_SECONDS`. The image pushes of `.build-image` and every `docker compose pull` of the stage, demo and
   production deploys go through it; the fetch of the target commit in `.fetch-target-commit` keeps its own small
-  loop, because that job has no checkout of the repository yet (and `$DEPLOY_DIR` is empty on the first deploy).
-  The last message of a failure says whether the final attempt timed out (status 124 or 137) or exited with another
-  status. `scripts/test-retry-bounded.sh` tests it, and `scripts/test-deploy-rollback.sh` runs the real
+  loop, because that job has no checkout of the repository yet (and `$DEPLOY_DIR` is empty on the first deploy);
+  each of its attempts is wrapped in `timeout -k 10 600`, so a hung fetch cannot hold the job.
+  A command that cannot run (status 125 to 127) is not retried. The last message of a failure says whether the final
+  attempt timed out or was killed (status 124 or 137), could not run, or exited with another status.
+  `scripts/test-retry-bounded.sh` tests it, and `scripts/test-deploy-rollback.sh` runs the real
   `before_script` and `after_script` of `deploy:prod` against a fake docker and git, in the GitLab
   `deploy-scripts:test` job and the GitHub `deploy-scripts` job. The deploy jobs have an explicit `timeout:`
-  (`.build-image` and the stage and demo deploys 2 hours, `deploy:prod` 90 minutes) that covers those worst cases.
+  (`.build-image` and the stage and demo deploys 2 hours, `deploy:prod` 90 minutes) that covers those worst cases;
+  the runner's maximum job timeout must allow it. `deploy:prod` and `deploy:demo` each have a `resource_group`, so
+  two deploys of one kind never run at once and never clear each other's markers.
 - `scripts/check-client-owner-ids.sh [container]`: read-only check of what `clients.UserId` points at
   (the local `AspNetUsers.Id` or the external identity provider's subject), run before and after switching
   `AUTH_MODE`. Defaults to the `hostpanel-db` container; on a remote host pipe it as

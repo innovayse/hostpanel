@@ -6,8 +6,11 @@
 #     DEPLOY_DIR, a failed registry login), so a stale marker never makes a later failure roll back;
 #   - after_script leaves the running stack alone when the deploy failed before the fetch, only restores the
 #     checkout when it failed after the fetch but before any container was recreated, rolls back fully once
-#     the containers were being recreated, does nothing on a failure with nothing recorded, and removes the
-#     markers on success and on failure.
+#     the containers were being recreated (both restores clear stale submodule folders first), does nothing
+#     on a failure with nothing recorded, and removes the markers on success and on failure.
+#
+# It also checks the order of the deploy script: the fetch, the fetched marker and the checkout, then the retried
+# pull, the recreating marker and the start of the containers.
 #
 # Usage: sh scripts/test-deploy-rollback.sh
 
@@ -57,6 +60,43 @@ extract() {
 
 extract before_script before.sh
 extract after_script handler.sh
+
+# Prints the lines of the `script` key of deploy:prod that are not comments, without the YAML indentation.
+script_lines() {
+  awk '
+    { sub(/[[:cntrl:]]$/, "") }
+    /^deploy:prod:/ { job = 1; next }
+    job && /^[^ #]/ { job = 0 }
+    job && $0 == "  script:" { inside = 1; next }
+    inside && /^  [^ ]/ { inside = 0 }
+    inside && $0 !~ /^ *#/ { print }
+  ' "$ROOT/.gitlab-ci.yml"
+}
+
+# Prints yes when each text given after the file $1 is found, as a fixed string, on a line of that file, the
+# second after the line of the first and so on.
+in_order() {
+  file="$1"
+  shift
+  position=0
+  for text in "$@"; do
+    position="$(PATTERN="$text" awk -v start="$position" 'NR > start && index($0, ENVIRON["PATTERN"]) { print NR; exit }' "$file")"
+    if [ -z "$position" ]; then
+      echo no
+      return
+    fi
+  done
+  echo yes
+}
+
+# The markers only protect the deploy when they are written at these points, so the order of the script is
+# checked: the fetch, then the fetched marker, then the checkout; the pull through the shared retry script, then
+# the recreating marker, then the start of the containers.
+script_lines > "$WORK/script.txt"
+expect "the deploy script writes the fetched marker between the fetch and the checkout" "yes" \
+  "$(in_order "$WORK/script.txt" '!reference [.fetch-target-commit, script]' 'touch "$DEPLOY_DIR/.deploy/fetched"' 'checkout -f "$CI_COMMIT_SHA"')"
+expect "the deploy script writes the recreating marker between the retried pull and the start" "yes" \
+  "$(in_order "$WORK/script.txt" 'scripts/retry-bounded.sh docker compose pull' 'touch "$DEPLOY_DIR/.deploy/recreating"' 'compose up -d --no-build')"
 
 # The extraction must fail on a key with two items or with a plain item, or the checks above prove nothing.
 cat > "$WORK/two-items.yml" <<'YAML'
@@ -108,6 +148,12 @@ prepare() {
     : > "$WORK/deploy/.deploy/recreating"
   fi
   echo 'echo "health $*" >> "'"$WORK/calls"'"' > "$WORK/deploy/scripts/wait-for-health.sh"
+  echo 'echo "clear $*" >> "'"$WORK/calls"'"' > "$WORK/deploy/scripts/clear-stale-submodule-dirs.sh"
+}
+
+# Prints yes when the recorded calls hold a `clear` call right before a `git submodule update`, as the forward path does.
+clear_precedes_update() {
+  awk '/^clear / { cleared = 1; next } /^git submodule update/ { if (cleared) { found = 1 } } { cleared = 0 } END { print found ? "yes" : "no" }' "$WORK/calls"
 }
 
 # Runs the after_script with the job status $1. Prints its exit status; the output is in $WORK/out.
@@ -159,7 +205,7 @@ rm -rf "$WORK/fresh" "$WORK/login-fails"
 : > "$WORK/calls"
 expect "an unset DEPLOY_DIR fails the before_script" "1" "$(run_before "")"
 expect "an unset DEPLOY_DIR is named in the message" "yes" "$(output_has "DEPLOY_DIR must be set")"
-expect "an unset DEPLOY_DIR creates nothing" "0" "$(calls_matching 'login')"
+expect "an unset DEPLOY_DIR does not reach the registry login" "0" "$(calls_matching 'login')"
 expect "a new DEPLOY_DIR gets its .deploy folder" "0" "$(run_before "$WORK/fresh")"
 expect "the .deploy folder exists" "yes" "$(exists "$WORK/fresh/.deploy")"
 
@@ -173,6 +219,7 @@ prepare yes no yes
 expect "a failure after the fetch only ends cleanly" "0" "$(run_handler failed)"
 expect "a failure after the fetch only checks out the previous commit" "1" "$(calls_matching 'git checkout -f abc123')"
 expect "a failure after the fetch only syncs the submodules" "1" "$(calls_matching 'git submodule update')"
+expect "a failure after the fetch only clears stale submodule folders before the update" "yes" "$(clear_precedes_update)"
 expect "a failure after the fetch only recreates nothing" "0" "$(calls_matching 'compose|tag|health')"
 expect "a failure after the fetch only says no container was recreated" "yes" "$(output_has "before any container was recreated")"
 expect "a failure after the fetch only removes the markers" "no" "$(exists "$WORK/deploy/.deploy/fetched")"
@@ -184,6 +231,7 @@ expect "a failure after the fetch with nothing recorded still restores the check
 prepare yes yes yes
 expect "a failure while recreating ends cleanly" "0" "$(run_handler failed)"
 expect "a failure while recreating checks out the previous commit" "1" "$(calls_matching 'git checkout -f abc123')"
+expect "a failure while recreating clears stale submodule folders before the update" "yes" "$(clear_precedes_update)"
 expect "a failure while recreating recreates the recorded service" "1" "$(calls_matching 'compose up -d --no-deps --force-recreate --no-build hostpanel-api')"
 expect "a failure while recreating waits for the site" "1" "$(calls_matching 'health')"
 expect "a failure while recreating removes the fetched marker" "no" "$(exists "$WORK/deploy/.deploy/fetched")"

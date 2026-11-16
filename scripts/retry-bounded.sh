@@ -20,8 +20,10 @@
 #   RETRY_TIMEOUT_SECONDS   limit of one attempt, at least 1, default 900
 #   RETRY_PAUSE_SECONDS     pause between attempts, 0 or more, default 10
 #
-# Exit status: 0 the command succeeded, 1 every attempt failed or timed out, 2 usage. The last message
-# on a failure names how the final attempt ended: "timed out" (status 124 or 137) or "exit status N".
+# Exit status: 0 the command succeeded, 1 every attempt failed or timed out, or the command cannot run, 2 usage.
+# A command that cannot run (status 125 to 127: the timeout itself failed, the command is not executable or was
+# not found) is not retried, a second attempt would end the same way. The last message on a failure names how
+# the final attempt ended: "timed out or was killed" (status 124 or 137), "cannot run" or "exit status N".
 
 set -eu
 
@@ -60,7 +62,11 @@ while :; do
     exit 0
   fi
   case "$status" in
-    124|137) how="timed out after ${limit} seconds (status $status)" ;;
+    125|126|127)
+      echo "ERROR: '$*' cannot run (status $status), not retried." >&2
+      exit 1
+      ;;
+    124|137) how="timed out or was killed (status $status)" ;;
     *) how="exit status $status" ;;
   esac
   if [ "$attempt" -ge "$attempts" ]; then

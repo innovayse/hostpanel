@@ -3,7 +3,8 @@
 # Tests scripts/retry-bounded.sh with fake commands: a command that succeeds is run once, a failed or
 # stalled one is retried and the run continues, one that keeps failing ends with a message naming how the
 # last attempt ended after the bounded attempts, a command that ignores the first signal is killed, the
-# pause is kept, arguments with spaces arrive intact, and a bad setting or a missing command is refused.
+# pause is kept, arguments with spaces arrive intact, a command that cannot run is not retried, and a bad
+# setting or a missing command is refused.
 #
 # Usage: sh scripts/test-retry-bounded.sh
 
@@ -93,7 +94,7 @@ expect "the final message names the exit status of a failure" "yes" "$(file_has 
 
 fake_command hung 99 stall
 expect "a command that always stalls exits 1" "1" "$(RETRY_ATTEMPTS=1 run "$WORK/hung")"
-expect "the final message says the last attempt timed out" "yes" "$(file_has "$WORK/err" "timed out after 1 seconds (status 124)")"
+expect "the final message says the last attempt timed out" "yes" "$(file_has "$WORK/err" "timed out or was killed (status 124)")"
 
 # A command that ignores SIGTERM is only stopped by the kill that follows the grace period. The grace is
 # ten seconds, so this check takes about eleven, and a missing -k would leave it running for the full minute.
@@ -102,7 +103,15 @@ started="$(date +%s)"
 expect "a command that ignores the first signal is killed and exits 1" "1" "$(RETRY_ATTEMPTS=1 run "$WORK/deaf")"
 elapsed=$(($(date +%s) - started))
 expect "the kill came within the grace period" "yes" "$([ "$elapsed" -lt 30 ] && echo yes || echo no)"
-expect "the kill is reported as a timeout" "yes" "$(file_has "$WORK/err" "timed out after 1 seconds (status 137)")"
+expect "the kill is reported as a timeout" "yes" "$(file_has "$WORK/err" "timed out or was killed (status 137)")"
+
+# A command that cannot run is not retried: not found (127) and not executable (126) end the run at once.
+expect "a missing command exits 1" "1" "$(RETRY_ATTEMPTS=3 run "$WORK/no-such-command")"
+expect "a missing command is reported as one that cannot run" "yes" "$(file_has "$WORK/err" "cannot run (status 127)")"
+expect "a missing command is not retried" "no" "$(file_has "$WORK/out" "Attempt failed")"
+printf '#!/usr/bin/env sh\n' > "$WORK/not-executable"
+expect "a command that is not executable exits 1" "1" "$(RETRY_ATTEMPTS=3 run "$WORK/not-executable")"
+expect "a command that is not executable is reported as one that cannot run" "yes" "$(file_has "$WORK/err" "cannot run (status 126)")"
 
 rm -f "$WORK/broken.count"
 expect "RETRY_ATTEMPTS sets the bound" "1" "$(RETRY_ATTEMPTS=4 run "$WORK/broken")"

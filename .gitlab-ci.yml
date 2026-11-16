@@ -188,7 +188,8 @@ variables:
     DOCKER_BUILDKIT: "1"
     # The version comes from the newest release tag, so the clone needs its whole history and its tags.
     GIT_DEPTH: "0"
-  # The build and the clone, then the two pushes at their worst case (62 minutes).
+  # The build and the clone, then the two pushes at their worst case (62 minutes). The runner's own maximum job
+  # timeout must allow this limit, or the runner cuts the job short at its maximum.
   timeout: 2h
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
@@ -222,7 +223,7 @@ variables:
     # limit above is two hours. Any failed push is retried, an authentication failure included.
     - |
       for tag in "$TAG" "$CI_COMMIT_SHORT_SHA"; do
-        sh scripts/retry-bounded.sh docker push "$IMAGE:$tag" || exit 1
+        sh scripts/retry-bounded.sh docker push "$IMAGE:$tag"
       done
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
@@ -232,12 +233,14 @@ variables:
 # A long transfer can break on a flaky link, so the fetch is retried a bounded number of times. The loop is
 # written out here and does not use scripts/retry-bounded.sh on purpose: the job has no checkout of its own
 # (GIT_STRATEGY none) and this fetch is what brings the repository to $DEPLOY_DIR, an empty directory on the
-# first deploy, so no script of the repository exists yet when it runs.
+# first deploy, so no script of the repository exists yet when it runs. Each attempt is wrapped in GNU `timeout`
+# (the host has it) for the same reason as the pushes: a fetch that hangs would otherwise hold the job for the
+# whole job timeout. 600 s per attempt, and the kill follows 10 s after the first signal.
 .fetch-target-commit:
   script:
     - |
       attempt=1
-      until git -C "$DEPLOY_DIR" fetch --depth 1 "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"; do
+      until timeout -k 10 600 git -C "$DEPLOY_DIR" fetch --depth 1 "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"; do
         if [ "$attempt" -ge 4 ]; then
           echo "Fetching $CI_COMMIT_SHA failed after $attempt attempts" >&2
           exit 1
@@ -311,7 +314,8 @@ variables:
   # stale entry would otherwise be left behind.
   after_script:
     - docker logout "$CI_REGISTRY" || true
-  # The pull at its worst case (31 minutes), the three image builds after it and, in the demo, the fetch.
+  # The pull at its worst case (31 minutes), the three image builds after it and, in the demo, the fetch. The
+  # runner's own maximum job timeout must allow this limit, or the runner cuts the job short at its maximum.
   timeout: 2h
   rules:
     # Off with the job that extends this. A rule here is overridden by any job that
@@ -692,6 +696,8 @@ deploy:staging:
 deploy:demo:
   extends: .deploy-staging
   tags: [prod]
+  # Two demo deploys never run at once: both write the same checkout and the same containers.
+  resource_group: demo-deploy
   variables:
     # The demo has a checkout of its own (DEPLOY_DIR, scoped to demo/hostpanel): this job runs
     # `git checkout -f`, which in production's directory would swap the files under the running
@@ -784,9 +790,13 @@ deploy:prod:
   # commit is fetched and `recreating` right before the containers are recreated. Markers of an earlier deploy
   # must not count, so the very first thing this job does, before any check and before the registry login, is to
   # remove them; one block, so the test of the handler can run it as it stands.
-  # The worst case is the fetch (four attempts), the database dump, the pull (about 31 minutes) and the
-  # health wait, inside the job limit of 90 minutes.
+  # The worst case is the fetch (four attempts of at most 10 minutes), the database dump, the pull (about 31 minutes)
+  # and the health wait, inside the job limit of 90 minutes. The runner's own maximum job timeout must allow this
+  # limit, or the runner cuts the job short at its maximum.
   timeout: 90m
+  # Two production deploys never run at once: they share the checkout and the two markers, and one would clear
+  # the other's markers.
+  resource_group: production-deploy
   # The images are pulled from the project's registry with the job's own token, which dies with the job.
   before_script:
     - |
@@ -891,11 +901,17 @@ deploy:prod:
       [ "$CI_JOB_STATUS" = "failed" ] || exit 0
       [ -e "$state/fetched" ] || { echo "The deploy failed before the target commit was fetched; nothing changed, the running stack is left alone."; exit 0; }
       cd "$DEPLOY_DIR"
-      if [ ! -e "$state/recreating" ]; then
-        echo "The deploy failed before any container was recreated; only the checkout is put back to $(cat "$state/previous-commit")."
+      # Puts the checkout and its submodules back to the commit recorded before the deploy, the way the forward path
+      # sets them up.
+      restore_checkout() {
         git checkout -f "$(cat "$state/previous-commit")"
         git submodule sync --recursive
+        sh scripts/clear-stale-submodule-dirs.sh .
         git submodule update --init --recursive --force
+      }
+      if [ ! -e "$state/recreating" ]; then
+        echo "The deploy failed before any container was recreated; only the checkout is put back to $(cat "$state/previous-commit")."
+        restore_checkout
         exit 0
       fi
       [ -s "$state/previous-images" ] || { echo "Nothing recorded to roll back to."; exit 0; }
@@ -904,9 +920,7 @@ deploy:prod:
         docker logs --tail 80 "$svc" 2>&1 || true
       done
       echo "──── rolling back to $(cat "$state/previous-commit") ────"
-      git checkout -f "$(cat "$state/previous-commit")"
-      git submodule sync --recursive
-      git submodule update --init --recursive --force
+      restore_checkout
       # Compose runs each service on ${IMAGE_REGISTRY}/<name>:${IMAGE_TAG}, with <name> the service key without
       # its product prefix. Put the recorded image under that name, so the recreate below starts it.
       while read -r svc previous; do

@@ -306,7 +306,7 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task APluginThatAnswersJustInTime_IsAnsweredNormally()
+    public async Task APluginThatAnswersWithinTheLimit_IsAnsweredNormally()
     {
         using var http = await OwnerAsync(Timed(InTimeLimitSeconds), "timeout-in-time");
         var running = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -319,7 +319,14 @@ public sealed class PluginCallTimeoutTests : IClassFixture<AppPluginFixture>, ID
         };
 
         var call = ClientCallAsync(http, HttpMethod.Get, "ping");
-        await running.Task.WaitAsync(Patience);
+        // A call that ends before the plugin ever runs surfaces its own failure here instead of a bare wait timeout.
+        var first = await Task.WhenAny(running.Task, call).WaitAsync(Patience);
+        if (first == call)
+        {
+            using var early = await call;
+            first.Should().NotBeSameAs(call, "the call ended with {0} before the plugin ran", early.StatusCode);
+        }
+
         answer.SetResult();
         using var response = await call;
 

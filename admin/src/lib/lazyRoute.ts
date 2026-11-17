@@ -55,9 +55,11 @@ const attempt = <T>(loader: () => Promise<T>): Promise<T> =>
     const timer = setTimeout(() => {
       reject(new Error(`Loading a screen took longer than ${LOAD_TIMEOUT_MS} ms`))
     }, LOAD_TIMEOUT_MS)
-    // Run the loader inside the chain so a loader that throws instead of rejecting still clears the timer.
-    Promise.resolve()
-      .then(loader)
+    // The loader runs at once, so a prefetch starts the download straight away; running it inside a promise
+    // executor turns a loader that throws instead of rejecting into a rejection, which still clears the timer.
+    new Promise<T>((run) => {
+      run(loader())
+    })
       .then(resolve, reject)
       .finally(() => {
         clearTimeout(timer)

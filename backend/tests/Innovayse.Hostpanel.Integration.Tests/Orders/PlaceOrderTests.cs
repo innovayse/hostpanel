@@ -484,6 +484,48 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>
+    /// A signed-in caller with a client row and no Client role who places two orders at the same moment: both are
+    /// placed and the role is granted exactly once. Both requests find the role missing and grant it, and the second
+    /// grant used to break the key of the role table and answer 500.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TwoFirstOrdersOfOneCallerPlacedTogetherBothSucceedAndGrantTheClientRoleOnce()
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync();
+        var subject = await ClientsTestSeeds.CreateUnlinkedSubjectAsync(factory, "orderer-parallel");
+        using (var seed = factory.Services.CreateScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Clients.Add(Domain.Clients.Client.Create(subject.UserId, "Fresh", "Parallel", subject.Email, TestMoments.Seeded));
+            await db.SaveChangesAsync();
+        }
+
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await factory.GetClientTokenAsync(subject.Email, TestPassword));
+        var order = new
+        {
+            paymentMethod = "bank_transfer",
+            items = new[] { new { productId, billingCycle = nameof(BillingCycle.Monthly) } },
+        };
+
+        var responses = await Task.WhenAll(
+            client.PostAsJsonAsync("/api/orders", order), client.PostAsJsonAsync("/api/orders", order));
+
+        foreach (var response in responses)
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        }
+
+        using var scope = factory.Services.CreateScope();
+        var db2 = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db2.SubjectRoles.AsNoTracking().CountAsync(r => r.Subject == subject.UserId && r.Role == Role.Client))
+            .Should().Be(1);
+    }
+
+    /// <summary>
     /// A credential whose display name is only an email address (a sign-on provider that knows no
     /// name sends the address instead) is not stored as the first and last name. The new client row
     /// is named after the email's local part, and the caller is granted the Client role.

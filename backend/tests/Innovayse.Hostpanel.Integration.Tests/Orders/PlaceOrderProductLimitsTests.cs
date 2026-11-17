@@ -133,10 +133,6 @@ public sealed class PlaceOrderProductLimitsTests(IntegrationTestFactory factory)
         var productId = await OrdersTestSeeds.SeedLimitedProductAsync(factory, max: null, onePerClient: true);
         var (client, _, _) = await ClientsTestSeeds.RegisterClientAsync(factory, "parallel-one");
 
-        // A first order grants the caller the Client role; two first orders placed together race to grant it, which is
-        // not what this test is about, so the caller already holds it.
-        (await OrderAsync(client, await OrdersTestSeeds.SeedProductAsync(factory))).StatusCode.Should().Be(HttpStatusCode.Created);
-
         var responses = await Task.WhenAll(OrderAsync(client, productId), OrderAsync(client, productId));
 
         responses.Count(r => r.StatusCode == HttpStatusCode.Created).Should().Be(1);

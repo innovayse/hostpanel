@@ -42,16 +42,22 @@ const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 /**
  * Runs a loader once and rejects when it has not settled within {@link LOAD_TIMEOUT_MS}.
  *
+ * The browser keeps one download per chunk address, so an attempt after a stalled one may join that
+ * same download rather than start a new request; the limit still ends the wait either way.
+ *
  * @param loader - The dynamic `import()` function.
  * @returns What the loader resolves to.
  * @throws The loader's own error, or a timeout error when the attempt stalled.
  */
 const attempt = <T>(loader: () => Promise<T>): Promise<T> =>
   new Promise<T>((resolve, reject) => {
+    // Only for logs: the screen shows its own translated load error.
     const timer = setTimeout(() => {
       reject(new Error(`Loading a screen took longer than ${LOAD_TIMEOUT_MS} ms`))
     }, LOAD_TIMEOUT_MS)
-    loader()
+    // Run the loader inside the chain so a loader that throws instead of rejecting still clears the timer.
+    Promise.resolve()
+      .then(loader)
       .then(resolve, reject)
       .finally(() => {
         clearTimeout(timer)

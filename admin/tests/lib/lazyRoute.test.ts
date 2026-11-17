@@ -86,6 +86,34 @@ describe('withRetry', () => {
     expect(loader).toHaveBeenCalledTimes(1)
   })
 
+  it('leaves no time limit running once an attempt succeeds', async () => {
+    expect(await withRetry(vi.fn().mockResolvedValue('ok'))()).toBe('ok')
+
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('leaves no time limit running once the last attempt fails', async () => {
+    const result = withRetry(vi.fn().mockRejectedValue(new Error('gone')))()
+    const settled = expect(result).rejects.toThrow('gone')
+
+    await vi.advanceTimersByTimeAsync(RETRY_STEP_MS * 3)
+    await settled
+
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('leaves no time limit running when the loader throws instead of rejecting', async () => {
+    const result = withRetry(() => {
+      throw new Error('broken')
+    })()
+    const settled = expect(result).rejects.toThrow('broken')
+
+    await vi.advanceTimersByTimeAsync(RETRY_STEP_MS * 3)
+    await settled
+
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
   it('returns the result of a first-time success without waiting', async () => {
     const loader = vi.fn().mockResolvedValue('ok')
 

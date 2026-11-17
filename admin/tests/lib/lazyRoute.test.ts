@@ -1,11 +1,11 @@
 /**
- * Tests for lazy route loaders: a failed download is repeated with a growing pause, the plain import
+ * Tests for lazy route loaders: a failed or stalled download is repeated with a growing pause, the plain import
  * behind a retrying loader stays reachable, and a route lists only the loaders the router still has
  * to call.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteLocationNormalized } from 'vue-router'
-import { LOAD_RETRIES, RETRY_STEP_MS, isLazyLoader, lazyLoadersOf, originalLoader, withRetry } from '@/lib/lazyRoute'
+import { LOAD_RETRIES, LOAD_TIMEOUT_MS, RETRY_STEP_MS, isLazyLoader, lazyLoadersOf, originalLoader, withRetry } from '@/lib/lazyRoute'
 
 /**
  * Builds the slice of a resolved route the helpers read.
@@ -50,6 +50,40 @@ describe('withRetry', () => {
 
     expect(await result).toBe('ok')
     expect(loader).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects an attempt that stalls after the time limit and repeats it', async () => {
+    const loader = vi.fn()
+      .mockReturnValueOnce(new Promise<string>(() => undefined))
+      .mockResolvedValue('ok')
+    const result = withRetry(loader)()
+
+    await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS - 1)
+    expect(loader).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1 + RETRY_STEP_MS)
+
+    expect(await result).toBe('ok')
+    expect(loader).toHaveBeenCalledTimes(2)
+  })
+
+  it('gives up with a timeout error when every attempt stalls', async () => {
+    const loader = vi.fn(() => new Promise<string>(() => undefined))
+    const settled = withRetry(loader)().catch((error: Error) => error.message)
+
+    await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS * (LOAD_RETRIES + 1) + RETRY_STEP_MS * 3)
+
+    expect(await settled).toContain('took longer than')
+    expect(loader).toHaveBeenCalledTimes(LOAD_RETRIES + 1)
+  })
+
+  it('does not time out a download that finishes within the limit', async () => {
+    const loader = vi.fn(() => new Promise<string>((resolve) => setTimeout(() => resolve('late'), LOAD_TIMEOUT_MS - 1)))
+    const result = withRetry(loader)()
+
+    await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS)
+
+    expect(await result).toBe('late')
+    expect(loader).toHaveBeenCalledTimes(1)
   })
 
   it('returns the result of a first-time success without waiting', async () => {

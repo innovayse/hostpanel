@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -32,18 +31,14 @@ public sealed class SubjectRoleStore : ISubjectRoleStore
     /// <inheritdoc/>
     public async Task AddAsync(string subject, Role role, CancellationToken ct)
     {
-        // Checked rather than caught: a duplicate grant is an ordinary thing for a caller
-        // to do, and letting it reach the database would surface as an exception the
-        // caller then has to distinguish from a real failure.
-        var held = await _db.SubjectRoles
-            .AnyAsync(x => x.Subject == subject && x.Role == role, ct);
-        if (held)
-        {
-            return;
-        }
-
-        _db.SubjectRoles.Add(SubjectRole.Grant(subject, role));
-        await _db.SaveChangesAsync(ct);
+        // One statement that ignores a row already there, rather than a check followed by an insert:
+        // two requests granting the same role at the same moment (a customer's first two orders) both
+        // pass a check, and the second insert then broke the key. The key is the pair, so the database
+        // is what decides, and a duplicate grant is simply not written.
+        var roleName = role.ToString();
+        await _db.Database.ExecuteSqlAsync(
+            $"""INSERT INTO "SubjectRoles" ("Subject", "Role") VALUES ({subject}, {roleName}) ON CONFLICT ("Subject", "Role") DO NOTHING""",
+            ct);
     }
 
     /// <inheritdoc/>

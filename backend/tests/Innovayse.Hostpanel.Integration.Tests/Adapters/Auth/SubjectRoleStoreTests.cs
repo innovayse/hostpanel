@@ -69,6 +69,39 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
     }
 
     /// <summary>
+    /// Many requests granting the same role to the same subject at the same moment (a customer's first
+    /// orders placed in parallel), each in its own scope and connection, all succeed and leave one row.
+    /// A check followed by an insert lets several pass the check and the later inserts break the key.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AddAsync_InParallelForTheSameGrant_WritesOneRowAndThrowsNothingAsync()
+    {
+        const int Callers = 20;
+        var subject = $"sub-{Guid.NewGuid()}";
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var grants = Enumerable.Range(0, Callers)
+            .Select(_ => Task.Run(async () =>
+            {
+                using var scope = factory.Services.CreateScope();
+                var store = scope.ServiceProvider.GetRequiredService<ISubjectRoleStore>();
+                await start.Task;
+                await store.AddAsync(subject, Role.Client, CancellationToken.None);
+            }))
+            .ToList();
+        start.SetResult();
+
+        var act = () => Task.WhenAll(grants);
+        await act.Should().NotThrowAsync();
+
+        using var check = factory.Services.CreateScope();
+        var db = check.ServiceProvider.GetRequiredService<AppDbContext>();
+        var rows = await db.SubjectRoles.AsNoTracking().CountAsync(x => x.Subject == subject && x.Role == Role.Client);
+        rows.Should().Be(1);
+    }
+
+    /// <summary>
     /// One subject's roles never appear against another. Trivial to state and the whole
     /// point of the table: every authorization decision downstream trusts this.
     /// </summary>

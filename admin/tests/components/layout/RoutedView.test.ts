@@ -1,9 +1,9 @@
 /**
  * Mount tests for RoutedView on a real memory router with the navigation hooks installed: a click
  * on a screen still downloading shows the skeleton at once, only the level the navigation replaces
- * changes, and a download that fails for good shows the load error.
+ * changes, and a download that fails or stalls for good shows the load error.
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
@@ -11,6 +11,7 @@ import type { Component } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Router } from 'vue-router'
 import RoutedView from '@/components/layout/RoutedView.vue'
+import { LOAD_RETRIES, LOAD_TIMEOUT_MS, RETRY_STEP_MS, withRetry } from '@/lib/lazyRoute'
 import { navigationAdmitted, navigationFailed, navigationSettled } from '@/middleware/navigation'
 import { pinia } from '@/pinia'
 import { useNavigationStore } from '@/stores/navigation'
@@ -134,6 +135,27 @@ describe('RoutedView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="area-slow"]').exists()).toBe(true)
+  })
+
+  it('ends on the load error, not the skeleton, when the download stalls for good', async () => {
+    vi.useFakeTimers()
+    try {
+      const { wrapper, router } = await mountRouted(withRetry(() => new Promise<{ default: Component }>(() => undefined)))
+
+      const navigation = router.push('/slow')
+      const outcome = navigation.then(() => 'arrived', (error: Error) => error.message)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(wrapper.find('[data-testid="view-loading"]').exists()).toBe(true)
+
+      await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS * (LOAD_RETRIES + 1) + RETRY_STEP_MS * 3)
+
+      expect(await outcome).toContain('took longer than')
+      await flushPromises()
+      expect(wrapper.find('[data-testid="view-loading"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="view-load-error"]').exists()).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('shows the load error when the screen never arrives, and the next screen afterwards', async () => {

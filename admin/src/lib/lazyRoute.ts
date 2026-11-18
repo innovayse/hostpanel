@@ -3,7 +3,7 @@
  *
  * Every routed screen and layout is its own chunk, handed to vue-router as a plain `() => import()`
  * loader, which is the only lazy form the router supports. The loader is wrapped by
- * {@link withRetry} so a failed download is repeated before the navigation gives up. The plain
+ * {@link withRetry} so a failed or stalled download is repeated before the navigation gives up. The plain
  * import behind a wrapper stays reachable through {@link originalLoader}, and
  * {@link lazyLoadersOf} lists the loaders a route still has to call, which is what prefetching and
  * the pending-navigation state read.
@@ -15,6 +15,15 @@ export type RouteLoader = () => Promise<unknown>
 
 /** How many times a failed download is repeated before the navigation fails. */
 export const LOAD_RETRIES = 2
+
+/**
+ * How long one load attempt may take, in milliseconds, before it counts as failed.
+ *
+ * A download that stalls never settles, so without a limit the navigation stays pending for good and
+ * the screen shows the skeleton forever. An attempt that overruns it is abandoned and handled like any
+ * other failed download: repeated, and after the repeats reported to the router.
+ */
+export const LOAD_TIMEOUT_MS = 15_000
 
 /** Wait before the first repeat, in milliseconds; each further repeat waits one step longer. */
 export const RETRY_STEP_MS = 400
@@ -31,32 +40,60 @@ const originals = new WeakMap<object, RouteLoader>()
 const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
- * Makes a loader repeat itself when the download fails.
+ * Runs a loader once and rejects when it has not settled within {@link LOAD_TIMEOUT_MS}.
+ *
+ * The browser keeps one download per chunk address, so an attempt after a stalled one may join that
+ * same download rather than start a new request; the limit still ends the wait either way.
+ *
+ * @param loader - The dynamic `import()` function.
+ * @returns What the loader resolves to.
+ * @throws The loader's own error, or a timeout error when the attempt stalled.
+ */
+const attempt = <T>(loader: () => Promise<T>): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    // Only for logs: the screen shows its own translated load error.
+    const timer = setTimeout(() => {
+      reject(new Error(`Loading a screen took longer than ${LOAD_TIMEOUT_MS} ms`))
+    }, LOAD_TIMEOUT_MS)
+    // The loader runs at once, so a prefetch starts the download straight away; running it inside a promise
+    // executor turns a loader that throws instead of rejecting into a rejection, which still clears the timer.
+    new Promise<T>((run) => {
+      run(loader())
+    })
+      .then(resolve, reject)
+      .finally(() => {
+        clearTimeout(timer)
+      })
+  })
+
+/**
+ * Makes a loader repeat itself when the download fails or stalls.
  *
  * A gateway timeout or a dropped connection on one small chunk is common on a long path, and
- * without a repeat it leaves the click with no effect at all.
+ * without a repeat it leaves the click with no effect at all. Each attempt has a time limit, so a
+ * download that never answers fails like one that errors.
  *
  * @param loader - The dynamic `import()` function.
  * @returns A loader that tries up to {@link LOAD_RETRIES} more times before it gives up with the last error.
  */
 export const withRetry = <T>(loader: () => Promise<T>): (() => Promise<T>) => {
   /**
-   * Runs the loader, repeating it after a growing pause while it fails.
+   * Runs the loader with a time limit per attempt, repeating it after a growing pause while it fails.
    *
    * @returns What the loader resolves to.
    * @throws The last error once the repeats are used up.
    */
   const retrying = async (): Promise<T> => {
-    let attempt = 0
+    let repeats = 0
     for (;;) {
       try {
-        return await loader()
+        return await attempt(loader)
       } catch (error) {
-        if (attempt >= LOAD_RETRIES) {
+        if (repeats >= LOAD_RETRIES) {
           throw error
         }
-        attempt += 1
-        await pause(RETRY_STEP_MS * attempt)
+        repeats += 1
+        await pause(RETRY_STEP_MS * repeats)
       }
     }
   }

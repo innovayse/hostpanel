@@ -284,6 +284,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       isDigitalService: payload.isDigitalService,
       maxActiveServices: payload.maxActiveServices,
       onePerClient: payload.onePerClient,
+      trial: payload.trial,
     })
   } else {
     saved = (await store.createProduct(payload)) !== null

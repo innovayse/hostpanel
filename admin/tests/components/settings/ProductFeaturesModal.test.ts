@@ -32,6 +32,7 @@ const product: Product = {
   isDigitalService: false,
   maxActiveServices: null,
   onePerClient: false,
+  trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 }
 
 /** Two stored lines. */

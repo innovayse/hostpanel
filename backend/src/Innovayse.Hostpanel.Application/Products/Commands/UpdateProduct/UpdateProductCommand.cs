@@ -65,6 +65,10 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 /// <param name="OnePerClient">
 /// Whether a client may hold only one live service of the product; null keeps the stored setting.
 /// </param>
+/// <param name="Trial">
+/// The free-trial settings of the product. Null keeps the stored settings, so a caller that does not know
+/// the field never changes them.
+/// </param>
 public sealed record UpdateProductCommand(
     int Id,
     string Name,
@@ -84,4 +88,5 @@ public sealed record UpdateProductCommand(
     bool? IsHidden = null,
     bool? IsDigitalService = null,
     int? MaxActiveServices = null,
-    bool? OnePerClient = null);
+    bool? OnePerClient = null,
+    ProductTrialDto? Trial = null);

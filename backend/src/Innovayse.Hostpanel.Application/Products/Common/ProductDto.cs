@@ -26,6 +26,7 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="IsDigitalService">Whether the product is an electronic service for VAT, taxed at the rate of the client's country when sold to a consumer in another EU member state.</param>
 /// <param name="MaxActiveServices">How many services of the product may be live at once, or null when unlimited.</param>
 /// <param name="OnePerClient">Whether a client may hold only one live service of the product.</param>
+/// <param name="Trial">The free-trial settings; the trial is off for a product that has none.</param>
 public sealed record ProductDto(
     int Id,
     int GroupId,
@@ -46,4 +47,5 @@ public sealed record ProductDto(
     int GracePeriodDays,
     bool IsDigitalService,
     int? MaxActiveServices,
-    bool OnePerClient);
+    bool OnePerClient,
+    ProductTrialDto Trial);

@@ -3395,6 +3395,29 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<bool>("TrialAutoConvert")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TrialDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(14);
+
+                    b.Property<bool>("TrialEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TrialGracePeriodDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
+                    b.Property<string>("TrialReminderDays")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("3,1");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -3417,6 +3440,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
 
                             t.HasCheckConstraint("CK_Products_MaxActiveServices", "\"MaxActiveServices\" IS NULL OR \"MaxActiveServices\" >= 1");
+
+                            t.HasCheckConstraint("CK_Products_TrialDays", "\"TrialDays\" BETWEEN 1 AND 365");
+
+                            t.HasCheckConstraint("CK_Products_TrialGracePeriodDays", "\"TrialGracePeriodDays\" BETWEEN 0 AND 30");
                         });
                 });
 

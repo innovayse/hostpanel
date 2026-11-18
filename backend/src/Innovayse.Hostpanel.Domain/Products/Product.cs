@@ -107,6 +107,25 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// </summary>
     public bool IsDigitalService { get; private set; }
 
+    /// <summary>Gets whether the product is offered as a free trial a client can start without paying.</summary>
+    public bool TrialEnabled { get; private set; }
+
+    /// <summary>Gets how long a free trial of this product lasts, in days.</summary>
+    public int TrialDays { get; private set; } = ProductTrial.DefaultDays;
+
+    /// <summary>Gets whether a trial of this product turns into a paid service at its end.</summary>
+    public bool TrialAutoConvert { get; private set; } = true;
+
+    /// <summary>Gets the stored reminder days of a trial: descending, comma separated; read them through <see cref="Trial"/>.</summary>
+    public string TrialReminderDays { get; private set; } = ProductTrial.DefaultReminderDaysText;
+
+    /// <summary>Gets how many days the invoice of a converted trial may stay unpaid before the service is ended.</summary>
+    public int TrialGracePeriodDays { get; private set; } = ProductTrial.DefaultGracePeriodDays;
+
+    /// <summary>Gets the free-trial settings of the product as one value.</summary>
+    public ProductTrial Trial => new(
+        TrialEnabled, TrialDays, TrialAutoConvert, ProductTrial.ParseReminderDays(TrialReminderDays), TrialGracePeriodDays);
+
     /// <summary>
     /// Gets how many services of this product may be live at once (not terminated, counting orders not yet
     /// fulfilled), or null when the product is unlimited. A new order is refused, and the public catalogue
@@ -355,6 +374,29 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// <summary>Sets whether the product is an electronic service for VAT.</summary>
     /// <param name="isDigitalService">Whether the product is an electronic service.</param>
     public void SetDigitalService(bool isDigitalService) => IsDigitalService = isDigitalService;
+
+    /// <summary>Replaces the free-trial settings of the product.</summary>
+    /// <param name="trial">The new settings; the reminder days are kept descending.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductTrialInvalid"/>: the settings fail <see cref="ProductTrial.IsValid"/>.
+    /// </exception>
+    public void ConfigureTrial(ProductTrial trial)
+    {
+        ArgumentNullException.ThrowIfNull(trial);
+
+        if (!ProductTrial.IsValid(trial.Days, trial.ReminderDays, trial.GracePeriodDays))
+        {
+            throw new DomainRuleException(
+                ProductsErrors.ProductTrialInvalid,
+                $"A trial of {trial.Days} days with reminders {ProductTrial.FormatReminderDays(trial.ReminderDays ?? [])} and a grace period of {trial.GracePeriodDays} days is not accepted.");
+        }
+
+        TrialEnabled = trial.Enabled;
+        TrialDays = trial.Days;
+        TrialAutoConvert = trial.AutoConvert;
+        TrialReminderDays = ProductTrial.FormatReminderDays(trial.ReminderDays);
+        TrialGracePeriodDays = trial.GracePeriodDays;
+    }
 
     /// <summary>Sets how many services of this product may be live at once.</summary>
     /// <param name="max">The cap, at least one, or null for unlimited.</param>

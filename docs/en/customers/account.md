@@ -88,6 +88,8 @@ Go to **Account**. The tabs you see depend on your permissions. The full set is:
 
 The **Account Details** tab has two sections: **Account Information** (name, company, phone, address) and **Billing Address**. Click **Edit** to change them, then **Save Changes**.
 
+**VAT Number.** A business can enter its VAT number in the **Billing Address** section. It is checked against the official register after you save, and the tab shows whether it is valid. A business with a valid VAT number in another EU country or in the United Kingdom is invoiced without VAT: the invoice states the reverse charge and shows the number, and the business accounts for the VAT itself. If you change the number or your billing country, it is checked again.
+
 **Email Preferences**: six toggles control which notification emails you receive:
 
 | Toggle | What it controls |

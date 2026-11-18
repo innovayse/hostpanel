@@ -7,7 +7,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -29,7 +30,7 @@ let table: StubRouteTable
  *
  * @param wrapper - The mounted page.
  */
-const submit = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promise<void> => {
+const submit = async (wrapper: Awaited<ReturnType<typeof mountPage>>): Promise<void> => {
   await wrapper.find('[data-testid="register-firstname"]').setValue('Ada')
   await wrapper.find('[data-testid="register-lastname"]').setValue('Lovelace')
   await wrapper.find('[data-testid="register-email"]').setValue('ada@example.com')
@@ -49,7 +50,7 @@ afterEach(async () => {
 
 describe('client register page', () => {
   it('gives every field a placeholder', async () => {
-    const wrapper = await mountAuthPage(RegisterPage)
+    const wrapper = await mountPage(RegisterPage)
 
     for (const id of ['firstname', 'lastname', 'email', 'password']) {
       expect(wrapper.find(`[data-testid="register-${id}"]`).attributes('placeholder')).toMatch(/^client\.register\./)
@@ -58,7 +59,7 @@ describe('client register page', () => {
 
   it('sends the typed fields to the API', async () => {
     table[writeOf(AccountEndpoint.Register)] = { body: {} }
-    const wrapper = await mountAuthPage(RegisterPage)
+    const wrapper = await mountPage(RegisterPage)
 
     await submit(wrapper)
     await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.Register)).toHaveLength(1))
@@ -69,7 +70,7 @@ describe('client register page', () => {
   it('shows the success banner and schedules the redirect to sign-in', async () => {
     table[writeOf(AccountEndpoint.Register)] = { body: {} }
     const timer = vi.spyOn(globalThis, 'setTimeout')
-    const wrapper = await mountAuthPage(RegisterPage)
+    const wrapper = await mountPage(RegisterPage)
 
     await submit(wrapper)
     await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(true))
@@ -81,7 +82,7 @@ describe('client register page', () => {
 
   it('shows the API sentence and no success banner when registration is refused', async () => {
     table[writeOf(AccountEndpoint.Register)] = { status: 409, body: { detail: 'That email is taken.' } }
-    const wrapper = await mountAuthPage(RegisterPage)
+    const wrapper = await mountPage(RegisterPage)
 
     await submit(wrapper)
     await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
@@ -92,14 +93,14 @@ describe('client register page', () => {
 
   it('shows a field message under its field', async () => {
     table[writeOf(AccountEndpoint.Register)] = { status: 400, body: { errors: { password: ['Too short.'] } } }
-    const wrapper = await mountAuthPage(RegisterPage)
+    const wrapper = await mountPage(RegisterPage)
 
     await submit(wrapper)
     await waitUntil(() => expect(wrapper.find('[data-testid="register-password"]').element.closest('div.w-full')?.textContent).toContain('Too short.'))
   })
 
   it('links back to sign-in', async () => {
-    const wrapper = await mountAuthPage(RegisterPage)
+    const wrapper = await mountPage(RegisterPage)
 
     expect(wrapper.find('[data-testid="register-signin"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
   })

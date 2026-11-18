@@ -80,6 +80,7 @@ describe('useMediaQuery', () => {
     const wide: FakeQuery = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }
     const narrow: FakeQuery = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }
     vi.stubGlobal('matchMedia', (text: string) => (text === 'narrow' ? narrow : wide))
+    /** The query text the probe watches; changing it swaps the media query. */
     const query = ref('wide')
     const wrapper = mountProbe(query)
     expect(wrapper.text()).toBe('false')

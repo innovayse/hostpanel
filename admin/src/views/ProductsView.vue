@@ -282,6 +282,8 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       gracePeriodDays: payload.gracePeriodDays,
       isHidden: payload.isHidden,
       isDigitalService: payload.isDigitalService,
+      maxActiveServices: payload.maxActiveServices,
+      onePerClient: payload.onePerClient,
       trial: payload.trial,
     })
   } else {

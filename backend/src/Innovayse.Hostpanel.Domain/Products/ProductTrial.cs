@@ -95,12 +95,13 @@ public sealed record ProductTrial(
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            return [];
+            return Array.AsReadOnly(Array.Empty<int>());
         }
 
         return text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(part => int.Parse(part, System.Globalization.CultureInfo.InvariantCulture))
             .OrderByDescending(day => day)
-            .ToList();
+            .ToList()
+            .AsReadOnly();
     }
 }

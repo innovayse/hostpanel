@@ -7,7 +7,10 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import DomainResults from '~/templates/aurora/sections/DomainResults.vue'
 import { DomainResultStatus } from '~/types/domainresultstatus'
 import type { DomainResult } from '~/types/domainresult'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 /** One result per availability state. */
 const RESULTS: DomainResult[] = [
@@ -17,22 +20,22 @@ const RESULTS: DomainResult[] = [
 ]
 
 describe('DomainResults', () => {
-  it('explains why there is nothing to search when no extension is priced', () => {
-    stubAuroraGlobals()
+  it('explains why there is nothing to search when no extension is priced', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainResults, { props: { hasZones: false } })
 
     expect(wrapper.find('[data-testid="domain-results-no-zones"]').text()).toBe('aurora.domainSearch.noZones')
   })
 
-  it('shows the loading skeleton while a lookup runs and the empty line after an empty one', () => {
-    stubAuroraGlobals()
+  it('shows the loading skeleton while a lookup runs and the empty line after an empty one', async () => {
+    await loadGlobals()
 
     expect(mountWithKit(DomainResults, { props: { pending: true } }).find('[data-testid="domain-results-pending"]').exists()).toBe(true)
     expect(mountWithKit(DomainResults, { props: { results: [] } }).find('[data-testid="domain-results-empty"]').exists()).toBe(true)
   })
 
-  it('marks each row with its status for the e2e specs', () => {
-    stubAuroraGlobals()
+  it('marks each row with its status for the e2e specs', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainResults, { props: { results: RESULTS } })
 
     expect(wrapper.find('[data-testid="domain-result-free.com"]').attributes('data-status')).toBe('available')
@@ -40,8 +43,8 @@ describe('DomainResults', () => {
     expect(wrapper.find('[data-testid="domain-result-odd.com"]').attributes('data-status')).toBe('unknown')
   })
 
-  it('offers add only for an available name and transfer only for a taken one', () => {
-    stubAuroraGlobals()
+  it('offers add only for an available name and transfer only for a taken one', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainResults, { props: { results: RESULTS } })
 
     expect(wrapper.find('[data-testid="domain-add-free.com"]').exists()).toBe(true)
@@ -51,7 +54,7 @@ describe('DomainResults', () => {
   })
 
   it('emits add with the name when the button is pressed', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(DomainResults, { props: { results: RESULTS } })
 
     await wrapper.find('[data-testid="domain-add-free.com"]').trigger('click')
@@ -59,8 +62,8 @@ describe('DomainResults', () => {
     expect(wrapper.emitted('add')).toEqual([['free.com']])
   })
 
-  it('disables add for a name already in the cart and switches its label', () => {
-    stubAuroraGlobals()
+  it('disables add for a name already in the cart and switches its label', async () => {
+    await loadGlobals()
     const button = mountWithKit(DomainResults, { props: { results: RESULTS, inCart: ['free.com'] } })
       .find('[data-testid="domain-add-free.com"]')
 

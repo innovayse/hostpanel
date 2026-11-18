@@ -41,6 +41,10 @@ export interface Product {
   gracePeriodDays: number
   /** Whether the product is an electronic service for VAT, taxed at the client's country rate when sold to a consumer in another EU member state. */
   isDigitalService: boolean
+  /** How many services of the product may be live at once, counting orders not yet fulfilled; null when unlimited. */
+  maxActiveServices: number | null
+  /** Whether a client may hold only one live service of the product. */
+  onePerClient: boolean
   /** The free-trial settings; the trial is off for a product that has none. */
   trial: ProductTrial
 }
@@ -57,6 +61,28 @@ export interface ProductTrial {
   reminderDays: number[]
   /** Days the invoice of a converted trial may stay unpaid before the service is ended, 0 to 30. */
   gracePeriodDays: number
+}
+
+/** The defaults and limits of the free-trial settings, as the API holds them. */
+export interface ProductTrialDefaults {
+  /** Trial length a new product starts with, in days. */
+  days: number
+  /** Whether a new product's trial converts to a paid service at its end. */
+  autoConvert: boolean
+  /** Reminder days a new product starts with. */
+  reminderDays: number[]
+  /** Grace period a new product starts with, in days. */
+  gracePeriodDays: number
+  /** Shortest trial, in days. */
+  minDays: number
+  /** Longest trial, in days. */
+  maxDays: number
+  /** Shortest grace period, in days. */
+  minGracePeriodDays: number
+  /** Longest grace period, in days. */
+  maxGracePeriodDays: number
+  /** Most reminders a trial may have. */
+  maxReminders: number
 }
 
 /** What narrows the product list: the search text, the group, the type and the status; each member left out means no narrowing. */
@@ -145,7 +171,11 @@ export interface CreateProductPayload {
   isHidden?: boolean
   /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
   isDigitalService?: boolean
-  /** The free-trial settings; omitted keeps the stored ones on update and creates the product with the trial off. */
+  /** Cap on live services; 0 means unlimited, omitted keeps the stored cap on update. */
+  maxActiveServices?: number
+  /** Allows one live service per client; omitted keeps the stored setting on update. */
+  onePerClient?: boolean
+  /** The free-trial settings; omitted creates the product with the trial off and the default settings. */
   trial?: ProductTrial
 }
 
@@ -179,6 +209,10 @@ export interface UpdateProductPayload {
   isHidden?: boolean
   /** Marks the product as an electronic service for VAT; omitted keeps the stored value on update. */
   isDigitalService?: boolean
-  /** The free-trial settings; omitted keeps the stored ones on update and creates the product with the trial off. */
+  /** Cap on live services; 0 means unlimited, omitted keeps the stored cap on update. */
+  maxActiveServices?: number
+  /** Allows one live service per client; omitted keeps the stored setting on update. */
+  onePerClient?: boolean
+  /** The free-trial settings; omitted keeps the stored ones. */
   trial?: ProductTrial
 }

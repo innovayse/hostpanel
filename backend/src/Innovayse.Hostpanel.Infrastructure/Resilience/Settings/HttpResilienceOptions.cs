@@ -352,6 +352,25 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
+    /// The VAT number registers, the EU service and the UK authority's lookup. Each check is one idempotent read, so it is
+    /// registered read-only with a retry.
+    /// </summary>
+    /// <remarks>
+    /// <b>10 seconds an attempt, 25 in total.</b> A member state's own register sits behind the EU service and is often slow,
+    /// and the check runs in the background or behind a staff button, so the budget is generous for a lookup yet short enough
+    /// that a daily pass of many clients is not held up by one dead register. <b>No breaker:</b> the calls are too rare for one
+    /// to see the throughput it needs to open, and an unavailable answer already leaves the client's status as it was.
+    /// </remarks>
+    public ResilienceProfileOptions Vat { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(10),
+        TotalTimeout = TimeSpan.FromSeconds(25),
+        MaxRetryAttempts = 1,
+        RetryDelay = TimeSpan.FromSeconds(1),
+        CircuitBreakerEnabled = false,
+    };
+
+    /// <summary>
     /// The named client of every loaded plugin: a plugin asks <c>IHttpClientFactory</c> for a
     /// client named after its own plugin id and gets this profile. No retry stage, since the host
     /// cannot tell a plugin's reads from its charges and refunds; no breaker, since a plugin may
@@ -460,6 +479,7 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(Migration), Migration);
         yield return new NamedResilienceProfile(nameof(NameAm), NameAm);
         yield return new NamedResilienceProfile(nameof(Namecheap), Namecheap);
+        yield return new NamedResilienceProfile(nameof(Vat), Vat);
         yield return new NamedResilienceProfile(nameof(Plugin), Plugin);
         yield return new NamedResilienceProfile(nameof(Cba), Cba);
         yield return new NamedResilienceProfile(nameof(Ecb), Ecb);

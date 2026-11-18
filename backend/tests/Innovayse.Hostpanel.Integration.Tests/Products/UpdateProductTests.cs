@@ -636,4 +636,40 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await FlagAsync()).Should().BeFalse();
     }
+
+    /// <summary>
+    /// <c>maxActiveServices</c> and <c>onePerClient</c> are set on update, kept by an update that omits them, and
+    /// cleared by <c>maxActiveServices: 0</c> and <c>onePerClient: false</c>.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_OrderLimits_SetKeepAndClear()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Limits", type = ProductType.SharedHosting, monthlyPrice = 3m, annualPrice = 30m,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        async Task<(int? Max, bool One)> StateAsync()
+        {
+            var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+            var max = dto.GetProperty("maxActiveServices");
+            return (max.ValueKind == JsonValueKind.Null ? null : max.GetInt32(), dto.GetProperty("onePerClient").GetBoolean());
+        }
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Limits", monthlyPrice = 3m, annualPrice = 30m, maxActiveServices = 50, onePerClient = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be(((int?)50, true));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Limits", monthlyPrice = 3m, annualPrice = 30m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be(((int?)50, true));
+
+        (await client.PutAsJsonAsync($"/api/products/{id}", new { name = "Limits", monthlyPrice = 3m, annualPrice = 30m, maxActiveServices = 0, onePerClient = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await StateAsync()).Should().Be(((int?)null, false));
+    }
 }

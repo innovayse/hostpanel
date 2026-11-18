@@ -176,7 +176,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
             }
 
             // After the lines and before the credit below: the credit is taken off the taxed total.
-            invoice.ApplyTaxRate(await _taxRates.ForInvoiceAsync(client, invoice, ct));
+            ClientTaxRateResolver.Apply(invoice, await _taxRates.ForInvoiceAsync(client, invoice, ct));
 
             Transaction? creditLine = null;
             if (settings.AutoApplyCredit && credit > 0 && invoice.Total > 0)

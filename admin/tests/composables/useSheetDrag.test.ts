@@ -105,6 +105,7 @@ const setup = (enabled = true) => {
   panelEl.append(gripEl, bodyEl)
   Object.defineProperty(panelEl, 'offsetHeight', { value: 400 })
   const close = vi.fn()
+  /** Whether the drag is enabled; tests flip it to check the sheet stops following the pointer. */
   const active = ref(enabled)
   const drag = useSheetDrag({ panel: ref(panelEl), body: ref(bodyEl), enabled: active, close })
   return { drag, panelEl, bodyEl, gripEl, inputEl, active, close }

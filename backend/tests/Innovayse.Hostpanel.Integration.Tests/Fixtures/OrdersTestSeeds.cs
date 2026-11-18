@@ -303,6 +303,24 @@ public static class OrdersTestSeeds
         return product.Id;
     }
 
+    /// <summary>Seeds an active USD product with a cap on live services and a one-per-client rule, and switches the bank transfer on.</summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <param name="max">The cap on live services, or null for unlimited.</param>
+    /// <param name="onePerClient">Whether a client may hold only one.</param>
+    /// <returns>The new product's primary key.</returns>
+    public static async Task<int> SeedLimitedProductAsync(IntegrationTestFactory factory, int? max, bool onePerClient)
+    {
+        await EnableBankTransferAsync(factory);
+        var productId = await SeedProductAsync(factory);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var product = await db.Products.FindAsync(productId);
+        product!.SetMaxActiveServices(max);
+        product.SetOnePerClient(onePerClient);
+        await db.SaveChangesAsync();
+        return productId;
+    }
+
     /// <summary>Seeds a client, a Pending order with one line, and its linked unpaid invoice.</summary>
     /// <param name="factory">The factory whose database the pair is seeded in.</param>
     /// <param name="currency">The ISO 4217 code the order and its invoice are billed in.</param>

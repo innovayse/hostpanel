@@ -1,24 +1,18 @@
 /**
  * Unit tests for AuroraPartners: the partners come from the storefront store, show a logo or the name, link only with a website, and the section hides when there are none.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { partnerFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import type { Partner } from '~/types/partner'
 import AuroraPartners from '~/templates/aurora/sections/AuroraPartners.vue'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** What the stub answers, by route; the tests below change the partners it serves. */
-const replies: StubRouteTable = {}
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useAuroraGlobals()
 
 /**
  * Makes the stub serve these partners.
@@ -35,22 +29,16 @@ const serve = (partners: Partner[]): void => {
  * @returns The wrapper.
  */
 const mountSection = async () => {
-  stubAuroraGlobals()
-  return mountAfterReads(stub, [StorefrontPath.Partners], () => mountWithKit(AuroraPartners))
+  await loadGlobals()
+  return mountAfterReads(stub(), [StorefrontPath.Partners], () => mountWithKit(AuroraPartners))
 }
 
 describe('AuroraPartners', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
+  beforeEach(() => {
     serve([
       partnerFixture(1, { name: 'Alpha', logoUrl: 'https://cdn.example.test/a.png', url: 'https://alpha.example.test' }),
       partnerFixture(2, { name: 'Beta', logoUrl: null, url: null }),
     ])
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('renders the logo when a partner has one and the name otherwise', async () => {

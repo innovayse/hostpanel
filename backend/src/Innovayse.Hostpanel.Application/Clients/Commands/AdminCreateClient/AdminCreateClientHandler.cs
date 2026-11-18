@@ -237,6 +237,9 @@ public sealed class AdminCreateClientHandler
         _context.Clients.Add(client);
         await _context.SaveChangesAsync(ct);
 
+        // A number entered with the client is checked in the background, once the client has its id.
+        await _bus.RequestVatCheckWhenPendingAsync(client, _clock.UtcNow);
+
         return client.Id;
     }
 

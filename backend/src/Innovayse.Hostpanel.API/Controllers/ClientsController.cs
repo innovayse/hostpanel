@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AddContact;
 using Innovayse.Hostpanel.Application.Clients.Commands.AddUserToClient;
 using Innovayse.Hostpanel.Application.Clients.Commands.AdminCreateClient;
+using Innovayse.Hostpanel.Application.Clients.Commands.CheckClientVat;
 using Innovayse.Hostpanel.Application.Clients.Commands.ExportClientData;
 using Innovayse.Hostpanel.Application.Clients.Commands.InviteUserToClient;
 using Innovayse.Hostpanel.Application.Clients.Commands.RemoveContact;
@@ -135,6 +136,32 @@ public sealed class ClientsController : BaseApiController
     public async Task<IActionResult> SetExternalAccountAsync(int id, [FromBody] SetClientExternalAccountCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ClientId = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Checks the client's VAT number against the VAT number service and records the answer on the client: its status, the date
+    /// and the name and address the service returned. Staff only. A number the service could not judge leaves the earlier
+    /// result as it was.
+    /// </summary>
+    /// <param name="id">The client primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when the answer was recorded; 404 with <c>CLIENT_NOT_FOUND</c>; 400 with <c>CLIENT_VAT_NUMBER_MISSING</c> or <c>CLIENT_VAT_COUNTRY_NOT_SUPPORTED</c>, or when the route fails validation; 409 with <c>CONFLICT</c> when another writer changed the client first; 503 with <c>VAT_SERVICE_UNAVAILABLE</c> when the service gave no verdict, or with <c>VAT_CHECK_NOT_CONFIGURED</c> when the register of the client's country is not set up on the installation; 401 without a session; 403 for a caller who is not staff;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/vat-check")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> CheckVatAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new CheckClientVatCommand(id), ct);
         return HandleResult(outcome);
     }
 

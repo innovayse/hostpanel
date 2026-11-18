@@ -4,11 +4,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import FinalCta from '~/templates/nova/sections/FinalCta.vue'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
+
+/** The stub server and the loader of the template globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useTemplateGlobals()
 
 describe('FinalCta', () => {
-  beforeEach(() => {
-    stubTemplateGlobals()
+  beforeEach(async () => {
+    await loadGlobals()
   })
 
   it('states the title and lead', () => {

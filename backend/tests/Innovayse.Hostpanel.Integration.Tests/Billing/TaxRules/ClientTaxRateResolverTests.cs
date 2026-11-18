@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing.TaxRules;
 /// is raised at. Every test uses its own country, so the rules of one test never reach another's client.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
+[Collection(TaxSettingsCollection.Name)]
 public sealed class ClientTaxRateResolverTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Starts an invoice with no lines for a client, dated at the fixed test moment.</summary>
@@ -27,7 +28,8 @@ public sealed class ClientTaxRateResolverTests(IntegrationTestFactory factory) :
         var resolver = scope.ServiceProvider.GetRequiredService<ClientTaxRateResolver>();
         var result = await resolver.ForInvoiceAsync(NewInvoice(clientId), CancellationToken.None);
         result.IsSuccess.Should().BeTrue();
-        return result.Value;
+        result.Value!.ReverseCharge.Should().BeFalse("the reverse charge has its own tests, which set the seller's country");
+        return result.Value.Rate;
     }
 
     /// <summary>A client whose country has no rule is not taxed.</summary>

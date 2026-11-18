@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="Preferences">Language, currency, payment preferences and the internal admin notes.</param>
 /// <param name="Notifications">Which kinds of email the client receives.</param>
 /// <param name="Settings">The account switches staff set on the client.</param>
+/// <param name="Vat">The last completed check of the client's VAT number; read only, written by the check use case.</param>
 /// <param name="TwoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
 /// <param name="CreatedAt">Account creation timestamp.</param>
 /// <param name="Contacts">Additional contacts linked to this client.</param>
@@ -38,6 +39,7 @@ public sealed record ClientDto(
     ClientPreferencesDto Preferences,
     ContactNotifications Notifications,
     ClientSettingsDto Settings,
+    ClientVatDto Vat,
     bool TwoFactorEnabled,
     DateTimeOffset CreatedAt,
     IReadOnlyList<ContactDto> Contacts,

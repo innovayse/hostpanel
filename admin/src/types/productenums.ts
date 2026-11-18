@@ -45,6 +45,8 @@ export enum ProductField {
   Metadata = 'metadata',
   /** Days a lapsed digital product stays usable. */
   GracePeriodDays = 'gracePeriodDays',
+  /** The cap on live services of the product. */
+  MaxActiveServices = 'maxActiveServices',
   /** The free-trial settings. */
   Trial = 'trial',
 }

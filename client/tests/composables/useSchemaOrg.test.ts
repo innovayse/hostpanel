@@ -233,6 +233,7 @@ describe('useSchemaOrg', () => {
 
   it('reads a getter again each time the head renders', async () => {
     await stubRuntime()
+    /** The schema list the getter reads; the test changes it between renders. */
     const schema = ref<object[]>([])
 
     useSchemaOrg().injectSchema(() => schema.value)
@@ -251,6 +252,7 @@ describe('useSchemaOrg', () => {
 
     injectSchema([first, second])
 
+    /** The script entries the head renders for the injected schemas. */
     const scripts = (useHead.mock.calls[0]![0] as () => { script: Array<{ type: string, innerHTML: string }> })().script
     expect(scripts).toEqual([
       { type: 'application/ld+json', innerHTML: JSON.stringify(first) },

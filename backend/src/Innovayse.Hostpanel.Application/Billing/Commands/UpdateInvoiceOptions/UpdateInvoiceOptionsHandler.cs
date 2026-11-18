@@ -1,10 +1,9 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
-using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.UpdateInvoiceOptions;
 
@@ -17,8 +16,8 @@ public sealed class UpdateInvoiceOptionsHandler
     /// <summary>Returns credit the change left unneeded to the client's balance in the same save.</summary>
     private readonly IClientCredit _clientCredit;
 
-    /// <summary>The Wolverine bus, for the client's tax exemption.</summary>
-    private readonly IMessageBus _bus;
+    /// <summary>Decides whether a tax rate may be typed by hand for the invoice's client.</summary>
+    private readonly ClientTaxRateResolver _taxRates;
 
     /// <summary>Stamps the moment a change that leaves the payments covering the invoice settles it.</summary>
     private readonly IClock _clock;
@@ -26,13 +25,13 @@ public sealed class UpdateInvoiceOptionsHandler
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="clientCredit">Returns credit the change left unneeded to the client's balance in the same save.</param>
-    /// <param name="bus">The Wolverine bus, for the client's tax exemption.</param>
+    /// <param name="taxRates">Decides whether a tax rate may be typed by hand for the invoice's client.</param>
     /// <param name="clock">Stamps the moment a change that leaves the payments covering the invoice settles it.</param>
-    public UpdateInvoiceOptionsHandler(IHostpanelDbContext context, IClientCredit clientCredit, IMessageBus bus, IClock clock)
+    public UpdateInvoiceOptionsHandler(IHostpanelDbContext context, IClientCredit clientCredit, ClientTaxRateResolver taxRates, IClock clock)
     {
         _context = context;
         _clientCredit = clientCredit;
-        _bus = bus;
+        _taxRates = taxRates;
         _clock = clock;
     }
 
@@ -40,8 +39,9 @@ public sealed class UpdateInvoiceOptionsHandler
     /// <param name="cmd">The update options command.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, <c>INVOICE_NOT_FOUND</c> when the id names no invoice, <c>CLIENT_TAX_EXEMPT</c> when a tax
-    /// rate is set on the invoice of a tax-exempt client, or <c>CLIENT_NOT_FOUND</c> when
+    /// Success, <c>INVOICE_NOT_FOUND</c> when the id names no invoice, <c>CLIENT_TAX_EXEMPT</c> or
+    /// <c>CLIENT_REVERSE_CHARGE_APPLIES</c> when a tax rate is set on the invoice of a client whose tax is not typed
+    /// by hand, or <c>CLIENT_NOT_FOUND</c> when
     /// excess credit has no client to go back to. A tax change below the payments taken throws; see
     /// <see cref="Domain.Billing.Invoice.UpdateOptions"/>.
     /// </returns>
@@ -61,12 +61,13 @@ public sealed class UpdateInvoiceOptionsHandler
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_FOUND);
         }
 
-        // Tax is only ever entered by hand here, so this is where a tax-exempt client is protected.
+        // Tax is only ever entered by hand here, so this is where a client whose tax is not the operator's to enter
+        // (tax exempt, or invoiced under the reverse charge) is protected; the resolver is the one place that decides it.
         // A rate the invoice already carries may stay (an exemption granted later does not rewrite
         // history), but no new or higher rate is set.
         if (cmd.TaxRate > 0 && cmd.TaxRate != invoice.TaxRate)
         {
-            var mayBeTaxed = await _bus.EnsureClientMayBeTaxedAsync(invoice.ClientId, ct);
+            var mayBeTaxed = await _taxRates.EnsureMayBeTaxedAsync(invoice.ClientId, ct);
             if (mayBeTaxed.IsFailure)
             {
                 return mayBeTaxed;

@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProductOptions;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProducts;
+using Innovayse.Hostpanel.Application.Products.Queries.GetProductTrialDefaults;
 using Innovayse.Hostpanel.Application.Products.Queries.ListCatalogProducts;
 using Innovayse.Hostpanel.Application.Products.Queries.ListProducts;
 using Innovayse.Hostpanel.Shared.Authorization;
@@ -45,6 +46,20 @@ public sealed class ProductsController : BaseApiController
     public async Task<IActionResult> ListAsync([FromQuery] GetProductsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ProductDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>The free-trial defaults and bounds the admin product form is built from.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the defaults and bounds; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
+    [HttpGet("trial-defaults")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(ProductTrialDefaultsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetTrialDefaultsAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<ProductTrialDefaultsDto>>(new GetProductTrialDefaultsQuery(), ct);
         return HandleResult(outcome);
     }
 

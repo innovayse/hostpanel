@@ -11,6 +11,7 @@
 import { translate, translateOrRaw } from '@/lib/translate'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientStatus } from '@/types/client'
+import { ClientVatStatus } from '@/types/clientvat'
 import { CampaignStatus } from '@/types/emailcampaign'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
@@ -112,6 +113,12 @@ const CLIENT_STATUS_TONES: Record<ClientStatus, UiTone> = {
   [ClientStatus.Suspended]: UiTone.Warning,
   [ClientStatus.Closed]: UiTone.Danger,
   [ClientStatus.Inactive]: UiTone.Neutral,
+}
+
+/** Badge tone of each VAT number check status. */
+const CLIENT_VAT_STATUS_TONES: Record<ClientVatStatus, UiTone> = {
+  [ClientVatStatus.Valid]: UiTone.Success,
+  [ClientVatStatus.Invalid]: UiTone.Danger,
 }
 
 /** Badge tone of each contact type. */
@@ -245,6 +252,14 @@ export const invoiceStatusTone = (status: string): UiTone => toneOf(INVOICE_TONE
  * @returns The tone; neutral for a status this panel does not know.
  */
 export const clientStatusTone = (status: string): UiTone => toneOf(CLIENT_STATUS_TONES, status)
+
+/**
+ * Tone of a VAT number check status badge.
+ *
+ * @param status - The status string the API sent.
+ * @returns The tone; neutral for a status this panel does not know.
+ */
+export const clientVatStatusTone = (status: string): UiTone => toneOf(CLIENT_VAT_STATUS_TONES, status)
 
 /**
  * Tone of a contact type badge.

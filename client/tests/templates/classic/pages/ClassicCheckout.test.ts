@@ -7,7 +7,6 @@
  * @module tests/templates/classic/pages/ClassicCheckout.test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { bankTransferPath, BillingEndpoint } from '~/tests/helpers/billingPaths'
@@ -48,18 +47,6 @@ const DEFAULT_METHODS: GatewayMethod[] = [
   { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: true },
 ]
 
-/** Stand-in for the phone field, which keeps its country picker out of this test. */
-const PhoneInputStub = defineComponent({
-  name: 'UiPhoneInput',
-  props: { modelValue: { type: String, default: '' } },
-  emits: ['update:modelValue'],
-  setup: (props, { emit }) => () => h('input', {
-    'data-testid': 'checkout-phone',
-    value: props.modelValue,
-    onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value),
-  }),
-})
-
 /** A signed-in client. */
 const client = makeClientUser()
 
@@ -71,7 +58,7 @@ const client = makeClientUser()
  */
 const mountCheckout = async (items: CartItem[] = [cartLine(1, 5), cartLine(2, 7)]) => {
   const wrapper = await mountPage(ClassicCheckout, {
-    components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
+    components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint },
   })
   await awaitCheckoutLoaded()
   useCartStore().items = items

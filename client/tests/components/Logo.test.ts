@@ -4,13 +4,16 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import Logo from '~/components/Logo.vue'
 import { LogoSurface } from '~/utils/appLogo'
 
+/** The stub server and the loader of the template globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useTemplateGlobals()
+
 describe('Logo', () => {
-  beforeEach(() => {
-    stubTemplateGlobals()
+  beforeEach(async () => {
+    await loadGlobals()
   })
 
   it('renders both bundled wordmarks, swapped by the dark variant, when nothing is uploaded', () => {
@@ -28,8 +31,8 @@ describe('Logo', () => {
     expect(wrapper.get('[data-testid="app-logo-dark"]').classes()).toEqual(expect.arrayContaining(['hidden', 'dark:block']))
   })
 
-  it('renders the uploads as plain images swapped by the dark variant', () => {
-    stubTemplateGlobals({ logo: '/api/uploads/light.png', logoDark: '/api/uploads/dark.png' })
+  it('renders the uploads as plain images swapped by the dark variant', async () => {
+    await loadGlobals({ logo: '/api/uploads/light.png', logoDark: '/api/uploads/dark.png' })
     const wrapper = mountWithKit(Logo)
 
     expect(wrapper.find('[data-testid="app-logo-light"]').attributes('src')).toBe('/api/uploads/light.png')
@@ -37,19 +40,19 @@ describe('Logo', () => {
     expect(wrapper.find('[data-testid="app-logo-dark"]').attributes('src')).toBe('/api/uploads/dark.png')
   })
 
-  it('lays a light plate behind a lone upload in dark mode, and not behind a dark variant', () => {
-    stubTemplateGlobals({ logo: '/api/uploads/light.png' })
+  it('lays a light plate behind a lone upload in dark mode, and not behind a dark variant', async () => {
+    await loadGlobals({ logo: '/api/uploads/light.png' })
     const lone = mountWithKit(Logo)
     expect(lone.get('[data-testid="app-logo-light"]').classes()).toEqual(expect.arrayContaining(['dark:bg-white/90']))
 
-    stubTemplateGlobals({ logo: '/api/uploads/light.png', logoDark: '/api/uploads/dark.png' })
+    await loadGlobals({ logo: '/api/uploads/light.png', logoDark: '/api/uploads/dark.png' })
     const pair = mountWithKit(Logo)
     expect(pair.get('[data-testid="app-logo-light"]').classes()).not.toContain('dark:bg-white/90')
     expect(pair.get('[data-testid="app-logo-dark"]').classes()).not.toContain('dark:bg-white/90')
   })
 
-  it('always plates a lone upload on an always-dark surface', () => {
-    stubTemplateGlobals({ logo: '/api/uploads/light.png' })
+  it('always plates a lone upload on an always-dark surface', async () => {
+    await loadGlobals({ logo: '/api/uploads/light.png' })
     const wrapper = mountWithKit(Logo, { props: { surface: LogoSurface.Dark } })
 
     expect(wrapper.get('[data-testid="app-logo-dark"]').classes()).toContain('bg-white/90')

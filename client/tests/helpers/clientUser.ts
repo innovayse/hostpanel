@@ -26,6 +26,8 @@ export const makeClientUser = (overrides: Partial<ClientUser> = {}): ClientUser 
   currency: null,
   paymentMethod: null,
   notifications: null,
+  vatNumber: null,
+  vat: { status: null, checkedAt: null, name: null, address: null },
   twoFactorEnabled: false,
   contacts: [],
   hasClientProfile: true,

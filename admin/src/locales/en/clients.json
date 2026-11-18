@@ -553,6 +553,18 @@
     "today": "Today",
     "add": "Add service"
   },
+  "vat": {
+    "title": "VAT number",
+    "none": "No VAT number is recorded. Enter it as the Tax ID in the client profile.",
+    "check": "Check again",
+    "checked": "VAT number checked.",
+    "checkedAt": "Checked {date}",
+    "status": {
+      "Valid": "Valid",
+      "Invalid": "Not valid",
+      "none": "Not checked"
+    }
+  },
   "externalAccount": {
     "title": "External account",
     "provider": "External system",

@@ -197,6 +197,8 @@ Unset or misspelled SMTP_ENCRYPTION stops the API on startup and names this key 
   { name: 'DEPARTMENT_GENERAL_EMAIL', type: 'string', default: 'hello@example.com', description: 'General department email on first install. Tiers: all.' },
   { name: 'TELEGRAM_BOT_TOKEN', type: 'secret', default: '', description: 'Telegram bot token for contact form notifications. Both or neither: half a pair refuses startup. Tiers: all.' },
   { name: 'TELEGRAM_CHAT_ID', type: 'string', default: '', description: 'Telegram chat ID, optional pair. Set both or neither. Tiers: all.' },
+  { name: 'HMRC_VAT_CLIENT_ID', type: 'string', default: '', description: 'Client id of the application registered with the UK tax authority, needed to check UK VAT numbers (EU numbers need nothing). Set it with the secret or leave both empty: half a pair refuses startup. Tiers: all.' },
+  { name: 'HMRC_VAT_CLIENT_SECRET', type: 'secret', default: '', description: 'Client secret of that application. Tiers: all.' },
 ]" />
 
 ## Reverse proxy and trusted proxies

@@ -1774,4 +1774,7 @@
   <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
     <value>A return parameter value is too long.</value>
   </data>
+  <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
+    <value>The maximum number of active services must be 0 or empty for unlimited, or a positive number.</value>
+  </data>
 </root>

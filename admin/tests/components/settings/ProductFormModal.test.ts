@@ -44,13 +44,29 @@ const stored: Product = {
   metadata: '{"tier":"pro"}',
   gracePeriodDays: 30,
   isDigitalService: false,
+  maxActiveServices: 50,
+  onePerClient: true,
   trial: { enabled: true, days: 30, autoConvert: false, reminderDays: [7, 2], gracePeriodDays: 5 },
+}
+
+/** What the API answers for the trial defaults and limits. */
+const trialDefaults = {
+  days: 14,
+  autoConvert: true,
+  reminderDays: [3, 1],
+  gracePeriodDays: 3,
+  minDays: 1,
+  maxDays: 365,
+  minGracePeriodDays: 0,
+  maxGracePeriodDays: 30,
+  maxReminders: 5,
 }
 
 /** Answers for the two lists the dialog loads on mount. */
 const lists = {
   'GET /admin/server-groups': () => json([{ id: 1, name: 'Group A' }]),
   'GET /admin/currencies': () => json([usd, eur]),
+  'GET /products/trial-defaults': () => json(trialDefaults),
 }
 
 /**
@@ -143,6 +159,8 @@ describe('ProductFormModal', () => {
       gracePeriodDays: 7,
       isHidden: false,
       isDigitalService: false,
+      maxActiveServices: 0,
+      onePerClient: false,
       trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
     }]])
   })
@@ -222,14 +240,88 @@ describe('ProductFormModal', () => {
     })
   })
 
-  it('sends a reminder day that is not a whole number as 0, so the API refuses it', async () => {
+  it('starts a new product with the trial defaults the API gave', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+    await wrapper.get('[data-testid="product-form-trial-enabled"]').trigger('click')
+
+    expect((wrapper.get('[data-testid="product-form-trial-days"] input').element as HTMLInputElement).value).toBe('14')
+    expect((wrapper.get('[data-testid="product-form-trial-reminders"]').element as HTMLInputElement).value).toBe('3, 1')
+    expect((wrapper.get('[data-testid="product-form-trial-grace-period"] input').element as HTMLInputElement).value).toBe('3')
+  })
+
+  it('starts with empty trial fields when the defaults cannot be read', async () => {
+    stubRouteTable({ ...lists, 'GET /products/trial-defaults': () => json({ type: 'X', title: 'x', status: 500 }, 500) })
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+    await wrapper.get('[data-testid="product-form-trial-enabled"]').trigger('click')
+
+    expect((wrapper.get('[data-testid="product-form-trial-days"] input').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.get('[data-testid="product-form-trial-reminders"]').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('refuses a reminder day that is not a whole number instead of sending 0', async () => {
     stubRouteTable(lists)
     const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
 
     await wrapper.get('[data-testid="product-form-trial-reminders"]').setValue('3, abc')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
-    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ trial: { reminderDays: [3, 0] } })
+    expect(wrapper.emitted('save')).toBeUndefined()
+    expect(wrapper.get('[data-testid="product-form-trial-error"]').text()).toContain('whole numbers')
+  })
+
+  it('refuses a trial length outside the range the API gave', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-trial-days"] input').setValue('0')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')).toBeUndefined()
+    expect(wrapper.get('[data-testid="product-form-trial-error"]').text()).toContain('1 to 365')
+  })
+
+  it('refuses a reminder day on or after the last day of the trial', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-trial-reminders"]').setValue('30')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')).toBeUndefined()
+  })
+
+  it('saves with the trial off even when the hidden trial fields were left invalid, keeping the stored settings', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-trial-days"] input').setValue('0')
+    await wrapper.get('[data-testid="product-form-trial-enabled"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({
+      trial: { enabled: false, days: 30, autoConvert: false, reminderDays: [7, 2], gracePeriodDays: 5 },
+    })
+  })
+
+  it('shows the API message for the trial settings while the trial is switched off', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, {
+      product: { ...stored, trial: { ...stored.trial, enabled: false } },
+      groups,
+      saving: false,
+      fieldErrors: { trial: 'The trial must last from 1 to 365 days.' },
+    })
+
+    expect(wrapper.find('[data-testid="product-form-trial-days"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="product-form-trial-error"]').text()).toContain('The trial must last')
+  })
+
+  it('tells the operator that a client cannot start a trial yet', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    expect(wrapper.get('[data-testid="product-form-trial-notice"]').text()).toContain('cannot start a trial yet')
   })
 
   it('shows the API message for the trial settings and clears it when a trial field changes', async () => {
@@ -268,6 +360,32 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
     expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ isHidden: true })
+  })
+
+  it('emits the order limits the operator sets for a new product', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-name"]').setValue('AI Hosting Beta')
+    await wrapper.get('[data-testid="product-form-max-active-services"] input').setValue('50')
+    await wrapper.get('[data-testid="product-form-one-per-client"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ maxActiveServices: 50, onePerClient: true })
+  })
+
+  it('opens a product with its order limits and emits 0 once the operator clears the cap', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
+
+    expect((wrapper.get('[data-testid="product-form-max-active-services"] input').element as HTMLInputElement).value).toBe('50')
+    expect(wrapper.get('[data-testid="product-form-one-per-client"]').attributes('aria-checked')).toBe('true')
+
+    await wrapper.get('[data-testid="product-form-max-active-services"] input').setValue('')
+    await wrapper.get('[data-testid="product-form-one-per-client"]').trigger('click')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ maxActiveServices: 0, onePerClient: false })
   })
 
   it('opens an inactive product as hidden and emits isHidden false once the operator turns it off', async () => {

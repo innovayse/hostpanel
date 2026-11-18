@@ -197,6 +197,8 @@ ENCRYPTION_KEY защищает пароли серверов, API-токены 
   { name: 'DEPARTMENT_GENERAL_EMAIL', type: 'string', default: 'hello@example.com', description: 'Общий адрес отдела при первой установке. Уровни: все.' },
   { name: 'TELEGRAM_BOT_TOKEN', type: 'secret', default: '', description: 'Токен бота Telegram для уведомлений из формы обратной связи. Обе настройки пары или ни одной: половина пары не даёт запуститься. Уровни: все.' },
   { name: 'TELEGRAM_CHAT_ID', type: 'string', default: '', description: 'Идентификатор чата Telegram, вторая часть необязательной пары. Задайте обе или ни одной. Уровни: все.' },
+  { name: 'HMRC_VAT_CLIENT_ID', type: 'string', default: '', description: 'Идентификатор приложения, зарегистрированного в налоговой службе Великобритании; нужен для проверки британских номеров плательщиков НДС (номера ЕС проверяются без настройки). Задайте его вместе с секретом или оставьте оба пустыми: половина пары останавливает запуск. Уровни: все.' },
+  { name: 'HMRC_VAT_CLIENT_SECRET', type: 'secret', default: '', description: 'Секрет этого приложения. Уровни: все.' },
 ]" />
 
 ## Обратный прокси и доверенные прокси {#reverse-proxy-and-trusted-proxies}

@@ -21,6 +21,12 @@
           <UiDescriptionItem :label="$t('client.profile.postcode')" :value="user.address?.postCode || undefined" />
           <UiDescriptionItem :label="$t('client.profile.country')" :value="user.address?.country || undefined" />
           <UiDescriptionItem :label="$t('client.profile.phone')" :value="user.phone || undefined" />
+          <UiDescriptionItem
+            v-if="user.vatNumber"
+            :label="$t('client.profile.vatNumber')"
+            :value="vatValue"
+            data-testid="profile-view-vat"
+          />
         </dl>
       </UiCard>
     </UiGrid>
@@ -35,7 +41,8 @@
 /**
  * ProfileView. The read-only account details: identity, billing address and email preferences.
  *
- * Empty values render the kit's dash; the labels it is given are already worded by the tab.
+ * Empty values render the kit's dash; the labels it is given are already worded by the tab. A VAT number is shown with the
+ * verdict of its last check, so the client sees whether it is accepted.
  *
  * @module components/account/ProfileView
  */
@@ -57,5 +64,18 @@ interface Props {
   emailPrefs: EmailPreferenceFlags
 }
 
-defineProps<Props>()
+/** The props. */
+const props = defineProps<Props>()
+
+/** Translator for the VAT number's status. */
+const { t } = useI18n()
+
+/** The VAT number with the verdict of its last check in brackets; undefined when none is recorded. */
+const vatValue = computed<string | undefined>(() => {
+  if (!props.user.vatNumber) {
+    return undefined
+  }
+  const status = props.user.vat?.status
+  return `${props.user.vatNumber} (${t(status ? `client.profile.vatStatus.${status}` : 'client.profile.vatStatus.none')})`
+})
 </script>

@@ -17,6 +17,8 @@ export interface RouteStubOptions {
   params?: Record<string, string>
   /** The route query (`route.query`). */
   query?: Record<string, string | string[]>
+  /** The path (`route.path`), which the SEO composable builds canonical URLs from; the root unless given. */
+  path?: string
   /** The full path (`route.fullPath`). */
   fullPath?: string
 }
@@ -24,13 +26,13 @@ export interface RouteStubOptions {
 /**
  * Defines `useRoute` as a global returning a fixed route.
  *
- * @param options - Parameters, query and full path of the route.
+ * @param options - Parameters, query, path and full path of the route.
  */
 export const stubRoute = (options: RouteStubOptions = {}): void => {
   vi.stubGlobal('useRoute', () => ({
     params: options.params ?? {},
     query: options.query ?? {},
-    path: '/',
+    path: options.path ?? '/',
     fullPath: options.fullPath ?? '/',
     meta: {},
   }))
@@ -64,3 +66,11 @@ export const TEST_LOCALE_PREFIX = '/en'
  * @returns The path behind {@link TEST_LOCALE_PREFIX}.
  */
 export const localized = (path: string): string => `${TEST_LOCALE_PREFIX}${path}`
+
+/**
+ * Defines `useSwitchLocalePath` as a global that turns a language code into that language's path, as the i18n router
+ * does for the language switcher.
+ */
+export const stubSwitchLocalePath = (): void => {
+  vi.stubGlobal('useSwitchLocalePath', () => (code: string) => `/${code}`)
+}

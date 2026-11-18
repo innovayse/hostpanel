@@ -15,7 +15,9 @@ import { storeToRefs } from 'pinia'
 import { vi } from 'vitest'
 import type { VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
+import Logo from '~/components/Logo.vue'
 import { mountAsyncPage, mountWithKit } from '~/tests/helpers/mountWithKit'
+import { nuxtComponentName } from '~/tests/helpers/nuxtComponentName'
 import type { MountWithKitOptions } from '~/tests/helpers/mountWithKit'
 import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
 
@@ -23,37 +25,13 @@ import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
 const CLIENT_MODULES = import.meta.glob<{ default: Component }>('../../components/client/**/*.vue', { eager: true })
 
 /**
- * Splits a PascalCase file name into its words.
- *
- * @param name - For example `SetupStepCard`.
- * @returns For example `['Setup', 'Step', 'Card']`.
- */
-const words = (name: string): string[] => name.match(/[A-Z][a-z0-9]*/g) ?? [name]
-
-/**
- * Builds the name Nuxt gives a component file.
- *
- * @param folders - Folder names below `components/`, for example `['client', 'services']`.
- * @param file - File name without extension.
- * @returns The PascalCase auto-import name.
- */
-export const nuxtComponentName = (folders: string[], file: string): string => {
-  const prefix = folders.flatMap((folder) => words(folder.charAt(0).toUpperCase() + folder.slice(1)))
-  const fileWords = words(file)
-  const kept: string[] = []
-  while (prefix.length > 0 && prefix[0]!.toLowerCase() !== fileWords[0]!.toLowerCase()) {
-    kept.push(prefix.shift()!) // loop guard keeps the array non-empty
-  }
-  return [...kept, ...fileWords].join('')
-}
-
-/**
- * Registers the client components under their auto-import names.
+ * Registers the client components under their auto-import names, with the real `Logo` the auth shell draws (it lives
+ * outside `components/client`).
  *
  * @returns Map of component name to component.
  */
 const buildClientComponents = (): Record<string, Component> => {
-  const registry: Record<string, Component> = {}
+  const registry: Record<string, Component> = { Logo }
   for (const [path, module] of Object.entries(CLIENT_MODULES)) {
     const parts = path.replace('../../components/', '').replace(/\.vue$/, '').split('/')
     const file = parts.pop()! // a glob key always ends in a file name

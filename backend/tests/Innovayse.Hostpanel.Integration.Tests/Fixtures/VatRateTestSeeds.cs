@@ -52,15 +52,17 @@ internal static class VatRateTestSeeds
 
     /// <summary>Stores the seller's country setting.</summary>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
-    /// <param name="country">The two-letter code to store, or empty to switch destination rates off.</param>
-    /// <returns>A task that completes when the setting is stored.</returns>
-    public static async Task SetSellerCountryAsync(IntegrationTestFactory factory, string country)
+    /// <param name="country">The two-letter code to store, or empty to switch the destination rates and the reverse charge off.</param>
+    /// <returns>The value the setting held before, so a test can put it back.</returns>
+    public static async Task<string> SetSellerCountryAsync(IntegrationTestFactory factory, string country)
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var row = await context.Settings.FirstAsync(s => s.Key == BillingSettingKeys.SellerCountry);
+        var previous = row.Value;
         row.UpdateValue(country);
         await context.SaveChangesAsync(CancellationToken.None);
+        return previous;
     }
 
     /// <summary>Seeds a client with a country and, optionally, a tax identification number.</summary>

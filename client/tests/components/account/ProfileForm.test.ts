@@ -56,16 +56,17 @@ const savedRequest = () => requestsTo(stub.requests, AccountEndpoint.Me).find(re
  * Mounts the form over a catalogue that offers one country.
  *
  * @param ownsLanguage - Whether the language select is offered.
+ * @param profile - The profile being edited.
  * @returns The wrapper.
  */
-const mountForm = (ownsLanguage = true) => {
+const mountForm = (ownsLanguage = true, profile: ClientUser = user) => {
   const pinia = createPinia()
   setActivePinia(pinia)
   useCatalogStore().countries = [{ value: 'AM', label: 'Armenia' }]
   return mountAccount(ProfileForm, {
     pinia,
     props: {
-      user,
+      user: profile,
       ownsLanguage,
       paymentOptions: [{ value: '', label: 'Default' }],
       languageOptions: [{ value: '', label: 'Default' }, { value: 'en', label: 'English' }]
@@ -121,6 +122,40 @@ describe('ProfileForm', () => {
       firstName: 'Janet',
       notifications: { general: true, affiliate: true }
     })
+  })
+
+  it('seeds the VAT number from the profile and sends what was typed with the save', async () => {
+    const wrapper = mountForm(true, makeClientUser({ ...user, vatNumber: 'DE123456789' }))
+    const input = wrapper.find('[data-testid="profile-vat-number"]')
+
+    expect((input.element as HTMLInputElement).value).toBe('DE123456789')
+
+    await input.setValue('DE987654321')
+    await wrapper.find('form').trigger('submit')
+
+    await waitUntil(() => expect(savedRequest()).toBeDefined())
+    expect(bodyOf(savedRequest())).toMatchObject({ vatNumber: 'DE987654321' })
+  })
+
+  it('sends an empty VAT number when the client has none, which keeps it empty', async () => {
+    const wrapper = mountForm()
+
+    await wrapper.find('form').trigger('submit')
+
+    await waitUntil(() => expect(savedRequest()).toBeDefined())
+    expect(bodyOf(savedRequest())).toMatchObject({ vatNumber: '' })
+  })
+
+  it('shows the API message of a refused VAT number under its input', async () => {
+    table[`${HttpMethod.Patch} ${AccountEndpoint.Me}`] = {
+      status: 400,
+      body: { type: 'VALIDATION_ERROR', title: 'Invalid', status: 400, detail: 'Fix the form.', errors: { 'settings.taxId': ['The VAT number is too long.'] } }
+    }
+    const wrapper = mountForm()
+
+    await wrapper.find('form').trigger('submit')
+
+    await waitUntil(() => expect(wrapper.text()).toContain('The VAT number is too long.'))
   })
 
   it('leaves the language out where the deployment does not store it', async () => {

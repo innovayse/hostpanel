@@ -125,6 +125,7 @@
                   />
                   <UiPhoneInput
                     v-model="form.phonenumber"
+                    testid="checkout-phone"
                     :label="$t('checkout.fields.phonenumber')"
                     required
                   />

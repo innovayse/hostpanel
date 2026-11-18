@@ -1,35 +1,56 @@
 /**
  * Unit tests for AccountMenu: the avatar trigger, the panel with the account destinations, sign
  * out, and the profile fetch on mount.
+ *
+ * The real auth store, API composable and transport run against a stub server playing the BFF.
  */
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AccountMenu from '~/templates/aurora/layout/AccountMenu.vue'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { requestsTo, writeOf } from '~/tests/helpers/stubRoutes'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import { CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH } from '~/constants/clientRoutes'
 
 /** The customer the session reports. */
 const USER = { firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' }
 
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useAuroraGlobals()
+
+/**
+ * Mounts the menu of a signed-in customer and waits until the profile read has filled in the name.
+ *
+ * @returns The wrapper.
+ */
+const mountSignedIn = async () => {
+  await loadGlobals({ user: USER })
+  const wrapper = mountWithKit(AccountMenu)
+  await waitUntil(() => expect(wrapper.find('[data-testid="account-menu-trigger"]').text()).toBe('AL'))
+  return wrapper
+}
+
 describe('AccountMenu', () => {
-  it('shows only the avatar trigger, named after the customer, until it is opened', () => {
-    stubAuroraGlobals({ user: USER })
-    const wrapper = mountWithKit(AccountMenu)
+  beforeEach(() => {
+    replies[writeOf(AccountEndpoint.Logout)] = { body: {} }
+  })
+
+  it('shows only the avatar trigger, named after the customer, until it is opened', async () => {
+    const wrapper = await mountSignedIn()
 
     expect(wrapper.find('[data-testid="account-menu-trigger"]').attributes('aria-label')).toBe('Ann Lee')
     expect(wrapper.find('[data-testid="ui-popover-panel"]').exists()).toBe(false)
   })
 
-  it('fetches the profile once on mount, because the cookie only says a session exists', () => {
-    const { fetchUser } = stubAuroraGlobals({ user: USER })
-    mountWithKit(AccountMenu)
+  it('fetches the profile once on mount, because the cookie only says a session exists', async () => {
+    await mountSignedIn()
 
-    expect(fetchUser).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub().requests, AccountEndpoint.Me)).toHaveLength(1)
   })
 
   it('opens a panel with the name, the e-mail and the five account destinations', async () => {
-    stubAuroraGlobals({ user: USER })
-    const wrapper = mountWithKit(AccountMenu)
+    const wrapper = await mountSignedIn()
 
     await wrapper.find('[data-testid="account-menu-trigger"]').trigger('click')
 
@@ -41,8 +62,7 @@ describe('AccountMenu', () => {
   })
 
   it('gives every row an icon and a left-aligned label row, sign out included', async () => {
-    stubAuroraGlobals({ user: USER })
-    const wrapper = mountWithKit(AccountMenu)
+    const wrapper = await mountSignedIn()
     await wrapper.find('[data-testid="account-menu-trigger"]').trigger('click')
 
     for (const item of wrapper.findAll('[role="menuitem"]')) {
@@ -52,15 +72,14 @@ describe('AccountMenu', () => {
     expect(wrapper.find('[data-testid="account-menu-sign-out"]').classes()).toEqual(expect.arrayContaining(['text-danger', 'hover:bg-acbg']))
   })
 
-  it('shows the customer initials in the trigger once the profile is known', () => {
-    stubAuroraGlobals({ user: USER })
-    const wrapper = mountWithKit(AccountMenu)
+  it('shows the customer initials in the trigger once the profile is known', async () => {
+    const wrapper = await mountSignedIn()
 
     expect(wrapper.find('[data-testid="account-menu-trigger"]').text()).toBe('AL')
   })
 
   it('falls back to the generic client-area label before the profile arrives', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(AccountMenu)
 
     await wrapper.find('[data-testid="account-menu-trigger"]').trigger('click')
@@ -69,8 +88,7 @@ describe('AccountMenu', () => {
   })
 
   it('closes the panel when a destination is chosen', async () => {
-    stubAuroraGlobals({ user: USER })
-    const wrapper = mountWithKit(AccountMenu)
+    const wrapper = await mountSignedIn()
     await wrapper.find('[data-testid="account-menu-trigger"]').trigger('click')
 
     await wrapper.find('[data-testid="account-menu-services"]').trigger('click')
@@ -79,13 +97,12 @@ describe('AccountMenu', () => {
   })
 
   it('signs out and closes the panel', async () => {
-    const { signOut } = stubAuroraGlobals({ user: USER })
-    const wrapper = mountWithKit(AccountMenu)
+    const wrapper = await mountSignedIn()
     await wrapper.find('[data-testid="account-menu-trigger"]').trigger('click')
 
     await wrapper.find('[data-testid="account-menu-sign-out"]').trigger('click')
 
-    expect(signOut).toHaveBeenCalledTimes(1)
+    await waitUntil(() => expect(requestsTo(stub().requests, AccountEndpoint.Logout)).toHaveLength(1))
     expect(wrapper.find('[data-testid="ui-popover-panel"]').exists()).toBe(false)
   })
 })

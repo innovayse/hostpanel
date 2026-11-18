@@ -67,6 +67,8 @@ const productOf = (id: number, name: string): Product => ({
   metadata: null,
   gracePeriodDays: 0,
   isDigitalService: false,
+  maxActiveServices: null,
+  onePerClient: false,
   trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 })
 

@@ -4,23 +4,17 @@
  * its rating, avatar or initials, role, company and localised date, and the section hides itself
  * when there are no quotes.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { testimonialFixture } from '~/tests/helpers/storefrontFixtures'
 import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
-import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
-import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import type { Testimonial } from '~/types/testimonial'
 import AuroraTestimonials from '~/templates/aurora/sections/AuroraTestimonials.vue'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** What the stub answers, by route; the tests below change the quotes it serves. */
-const replies: StubRouteTable = {}
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useAuroraGlobals()
 
 /**
  * Makes the stub serve these quotes.
@@ -37,8 +31,8 @@ const serve = (testimonials: Testimonial[]): void => {
  * @returns The wrapper.
  */
 const mountSection = async () => {
-  stubAuroraGlobals()
-  return mountAfterReads(stub, [StorefrontPath.Testimonials], () => mountWithKit(AuroraTestimonials))
+  await loadGlobals()
+  return mountAfterReads(stub(), [StorefrontPath.Testimonials], () => mountWithKit(AuroraTestimonials))
 }
 
 /**
@@ -51,17 +45,11 @@ const visibleCard = (wrapper: Awaited<ReturnType<typeof mountSection>>) =>
   wrapper.findAll('[data-testid="testimonial-card"]').find(card => !card.classes().includes('hidden'))!
 
 describe('AuroraTestimonials', () => {
-  beforeEach(async () => {
-    stub = await startTransport(routeTable(replies))
+  beforeEach(() => {
     serve([
       testimonialFixture(1, { quote: 'First quote', name: 'Ann Lee', role: 'CEO', company: 'Example Co', rating: 4, publishedAt: '2026-03-10T00:00:00+00:00' }),
       testimonialFixture(2, { quote: 'Second quote', name: 'Bob', role: null, company: null, avatarUrl: '/uploads/bob.png', publishedAt: '2026-05-02T00:00:00+00:00' }),
     ])
-  })
-
-  afterEach(async () => {
-    await stub.close()
-    vi.unstubAllGlobals()
   })
 
   it('shows the first quote with its author, role and company', async () => {

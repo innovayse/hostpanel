@@ -5,7 +5,9 @@
  * source file at build time. Vitest compiles the same files without that step, so each name a
  * source file uses without importing is defined here as a global. Vue's own reactivity is the
  * real one; the Nuxt composables are minimal stand-ins that a test replaces with
- * `vi.stubGlobal` when it needs a specific answer.
+ * `vi.stubGlobal` when it needs a specific answer. A composable or store of ours is never stood in here: a
+ * test registers the real one under its auto-import name, and `tests/config/noOwnMocks.test.ts` fails on a
+ * definition of ours in this file.
  *
  * @module vitest.setup
  */
@@ -125,23 +127,6 @@ const installAutoImports = (): void => {
     }
     return { data, error, pending: vue.ref(false), refresh: run }
   })
-
-  /** `useSiteIdentity` stand-in: the operator-set name falls back to the brand, no tagline. */
-  define('useSiteIdentity', () => ({ name: vue.ref('Hostpanel'), tagline: vue.ref('') }))
-
-  /** `useContactDetails` stand-in: nothing configured, so every contact row is hidden. */
-  define('useContactDetails', () => ({
-    email: vue.ref(''),
-    phone: vue.ref(''),
-    phoneLink: vue.ref(''),
-    telegramUrl: vue.ref(''),
-    whatsappUrl: vue.ref(''),
-    address: vue.ref(''),
-    mapUrl: vue.ref(''),
-  }))
-
-  /** `useContactHours` stand-in: no working hours set, so the contact page shows no hours row. */
-  define('useContactHours', () => ({ workingHours: vue.ref('') }))
 }
 
 installAutoImports()

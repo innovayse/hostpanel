@@ -81,6 +81,8 @@ services:
       DefaultDepartments__GeneralEmail: ${DEPARTMENT_GENERAL_EMAIL:?DEPARTMENT_GENERAL_EMAIL must be set}
       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
       Telegram__ChatId: ${TELEGRAM_CHAT_ID:-}
+      Vat__Hmrc__ClientId: ${HMRC_VAT_CLIENT_ID:-}
+      Vat__Hmrc__ClientSecret: ${HMRC_VAT_CLIENT_SECRET:-}
 
       Jwt__Secret: ${JWT_SECRET:?JWT_SECRET is required}
       Jwt__Issuer: ${JWT_ISSUER}

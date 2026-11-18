@@ -113,6 +113,16 @@
             size="sm"
             class="sm:col-span-2"
           />
+          <UiInput
+            v-model="form.vatNumber"
+            testid="profile-vat-number"
+            :label="$t('client.profile.vatNumber')"
+            :placeholder="$t('client.account.placeholders.vatNumber')"
+            :hint="$t('client.profile.vatNumberHint')"
+            :error="errors['settings.taxId']"
+            size="sm"
+            class="sm:col-span-2"
+          />
         </UiGrid>
       </UiCard>
     </UiGrid>
@@ -225,6 +235,7 @@ const form = reactive<ProfileDraft>({
     country: props.user.address?.country ?? ''
   },
   paymentMethod: props.user.paymentMethod ?? '',
+  vatNumber: props.user.vatNumber ?? '',
   // Sent only where this deployment stores the language; left out, the backend keeps it as is.
   language: props.ownsLanguage ? (props.user.language ?? '') : undefined
 })

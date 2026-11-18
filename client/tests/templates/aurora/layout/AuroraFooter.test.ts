@@ -5,19 +5,22 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraFooter from '~/templates/aurora/layout/AuroraFooter.vue'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 describe('AuroraFooter', () => {
-  it('is a separate block: the footer token surface, a visible top border and a soft shadow', () => {
-    stubAuroraGlobals()
+  it('is a separate block: the footer token surface, a visible top border and a soft shadow', async () => {
+    await loadGlobals()
     const classes = mountWithKit(AuroraFooter).find('footer').classes()
 
     expect(classes).toEqual(expect.arrayContaining(['bg-[color:var(--footer)]', 'border-t', 'border-line2']))
     expect(classes.some((name) => name.startsWith('shadow-'))).toBe(true)
   })
 
-  it('renders the three link columns with their destinations', () => {
-    stubAuroraGlobals()
+  it('renders the three link columns with their destinations', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraFooter)
 
     expect(wrapper.findAll('h3').map((title) => title.text())).toEqual([
@@ -29,15 +32,15 @@ describe('AuroraFooter', () => {
     expect(wrapper.find('a[href="/domains/transfer"]').exists()).toBe(true)
   })
 
-  it('keeps the product catalogue reachable from the company column', () => {
-    stubAuroraGlobals()
+  it('keeps the product catalogue reachable from the company column', async () => {
+    await loadGlobals()
     const labels = mountWithKit(AuroraFooter).findAll('a[href="/products"]').map((link) => link.text())
 
     expect(labels).toContain('aurora.footer.services')
   })
 
-  it('labels the /knowledgebase link in the company column "knowledgebase", not "blog"', () => {
-    stubAuroraGlobals()
+  it('labels the /knowledgebase link in the company column "knowledgebase", not "blog"', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraFooter)
     const labels = wrapper.findAll('a[href="/knowledgebase"]').map((link) => link.text())
 
@@ -45,8 +48,8 @@ describe('AuroraFooter', () => {
     expect(labels).not.toContain('aurora.footer.blog')
   })
 
-  it('gives every footer link a theme-token hover and focus state, in light and dark', () => {
-    stubAuroraGlobals({ settings: { 'portal.contact.email': 'hi@acme.test' } })
+  it('gives every footer link a theme-token hover and focus state, in light and dark', async () => {
+    await loadGlobals({ settings: { 'portal.contact.email': 'hi@acme.test' } })
     const wrapper = mountWithKit(AuroraFooter)
     const links = [...wrapper.findAll('[data-testid="aurora-footer-link"]'), wrapper.find('[data-testid="aurora-footer-email"]')]
 
@@ -56,8 +59,8 @@ describe('AuroraFooter', () => {
     }
   })
 
-  it('shows no newsletter form, no social row and no contact line on a fresh install', () => {
-    stubAuroraGlobals()
+  it('shows no newsletter form, no social row and no contact line on a fresh install', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraFooter)
 
     expect(wrapper.find('[data-testid="newsletter-form"]').exists()).toBe(false)
@@ -65,8 +68,8 @@ describe('AuroraFooter', () => {
     expect(wrapper.find('a[href^="mailto:"]').exists()).toBe(false)
   })
 
-  it('posts the newsletter form natively to the configured endpoint', () => {
-    stubAuroraGlobals({ settings: { 'portal.newsletter.action_url': 'https://mail.test/subscribe' } })
+  it('posts the newsletter form natively to the configured endpoint', async () => {
+    await loadGlobals({ settings: { 'portal.newsletter.action_url': 'https://mail.test/subscribe' } })
     const form = mountWithKit(AuroraFooter).find('[data-testid="newsletter-form"]')
 
     expect(form.attributes('action')).toBe('https://mail.test/subscribe')
@@ -77,7 +80,7 @@ describe('AuroraFooter', () => {
   })
 
   it('warns about an obviously wrong newsletter address only after the field was left', async () => {
-    stubAuroraGlobals({ settings: { 'portal.newsletter.action_url': 'https://mail.test/subscribe' } })
+    await loadGlobals({ settings: { 'portal.newsletter.action_url': 'https://mail.test/subscribe' } })
     const wrapper = mountWithKit(AuroraFooter)
     const input = wrapper.find('[data-testid="newsletter-email"]')
 
@@ -88,8 +91,8 @@ describe('AuroraFooter', () => {
     expect(wrapper.find('[data-testid="newsletter-invalid"]').exists()).toBe(true)
   })
 
-  it('shows the contact entries and tax id the operator filled in', () => {
-    stubAuroraGlobals({
+  it('shows the contact entries and tax id the operator filled in', async () => {
+    await loadGlobals({
       settings: {
         'portal.contact.email': 'hi@acme.test',
         'portal.contact.phone': '+374 (10) 123',
@@ -103,8 +106,8 @@ describe('AuroraFooter', () => {
     expect(wrapper.text()).toContain('TIN-1')
   })
 
-  it('shows only the social profiles that are set, building Telegram from a handle', () => {
-    stubAuroraGlobals({ settings: { 'portal.social.youtube': 'https://youtube.test/acme', 'portal.contact.telegram': 'acme' } })
+  it('shows only the social profiles that are set, building Telegram from a handle', async () => {
+    await loadGlobals({ settings: { 'portal.social.youtube': 'https://youtube.test/acme', 'portal.contact.telegram': 'acme' } })
     const wrapper = mountWithKit(AuroraFooter)
 
     expect(wrapper.find('[data-testid="footer-social-yt"]').attributes('href')).toBe('https://youtube.test/acme')
@@ -112,27 +115,27 @@ describe('AuroraFooter', () => {
     expect(wrapper.find('[data-testid="footer-social-fb"]').exists()).toBe(false)
   })
 
-  it('opens social profiles in a new tab without handing over the opener', () => {
-    stubAuroraGlobals({ settings: { 'portal.social.youtube': 'https://youtube.test/acme' } })
+  it('opens social profiles in a new tab without handing over the opener', async () => {
+    await loadGlobals({ settings: { 'portal.social.youtube': 'https://youtube.test/acme' } })
     const link = mountWithKit(AuroraFooter).find('[data-testid="footer-social-yt"]')
 
     expect(link.attributes('target')).toBe('_blank')
     expect(link.attributes('rel')).toContain('noopener')
   })
 
-  it('shows the operator site name beside the mark and in the copyright line', () => {
-    stubAuroraGlobals({ siteName: 'Acme Host' })
+  it('shows the operator site name beside the mark and in the copyright line', async () => {
+    await loadGlobals({ siteName: 'Acme Host' })
     const text = mountWithKit(AuroraFooter).text()
 
     expect(text.match(/Acme Host/g)).toHaveLength(2)
     expect(text).not.toContain('Innovayse')
   })
 
-  it('draws the bundled cube mark when no logo is uploaded, and the upload once there is one', () => {
-    stubAuroraGlobals()
+  it('draws the bundled cube mark when no logo is uploaded, and the upload once there is one', async () => {
+    await loadGlobals()
     expect(mountWithKit(AuroraFooter).find('[data-testid="app-logo-mark"]').attributes('src')).toContain('/favicon.svg')
 
-    stubAuroraGlobals({ logo: '/api/uploads/logo.png' })
+    await loadGlobals({ logo: '/api/uploads/logo.png' })
     const wrapper = mountWithKit(AuroraFooter)
     expect(wrapper.find('[data-testid="app-logo-light"]').attributes('src')).toBe('/api/uploads/logo.png')
     expect(wrapper.find('[data-testid="app-logo-mark"]').exists()).toBe(false)

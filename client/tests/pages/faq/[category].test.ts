@@ -7,7 +7,7 @@
  * @module tests/pages/faq/[category].test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { PUBLIC_PAGE_BASE_URL, canonicalOf, mountPage, publishedSchemas, registerPageComponents, seoTags, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import { StorefrontPath } from '~/tests/helpers/storefrontSection'
@@ -109,12 +109,9 @@ describe('pages/faq/[category]', () => {
   it('sets the tags and the structured data of the topic only', async () => {
     await mountRenderedPage(Page, ROOT)
 
-    expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'seo.faqCategory.products.title',
-      path: '/faq/products',
-    }))
-    const schema = spies.injectSchema.mock.calls[0]?.[0] as { items: unknown[] }
-    expect(schema.items).toHaveLength(2)
+    expect(seoTags(spies)).toMatchObject({ title: 'seo.faqCategory.products.title' })
+    expect(canonicalOf(spies)).toBe(`${PUBLIC_PAGE_BASE_URL}/faq/products`)
+    expect(publishedSchemas(spies)[0]?.mainEntity).toHaveLength(2)
   })
 
   it('raises a 404 for a topic that does not exist', async () => {

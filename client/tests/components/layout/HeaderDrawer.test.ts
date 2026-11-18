@@ -3,38 +3,25 @@
  * footers, the preference pickers and closing.
  *
  * The real auth store, API composable and transport run against a stub server playing the BFF;
- * only the two pickers are stood in for.
+ * the language and currency pickers run for real too.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
-import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
+import { useTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderDrawer from '~/components/layout/HeaderDrawer.vue'
 import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { CLIENT_INVOICES_PATH, CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
-import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
-import type { StubServer } from '~/tests/helpers/stubServer'
-import { startTransport } from '~/tests/helpers/stubTransport'
+import { readOf, requestsTo, writeOf } from '~/tests/helpers/stubRoutes'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { AMD_CURRENCY, USD_CURRENCY } from '~/tests/helpers/payerCatalogue'
 import type { HeaderNavItem } from '~/types/headernavitem'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 
-/** The stub playing the BFF. */
-let stub: StubServer
-
-/** Stand-in for the language switcher, which needs the i18n runtime. */
-const LanguageSwitcherStub = defineComponent({
-  name: 'UiLanguageSwitcher',
-  setup: () => () => h('div', { 'data-testid': 'language-switcher-stub' }),
-})
-
-/** Stand-in for the currency switcher, which has its own test. */
-const CurrencySwitcherStub = defineComponent({
-  name: 'UiCurrencySwitcher',
-  setup: () => () => h('div', { 'data-testid': 'currency-switcher-stub' }),
-})
+/** The stub server and the loader of the template globals; the hooks start the stub before each test and close it after. */
+const { replies, stub, loadGlobals } = useTemplateGlobals()
 
 /**
  * A plain link and a group. The destinations are fixture data, not routes the drawer owns: the
@@ -63,18 +50,14 @@ const client = makeClientUser()
  */
 const mountDrawer = (path = '/en/') => mountWithKit(LayoutHeaderDrawer, {
   props: { modelValue: true, items, path },
-  components: { UiLanguageSwitcher: LanguageSwitcherStub, UiCurrencySwitcher: CurrencySwitcherStub },
   attachToBody: true,
 })
 
 describe('LayoutHeaderDrawer', () => {
   beforeEach(async () => {
-    stubTemplateGlobals()
-    stub = await startTransport(routeTable({ [writeOf(AccountEndpoint.Logout)]: { body: {} } }))
-  })
-
-  afterEach(async () => {
-    await stub.close()
+    replies[writeOf(AccountEndpoint.Logout)] = { body: {} }
+    replies[readOf(CatalogPath.BillingCurrencies)] = { body: [USD_CURRENCY, AMD_CURRENCY] }
+    await loadGlobals()
   })
 
   it('renders nothing while closed', () => {
@@ -106,7 +89,6 @@ describe('LayoutHeaderDrawer', () => {
     ]
     const wrapper = mountWithKit(LayoutHeaderDrawer, {
       props: { modelValue: true, items: nested, path: '/en/products/mail' },
-      components: { UiLanguageSwitcher: LanguageSwitcherStub, UiCurrencySwitcher: CurrencySwitcherStub },
       attachToBody: true,
     })
 
@@ -122,12 +104,12 @@ describe('LayoutHeaderDrawer', () => {
     expect(wrapper.find('[data-testid="header-drawer-child-faq-icon"]').classes()).toContain('bg-classic-on-brand/20')
   })
 
-  it('carries the preference pickers', () => {
+  it('carries the real preference pickers', async () => {
     const wrapper = mountDrawer()
 
     const preferences = wrapper.find('[data-testid="header-drawer-preferences"]')
-    expect(preferences.find('[data-testid="language-switcher-stub"]').exists()).toBe(true)
-    expect(preferences.find('[data-testid="currency-switcher-stub"]').exists()).toBe(true)
+    expect(preferences.find('[data-testid="language-switcher"]').exists()).toBe(true)
+    await waitUntil(() => expect(preferences.find('[data-testid="currency-switcher"]').exists()).toBe(true))
   })
 
   it('offers sign in and get started to a visitor', () => {
@@ -167,7 +149,7 @@ describe('LayoutHeaderDrawer', () => {
 
     await wrapper.find('[data-testid="header-drawer-sign-out"]').trigger('click')
 
-    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub().requests, AccountEndpoint.Logout)).toHaveLength(1))
     await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
   })

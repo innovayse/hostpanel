@@ -19,6 +19,8 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="Currency">ISO 4217 currency code.</param>
 /// <param name="PaymentMethod">Preferred payment method.</param>
 /// <param name="Notifications">Which emails the client receives.</param>
+/// <param name="VatNumber">The client's VAT number (their tax identification number), or null when none is recorded.</param>
+/// <param name="Vat">The last completed check of that number.</param>
 /// <param name="TwoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
 /// <param name="Contacts">Additional contacts linked to this client.</param>
 public sealed record MyProfileDto(
@@ -33,5 +35,7 @@ public sealed record MyProfileDto(
     string? Currency,
     string? PaymentMethod,
     MyProfileNotificationsDto Notifications,
+    string? VatNumber,
+    ClientVatDto Vat,
     bool TwoFactorEnabled,
     IReadOnlyList<ContactDto> Contacts);

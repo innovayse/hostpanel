@@ -21,5 +21,14 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// discount is an amount, not a percent), so on a bundle order <paramref name="Price"/> is lower than the list price
 /// less this percent alone.
 /// </param>
+/// <param name="PlaceLimited">
+/// Whether the line takes a place of a product with a cap on live services or a one-per-client rule, so the order holds
+/// that product's lock while the places are counted and the order is saved. <see langword="false"/> on a domain line.
+/// </param>
 public sealed record PricedOrderLine(
-    PlaceOrderItemDto Item, string ProductName, decimal Price, ProductSnapshot? Snapshot, decimal DiscountPercent = 0m);
+    PlaceOrderItemDto Item,
+    string ProductName,
+    decimal Price,
+    ProductSnapshot? Snapshot,
+    decimal DiscountPercent = 0m,
+    bool PlaceLimited = false);

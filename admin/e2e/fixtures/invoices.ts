@@ -48,6 +48,8 @@ export const unpaidInvoiceDetail: InvoiceDetail = {
   amountDue: 120,
   creditableAmount: 0,
   isCreditTopUp: false,
+  reverseCharge: false,
+  clientVatNumber: null,
   payment: { method: null, gatewayTransactionId: null },
   notes: null,
   items: [{ id: 1, description: 'Hosting', unitPrice: 120, quantity: 1, amount: 120, sku: null }],

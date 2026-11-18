@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Hostpanel.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261116120000_AddProductTrials")]
-    partial class AddProductTrials
+    [Migration("20261116102809_AddVatNumberChecksAndReverseCharge")]
+    partial class AddVatNumberChecksAndReverseCharge
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -507,6 +507,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ClientVatNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -597,6 +601,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("RefundStartedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("ReverseCharge")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1448,6 +1457,21 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("character varying(450)");
+
+                    b.Property<string>("VatAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("VatCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VatName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("VatStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -3368,29 +3392,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<bool>("TrialAutoConvert")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("TrialDays")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(14);
-
-                    b.Property<bool>("TrialEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("TrialGracePeriodDays")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(3);
-
-                    b.Property<string>("TrialReminderDays")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("3,1");
-
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -3411,10 +3412,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Products", t =>
                         {
                             t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
-
-                            t.HasCheckConstraint("CK_Products_TrialDays", "\"TrialDays\" BETWEEN 1 AND 365");
-
-                            t.HasCheckConstraint("CK_Products_TrialGracePeriodDays", "\"TrialGracePeriodDays\" BETWEEN 0 AND 30");
                         });
                 });
 

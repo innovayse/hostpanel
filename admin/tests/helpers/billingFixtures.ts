@@ -29,6 +29,8 @@ export const invoiceFixture = (overrides: Partial<InvoiceDetail> = {}): InvoiceD
   amountDue: 60,
   creditableAmount: 0,
   isCreditTopUp: false,
+  reverseCharge: false,
+  clientVatNumber: null,
   payment: { method: 'Example Gateway', gatewayTransactionId: null },
   notes: null,
   items: [{ id: 11, description: 'Managed hosting', unitPrice: 100, quantity: 1, amount: 100, sku: null }],

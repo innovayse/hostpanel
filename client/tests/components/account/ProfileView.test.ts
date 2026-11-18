@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import ProfileView from '~/components/account/ProfileView.vue'
 import type { ClientUser } from '~/types/clientuser'
+import { ClientVatStatus } from '~/types/clientvat'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { decodeEmailPrefs } from '~/utils/emailPreferences'
 
@@ -47,6 +48,25 @@ describe('ProfileView', () => {
 
   it('shows a dash for an empty address field', () => {
     expect(mountView().text()).toContain('—')
+  })
+
+  it('shows the VAT number with the verdict of its last check', () => {
+    const valid = mountView({
+      user: makeClientUser({ ...user, vatNumber: 'DE123456789', vat: { status: ClientVatStatus.Valid, checkedAt: null, name: null, address: null } })
+    })
+    const invalid = mountView({
+      user: makeClientUser({ ...user, vatNumber: 'DE123456789', vat: { status: ClientVatStatus.Invalid, checkedAt: null, name: null, address: null } })
+    })
+    const unchecked = mountView({ user: makeClientUser({ ...user, vatNumber: 'DE123456789' }) })
+
+    expect(valid.get('[data-testid="profile-view-vat"]').text()).toContain('DE123456789')
+    expect(valid.get('[data-testid="profile-view-vat"]').text()).toContain('client.profile.vatStatus.Valid')
+    expect(invalid.get('[data-testid="profile-view-vat"]').text()).toContain('client.profile.vatStatus.Invalid')
+    expect(unchecked.get('[data-testid="profile-view-vat"]').text()).toContain('client.profile.vatStatus.none')
+  })
+
+  it('shows no VAT number row when none is recorded', () => {
+    expect(mountView().find('[data-testid="profile-view-vat"]').exists()).toBe(false)
   })
 
   it('shows the language row when the deployment owns the language', () => {

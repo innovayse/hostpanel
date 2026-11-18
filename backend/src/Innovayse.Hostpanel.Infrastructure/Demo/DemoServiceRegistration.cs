@@ -61,6 +61,7 @@ internal static class DemoServiceRegistration
         services.Replace(ServiceDescriptor.Scoped<IProvisioningProviderFactory, DemoProvisioningProviderFactory>());
         services.Replace(ServiceDescriptor.Scoped<IServerConnectionTester, DemoServerConnectionTester>());
         services.Replace(ServiceDescriptor.Scoped<IExchangeRateSource, DemoExchangeRateSource>());
+        services.Replace(ServiceDescriptor.Scoped<IVatNumberChecker, DemoVatNumberChecker>());
         services.Replace(ServiceDescriptor.Scoped<IContactNotifier, DemoContactNotifier>());
         services.Replace(ServiceDescriptor.Scoped<IHostingProbe, DemoHostingProbe>());
 

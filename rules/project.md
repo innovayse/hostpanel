@@ -70,7 +70,7 @@ repositories. What is specific to this project is short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`, `RecheckVatNumbersCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -191,6 +191,25 @@ docker/                              compose set (shared·dev·prod·platform), 
   the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
   API URL and test mode saved on the admin Integrations page over the bound options
   (`IsConfiguredAsync`), so the page configures what requests use.
+- **VAT numbers are checked through one port, and the reverse charge is decided in one place (#1144).** `IVatNumberChecker`
+  (`Application/Common/Interfaces/`) takes a `VatNumberLookup` (country, number without prefix) and answers a `VatNumberCheck`
+  (`VatCheckOutcome` valid, invalid or unavailable, plus the registered name and address); `Infrastructure/Vat/VatNumberChecker`
+  picks the register, `ViesVatClient` for an EU member state and `HmrcVatClient` for the UK, and nothing else takes those two
+  clients (`VatNumberCheckerPortTests`). Unavailable (a down service, an error status, an unreadable body, a timeout, no UK
+  credentials) is never stored as invalid: `Client.RecordVatCheck` ignores it, so the client keeps its status and date. The
+  client's VAT number is its existing `TaxId`; `Client` clears the verdict when the number or the billing country changes
+  (`VatCheckPending`), and the writers that can change them (`UpdateClient`, so the portal's `UpdateMyProfile` too, and
+  `AdminCreateClient`) publish `ClientVatCheckRequestedEvent` after the save, which `ClientVatCheckRequestedHandler` runs as
+  `CheckClientVat` in the background. `VatRegisters` (Application) is the one list of the countries that have a register (the EU
+  member states and `GB`) and the one place a number is put in lookup shape. `RecheckVatNumbersCron` re-checks never judged
+  numbers first, then those older than `ScheduledJobs:VatRecheckAfterDays`; it leaves out the countries whose register is not set
+  up (`IVatNumberChecker.IsConfiguredFor`, the UK without credentials) and stops asking about a country after
+  `VatRecheckStopAfterUnavailable` answers in a row without a verdict, so one register never starves the others. `ClientTaxRateResolver` is still the one place a new
+  invoice's tax is decided: it answers a `ClientTaxTreatment` (rate, or the VAT number of a reverse charge), `Tax Exempt` wins, and
+  a reverse charge needs a valid verdict no older than `ScheduledJobs:VatCheckValidForDays` (it fails closed when the re-check stops), a country with a register other than `billing.tax.seller_country`; the invoice stores
+  `ReverseCharge` and `ClientVatNumber` (`Invoice.ApplyReverseCharge`) so a later change of the client never rewrites it, and
+  `UpdateInvoiceOptions` asks the resolver (`EnsureMayBeTaxedAsync`) instead of deciding. The UK lookup needs `Vat:Hmrc` credentials
+  (`HmrcVatOptions`, both or neither); the demo replaces the port with `DemoVatNumberChecker`.
 - **Plugin integrations on the Integrations page (#854, #855, #856).** A plugin's form texts are resolved per request:
   `IntegrationFields.Resolve` maps each `GetSettings()` entry with `ToFieldDefinition(PluginUiTexts)`, so the label, the
   help text (`description`), the `placeholder` and every select option label (`optionLabels`, keyed by the stored value;
@@ -1769,8 +1788,9 @@ feature does not exist is not kept. The decisions:
   that decides: for a client with no `TaxId` in an EU country other than `billing.tax.seller_country`
   (empty turns it off), on an invoice whose every line has `InvoiceItem.IsDigitalService` (the product's
   `IsDigitalService`, copied into the line's `ProductSnapshot` at billing time; not `IsDigital`, which is about delivery) the rate is the
-  standard `VatRate` in force on the invoice date; everything else keeps the tax rule rate. The reverse charge for
-  business clients is not decided here. The OSS report (`GetOssReport`, `GET /api/reports/oss`, formerly named
+  standard `VatRate` in force on the invoice date; everything else keeps the tax rule rate. A client with a `TaxId` never gets the
+  destination rate: the same method gives one whose number checked valid the reverse charge (#1144), the same
+  `billing.tax.seller_country` switching both off, and a hand-typed rate is refused for it. The OSS report (`GetOssReport`, `GET /api/reports/oss`, formerly named
   after the scheme it replaced; the old route `vat-moss` is a deprecated alias for one release, removed in the next) groups by member state, rate and currency.
 - **`OverdueNotices`.** The payment reminder mail for an unpaid renewal invoice
   (`SendRenewalReminder`) goes only to a client with both `NotifyInvoice` and `OverdueNotices` on. The
@@ -2781,10 +2801,24 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `tests/lint/noOwnMocks.test.ts` (admin) and `tests/config/noOwnMocks.test.ts` (client, one guard per
   app because an app's container cannot read the other's files) fail on a `vi.mock` or `vi.doMock` of
   any module of ours; the client one also fails on a test that fakes a composable or store of ours with
-  `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed), and its `KNOWN_REMAINDER` list of
-  tests that still do so may only shrink. The guard also reads the argument of `usePortalSettingsServer`:
-  each entry must be a bare name imported from a composable, store or util of the client, never renamed on
-  import and never from a test helper.
+  `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed), in every client test with no exemption list,
+  and it reads `vitest.setup.ts` (by `define`, `vi.stubGlobal` and `globalThis` assignment), which may stand
+  in for none of our composables. Registering the real one under its own name (`vi.stubGlobal('useX', useX)`)
+  is allowed only when `useX` is imported (or destructured from `await import`) from a composable, store or
+  util of the client, never a local value. The guard also reads the argument of `usePortalSettingsServer`
+  with the same check: each entry must be a bare name bound that way, never renamed on import and never from
+  a test helper. The client guard also fails on a stub of a component of ours: every component under
+  `client/components` runs for real in every client test (its data comes from the stub server, the real
+  composables registered under their auto-import names), so an entry of a `stubs` or `components` option or of
+  `registerPageComponents` that is named after one of them (by the name Nuxt gives its file, kebab-case read
+  as the same name) must be that very component, the default import of its `.vue` file, never `true`, a marker
+  component or a component from another file, and `shallowMount` (which stubs every child) and `shallow: true`
+  are refused. Framework and third-party components (`NuxtLink`, `i18n-t`, `Swiper`) are not ours and may be
+  stood in for, and the template slot stand-ins of the page tests (`stubTemplateSlots`) replace a template
+  page, not a component under `client/components`. The scan reads object literals (or a `const` one in the same
+  file) after those options, so a registry spread from a helper (`...CLASSIC_COMPONENTS`) is not read; the
+  helpers register only real components. `tests/helpers/nuxtComponentName.ts` is the one place the Nuxt naming
+  rule lives, for the mount helpers and for the guard.
   On this laptop vitest needs `--maxWorkers=2`.
 - **e2e.** `admin/e2e/`: Playwright, one spec per flow, `data-testid` selectors only (`fieldOf` for
   inputs), against `vite preview` of a production build with the API replaced by `page.route`

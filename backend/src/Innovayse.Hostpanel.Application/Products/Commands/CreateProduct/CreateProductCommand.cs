@@ -50,6 +50,10 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 /// <param name="IsDigitalService">
 /// Whether the product is an electronic service for VAT (see <see cref="Product.IsDigitalService"/>). <c>false</c> by default.
 /// </param>
+/// <param name="MaxActiveServices">
+/// How many services of the product may be live at once, counting orders not yet fulfilled; null or 0 is unlimited.
+/// </param>
+/// <param name="OnePerClient">Whether a client may hold only one live service of the product.</param>
 /// <param name="Trial">
 /// Optional free-trial settings of the product. Null creates the product with the trial off and the
 /// default settings (<see cref="ProductTrial.Default"/>).
@@ -73,4 +77,6 @@ public sealed record CreateProductCommand(
     int? GracePeriodDays = null,
     bool IsHidden = false,
     bool IsDigitalService = false,
+    int? MaxActiveServices = null,
+    bool OnePerClient = false,
     ProductTrialDto? Trial = null);

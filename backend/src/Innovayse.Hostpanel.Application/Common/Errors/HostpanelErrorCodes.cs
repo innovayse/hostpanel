@@ -679,6 +679,17 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PRODUCT_NOT_AVAILABLE = "PRODUCT_NOT_AVAILABLE";
 
+    /// <summary>
+    /// The product's cap on live services is reached, counting orders not yet fulfilled, so it takes no new order (409).
+    /// </summary>
+    public const string ORDER_PRODUCT_SOLD_OUT = "ORDER_PRODUCT_SOLD_OUT";
+
+    /// <summary>
+    /// The product allows one live service per client and the client already holds or has ordered one, or the order
+    /// names it more than once (409).
+    /// </summary>
+    public const string ORDER_PRODUCT_ONE_PER_CLIENT = "ORDER_PRODUCT_ONE_PER_CLIENT";
+
     /// <summary>The service is not Pending, so it cannot be set up (400).</summary>
     public const string SERVICE_NOT_PENDING = "SERVICE_NOT_PENDING";
 
@@ -1502,6 +1513,21 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string CLIENT_TAX_EXEMPT = Domain.Clients.ClientsErrors.ClientTaxExempt;
 
+    /// <summary>The account is invoiced under the reverse charge, so a tax rate cannot be set on its invoices by hand (409).</summary>
+    public const string CLIENT_REVERSE_CHARGE_APPLIES = Domain.Clients.ClientsErrors.ClientReverseChargeApplies;
+
+    /// <summary>The client holds no VAT number to check (400).</summary>
+    public const string CLIENT_VAT_NUMBER_MISSING = Domain.Clients.ClientsErrors.ClientVatNumberMissing;
+
+    /// <summary>The client's billing country has no VAT number register to ask: it is neither an EU member state nor the United Kingdom (400).</summary>
+    public const string CLIENT_VAT_COUNTRY_NOT_SUPPORTED = Domain.Clients.ClientsErrors.ClientVatCountryNotSupported;
+
+    /// <summary>The VAT number service, or the member state behind it, gave no verdict; nothing was changed (503).</summary>
+    public const string VAT_SERVICE_UNAVAILABLE = Domain.Clients.ClientsErrors.VatServiceUnavailable;
+
+    /// <summary>The register of the client's country is not set up on this installation, so no check can be made (503).</summary>
+    public const string VAT_CHECK_NOT_CONFIGURED = Domain.Clients.ClientsErrors.VatCheckNotConfigured;
+
     /// <summary>The discount of a client group is outside 0 to 100 percent (400).</summary>
     public const string CLIENT_GROUP_DISCOUNT_INVALID = Domain.Clients.ClientsErrors.ClientGroupDiscountInvalid;
 
@@ -1657,6 +1683,12 @@ public static class HostpanelErrorCodes
     /// <see cref="Domain.Products.Product.ConfigureTrial"/>.
     /// </summary>
     public const string PRODUCT_TRIAL_INVALID = Domain.Products.ProductsErrors.ProductTrialInvalid;
+
+    /// <summary>
+    /// The cap on live services is negative (400): <see cref="Domain.Products.Product.SetMaxActiveServices"/>. Zero is
+    /// the unlimited cap on the command and never reaches the aggregate.
+    /// </summary>
+    public const string PRODUCT_MAX_ACTIVE_SERVICES_INVALID = Domain.Products.ProductsErrors.ProductMaxActiveServicesInvalid;
 
     /// <summary>
     /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):

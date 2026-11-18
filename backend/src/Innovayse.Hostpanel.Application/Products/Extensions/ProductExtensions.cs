@@ -36,6 +36,8 @@ public static class ProductExtensions
             product.Metadata,
             product.GracePeriodDays,
             product.IsDigitalService,
+            product.MaxActiveServices,
+            product.OnePerClient,
             product.Trial.ToDto());
     }
 
@@ -102,26 +104,6 @@ public static class ProductExtensions
     /// <returns>The cycle prices; a cycle not sold in that currency is null.</returns>
     private static ProductPricingDto ToPricingDto(this Product product, string currencyCode) =>
         ProductPricingDto.Of(cycle => product.PriceFor(currencyCode, cycle));
-
-    /// <summary>Maps free-trial settings to the DTO the API answers with.</summary>
-    /// <param name="trial">The settings.</param>
-    /// <returns>The DTO, its reminder days descending.</returns>
-    public static ProductTrialDto ToDto(this ProductTrial trial)
-    {
-        ArgumentNullException.ThrowIfNull(trial);
-
-        return new ProductTrialDto(trial.Enabled, trial.Days, trial.AutoConvert, trial.ReminderDays, trial.GracePeriodDays);
-    }
-
-    /// <summary>Maps free-trial settings the API received to the domain value.</summary>
-    /// <param name="trial">The DTO.</param>
-    /// <returns>The settings; validity is checked when they are applied to a product.</returns>
-    public static ProductTrial ToDomain(this ProductTrialDto trial)
-    {
-        ArgumentNullException.ThrowIfNull(trial);
-
-        return new ProductTrial(trial.Enabled, trial.Days, trial.AutoConvert, trial.ReminderDays, trial.GracePeriodDays);
-    }
 
     /// <summary>Groups a product's stored prices by currency, one DTO per currency.</summary>
     /// <param name="product">The product whose prices are read.</param>

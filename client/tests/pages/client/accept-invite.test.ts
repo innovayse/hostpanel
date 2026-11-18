@@ -7,7 +7,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -36,7 +37,7 @@ let table: StubRouteTable
  *
  * @param wrapper - The mounted page.
  */
-const submit = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promise<void> => {
+const submit = async (wrapper: Awaited<ReturnType<typeof mountPage>>): Promise<void> => {
   await wrapper.find('form').trigger('submit')
 }
 
@@ -45,7 +46,7 @@ const submit = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promi
  *
  * @param wrapper - The mounted page.
  */
-const submitUntilSignInRequired = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promise<void> => {
+const submitUntilSignInRequired = async (wrapper: Awaited<ReturnType<typeof mountPage>>): Promise<void> => {
   await submit(wrapper)
   await waitUntil(() => expect(wrapper.find('[data-testid="invite-sign-in-required"]').exists()).toBe(true))
 }
@@ -63,7 +64,7 @@ describe('client accept-invite page', () => {
   it('shows the invalid-link state when the link has no token', async () => {
     stubAuthRuntime()
 
-    const wrapper = await mountAuthPage(AcceptInvitePage)
+    const wrapper = await mountPage(AcceptInvitePage)
 
     expect(wrapper.find('[data-testid="invite-invalid"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invite-form"]').exists()).toBe(false)
@@ -73,7 +74,7 @@ describe('client accept-invite page', () => {
   it('shows the accept form for a link with a token', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
 
-    const wrapper = await mountAuthPage(AcceptInvitePage)
+    const wrapper = await mountPage(AcceptInvitePage)
 
     expect(wrapper.find('[data-testid="invite-form"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invite-submit"]').exists()).toBe(true)
@@ -82,7 +83,7 @@ describe('client accept-invite page', () => {
   it('posts the token when the form is submitted', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
     table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 400, body: { detail: 'This invitation has expired.' } }
-    const wrapper = await mountAuthPage(AcceptInvitePage)
+    const wrapper = await mountPage(AcceptInvitePage)
 
     await submit(wrapper)
     await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.AcceptInvite)).toHaveLength(1))
@@ -93,7 +94,7 @@ describe('client accept-invite page', () => {
   it('shows the API sentence for a refused invitation', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
     table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 400, body: { detail: 'This invitation has expired.' } }
-    const wrapper = await mountAuthPage(AcceptInvitePage)
+    const wrapper = await mountPage(AcceptInvitePage)
 
     await submit(wrapper)
     await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
@@ -104,7 +105,7 @@ describe('client accept-invite page', () => {
   it('offers the sign-in step when the API says a session is needed', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
     table[writeOf(AccountEndpoint.AcceptInvite)] = { status: 403, body: { type: PortalErrorCode.InviteSignInRequired, detail: 'Sign in first.' } }
-    const wrapper = await mountAuthPage(AcceptInvitePage)
+    const wrapper = await mountPage(AcceptInvitePage)
 
     await submitUntilSignInRequired(wrapper)
 
@@ -115,10 +116,10 @@ describe('client accept-invite page', () => {
   it('shows the accept form again when the visitor returns to the link after a sign-in-required refusal', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
     table[writeOf(AccountEndpoint.AcceptInvite)] = SIGN_IN_REQUIRED
-    const first = await mountAuthPage(AcceptInvitePage)
+    const first = await mountPage(AcceptInvitePage)
     await submitUntilSignInRequired(first)
 
-    const second = await mountAuthPage(AcceptInvitePage)
+    const second = await mountPage(AcceptInvitePage)
 
     expect(second.find('[data-testid="invite-form"]').exists()).toBe(true)
     expect(second.find('[data-testid="invite-sign-in-required"]').exists()).toBe(false)
@@ -127,7 +128,7 @@ describe('client accept-invite page', () => {
   it('sends the visitor to the local sign-in page and back to this exact link', async () => {
     stubAuthRuntime({ query: { token: 'tok' }, fullPath: INVITE_LINK })
     table[writeOf(AccountEndpoint.AcceptInvite)] = SIGN_IN_REQUIRED
-    const wrapper = await mountAuthPage(AcceptInvitePage)
+    const wrapper = await mountPage(AcceptInvitePage)
     await submitUntilSignInRequired(wrapper)
 
     await wrapper.find('[data-testid="invite-sign-in"]').trigger('click')
@@ -143,7 +144,7 @@ describe('client accept-invite page', () => {
       publicConfig: { baseUrl: 'https://portal.example.test' }
     })
     table[writeOf(AccountEndpoint.AcceptInvite)] = SIGN_IN_REQUIRED
-    const wrapper = await mountAuthPage(AcceptInvitePage)
+    const wrapper = await mountPage(AcceptInvitePage)
     await submitUntilSignInRequired(wrapper)
 
     await wrapper.find('[data-testid="invite-sign-in"]').trigger('click')

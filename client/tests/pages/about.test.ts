@@ -1,21 +1,26 @@
 /**
  * Tests for the About page: the operator's story as one section, and a redirect to contact when no
- * story is set.
+ * story is set. The real story reader runs against the operator's settings from the stub server.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { useAboutText } from '~/composables/useAboutText'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import LegalDocument from '~/components/legal/LegalDocument.vue'
 import Page from '~/pages/about.vue'
 
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer({ useAboutText })
+
 /**
- * Stands in for the story reader.
+ * Publishes the story the operator wrote, one blank line between paragraphs.
  *
  * @param paragraphs The paragraphs the operator set.
+ * @returns Resolves once the settings are loaded.
  */
-const stubStory = (paragraphs: string[]): void => {
-  vi.stubGlobal('useAboutText', () => ({ paragraphs: ref(paragraphs) }))
-}
+const publishStory = (paragraphs: string[]): Promise<void> =>
+  loadPortalSettings(replies, { [PortalSettingKey.AboutText]: paragraphs.join('\n\n') })
 
 /** `navigateTo` spy, renewed before each test. */
 let navigateTo: ReturnType<typeof vi.fn>
@@ -28,12 +33,8 @@ describe('pages/about', () => {
     vi.stubGlobal('navigateTo', navigateTo)
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('shows the title and every paragraph of the story', async () => {
-    stubStory(['We host sites.', 'We register domains.'])
+    await publishStory(['We host sites.', 'We register domains.'])
 
     const wrapper = await mountPage(Page)
 
@@ -45,7 +46,7 @@ describe('pages/about', () => {
   })
 
   it('sends the visitor to contact when no story is set', async () => {
-    stubStory([])
+    await publishStory([])
 
     await mountPage(Page)
 

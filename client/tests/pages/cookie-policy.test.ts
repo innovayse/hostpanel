@@ -2,10 +2,11 @@
  * Tests for the Cookie Policy page: the cookie types as cards, the uses as a checklist, a note,
  * and the contact address as a mail link.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { PortalSettingKey } from '~/constants/portalSettingKey'
 import LegalDocument from '~/components/legal/LegalDocument.vue'
 import Page from '~/pages/cookie-policy.vue'
 
@@ -18,6 +19,9 @@ const MESSAGES: Record<string, unknown> = {
   'cookiePolicy.sections.howWeUseCookies.uses': ['Authentication', 'Security', 'Language'],
 }
 
+/** What the stub answers, by route; the hooks start the stub before each test and close it after. */
+const { replies } = usePortalSettingsServer()
+
 /** Spies of the stood-in runtime, renewed before each test. */
 let spies: PublicPageSpies
 
@@ -25,10 +29,6 @@ describe('pages/cookie-policy', () => {
   beforeEach(() => {
     spies = stubPublicPageRuntime({ tm: key => MESSAGES[key] ?? [] })
     registerPageComponents({ LegalDocument })
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
   })
 
   it('shows the title and the dated last-updated line without a badge', async () => {
@@ -71,7 +71,7 @@ describe('pages/cookie-policy', () => {
   })
 
   it('links the contact address as a mail link and has no separate contact card', async () => {
-    vi.stubGlobal('useContactDetails', () => ({ email: ref('hello@acme.test') }))
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactEmail]: 'hello@acme.test' })
     const wrapper = await mountPage(Page)
 
     const link = wrapper.find('[data-testid="legal-section-link"]')

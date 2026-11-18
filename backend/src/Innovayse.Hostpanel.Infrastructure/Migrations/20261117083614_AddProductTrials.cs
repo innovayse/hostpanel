@@ -15,7 +15,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 table: "Products",
                 type: "boolean",
                 nullable: false,
-                defaultValue: true);
+                defaultValue: false);
+
+            // A new product turns a trial into a paid service by default (Product.TrialAutoConvert), and the model
+            // states no column default for a bool, so the rows that existed before the column take that value here.
+            migrationBuilder.Sql("UPDATE \"Products\" SET \"TrialAutoConvert\" = TRUE;");
 
             migrationBuilder.AddColumn<int>(
                 name: "TrialDays",

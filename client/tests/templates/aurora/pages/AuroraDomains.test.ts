@@ -8,7 +8,10 @@ import AuroraDomains from '~/templates/aurora/pages/AuroraDomains.vue'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
 import { DomainResultStatus } from '~/types/domainresultstatus'
 import type { TldPriceRow } from '~/types/tldpricerow'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { useAuroraGlobals } from '../auroraGlobals'
+
+/** The stub server and the loader of the aurora globals; the hooks start the stub before each test and close it after. */
+const { loadGlobals } = useAuroraGlobals()
 
 /** One priced extension, so the page treats the registrar as configured. */
 const ROW: TldPriceRow = {
@@ -23,8 +26,8 @@ const ROW: TldPriceRow = {
 }
 
 describe('AuroraDomains', () => {
-  it('renders the headline, the search bar and the price table', () => {
-    stubAuroraGlobals()
+  it('renders the headline, the search bar and the price table', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraDomains, { props: { priceRows: [ROW] } })
 
     expect(wrapper.find('[data-testid="domains-title"]').text()).toBe('aurora.domainsPage.title')
@@ -32,8 +35,8 @@ describe('AuroraDomains', () => {
     expect(wrapper.find('[data-testid="tld-row-.com"]').exists()).toBe(true)
   })
 
-  it('disables the search and explains why when no extension is priced', () => {
-    stubAuroraGlobals()
+  it('disables the search and explains why when no extension is priced', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraDomains)
 
     expect(wrapper.find('[data-testid="domain-search-input"]').attributes('disabled')).toBeDefined()
@@ -41,7 +44,7 @@ describe('AuroraDomains', () => {
   })
 
   it('passes the typed term up to the page', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraDomains, { props: { priceRows: [ROW] } })
 
     await wrapper.find('[data-testid="domain-search-input"]').setValue('shop')
@@ -51,7 +54,7 @@ describe('AuroraDomains', () => {
   })
 
   it('passes the chosen category up and filters the table by the active one', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraDomains, {
       props: { priceRows: [ROW], categories: [ALL_CATEGORY, 'Popular'], activeCategory: 'Country' },
     })
@@ -63,7 +66,7 @@ describe('AuroraDomains', () => {
   })
 
   it('passes an add request up and shows cart state from the page', async () => {
-    stubAuroraGlobals()
+    await loadGlobals()
     const wrapper = mountWithKit(AuroraDomains, {
       props: {
         priceRows: [ROW],

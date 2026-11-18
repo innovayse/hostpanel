@@ -126,6 +126,20 @@ public sealed class ProductTrialTests(IntegrationTestFactory factory) : IClassFi
         (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("trial").GetProperty("enabled").GetBoolean().Should().BeFalse();
     }
 
+    /// <summary>A trial sent without its reminder days is refused as a trial, not stored half empty or answered with a server error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_TrialWithoutReminderDays_IsRefused()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/products", CreateBody(groupId, new { enabled = true, days = 14, autoConvert = true, gracePeriodDays = 3 }));
+
+        await ProductsTestSeeds.AssertFieldRefusedAsync(response, "trial");
+    }
+
     /// <summary>The body of a create with an optional trial object.</summary>
     /// <param name="groupId">The group the product joins.</param>
     /// <param name="trial">The trial object, or null to leave it out.</param>

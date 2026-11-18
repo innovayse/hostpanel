@@ -9,7 +9,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { mountPage } from '~/tests/helpers/mountClient'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import { Permission } from '~/types/permission'
 import { makeClientUser } from '~/tests/helpers/clientUser'
@@ -36,8 +37,8 @@ const { default: DashboardPage } = await import('~/pages/client/dashboard.vue')
  *
  * @returns The mounted page.
  */
-const mountDashboard = async (): Promise<Awaited<ReturnType<typeof mountAuthPage>>> => {
-  const wrapper = await mountAuthPage(DashboardPage, PLUGIN_COMPONENTS)
+const mountDashboard = async (): Promise<Awaited<ReturnType<typeof mountPage>>> => {
+  const wrapper = await mountPage(DashboardPage, { components: PLUGIN_COMPONENTS })
   await waitUntil(() => expect(wrapper.find('[data-testid="dashboard-title"]').exists()).toBe(true))
   return wrapper
 }

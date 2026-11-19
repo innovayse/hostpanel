@@ -198,6 +198,8 @@
     "chatCopy": "Copiar respuesta",
     "chatCopyCode": "Copiar código",
     "chatCopied": "Copiado",
+    "openUrlBlocked": "Este navegador bloqueó la nueva pestaña. Permite las ventanas emergentes para este sitio e inténtalo de nuevo.",
+    "openUrlRefused": "El complemento respondió con una dirección que no se puede abrir.",
     "chatRetry": "Reintentar",
     "chatWriting": "Escribiendo una respuesta"
   }

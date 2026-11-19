@@ -663,7 +663,7 @@ public sealed class PluginHostingService
     private async Task<PluginHostAccessFailure?> RemoveHeldAsync<TResource>(
         PluginCallBinding binding,
         int serviceId,
-        PluginHostAccess access,
+        string access,
         Func<SshServiceContext, Task<TResource?>> find,
         HeldResourceKind<TResource> kind,
         CancellationToken ct)

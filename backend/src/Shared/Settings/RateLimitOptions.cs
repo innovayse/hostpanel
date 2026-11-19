@@ -105,6 +105,17 @@ public sealed class RateLimitOptions
     public RateLimitTierOptions SshKeys { get; set; } = new() { PermitLimit = 20, WindowSeconds = 60 };
 
     /// <summary>
+    /// Gets or sets the tier for <see cref="Constants.RateLimitPolicies.HostingResources"/>: what a plugin changes on a
+    /// client's hosting, counted per plugin and client account. 10 a minute.
+    /// </summary>
+    /// <remarks>
+    /// Every permit is an SSH connection to a managed server and a helper that may run for up to a minute (a web server
+    /// reload, a database created), so the budget is far below the key tier: a plugin that sets up a site does so a few
+    /// times, not in a loop.
+    /// </remarks>
+    public RateLimitTierOptions HostingResources { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
+
+    /// <summary>
     /// How many expensive operations one caller may have in flight at once. Five.
     /// </summary>
     /// <remarks>

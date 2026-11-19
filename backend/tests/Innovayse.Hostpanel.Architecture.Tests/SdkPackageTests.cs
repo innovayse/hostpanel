@@ -21,8 +21,8 @@ public sealed class SdkPackageTests
     {
         var project = LoadProject();
 
-        Property(project, "PackageLicenseExpression").Should().Be("MIT");
-        Property(project, "PackageLicenseFile").Should().BeNull();
+        PackageProperty(project, "PackageLicenseExpression").Should().Be("MIT");
+        PackageProperty(project, "PackageLicenseFile").Should().BeNull();
     }
 
     /// <summary>The MIT text sits beside the project and is packed at the package root.</summary>
@@ -57,8 +57,8 @@ public sealed class SdkPackageTests
         Property(LoadSharedProps(), "Version").Should().MatchRegex(@"^\d+\.\d+\.\d+$");
         Property(project, "Description").Should().NotBeNullOrWhiteSpace();
         Property(project, "PackageTags").Should().NotBeNullOrWhiteSpace();
-        Property(project, "RepositoryUrl").Should().Be("https://github.com/innovayse/hostpanel-sdk.git");
-        Property(project, "PackageProjectUrl").Should().Be("https://github.com/innovayse/hostpanel-sdk");
+        PackageProperty(project, "RepositoryUrl").Should().Be("https://github.com/innovayse/hostpanel-sdk.git");
+        PackageProperty(project, "PackageProjectUrl").Should().Be("https://github.com/innovayse/hostpanel-sdk");
         Property(project, "IsPackable").Should().Be("true");
     }
 
@@ -157,6 +157,18 @@ public sealed class SdkPackageTests
     private static string? Property(XDocument project, string name)
     {
         return project.Descendants(name).Select(element => element.Value.Trim()).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// The value of a package property as MSBuild resolves it: the project's own, else the one the shared props beside
+    /// it set for both packages (the licence, the repository and the project URL live there).
+    /// </summary>
+    /// <param name="project">The parsed SDK project.</param>
+    /// <param name="name">The property name.</param>
+    /// <returns>The trimmed value, or null when neither file sets it.</returns>
+    private static string? PackageProperty(XDocument project, string name)
+    {
+        return Property(project, name) ?? Property(LoadSharedProps(), name);
     }
 
     /// <summary>The files the project packs, by their <c>Include</c> path.</summary>

@@ -1,0 +1,20 @@
+{
+  "op": "ping",
+  "cases": [
+    {
+      "name": "lists the ops this server has a helper for and its php versions",
+      "request": {"v": 1, "op": "ping"},
+      "installed": ["ensure-website", "remove-website", "ensure-database", "remove-database"],
+      "php_versions_output": ["8.3", "8.1", "8.2"],
+      "helper": null,
+      "response": {"v": 1, "ok": true, "agent_version": "1.5.0", "provider": "generic-linux", "binding": "", "capabilities": ["ensure-website", "remove-website", "ensure-database", "remove-database"], "php_versions": ["8.1", "8.2", "8.3"]}
+    },
+    {
+      "name": "a server without helpers reports no ops and no php versions",
+      "request": {"v": 1, "op": "ping"},
+      "installed": [],
+      "helper": null,
+      "response": {"v": 1, "ok": true, "agent_version": "1.5.0", "provider": "generic-linux", "binding": "", "capabilities": [], "php_versions": []}
+    }
+  ]
+}

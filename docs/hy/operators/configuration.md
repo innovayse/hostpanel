@@ -242,6 +242,8 @@ visitor → [extra proxy] → edge (Caddy/nginx) → client portal → API
 | `RateLimit__Strict__WindowSeconds` | `60` | Խիստ պատուհանի երկարությունը վայրկյաններով |
 | `RateLimit__SshKeys__PermitLimit` | `20` | SSH բանալիների endpoint-ների սահմանաչափը պատուհանում |
 | `RateLimit__SshKeys__WindowSeconds` | `60` | SSH բանալիների պատուհանի երկարությունը վայրկյաններով |
+| `RateLimit__HostingResources__PermitLimit` | `10` | Սահմանաչափը պատուհանում այն բանի համար, ինչ պլագինը փոխում է հաճախորդի հոսթինգում (կայքեր և տվյալների բազաներ)։ Հաշվվում է յուրաքանչյուր պլագինի և հաճախորդի հաշվի համար |
+| `RateLimit__HostingResources__WindowSeconds` | `60` | Հոսթինգի փոփոխությունների պատուհանի երկարությունը վայրկյաններով |
 | `RateLimit__ConcurrentPermitLimit` | `5` | Մեկ հասցեից միաժամանակյա հարցումների առավելագույն քանակը |
 | `RateLimit__PluginDefault__PermitLimit` | `120` | Պլագինի երթուղու սահմանաչափը պատուհանում այն երթուղու համար, որը մակարդակ չի նշում։ Հաշվվում է ըստ պլագինի և ըստ կանչողի (հաճախորդի հաշիվ, կամ ադմինիստրատոր՝ ադմինի կանչի դեպքում) |
 | `RateLimit__PluginDefault__WindowSeconds` | `60` | Պլագինի լռելյայն պատուհանի երկարությունը վայրկյաններով |

@@ -1,0 +1,41 @@
+{
+  "op": "remove-website",
+  "cases": [
+    {
+      "name": "removes what the agent created",
+      "request": {"v": 1, "op": "remove-website", "account": "alice", "hostname": "app.example.com"},
+      "helper": {"exit": 0, "result": {"changed": true}},
+      "response": {"v": 1, "ok": true, "changed": true}
+    },
+    {
+      "name": "nothing left to remove",
+      "request": {"v": 1, "op": "remove-website", "account": "alice", "hostname": "app.example.com"},
+      "helper": {"exit": 0, "result": {"changed": false}},
+      "response": {"v": 1, "ok": true, "changed": false}
+    },
+    {
+      "name": "the vhost exists but the agent did not create it",
+      "request": {"v": 1, "op": "remove-website", "account": "alice", "hostname": "example.com"},
+      "helper": {"exit": 3, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "site_not_owned"}
+    },
+    {
+      "name": "a configuration test failed and was restored",
+      "request": {"v": 1, "op": "remove-website", "account": "alice", "hostname": "app.example.com"},
+      "helper": {"exit": 1, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "website_failed"}
+    },
+    {
+      "name": "no helper on this server",
+      "request": {"v": 1, "op": "remove-website", "account": "alice", "hostname": "app.example.com"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "not_supported"}
+    },
+    {
+      "name": "hostname with an uppercase letter",
+      "request": {"v": 1, "op": "remove-website", "account": "alice", "hostname": "App.example.com"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    }
+  ]
+}

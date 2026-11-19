@@ -144,6 +144,7 @@ public sealed class RateLimitingRegistrationTests
         limits.PluginStrict.Should().BeEquivalentTo(new RateLimitTierOptions { PermitLimit = 20, WindowSeconds = 60 });
         limits.PluginHeavy.Should().BeEquivalentTo(new RateLimitTierOptions { PermitLimit = 6, WindowSeconds = 60 });
         limits.PluginStreamPermitLimit.Should().Be(3);
+        limits.HostingResources.Should().BeEquivalentTo(new RateLimitTierOptions { PermitLimit = 10, WindowSeconds = 60 });
     }
 
     /// <summary>The plugin tiers and the stream cap are bound from the section.</summary>
@@ -172,6 +173,7 @@ public sealed class RateLimitingRegistrationTests
     [InlineData("RateLimit:PluginDefault:PermitLimit")]
     [InlineData("RateLimit:PluginStrict:PermitLimit")]
     [InlineData("RateLimit:PluginHeavy:PermitLimit")]
+    [InlineData("RateLimit:HostingResources:PermitLimit")]
     public void PluginTierAboveGlobal_IsRefused(string key)
     {
         using var provider = Build(new() { ["RateLimit:Global:PermitLimit"] = "10", [key] = "11" });
@@ -189,6 +191,8 @@ public sealed class RateLimitingRegistrationTests
     [InlineData("RateLimit:PluginStrict:PermitLimit")]
     [InlineData("RateLimit:PluginHeavy:WindowSeconds")]
     [InlineData("RateLimit:PluginHeavy:PermitLimit")]
+    [InlineData("RateLimit:HostingResources:PermitLimit")]
+    [InlineData("RateLimit:HostingResources:WindowSeconds")]
     [InlineData("RateLimit:PluginStreamPermitLimit")]
     public void NonPositivePluginBudget_IsRefused(string key)
     {

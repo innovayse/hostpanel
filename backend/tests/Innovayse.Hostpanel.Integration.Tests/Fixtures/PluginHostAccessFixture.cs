@@ -7,11 +7,14 @@ using Hostpanel.Sdk.Plugins.Slots;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Shared;
+using Innovayse.Hostpanel.Shared.Infrastructure;
+using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -23,13 +26,13 @@ using Microsoft.Extensions.Logging;
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 /// <summary>
-/// A host with four enabled app plugins, built once for a test class, with every log line recorded: three whose manifests
+/// A host with enabled app plugins, built once for a test class, with every log line recorded: three whose manifests
 /// declare <c>hostAccess: ["ssh"]</c> (one listing every product in its own manifest) and one that does not. Each puts a service tab widget into
 /// <c>client.service.tabs</c>, the widget an operator binds to products (#823), which is what lets a plugin reach a
 /// service's hosting. Tests reach the SSH methods the way a plugin does: through the <see cref="IPluginHostApi"/> that
 /// <see cref="IPluginCallServices"/> builds for a binding.
 /// </summary>
-public sealed class PluginSshFixture : IAsyncLifetime
+public sealed class PluginHostAccessFixture : IAsyncLifetime
 {
     /// <summary>Every log line the host wrote, for asserting the private key never reached a log.</summary>
     private readonly RecordingLoggerProvider _logs = new();
@@ -58,6 +61,18 @@ public sealed class PluginSshFixture : IAsyncLifetime
     /// <summary>The highest product id the greedy plugin's manifest lists, far above any product a test seeds.</summary>
     public const int GreedyProductIdCeiling = 100_000;
 
+    /// <summary>Gets the id of an enabled plugin that declares <c>hostAccess: ["websites"]</c> only.</summary>
+    public string WebsitesPluginId { get; } = PluginActivationTestSeeds.NewId("websites");
+
+    /// <summary>Gets the id of an enabled plugin that declares <c>hostAccess: ["databases"]</c> only.</summary>
+    public string DatabasesPluginId { get; } = PluginActivationTestSeeds.NewId("databases");
+
+    /// <summary>Gets the id of an enabled plugin that declares both <c>websites</c> and <c>databases</c> host access.</summary>
+    public string HostingPluginId { get; } = PluginActivationTestSeeds.NewId("hosting");
+
+    /// <summary>Gets the id of a second enabled plugin that declares <c>websites</c> and <c>databases</c>, which must never reach the first one's sites.</summary>
+    public string OtherHostingPluginId { get; } = PluginActivationTestSeeds.NewId("hosting-other");
+
     /// <summary>Gets the id of an enabled plugin that declares no host access.</summary>
     public string PlainPluginId { get; } = PluginActivationTestSeeds.NewId("plain");
 
@@ -77,12 +92,25 @@ public sealed class PluginSshFixture : IAsyncLifetime
             Plugin(SshPluginId, [PluginHostAccess.Ssh]),
             Plugin(OtherSshPluginId, [PluginHostAccess.Ssh]),
             Plugin(GreedySshPluginId, [PluginHostAccess.Ssh], [.. Enumerable.Range(1, GreedyProductIdCeiling)]),
+            Plugin(WebsitesPluginId, [PluginHostAccess.Websites]),
+            Plugin(DatabasesPluginId, [PluginHostAccess.Databases]),
+            Plugin(HostingPluginId, [PluginHostAccess.Websites, PluginHostAccess.Databases]),
+            Plugin(OtherHostingPluginId, [PluginHostAccess.Websites, PluginHostAccess.Databases]),
             Plugin(PlainPluginId, []));
 
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await PluginActivationTestSeeds.EnableAsync(db, SshPluginId, OtherSshPluginId, PlainPluginId, GreedySshPluginId);
+            await PluginActivationTestSeeds.EnableAsync(
+                db,
+                SshPluginId,
+                OtherSshPluginId,
+                PlainPluginId,
+                GreedySshPluginId,
+                WebsitesPluginId,
+                DatabasesPluginId,
+                HostingPluginId,
+                OtherHostingPluginId);
         }
 
         Host = Factory.WithWebHostBuilder(builder =>
@@ -117,6 +145,175 @@ public sealed class PluginSshFixture : IAsyncLifetime
     public FakeSshKeyProviderFactory Agents()
     {
         return (FakeSshKeyProviderFactory)Host.Services.GetRequiredService<ISshKeyProviderFactory>();
+    }
+
+    /// <summary>The fake website and database agents of <see cref="Host"/>, which are the ones its calls reach.</summary>
+    /// <returns>The agents.</returns>
+    public FakeHostingResourceProviderFactory HostingAgents()
+    {
+        return HostingAgentsOf(Host);
+    }
+
+    /// <summary>The fake website and database agents of a host derived from <see cref="Host"/>, which has agents of its own.</summary>
+    /// <param name="host">The derived host.</param>
+    /// <returns>The agents.</returns>
+    public static FakeHostingResourceProviderFactory HostingAgentsOf(WebApplicationFactory<Program> host)
+    {
+        return (FakeHostingResourceProviderFactory)host.Services.GetRequiredService<IHostingResourceProviderFactory>();
+    }
+
+    /// <summary>
+    /// Seeds a client with one active service on a fresh server, whose domain is <c>{label}.example.test</c>, and binds the
+    /// products of that service to <paramref name="pluginIds"/>.
+    /// </summary>
+    /// <param name="label">Label for the generated e-mail and the service's domain.</param>
+    /// <param name="pluginIds">The plugins the operator binds to the service's product.</param>
+    /// <returns>The owner, server and service.</returns>
+    public async Task<SshOwnerScenario> OwnerWithDomainBoundToAsync(string label, params string[] pluginIds)
+    {
+        var owner = await OwnerWithDomainAsync(label);
+        foreach (var pluginId in pluginIds)
+        {
+            await BindProductsOfAsync(pluginId, owner.ServiceId);
+        }
+
+        return owner;
+    }
+
+    /// <summary>
+    /// Seeds a client with one active service on a fresh server, whose domain is <c>{label}.example.test</c>, bound to no
+    /// plugin. A binding replaces the plugin's whole product list, so a test with several services binds them in one
+    /// <see cref="BindProductsOfAsync"/> call after seeding all of them.
+    /// </summary>
+    /// <param name="label">Label for the generated e-mail and the service's domain.</param>
+    /// <returns>The owner, server and service.</returns>
+    public async Task<SshOwnerScenario> OwnerWithDomainAsync(string label)
+    {
+        var owner = await OwnerWithServiceAsync(label);
+        await SetDomainAsync(owner.ServiceId, $"{label}.example.test");
+        return owner;
+    }
+
+    /// <summary>Gives a service the domain its hosting account answers for, keeping the rest of the account as it is.</summary>
+    /// <param name="serviceId">The service.</param>
+    /// <param name="domain">The domain.</param>
+    /// <returns>A task that completes once the domain is saved.</returns>
+    public Task SetDomainAsync(int serviceId, string domain)
+    {
+        return SshTestSeeds.ChangeServiceQuietlyAsync(
+            Factory,
+            serviceId,
+            service => service.RecordHostingAccount(
+                new ServiceHostingAccount(service.ServerId, domain, service.ProvisioningRef, null, service.Username, null)));
+    }
+
+    /// <summary>
+    /// Stores <paramref name="count"/> active websites of a plugin on a service directly, to bring it up to the limit
+    /// without a call (and a budget permit) for each.
+    /// </summary>
+    /// <param name="owner">The service's owner scenario.</param>
+    /// <param name="pluginId">The plugin the websites are issued to.</param>
+    /// <param name="count">How many to store.</param>
+    /// <returns>A task that completes once they are saved.</returns>
+    public async Task SeedWebsitesAsync(SshOwnerScenario owner, string pluginId, int count)
+    {
+        using var scope = Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        for (var i = 0; i < count; i++)
+        {
+            var website = ServiceWebsite.Create(owner.ServiceId, owner.ServerId, "web", pluginId, $"seed{i}.example.test", "public_html", null, false);
+            website.MarkActive();
+            context.ServiceWebsites.Add(website);
+        }
+
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>Stores <paramref name="count"/> active databases of a plugin on a service directly.</summary>
+    /// <param name="owner">The service's owner scenario.</param>
+    /// <param name="pluginId">The plugin the databases are issued to.</param>
+    /// <param name="count">How many to store.</param>
+    /// <returns>A task that completes once they are saved.</returns>
+    public async Task SeedDatabasesAsync(SshOwnerScenario owner, string pluginId, int count)
+    {
+        using var scope = Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        for (var i = 0; i < count; i++)
+        {
+            var database = ServiceDatabase.Create(owner.ServiceId, owner.ServerId, "web", pluginId, $"seed{i}");
+            database.MarkProvisioned($"web_seed{i}", $"web_seed{i}");
+            context.ServiceDatabases.Add(database);
+        }
+
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// A host derived from <see cref="Host"/> whose plugin limiters count for real and allow <paramref name="permits"/>
+    /// hosting changes a minute per plugin and client, every other plugin tier being roomy. Its agents are its own.
+    /// </summary>
+    /// <param name="permits">The hosting budget per window.</param>
+    /// <returns>The host, to dispose when the test ends.</returns>
+    public WebApplicationFactory<Program> HostWithHostingBudget(int permits)
+    {
+        return Host.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<PluginRateLimiter>();
+            services.AddSingleton(new PluginRateLimiter(
+                new RateLimitOptions
+                {
+                    PluginDefault = new RateLimitTierOptions { PermitLimit = 100, WindowSeconds = 60 },
+                    PluginStrict = new RateLimitTierOptions { PermitLimit = 100, WindowSeconds = 60 },
+                    PluginHeavy = new RateLimitTierOptions { PermitLimit = 100, WindowSeconds = 60 },
+                    PluginStreamPermitLimit = 1,
+                    HostingResources = new RateLimitTierOptions { PermitLimit = permits, WindowSeconds = 60 },
+                },
+                disabled: false));
+        }));
+    }
+
+    /// <summary>A host derived from <see cref="Host"/> whose plugin limiter has been disposed, so it can no longer answer.</summary>
+    /// <returns>The host, to dispose when the test ends.</returns>
+    public WebApplicationFactory<Program> HostWithADeadLimiter()
+    {
+        var limiter = new PluginRateLimiter(
+            new RateLimitOptions { HostingResources = new RateLimitTierOptions { PermitLimit = 100, WindowSeconds = 60 } }, disabled: false);
+        limiter.Dispose();
+        return Host.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<PluginRateLimiter>();
+            services.AddSingleton(limiter);
+        }));
+    }
+
+    /// <summary>Runs <paramref name="act"/> against the hosting host API one plugin call is handed.</summary>
+    /// <typeparam name="T">What the action answers.</typeparam>
+    /// <param name="binding">The call.</param>
+    /// <param name="act">What the plugin does with the hosting host API.</param>
+    /// <returns>What <paramref name="act"/> answered.</returns>
+    public Task<T> AsHostingPluginAsync<T>(PluginCallBinding binding, Func<IPluginHostHostingApi, Task<T>> act)
+    {
+        return AsPluginAsync(binding, api => act((IPluginHostHostingApi)api));
+    }
+
+    /// <summary>The websites stored for a service, removed ones included.</summary>
+    /// <param name="serviceId">The service.</param>
+    /// <returns>The records.</returns>
+    public async Task<IReadOnlyList<ServiceWebsite>> WebsitesOfAsync(int serviceId)
+    {
+        using var scope = Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return await context.ServiceWebsites.AsNoTracking().Where(w => w.ClientServiceId == serviceId).ToListAsync();
+    }
+
+    /// <summary>The databases stored for a service, removed ones included.</summary>
+    /// <param name="serviceId">The service.</param>
+    /// <returns>The records.</returns>
+    public async Task<IReadOnlyList<ServiceDatabase>> DatabasesOfAsync(int serviceId)
+    {
+        using var scope = Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return await context.ServiceDatabases.AsNoTracking().Where(d => d.ClientServiceId == serviceId).ToListAsync();
     }
 
     /// <summary>Makes a client of <see cref="Host"/> carrying an administrator's bearer token.</summary>

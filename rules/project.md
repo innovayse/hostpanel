@@ -263,7 +263,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.9.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.10.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -589,7 +589,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     client (`ActionBlock.vue`, `pluginActionBody`) the button is disabled until every member is read as a scalar, the body
     is fixed at the click, and a refused call reads the data and `refresh` again. Absent, an action posts `{}`. A result
     card's action carries a literal `body` instead (`readResultBody`), and a malformed one drops that action.
-  - **Open a URL from the reply (#1333, SDK 3.10.0).** An action's `openUrlFrom` names the field of its JSON reply that holds an absolute https URL. Both panels (`PluginActionBlock.vue`, `ActionBlock.vue`) open a blank tab in the click (`openBlankTab`, opener cut), call the route, read the field through `pluginOpenUrlTarget` (`pluginLinkTarget` with the page's `externalOrigins`, a `https://*.host` pattern admits subdomains, external addresses only) and send the tab there; a failed call or a refused address closes it and shows the error. The reader checks the member in `CheckOpenUrl` (`PLUGIN_VIEW_OPEN_URL_INVALID`, `ViewOpenUrlInvalid`): a name of 1 to 64 ASCII letters, digits or underscores, on an action with a route and no `navigate`; the name rule is the reader's own until the SDK's `PluginViews.IsOpenUrlFieldName` is bumped in.
+  - **Open a URL from the reply (#1333, SDK 3.10.0).** An action's `openUrlFrom` names the field of its JSON reply that holds an absolute https URL. Both panels (`PluginActionBlock.vue`, `ActionBlock.vue`) open a blank tab in the click (`openBlankTab`, opener cut), call the route, read the field through `pluginOpenUrlTarget` (`pluginLinkTarget` with the page's `externalOrigins`, a `https://*.host` pattern admits subdomains, external addresses only) and send the tab there; a failed call or a refused address closes it and shows the error. The reader checks the member in `CheckOpenUrl` (`PLUGIN_VIEW_OPEN_URL_INVALID`, `ViewOpenUrlInvalid`): a name of 1 to 64 ASCII letters, digits or underscores, on an action with a route and no `navigate`, checked with the SDK's `PluginViews.IsOpenUrlFieldName`.
   - **Layout, split and preview (#910, SDK 3.2.0, schema stays 1).** A client page's `layout` is a `PluginPageLayouts`
     value and the page answers it (`PluginPageViewDto.Layout`, `standard` when absent); another value or any layout on an
     admin page is `PLUGIN_PAGE_LAYOUT_UNKNOWN` (`CheckPageLayouts` in the manifest validator). `split` holds exactly two

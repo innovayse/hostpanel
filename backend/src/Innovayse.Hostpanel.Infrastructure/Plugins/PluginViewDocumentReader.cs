@@ -86,18 +86,8 @@ internal static partial class PluginViewDocumentReader
     /// <summary>The member of an action block that builds the body of its call from what the page has read.</summary>
     private const string BodySourceMember = "bodySource";
 
-    /// <summary>The member of an action block naming the field of its reply that holds an address to open in a new tab.</summary>
-    private const string OpenUrlFromMember = "openUrlFrom";
-
     /// <summary>The member of an action block that opens a page of the panel after the call; it and an open-URL field exclude each other.</summary>
     private const string NavigateMember = "navigate";
-
-    /// <summary>
-    /// The most characters an open-URL field name may have. The SDK publishes the same bound with its name check
-    /// (<c>PluginViews.MaxOpenUrlFieldLength</c>, <c>PluginViews.IsOpenUrlFieldName</c>); replace this and
-    /// <see cref="OpenUrlFieldPattern"/> with them once the submodule is bumped.
-    /// </summary>
-    private const int MaxOpenUrlFieldLength = 64;
 
     /// <summary>The member of a body source mapping each body member to a dotted path into the reply.</summary>
     private const string BodySourceFieldsMember = "fields";
@@ -226,11 +216,6 @@ internal static partial class PluginViewDocumentReader
     /// <returns>The compiled pattern.</returns>
     [GeneratedRegex(@"\A[a-z0-9][a-z0-9_.-]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex PathSegmentPattern();
-
-    /// <summary>Matches a field name an action may open: 1 to <see cref="MaxOpenUrlFieldLength"/> ASCII letters, digits or underscores.</summary>
-    /// <returns>The compiled pattern.</returns>
-    [GeneratedRegex(@"\A[A-Za-z0-9_]{1,64}\z", RegexOptions.CultureInvariant)]
-    private static partial Regex OpenUrlFieldPattern();
 
     /// <summary>Matches a plain icon name: 1 to 64 lowercase letters, digits and hyphens; nothing after it, not even a newline.</summary>
     /// <returns>The compiled pattern.</returns>
@@ -799,7 +784,7 @@ internal static partial class PluginViewDocumentReader
                 CheckActionBody(block, bodySource, scan);
             }
 
-            if (block.TryGetProperty(OpenUrlFromMember, out var openUrlFrom))
+            if (block.TryGetProperty(PluginViews.OpenUrlFromProperty, out var openUrlFrom))
             {
                 CheckOpenUrl(block, openUrlFrom, scan);
             }
@@ -933,8 +918,8 @@ internal static partial class PluginViewDocumentReader
     }
 
     /// <summary>
-    /// Checks an action's <c>openUrlFrom</c>: a field name of 1 to <see cref="MaxOpenUrlFieldLength"/> ASCII letters, digits
-    /// or underscores, on an action that calls a route and does not also <c>navigate</c>. Whether the address the reply
+    /// Checks an action's <c>openUrlFrom</c>: a field name (<see cref="PluginViews.IsOpenUrlFieldName"/>),
+    /// on an action that calls a route and does not also <c>navigate</c>. Whether the address the reply
     /// holds under it may be opened is decided by the panel against the page's allowed origins when the reply arrives.
     /// </summary>
     /// <param name="action">The action block.</param>
@@ -943,7 +928,7 @@ internal static partial class PluginViewDocumentReader
     private static void CheckOpenUrl(JsonElement action, JsonElement value, DocumentScan scan)
     {
         var valid = value.ValueKind == JsonValueKind.String
-            && OpenUrlFieldPattern().IsMatch(value.GetString() ?? string.Empty)
+            && PluginViews.IsOpenUrlFieldName(value.GetString())
             && action.TryGetProperty(ActionRouteMember, out var called)
             && ReadRoute(called) is not null
             && !action.TryGetProperty(NavigateMember, out _);
@@ -951,7 +936,7 @@ internal static partial class PluginViewDocumentReader
         {
             scan.StateViolation ??= new PluginManifestViolation(
                 PluginManifestRule.ViewOpenUrlInvalid,
-                $"has an '{OpenUrlFromMember}' that is not a field name of 1 to {MaxOpenUrlFieldLength} letters, digits or underscores on an action that calls a route and has no '{NavigateMember}'");
+                $"has an '{PluginViews.OpenUrlFromProperty}' that is not a field name of 1 to {PluginViews.MaxOpenUrlFieldLength} letters, digits or underscores on an action that calls a route and has no '{NavigateMember}'");
         }
     }
 
@@ -1212,13 +1197,13 @@ internal static partial class PluginViewDocumentReader
             return true;
         }
 
-        if (member.NameEquals(OpenUrlFromMember))
+        if (member.NameEquals(PluginViews.OpenUrlFromProperty))
         {
             // On an action it was checked with its block; the name is never content, so it is not walked.
             if (!string.Equals(kind, ActionKind, StringComparison.Ordinal))
             {
                 scan.StateViolation ??= new PluginManifestViolation(
-                    PluginManifestRule.ViewOpenUrlInvalid, $"has an '{OpenUrlFromMember}' outside an action block");
+                    PluginManifestRule.ViewOpenUrlInvalid, $"has an '{PluginViews.OpenUrlFromProperty}' outside an action block");
             }
 
             return true;

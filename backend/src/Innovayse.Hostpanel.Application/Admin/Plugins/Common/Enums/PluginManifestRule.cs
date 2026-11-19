@@ -167,4 +167,13 @@ public enum PluginManifestRule
 
     /// <summary>The <c>serverAccountIdLabel</c> is empty, longer than the SDK allows or holds a control character.</summary>
     AccountIdLabelInvalid = 41,
+
+    /// <summary>
+    /// A view document holds an <c>openUrlFrom</c> that is not a field name, sits outside an action block, on an action that
+    /// calls no route, or beside a <c>navigate</c>.
+    /// </summary>
+    ViewOpenUrlInvalid = 42,
+
+    /// <summary>The <c>agentProfile</c> is not one of the SSH key agent profiles the SDK defines.</summary>
+    AgentProfileInvalid = 43,
 }

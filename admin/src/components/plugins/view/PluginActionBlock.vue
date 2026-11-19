@@ -9,14 +9,18 @@
  * under its button; inside a header it hands the sentence to the header's line instead. A `labelSource`
  * lets the label follow data; `label` stands until it is read and whenever it is empty. A result card's
  * `body` is fixed at the click, so a refresh under an open confirmation cannot change what was asked.
+ *
+ * An `openUrlFrom` opens a blank tab in the click itself, reads that field of the reply, and sends the tab to it when it
+ * passes the plugin's allowed origins; a failed call or a refused address closes the tab and shows an error.
  */
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { usePluginActionMessageOutlet, usePluginFollowUp, usePluginSource, usePluginView } from '@/composables/usePluginView'
-import { pluginButtonVariant, readPluginField } from '@/lib/pluginView'
+import { openBlankTab, pluginButtonVariant, pluginOpenUrlTarget, readPluginField } from '@/lib/pluginView'
 import { usePluginUiStore } from '@/stores/pluginUi'
 import { PluginBlockTone } from '@/types/pluginview'
 import type { PluginActionBlock } from '@/types/pluginview'
@@ -35,6 +39,8 @@ const props = defineProps<{
 
 /** The view's context: values, refresh and navigation. */
 const context = usePluginView()
+/** Translates the sentences this block owns. */
+const { t } = useI18n()
 /** The plugin ui store, which makes the call. */
 const store = usePluginUiStore()
 /** Starts the follow-up refresh; the view ends it when the page is left, not when this block hides. */
@@ -79,13 +85,36 @@ const run = async (): Promise<void> => {
   if (running.value) {
     return
   }
+  // The tab opens before the call is awaited: only the click itself may open one.
+  const openUrlFrom = props.block.openUrlFrom
+  const tab = openUrlFrom ? openBlankTab() : null
+  if (openUrlFrom && tab === null) {
+    confirming.value = false
+    failed.value = true
+    message.value = t('plugins.pluginPage.openUrlBlocked')
+    outlet?.({ text: message.value, failed: true })
+    return
+  }
   running.value = true
   const result = await store.callRoute(context.pluginId, props.block.route, context.values, sending)
   running.value = false
   confirming.value = false
-  failed.value = !result.ok
+  const target = tab && result.ok && openUrlFrom ? pluginOpenUrlTarget(result.data, openUrlFrom, context.externalOrigins) : null
+  if (tab) {
+    if (target) {
+      tab.location.href = target.href
+    } else {
+      tab.close()
+    }
+  }
+  const refused = result.ok && openUrlFrom !== undefined && target === null
+  failed.value = !result.ok || refused
   const answered = readPluginField(result.data, 'message')
-  message.value = result.ok ? (typeof answered === 'string' ? answered : '') : result.error
+  if (refused) {
+    message.value = t('plugins.pluginPage.openUrlRefused')
+  } else {
+    message.value = result.ok ? (typeof answered === 'string' ? answered : '') : result.error
+  }
   const sentence = message.value
   const takeBack = outlet?.({ text: sentence, failed: failed.value })
   if (result.ok) {

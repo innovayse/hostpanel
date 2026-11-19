@@ -124,3 +124,84 @@ describe('PluginActionBlock', () => {
     expect(wrapper.get('[data-testid="plugin-action-message"]').text()).toBe('')
   })
 })
+
+describe('PluginActionBlock open URL', () => {
+  /** The tab a stubbed `window.open` hands out. */
+  const stubTab = (): { opener: unknown; location: { href: string }; close: ReturnType<typeof vi.fn> } => {
+    const tab = { opener: 'page', location: { href: '' }, close: vi.fn() }
+    vi.stubGlobal('open', vi.fn(() => tab))
+    return tab
+  }
+  /** The block of the cases below. */
+  const open = { kind: PluginBlockKind.Action, label: 'Open', route: { method: 'post', path: '/login' }, openUrlFrom: 'url' } as const
+  /** The route of the block. */
+  const login = `POST ${ext('login')}`
+
+  it('opens a blank tab in the click and sends it to the address of the reply', async () => {
+    const tab = stubTab()
+    const { wrapper } = await mountPluginView([open], {
+      externalOrigins: ['https://*.sites.example.test'],
+      routes: { [login]: () => json({ url: 'https://blog.sites.example.test/enter?t=1' }) },
+    })
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await flushPromises()
+
+    expect(window.open).toHaveBeenCalledWith('', '_blank')
+    expect(tab.opener).toBeNull()
+    expect(tab.location.href).toBe('https://blog.sites.example.test/enter?t=1')
+    expect(tab.close).not.toHaveBeenCalled()
+  })
+
+  it('closes the tab and shows an error for an address outside the allowed origins', async () => {
+    const tab = stubTab()
+    const { wrapper } = await mountPluginView([open], {
+      externalOrigins: ['https://*.sites.example.test'],
+      routes: { [login]: () => json({ url: 'https://evil.test/' }) },
+    })
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await flushPromises()
+
+    expect(tab.location.href).toBe('')
+    expect(tab.close).toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="plugin-action-message"]').text()).toBe('The plugin answered with an address that cannot be opened.')
+  })
+
+  it('closes the tab when the call fails and shows the API sentence', async () => {
+    const tab = stubTab()
+    const { wrapper } = await mountPluginView([open], {
+      externalOrigins: ['https://*.sites.example.test'],
+      routes: { [login]: () => problem('Nothing to open.', 409) },
+    })
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await flushPromises()
+
+    expect(tab.close).toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="plugin-action-message"]').text()).toBe('Nothing to open.')
+  })
+
+  it('makes no call when the browser blocks the tab', async () => {
+    vi.stubGlobal('open', vi.fn(() => null))
+    const { wrapper, fetch } = await mountPluginView([open], { externalOrigins: ['https://*.sites.example.test'] })
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await flushPromises()
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="plugin-action-message"]').text()).toContain('blocked the new tab')
+  })
+
+  it('opens no tab for an action without openUrlFrom', async () => {
+    vi.stubGlobal('open', vi.fn())
+    const { wrapper } = await mountPluginView([{ ...open, openUrlFrom: undefined }], {
+      routes: { [login]: () => json({}) },
+    })
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await flushPromises()
+
+    expect(window.open).not.toHaveBeenCalled()
+  })
+})

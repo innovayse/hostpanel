@@ -615,6 +615,9 @@
 <data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
     <value>Մանիֆեստում սերվերի հաշվի նույնացուցչի պիտակը պետք է լինի 1-ից 60 նիշ՝ առանց կառավարող նիշերի։</value>
   </data>
+<data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Մանիֆեստի agentProfile-ը պետք է լինի SDK-ի սահմանած SSH բանալիների գործակալի պրոֆիլներից մեկը՝ գրված ճշգրիտ։</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
   </data>
@@ -1335,6 +1338,9 @@
   </data>
   <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
     <value>Այս պլագինի տեսքի փաստաթղթերից մեկը գործողության հարցման մարմինը կազմում է էջի տվյալներից այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>
+  </data>
+  <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
+    <value>Այս պլագինի տեսքի փաստաթղթերից մեկը պատասխանից հասցե է բացում այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>
   </data>
   <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
     <value>Այս պլագինի դիտման փաստաթղթերից մեկը հայտարարում է տարրերի ընտրություն այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>

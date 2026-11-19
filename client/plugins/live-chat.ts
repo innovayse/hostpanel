@@ -28,7 +28,7 @@ interface I18nLocale {
  * @returns The English name of the language; English for any unknown code.
  */
 const languageOf = (code: string): string =>
-  code === AppLocale.Hy ? 'Armenian' : code === AppLocale.Ru ? 'Russian' : 'English'
+  code === AppLocale.Hy ? 'Armenian' : code === AppLocale.Ru ? 'Russian' : code === AppLocale.Es ? 'Spanish' : 'English'
 
 /**
  * Live-chat widget loader, driven entirely by settings.

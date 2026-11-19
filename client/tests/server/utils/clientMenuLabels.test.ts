@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest'
 import en from '~/locales/en/client.json'
 import ru from '~/locales/ru/client.json'
 import hy from '~/locales/hy/client.json'
+import es from '~/locales/es/client.json'
 import { CLIENT_MENU_MESSAGES, clientMenuLabel } from '~/server/utils/clientMenuLabels'
 import { AppLocale } from '~/types/applocale'
 import { ClientMenuIcon } from '~/types/clientmenuicon'
@@ -17,7 +18,8 @@ import { ClientMenuIcon } from '~/types/clientmenuicon'
 const CATALOGUES: Record<AppLocale, { client: { nav: Record<string, string> } }> = {
   [AppLocale.En]: en,
   [AppLocale.Ru]: ru,
-  [AppLocale.Hy]: hy
+  [AppLocale.Hy]: hy,
+  [AppLocale.Es]: es
 }
 
 describe('CLIENT_MENU_MESSAGES', () => {

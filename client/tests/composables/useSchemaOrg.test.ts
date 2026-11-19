@@ -156,7 +156,7 @@ describe('useSchemaOrg', () => {
 
     expect(schema['@type']).toBe('WebSite')
     expect(schema.publisher['@id']).toBe(`${BASE}/#organization`)
-    expect(schema.inLanguage).toEqual(['en', 'ru', 'hy'])
+    expect(schema.inLanguage).toEqual(['en', 'ru', 'hy', 'es'])
   })
 
   it('names the local business after the operator', async () => {

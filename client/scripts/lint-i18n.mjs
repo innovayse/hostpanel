@@ -84,8 +84,14 @@ const trees = Object.fromEntries(LOCALES.map((locale) => {
   return [locale, modules]
 }))
 
+// Module files a language does not translate yet; they fall back to English (see locales/untranslated.json).
+const UNTRANSLATED = JSON.parse(readFileSync(join(ROOT, 'locales', 'untranslated.json'), 'utf8'))
+
 for (const locale of LOCALES.filter((l) => l !== 'en')) {
   for (const file of new Set([...Object.keys(trees.en), ...Object.keys(trees[locale])])) {
+    if ((UNTRANSLATED[locale] ?? []).includes(file)) {
+      continue
+    }
     const reference = trees.en[file] ?? new Set()
     const other = trees[locale][file] ?? new Set()
     for (const key of reference) {

@@ -16,7 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class DomainTemplatesSeederTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The languages every seeded mail is written in.</summary>
-    private static readonly string[] Languages = ["en", "ru", "hy"];
+    private static readonly string[] Languages = ["en", "ru", "hy", "de", "es"];
 
     /// <summary>The seven slugs the domain handlers send.</summary>
     private static readonly string[] Slugs =
@@ -79,6 +79,8 @@ public sealed class DomainTemplatesSeederTests(IntegrationTestFactory factory) :
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task SeededCopy_RenderedWithTheHandlersModel_PrintsTheDomainAndDatesAsync(string language)
     {
         using var scope = factory.Services.CreateScope();

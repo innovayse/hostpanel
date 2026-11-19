@@ -25,7 +25,7 @@ describe('storefrontTranslations', () => {
 
     forms.en.text = 'x'
 
-    expect(Object.keys(forms)).toEqual(['en', 'ru', 'hy'])
+    expect(Object.keys(forms)).toEqual(['en', 'ru', 'hy', 'de', 'es'])
     expect(forms.ru.text).toBe('')
   })
 

@@ -8,7 +8,7 @@
  */
 
 import { translate } from '@/lib/translate'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { ClientStatus } from '@/types/client'
 import { CurrencyCode } from '@/types/currency'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
@@ -60,9 +60,11 @@ export const SERVICE_STATUS_OPTIONS: SelectOption<ServiceStatus>[] = [
 /** Language options for dropdowns. */
 export const LANGUAGE_OPTIONS: SelectOption[] = [
   { value: '', get label() { return translate('shared.default') } },
-  { value: MessageLanguage.En, get label() { return translate('clients.clientForm.english') } },
-  { value: MessageLanguage.Ru, get label() { return translate('clients.clientForm.russian') } },
-  { value: MessageLanguage.Hy, get label() { return translate('clients.clientForm.armenian') } },
+  { value: ContentLanguage.En, get label() { return translate('clients.clientForm.english') } },
+  { value: ContentLanguage.Ru, get label() { return translate('clients.clientForm.russian') } },
+  { value: ContentLanguage.Hy, get label() { return translate('clients.clientForm.armenian') } },
+  { value: ContentLanguage.De, get label() { return translate('clients.clientForm.german') } },
+  { value: ContentLanguage.Es, get label() { return translate('clients.clientForm.spanish') } },
 ]
 
 /** Domain status options for dropdowns. */

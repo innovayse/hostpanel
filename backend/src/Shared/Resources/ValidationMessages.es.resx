@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+    <data name="ValidationFailed" xml:space="preserve">
+    <value>Error de validación</value>
+  </data>
+  <data name="ValidationErrorsOccurred" xml:space="preserve">
+    <value>Se produjeron uno o más errores de validación.</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>No autorizado</value>
+  </data>
+  <data name="UnauthorizedDetail" xml:space="preserve">
+    <value>No está autorizado para realizar esta acción.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>Recurso no encontrado</value>
+  </data>
+  <data name="ResourceNotFoundDetail" xml:space="preserve">
+    <value>No se encontró el recurso solicitado.</value>
+  </data>
+  <data name="InternalServerError" xml:space="preserve">
+    <value>Error interno del servidor</value>
+  </data>
+  <data name="UnexpectedErrorOccurred" xml:space="preserve">
+    <value>Se produjo un error inesperado. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="BusinessRuleViolation" xml:space="preserve">
+    <value>Infracción de una regla de negocio</value>
+  </data>
+  <data name="BusinessRuleViolationDetail" xml:space="preserve">
+    <value>La solicitud infringe una regla de negocio.</value>
+  </data>
+  <data name="ConcurrencyConflict" xml:space="preserve">
+    <value>Conflicto de concurrencia</value>
+  </data>
+  <data name="ConcurrencyConflictDetail" xml:space="preserve">
+    <value>Otra persona ya guardó un cambio en este registro. Vuelva a cargarlo e inténtelo de nuevo.</value>
+  </data>
+  <data name="InvalidRequestBody" xml:space="preserve">
+    <value>Cuerpo de la solicitud no válido</value>
+  </data>
+  <data name="InvalidRequestBodyDetail" xml:space="preserve">
+    <value>No se pudo leer el cuerpo de la solicitud. Compruebe su formato.</value>
+  </data>
+  <data name="InvalidDecimalValue" xml:space="preserve">
+    <value>El valor '{0}' no es un número válido.</value>
+  </data>
+  <data name="Forbidden" xml:space="preserve">
+    <value>Prohibido</value>
+  </data>
+  <data name="CsrfHeaderMissingDetail" xml:space="preserve">
+    <value>Esta solicitud debe enviarse desde el propio panel. Recargue la página e inténtelo de nuevo.</value>
+  </data>
+  <data name="ForbiddenDetail" xml:space="preserve">
+    <value>No tiene permiso para realizar esta acción.</value>
+  </data>
+  <data name="InvalidFieldValue" xml:space="preserve">
+    <value>Este valor no es válido.</value>
+  </data>
+</root>

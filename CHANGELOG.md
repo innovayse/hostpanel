@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- German and Spanish are added as API, email and content languages.
 - A product stores free-trial settings (#81, stage 1 of the trial automation): whether a trial is offered, its length in days, whether it turns into a paid service at its end, the reminder days before the end and the grace period of the invoice raised at conversion, set in the new Free trial block of the product form. `trial` (`enabled`, `days` 1 to 365, `autoConvert`, `reminderDays` at most five days each from 1 to days minus 1, `gracePeriodDays` 0 to 30) is part of the product create and update bodies, where leaving it out keeps the stored settings, and of the product answers, and a value outside these bounds is refused with 400 and `PRODUCT_TRIAL_INVALID`. `GET /api/products/trial-defaults` answers the defaults and bounds the form shows. This stage only stores the settings: a client cannot start a trial yet, and existing products keep the trial off.
 - A product can cap how many services of it are live at once (Max active services on the product form) and allow one live service per client (One per client). An order that is placed but not yet fulfilled holds a place too, and an unpaid order keeps it until the order is cancelled. When every place is taken the product is left off the public catalogue and a new order, or a service a client orders for itself, is refused with 409 and `ORDER_PRODUCT_SOLD_OUT` or `ORDER_PRODUCT_ONE_PER_CLIENT`. The count and the save that takes a place run under a per product lock, so parallel orders cannot pass the cap. `maxActiveServices` (0 or omitted is unlimited, a negative number is refused with `PRODUCT_MAX_ACTIVE_SERVICES_INVALID`) and `onePerClient` are part of the product create and update bodies and of the product answers; the public catalogue answers an error instead of listing a sold out product when the places cannot be counted.
 - The European Central Bank can be chosen as the exchange rate source per installation on the Currencies page. The choice is stored in the `billing.exchange_rates.provider` setting, defaults to the current bank so nothing changes for existing installations, and applies to the daily update and the Update Exchange Rates button from the next refresh. Rates are converted to the base currency, a base the bank does not publish is refused with `EXCHANGE_RATE_BASE_NOT_QUOTED`, and an unavailable source keeps the stored rates.
@@ -53,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- German and Spanish are added as API, email and content languages.
 - SSH key agent 1.3.0: an opt-in `prepare-site` operation (`site_prepare_command` in `agent.conf`, empty by default) runs a provider helper as root that prepares one account's own domain for Innovayse Sites deploys. The CWP helper (`providers/cwp/prepare-site`) sets up a php-fpm 8.3 pool with the OPcache and realpath settings a symlink-switch deploy needs behind Apache, the vhost handler and CWP's own record of it, a database, the deploy settings file, `public_html -> current/public` and PHP in the jail. It is idempotent, backs up what it edits, refuses a domain that is not the account's (`site_not_owned`) and reloads Apache and php-fpm only gracefully and after their config tests.
 - A hosting product whose metadata holds `{"innovayseSites": {"prepare": true}}` has every newly provisioned account prepared that way through the server's agent, in the background after provisioning. Failures are logged and leave the service active.
 
@@ -79,6 +81,7 @@ Upgrade notes, read before upgrading:
 
 ### Added
 
+- German and Spanish are added as API, email and content languages.
 - Payments: a payment plugin can now answer a form post or a browser step (#1174, plugin SDK 3.7.0). The portal submits a form post as a form it builds itself from the plugin's fields, and sends the payer to the page of a browser step. When the payer comes back, the result page hands the parameters of the return request to the plugin (`IPaymentReturnPlugin`, capability `paymentReturn`), within the limits of the SDK, and only then reads the payment status. A form that breaks the SDK's rules, or a browser step from a plugin that cannot complete a return, is a failed payment and the order it registered is cancelled.
 - Plugins: a public callback can answer an HTML page, so a gateway can serve its checkout page. The page is sent under a strict content security policy that allows only the https origins the plugin lists in `externalOrigins`, runs sandboxed, is never cached and sends no referrer.
 - Plugins: the Browse tab of the admin Plugins page shows three cards per row on wide screens, two on medium ones and one on narrow ones, in the layout of the public plugin list, and each card shows the rating (stars, average and number of reviews) when the registry sends one (#1168).
@@ -193,6 +196,7 @@ Upgrade notes, read before upgrading:
 
 ### Added
 
+- German and Spanish are added as API, email and content languages.
 - Signed plugin packages: an uploaded plugin carries a detached Ed25519 signature (`plugin.sig`), checked at install and at every start against the maintainers' keys and the keys an operator adds under `PluginSigning:OperatorKeys`. A production server refuses an unsigned, changed or unknown-key package unless an administrator turns on "Allow unsigned plugins" on the Plugins page (off by default, audited); Development still loads unsigned packages, and plugins shipped inside the server image are not affected. `backend/tools/Innovayse.Hostpanel.PluginSigner` signs a package (#638, #789, #847).
 - Quarterly, semi-annual and biennial billing cycles beside monthly and annual: product prices per cycle in the admin form and list, the cycle choice on the storefront plan pages and at checkout, and renewal periods of 3, 6 and 24 months. Existing monthly and annual services, orders and plugin contracts are unchanged (#478, #722).
 - Admin plugin slots: a plugin's widgets appear on the client summary page (`admin.client.panels`) and the service detail page (`admin.service.panels`). Each widget fails alone, with a neutral note, without breaking the page or the other widgets. An operator can bind a widget to products and hide it (#648, #703, #820, #823, #832, #843). The renderer of the widget body is still to come (#647).
@@ -375,6 +379,7 @@ Upgrade notes, read before upgrading:
 
 ### Added
 
+- German and Spanish are added as API, email and content languages.
 - One-command install script with automatic HTTPS.
 - Docker Hub images, published per surface as `innovayse/hostpanel:api-<version>`,
   `innovayse/hostpanel:client-<version>` and `innovayse/hostpanel:admin-<version>`.
@@ -396,6 +401,7 @@ Upgrade notes, read before upgrading:
 
 ### Added
 
+- German and Spanish are added as API, email and content languages.
 - Initial open-source release under AGPL-3.0: API, client portal and admin panel.
 - Issue templates and a pull request template.
 

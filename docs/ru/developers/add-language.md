@@ -11,6 +11,8 @@ description: Шаги по добавлению четвёртого языка 
 
 ## Панель администратора {#admin-panel}
 
+В панели администратора есть два списка языков. `MessageLanguage` (`admin/src/locales/messages.ts`) содержит только языки, на которые переведён сам интерфейс панели; от него зависят папки `locales`, `SUPPORTED_LOCALES` и проверка i18n. `ContentLanguage` (`admin/src/locales/contentLanguage.ts`) содержит языки содержимого: язык ответов API, шаблоны писем, предпочитаемый язык клиента и содержимое витрины. Шаги ниже добавляют язык интерфейса, который попадает в оба списка. Язык, который является только языком содержимого, как сейчас немецкий и испанский, добавляется только в `ContentLanguage`, вместе с дополнениями панели администратора из раздела API.
+
 <Steps>
 <li>
 
@@ -158,11 +160,20 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 - `client/composables/useSeo.ts`: добавьте запись в `ogLocaleMap`, чтобы теги Open Graph и hreflang использовали правильный код локали, например `[AppLocale.Fr]: 'fr_FR'`.
 - `client/server/utils/clientMenuLabels.ts`: добавьте новый блок `[AppLocale.Fr]: { ... }` в `CLIENT_MENU_MESSAGES` с переведёнными подписями для меню виджета SSO.
 
-**Дополнения панели администратора (обязательны):**
+**Дополнения панели администратора для языка содержимого (обязательны):**
 
-- `admin/src/lib/constants.ts`: добавьте запись в список `LANGUAGE_OPTIONS` для нового языка, чтобы он появился в селекторах языка в формах клиента и пользователя. Его подпись читает новый ключ `clients.clientForm.french` (используйте название вашего языка), который вы добавляете во все языковые файлы `admin/src/locales/<lang>/clients.json` рядом с `english`, `russian` и `armenian`.
-- `admin/src/lib/storefrontTranslations.ts`: добавьте новую локаль в `STOREFRONT_LOCALES` и запись `[MessageLanguage.Fr]: blank()` в `blankTranslations`, чтобы в формах содержимого витрины появилась вкладка для нового языка.
-- `admin/src/composables/useStorefrontLocaleTabs.ts`: добавьте запись вкладки для новой локали в вычисляемый массив `tabs`.
+- `admin/src/locales/contentLanguage.ts`: добавьте язык в перечисление `ContentLanguage`.
+- `admin/src/lib/constants.ts`: добавьте запись в список `LANGUAGE_OPTIONS`, чтобы язык появился в селекторах языка в формах клиента и пользователя.
+- `admin/src/lib/storefrontTranslations.ts`: добавьте локаль в `STOREFRONT_LOCALES` и запись `[ContentLanguage.Fr]: blank()` в `blankTranslations`, чтобы в формах содержимого витрины появилась вкладка для неё.
+- `admin/src/composables/useStorefrontLocaleTabs.ts` и `admin/src/views/SlideFormView.vue`: добавьте вкладку для новой локали.
+- Подписи во всех языковых файлах панели администратора: `storefront.locales.fr`, `settings.slideForm.locales.fr` и `clients.clientForm.french` (используйте название вашего языка), в файлах `storefront.json`, `settings.json` и `clients.json` в `admin/src/locales/<lang>/`.
+
+**Дополнения бэкенда:**
+
+- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/CreditNotePdfLabelSets.cs`: добавьте набор подписей для языка и ветку с его кодом в `switch` метода `For`, чтобы PDF кредит-ноты печатался на этом языке.
+- Сидеры шаблонов писем в `backend/src/Innovayse.Hostpanel.Application/Notifications/Seeding/`: каждый сидер добавляет версию своего шаблона на новом языке, а `SeededEmailLayout.RightsReserved` получает фразу для подвала.
+- Переводы демо-данных в `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` и `DemoStorefrontSeeder.cs`.
+- Языковые theory-тесты `ResourceCoverageTests` (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) и другие тесты, перечисляющие языки: для нового кода нужна строка.
 
 **Настройки с языковым суффиксом (необязательно):**
 
@@ -185,7 +196,7 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 
 ## Шаблоны писем {#email-templates}
 
-Добавьте версию каждого шаблона письма на новом языке в панели администратора.
+Сидеры, описанные выше, при запуске создают версию каждого заложенного шаблона письма на новом языке. Откройте каждый шаблон в панели администратора и проверьте текст.
 
 ## Проверьте результат {#check-it}
 

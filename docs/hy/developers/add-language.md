@@ -11,6 +11,8 @@ description: Ադմինի վահանակին, հաճախորդի պորտալի�
 
 ## Ադմինի վահանակ {#admin-panel}
 
+Ադմինի վահանակն ունի լեզուների երկու ցանկ։ `MessageLanguage`-ը (`admin/src/locales/messages.ts`) պարունակում է միայն այն լեզուները, որոնցով թարգմանված է հենց վահանակի ինտերֆեյսը․ դրանից են կախված `locales` պանակները, `SUPPORTED_LOCALES`-ը և i18n ստուգումը։ `ContentLanguage`-ը (`admin/src/locales/contentLanguage.ts`) պարունակում է բովանդակության լեզուները՝ API-ի պատասխանների լեզուն, նամակների ձևանմուշները, հաճախորդի նախընտրած լեզուն և հանրային կայքի բովանդակությունը։ Ստորև քայլերը ավելացնում են ինտերֆեյսի լեզու, որը մտնում է երկու ցանկում էլ։ Լեզուն, որը միայն բովանդակության լեզու է, ինչպես հիմա գերմաներենն ու իսպաներենը, ավելացվում է միայն `ContentLanguage`-ում՝ API բաժնի ադմինի վահանակի լրացումների հետ։
+
 <Steps>
 <li>
 
@@ -158,11 +160,20 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 - `client/composables/useSeo.ts`՝ ավելացրեք գրառում `ogLocaleMap`-ում, որպեսզի Open Graph և hreflang թեգերը օգտագործեն ճիշտ լեզվի կոդը, օրինակ՝ `[AppLocale.Fr]: 'fr_FR'`։
 - `client/server/utils/clientMenuLabels.ts`՝ ավելացրեք նոր `[AppLocale.Fr]: { ... }` բլոկ `CLIENT_MENU_MESSAGES`-ում՝ SSO վիջեթի մենյուի թարգմանված պիտակներով։
 
-**Ադմինի վահանակի լրացումներ (պարտադիր է)․**
+**Ադմինի վահանակի լրացումներ բովանդակության լեզվի համար (պարտադիր է)․**
 
-- `admin/src/lib/constants.ts`՝ ավելացրեք գրառում `LANGUAGE_OPTIONS` ցանկում նոր լեզվի համար, որպեսզի այն երևա հաճախորդի և օգտատիրոջ ձևերի լեզվի ընտրիչներում։ Նրա պիտակը կարդում է նոր բանալի՝ `clients.clientForm.french` (օգտագործեք ձեր լեզվի անունը), որը ավելացնում եք `admin/src/locales/<lang>/clients.json` ֆայլի յուրաքանչյուր լեզվի տարբերակում՝ `english`, `russian` և `armenian` բանալիների կողքին։
-- `admin/src/lib/storefrontTranslations.ts`՝ ավելացրեք նոր լեզուն `STOREFRONT_LOCALES`-ում և `[MessageLanguage.Fr]: blank()` գրառումը `blankTranslations`-ում, որպեսզի հանրային կայքի բովանդակության ձևերն ունենան ներդիր նոր լեզվի համար։
-- `admin/src/composables/useStorefrontLocaleTabs.ts`՝ ավելացրեք նոր լեզվի ներդիրը `tabs` computed զանգվածում։
+- `admin/src/locales/contentLanguage.ts`՝ ավելացրեք լեզուն `ContentLanguage` թվարկման մեջ։
+- `admin/src/lib/constants.ts`՝ ավելացրեք գրառում `LANGUAGE_OPTIONS` ցանկում, որպեսզի լեզուն երևա հաճախորդի և օգտատիրոջ ձևերի լեզվի ընտրիչներում։
+- `admin/src/lib/storefrontTranslations.ts`՝ ավելացրեք լեզուն `STOREFRONT_LOCALES`-ում և `[ContentLanguage.Fr]: blank()` գրառումը `blankTranslations`-ում, որպեսզի հանրային կայքի բովանդակության ձևերն ունենան ներդիր դրա համար։
+- `admin/src/composables/useStorefrontLocaleTabs.ts` և `admin/src/views/SlideFormView.vue`՝ ավելացրեք ներդիր նոր լեզվի համար։
+- Պիտակները ադմինի վահանակի յուրաքանչյուր լեզվի ֆայլում՝ `storefront.locales.fr`, `settings.slideForm.locales.fr` և `clients.clientForm.french` (օգտագործեք ձեր լեզվի անունը), `admin/src/locales/<lang>/` պանակի `storefront.json`, `settings.json` և `clients.json` ֆայլերում։
+
+**Backend-ի լրացումներ․**
+
+- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/CreditNotePdfLabelSets.cs`՝ ավելացրեք լեզվի պիտակների հավաքածուն և նրա կոդի ճյուղը `For` մեթոդի `switch`-ում, որպեսզի կրեդիտ նոտայի PDF-ը տպվի այդ լեզվով։
+- Նամակների ձևանմուշների seeder-ները `backend/src/Innovayse.Hostpanel.Application/Notifications/Seeding/` պանակում՝ յուրաքանչյուր seeder ավելացնում է իր ձևանմուշի տարբերակը նոր լեզվով, իսկ `SeededEmailLayout.RightsReserved`-ը ստանում է ստորագրի նախադասությունը։
+- Դեմո տվյալների թարգմանությունները `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` և `DemoStorefrontSeeder.cs` ֆայլերում։
+- `ResourceCoverageTests`-ի (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) լեզուների theory թեստերը և լեզուները թվարկող մյուս թեստերը՝ նոր կոդի համար պետք է տող ավելացնել։
 
 **Լեզվի վերջածանցով կարգավորումներ (ըստ ցանկության)․**
 
@@ -185,7 +196,7 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 
 ## Նամակների ձևանմուշներ {#email-templates}
 
-Ադմինի վահանակում ավելացրեք նամակի յուրաքանչյուր ձևանմուշի տարբերակը նոր լեզվով։
+Վերևում նշված seeder-ները գործարկման ժամանակ ստեղծում են յուրաքանչյուր seed արված նամակի ձևանմուշի տարբերակը նոր լեզվով։ Բացեք յուրաքանչյուր ձևանմուշ ադմինի վահանակում և ստուգեք տեքստը։
 
 ## Ստուգեք {#check-it}
 

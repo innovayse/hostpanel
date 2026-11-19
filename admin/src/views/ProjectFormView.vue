@@ -3,7 +3,7 @@
  * Full-page form for creating or editing a storefront project.
  *
  * Detects edit mode from the route params, loads the project when editing, carries the title,
- * summary and description in en / ru / hy tabs, and manages the gallery images (the first is the
+ * summary and description in one tab per content language, and manages the gallery images (the first is the
  * cover). Asks before leaving with unsaved edits.
  */
 import { computed, reactive } from 'vue'

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
 /// <summary>
-/// Proves a request that asks for Russian or Armenian is answered in Russian or Armenian.
+/// Proves a request that asks for Russian, Armenian, German or Spanish is answered in that language.
 /// <para>
 /// The client app ships three languages and does not translate error codes itself: the sentence
 /// comes from
@@ -34,12 +34,18 @@ public sealed class ValidationMessagesLocalizationTests
     /// <summary>The language tag an Armenian-speaking customer's browser sends.</summary>
     private const string Armenian = "hy";
 
+    /// <summary>The language tag a German-speaking customer's browser sends.</summary>
+    private const string German = "de";
+
+    /// <summary>The language tag a Spanish-speaking customer's browser sends.</summary>
+    private const string Spanish = "es";
+
     /// <summary>
     /// A language tag no resource file is shipped for. Every key resolves through the culture
-    /// fallback to the neutral (English) file; <c>ru</c> and <c>hy</c> carry every key, so only a
+    /// fallback to the neutral (English) file; every supported language carries every key, so only a
     /// language with no file exercises the fallback.
     /// </summary>
-    private const string LocaleWithoutTranslations = "de";
+    private const string LocaleWithoutTranslations = "fr";
 
     /// <summary>A key of the neutral file whose English sentence takes a length limit.</summary>
     private const string FallbackKey = "ProductNameTooLong";
@@ -123,22 +129,46 @@ public sealed class ValidationMessagesLocalizationTests
     }
 
     /// <summary>
+    /// A German caller reads the refusal in German, not in English.
+    /// </summary>
+    [Fact]
+    public void GermanCallerGetsTheGermanSentence()
+    {
+        var message = Resolve<ApplicationValidationMessages>(German, "PaymentMethodRequired");
+
+        Assert.NotEqual("Select a payment method.", message);
+        Assert.NotEqual("PaymentMethodRequired", message);
+    }
+
+    /// <summary>
+    /// A Spanish caller reads the refusal in Spanish, not in English.
+    /// </summary>
+    [Fact]
+    public void SpanishCallerGetsTheSpanishSentence()
+    {
+        var message = Resolve<ApplicationValidationMessages>(Spanish, "PaymentMethodRequired");
+
+        Assert.NotEqual("Select a payment method.", message);
+        Assert.NotEqual("PaymentMethodRequired", message);
+    }
+
+    /// <summary>
     /// The two languages disagree with each other. A resource set that failed to load would give
     /// all three the same English string and every other assertion here could still pass.
     /// </summary>
     [Fact]
-    public void ThreeLocalesGiveThreeDifferentSentences()
+    public void EveryLocaleGivesItsOwnSentence()
     {
         const string key = "PaymentMethodRequired";
 
         var english = Resolve<ApplicationValidationMessages>("en", key);
         var russian = Resolve<ApplicationValidationMessages>(Russian, key);
         var armenian = Resolve<ApplicationValidationMessages>(Armenian, key);
+        var german = Resolve<ApplicationValidationMessages>(German, key);
+        var spanish = Resolve<ApplicationValidationMessages>(Spanish, key);
 
         Assert.Equal("Select a payment method.", english);
-        Assert.NotEqual(english, russian);
-        Assert.NotEqual(english, armenian);
-        Assert.NotEqual(russian, armenian);
+        Assert.Equal(5, new[] { english, russian, armenian, german, spanish }.Distinct().Count());
     }
 
     /// <summary>

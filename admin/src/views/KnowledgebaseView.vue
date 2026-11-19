@@ -37,7 +37,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useStorefrontLocaleTabs } from '@/composables/useStorefrontLocaleTabs'
 import { enumValueOf } from '@/lib/enumValue'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { blankTranslations, collectTranslations, formsFromTranslations } from '@/lib/storefrontTranslations'
 import { useKnowledgebaseStore } from '@/stores/knowledgebase'
 import type { KbArticle, KbArticleTranslation, KbCategory } from '@/types/kbarticle'
@@ -146,7 +146,7 @@ const categoryOptions = computed(() => store.categories.map((category) => ({ val
 
 /** Whether the article form is complete: a category and the English title and body (English is required). */
 const canSaveArticle = computed<boolean>(() => {
-  const english = articleForm.translations[MessageLanguage.En]
+  const english = articleForm.translations[ContentLanguage.En]
   return articleForm.categoryId !== 0 && english.title.trim() !== '' && english.content.trim() !== ''
 })
 
@@ -284,7 +284,7 @@ const resetArticleForm = (): void => {
   articleForm.isPublished = false
   articleForm.translations = blankTranslations(blankText)
   editingArticleId.value = null
-  activeLocale.value = MessageLanguage.En
+  activeLocale.value = ContentLanguage.En
 }
 
 /**
@@ -322,7 +322,7 @@ const startEditArticle = (article: KbArticle): void => {
   articleForm.categoryId = article.categoryId
   articleForm.isPublished = article.isPublished
   articleForm.translations = formsFromTranslations(article.translations, blankText)
-  activeLocale.value = MessageLanguage.En
+  activeLocale.value = ContentLanguage.En
 }
 
 /** Loads the categories; the article list loads itself when its tab appears. */

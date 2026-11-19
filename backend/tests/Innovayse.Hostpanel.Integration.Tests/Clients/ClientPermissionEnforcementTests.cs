@@ -232,6 +232,8 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task TheRefusal_IsTheStandardErrorBodyInTheCallersLanguage(string language)
     {
         var user = await ClientsTestSeeds.LinkedUserAsync(factory, "perm-body", ClientPermission.ViewDomains);

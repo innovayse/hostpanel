@@ -52,6 +52,22 @@ public static class EmailChangedNoticeTemplateSeeder
                     ButtonText: null,
                     "Եթե այս փոփոխությունը դուք չեք կատարել, անմիջապես դիմեք աջակցության ծառայությանը։",
                     EchoButtonUrl: false)),
+                new SeededEmailVersion("Ihre Anmelde-E-Mail-Adresse wurde geändert | {{ site.name }}", new SeededEmailCopy(
+                    "de",
+                    "Ihre Anmelde-E-Mail-Adresse wurde geändert",
+                    ["Ihr Konto meldet sich jetzt mit {{ new_email }} an. Alle geöffneten Sitzungen wurden abgemeldet."],
+                    ButtonUrl: null,
+                    ButtonText: null,
+                    "Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich umgehend an den Support.",
+                    EchoButtonUrl: false)),
+                new SeededEmailVersion("Su correo electrónico de inicio de sesión ha cambiado | {{ site.name }}", new SeededEmailCopy(
+                    "es",
+                    "Su correo electrónico de inicio de sesión ha cambiado",
+                    ["Su cuenta ahora inicia sesión con {{ new_email }}. Se han cerrado todas las sesiones que estaban abiertas."],
+                    ButtonUrl: null,
+                    ButtonText: null,
+                    "Si usted no realizó este cambio, póngase en contacto con soporte de inmediato.",
+                    EchoButtonUrl: false)),
             ]), ct);
     }
 }

@@ -41,6 +41,8 @@
     "english": "English",
     "russian": "Russian",
     "armenian": "Armenian",
+    "german": "German",
+    "spanish": "Spanish",
     "suspended": "Suspended",
     "closed": "Closed",
     "emailIsRequired": "Email is required",

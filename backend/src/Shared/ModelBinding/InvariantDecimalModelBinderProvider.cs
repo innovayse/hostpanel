@@ -18,7 +18,7 @@ public sealed class InvariantDecimalModelBinderProvider : IModelBinderProvider
     /// </summary>
     /// <param name="localizer">
     ///     Localizer used by the binder to resolve the error message at request time,
-    ///     so the message respects the current request culture (en/ru/hy).
+    ///     so the message respects the current request culture (en/ru/hy/de/es).
     /// </param>
     public InvariantDecimalModelBinderProvider(IStringLocalizer localizer)
     {

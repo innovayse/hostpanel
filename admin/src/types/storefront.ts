@@ -1,10 +1,10 @@
 /**
  * Shapes shared by every storefront content type: the translation map and the reorder pair.
  */
-import type { MessageLanguage } from '@/locales/messages'
+import type { ContentLanguage } from '@/locales/contentLanguage'
 
 /** Per-locale text of one entry; a locale the operator has not written is absent. */
-export type StorefrontTranslations<T> = Partial<Record<MessageLanguage, T>>
+export type StorefrontTranslations<T> = Partial<Record<ContentLanguage, T>>
 
 /** What the last successful action of a storefront list page did, shown as its outcome line. */
 export enum StorefrontListOutcome {

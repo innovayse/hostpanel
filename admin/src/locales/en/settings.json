@@ -569,7 +569,9 @@
     "locales": {
       "en": "English",
       "ru": "Russian",
-      "hy": "Armenian"
+      "hy": "Armenian",
+      "de": "German",
+      "es": "Spanish"
     },
     "notFound": "Slide #{id} not found.",
     "ai": "AI"

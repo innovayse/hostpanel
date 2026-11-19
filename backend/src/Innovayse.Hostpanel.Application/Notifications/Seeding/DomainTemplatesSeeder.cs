@@ -74,6 +74,22 @@ public static class DomainTemplatesSeeder
                 ButtonText: null,
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} wurde verlängert | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Domain wurde verlängert",
+                ["{{ domain.name }} wurde verlängert. Sie ist nun bis zum {{ domain.new_expires_at }} registriert."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} ha sido renovado | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su dominio ha sido renovado",
+                ["{{ domain.name }} ha sido renovado. Ahora está registrado hasta el {{ domain.new_expires_at }}."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>The expiry warning for a client, one version per language.</summary>
@@ -102,6 +118,22 @@ public static class DomainTemplatesSeeder
                 "hy",
                 "Ձեր դոմենի ժամկետը շուտով լրանում է",
                 ["{{ domain.name }} դոմենի ժամկետը լրանում է {{ domain.expires_at }}-ին՝ {{ domain.days_until_expiry }} օրից։ Երկարաձգեք այն, որպեսզի կայքը և էլ. փոստը շարունակեն աշխատել։"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} läuft in {{ domain.days_until_expiry }} Tagen ab | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Domain läuft bald ab",
+                ["{{ domain.name }} läuft am {{ domain.expires_at }} ab, also in {{ domain.days_until_expiry }} Tagen. Verlängern Sie sie, damit Ihre Website und Ihre E-Mails weiter funktionieren."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} vence en {{ domain.days_until_expiry }} días | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su dominio está a punto de vencer",
+                ["{{ domain.name }} vence el {{ domain.expires_at }}, dentro de {{ domain.days_until_expiry }} días. Renuévelo para que su sitio web y su correo electrónico sigan funcionando."],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,
@@ -138,6 +170,22 @@ public static class DomainTemplatesSeeder
                 ButtonText: null,
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} konnte nicht registriert werden | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Domain-Registrierung fehlgeschlagen",
+                ["Wir konnten die Registrierung von {{ domain.name }} nicht abschließen. Unser Team wurde informiert und wird sich wegen der Rechnung #{{ invoice.id }} bei Ihnen melden."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("No pudimos registrar {{ domain.name }} | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Error en el registro del dominio",
+                ["No pudimos completar el registro de {{ domain.name }}. Nuestro equipo ha sido notificado y se pondrá en contacto con usted respecto a la factura n.º {{ invoice.id }}."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>The registration failure alert for staff, one version per language.</summary>
@@ -166,6 +214,22 @@ public static class DomainTemplatesSeeder
                 "hy",
                 "Դոմենի գրանցումը ձախողվեց",
                 ["{{ domain.name }} (հաճախորդ №{{ client.id }}, հաշիվ №{{ invoice.id }}): {{ reason }}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Domain-Registrierung fehlgeschlagen: {{ domain.name }}", new SeededEmailCopy(
+                "de",
+                "Domain-Registrierung fehlgeschlagen",
+                ["{{ domain.name }} (Kunde #{{ client.id }}, Rechnung #{{ invoice.id }}): {{ reason }}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Error en el registro del dominio: {{ domain.name }}", new SeededEmailCopy(
+                "es",
+                "Error en el registro del dominio",
+                ["{{ domain.name }} (cliente n.º {{ client.id }}, factura n.º {{ invoice.id }}): {{ reason }}"],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,
@@ -202,6 +266,22 @@ public static class DomainTemplatesSeeder
                 ButtonText: null,
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} wurde registriert | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Domain wurde registriert",
+                ["{{ domain.name }} wurde registriert. Die Registrierung gilt bis zum {{ domain.expires_at }}."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} ha sido registrado | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su dominio ha sido registrado",
+                ["{{ domain.name }} ha sido registrado. El registro es válido hasta el {{ domain.expires_at }}."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>The expiry notice for a client, one version per language.</summary>
@@ -234,6 +314,22 @@ public static class DomainTemplatesSeeder
                 ButtonText: null,
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} ist abgelaufen | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Domain ist abgelaufen",
+                ["{{ domain.name }} ist abgelaufen. Verlängern Sie sie so schnell wie möglich, damit Ihre Website und Ihre E-Mails wieder funktionieren."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} ha vencido | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su dominio ha vencido",
+                ["{{ domain.name }} ha vencido. Renuévelo lo antes posible para que su sitio web y su correo electrónico vuelvan a funcionar."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>The incoming transfer confirmation for a client, one version per language.</summary>
@@ -262,6 +358,22 @@ public static class DomainTemplatesSeeder
                 "hy",
                 "Ձեր դոմենը տեղափոխվել է",
                 ["{{ domain.name }} դոմենը տեղափոխվել է մեզ մոտ։ Այն գրանցված է մինչև {{ domain.expires_at }}։"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} wurde transferiert | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Domain wurde transferiert",
+                ["{{ domain.name }} wurde zu uns transferiert. Sie ist bis zum {{ domain.expires_at }} registriert."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("{{ domain.name }} ha sido transferido | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su dominio ha sido transferido",
+                ["{{ domain.name }} ha sido transferido a nosotros. Está registrado hasta el {{ domain.expires_at }}."],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,

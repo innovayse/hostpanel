@@ -64,6 +64,22 @@ public static class StaffAlertTemplatesSeeder
                 ButtonText: null,
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Dienstbeendigung fehlgeschlagen: Dienst Nr. {{ service.id }}", new SeededEmailCopy(
+                "de",
+                "Dienstbeendigung fehlgeschlagen",
+                ["Der Dienst Nr. {{ service.id }} konnte nicht automatisch beendet werden, daher wurde sein Hosting-Konto nicht entfernt. Der nächste Lauf versucht es erneut. Grund: {{ reason }}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Error al finalizar el servicio n.º {{ service.id }}", new SeededEmailCopy(
+                "es",
+                "Error al finalizar el servicio",
+                ["El servicio n.º {{ service.id }} no se pudo finalizar automáticamente, por lo que su cuenta de hosting no fue eliminada. La próxima ejecución lo reintentará. Motivo: {{ reason }}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>The staff alert about a gateway payment pending for an unusual time, one version per language.</summary>
@@ -92,6 +108,22 @@ public static class StaffAlertTemplatesSeeder
                 "hy",
                 "Վճարումը դեռ սպասման մեջ է",
                 ["№{{ invoice.id }} հաշվի {{ module }} վճարումը (հաճախորդ №{{ client.id }}) սպասման մեջ է արդեն {{ pending_hours }} ժամ։ Համակարգը շարունակում է հարցում անել դարպասին, մինչև այն վերջնական պատասխան տա։"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Zahlung weiterhin ausstehend: Rechnung Nr. {{ invoice.id }}", new SeededEmailCopy(
+                "de",
+                "Zahlung weiterhin ausstehend",
+                ["Die {{ module }}-Zahlung für Rechnung Nr. {{ invoice.id }} (Kunde Nr. {{ client.id }}) ist seit {{ pending_hours }} Stunden ausstehend. Das System fragt das Gateway weiter ab, bis es eine endgültige Antwort liefert."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Pago aún pendiente: factura n.º {{ invoice.id }}", new SeededEmailCopy(
+                "es",
+                "Pago aún pendiente",
+                ["El pago de {{ module }} de la factura n.º {{ invoice.id }} (cliente n.º {{ client.id }}) lleva {{ pending_hours }} horas pendiente. El sistema sigue consultando la pasarela hasta que dé una respuesta definitiva."],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,
@@ -131,6 +163,22 @@ public static class StaffAlertTemplatesSeeder
                 ButtonText: null,
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Gateway-Zahlung nicht auf Rechnung Nr. {{ invoice.id }} verbucht", new SeededEmailCopy(
+                "de",
+                "Gateway-Zahlung nicht auf der Rechnung verbucht",
+                ["Die {{ module }}-Zahlung {{ reference }} für Rechnung Nr. {{ invoice.id }} (Kunde Nr. {{ client.id }}) hat {{ amount }} {{ currency }} eingebracht, die die Rechnung nicht verbuchen konnte. {% if credited %}Der Betrag wurde dem Guthaben des Kunden gutgeschrieben.{% else %}Der Betrag konnte nicht gutgeschrieben werden und wird bis zur Klärung durch einen Mitarbeiter zurückgehalten.{% endif %}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Pago de pasarela no registrado en la factura n.º {{ invoice.id }}", new SeededEmailCopy(
+                "es",
+                "Pago de pasarela no registrado en la factura",
+                ["El pago de {{ module }} {{ reference }} de la factura n.º {{ invoice.id }} (cliente n.º {{ client.id }}) recibió {{ amount }} {{ currency }} que la factura no pudo registrar. {% if credited %}El importe se añadió al saldo de crédito del cliente.{% else %}El importe no se pudo abonar y queda retenido hasta que un operador lo resuelva.{% endif %}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>
@@ -162,6 +210,22 @@ public static class StaffAlertTemplatesSeeder
                 "hy",
                 "Վճարված դարպասի վճարում առանց վճարման նույնացուցիչի",
                 ["{{ module }} դարպասը №{{ invoice.id }} հաշվի (հաճախորդ №{{ client.id }}) համար հայտնում է վճարման մասին{% if amount %}՝ {{ amount }} {{ currency }}{% endif %}, բայց վճարման նույնացուցիչ չի փոխանցվել։ Ոչինչ չի գրանցվել և չի ավելացվել մնացորդին, քանի որ վճարումը հնարավոր չէ տարբերել մյուսից։ Օպերատորը պետք է գտնի այն դարպասում և գրանցի ձեռքով։"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Bezahlte Gateway-Zahlung ohne Referenz: Rechnung Nr. {{ invoice.id }}", new SeededEmailCopy(
+                "de",
+                "Bezahlte Gateway-Zahlung ohne Referenz",
+                ["Das Gateway {{ module }} meldet eine Zahlung{% if amount %} über {{ amount }} {{ currency }}{% endif %} als bezahlt für Rechnung Nr. {{ invoice.id }} (Kunde Nr. {{ client.id }}), liefert aber keine Zahlungsreferenz. Es wurde nichts verbucht oder gutgeschrieben, da sich die Zahlung nicht von einer anderen unterscheiden ließ. Ein Mitarbeiter muss sie im Gateway suchen und manuell verbuchen."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Pago de pasarela abonado sin referencia: factura n.º {{ invoice.id }}", new SeededEmailCopy(
+                "es",
+                "Pago de pasarela abonado sin referencia",
+                ["La pasarela {{ module }} informa de un pago{% if amount %} de {{ amount }} {{ currency }}{% endif %} como abonado para la factura n.º {{ invoice.id }} (cliente n.º {{ client.id }}), pero no incluye referencia de pago. No se registró ni abonó nada, porque el pago no se pudo distinguir de otro. Un operador debe localizarlo en la pasarela y registrarlo manualmente."],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,

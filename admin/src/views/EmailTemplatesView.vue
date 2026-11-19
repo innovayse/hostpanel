@@ -24,7 +24,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useSettingsStore } from '@/stores/settings'
 import type { EmailTemplate, EmailTemplateContent, EmailTemplateGroup } from '@/types/emailtemplate'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -48,7 +48,7 @@ const groups = computed<EmailTemplateGroup[]>(() => {
     slug,
     versions,
     // The map only holds slugs with at least one version, so versions[0] always exists.
-    shown: versions.find((v) => v.language === MessageLanguage.En) ?? versions[0] as EmailTemplate,
+    shown: versions.find((v) => v.language === ContentLanguage.En) ?? versions[0] as EmailTemplate,
   }))
 })
 
@@ -84,7 +84,7 @@ const closeEditor = (): void => {
  * @param content - Subject, body and description.
  */
 const handleSave = async (
-  language: MessageLanguage,
+  language: ContentLanguage,
   existingId: number | null,
   content: EmailTemplateContent,
 ): Promise<void> => {

@@ -2,7 +2,9 @@
   "locales": {
     "en": "English",
     "ru": "Russian",
-    "hy": "Armenian"
+    "hy": "Armenian",
+    "de": "German",
+    "es": "Spanish"
   },
   "notFound": "Entry #{id} was not found.",
   "list": {

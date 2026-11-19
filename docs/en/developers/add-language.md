@@ -11,6 +11,8 @@ Open an issue before you start. A new language needs all three parts translated 
 
 ## Admin panel
 
+The admin panel keeps two lists of languages. `MessageLanguage` (`admin/src/locales/messages.ts`) holds only the languages the admin interface itself is translated into; it drives the `locales` folders, `SUPPORTED_LOCALES` and the i18n check. `ContentLanguage` (`admin/src/locales/contentLanguage.ts`) holds the languages of content: what the API answers in, email templates, a client's preferred language and storefront content. The steps below add an interface language, which goes into both lists. A language that is only a content language, as German and Spanish are for now, is added to `ContentLanguage` alone, with the admin extras in the API section.
+
 <Steps>
 <li>
 
@@ -158,11 +160,20 @@ The backend list above covers the core error and validation messages. The follow
 - `client/composables/useSeo.ts`: add an entry to `ogLocaleMap` so Open Graph and hreflang tags use the correct locale code, e.g. `[AppLocale.Fr]: 'fr_FR'`.
 - `client/server/utils/clientMenuLabels.ts`: add a new `[AppLocale.Fr]: { ... }` block to `CLIENT_MENU_MESSAGES` with the translated labels for the SSO widget menu.
 
-**Admin panel extras (required):**
+**Admin panel extras for a content language (required):**
 
-- `admin/src/lib/constants.ts`: add an entry to the `LANGUAGE_OPTIONS` list for the new language so it appears in the language selectors of the client and user forms. Its label reads a new key, `clients.clientForm.french` (use the name of your language), which you add to every language file of `admin/src/locales/<lang>/clients.json`, next to `english`, `russian` and `armenian`.
-- `admin/src/lib/storefrontTranslations.ts`: add the new locale to `STOREFRONT_LOCALES` and add a `[MessageLanguage.Fr]: blank()` entry to `blankTranslations` so storefront content forms carry a tab for the new language.
-- `admin/src/composables/useStorefrontLocaleTabs.ts`: add a tab entry for the new locale to the `tabs` computed array.
+- `admin/src/locales/contentLanguage.ts`: add the language to the `ContentLanguage` enum.
+- `admin/src/lib/constants.ts`: add an entry to the `LANGUAGE_OPTIONS` list so the language appears in the language selectors of the client and user forms.
+- `admin/src/lib/storefrontTranslations.ts`: add the locale to `STOREFRONT_LOCALES` and a `[ContentLanguage.Fr]: blank()` entry to `blankTranslations`, so storefront content forms carry a tab for it.
+- `admin/src/composables/useStorefrontLocaleTabs.ts` and `admin/src/views/SlideFormView.vue`: add a tab for the new locale.
+- The labels, in every language file of the admin panel: `storefront.locales.fr`, `settings.slideForm.locales.fr` and `clients.clientForm.french` (use the name of your language), in `storefront.json`, `settings.json` and `clients.json` under `admin/src/locales/<lang>/`.
+
+**Backend extras:**
+
+- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/CreditNotePdfLabelSets.cs`: add a label set for the language and an arm for its code to the `switch` in `For`, so the credit note PDF prints in it.
+- The email template seeders under `backend/src/Innovayse.Hostpanel.Application/Notifications/Seeding/`: each seeder adds a version of its template in the new language, and `SeededEmailLayout.RightsReserved` gets the footer sentence.
+- The demo seed translations in `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` and `DemoStorefrontSeeder.cs`.
+- The language theories of `ResourceCoverageTests` (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) and the other tests that list the languages, which take a row for the new code.
 
 **Settings with a language suffix (optional):**
 
@@ -185,7 +196,7 @@ The public demo has its own sample values in `DemoPortalSettingsSeeder.cs`. Add 
 
 ## Email templates
 
-Add a version of each email template in the new language in the admin panel.
+The seeders above create a version of each seeded email template in the new language at start-up. Open each template in the admin panel and check the text.
 
 ## Check it
 

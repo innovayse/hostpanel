@@ -1,4 +1,4 @@
-import type { MessageLanguage } from '@/locales/messages'
+import type { ContentLanguage } from '@/locales/contentLanguage'
 
 /** The editable words of one language version of an email template. */
 export interface EmailTemplateContent {
@@ -17,7 +17,7 @@ export interface EmailTemplate extends EmailTemplateContent {
   /** Template slug, the API's identifier of the template (the API sends no separate display name). */
   slug: string
   /** The language this version is written in. */
-  language: MessageLanguage
+  language: ContentLanguage
   /** Whether the version is in use. */
   isActive: boolean
 }
@@ -27,7 +27,7 @@ export interface CreateEmailTemplatePayload extends EmailTemplateContent {
   /** Template slug the version belongs to. */
   slug: string
   /** The language the version is written in. */
-  language: MessageLanguage
+  language: ContentLanguage
 }
 
 /** One template with all of its language versions, as the templates screen lists it. */

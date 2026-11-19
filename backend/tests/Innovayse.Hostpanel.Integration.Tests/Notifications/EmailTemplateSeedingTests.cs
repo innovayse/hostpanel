@@ -15,7 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class EmailTemplateSeedingTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The seeded password reset mail exists in English, Russian and Armenian.</summary>
+    /// <summary>The seeded password reset mail exists in English, Russian, Armenian, German and Spanish.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PasswordReset_IsSeededInEveryLanguage()
@@ -29,7 +29,13 @@ public sealed class EmailTemplateSeedingTests(IntegrationTestFactory factory) : 
             .Where(t => t.Slug == PasswordResetTemplateSeeder.Slug)
             .Select(t => t.Language)
             .ToListAsync();
-        languages.Should().BeEquivalentTo(["en", "ru", "hy"]);
+        languages.Should().BeEquivalentTo(["en", "ru", "hy", "de", "es"]);
+
+        var subjects = await context.EmailTemplates.AsNoTracking()
+            .Where(t => t.Slug == PasswordResetTemplateSeeder.Slug)
+            .ToDictionaryAsync(t => t.Language, t => t.Subject);
+        subjects["de"].Should().NotBe(subjects["en"]);
+        subjects["es"].Should().NotBe(subjects["en"]);
     }
 
     /// <summary>A version an operator edited keeps the edit when the seed runs again; only the missing ones are added.</summary>

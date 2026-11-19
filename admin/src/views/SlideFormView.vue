@@ -46,7 +46,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useSlidesStore } from '@/stores/slides'
 import type { CreateSlidePayload, SlideTranslation, UpdateSlidePayload } from '@/types/slide'
 import { SlideAudience } from '@/types/slideaudience'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { AppRoute } from '@/lib/routes'
 import { ILLUSTRATION_ACCEPT } from '@/lib/mimeTypes'
@@ -135,9 +135,11 @@ const breadcrumb = computed(() => [
 
 /** The translation tabs, one per locale. */
 const localeTabs = computed<UiTabItem[]>(() => [
-  { value: MessageLanguage.En, label: t('settings.slideForm.locales.en'), testid: 'slide-form-tab-en' },
-  { value: MessageLanguage.Ru, label: t('settings.slideForm.locales.ru'), testid: 'slide-form-tab-ru' },
-  { value: MessageLanguage.Hy, label: t('settings.slideForm.locales.hy'), testid: 'slide-form-tab-hy' },
+  { value: ContentLanguage.En, label: t('settings.slideForm.locales.en'), testid: 'slide-form-tab-en' },
+  { value: ContentLanguage.Ru, label: t('settings.slideForm.locales.ru'), testid: 'slide-form-tab-ru' },
+  { value: ContentLanguage.Hy, label: t('settings.slideForm.locales.hy'), testid: 'slide-form-tab-hy' },
+  { value: ContentLanguage.De, label: t('settings.slideForm.locales.de'), testid: 'slide-form-tab-de' },
+  { value: ContentLanguage.Es, label: t('settings.slideForm.locales.es'), testid: 'slide-form-tab-es' },
 ])
 
 /** True while loading existing slide data in edit mode. */
@@ -195,7 +197,7 @@ const uploading = ref(false)
 const uploadError = ref<string | null>(null)
 
 /** Currently active translation tab locale. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /**
  * Creates a blank translation form object.
@@ -216,10 +218,12 @@ const createEmptyTranslation = (): TranslationForm => ({
  * enum: `Object.fromEntries` produces a string index signature, which cannot prove every locale is
  * present, so adding a locale to the enum fails to compile here until its tab is initialised too.
  */
-const translations = reactive<Record<MessageLanguage, TranslationForm>>({
-  [MessageLanguage.En]: createEmptyTranslation(),
-  [MessageLanguage.Ru]: createEmptyTranslation(),
-  [MessageLanguage.Hy]: createEmptyTranslation(),
+const translations = reactive<Record<ContentLanguage, TranslationForm>>({
+  [ContentLanguage.En]: createEmptyTranslation(),
+  [ContentLanguage.Ru]: createEmptyTranslation(),
+  [ContentLanguage.Hy]: createEmptyTranslation(),
+  [ContentLanguage.De]: createEmptyTranslation(),
+  [ContentLanguage.Es]: createEmptyTranslation(),
 })
 
 /** Whether a linked product is selected. */
@@ -240,7 +244,7 @@ const leaveGuard = useUnsavedChangesGuard(() => isDirty.value && !saving.value)
  * @param value - The tab value the strip reported.
  */
 const selectLocale = (value: string): void => {
-  const locale = enumValueOf(MessageLanguage, value)
+  const locale = enumValueOf(ContentLanguage, value)
   if (locale !== null) {
     activeLocale.value = locale
   }
@@ -323,11 +327,11 @@ const loadSlide = async (): Promise<void> => {
   visibleFrom.value = slide.visibleFrom ? new Date(slide.visibleFrom) : null
   visibleUntil.value = slide.visibleUntil ? new Date(slide.visibleUntil) : null
 
-  for (const locale of Object.values(MessageLanguage)) {
+  for (const locale of Object.values(ContentLanguage)) {
     translations[locale] = createEmptyTranslation()
   }
   for (const stored of slide.translations) {
-    const locale = enumValueOf(MessageLanguage, stored.locale)
+    const locale = enumValueOf(ContentLanguage, stored.locale)
     if (locale !== null) {
       translations[locale] = {
         title: stored.title,
@@ -356,7 +360,7 @@ onMounted(async () => {
  *
  * @param locale - The locale to add the feature to.
  */
-const addFeature = (locale: MessageLanguage): void => {
+const addFeature = (locale: ContentLanguage): void => {
   translations[locale].features.push({ key: nextRowKey(), text: '' })
 }
 
@@ -366,7 +370,7 @@ const addFeature = (locale: MessageLanguage): void => {
  * @param locale - The locale to remove the feature from.
  * @param index - The index of the feature to remove.
  */
-const removeFeature = (locale: MessageLanguage, index: number): void => {
+const removeFeature = (locale: ContentLanguage, index: number): void => {
   translations[locale].features.splice(index, 1)
 }
 
@@ -377,7 +381,7 @@ const removeFeature = (locale: MessageLanguage, index: number): void => {
  */
 const collectTranslations = (): SlideTranslation[] => {
   const collected: SlideTranslation[] = []
-  for (const locale of Object.values(MessageLanguage)) {
+  for (const locale of Object.values(ContentLanguage)) {
     const form = translations[locale]
     if (form.title.trim()) {
       const features = form.features.map((f) => f.text).filter((text) => text.trim())

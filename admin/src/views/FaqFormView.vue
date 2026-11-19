@@ -3,7 +3,7 @@
  * Full-page form for creating or editing a storefront FAQ entry.
  *
  * Detects edit mode from the route params, loads the entry when editing, and carries the question
- * and answer in en / ru / hy tabs. Asks before leaving with unsaved edits.
+ * and answer in one tab per content language. Asks before leaving with unsaved edits.
  */
 import { computed, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'

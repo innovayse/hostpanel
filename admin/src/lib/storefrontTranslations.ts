@@ -3,11 +3,11 @@
  * `translations` object the API takes, and back.
  */
 
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import type { StorefrontTranslations } from '@/types/storefront'
 
 /** Every locale the forms carry a tab for, in tab order. */
-export const STOREFRONT_LOCALES: MessageLanguage[] = [MessageLanguage.En, MessageLanguage.Ru, MessageLanguage.Hy]
+export const STOREFRONT_LOCALES: ContentLanguage[] = [ContentLanguage.En, ContentLanguage.Ru, ContentLanguage.Hy, ContentLanguage.De, ContentLanguage.Es]
 
 /**
  * Builds one blank form per locale.
@@ -19,10 +19,12 @@ export const STOREFRONT_LOCALES: MessageLanguage[] = [MessageLanguage.En, Messag
  * @param blank - Makes one blank form; called once per locale so the forms never share an object.
  * @returns A blank form for each locale.
  */
-export const blankTranslations = <T>(blank: () => T): Record<MessageLanguage, T> => ({
-  [MessageLanguage.En]: blank(),
-  [MessageLanguage.Ru]: blank(),
-  [MessageLanguage.Hy]: blank(),
+export const blankTranslations = <T>(blank: () => T): Record<ContentLanguage, T> => ({
+  [ContentLanguage.En]: blank(),
+  [ContentLanguage.Ru]: blank(),
+  [ContentLanguage.Hy]: blank(),
+  [ContentLanguage.De]: blank(),
+  [ContentLanguage.Es]: blank(),
 })
 
 /**
@@ -35,7 +37,7 @@ export const blankTranslations = <T>(blank: () => T): Record<MessageLanguage, T>
 export const formsFromTranslations = <T extends object>(
   stored: StorefrontTranslations<T>,
   blank: () => T,
-): Record<MessageLanguage, T> => {
+): Record<ContentLanguage, T> => {
   const forms = blankTranslations(blank)
   for (const locale of STOREFRONT_LOCALES) {
     const text = stored[locale]
@@ -55,7 +57,7 @@ export const formsFromTranslations = <T extends object>(
  * @returns The translations object of the payload.
  */
 export const collectTranslations = <T>(
-  forms: Record<MessageLanguage, T>,
+  forms: Record<ContentLanguage, T>,
   isFilled: (form: T) => boolean,
   trim: (form: T) => T,
 ): StorefrontTranslations<T> => {

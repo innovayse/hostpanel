@@ -19,7 +19,7 @@ import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useStorefrontLocaleTabs } from '@/composables/useStorefrontLocaleTabs'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 
 const { t } = useI18n()
@@ -38,7 +38,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** Emitted on submit with the language on screen, its stored version id (null when new) and its words. */
-  save: [language: MessageLanguage, existingId: number | null, content: EmailTemplateContent]
+  save: [language: ContentLanguage, existingId: number | null, content: EmailTemplateContent]
   /** Emitted when the user closes or cancels the dialog. */
   close: []
 }>()
@@ -54,15 +54,17 @@ const { activeLocale, tabs, select } = useStorefrontLocaleTabs('email-template-t
 const blank = (): EmailTemplateContent => ({ subject: '', body: '', description: null })
 
 /** The words of each language being edited. */
-const forms = reactive<Record<MessageLanguage, EmailTemplateContent>>({
-  [MessageLanguage.En]: blank(),
-  [MessageLanguage.Ru]: blank(),
-  [MessageLanguage.Hy]: blank(),
+const forms = reactive<Record<ContentLanguage, EmailTemplateContent>>({
+  [ContentLanguage.En]: blank(),
+  [ContentLanguage.Ru]: blank(),
+  [ContentLanguage.Hy]: blank(),
+  [ContentLanguage.De]: blank(),
+  [ContentLanguage.Es]: blank(),
 })
 
 /** Fills every tab from the stored versions, blank where a language has none. */
 watch(() => props.versions, (versions) => {
-  for (const language of Object.values(MessageLanguage)) {
+  for (const language of Object.values(ContentLanguage)) {
     const stored = versions.find((v) => v.language === language)
     forms[language] = stored
       ? { subject: stored.subject, body: stored.body, description: stored.description }

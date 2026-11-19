@@ -13,7 +13,7 @@ public static class JwtClaims
     /// <summary>Email address.</summary>
     public const string Email = "email";
 
-    /// <summary>Preferred language/locale (en, ru, hy).</summary>
+    /// <summary>Preferred language/locale (en, ru, hy, de, es).</summary>
     public const string Locale = "locale";
 
     /// <summary>User role.</summary>

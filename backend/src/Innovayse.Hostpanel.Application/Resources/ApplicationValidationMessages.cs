@@ -8,7 +8,7 @@ namespace Innovayse.Hostpanel.Application.Resources;
 /// <para>
 /// The sentence a refusal carries is written here, in <c>ApplicationValidationMessages.resx</c> and its
 /// per-language siblings, and not in the frontend, so one place answers for all three languages
-/// (en/ru/hy). The response body still carries the machine-readable
+/// (en/ru/hy/de/es). The response body still carries the machine-readable
 /// <c>code</c> beside the sentence so a page can branch without matching on prose.
 /// </para>
 /// <para>

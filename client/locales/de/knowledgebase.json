@@ -1,0 +1,23 @@
+{
+  "kb": {
+    "badge": "Hilfe-Center",
+    "title": "Wissensdatenbank",
+    "subtitle": "Durchsuchen Sie Artikel und Anleitungen oder suchen Sie Antworten auf Ihre Fragen.",
+    "searchPlaceholder": "Geben Sie hier eine Frage ein, um unsere Wissensdatenbank zu durchsuchen",
+    "search": "Suchen",
+    "categories": "Kategorien",
+    "articles": "Artikel",
+    "article": "Artikel",
+    "articlesHeading": "Artikel",
+    "noResults": "Für Ihre Suche wurden keine Artikel gefunden.",
+    "empty": "Keine Artikel verfügbar.",
+    "backToKb": "Zurück zur Wissensdatenbank",
+    "categorySeoTitle": "{category}-Artikel in der Wissensdatenbank",
+    "categorySeoDescription": "Artikel und Anleitungen zu {category}: Durchsuchen Sie die Antworten in unserer Wissensdatenbank.",
+    "views": "Aufrufe",
+    "lastUpdated": "Zuletzt aktualisiert",
+    "helpful": "War dieser Artikel hilfreich?",
+    "yes": "Ja",
+    "no": "Nein"
+  }
+}

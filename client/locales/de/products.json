@@ -1,0 +1,108 @@
+{
+  "products": {
+    "hero": {
+      "badge": "Zuverlässige Hosting-Lösungen",
+      "headline1": "Hosting, Domains und Server",
+      "headline2": "für jede Website.",
+      "subtitle": "Wählen Sie die Hosting-, Domain-, SSL- und Server-Tarife, die Ihre Website braucht, mit klaren Preisen und Support, der antwortet.",
+      "cta": {
+        "viewProducts": "Produkte ansehen",
+        "comparePlans": "Hosting-Tarife vergleichen"
+      },
+      "trustBadges": {
+        "support": "Support, der antwortet",
+        "encryption": "Verschlüsselte Verbindungen",
+        "uptime": "Zuverlässige Verfügbarkeit"
+      }
+    },
+    "products": {
+      "featured": "Empfohlen"
+    },
+    "pricing": {
+      "title": "Wählen Sie Ihren Tarif",
+      "trial": "Kostenlos testen",
+      "cycles": {
+        "monthly": "Monatlich",
+        "quarterly": "Vierteljährlich",
+        "semiannually": "6 Monate",
+        "annually": "Jährlich",
+        "biennially": "2 Jahre",
+        "triennially": "3 Jahre"
+      },
+      "popular": "⭐ Am beliebtesten",
+      "period": {
+        "monthly": "/Mon.",
+        "quarterly": "/Quartal",
+        "semiannually": "/6 Mon.",
+        "annually": "/Jahr",
+        "biennially": "/2 Jahre"
+      },
+      "save": "{percent} % sparen",
+      "more": "+{count} weitere",
+      "cta": {
+        "viewDemo": "Demo ansehen",
+        "learnMore": "Mehr erfahren"
+      }
+    },
+    "help": {
+      "title": "Unsicher, welcher Tarif passt?",
+      "subtitle": "Vergleichen Sie die Tarife nebeneinander oder bitten Sie unser Support-Team um Hilfe bei der Auswahl.",
+      "compare": "Tarife vergleichen",
+      "contact": "Support kontaktieren"
+    },
+    "comparison": {
+      "title": "Tarife vergleichen",
+      "headline": "Finden Sie Ihren {perfectMatch}",
+      "perfectMatchHighlight": "perfekten Tarif",
+      "subtitle": "Vergleichen Sie die Tarife und wählen Sie den passenden",
+      "headers": {
+        "feature": "Funktion",
+        "popular": "Beliebt"
+      },
+      "groupsLabel": "Tarifgruppen",
+      "notIncluded": "Nicht enthalten"
+    },
+    "benefits": {
+      "title": "Warum bei {benefitsHighlight} hosten",
+      "benefitsHighlight": "uns",
+      "subtitle": "Schnelles, sicheres Hosting mit Support, der antwortet",
+      "speed": {
+        "title": "Schnell und zuverlässig",
+        "description": "SSD-Speicher und ein stabiles Netzwerk halten Ihre Website schnell und online."
+      },
+      "security": {
+        "title": "Standardmäßig sicher",
+        "description": "Regelmäßige Backups und Schutz vor gängigen Bedrohungen."
+      },
+      "support": {
+        "title": "Support von echten Menschen",
+        "description": "Ihre Fragen gehen an Menschen, die antworten, nicht an einen Bot."
+      },
+      "migration": {
+        "title": "Einfacher Einstieg",
+        "description": "Bestellen Sie in Minuten und ziehen Sie Ihre Website mit unserer Hilfe um."
+      },
+      "additional": {
+        "trial": {
+          "title": "Testzugang",
+          "description": "Erst testen, dann entscheiden"
+        },
+        "guarantee": {
+          "title": "Erstattungsrichtlinie",
+          "description": "Unsere Erstattungsbedingungen ansehen"
+        },
+        "pricing": {
+          "title": "Klare Preise",
+          "description": "Preise in Ihrer Währung"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Beliebt bei {thousands}",
+      "thousandsHighlight": "unseren Kunden",
+      "subtitle": "Echte Ergebnisse von echten Kunden"
+    },
+    "notFound": "Produkt nicht gefunden",
+    "notFoundDescription": "Das gesuchte Produkt existiert nicht oder wurde entfernt."
+  }
+}

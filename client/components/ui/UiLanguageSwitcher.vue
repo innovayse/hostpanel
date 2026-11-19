@@ -112,6 +112,7 @@ const FLAGS: Record<string, string> = {
   en: '/flags/us.svg',
   ru: '/flags/ru.svg',
   hy: '/flags/am.svg',
+  de: '/flags/de.svg',
 }
 
 /** Active locale code and the locales the portal offers. */

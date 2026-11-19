@@ -1,0 +1,29 @@
+{
+  "trial": {
+    "badge": "Kostenlose Testphase",
+    "title": "{product} kostenlos testen",
+    "subtitle": "Erhalten Sie während der Testphase vollen Zugriff und überzeugen Sie sich selbst.",
+    "cta": "Kostenlose Testphase starten",
+    "learnMore": "Mehr erfahren",
+    "noCc": "Starten Sie Ihre Testphase noch heute.",
+    "featuresTitle": "Alles in {product}",
+    "perks": {
+      "noCc": {
+        "title": "Schneller Start",
+        "desc": "Sofort loslegen"
+      },
+      "duration": {
+        "title": "Testzeitraum",
+        "desc": "Voller Zugriff während Ihrer Testphase"
+      },
+      "support": {
+        "title": "Voller Support",
+        "desc": "Unser Support-Team hilft Ihnen bei der Einrichtung"
+      }
+    },
+    "seo": {
+      "title": "Kostenlose Testphase starten: {product}",
+      "description": "Testen Sie {product} kostenlos."
+    }
+  }
+}

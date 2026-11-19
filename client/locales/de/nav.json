@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "products": "Produkte",
+    "hosting": "Hosting",
+    "domains": "Domains",
+    "clientArea": "Kundenbereich",
+    "hostingDesc": "Shared-Webhosting-Tarife",
+    "openMenu": "Menü öffnen",
+    "allHosting": "Alle Hosting-Tarife",
+    "vpsDesc": "Ihr eigener virtueller Server mit Root-Zugriff",
+    "serversDesc": "Komplette Maschinen für anspruchsvolle Workloads",
+    "emailDesc": "Eigene Postfächer für Ihr Team",
+    "sslDesc": "Verschlüsseln Sie den Datenverkehr und gewinnen Sie das Vertrauen Ihrer Besucher",
+    "backupDesc": "Automatische Kopien, die sich schnell wiederherstellen lassen",
+    "support": "Support",
+    "help": "Hilfe-Center",
+    "helpDesc": "Anleitungen und Ratgeberartikel",
+    "faq": "FAQ",
+    "faqDesc": "Schnelle Antworten auf häufige Fragen",
+    "contact": "Kontakt",
+    "contactDesc": "Sprechen Sie mit unserem Team",
+    "signIn": "Anmelden",
+    "getStarted": "Jetzt starten",
+    "menu": "Menü",
+    "primary": "Hauptnavigation",
+    "preferences": "Einstellungen"
+  }
+}

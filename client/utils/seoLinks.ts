@@ -43,7 +43,7 @@ export type SeoLink =
  * @param path - A route path, possibly starting with `/ru` or `/hy`.
  * @returns The path as it is in the default language.
  */
-export const stripLocalePrefix = (path: string): string => path.replace(/^\/(en|ru|hy)/, '')
+export const stripLocalePrefix = (path: string): string => path.replace(/^\/(en|ru|hy|de)/, '')
 
 /**
  * Builds the absolute URL of a page in one language.

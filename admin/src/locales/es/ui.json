@@ -1,4 +1,5 @@
 {
+  "loading": "Cargando",
   "uiAdvancedFilters": {
     "filterValue": "Filtrar {value}",
     "selectField": "Seleccionar campo...",
@@ -12,6 +13,9 @@
   },
   "uiCountrySelect": {
     "selectCountry": "Seleccionar país..."
+  },
+  "uiDateTimePicker": {
+    "title": "Seleccionar fecha y hora"
   },
   "uiDatePicker": {
     "ddMmYyyy": "DD/MM/AAAA",
@@ -41,39 +45,81 @@
   },
   "uiFieldSelector": {
     "fields": "Campos",
+    "selectedCount": "{count} de {total} campos",
     "clearAll": "Limpiar todo"
   },
+  "uiFilterTrigger": {
+    "filters": "Filtros",
+    "title": "Filtros",
+    "apply": "Aplicar",
+    "reset": "Borrar",
+    "cancel": "Cancelar"
+  },
+  "uiFilterChips": {
+    "label": "Filtros activos",
+    "remove": "Quitar filtro {label}: {value}",
+    "clearAll": "Borrar todo"
+  },
   "uiSelect": {
+    "choose": "Elige una opción",
     "noResults": "Sin resultados"
   },
+  "uiLimitField": {
+    "unlimited": "Ilimitado"
+  },
   "phoneInput": {
-    "countryCode": "Código de país",
-    "searchCountry": "Buscar país o código"
+    "countryCode": "Código de país"
   },
   "selectCountry": "Seleccionar país",
   "dialog": {
     "close": "Cerrar",
-    "confirm": "Confirmar",
-    "processing": "Procesando..."
+    "confirm": "Confirmar"
   },
   "pagination": {
     "navigation": "Paginación",
     "previous": "Anterior",
     "next": "Siguiente",
-    "page": "Página"
+    "page": "Página",
+    "range": "{from} a {to} de {total}",
+    "pageOf": "Página {page} de {count}",
+    "rowsPerPage": "Filas por página"
   },
   "table": {
-    "empty": "Sin datos"
+    "empty": "Sin datos",
+    "sortBy": "Ordenar por",
+    "sortDirection": "Invertir el orden de clasificación"
+  },
+  "bulkBar": {
+    "label": "Acciones masivas",
+    "clear": "Borrar selección",
+    "selected": "{count} seleccionados"
+  },
+  "actionBar": {
+    "more": "Más acciones"
   },
   "chart": {
-    "empty": "Sin datos para graficar"
+    "empty": "Sin datos para graficar",
+    "target": "Objetivo",
+    "aria": "Gráfico"
   },
   "uploadZone": {
     "dropOr": "Suelta un archivo o",
-    "browse": "explora",
-    "uploading": "Subiendo..."
+    "browse": "explora"
+  },
+  "input": {
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "clearSearch": "Borrar"
   },
   "errorState": {
     "retry": "Reintentar"
+  },
+  "uiLocalizedField": {
+    "emptyTab": "Sin completar",
+    "invalidTab": "Requiere atención"
+  },
+  "imagePreview": {
+    "showOnLight": "Mostrar sobre fondo claro",
+    "showOnDark": "Mostrar sobre fondo oscuro"
   }
 }

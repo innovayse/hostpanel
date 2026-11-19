@@ -45,10 +45,14 @@ export const SettingKey = {
   ContactAddressRu: 'portal.contact.address.ru',
   /** Postal address for Armenian visitors. */
   ContactAddressHy: 'portal.contact.address.hy',
+  /** Postal address for Spanish visitors. */
+  ContactAddressEs: 'portal.contact.address.es',
   /** Support working hours for Russian visitors. */
   ContactHoursRu: 'portal.contact.hours.ru',
   /** Support working hours for Armenian visitors. */
   ContactHoursHy: 'portal.contact.hours.hy',
+  /** Support working hours for Spanish visitors. */
+  ContactHoursEs: 'portal.contact.hours.es',
   /** The storefront template. */
   Template: 'portal.template',
   /** Default colour mode of the storefront. */
@@ -83,6 +87,8 @@ export const SettingKey = {
   ChatWebsiteTokenRu: 'portal.chat.website_token.ru',
   /** Chat website token for Armenian. */
   ChatWebsiteTokenHy: 'portal.chat.website_token.hy',
+  /** Chat website token for Spanish. */
+  ChatWebsiteTokenEs: 'portal.chat.website_token.es',
   /** Whether the stats section shows on the home page. */
   SectionStats: 'portal.sections.stats',
   /** Whether the partners section shows on the home page. */
@@ -193,8 +199,10 @@ export const SettingEnv: Record<SettingKey, string> = {
   [SettingKey.ContactTimezone]: `${SETTING_ENV_PREFIX}CONTACT_TIMEZONE`,
   [SettingKey.ContactAddressRu]: `${SETTING_ENV_PREFIX}CONTACT_ADDRESS_RU`,
   [SettingKey.ContactAddressHy]: `${SETTING_ENV_PREFIX}CONTACT_ADDRESS_HY`,
+  [SettingKey.ContactAddressEs]: `${SETTING_ENV_PREFIX}CONTACT_ADDRESS_ES`,
   [SettingKey.ContactHoursRu]: `${SETTING_ENV_PREFIX}CONTACT_HOURS_RU`,
   [SettingKey.ContactHoursHy]: `${SETTING_ENV_PREFIX}CONTACT_HOURS_HY`,
+  [SettingKey.ContactHoursEs]: `${SETTING_ENV_PREFIX}CONTACT_HOURS_ES`,
   [SettingKey.Template]: `${SETTING_ENV_PREFIX}TEMPLATE`,
   [SettingKey.ThemeDefault]: `${SETTING_ENV_PREFIX}THEME_DEFAULT`,
   [SettingKey.ThemeUserToggle]: `${SETTING_ENV_PREFIX}THEME_USER_TOGGLE`,
@@ -212,6 +220,7 @@ export const SettingEnv: Record<SettingKey, string> = {
   [SettingKey.ChatWebsiteToken]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN`,
   [SettingKey.ChatWebsiteTokenRu]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN_RU`,
   [SettingKey.ChatWebsiteTokenHy]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN_HY`,
+  [SettingKey.ChatWebsiteTokenEs]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN_ES`,
   [SettingKey.SectionStats]: `${SETTING_ENV_PREFIX}SECTIONS_STATS`,
   [SettingKey.SectionPartners]: `${SETTING_ENV_PREFIX}SECTIONS_PARTNERS`,
   [SettingKey.SectionServices]: `${SETTING_ENV_PREFIX}SECTIONS_SERVICES`,

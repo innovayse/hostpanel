@@ -6,7 +6,19 @@
     "resend": "Reenviar el correo electrónico",
     "resent": "Correo electrónico de verificación enviado."
   },
+  "collapseSidebar": "Contraer barra lateral",
+  "expandSidebar": "Expandir barra lateral",
+  "userMenu": "Menú de la cuenta",
   "menu": "Menú",
+  "openMenu": "Abrir menú",
+  "breadcrumb": {
+    "label": "Ruta de navegación",
+    "hidden": "Mostrar páginas ocultas",
+    "new": "Nuevo",
+    "edit": "Editar",
+    "details": "Detalles",
+    "configure": "Configurar"
+  },
   "navigation": "Navegación principal",
   "viewLoadFailed": "Esta página no se pudo cargar. Revisa tu conexión e inténtalo de nuevo.",
   "reload": "Recargar",
@@ -22,10 +34,14 @@
     "dark": "Oscuro",
     "system": "Sistema"
   },
+  "version": {
+    "label": "Hostpanel {version}"
+  },
   "releaseUpdate": {
     "title": "Hostpanel {version} disponible",
     "releaseNotes": "Notas de la versión",
     "copy": "Copiar comando de actualización",
     "copied": "¡Copiado!"
-  }
+  },
+  "newClient": "Nuevo cliente"
 }

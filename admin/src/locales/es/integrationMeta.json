@@ -60,9 +60,6 @@
   },
   "maxmind": {
     "shortDescription": "Detectar pedidos fraudulentos con la puntuación de riesgo GeoIP de MaxMind.",
-    "fieldLicenseKey": "Clave de licencia",
-    "fieldRegistrars": "Registradores de Dominios",
-    "fieldEmail": "Correo / SMTP",
-    "fieldFraud": "Protección contra fraude"
+    "fieldLicenseKey": "Clave de licencia"
   }
 }

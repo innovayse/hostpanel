@@ -76,34 +76,17 @@
       "label": "Horario de trabajo",
       "hint": "Lun-Vie 09:00-18:00"
     },
-    "contactHoursRu": {
-      "label": "Horario de trabajo (ruso)",
-      "hint": "Mostrado a visitantes rusos; vacío usa el horario predeterminado"
-    },
-    "contactHoursHy": {
-      "label": "Horario de trabajo (armenio)",
-      "hint": "Mostrado a visitantes armenios; vacío usa el horario predeterminado"
-    },
-    "contactHoursEs": {
-      "label": "Horario de trabajo (español)",
-      "hint": "Mostrado a visitantes hispanohablantes; vacío usa el horario predeterminado"
+    "groups": {
+      "figures": "Cifras",
+      "contacts": "Contactos",
+      "messengers": "Mensajería",
+      "address": "Dirección y horario"
     },
     "contactTimezone": {
       "label": "Zona horaria",
       "hint": "UTC+4"
     },
-    "contactAddressRu": {
-      "label": "Dirección (ruso)",
-      "hint": "Mostrado a visitantes rusos; vacío usa la dirección predeterminada"
-    },
-    "contactAddressHy": {
-      "label": "Dirección (armenio)",
-      "hint": "Mostrado a visitantes armenios; vacío usa la dirección predeterminada"
-    },
-    "contactAddressEs": {
-      "label": "Dirección (español)",
-      "hint": "Mostrado a visitantes hispanohablantes; vacío usa la dirección predeterminada"
-    }
+    "localeFallbackHint": "El idioma que se deja vacío muestra el texto en inglés."
   },
   "portalAppearance": {
     "title": "Apariencia del portal",
@@ -223,6 +206,12 @@
   "hostingDetails": {
     "title": "Detalles de hosting",
     "description": "Las cifras y datos detrás del rendimiento, seguridad, instalador, garantía y soporte. Deja una cifra vacía para ocultarla.",
+    "groups": {
+      "performance": "Cifras de rendimiento",
+      "guarantees": "Garantías",
+      "support": "Respuesta de soporte",
+      "features": "Características"
+    },
     "statsResponseTime": {
       "label": "Tiempo de respuesta",
       "hint": "ej. 180 ms"
@@ -333,6 +322,7 @@
     "title": "Seguimiento y chat",
     "description": "Servicios de terceros con los que se comunica la tienda. Nada se carga hasta que se configura aquí.",
     "gtm": {
+      "title": "Gestor de etiquetas",
       "label": "Contenedor de Google Tag Manager",
       "hint": "Se carga solo después de que un visitante acepta todas las cookies. Vacío no carga ninguna etiqueta."
     },
@@ -342,9 +332,6 @@
       "baseUrlHint": "https://chat.example.com",
       "token": "Token del sitio web",
       "tokenHint": "Desde la configuración de la bandeja de entrada de chat",
-      "tokenRu": "Token para visitantes rusos",
-      "tokenHy": "Token para visitantes armenios",
-      "tokenEs": "Token para visitantes hispanohablantes",
       "tokenLocaleHint": "Opcional; vacío usa el token predeterminado",
       "hint": "El widget aparece solo cuando un proveedor, el servidor y un token están configurados."
     },
@@ -363,7 +350,6 @@
     "10Gb": "10 GB",
     "removeLine": "Eliminar línea",
     "feature": "Función",
-    "adding": "Agregando…",
     "add": "Agregar",
     "plansLineUpByFeature": "Los planes se alinean por nombre de función, así que escríbelo igual en todos los productos — \"Disco\" y \"Espacio en disco\" se convierten en dos filas separadas. Dentro de un producto, un nombre solo puede usarse una vez; reutilizarlo se rechaza en lugar de guardarlo donde nunca se mostraría.",
     "confirmRemoveTitle": "¿Eliminar esta línea?",
@@ -397,6 +383,8 @@
     "hideThisProductFromThe": "Ocultar este producto del formulario de pedido",
     "featured": "Plan recomendado",
     "featuredHint": "Mostrar este producto con una insignia \"Recomendado\" en la tienda. Solo un producto por grupo puede ser recomendado; al guardar esto borra los demás.",
+    "digitalService": "Servicio digital",
+    "digitalServiceHint": "El producto es un servicio electrónico a efectos de IVA (alojamiento, una licencia, un dominio que cuenta como tal). A un consumidor de otro Estado miembro de la UE se le factura al tipo de IVA de su propio país. No es lo mismo que un producto digital entregado por un complemento.",
     "sortOrder": "Orden",
     "sortOrderHint": "Posición dentro del grupo, el más bajo primero. Los productos con el mismo número se ordenan por nombre.",
     "sortOrderPlaceholder": "ej. 1",
@@ -409,6 +397,26 @@
     "gracePeriod": "Período de gracia (días)",
     "gracePeriodHint": "Días que un servicio sigue usable después de su fecha de vencimiento antes de ser suspendido.",
     "gracePeriodPlaceholder": "ej. 7",
+    "maxActiveServices": "Máximo de servicios activos",
+    "maxActiveServicesHint": "Cuántos servicios de este producto pueden estar activos a la vez, contando los pedidos no suministrados. Al alcanzarse, el producto se agota y se oculta de la tienda. Déjalo vacío o en 0 para ilimitado.",
+    "maxActiveServicesPlaceholder": "Ilimitado",
+    "onePerClient": "Uno por cliente",
+    "onePerClientHint": "Un cliente que ya tiene un servicio activo de este producto no puede volver a pedirlo.",
+    "trial": "Prueba gratuita",
+    "trialHint": "Permite a los clientes empezar este producto gratis durante un tiempo limitado, sin pagar.",
+    "trialDays": "Duración de la prueba (días)",
+    "trialDaysPlaceholder": "p. ej. 14",
+    "trialReminderDays": "Días de recordatorio",
+    "trialReminderDaysHint": "Días antes del final de la prueba en que se envía un recordatorio por correo, separados por comas. Cada uno debe ser anterior al final; como máximo cinco.",
+    "trialReminderDaysPlaceholder": "p. ej. 3, 1",
+    "trialGracePeriod": "Período de gracia tras la prueba (días)",
+    "trialGracePeriodPlaceholder": "p. ej. 3",
+    "trialGracePeriodHint": "Días que la factura de una prueba convertida puede quedar sin pagar antes de dar de baja el servicio.",
+    "trialAutoConvert": "Convertir en servicio de pago al final",
+    "trialAutoConvertHint": "Se emite una factura cuando termina la prueba. Si está desactivado, el servicio se da de baja en su lugar.",
+    "trialNotice": "Los clientes todavía no pueden iniciar una prueba: por ahora estos ajustes solo se guardan.",
+    "trialInvalid": "Una prueba dura de {minDays} a {maxDays} días, el período de gracia de {minGrace} a {maxGrace} días, y cada día de recordatorio es un número entero desde 1 hasta un día antes del final (como máximo {maxReminders}, sin repetir ninguno).",
+    "trialReminderDaysInvalid": "Los días de recordatorio deben ser números enteros separados por comas.",
     "createProduct": "Crear producto",
     "sharedHosting": "Alojamiento compartido",
     "dedicated": "Dedicado",
@@ -419,13 +427,56 @@
     "other": "Otro",
     "vps": "VPS"
   },
-  "currencies": {
-    "loadingCurrencies": "Cargando monedas..."
-  },
+  "currencies": {},
   "emailTemplates": {
     "emailTemplates": "Plantillas de correo electrónico",
     "noTemplatesFound": "No se encontraron plantillas.",
     "languages": "Idiomas",
+    "searchPlaceholder": "Buscar por nombre o asunto",
+    "groupFilter": "Grupo",
+    "noMatches": "Ninguna plantilla coincide con tu búsqueda",
+    "groups": {
+      "bank": "Transferencia bancaria",
+      "card": "Tarjeta",
+      "credit": "Crédito",
+      "domain": "Dominios",
+      "email": "Campañas",
+      "gateway": "Pagos de pasarela",
+      "invoice": "Facturas",
+      "order": "Pedidos",
+      "service": "Servicios",
+      "user": "Cuentas"
+    },
+    "names": {
+      "bank-transfer-confirmed": "Transferencia bancaria confirmada",
+      "bank-transfer-details": "Datos de la transferencia bancaria",
+      "bank-transfer-rejected": "Transferencia bancaria rechazada",
+      "bank-transfer-requested-admin": "Transferencia bancaria solicitada (personal)",
+      "card-charge-action-required": "El cargo con tarjeta requiere acción",
+      "card-charge-declined": "Cargo con tarjeta rechazado",
+      "credit-balance-changed": "Saldo a favor modificado",
+      "credit-note-issued": "Abono emitido",
+      "domain-expired": "Dominio caducado",
+      "domain-expiring": "Dominio próximo a caducar",
+      "domain-registered": "Dominio registrado",
+      "domain-registration-failed": "Error en el registro del dominio",
+      "domain-registration-failed-admin": "Error en el registro del dominio (personal)",
+      "domain-renewal-failed-admin": "Error en la renovación del dominio (personal)",
+      "domain-renewed": "Dominio renovado",
+      "domain-transferred": "Dominio transferido",
+      "email-campaign": "Campaña de correo",
+      "gateway-payment-credited-admin": "Pago de pasarela abonado (personal)",
+      "gateway-payment-stalled-admin": "Pago de pasarela bloqueado (personal)",
+      "gateway-payment-without-reference-admin": "Pago de pasarela sin referencia (personal)",
+      "invoice-renewal-reminder": "Recordatorio de renovación de factura",
+      "order-rejected": "Pedido rechazado",
+      "service-termination-failed-admin": "Error al dar de baja el servicio (personal)",
+      "user-email-change": "Confirmación de cambio de correo",
+      "user-email-changed-notice": "Aviso de cambio de correo",
+      "user-email-verification": "Verificación de correo",
+      "user-invite": "Invitación de usuario",
+      "user-password-reset": "Restablecimiento de contraseña"
+    },
     "body": "Cuerpo (HTML)",
     "missingVersion": "Esta plantilla no tiene una versión en este idioma todavía, por lo que el correo se envía en inglés. Al guardarlo se agrega.",
     "subjectPlaceholder": "Asunto, se permiten variables",
@@ -433,14 +484,16 @@
     "descriptionPlaceholder": "Cuándo se envía este correo"
   },
   "products": {
-    "products": "Productos",
     "manageHostingPlansAndServices": "Gestionar planes de alojamiento y servicios disponibles para compra",
     "createProduct": "Crear producto",
-    "loadingProducts": "Cargando productos...",
     "group": "Grupo",
     "editSpecification": "Editar especificación",
     "editProduct": "Editar producto",
     "noProductsFoundCreateYour": "No se encontraron productos. Crea tu primer producto para comenzar.",
+    "searchPlaceholder": "Buscar por nombre, SKU o slug",
+    "noProductsMatchYourFilters": "Ningún producto coincide con tus filtros",
+    "clearFilters": "Borrar filtros",
+    "totalCount": "Productos: {totalCount}",
     "typeSharedHosting": "Alojamiento compartido",
     "typeDedicated": "Dedicado",
     "typeDomain": "Dominio",
@@ -452,18 +505,52 @@
     "typeVps": "VPS",
     "typeSsl": "SSL"
   },
+  "productBundles": {
+    "subtitle": "Vende productos juntos como una sola oferta, con un registro de dominio opcional y un descuento.",
+    "add": "Crear oferta",
+    "empty": "Todavía no hay ofertas de productos.",
+    "components": "Productos",
+    "domain": "Dominio",
+    "discount": "Descuento",
+    "years": "{count} año | {count} años",
+    "discountPercentage": "{amount}%",
+    "discountFixed": "{amount} {currency}",
+    "deleteTitle": "Eliminar oferta de productos",
+    "deleteMessage": "¿Eliminar la oferta \"{name}\"? Los pedidos ya realizados con ella se conservan y pierden el vínculo con ella.",
+    "createTitle": "Crear oferta de productos",
+    "editTitle": "Editar oferta de productos",
+    "namePlaceholder": "p. ej. Alojamiento con un dominio",
+    "descriptionPlaceholder": "Se muestra al cliente junto a la oferta",
+    "sortOrder": "Orden de clasificación",
+    "sortOrderHint": "Posición en la lista, de menor a mayor.",
+    "sortOrderPlaceholder": "0",
+    "componentsHint": "Elige los productos que se venden juntos y marca uno como producto principal. El dominio se añade abajo, no aquí.",
+    "productPlaceholder": "Selecciona un producto",
+    "makePrimary": "Producto principal",
+    "addComponent": "Añadir un producto",
+    "removeComponent": "Quitar",
+    "includesDomain": "Incluye el registro de un dominio",
+    "includesDomainHint": "El cliente elige el dominio al hacer el pedido; su precio depende del TLD que elija.",
+    "domainYears": "Años de registro",
+    "domainYearsPlaceholder": "1",
+    "discountType": "Descuento",
+    "discountTypePlaceholder": "Selecciona un tipo de descuento",
+    "discountTypeNone": "Sin descuento",
+    "discountTypePercentage": "Porcentaje",
+    "discountTypeFixed": "Importe fijo",
+    "discountAmount": "Importe",
+    "discountAmountPlaceholder": "0",
+    "discountCurrency": "Moneda",
+    "discountCurrencyPlaceholder": "Selecciona una moneda",
+    "activeHint": "Una oferta inactiva se oculta de la tienda."
+  },
   "slideForm": {
-    "slides": "Diapositivas",
-    "loadingSlideData": "Cargando datos de la diapositiva...",
     "generalSettings": "Configuración general",
     "icon": "Ícono",
     "orTypeMdiIconName": "O escribe el nombre del ícono MDI (ej. cloud-check)",
     "brandColor": "Color de marca",
     "image": "Imagen",
     "slidePreview": "Vista previa de la diapositiva",
-    "removeImage": "Eliminar imagen",
-    "jpegPngWebpSvgMax": "JPEG, PNG, WebP, SVG — máximo 5 MB",
-    "orPasteImageUrl": "O pega la URL de la imagen...",
     "demoUrl": "URL de demostración",
     "demoUrlPlaceholder": "https://demo.example.com",
     "optionalTryDemoButtonLink": "Enlace opcional \"Probar demostración\" en la diapositiva",
@@ -511,24 +598,13 @@
     "finance": "Finanzas",
     "media": "Medios",
     "health": "Salud",
-    "pageTitleEdit": "Editar diapositiva",
-    "pageTitleCreate": "Crear diapositiva",
     "featureNumber": "Característica {number}",
-    "locales": {
-      "en": "Inglés",
-      "ru": "Ruso",
-      "hy": "Armenio",
-      "es": "Español"
-    },
     "notFound": "Diapositiva #{id} no encontrada.",
     "ai": "IA"
   },
   "slides": {
-    "slides": "Diapositivas",
     "manageHomepageHeroSlidesDrag": "Gestionar diapositivas del hero de la página principal — arrastra para reordenar",
-    "savingOrder": "Guardando orden...",
     "addSlide": "Agregar diapositiva",
-    "loadingSlides": "Cargando diapositivas...",
     "image": "Imagen",
     "audience": "Público",
     "visibility": "Visibilidad",
@@ -540,12 +616,11 @@
     "always": "Siempre",
     "from": "Desde {date}",
     "until": "Hasta {date}",
+    "range": "De {from} a {until}",
     "slideNumber": "Diapositiva #{id}",
     "deleteMessage": "¿Eliminar \"{title}\"? Esta acción no se puede deshacer."
   },
   "tldConfigForm": {
-    "tldPricing": "Precios de TLD",
-    "loadingTldConfiguration": "Cargando configuración de TLD...",
     "generalSettings": "Configuración general",
     "tld": "TLD",
     "domainExtensionWithoutTheDot": "Extensión de dominio sin el punto (ej. \"com\", \"net\", \"am\")",
@@ -563,46 +638,133 @@
     "costCostsymbol": "Costo ({costSymbol})",
     "sellSellsymbol": "Venta ({sellSymbol})",
     "margin": "Margen",
+    "marginDifferentCurrencies": "El coste y el precio de venta están en monedas distintas, así que aquí no se calcula el margen. La lista de precios lo muestra al tipo de cambio actual",
     "years": "Años",
     "transferPricing": "Precios de transferencia",
     "renewalPricing": "Precios de renovación",
     "createTld": "Crear TLD",
+    "editTld": "Editar TLD",
     "unsavedChanges": "Cambios sin guardar",
     "youHaveUnsavedChangesAre": "Tienes cambios sin guardar. ¿Estás seguro de que quieres irte?",
     "leave": "Ir",
     "tldIsRequired": "El TLD es obligatorio.",
-    "addTld": "Agregar TLD",
-    "editTld": "Editar TLD",
     "notFound": "Configuración de TLD #{id} no encontrada."
   },
   "tldConfigs": {
     "tldPricing": "Precios de TLD",
     "configureDomainExtensionPricingAnd": "Configurar precios y proveedores de extensiones de dominio",
-    "importing": "Importando...",
     "import": "Importar",
     "nameAm": "Name.am",
     "namecheap": "Namecheap",
-    "syncing": "Sincronizando...",
     "syncPrices": "Sincronizar precios",
     "addTld": "Agregar TLD",
     "searchTlds": "Buscar TLDs...",
-    "loadingTldConfigurations": "Cargando configuraciones de TLD...",
     "tld": "TLD",
     "provider": "Proveedor",
     "cost1yr": "Costo (1 año)",
     "sell1yr": "Venta (1 año)",
     "margin": "Margen",
+    "marginUnavailable": "Sin margen: falta un precio o no hay tipo de cambio entre la moneda de coste y la de venta",
     "lastSynced": "Última sincronización",
     "editTld": "Editar TLD",
     "deleteTld": "Eliminar TLD",
     "noTldConfigurationsFoundAdd": "No se encontraron configuraciones de TLD. Agrega tu primera TLD o importa de un proveedor.",
-    "showingValueValue2OfLength": "Mostrando {value}–{value2} de {length} TLDs",
+    "noTldsMatchYourFilters": "Ningún TLD coincide con tus filtros",
+    "clearFilters": "Borrar filtros",
+    "totalcountTldValue": "TLD: {totalCount}",
     "deleteTldConfiguration": "Eliminar configuración de TLD",
-    "allProviders": "Todos los proveedores",
-    "allStatus": "Todos los estados",
     "priceSyncComplete": "Sincronización de precios completa.",
     "deleteMessage": "¿Eliminar la configuración de TLD \".{tld}\"? Esta acción no se puede deshacer.",
     "importComplete": "Importación completa: {imported} importado(s), {updated} actualizado(s).",
     "never": "Nunca"
+  },
+  "index": {
+    "subtitle": "Todo lo que define el panel y la tienda, agrupado por lo que controla.",
+    "groups": {
+      "storefront": "Tienda y catálogo",
+      "billing": "Facturación",
+      "communication": "Comunicación",
+      "security": "Seguridad"
+    },
+    "items": {
+      "general": {
+        "title": "General",
+        "description": "Identidad del sitio, apariencia, marca, seguimiento y todos los demás ajustes globales."
+      },
+      "products": {
+        "title": "Productos",
+        "description": "Planes, precios, ciclos de facturación y características."
+      },
+      "productBundles": {
+        "title": "Ofertas de productos",
+        "description": "Ofertas que venden varios productos juntos."
+      },
+      "tldPricing": {
+        "title": "Precios de TLD",
+        "description": "Precios de registro, renovación y transferencia por extensión de dominio."
+      },
+      "slides": {
+        "title": "Diapositivas",
+        "description": "Las diapositivas del banner de la página de inicio de la tienda."
+      },
+      "gateways": {
+        "title": "Pasarelas de pago",
+        "description": "Las formas en que los clientes pueden pagar, configuradas en integraciones."
+      },
+      "currencies": {
+        "title": "Monedas",
+        "description": "Monedas, tipos de cambio y la moneda predeterminada."
+      },
+      "taxRules": {
+        "title": "Reglas fiscales",
+        "description": "Tipos impositivos por país y región."
+      },
+      "vatRates": {
+        "title": "Tipos de IVA",
+        "description": "El tipo de IVA de cada Estado miembro de la UE, usado para los servicios digitales vendidos a consumidores."
+      },
+      "emailTemplates": {
+        "title": "Plantillas de correo",
+        "description": "Los mensajes que el panel envía a clientes y personal."
+      },
+      "fraud": {
+        "title": "Protección antifraude",
+        "description": "Cribado de pedidos, listas de bloqueo y registro de fraude."
+      }
+    }
+  },
+  "tabs": {
+    "label": "Secciones de ajustes",
+    "general": "General",
+    "appearance": "Apariencia",
+    "integrations": "Integraciones",
+    "advanced": "Avanzado"
+  },
+  "advanced": {
+    "title": "Ajustes avanzados",
+    "description": "Ajustes que no tienen tarjeta propia. Edita aquí los pares de clave y valor."
+  },
+  "timezone": {
+    "none": "Sin zona horaria",
+    "placeholder": "Elige una zona horaria",
+    "regions": {
+      "Africa": "África",
+      "America": "América",
+      "Antarctica": "Antártida",
+      "Arctic": "Ártico",
+      "Asia": "Asia",
+      "Atlantic": "Océano Atlántico",
+      "Australia": "Australia",
+      "Europe": "Europa",
+      "Indian": "Océano Índico",
+      "Pacific": "Océano Pacífico",
+      "UTC": "UTC"
+    }
+  },
+  "saveBar": {
+    "unsaved": "{count} cambio sin guardar | {count} cambios sin guardar",
+    "clean": "Sin cambios sin guardar",
+    "save": "Guardar",
+    "discard": "Descartar"
   }
 }

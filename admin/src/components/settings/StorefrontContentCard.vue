@@ -206,11 +206,13 @@ const LOCALIZED_FIELDS: LocalizedStorefrontField[] = [
     [MessageLanguage.En]: SettingKey.ContactAddress,
     [MessageLanguage.Ru]: SettingKey.ContactAddressRu,
     [MessageLanguage.Hy]: SettingKey.ContactAddressHy,
+    [MessageLanguage.Es]: SettingKey.ContactAddressEs,
   }),
   localizedField(StorefrontGroup.Address, 'contact-hours', 'settings.storefrontContent.contactHours.label', 'settings.storefrontContent.contactHours.hint', {
     [MessageLanguage.En]: SettingKey.ContactHours,
     [MessageLanguage.Ru]: SettingKey.ContactHoursRu,
     [MessageLanguage.Hy]: SettingKey.ContactHoursHy,
+    [MessageLanguage.Es]: SettingKey.ContactHoursEs,
   }),
 ]
 

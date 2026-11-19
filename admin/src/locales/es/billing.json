@@ -15,7 +15,8 @@
   },
   "invoiceOptionsTab": {
     "thisIsADraftInvoice": "Esta es una factura en borrador. El cliente no puede ver ni acceder a esta factura hasta que se publique.",
-    "taxRate": "Tasa de Impuesto"
+    "taxRate": "Tasa de Impuesto",
+    "reverseCharge": "Esta factura se emitió con inversión del sujeto pasivo: no se añade IVA y es el cliente quien lo declara. Número de IVA del cliente: {vatNumber}."
   },
   "invoicePaymentTab": {
     "publishTheInvoiceBeforeAdding": "Publica la factura antes de agregar pagos.",
@@ -103,15 +104,14 @@
   "billableItems": {
     "billableItems": "Elementos Facturables",
     "manageUninvoicedAndRecurringCharges": "Gestionar cargos no facturados y recurrentes",
-    "searchDescription": "Buscar descripción...",
+    "searchItems": "Buscar por descripción o ID",
     "lengthRecordsFound": "{length} Registros Encontrados",
     "invoiced": "Facturado",
     "typeOneTime": "Una vez",
     "typeRecurring": "Recurrente",
     "noItemsFound": "No se encontraron elementos.",
-    "uninvoiced": "No facturado",
-    "activeRecurring": "Recurrente Activo",
-    "completedRecurring": "Recurrente Completado",
+    "noItemsMatchYourFilters": "Ningún concepto facturable coincide con tus filtros.",
+    "clearFilters": "Borrar filtros",
     "deleteItems": "Eliminar elementos facturables",
     "deleteItemsMessage": "¿Eliminar {count} elemento facturable seleccionado? Esta acción no se puede deshacer. | ¿Eliminar {count} elementos facturables seleccionados? Esta acción no se puede deshacer.",
     "itemsDeleted": "Elementos facturables eliminados."
@@ -131,13 +131,13 @@
     "gatewayTransactionLog": "Registro de Transacciones de Pasarela",
     "viewPaymentGatewayTransactionLogs": "Ver registros de transacciones de pasarela de pago",
     "debugData": "Datos de depuración",
-    "searchInDebugData": "Buscar en datos de depuración...",
     "gateway": "Pasarela",
     "result": "Resultado",
     "payment": "Pago",
     "refund": "Reembolso",
     "credit": "Crédito",
-    "pending": "Pendiente"
+    "pending": "Pendiente",
+    "searchPlaceholder": "Buscar datos de pasarela o depuración"
   },
   "renewals": {
     "heading": "Renovaciones Próximas",
@@ -158,10 +158,10 @@
     "line": "Línea de factura",
     "claimedAt": "Reclamado en",
     "generateInvoice": "Facturar todas las renovaciones vencidas de este cliente",
+    "generateInvoiceHint": "Facturar todas las renovaciones pendientes de este cliente",
     "invoicesRaised": "Facturas de renovación emitidas: {count}.",
     "nothingDue": "Nada que facturar todavía. Las facturas de renovación se emiten una vez que una renovación está dentro del tiempo de entrega de facturación, o ya existen.",
     "releaseClaim": "Liberar reclamación",
-    "releasing": "Liberando...",
     "releaseTitle": "Liberar reclamación de renovación",
     "releaseMessage": "Advertencia: liberar esta reclamación permite que la próxima ejecución de renovación envíe la renovación al registrador de nuevo. Si el registrador ya renovó el dominio, se renueva dos veces y el registrador cobra dos veces. Revisa el dominio en el registrador primero y libera solo si no se renovó: {line}.",
     "claimReleased": "La reclamación se liberó. La próxima ejecución de renovación lo intentará de nuevo.",
@@ -211,7 +211,6 @@
     "manageInvoice": "Administrar Factura",
     "theClientIsNotAble": "El cliente no puede ver ni acceder a esta factura hasta que se publique.",
     "thisIsADraftInvoice": "Esta es una factura en borrador.",
-    "markUnpaid": "Marcar como Impaga",
     "addPayment": "Agregar Pago",
     "options": "Opciones",
     "unpaid": "Impaga",
@@ -224,13 +223,20 @@
   },
   "invoicesList": {
     "manageBillingInvoices": "Gestionar facturas de facturación",
+    "due": "Pendiente",
+    "summaryHint": "{count} factura en esta página | {count} facturas en esta página",
     "dateRefunded": "Fecha de Reembolso",
     "totalcountRecordsFoundShowingValue": "{totalCount} Registros Encontrados, Mostrando {value} a {value2}",
     "markPaid": "Marcar como Pagada",
     "markUnpaid": "Marcar como Impaga",
     "duplicateInvoice": "Duplicar Factura",
+    "bulkPaid": "Pagado",
+    "bulkUnpaid": "Sin pagar",
+    "bulkCancelled": "Cancelado",
+    "bulkDuplicate": "Duplicado",
     "collections": "Cobros",
     "paymentPending": "Pago Pendiente",
+    "searchInvoices": "Buscar por número de factura o método de pago",
     "deleteInvoice": "Eliminar factura",
     "deleteInvoiceMessage": "¿Eliminar factura #{id}? Esta acción no se puede deshacer.",
     "deleteInvoices": "Eliminar facturas",
@@ -278,7 +284,8 @@
     "created": "Creado",
     "noQuotesFound": "No se encontraron cotizaciones.",
     "expired": "Expirada",
-    "valid": "Válida"
+    "valid": "Válida",
+    "searchQuotes": "Buscar por asunto o número de presupuesto"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Transacciones y registros de pago",
@@ -294,7 +301,8 @@
     "paymentsReceived": "Pagos Recibidos",
     "paymentsSent": "Pagos Enviados",
     "deleteTransaction": "Eliminar transacción",
-    "deleteTransactionMessage": "¿Eliminar transacción #{id}? Esta acción no se puede deshacer."
+    "deleteTransactionMessage": "¿Eliminar transacción #{id}? Esta acción no se puede deshacer.",
+    "searchTransactions": "Buscar por descripción, referencia o método de pago"
   },
   "invoiceItems": {
     "removeItem": "Eliminar línea",
@@ -366,9 +374,7 @@
     "voidedAt": "Anulada",
     "empty": "No se encontraron notas de crédito.",
     "emptyForInvoice": "No se emitieron notas de crédito contra esta factura.",
-    "allStatuses": "Todos los estados",
-    "statusFilter": "Estado",
-    "statusFilterPlaceholder": "Filtrar por estado",
+    "searchCreditNotes": "Buscar por número, motivo, referencia del reembolso o ID",
     "status": {
       "Draft": "Borrador",
       "Issued": "Emitida",

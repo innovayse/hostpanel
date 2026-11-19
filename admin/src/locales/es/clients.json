@@ -15,6 +15,8 @@
     "transactionDescription": "Descripción de la transacción...",
     "externalReference": "Referencia externa...",
     "invoiceIdOptional": "ID de Factura (opcional)",
+    "noInvoice": "Sin factura",
+    "selectInvoice": "Selecciona una factura",
     "selectGateway": "Seleccionar pasarela",
     "addToClientSCredit": "Agregar al Saldo de Crédito del Cliente",
     "failedToSaveTransaction": "Error al guardar la transacción."
@@ -28,7 +30,6 @@
     "exportData": "Exportar Datos",
     "chooseWhichDataPointsTo": "Elige qué puntos de datos incluir en la exportación.",
     "generatingAnExportForA": "Generar una exportación para un cliente con una cantidad sustancial de historial puede llevar un tiempo.",
-    "generating": "Generando…",
     "profileData": "Datos del Perfil",
     "payMethods": "Métodos de Pago",
     "users": "Usuarios Vinculados",
@@ -133,6 +134,9 @@
     "deleteRequest": "Eliminar solicitud",
     "totalcountRequestValue": "Solicitudes: {totalCount}",
     "noCancellationRequestsFound": "No se encontraron solicitudes de cancelación",
+    "searchRequests": "Buscar por motivo o ID",
+    "noRequestsMatchYourFilters": "Ninguna solicitud de cancelación coincide con tus filtros",
+    "clearFilters": "Borrar filtros",
     "deleteCancellationRequest": "Eliminar Solicitud de Cancelación",
     "areYouSureYouWant": "¿Estás seguro de que quieres eliminar esta solicitud de cancelación?",
     "requestDeleted": "Solicitud de cancelación eliminada."
@@ -141,14 +145,17 @@
     "billableItems": "Ítems Facturables",
     "addTimeBillingEntries": "Agregar Entradas de Facturación por Tiempo",
     "addBillableItem": "+ Agregar Ítem Facturable",
-    "loadingBillableItems": "Cargando ítems facturables...",
     "uninvoicedItemsLength": "Ítems No Facturados ({length})",
     "uninvoicedItemsAmountLength": "Ítems No Facturados — {amount} ({length})",
     "invoiceSelectedItems": "Facturar Ítems Seleccionados",
+    "invoiceSelected": "Factura",
     "noUninvoicedBillableItems": "No hay ítems facturables no facturados.",
     "invoicedItems": "Ítems Facturados",
     "invoicedtotalcountItemValue": "Ítems: {invoicedTotalCount}",
     "noInvoicedBillableItems": "No hay ítems facturables facturados.",
+    "searchItems": "Buscar por descripción o ID",
+    "noUninvoicedItemsMatchYourFilters": "Ningún concepto facturable sin facturar coincide con tus filtros.",
+    "noInvoicedItemsMatchYourFilters": "Ningún concepto facturable facturado coincide con tus filtros.",
     "confirmInvoice": "Confirmar Factura",
     "areYouSureYouWant": "¿Estás seguro de que quieres facturar los ítems seleccionados de inmediato?",
     "confirmDelete": "Confirmar Eliminar",
@@ -170,7 +177,6 @@
     "contactDeletedSuccessfully": "Contacto eliminado con éxito."
   },
   "clientDomainDetail": {
-    "loadingDomain": "Cargando dominio...",
     "domainName": "Dominio — {name}",
     "domainInfo": "Información del Dominio",
     "order": "Orden #:",
@@ -205,6 +211,8 @@
     "registrarLock": "Bloqueo del Registrador",
     "renewDomain": "Renovar Dominio",
     "numberOfYears": "Número de años",
+    "cancelTransfer": "Cancelar transferencia",
+    "cancelThisTransferAtThe": "¿Cancelar esta transferencia pendiente en el registrador?",
     "registerDomain": "Registrar Dominio",
     "registerThisDomainWithThe": "¿Registrar este dominio con el registrador?",
     "eppAuthorizationCode": "Código de Autorización EPP",
@@ -214,12 +222,10 @@
     "contactSaved": "Detalles de contacto guardados."
   },
   "clientDomainsList": {
-    "loadingDomains": "Cargando dominios...",
     "noDomainsFoundForThis": "No se encontraron dominios para este cliente"
   },
   "clientEmails": {
     "emails": "Correos Electrónicos",
-    "loadingEmails": "Cargando correos electrónicos...",
     "totalcountEmailValue": "Correos Electrónicos: {totalCount}",
     "status": "Estado",
     "delivered": "Entregado",
@@ -232,7 +238,8 @@
       "recipientRejected": "Dirección de destinatario rechazada",
       "senderRejected": "Dirección de remitente rechazada",
       "messageRejected": "Mensaje rechazado"
-    }
+    },
+    "searchEmails": "Buscar correos"
   },
   "clientInvoices": {
     "createInvoice": "+ Crear Factura",
@@ -242,35 +249,24 @@
     "addItem": "+ Agregar Ítem",
     "createInvoice2": "Crear Factura",
     "allStatuses": "Todos los Estados",
-    "from": "Desde",
-    "filter": "Filtrar",
-    "loadingInvoices": "Cargando facturas...",
-    "sizeSelected": "{size} seleccionados:",
-    "bulkActions": "Acciones Masivas...",
     "clientinvoicestotalInvoiceValue": "Facturas: {clientInvoicesTotal}",
     "deleteInvoice": "Eliminar Factura",
-    "confirmBulkAction": "Confirmar Acción Masiva",
-    "confirmBulkApply": "¿Aplicar '{action}' a {count} factura seleccionada? | ¿Aplicar '{action}' a {count} facturas seleccionadas?",
     "confirmDeleteInvoice": "¿Estás seguro de que quieres eliminar la factura #{id}?",
     "bulkActionDone": "Hecho para las facturas seleccionadas.",
     "invoiceDeleted": "Factura eliminada."
   },
   "clientNav": {
-    "rail": "Secciones de cliente",
     "strip": "Pestañas de sección de cliente"
   },
   "clientLayout": {
-    "loadingClient": "Cargando cliente…",
     "exportData": "Exportar Datos"
   },
   "clientLog": {
     "activityLog": "Registro de Actividad",
-    "filterLog": "Filtrar Registro",
-    "selectDate": "Seleccionar fecha",
-    "loadingActivityLog": "Cargando registro de actividad...",
     "logEntry": "Entrada de Registro",
     "user": "Usuario",
-    "totalcountEntrValue": "Entradas: {totalCount}"
+    "totalcountEntrValue": "Entradas: {totalCount}",
+    "searchLog": "Buscar en el registro de actividad"
   },
   "clientOpenTicket": {
     "ticketSubject": "Asunto del ticket",
@@ -306,16 +302,16 @@
   },
   "clientQuotes": {
     "createNewQuote": "+ Crear Nueva Cotización",
-    "loadingQuotes": "Cargando cotizaciones...",
     "createDate": "Fecha de Creación",
     "noQuotesFound": "No se encontraron cotizaciones.",
     "clientquotestotalQuoteValue": "Cotizaciones: {clientQuotesTotal}",
     "deleteQuote": "Eliminar Cotización",
     "confirmDeleteQuote": "¿Estás seguro de que quieres eliminar la cotización #{id}?",
-    "quoteDeleted": "Cotización eliminada."
+    "quoteDeleted": "Cotización eliminada.",
+    "noQuotesMatchYourFilters": "Ningún presupuesto coincide con tus filtros",
+    "clearFilters": "Borrar filtros"
   },
   "clientServiceDetail": {
-    "loadingService": "Cargando servicio...",
     "serviceIdProductname": "Servicio #{id} — {productName}",
     "loginToControlPanel": "Iniciar sesión en el Panel de Control",
     "serviceInfo": "Información del Servicio",
@@ -372,19 +368,19 @@
     "terminated": "Servicio terminado."
   },
   "clientServicesList": {
-    "loadingServices": "Cargando servicios...",
     "nextDue": "Próximo Vencimiento",
     "totalcountServiceValue": "Servicios: {totalCount}",
-    "noServicesFoundForThis": "No se encontraron servicios para este cliente"
+    "noServicesFoundForThis": "No se encontraron servicios para este cliente",
+    "searchServices": "Buscar por dominio, producto o ID",
+    "noServicesMatchYourFilters": "Ningún servicio coincide con tus filtros",
+    "clearFilters": "Borrar filtros"
   },
   "clientsList": {
     "manageYourClientAccounts": "Gestiona tus cuentas de clientes",
+    "searchPlaceholder": "Buscar por nombre, empresa o ID",
     "addClient": "Agregar Cliente",
-    "clientCompanyName": "Cliente / Nombre de Empresa",
-    "searchByName": "Buscar por nombre…",
     "searchByEmail": "Buscar por correo electrónico…",
     "searchByPhone": "Buscar por teléfono…",
-    "loadingClients": "Cargando clientes…",
     "2fa": "2FA",
     "joined": "Unido",
     "userDeleted": "Usuario Eliminado",
@@ -392,7 +388,6 @@
     "on": "Activado",
     "twoFactorAuthenticationDisabled": "Autenticación de Dos Factores deshabilitada",
     "off": "Desactivado",
-    "totalcountClientValue": "Clientes: {totalCount}",
     "noClientsMatchYourFilters": "No hay clientes que coincidan con tus filtros",
     "noClientsFound": "No se encontraron clientes",
     "clearFilters": "Borrar filtros",
@@ -401,7 +396,6 @@
   },
   "clientSummary": {
     "summary": "Resumen",
-    "loadingSummary": "Cargando resumen...",
     "clientInformation": "Información del Cliente",
     "stateRegion": "Estado/Región",
     "otherInformation": "Otra Información",
@@ -448,7 +442,6 @@
     "notesSaved": "Notas guardadas."
   },
   "clientTicketDetail": {
-    "loadingTicket": "Cargando ticket...",
     "reopen": "Reabrir",
     "ticketSettings": "Configuración del Ticket",
     "noRepliesYet": "Sin respuestas todavía",
@@ -466,19 +459,18 @@
   "clientTickets": {
     "tickets": "Tickets",
     "openNewTicket": "Abrir Nuevo Ticket +",
-    "loadingTickets": "Cargando tickets...",
     "openedThisMonth": "Abiertos Este Mes",
     "openedLastMonth": "Abiertos El Mes Pasado",
     "openedThisYear": "Abiertos Este Año",
     "openedLastYear": "Abiertos El Año Pasado",
-    "searchSubject": "Buscar Asunto:",
     "dateOpened": "Fecha de Apertura",
     "noDataAvailableInTable": "No hay datos disponibles en la tabla",
+    "noTicketsMatchYourFilters": "Ningún ticket coincide con tus filtros",
+    "clearFilters": "Borrar filtros",
     "totalcountTicketValue": "Tickets: {totalCount}"
   },
   "clientTransactions": {
     "addNewTransaction": "+ Agregar Nueva Transacción",
-    "loadingTransactions": "Cargando transacciones...",
     "totalIn": "Total Ingreso",
     "totalFees": "Total Comisiones",
     "totalOut": "Total Egreso",
@@ -486,17 +478,17 @@
     "deleteTransaction": "Eliminar Transacción",
     "confirmDeleteTransaction": "¿Estás seguro de que quieres eliminar la transacción #{id}?",
     "transactionAdded": "Transacción agregada.",
-    "transactionDeleted": "Transacción eliminada."
+    "transactionDeleted": "Transacción eliminada.",
+    "noTransactionsMatchYourFilters": "Ninguna transacción coincide con tus filtros",
+    "clearFilters": "Borrar filtros"
   },
   "clientUsers": {
-    "loadingUsers": "Cargando usuarios...",
     "usersLength": "Usuarios ({length})",
     "addUser": "+ Agregar Usuario",
     "addUserToAccount": "Agregar Usuario a la Cuenta",
     "searchExisting": "Buscar Existente",
     "inviteByEmail": "Invitar por Correo Electrónico",
     "permissions": "Permisos",
-    "adding": "Agregando...",
     "addUser2": "Agregar Usuario",
     "sendInvite": "Enviar Invitación",
     "role": "Rol",
@@ -520,12 +512,6 @@
     "invitationSentTo": "Invitación enviada a {email}",
     "never": "Nunca"
   },
-  "domainRegistrations": {
-    "domainRegistrations": "Registros de Dominios",
-    "viewAndManageClientDomain": "Ver y gestionar registros de dominio de clientes",
-    "regPeriod": "Período de Registro",
-    "noDomainRegistrationsFound": "No se encontraron registros de dominios"
-  },
   "manageAffiliates": {
     "manageAffiliates": "Gestionar Afiliados",
     "viewAndManageTheAffiliate": "Ver y gestionar el programa de afiliados",
@@ -542,6 +528,7 @@
     "sendPasswordResetEmail": "Enviar Correo de Restablecimiento de Contraseña",
     "totalcountUserValue": "Usuarios: {totalCount}",
     "noUsersFound": "No se encontraron usuarios",
+    "noUsersMatchYourSearch": "Ningún usuario coincide con tu búsqueda",
     "passwordResetEmailSent": "Correo de restablecimiento de contraseña enviado.",
     "never": "Nunca",
     "userSaved": "Usuario guardado.",
@@ -567,6 +554,18 @@
     "startedAt": "Período actual iniciado",
     "today": "Hoy",
     "add": "Agregar servicio"
+  },
+  "vat": {
+    "title": "Número de IVA",
+    "none": "No hay ningún número de IVA registrado. Introdúcelo como ID fiscal en el perfil del cliente.",
+    "check": "Comprobar de nuevo",
+    "checked": "Número de IVA comprobado.",
+    "checkedAt": "Comprobado el {date}",
+    "status": {
+      "Valid": "Válido",
+      "Invalid": "No válido",
+      "none": "Sin comprobar"
+    }
   },
   "externalAccount": {
     "title": "Cuenta externa",
@@ -612,7 +611,30 @@
       "PaymentSurplus": "Pago más allá de una factura",
       "TransactionReversed": "Entrada de libro invertida",
       "CreditNoteIssued": "Nota de crédito emitida como crédito de cuenta",
-      "CreditNoteVoided": "Nota de crédito anulada"
+      "CreditNoteVoided": "Nota de crédito anulada",
+      "PlanChangeCredit": "Crédito por bajada de plan"
     }
+  },
+  "clientGroups": {
+    "title": "Grupos de clientes",
+    "subtitle": "Segmenta clientes con un descuento y un color.",
+    "add": "Añadir grupo",
+    "createTitle": "Añadir grupo de clientes",
+    "editTitle": "Editar grupo de clientes",
+    "empty": "Todavía no hay grupos de clientes.",
+    "namePlaceholder": "Por ejemplo, Revendedores",
+    "descriptionPlaceholder": "Para qué sirve este grupo",
+    "discount": "Descuento (%)",
+    "discountPlaceholder": "0",
+    "color": "Color",
+    "colorPlaceholder": "#3B82F6",
+    "clients": "Clientes",
+    "setDefault": "Establecer como predeterminado",
+    "clearDefault": "Quitar predeterminado",
+    "deleteTitle": "Eliminar grupo de clientes",
+    "deleteMessage": "¿Eliminar el grupo {name}? Esta acción no se puede deshacer.",
+    "group": "Grupo de clientes",
+    "noGroup": "Sin grupo",
+    "defaultGroup": "Grupo predeterminado"
   }
 }

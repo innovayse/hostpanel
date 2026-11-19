@@ -1,10 +1,20 @@
 {
-  "title": "Monedas",
   "description": "Configurar monedas de facturación, tasas de cambio y la moneda base",
   "updateRates": "Actualizar Tasas de Cambio",
-  "updatingRates": "Actualizando...",
   "updateProductPrices": "Actualizar Precios de Productos",
   "addCurrency": "Agregar Moneda",
+  "rateProvider": {
+    "title": "Fuente de tipos de cambio",
+    "description": "Elige el banco del que se obtienen los tipos de cambio. Tanto la actualización diaria como el botón Actualizar tipos de cambio lo usan. El Banco Central Europeo cotiza frente al euro, así que la moneda base debe ser una de las que publica.",
+    "label": "Banco",
+    "placeholder": "Elige un banco",
+    "hint": "El cambio se aplica en la próxima actualización. Si la actualización falla, los tipos se mantienen como estaban.",
+    "notSeeded": "El ajuste {key} aún no se ha inicializado, así que no se puede cambiar aquí.",
+    "options": {
+      "Cba": "Banco Central de Armenia",
+      "Ecb": "Banco Central Europeo"
+    }
+  },
   "table": {
     "code": "Código",
     "numeric": "Numérico",
@@ -19,13 +29,11 @@
   "baseBadge": "Base",
   "enabledBadge": "Habilitada",
   "disabledBadge": "Deshabilitada",
-  "editTooltip": "Editar moneda",
   "empty": "No hay monedas configuradas todavía. Agrega tu primera moneda para comenzar.",
   "makeBaseModal": {
     "title": "Establecer Moneda Base",
     "message": "¿Establecer {code} como moneda base? Las tasas de todas las demás monedas se reexpresan con respecto a la nueva base.",
-    "confirmLabel": "Establecer como Base",
-    "loadingLabel": "Cambiando..."
+    "confirmLabel": "Establecer como Base"
   },
   "pricesPicker": {
     "title": "Actualizar Precios de Productos",
@@ -36,8 +44,7 @@
   "pricesConfirm": {
     "title": "Sobrescribir Precios de Productos",
     "message": "Esto sobrescribe {codes} precios de productos, recalculados desde la moneda base. Esto no se puede deshacer.",
-    "confirmLabel": "Sobrescribir",
-    "loadingLabel": "Actualizando..."
+    "confirmLabel": "Sobrescribir"
   },
   "toasts": {
     "makeBaseSucceeded": "{code} es ahora la moneda base.",
@@ -76,7 +83,6 @@
     },
     "cancel": "Cancelar",
     "save": "Guardar Cambios",
-    "add": "Agregar Moneda",
-    "saving": "Guardando..."
+    "add": "Agregar Moneda"
   }
 }

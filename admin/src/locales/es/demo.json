@@ -10,8 +10,13 @@
   },
   "login": {
     "hint": "Esta es una demostración pública. Usa la cuenta de abajo para explorar.",
-    "useAccount": "Usar cuenta de demostración",
+    "use": "Usar",
     "email": "Correo electrónico: {email}",
-    "password": "Contraseña: {password}"
+    "password": "Contraseña: {password}",
+    "roles": {
+      "admin": "Administración",
+      "client": "Cliente"
+    },
+    "openClientPortal": "Abrir el portal del cliente"
   }
 }

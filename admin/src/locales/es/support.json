@@ -17,7 +17,8 @@
     "createYourFirstAnnouncementTo": "Crea tu primer anuncio para comenzar.",
     "deleteAnnouncement": "Eliminar Anuncio",
     "areYouSureYouWant": "¿Estás seguro de que quieres eliminar este anuncio? Esta acción no se puede deshacer.",
-    "announcementDeleted": "Anuncio eliminado."
+    "announcementDeleted": "Anuncio eliminado.",
+    "searchAnnouncements": "Buscar anuncios"
   },
   "downloads": {
     "downloads": "Descargas",
@@ -34,7 +35,6 @@
     "addDownload": "Agregar Descarga",
     "downloadHome": "Inicio de Descargas",
     "files": "Archivos",
-    "downloadsDownloadcount": "Descargas: {downloadCount}",
     "noDownloadsFound": "No se encontraron Descargas",
     "addADownloadUsingThe": "Agrega una descarga usando el formulario de arriba.",
     "editCategory": "Editar Categoría",
@@ -55,7 +55,6 @@
     "deleted": "Eliminado."
   },
   "knowledgebase": {
-    "knowledgebase": "Base de Conocimientos",
     "manageKnowledgebaseArticlesAndCategories": "Gestionar artículos y categorías de la base de conocimientos",
     "checkToHide": "Marcar para Ocultar",
     "categoryDescription": "Descripción de la categoría",
@@ -75,7 +74,14 @@
     "addArticle": "Agregar Artículo",
     "categorySaved": "Categoría guardada.",
     "categoryDeleted": "Categoría eliminada.",
-    "articleSaved": "Artículo guardado."
+    "articleSaved": "Artículo guardado.",
+    "editArticle": "Editar artículo",
+    "articles": "Artículos",
+    "noArticlesFound": "No se encontraron artículos",
+    "createYourFirstArticleAbove": "Crea tu primer artículo arriba.",
+    "englishRequired": "El inglés es obligatorio; los demás idiomas son opcionales.",
+    "draft": "Borrador",
+    "searchArticles": "Buscar artículos"
   },
   "networkIssueForm": {
     "updateTheNetworkIssueDetails": "Actualiza los detalles del problema de red a continuación",
@@ -109,15 +115,9 @@
     "createNew": "(+) Crear Nuevo",
     "startDate": "Fecha de Inicio",
     "endDate": "Fecha de Fin",
-    "noTolowercaseAtTheMoment": "Nada bajo “{heading}” en este momento.",
     "deleteNetworkIssue": "Eliminar Problema de Red",
     "areYouSureYouWant": "¿Estás seguro de que quieres eliminar este problema de red? Esta acción no se puede deshacer.",
-    "open": "Abierto",
-    "openIssues": "Problemas Abiertos",
-    "scheduled": "Programado",
-    "scheduledIssues": "Problemas Programados",
-    "resolved": "Resuelto",
-    "resolvedIssues": "Problemas Resueltos"
+    "searchNetworkIssues": "Buscar incidencias de red"
   },
   "predefinedReplies": {
     "predefinedReplies": "Respuestas Predefinidas",
@@ -174,7 +174,11 @@
     "deleteTicketMessage": "¿Estás seguro de que quieres eliminar el ticket #TKT-{id}? Esta acción no se puede deshacer.",
     "ticketClosed": "Ticket cerrado.",
     "ticketReopened": "Ticket reabierto.",
-    "replySent": "Respuesta enviada."
+    "replySent": "Respuesta enviada.",
+    "details": "Detalles",
+    "created": "Creado",
+    "assignee": "Responsable",
+    "unassigned": "Sin asignar"
   },
   "supportTickets": {
     "supportTickets": "Tickets de Soporte",
@@ -183,9 +187,12 @@
     "totalcountRecordsFoundShowingShowingfrom": "{totalCount} Registros Encontrados, Mostrando {showingFrom} a {showingTo}",
     "flag": "Marcar",
     "unflag": "Desmarcar",
+    "noRepliesYet": "Todavía no hay respuestas",
     "requestor": "Solicitante",
     "noTicketsFound": "No se encontraron tickets",
+    "noTicketsMatchYourFilters": "Ningún ticket coincide con tus filtros",
     "tryAdjustingYourFiltersOr": "Intenta ajustar tus filtros o consulta de búsqueda.",
+    "clearFilters": "Borrar filtros",
     "confirmBulkDeleteTitle": "¿Eliminar los tickets seleccionados?",
     "confirmBulkDeleteMessage": "{count} tickets se eliminarán permanentemente. Esto no se puede deshacer."
   }

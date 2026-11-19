@@ -1,14 +1,16 @@
 {
-  "loading": "Cargando...",
   "save": "Guardar",
-  "saving": "Guardando…",
   "signOut": "Cerrar sesión",
   "admin": "Administración",
   "notifications": "Notificaciones",
   "notificationsWithCount": "Notificaciones, {count} nuevas",
-  "toggleSidebar": "Alternar barra lateral",
   "viewAllNotifications": "Ver todas las notificaciones",
   "newCount": "{count} nuevas | {count} nuevas",
   "noNotifications": "No hay notificaciones",
-  "help": "Ayuda"
+  "help": "Ayuda",
+  "roles": {
+    "Admin": "Administración",
+    "Reseller": "Revendedor",
+    "Client": "Cliente"
+  }
 }

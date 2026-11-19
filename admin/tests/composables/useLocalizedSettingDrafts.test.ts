@@ -15,6 +15,7 @@ const keys = {
   [MessageLanguage.En]: 'portal.contact.address',
   [MessageLanguage.Ru]: 'portal.contact.address.ru',
   [MessageLanguage.Hy]: 'portal.contact.address.hy',
+  [MessageLanguage.Es]: 'portal.contact.address.es',
 }
 
 /**

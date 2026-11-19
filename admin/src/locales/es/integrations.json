@@ -11,21 +11,37 @@
     "notConfigured": "No configurado"
   },
   "categories": {
+    "payments": "Pasarelas de pago",
+    "provisioning": "Paneles de alojamiento",
+    "registrars": "Registradores de dominios",
+    "email": "Correo electrónico / SMTP",
     "fulfilment": "Cumplimiento",
+    "fraud": "Protección antifraude",
     "identity": "Identidad",
     "hosted": "Trabajos en segundo plano"
   },
-  "pluginType": {
-    "provisioning": "Aprovisionamiento",
-    "payment": "Pago",
-    "registrar": "Registrador",
+  "categoryMenu": {
+    "payments": "Pagos",
+    "provisioning": "Paneles de alojamiento",
+    "registrars": "Registradores",
+    "email": "Correo electrónico",
+    "fulfilment": "Suministro",
+    "fraud": "Fraude",
     "identity": "Identidad",
-    "fulfilment": "Cumplimiento",
-    "hosted": "Trabajo en segundo plano"
+    "hosted": "Tareas en segundo plano"
+  },
+  "categoryEmpty": {
+    "payments": "Las pasarelas de pago aceptan pagos con tarjeta y por banco para las facturas. Todavía no hay ninguna instalada.",
+    "provisioning": "Los paneles de alojamiento crean y gestionan cuentas de alojamiento en tus servidores. Todavía no hay ninguno instalado.",
+    "registrars": "Los registradores de dominios registran y renuevan los dominios que piden tus clientes. Todavía no hay ninguno instalado.",
+    "email": "Los proveedores de correo entregan el correo que envía el panel. Todavía no hay ninguno instalado.",
+    "fulfilment": "Los complementos de suministro entregan productos digitales cuando se paga una factura. Todavía no hay ninguno instalado.",
+    "fraud": "La protección antifraude analiza el riesgo de los pedidos nuevos. Todavía no hay ninguna instalada.",
+    "identity": "Los complementos de identidad deciden en nombre de qué cliente actúa una persona con sesión iniciada. Todavía no hay ninguno instalado.",
+    "hosted": "Los complementos de tareas en segundo plano ejecutan procesos que se inician y detienen con el servidor. Todavía no hay ninguno instalado."
   },
   "integrationStatusSidebar": {
     "connectionStatus": "Estado de conexión",
-    "testingConnection": "Probando conexión…",
     "connectionOk": "Conexión OK",
     "connectionFailed": "Conexión fallida",
     "endpoint": "Punto de conexión",
@@ -49,15 +65,14 @@
     "lengthServerValue": "Servidores: {length}",
     "noCwp7ServersConfiguredYet": "No hay servidores CWP7 configurados todavía.",
     "addYourFirstServer": "Agrega tu primer servidor →",
-    "accountscountValueAccounts": "{accountsCount} / {value} cuentas"
-  },
-  "cwpIntegration": {
-    "centosWebPanel": "CentOS Web Panel"
+    "accountsUsage": "{usage} cuentas"
   },
   "integrations": {
     "lengthIntegrationValue": "Integraciones: {length}",
     "activecountActive": "· {activeCount} activas",
-    "noIntegrationsInThisCategory": "No hay integraciones en esta categoría"
+    "noIntegrationsInThisCategory": "No hay integraciones en esta categoría",
+    "emptyHint": "Instala un complemento del catálogo o sube un paquete de complemento para añadir uno.",
+    "browsePlugins": "Explorar complementos"
   },
   "common": {
     "never": "Nunca"

@@ -61,5 +61,8 @@ public sealed class CreateProductValidator : LocalizedValidator<CreateProductCom
         RuleFor(x => x.MaxActiveServices).GreaterThanOrEqualTo(0).When(x => x.MaxActiveServices is not null)
             .WithErrorCode(HostpanelErrorCodes.PRODUCT_MAX_ACTIVE_SERVICES_INVALID)
             .WithMessage(L["ProductMaxActiveServicesInvalid"]);
+        RuleFor(x => x.Trial).MustBeProductTrial(
+            L["ProductTrialInvalid", ProductTrial.MinDays, ProductTrial.MaxDays, ProductTrial.MaxReminders,
+                ProductTrial.MinGracePeriodDays, ProductTrial.MaxGracePeriodDays]);
     }
 }

@@ -4,6 +4,7 @@
  */
 import { vi } from 'vitest'
 import CreditsReviewerView from '@/views/CreditsReviewerView.vue'
+import schema from '@/views/CreditsReviewerView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
 
@@ -12,6 +13,7 @@ vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJs
 runReportCase({
   name: 'CreditsReviewerView',
   view: CreditsReviewerView,
+  schema,
   routes: {
     'GET /reports/credits-reviewer': () => json({
       totals: [{ currency: 'AMD', totalCount: 1, totalAmount: 5000 }],

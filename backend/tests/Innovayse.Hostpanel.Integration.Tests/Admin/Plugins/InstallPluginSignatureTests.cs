@@ -3,11 +3,14 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Plugins.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -36,6 +39,13 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), PluginSignatureFile.FileName)).Should().BeTrue();
+
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var record = await db.InstalledPlugins.AsNoTracking().SingleAsync(p => p.PluginId == pluginId);
+            record.Source.Should().Be(PluginSource.Uploaded);
+            record.Signer.Should().Be(PluginSignerKind.VerifiedPublisher, "the test key is a trusted key the operator did not add");
+            record.SignerKeyId.Should().Be(PluginSigningTestSeeds.TrustedKeyId);
         }
         finally
         {

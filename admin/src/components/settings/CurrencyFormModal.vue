@@ -22,6 +22,7 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import { formatAffixed } from '@/lib/money'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
 import { CURRENCY_CODE_LENGTH, CURRENCY_MAX_DECIMALS, EXCHANGE_RATE_STEP } from '@/lib/limits'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -208,10 +209,10 @@ const handleSubmit = (): void => {
       </UiStack>
 
       <UiFormActions>
-        <UiButton type="button" variant="secondary" data-testid="currency-form-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="currency-form-cancel" @click="emit('close')">
           {{ t('currencies.form.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :loading="saving" data-testid="currency-form-save">
+        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="currency-form-save">
           {{ submitLabel }}
         </UiButton>
       </UiFormActions>

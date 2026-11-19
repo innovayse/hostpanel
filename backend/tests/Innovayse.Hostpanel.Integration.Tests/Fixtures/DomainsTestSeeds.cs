@@ -218,6 +218,25 @@ internal static class DomainsTestSeeds
         return config.Id;
     }
 
+    /// <summary>Seeds an enabled NameAm TLD configuration priced in two currencies, with a 1-year cost and sell price.</summary>
+    /// <param name="context">The data context to seed through.</param>
+    /// <param name="tld">The extension, without its dot.</param>
+    /// <param name="costCurrency">The currency the registrar cost is stated in.</param>
+    /// <param name="sellCurrency">The currency the sell price is stated in.</param>
+    /// <param name="cost">The 1-year registration cost.</param>
+    /// <param name="sell">The 1-year registration sell price.</param>
+    /// <returns>The saved configuration's id.</returns>
+    public static async Task<int> SeedPricedTldConfigAsync(
+        IHostpanelDbContext context, string tld, string costCurrency, string sellCurrency, decimal cost, decimal sell)
+    {
+        var config = TldConfig.Create(tld, RegistrarModule.NameAm, costCurrency, sellCurrency, true, 1, []);
+        config.UpdateCostPrices(new Dictionary<int, decimal> { [1] = cost }, [], []);
+        config.UpdateSellPrices(new Dictionary<int, decimal> { [1] = sell }, [], []);
+        context.TldConfigs.Add(config);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return config.Id;
+    }
+
     /// <summary>Seeds an active, registrar-linked domain for a DB-level (non-HTTP) test to act on.</summary>
     /// <param name="context">The data context to seed through.</param>
     /// <returns>The saved domain's id.</returns>

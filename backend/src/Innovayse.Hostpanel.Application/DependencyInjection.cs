@@ -108,6 +108,8 @@ public static class DependencyInjection
         // The update a registry row offers for an installed plugin: only a version that runs on this host.
         services.AddScoped<RegistryPluginReader>();
         services.AddScoped<PluginUpdateOffer>();
+        // The install record both plugin install use cases (upload and registry) write for an accepted package.
+        services.AddScoped<InstalledPluginRecorder>();
 
         return services;
     }

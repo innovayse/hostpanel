@@ -28,8 +28,20 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
 
-/** Classes of the track that do not depend on its state. */
-const baseClasses = `group w-9 h-5 rounded-full transition-colors duration-200 flex items-center px-0.5 shrink-0 cursor-pointer focus-visible:ring-offset-1 focus-visible:ring-offset-surface-base disabled:cursor-not-allowed disabled:bg-surface-hover disabled:shadow-[inset_0_0_0_1px_var(--text-muted)] ${focusRingClasses}`
+/**
+ * Classes of the track that do not depend on its state. Its width, its inset and its height come from the switch tokens
+ * (`--spacing-toggle-*` in `assets/main.css`): the height is the knob plus an inset above and below.
+ */
+const baseClasses = `group w-toggle-track h-[calc(var(--spacing-toggle-knob)+2*var(--spacing-toggle-inset))] rounded-full transition-colors duration-200 flex items-center px-toggle-inset shrink-0 cursor-pointer focus-visible:ring-offset-1 focus-visible:ring-offset-surface-base disabled:cursor-not-allowed disabled:bg-surface-hover disabled:shadow-[inset_0_0_0_1px_var(--text-muted)] ${focusRingClasses}`
+
+/** Classes of the knob: its own size, its colour and the movement between the two states. */
+const knobClasses = 'w-toggle-knob h-toggle-knob rounded-full bg-text-on-primary shadow transition-transform duration-200 group-disabled:bg-text-muted'
+
+/**
+ * Travel of the knob when the switch is on: what the track leaves once the knob and an inset on each side are taken out
+ * of it. That keeps the knob centred in both states.
+ */
+const knobOnClasses = 'translate-x-[calc(var(--spacing-toggle-track)-var(--spacing-toggle-knob)-2*var(--spacing-toggle-inset))]'
 
 /** Flips the state unless the switch is disabled. */
 const flip = (): void => {
@@ -49,9 +61,6 @@ const flip = (): void => {
     :class="[baseClasses, modelValue ? 'not-disabled:gradient-brand' : 'bg-control-track']"
     @click="flip"
   >
-    <span
-      class="w-4 h-4 rounded-full bg-text-on-primary shadow transition-transform duration-200 group-disabled:bg-text-muted"
-      :class="modelValue ? 'translate-x-[14px]' : 'translate-x-0'"
-    />
+    <span :class="[knobClasses, modelValue ? knobOnClasses : 'translate-x-0']" />
   </button>
 </template>

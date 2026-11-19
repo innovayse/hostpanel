@@ -146,7 +146,7 @@ public static class PluginLoader
                 continue;
             }
 
-            var refusal = verifier.Check(pluginDir, manifest.Id, origin, allowUnsigned, logger);
+            var refusal = verifier.Check(pluginDir, manifest.Id, origin, allowUnsigned, logger).Refusal;
             if (refusal is not null)
             {
                 logger.LogWarning(

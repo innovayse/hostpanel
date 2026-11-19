@@ -7,12 +7,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import DashboardView from '@/views/DashboardView.vue'
+import { splitRatioClasses, UiSplitRatio } from '@/utils/ui/layout'
+import schema, { DASHBOARD_CHARTS_ROW, DASHBOARD_MAIN_ROW, DASHBOARD_PANELS_ROW } from '@/views/DashboardView.schema'
 import { dashboardCharts } from '../helpers/dashboardFixtures'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
 
 vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
+
+/**
+ * The wide screen column template class of a split ratio.
+ *
+ * @param ratio - The ratio of a row, the default one when absent.
+ * @returns The `lg:` class of its grid.
+ */
+const wideColumnsOf = (ratio: UiSplitRatio | undefined): string =>
+  splitRatioClasses[ratio ?? UiSplitRatio.TwoThirds].split(' ').find((name) => name.startsWith('lg:')) ?? ''
 
 /** Statistics as the dashboard endpoint returns them. */
 const stats = {
@@ -73,6 +84,17 @@ describe('DashboardView', () => {
     expect(wrapper.find('[data-testid="dashboard-stat-totalRevenue"]').exists()).toBe(false)
   })
 
+  it('draws one tile per stat of its schema, the revenue one naming the chosen period', async () => {
+    stubRoutes({ 'GET /api/admin/dashboard/stats': () => json(stats) })
+    const { wrapper } = await mountRouted(DashboardView, '/', '/')
+    await flushPromises()
+
+    for (const stat of schema.stats) {
+      expect(wrapper.find(`[data-testid="dashboard-stat-${stat.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.get('[data-testid="dashboard-stat-periodRevenue"]').text()).toContain('Revenue, 30 days')
+  })
+
   it('greets and offers the 30 and 90 day toggle', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/stats': () => json(stats) })
     const { wrapper } = await mountRouted(DashboardView, '/', '/')
@@ -92,6 +114,16 @@ describe('DashboardView', () => {
 
     await flushPromises()
     expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(1)
+  })
+
+  it('lays the panels out in the three rows its schema describes', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(answer(url))))
+    const { wrapper } = await mountRouted(DashboardView, '/', '/')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="dashboard-main"]').classes()).toContain(wideColumnsOf(DASHBOARD_MAIN_ROW.ratio))
+    expect(wrapper.get('[data-testid="dashboard-charts"]').element.children).toHaveLength(DASHBOARD_CHARTS_ROW.columns.length)
+    expect(wrapper.get('[data-testid="dashboard-panels"]').classes()).toContain(wideColumnsOf(DASHBOARD_PANELS_ROW.ratio))
   })
 
   it('shows the API sentence when the statistics are refused', async () => {

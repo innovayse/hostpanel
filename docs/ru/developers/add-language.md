@@ -162,7 +162,7 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 
 - `admin/src/lib/constants.ts`: добавьте запись в список `LANGUAGE_OPTIONS` для нового языка, чтобы он появился в селекторах языка в формах клиента и пользователя. Его подпись читает новый ключ `clients.clientForm.french` (используйте название вашего языка), который вы добавляете во все языковые файлы `admin/src/locales/<lang>/clients.json` рядом с `english`, `russian` и `armenian`.
 - `admin/src/lib/storefrontTranslations.ts`: добавьте новую локаль в `STOREFRONT_LOCALES` и запись `[MessageLanguage.Fr]: blank()` в `blankTranslations`, чтобы в формах содержимого витрины появилась вкладка для нового языка.
-- `admin/src/composables/useStorefrontLocaleTabs.ts`: добавьте запись вкладки для новой локали в вычисляемый массив `tabs`.
+- `admin/src/components/ui/UiLocalizedField.vue`: добавьте подпись новой локали в вычисляемый объект `captions`, который читает каждая полоса языковых вкладок админки. Такие же новые записи `Record<MessageLanguage, ...>` нужны в `filledLocales` из `storefrontTranslations.ts` и в `useLocalizedSettingDrafts`, компилятор перечислит каждую.
 
 **Настройки с языковым суффиксом (необязательно):**
 

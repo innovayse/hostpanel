@@ -8,7 +8,7 @@
  * Changes tabs are left out. Settings holds the plugin's configuration and the product bindings of its slot widgets. A chosen
  * version is installed after a confirmation; an older one than the installed version needs its own explicit downgrade
  * confirmation. Uninstalling is confirmed first (the plugin's data is kept), raises the restart banner, shows its outcome in the processing dialog and returns to the plugins page once the operator closes it. The
- * page shows a skeleton while the list loads, the API's sentence with a retry when it fails, and a not-found state for an id that is not installed.
+ * page shows the cards of `PluginDetailsView.schema` as placeholders while the list loads, the API's sentence with a retry when it fails, and a not-found state for an id that is not installed.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -28,24 +28,23 @@ import PluginRemoveDialog from '@/components/plugins/PluginRemoveDialog.vue'
 import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiLink from '@/components/ui/UiLink.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import { usePluginProcessing } from '@/composables/usePluginProcessing'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { Icon } from '@/lib/icons'
 import { AppRoute } from '@/lib/routes'
 import { PluginErrorCode, PluginProcessingStep, VersionRelation } from '@/types/plugin'
 import type { PluginListItemDto, PluginSlotWidgetBindingDto, RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
-import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
+import schema, { PLUGIN_LINKS_CARD } from '@/views/PluginDetailsView.schema'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -110,6 +109,9 @@ const registryLoading = computed<boolean>(() => details.value === null && (state
 const registryError = computed<string | null>(() =>
   details.value === null && state.value?.errorCode !== PluginErrorCode.RegistryDisabled ? (state.value?.error ?? null) : null,
 )
+
+/** The links card of the schema alone, drawn as a placeholder while the registry's details load. */
+const linksColumns = [[PLUGIN_LINKS_CARD]]
 
 /** True when the registry load was refused because the plugin's page is gated by a licence key the server lacks or the registry rejected. */
 const licenceGated = computed<boolean>(
@@ -408,20 +410,19 @@ onMounted(load)
 
 <template>
   <UiStack gap="lg" class="w-full" data-testid="plugin-details">
-    <UiLink :to="AppRoute.Plugins" :variant="UiButtonVariant.Link" class="self-start" data-testid="plugin-details-back">
-      <UiIcon :markup="Icon.Back" size="sm" />
-      {{ t('pluginDetails.back') }}
-    </UiLink>
+    <UiPageHeader
+      :title="plugin?.name ?? t('pluginDetails.title')"
+      :back-to="AppRoute.Plugins"
+      :back-label="t('shared.plugins')"
+      back-mobile-only
+      back-testid="plugin-details-back"
+    />
 
     <RestartBanner v-if="store.requiresRestart" :restarting="restarting" @restart="handleRestart" />
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plugin-details-feedback" />
 
-    <template v-if="showLoading">
-      <PluginDetailsHeader :plugin="null" :registry="null" :busy="false" />
-      <UiTabs :model-value="DetailsTab.Overview" :items="tabs" :aria-label="t('pluginDetails.tabs.label')" />
-      <PluginDetailsLinks :details="null" />
-    </template>
+    <UiDetailCards v-if="showLoading" :columns="schema.columns" loading />
 
     <UiErrorState
       v-else-if="loadError !== null"
@@ -457,7 +458,8 @@ onMounted(load)
       />
       <template v-if="activeTab === DetailsTab.Overview">
         <PluginInstalledOverview :plugin="plugin" />
-        <PluginDetailsLinks v-if="details !== null || registryLoading" :details="details" />
+        <UiDetailCards v-if="registryLoading" :columns="linksColumns" loading />
+        <PluginDetailsLinks v-else-if="details !== null" :details="details" />
       </template>
       <PluginSettingsTab
         v-else-if="activeTab === DetailsTab.Settings"

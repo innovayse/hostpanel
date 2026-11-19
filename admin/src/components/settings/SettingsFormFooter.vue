@@ -10,15 +10,18 @@
  *
  * The bar can also report the form's state: `status` is a line on the left (for example the count
  * of unsaved changes) and `dirty` false disables both buttons, so a page whose edits are optional
- * shows an idle bar instead of an empty space.
+ * shows an idle bar instead of an empty space. `saveDisabled` turns off Save alone (the edits are there but break a rule), so
+ * Cancel still discards them.
  *
- * Below `sm` the bar is compact so it stays one row: smaller padding, 32px buttons, and the short labels
- * (`saveLabelCompact`, `cancelLabelCompact`) when the screen gives them, since the full ones wrap on a phone.
+ * Both buttons carry an icon (undo, check) and a short label, so the bar stays one row on a phone: below `sm` it has
+ * smaller padding and 32px buttons. It floats 4px above the bottom edge of the scrolling area on every width.
  */
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { Icon } from '@/lib/icons'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -32,17 +35,14 @@ withDefaults(defineProps<{
   status?: string
   /** Label of the secondary button (already translated); defaults to "Cancel". */
   cancelLabel?: string
-  /** Shorter save label for a phone (already translated); the full label is used when omitted. */
-  saveLabelCompact?: string
-  /** Shorter secondary label for a phone (already translated); the full label is used when omitted. */
-  cancelLabelCompact?: string
   /** False when there is nothing to save or discard; both buttons are then disabled. */
   dirty?: boolean
+  /** True when the edits cannot be saved as they are; only Save is disabled. */
+  saveDisabled?: boolean
 }>(), {
+  saveDisabled: false,
   status: undefined,
   cancelLabel: undefined,
-  saveLabelCompact: undefined,
-  cancelLabelCompact: undefined,
   dirty: true,
 })
 
@@ -55,44 +55,30 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="glass-strong sticky bottom-4 z-30 rounded-card px-3 py-2 sm:bottom-6 sm:px-6 sm:py-4 lg:bottom-8">
+  <div class="glass-strong sticky bottom-1 z-30 rounded-card px-3 py-2 sm:px-6 sm:py-4">
     <UiStack direction="row" align="center" justify="between" gap="sm">
-      <UiText v-if="status" tone="secondary" size="md" role="status" class="min-w-0 truncate" data-testid="settings-form-status">
+      <UiText v-if="status" :tone="UiTextTone.Secondary" :size="UiTextSize.Md" role="status" class="min-w-0 truncate" data-testid="settings-form-status">
         {{ status }}
       </UiText>
       <UiStack direction="row" align="center" justify="end" gap="sm" class="ml-auto shrink-0">
-        <UiButton
+        <UiButton :icon="Icon.Undo"
           type="button"
           variant="secondary"
           class="whitespace-nowrap max-sm:h-8 max-sm:px-3 max-sm:text-[0.8125rem]"
           :disabled="!dirty || saving"
           data-testid="settings-form-cancel"
           @click="emit('cancel')"
-        >
-          <template v-if="cancelLabelCompact">
-            <span class="sm:hidden">{{ cancelLabelCompact }}</span>
-            <span class="max-sm:hidden">{{ cancelLabel ?? t('shared.cancel') }}</span>
-          </template>
-          <template v-else>
-            {{ cancelLabel ?? t('shared.cancel') }}
-          </template>
+        >{{ cancelLabel ?? t('shared.cancel') }}
         </UiButton>
-        <UiButton
+        <UiButton :icon="Icon.Check"
           type="button"
           variant="primary"
           class="whitespace-nowrap max-sm:h-8 max-sm:px-3 max-sm:text-[0.8125rem]"
           :loading="saving"
-          :disabled="!dirty"
+          :disabled="!dirty || saveDisabled"
           data-testid="settings-form-save"
           @click="emit('save')"
-        >
-          <template v-if="saveLabelCompact">
-            <span class="sm:hidden">{{ saveLabelCompact }}</span>
-            <span class="max-sm:hidden">{{ saveLabel }}</span>
-          </template>
-          <template v-else>
-            {{ saveLabel }}
-          </template>
+        >{{ saveLabel }}
         </UiButton>
       </UiStack>
     </UiStack>

@@ -7,7 +7,7 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import type { Announcement } from '../src/types/announcement'
 import type { KbArticle, KbCategory } from '../src/types/kbarticle'
-import { fieldOf } from './support/locators'
+import { fieldOf, toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 test('publishing an announcement posts it and returns to the list', async ({ page }) => {
@@ -165,7 +165,7 @@ test('a knowledgebase article is written in two languages, listed, and edited to
   await fieldOf(page, 'knowledgebase-article-content').fill('Քարտով')
   await page.getByTestId('knowledgebase-article-save').click()
 
-  await expect(page.getByTestId('knowledgebase-feedback')).toContainText('Article saved.')
+  await expect(toastWith(page, 'Article saved.')).toBeVisible()
   expect(api.callsTo(HttpMethod.Put, '/api/admin/knowledgebase/11')[0]?.body).toMatchObject({
     categoryId: 3,
     translations: { hy: { title: 'Ինչպես վճարել', content: 'Քարտով' } },

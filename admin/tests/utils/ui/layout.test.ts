@@ -5,8 +5,10 @@ import { describe, expect, it } from 'vitest'
 import {
   alignItemsClasses,
   gapClasses,
+  containerGridColumnClasses,
   gridColumnClasses,
   justifyClasses,
+  pairedGridColumnClasses,
   splitRatioClasses,
   UiAlignItems,
   UiGap,
@@ -44,6 +46,18 @@ describe('layout maps', () => {
     expect(gridColumnClasses[1]).toBe('grid-cols-1')
     expect(gridColumnClasses[3]).toBe('grid-cols-1 md:grid-cols-2 lg:grid-cols-3')
     expect(gridColumnClasses[6]).toContain('lg:grid-cols-6')
+  })
+
+  it('counts columns by the container width, one column below 48rem', () => {
+    expect(Object.keys(containerGridColumnClasses)).toEqual(Object.keys(gridColumnClasses))
+    expect(containerGridColumnClasses[2]).toBe('grid-cols-1 @3xl:grid-cols-2')
+    expect(containerGridColumnClasses[4]).toBe('grid-cols-1 @3xl:grid-cols-2 @4xl:grid-cols-4')
+  })
+
+  it('keeps two columns on a phone for a grid of small tiles', () => {
+    expect(Object.keys(pairedGridColumnClasses)).toEqual(Object.keys(gridColumnClasses))
+    expect(pairedGridColumnClasses[4]).toBe('grid-cols-2 lg:grid-cols-4')
+    expect(pairedGridColumnClasses[1]).toBe('grid-cols-1')
   })
 
   it('covers every split ratio with a single column on narrow screens', () => {

@@ -377,6 +377,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the products an operator bound plugin slot widgets to after install; see <see cref="PluginSlotProductBinding"/>.</summary>
     public DbSet<PluginSlotProductBinding> PluginSlotProductBindings => Set<PluginSlotProductBinding>();
 
+    /// <summary>Gets the install records of uploaded and registry plugins; see <see cref="InstalledPlugin"/>.</summary>
+    public DbSet<InstalledPlugin> InstalledPlugins => Set<InstalledPlugin>();
+
     /// <summary>
     /// Gets the Data Protection key ring, shared by every instance so a token protected by one
     /// instance is read by any other and outlives a redeploy. Named by this property like every

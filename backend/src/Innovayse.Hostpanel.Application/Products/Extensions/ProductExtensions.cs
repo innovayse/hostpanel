@@ -37,7 +37,8 @@ public static class ProductExtensions
             product.GracePeriodDays,
             product.IsDigitalService,
             product.MaxActiveServices,
-            product.OnePerClient);
+            product.OnePerClient,
+            product.Trial.ToDto());
     }
 
     /// <summary>Maps a product to the facts a billed line keeps a copy of.</summary>

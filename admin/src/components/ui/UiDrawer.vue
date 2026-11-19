@@ -1,27 +1,39 @@
 <script setup lang="ts">
 /**
- * Side panel that slides over the page edge (filters, detail peek, the menu on a phone).
+ * Panel that slides over the page: a side panel (filters, detail peek, the notification feed) or, with
+ * `presentation="sheet"`, a bottom sheet (the navigation menu and every popup of a phone, see {@link useDrawerPresentation}).
  *
  * Teleported to `<body>`; closes on Escape or a backdrop click, keeps Tab inside and returns focus
- * to the opener. The panel is an opaque elevated surface (nothing shows through it). With `sheet` it is a bottom
- * sheet below the `sm` breakpoint (below `lg` with `sheetBelow`; rounded top corners, a grip, room for the home
- * indicator through the safe-area inset) and the usual side panel from there up. A sheet follows touch gestures
- * ({@link useSheetDrag}): dragged down by the grip or the header (or by the body of a touch, while it is scrolled to
- * its top) it closes past a distance or on a flick, a short drag springs back, dragged up from a partial height it
- * opens to full height. The default slot is the body and `footer` an optional pinned action row. It slides in from its
- * edge (`UiTransition`, nothing moves under reduced motion); focus goes to the first control when the enter has
- * ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
+ * to the opener. The panel is an opaque elevated surface (nothing shows through it). A sheet is full width along the
+ * bottom edge with rounded top corners, a grip and room for the home indicator (the safe-area inset), and follows
+ * touch gestures ({@link useSheetDrag}): dragged down by the grip or the header (or by the body of a touch, while it is
+ * scrolled to its top) it closes past a distance or on a flick, a short drag springs back, dragged up from a partial
+ * height it opens to full height. The default slot is the body and `footer` an optional pinned action row. It slides
+ * in from its edge (`UiTransition`, nothing moves under reduced motion); focus goes to the first control when the enter
+ * has ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
+ * `dismissible="false"` makes it a surface the reader cannot leave (no close button; Escape, the backdrop and a drag
+ * do nothing) while work runs. A parent that removes it with `v-if` while open gets the leave played on an inert copy
+ * of the backdrop (`playGhostLeave`). The caller's attributes (a `data-testid`, `aria-*`) land on the panel.
  */
-import { computed, nextTick, ref, useId, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
-import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useSheetDrag } from '@/composables/useSheetDrag'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
+import { ACTION_ROW_PHONE_CLASSES } from '@/utils/ui/actions'
+import { UiSize } from '@/utils/ui/size'
 import { useModalSurface } from '@/utils/ui/modalSurface'
-import { modalPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
-import { sheetQueries, UiDrawerSheetBelow, type UiDrawerSide } from '@/utils/ui/drawer'
+import { modalPanelClasses, playGhostLeave, UiTransitionKind } from '@/utils/ui/transition'
+import { UiDrawerPresentation, UiDrawerSide } from '@/utils/ui/drawer'
+
+/**
+ * The root is a Teleport, which cannot take attributes, so a caller's `data-testid` or `aria-*`
+ * would be dropped with a warning. They go onto the panel instead.
+ */
+defineOptions({ inheritAttrs: false })
 
 const { t } = useI18n()
 
@@ -31,39 +43,45 @@ const props = withDefaults(defineProps<{
   open: boolean
   /** Title in the header (already translated). */
   title: string
-  /** Edge the drawer slides from. */
+  /** Shape of the drawer: a panel on a page edge, or a bottom sheet. */
+  presentation?: UiDrawerPresentation
+  /** Edge a side panel slides from. */
   side?: UiDrawerSide
   /** Drops the body padding, for content that draws its own (a navigation list that runs edge to edge). */
   flush?: boolean
-  /** A narrower panel (20rem) that leaves a strip of the page to tap on a phone. */
+  /** A narrower side panel (20rem). */
   narrow?: boolean
-  /** Becomes a bottom sheet on a phone (below `sm`); a side panel from there up. Off keeps the side panel everywhere. */
-  sheet?: boolean
-  /** The breakpoint under which a `sheet` is a bottom sheet: a phone (`sm`, the default) or anything below `lg` (the menu). Follows a change of the prop. */
-  sheetBelow?: UiDrawerSheetBelow
+  /** Whether the reader can close it: false hides the close button and ignores Escape, the backdrop and a drag (work is running). */
+  dismissible?: boolean
+  /** Whether a click on the backdrop closes it. */
+  closeOnBackdrop?: boolean
 }>(), {
-  side: 'right',
+  presentation: UiDrawerPresentation.Side,
+  side: UiDrawerSide.Right,
   flush: false,
   narrow: false,
-  sheet: false,
-  sheetBelow: UiDrawerSheetBelow.Sm,
+  dismissible: true,
+  closeOnBackdrop: true,
 })
 
 const emit = defineEmits<{
-  /** Emitted when the user presses Escape, clicks the backdrop or the close button. */
+  /** Emitted when the user presses Escape, clicks the backdrop or the close button, or drags a sheet away. */
   close: []
 }>()
 
 /** Id of the title element, referenced by `aria-labelledby`. */
 const titleId = useId()
 
+/** The backdrop element, which a parent's `v-if` removal copies for the leave. */
+const backdrop = ref<HTMLElement | null>(null)
+
 /** The drawer panel, for focus handling. */
 const panel = ref<HTMLElement | null>(null)
 
 /** Placement classes per edge. */
 const sideClasses: Record<UiDrawerSide, string> = {
-  left: 'top-0 bottom-0 left-0 border-r border-border-strong',
-  right: 'top-0 bottom-0 right-0 border-l border-border-strong',
+  [UiDrawerSide.Left]: 'top-0 bottom-0 left-0 border-r border-border-strong',
+  [UiDrawerSide.Right]: 'top-0 bottom-0 right-0 border-l border-border-strong',
 }
 
 /** Placement of a bottom sheet: along the bottom with rounded top corners and room for the home indicator. */
@@ -77,20 +95,17 @@ const sheetHeights = {
 
 /** Panel motion per edge. */
 const slideClasses: Record<UiDrawerSide, string> = {
-  left: modalPanelClasses.drawerLeft,
-  right: modalPanelClasses.drawerRight,
+  [UiDrawerSide.Left]: modalPanelClasses.drawerLeft,
+  [UiDrawerSide.Right]: modalPanelClasses.drawerRight,
 }
 
 /** The scrolling body, whose scroll position decides whether a drag from it moves the sheet. */
 const body = ref<HTMLElement | null>(null)
 
-/** Whether the screen is narrow enough for a `sheet` to be a bottom sheet right now. */
-const underSheetBreakpoint = useMediaQuery(() => sheetQueries[props.sheetBelow])
+/** Whether the drawer is a bottom sheet. */
+const sheetActive = computed<boolean>(() => props.presentation === UiDrawerPresentation.Sheet)
 
-/** Whether the drawer is a bottom sheet at this moment: asked for with `sheet` and on a narrow enough screen. */
-const sheetActive = computed<boolean>(() => props.sheet && underSheetBreakpoint.value)
-
-/** Placement of the panel for the chosen edge. */
+/** Placement of the panel: the chosen edge, or the bottom of the screen for a sheet. */
 const placementClasses = computed<string>(() => {
   if (!sheetActive.value) {
     return sideClasses[props.side]
@@ -98,7 +113,7 @@ const placementClasses = computed<string>(() => {
   return `${sheetPlacement} ${expanded.value ? sheetHeights.expanded : sheetHeights.partial}`
 })
 
-/** Motion of the panel: a sheet rises from the bottom on a phone. */
+/** Motion of the panel: a sheet rises from the bottom. */
 const motionClasses = computed<string>(() => (sheetActive.value ? modalPanelClasses.sheet : slideClasses[props.side]))
 
 /** Maximum width; a bottom sheet is full width, so only a side panel is limited. */
@@ -115,10 +130,17 @@ const leaving = ref(false)
 /** Whether the panel has finished sliding in: the close button shows only then, so it never slides across the page. */
 const settled = ref(false)
 
-/** Requests closing, unless the drawer is already leaving. */
+/** Requests closing, unless the drawer is already leaving or may not be dismissed. */
 const close = (): void => {
-  if (!leaving.value) {
+  if (!leaving.value && props.dismissible) {
     emit('close')
+  }
+}
+
+/** Closes on a backdrop click when allowed. */
+const onBackdrop = (): void => {
+  if (props.closeOnBackdrop) {
+    close()
   }
 }
 
@@ -188,6 +210,13 @@ const onLeaveCancelled = (): void => {
   leaving.value = false
   settled.value = true
 }
+
+onBeforeUnmount(() => {
+  // Still in the page here means no leave has run for it: the parent removed the component while it was open.
+  if (backdrop.value !== null && !leaving.value) {
+    playGhostLeave(backdrop.value, UiTransitionKind.Drawer)
+  }
+})
 </script>
 
 <template>
@@ -200,12 +229,20 @@ const onLeaveCancelled = (): void => {
       @after-leave="onLeft"
       @leave-cancelled="onLeaveCancelled"
     >
-      <div v-if="open" class="group/overlay fixed inset-0 z-50 bg-(--overlay-backdrop) backdrop-blur-sm" @click.self="close">
+      <!-- The backdrop swallows the pointer-down: a surface opened from inside another floating panel (a select in a picker) is not "outside" it. -->
+      <div
+        v-if="open"
+        ref="backdrop"
+        class="group/overlay fixed inset-0 z-50 bg-(--overlay-backdrop) backdrop-blur-sm"
+        @mousedown.stop
+        @click.self="onBackdrop"
+      >
         <aside
           ref="panel"
           role="dialog"
           aria-modal="true"
           data-testid="drawer"
+          v-bind="$attrs"
           :aria-labelledby="titleId"
           tabindex="-1"
           class="glass-strong absolute w-full shadow-overlay flex flex-col overflow-hidden outline-none"
@@ -225,23 +262,21 @@ const onLeaveCancelled = (): void => {
               {{ title }}
             </UiHeading>
             <UiIconButton
+              v-if="dismissible"
               :label="t('ui.dialog.close')"
-              size="sm"
+              :size="UiSize.Sm"
               class="transition-opacity duration-(--duration-fast) motion-reduce:transition-none"
               :class="settled ? 'opacity-100' : 'invisible opacity-0'"
               data-testid="drawer-close"
               @click="close"
             >
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
             </UiIconButton>
           </div>
           <div ref="body" class="flex-1 min-h-0 overflow-y-auto" :class="[flush ? '' : 'p-6', sheetActive ? 'overscroll-y-contain' : '']" data-testid="drawer-body">
             <slot />
           </div>
-          <div v-if="$slots.footer" class="flex justify-end gap-2 px-6 py-4 border-t border-border-subtle shrink-0 max-sm:flex-col-reverse max-sm:items-stretch" data-testid="ui-drawer-footer">
+          <div v-if="$slots.footer" class="flex justify-end gap-2 px-6 py-4 border-t border-border-subtle shrink-0" :class="ACTION_ROW_PHONE_CLASSES" data-testid="ui-drawer-footer">
             <slot name="footer" />
           </div>
         </aside>

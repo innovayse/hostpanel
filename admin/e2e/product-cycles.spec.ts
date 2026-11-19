@@ -36,6 +36,7 @@ const listed: Product = {
   isDigitalService: false,
   maxActiveServices: null,
   onePerClient: false,
+  trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 }
 
 test('the operator prices a product for a quarterly and a biennial cycle', async ({ page }) => {

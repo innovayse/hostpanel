@@ -5,6 +5,7 @@
 import { vi } from 'vitest'
 import { DomainReminderType } from '@/types/domain'
 import DomainRenewalEmailsView from '@/views/DomainRenewalEmailsView.vue'
+import schema from '@/views/DomainRenewalEmailsView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
 
@@ -13,6 +14,7 @@ vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJs
 runReportCase({
   name: 'DomainRenewalEmailsView',
   view: DomainRenewalEmailsView,
+  schema,
   routes: {
     'GET /reports/domain-renewal-emails': () => json({
       rows: [{ clientName: 'Beta', domain: 'beta.test', sentAt: '2024-03-05T12:00:00Z', reminder: DomainReminderType.ThirtyDaysBeforeExpiry, recipients: 'a@b.test' }],

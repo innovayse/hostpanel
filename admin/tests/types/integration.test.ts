@@ -4,8 +4,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { IntegrationCategoryName, IntegrationEncryption, IntegrationMode, IntegrationYesNo } from '@/types/integration'
-import { INTEGRATION_CATEGORIES, INTEGRATION_META, PLUGIN_TYPE_LABELS } from '@/types/integrationmeta'
-import { PluginType } from '@/types/plugin'
+import { INTEGRATION_CATEGORIES, INTEGRATION_CATEGORY_BY_KEY, INTEGRATION_META } from '@/types/integrationmeta'
+import { translate } from '@/lib/translate'
+import { PluginCategory, PluginType } from '@/types/plugin'
 
 describe('integration value sets', () => {
   it('keep the strings the API stores', () => {
@@ -28,13 +29,22 @@ describe('integration value sets', () => {
     expect(Object.values(PluginType)).toEqual(['Provisioning', 'Payment', 'Registrar', 'Identity', 'Fulfilment', 'Hosted'])
   })
 
-  it('label every plugin type and list a page for each plugin-only category', () => {
-    expect(Object.keys(PLUGIN_TYPE_LABELS)).toEqual(Object.values(PluginType))
-    expect(PLUGIN_TYPE_LABELS[PluginType.Hosted]).toBe('Background worker')
+  it('list the categories in menu order, each with a title, a short menu caption and a description', () => {
     expect(INTEGRATION_CATEGORIES.map(category => category.key)).toEqual(
-      ['payments', 'registrars', 'provisioning', 'email', 'fraud', 'fulfilment', 'identity', 'hosted'],
+      ['payments', 'provisioning', 'registrars', 'email', 'fulfilment', 'fraud', 'identity', 'hosted'],
     )
-    expect(INTEGRATION_CATEGORIES.at(-1)?.label).toBe('Background workers')
+    expect(INTEGRATION_CATEGORIES.map(category => translate(category.menuLabelKey))).toEqual(
+      ['Payments', 'Hosting panels', 'Registrars', 'Email', 'Fulfilment', 'Fraud', 'Identity', 'Background jobs'],
+    )
+    expect(translate(INTEGRATION_CATEGORY_BY_KEY.hosted.labelKey)).toBe('Background jobs')
+    expect(translate(INTEGRATION_CATEGORY_BY_KEY.identity.descriptionKey)).toContain('Identity plugins')
+  })
+
+  it('point a category at the registry category that lists its plugins, when there is one', () => {
+    expect(INTEGRATION_CATEGORY_BY_KEY.payments.registryCategory).toBe(PluginCategory.Payment)
+    expect(INTEGRATION_CATEGORY_BY_KEY.provisioning.registryCategory).toBe(PluginCategory.Provisioning)
+    expect(INTEGRATION_CATEGORY_BY_KEY.registrars.registryCategory).toBe(PluginCategory.Registrar)
+    expect(INTEGRATION_CATEGORY_BY_KEY.identity.registryCategory).toBeUndefined()
   })
 
   it('offer the encryption modes through the enum', () => {

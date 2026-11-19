@@ -31,7 +31,7 @@ public sealed class ConvertAmountsHandler
     /// <returns>
     /// The target currency and one converted amount per input amount, in the same order. With no
     /// target named, the base currency is the target. An amount whose own currency has no stored row
-    /// is returned unchanged with two decimals rather than guessed at. With no target named and no
+    /// is returned unchanged with two decimals and marked not converted, rather than guessed at. With no target named and no
     /// base currency stored, <c>BASE_CURRENCY_NOT_CONFIGURED</c>, since there is then no currency to
     /// answer in; with a target named that has no stored row, <c>CURRENCY_NOT_FOUND</c>, since
     /// unconverted amounts labelled with that code would be wrong prices.
@@ -60,8 +60,8 @@ public sealed class ConvertAmountsHandler
             {
                 var source = currencies.Find(c => string.Equals(c.Code, a.Currency, StringComparison.OrdinalIgnoreCase));
                 return source is not null
-                    ? new ConvertedAmountDto(source.ConvertTo(a.Amount, target), target.Decimals)
-                    : new ConvertedAmountDto(a.Amount, UnconvertedDecimals);
+                    ? new ConvertedAmountDto(source.ConvertTo(a.Amount, target), target.Decimals, true)
+                    : new ConvertedAmountDto(a.Amount, UnconvertedDecimals, false);
             })
             .ToList();
 

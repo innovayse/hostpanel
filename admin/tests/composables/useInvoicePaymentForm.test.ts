@@ -6,14 +6,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { DEFAULT_PAYMENT_GATEWAY, useInvoicePaymentForm } from '@/composables/useInvoicePaymentForm'
 import type { InvoicePaymentForm, InvoicePaymentFormOptions } from '@/composables/useInvoicePaymentForm'
+import { useToastStore } from '@/stores/toast'
 import { PaymentGateway } from '@/types/gateway'
 import { UiTone } from '@/utils/ui/tone'
 import { createTestI18n } from '../helpers/i18n'
 
 /**
- * Mounts a throwaway component that owns the form, so the i18n and unmount hooks are real.
+ * Mounts a throwaway component that owns the form, so the i18n, the store and the unmount hooks are real.
  *
  * @param options - Options handed to the composable.
  * @returns The form.
@@ -25,7 +27,7 @@ const mountForm = (options: InvoicePaymentFormOptions): InvoicePaymentForm => {
       form = useInvoicePaymentForm(options)
       return () => h('div')
     },
-  }), { global: { plugins: [createTestI18n()] } })
+  }), { global: { plugins: [createTestI18n(), createPinia()] } })
   return form as InvoicePaymentForm
 }
 
@@ -134,7 +136,9 @@ describe('useInvoicePaymentForm', () => {
     expect(form.amount.value).toBe(0)
     expect(form.fees.value).toBe(0)
     expect(form.submitting.value).toBe(false)
-    expect(form.feedback.message.value).toBe('Recorded.')
+    // A success is a toast, not an inline sentence.
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Recorded.'])
+    expect(form.feedback.message.value).toBeNull()
     expect(form.feedbackTone.value).toBe(UiTone.Success)
   })
 

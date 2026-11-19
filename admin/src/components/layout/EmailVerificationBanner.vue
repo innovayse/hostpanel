@@ -14,6 +14,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -58,7 +59,7 @@ const resend = async (): Promise<void> => {
         <UiAlert v-else-if="authStore.error" variant="error" data-testid="email-verification-error">
           {{ authStore.error }}
         </UiAlert>
-        <UiButton
+        <UiButton :action="UiActionKind.Refresh"
           variant="secondary"
           :loading="resending"
           data-testid="email-verification-resend"

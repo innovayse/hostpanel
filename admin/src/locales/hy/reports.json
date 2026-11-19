@@ -1,8 +1,4 @@
 {
-  "reportComingSoon": {
-    "comingSoon": "Շուտով",
-    "thisReportIsUnderDevelopment": "Այս հաշվետվությունը մշակման փուլում է։"
-  },
   "reportTimestamp": {
     "reportGeneratedOnTimestamp": "Հաշվետվությունը ստեղծվել է՝ {timestamp}"
   },
@@ -25,7 +21,12 @@
     "income": "Եկամուտ",
     "totalIncome": "Ընդհանուր եկամուտ",
     "averageMonth": "Ամսվա միջինը",
-    "bestMonth": "Լավագույն ամիս"
+    "bestMonth": "Լավագույն ամիս",
+    "tooltips": {
+      "total": "Տարվա ընթացքում ստացված վճարումները՝ հանած վերադարձները, հիմնական արժույթով։",
+      "average": "Տարվա եկամուտը՝ բաժանած թվարկված ամիսների թվի վրա։",
+      "best": "Տարվա ամենաբարձր եկամուտ ունեցող ամիսը։"
+    }
   },
   "clientsByCountry": {
     "clientsByCountry": "Հաճախորդներ ըստ երկրների",
@@ -34,12 +35,15 @@
     "clearSelection": "Մաքրել ընտրությունը",
     "activeClients": "Ակտիվ հաճախորդներ",
     "totalClients": "Ընդամենը հաճախորդներ՝",
-    "mapHint": "Սավառնեք կետի վրա՝ քաղաքը տեսնելու համար։"
+    "legendNoData": "Տվյալներ չկան",
+    "legendFewer": "Ավելի քիչ",
+    "legendMore": "Ավելի շատ՝ մինչև {count}"
   },
   "clientsReport": {
     "thisReportCanBeUsed": "Այս հաշվետվությունը թույլ է տալիս ստեղծել հաճախորդների անհատական արտահանում՝ կիրառելով մինչև 5 ֆիլտր։ CSV արտահանումը հասանելի է աջ կողմի «Գործիքներ» մենյուից։",
     "creationDateRange": "Ստեղծման ժամանակահատված",
     "totalcountClientSFound": "Գտնվել է հաճախորդ՝ {totalCount}",
+    "creditBalance": "Կրեդիտի մնացորդ",
     "noClientsFoundClickFilter": "Հաճախորդներ չեն գտնվել։ Սեղմեք «Ֆիլտր»՝ արդյունքները բեռնելու համար։"
   },
   "clientStatement": {
@@ -85,7 +89,13 @@
     "paidInvoices": "Վճարված հաշիվներ",
     "openedTickets": "Բացված տոմսեր",
     "ticketReplies": "Պատասխաններ տոմսերին",
-    "cancellationRequests": "Չեղարկման հարցումներ"
+    "cancellationRequests": "Չեղարկման հարցումներ",
+    "tooltips": {
+      "completedOrders": "Ընտրված օրերին ավարտված պատվերներ։",
+      "paidInvoices": "Ընտրված օրերին վճարված հաշիվներ։",
+      "openedTickets": "Ընտրված օրերին բացված աջակցության տոմսեր։",
+      "cancellationRequests": "Ընտրված օրերին ուղարկված չեղարկման հարցումներ։"
+    }
   },
   "directDebit": {
     "directDebitProcessing": "Ուղիղ դեբետի մշակում",
@@ -102,7 +112,12 @@
     "diskSpaceBandwidthUsageSummary": "Սկավառակային տարածության և թրաֆիկի ամփոփում",
     "thisReportShowsTheDisk": "Այս հաշվետվությունը ցույց է տալիս հոսթինգ հաշիվների սկավառակային տարածության և թրաֆիկի օգտագործման վիճակագրությունը։",
     "diskSpaceUsageStatsLast": "Սկավառակի օգտագործման վիճակագրությունը թարմացվել է՝ {value}",
-    "noDataYetClickUpdate": "Տվյալներ դեռ չկան։ Սեղմեք «Թարմացնել»՝ սերվերներից ստանալու համար։",
+    "failuresTitle": "Այս սերվերները տվյալներ չտվեցին՝",
+    "failure": {
+      "unsupportedModule": "դրա կառավարման վահանակը դեռ չի տրամադրում սկավառակի և տրաֆիկի տվյալներ։",
+      "missingCredentials": "API թոքենը կամ մուտքի բանալին նշված չէ։",
+      "unreachable": "սերվերը չպատասխանեց կամ մերժեց հարցումը։"
+    },
     "updateNow": "Թարմացնել",
     "clientNameDomain": "Հաճախորդ / դոմեյն",
     "diskUsage": "Սկավառակի օգտագործում",
@@ -111,12 +126,12 @@
     "bwUsage": "Թրաֆիկի օգտագործում",
     "bwLimit": "Թրաֆիկի սահման",
     "noAccountsOnThisServer": "Այս սերվերում հաշիվներ չկան։",
-    "noData": "Տվյալներ չեն գտնվել։ Սեղմեք «Թարմացնել»՝ հոսթինգ սերվերներից վիճակագրություն ստանալու համար։"
+    "noData": "Տվյալներ չեն գտնվել։",
+    "noDataHint": "Սեղմեք «Թարմացնել»՝ հոսթինգ սերվերներից վիճակագրություն ստանալու համար։"
   },
   "domainRenewalEmails": {
     "domainRenewalReminderEmails": "Դոմեյնի երկարաձգման հիշեցման նամակներ",
     "thisReportCanBeUsed": "Այս հաշվետվությունը թույլ է տալիս ստեղծել դոմեյնի երկարաձգման հիշեցման նամակների անհատական արտահանում։",
-    "optional": "Ոչ պարտադիր",
     "dateSent": "Ուղարկման ամսաթիվ",
     "reminder": "Հիշեցում",
     "recipients": "Ստացողներ",
@@ -143,7 +158,14 @@
     "quarterly": "Եռամսյակային",
     "semiAnnual": "Կիսամյակային",
     "annual": "Տարեկան",
-    "incomePerMonthWithTrailingWindows": "Ամսական եկամուտը՝ վերջին եռամսյակի, կիսամյակի և տարեսկզբից գումարներով։"
+    "incomePerMonthWithTrailingWindows": "Ամսական եկամուտը՝ վերջին եռամսյակի, կիսամյակի և տարեսկզբից գումարներով։",
+    "hints": {
+      "monthly": "Այս ամսում ստացված եկամուտը։",
+      "quarterly": "Այս և նախորդ երկու ամիսների եկամուտը։",
+      "semiAnnual": "Այս և նախորդ հինգ ամիսների եկամուտը։",
+      "annual": "Այս և նախորդ տասնմեկ ամիսների եկամուտը։",
+      "total": "Կուտակային գումարը հունվարից մինչև այս ամիսը։"
+    }
   },
   "invoicesReport": {
     "thisReportCanBeUsed": "Այս հաշվետվությունը թույլ է տալիս ստեղծել հաշիվների անհատական արտահանում՝ կիրառելով մինչև 5 ֆիլտր։",
@@ -164,19 +186,29 @@
     "monthlyNewSignupsAndOrder": "Ամսական նոր գրանցումներ և պատվերների ակտիվություն",
     "newSignups": "Նոր գրանցումներ",
     "ordersPlaced": "Կատարված պատվերներ",
-    "ordersCompleted": "Ավարտված պատվերներ"
-  },
-  "pdfBatch": {
-    "pdfBatch": "PDF փաթեթ"
+    "ordersCompleted": "Ավարտված պատվերներ",
+    "conversionRate": "Կոնվերսիա",
+    "newSignupsHint": "Ամսվա ընթացքում ստեղծված հաճախորդական հաշիվներ։",
+    "ordersPlacedHint": "Ամսվա ընթացքում կատարված պատվերներ։",
+    "ordersCompletedHint": "Ամսվա պատվերներից ավարտվածները։",
+    "conversionRateHint": "Ամսվա պատվերները՝ որպես ամսվա գրանցումների տոկոս։"
   },
   "productSuspensions": {
     "productSuspensions": "Ապրանքների կասեցումներ",
     "thisReportAllowsYouTo": "Այս հաշվետվությունը թույլ է տալիս դիտել բոլոր կասեցված ապրանքները և դրանց կասեցման նշված պատճառները։",
     "serviceId": "Ծառայության ID",
-    "suspendReason": "Կասեցման պատճառ"
+    "suspendReason": "Կասեցման պատճառ",
+    "noSuspendedServices": "Կասեցված ծառայություններ չկան։"
   },
   "promotions": {
-    "promotions": "Ակցիաներ"
+    "promotions": "Ակցիաներ",
+    "thisReportShowsHowOften": "Ինչ հաճախությամբ է օգտագործվում յուրաքանչյուր ակցիայի կոդը և ինչ գումարով են երկարացվում դրանով ակտիվ ծառայությունները։",
+    "code": "Կոդ",
+    "services": "Ծառայություններ",
+    "activeServices": "Ակտիվ ծառայություններ",
+    "monthlyRevenue": "Ամսական եկամուտ",
+    "monthlyRevenueHint": "Ինչ գումարով են ամեն ամիս երկարացվում այս կոդով ակտիվ ծառայությունները, տարեկան ծառայությունը հաշվվում է որպես տասներկուերորդ մաս։",
+    "noPromotionCodesUsed": "Ոչ մի ծառայություն ակցիայի կոդ չի օգտագործում։"
   },
   "salesTax": {
     "salesTaxLiability": "Վաճառքի հարկի պարտավորություն",
@@ -188,7 +220,16 @@
     "thisReportExcludesInvoicesThat": "Այս հաշվետվությունը չի ներառում հաճախորդի կրեդիտային մնացորդի վրա ազդող հաշիվները, քանի որ այդ եկամուտը հաշվառվում և արտացոլվում է ապրանքների/ծառայությունների հաշիվներին կիրառվելիս։"
   },
   "serverRevenueForecasts": {
-    "serverRevenueForecasts": "Սերվերների եկամուտների կանխատեսում"
+    "serverRevenueForecasts": "Սերվերների եկամուտների կանխատեսում",
+    "thisReportShowsWhatTheActive": "Ինչ գումարով են երկարացվում յուրաքանչյուր սերվերի ակտիվ ծառայությունները՝ ամսական և տարեկան կտրվածքով։",
+    "server": "Սերվեր",
+    "hostname": "Հոսթի անուն",
+    "activeServices": "Ակտիվ ծառայություններ",
+    "monthlyRevenue": "Ամսական եկամուտ",
+    "annualRevenue": "Տարեկան եկամուտ",
+    "monthlyRevenueHint": "Ինչ գումարով են ամեն ամիս երկարացվում սերվերի ակտիվ ծառայությունները, տարեկան ծառայությունը հաշվվում է որպես տասներկուերորդ մաս։",
+    "annualRevenueHint": "Ամսական եկամտի տասներկու անգամը։",
+    "noServers": "Սերվերներ չկան։"
   },
   "servicesReport": {
     "services": "Ծառայություններ",
@@ -200,24 +241,36 @@
     "productId": "Ապրանքի ID",
     "terminatedAt": "Դադարեցման ամսաթիվ"
   },
-  "smartyCompatibility": {
-    "smartyCompatibility": "Smarty համատեղելիություն"
-  },
   "sslMonitoring": {
     "sslCertificateMonitoring": "SSL սերտիֆիկատների մոնիտորինգ",
     "displaysAListOfDomains": "Ցուցադրում է դոմեյնների ցանկը և դրանց SSL կարգավիճակը, եթե հասանելի է։",
-    "hideInactiveDomains": "Թաքցնել ոչ ակտիվ դոմեյնները",
-    "showInactiveDomains": "Ցուցադրել ոչ ակտիվ դոմեյնները",
-    "reValidateSslStatus": "Կրկին ստուգել SSL կարգավիճակը",
     "issuer": "Թողարկող",
     "expiry": "Ավարտ",
     "lastUpdate": "Վերջին թարմացում",
     "valid": "Վավեր",
-    "noSsl": "SSL չկա"
+    "noSsl": "SSL չկա",
+    "groups": {
+      "within30Days": "Լրանում է 30 օրվա ընթացքում",
+      "within90Days": "Լրանում է 90 օրվա ընթացքում",
+      "within180Days": "Լրանում է 180 օրվա ընթացքում",
+      "over180Days": "Լրանում է 180 օրից ավելի հետո",
+      "noSsl": "SSL չի հայտնաբերվել"
+    },
+    "showInactive": "Ցուցադրել ոչ ակտիվ դոմենները",
+    "showInactiveHint": "Ցուցադրել նաև ոչ ակտիվ դոմենները։",
+    "recheck": "Կրկին ստուգել SSL-ը",
+    "recheckHint": "Հիմա կրկին ստուգել վկայականները։",
+    "noDomains": "Մոնիթորինգի դոմեններ չկան։",
+    "summary": "Դոմեններն ըստ լրացման ժամկետի"
   },
   "supportTicketsReport": {
     "thisReportShowsABreakdown": "Այս հաշվետվությունը ցույց է տալիս տվյալ ամսում մշակված աջակցության տոմսերի բաշխումն ըստ ադմինիստրատորների։",
-    "admin": "Ադմինիստրատոր"
+    "admin": "Ադմինիստրատոր",
+    "averagePerDay": "Միջինը օրական",
+    "byDay": "Ըստ օրերի",
+    "totalHint": "Ադմինի գրած պատասխանները տոմսերին ամսվա ընթացքում։",
+    "averagePerDayHint": "Ամսվա պատասխանները բաժանած ամսվա օրերի թվին։",
+    "dayReplies": "Օր {day}՝ {count} պատասխան | Օր {day}՝ {count} պատասխան | Օր {day}՝ {count} պատասխան"
   },
   "ticketFeedbackComments": {
     "ticketFeedbackComments": "Հաճախորդների մեկնաբանությունները տոմսերի վերաբերյալ",
@@ -226,28 +279,40 @@
     "ticketId": "Տոմսի ID",
     "feedbackLeft": "Թողնված կարծիք",
     "rating": "Գնահատական",
-    "comments": "Մեկնաբանություններ"
+    "comments": "Մեկնաբանություններ",
+    "ratingHint": "Գնահատական 1 (վատագույն) մինչև 10 (լավագույն) սանդղակով։"
   },
   "ticketFeedbackScores": {
     "ticketFeedbackScores": "Տոմսերի գնահատականներ",
     "thisReportProvidesASummary": "Այս հաշվետվությունը պարունակում է գնահատականների ամփոփում ըստ աշխատակիցների՝ ընտրված ժամանակահատվածի համար։",
     "staffName": "Աշխատակցի անուն",
     "totalRatings": "Ընդհանուր գնահատականներ",
-    "averageRating": "Միջին գնահատական"
+    "averageRating": "Միջին գնահատական",
+    "distribution": "Գնահատականներ (1-ից 10)",
+    "distributionHint": "Ինչպես են գնահատականները բաժանվում ցածր, միջին և բարձր։ Սավառնեք մասի վրա՝ թիվը տեսնելու համար։",
+    "totalRatingsHint": "Աշխատակցի ստացած գնահատականները ժամանակահատվածում։",
+    "averageRatingHint": "Բոլոր գնահատականների միջինը 1-ից 10 սանդղակով։",
+    "bands": {
+      "poor": "Ցածր ({from}-ից {to})",
+      "fair": "Միջին ({from}-ից {to})",
+      "good": "Բարձր ({from}-ից {to})"
+    }
   },
   "ticketRatingsReviewer": {
     "supportTicketRatingsReviewer": "Աջակցության տոմսերի գնահատականների ստուգում",
-    "thisReportIsShowingAll": "Այս հաշվետվությունը ցույց է տալիս ընտրված ժամանակահատվածում 1 գնահատական ստացած բոլոր պատասխանները՝ ստուգման համար։",
+    "thisReportIsShowingAll": "Ընտրված ժամանակահատվածում հաճախորդների գնահատած պատասխանները՝ վերանայման համար։ Ընտրեք գնահատական՝ միայն դրա և ավելի բարձր գնահատվածները տեսնելու համար։",
     "rating": "Գնահատական",
     "ticket": "Տոմս №",
     "admin": "Ադմինիստրատոր",
-    "ratingAtLeast": "{rating}+"
+    "ratingAtLeast": "{rating}+",
+    "ratingHint": "Գնահատական 1 (վատագույն) մինչև 10 (լավագույն) սանդղակով։"
   },
   "ticketTags": {
     "ticketTagsOverview": "Տոմսերի թեգերի ակնարկ",
     "thisReportProvidesAnOverview": "Այս հաշվետվությունը պարունակում է տոմսերին նշանակված թեգերի ակնարկ՝ ընտրված ժամանակահատվածի համար։",
     "tag": "Թեգ",
-    "count": "Քանակ"
+    "count": "Քանակ",
+    "countHint": "Այս պիտակով տոմսերը ժամանակահատվածում։"
   },
   "topClients": {
     "top10ClientsByIncome": "Թոփ 10 հաճախորդներ եկամտով",
@@ -255,7 +320,10 @@
     "noData": "Տվյալներ չկան",
     "leader": "Լավագույն հաճախորդ",
     "totalIncome": "Ընդհանուր եկամուտ",
-    "rankedClients": "Հաճախորդներ վարկանիշում"
+    "rankedClients": "Հաճախորդներ վարկանիշում",
+    "leaderHint": "Վարկանիշում ամենաբարձր զուտ եկամուտ ունեցող հաճախորդը։",
+    "totalIncomeHint": "Վարկանիշի բոլոր հաճախորդների զուտ եկամուտը միասին՝ հիմնական արժույթով։",
+    "rankedClientsHint": "Քանի հաճախորդ կա վարկանիշում, ոչ ավելի քան տասը։"
   },
   "transactionsReport": {
     "thisReportCanBeUsed": "Այս հաշվետվությունը թույլ է տալիս ստեղծել գործարքների անհատական արտահանում՝ կիրառելով մինչև 5 ֆիլտր։",
@@ -275,12 +343,7 @@
     "totalVatCollected": "Հավաքված ԱԱՀ ընդամենը",
     "totals": "Ընդամենը",
     "ifACountryDoesNot": "* Եթե երկիրը հաշվետվության մեջ չկա, ապա ընտրված ժամանակահատվածում այդ երկրի հաճախորդներից ԱԱՀ չի գանձվել։",
-    "period": "{from}-ից {to} ժամանակահատվածի համար",
-    "quarter1": "Հունվար-մարտ",
-    "quarter2": "Ապրիլ-հունիս",
-    "quarter3": "Հուլիս-սեպտեմբեր",
-    "quarter4": "Հոկտեմբեր-դեկտեմբեր",
-    "quarterOption": "{year} Q{quarter} - {months}"
+    "period": "{from}-ից {to} ժամանակահատվածի համար"
   },
   "titles": {
     "reports": {
@@ -305,6 +368,54 @@
   "common": {
     "years": "{count} տարի",
     "clientCount": "{count} հաճախորդ | {count} հաճախորդ",
-    "convertedToBaseCurrency": "Գումարները {currency}-ով են՝ վերահաշվարկված յուրաքանչյուր հաշվի արժույթից կարգավորված փոխարժեքներով։"
+    "convertedToBaseCurrency": "Գումարները {currency}-ով են՝ վերահաշվարկված յուրաքանչյուր հաշվի արժույթից կարգավորված փոխարժեքներով։",
+    "recurringInBaseCurrency": "Կրկնվող գումարները փոխարկված են {currency}-ի, երկար ցիկլերը բաշխված են իրենց ամիսների վրա։"
+  },
+  "menu": {
+    "dailyPerformance": "Օրական",
+    "annualIncome": "Տարեկան եկամուտ",
+    "incomeForecast": "Կանխատեսում",
+    "incomeByProduct": "Ըստ ապրանքների",
+    "invoices": "Հաշիվ-ապրանքագրեր",
+    "agingInvoices": "Ժամկետանց",
+    "monthlyTransactions": "Գործարքներ / ամիս",
+    "transactions": "Գործարքներ",
+    "salesTax": "Վաճառքի հարկ",
+    "oss": "OSS",
+    "directDebit": "Ուղիղ դեբետ",
+    "creditsReviewer": "Կրեդիտներ",
+    "clients": "Հաճախորդներ",
+    "newCustomers": "Նոր հաճախորդներ",
+    "topClients": "Լավագույն հաճախորդներ",
+    "clientsByCountry": "Ըստ երկրների",
+    "customerRetention": "Պահման ժամանակ",
+    "clientStatement": "Քաղվածք",
+    "monthlyOrders": "Պատվերներ / ամիս",
+    "services": "Ծառայություններ",
+    "productSuspensions": "Կասեցումներ",
+    "promotions": "Ակցիաներ",
+    "domains": "Դոմեններ",
+    "domainRenewalEmails": "Երկարաձգման նամակներ",
+    "sslMonitoring": "SSL մոնիթորինգ",
+    "supportTicketReplies": "Պատասխաններ հայտերին",
+    "ticketTags": "Պիտակներ",
+    "ticketFeedbackScores": "Գնահատականներ",
+    "ticketFeedbackComments": "Մեկնաբանություններ",
+    "ticketRatingsReviewer": "Գնահատումներ ըստ գնահատողի",
+    "diskUsage": "Սկավառակ",
+    "serverRevenueForecasts": "Սերվերների եկամուտ"
+  },
+  "groups": {
+    "overview": "Ընդհանուր",
+    "finance": "Ֆինանսներ",
+    "clients": "Հաճախորդներ",
+    "ordersServices": "Պատվերներ և ծառայություններ",
+    "domains": "Դոմեններ",
+    "support": "Աջակցություն",
+    "servers": "Սերվերներ"
+  },
+  "sidebar": {
+    "search": "Որոնել հաշվետվություն",
+    "empty": "Հաշվետվություն չի գտնվել"
   }
 }

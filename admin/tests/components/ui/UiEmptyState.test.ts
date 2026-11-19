@@ -38,4 +38,17 @@ describe('UiEmptyState', () => {
     expect(wrapper.find('[data-testid="ui-empty-state-icon"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="ui-empty-state-actions"]').exists()).toBe(false)
   })
+
+  it('trims the padding and the icon tile when compact', () => {
+    const wrapper = mount(UiEmptyState, { props: { title: 'Nothing', compact: true }, slots: { icon: '<i />' } })
+
+    expect(wrapper.classes()).toContain('py-6')
+    expect(wrapper.get('[data-testid="ui-empty-state-icon"]').classes()).toContain('h-10')
+  })
+
+  it('keeps the roomy padding by default', () => {
+    const wrapper = mount(UiEmptyState, { props: { title: 'Nothing' } })
+
+    expect(wrapper.classes()).toContain('py-12')
+  })
 })

@@ -7,11 +7,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientOpenTicketView from '@/views/ClientOpenTicketView.vue'
+import schema from '@/views/ClientOpenTicketView.schema'
 import { ClientSection, clientItemPath } from '@/lib/routes'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
+import { fieldsOf } from '../helpers/schemaParity'
 
 /** Route pattern the view is mounted under. */
 const PATTERN = '/clients/:id/tickets/new'
@@ -90,5 +92,28 @@ describe('ClientOpenTicketView', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe(clientItemPath('5', ClientSection.Tickets, 15))
+  })
+
+  it('returns to the tickets of its client with the back pill', async () => {
+    stubRoutes({ 'GET /api/tickets/departments': () => json(DEPARTMENTS) })
+
+    const { wrapper } = await mountScreen(ClientOpenTicketView, {}, URL, PATTERN)
+    const back = wrapper.get('[data-testid="client-open-ticket-back"]')
+
+    expect(back.attributes('href')).toBe('/clients/5/tickets')
+    expect(back.text()).toBe('Tickets')
+  })
+
+  it('draws every section and field of its schema once the departments are loaded', async () => {
+    stubRoutes({ 'GET /api/tickets/departments': () => json(DEPARTMENTS) })
+
+    const { wrapper } = await mountScreen(ClientOpenTicketView, {}, URL, PATTERN)
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+    }
+    for (const field of fieldsOf(schema)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
   })
 })

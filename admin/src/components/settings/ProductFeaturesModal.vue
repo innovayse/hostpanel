@@ -34,6 +34,7 @@ import { Icon } from '@/lib/icons'
 import { useProductFeaturesStore } from '@/stores/productFeatures'
 import type { Product } from '@/types/product'
 import type { ProductFeature } from '@/types/productfeature'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -224,7 +225,7 @@ const dismissRemove = (): void => {
             class="flex-1"
             @keyup.enter="save(feature)"
           />
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             type="button"
             variant="secondary"
             size="sm"
@@ -267,7 +268,7 @@ const dismissRemove = (): void => {
           class="flex-1"
           @keyup.enter="add"
         />
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           type="button"
           variant="primary"
           size="sm"

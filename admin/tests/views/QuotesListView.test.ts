@@ -8,6 +8,8 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import QuotesListView from '@/views/QuotesListView.vue'
+import schema from '@/views/QuotesListView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { quoteRowFixture } from '../helpers/billingFixtures'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
@@ -212,5 +214,14 @@ describe('QuotesListView', () => {
 
     expect(wrapper.find('[data-testid="billing-quotes-error"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-testid="billing-quotes-table"] tbody tr')).toHaveLength(2)
+  })
+
+  it('draws the table skeleton under the schema head while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(QuotesListView, '/billing/quotes', '/billing/quotes')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

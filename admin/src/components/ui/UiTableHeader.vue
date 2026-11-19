@@ -6,13 +6,14 @@
  * can still override a single property. `sortable` turns the caption into a button that emits
  * `sort`; the parent owns the order and passes the current `direction`, which is mirrored into
  * `aria-sort` and an arrow. `numeric` and `actions` match the cells below them (right aligned, the
- * actions column at its one fixed width); `hideBelow` hides the column under a breakpoint. The cell paints the one hairline under the header (an inset
+ * actions column always `Compact`, its caption read by assistive technology only); `size` is the width the column takes (`Compact`, `Auto` by default, or the one `Grow` column that takes
+ * the rest and truncates), set once here and followed by every cell of the column; `hideBelow` hides the column under a breakpoint. The cell paints the one hairline under the header (an inset
  * shadow, because a border does not travel with a sticky header in a collapsed-border table); the fill of a
  * sticky header comes from the scrolling box (`UiTable` with `maxHeight`). `select` marks the checkbox column of a selectable table
  * (drawn by `UiTableRow`, not set by a screen); a header that holds the select-all checkbox itself (an editable table) says `select` too.
  * The caption is also the label of the column's value on a card (below `sm`, see `UiTable`), where `cardRole` sets what the column is
- * (the heading, the top right badge, a field, a control or left out; a `hideBelow` column is left out unless it says otherwise); the header
- * itself is not drawn there, except a `select` one. The caption text is read from a `display: contents` span around the slot, because a
+ * (the heading, a muted subtitle, the top right badge, a field, a control or left out); the header
+ * itself is not drawn there (a hidden element holds its caption so it can be read). The caption text is read from a `display: contents` span around the slot, because a
  * slot can hold any markup, and a sortable column also hands the table its `sort` request, so the table's sort control can order it.
  *
  * The row hands each header its position (`columnIndex`), counted over the row's cells at render time, and the header registers its
@@ -21,9 +22,8 @@
 import { computed, inject, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
-import { columnClasses, headerDensityClasses, UiSortDirection } from '@/utils/ui/table'
-import type { UiCardRole } from '@/utils/ui/table'
-import type { UiAlign, UiHideBelow } from '@/utils/ui/table'
+import { columnClasses, columnSizeOf, headerDensityClasses, UiColumnSize, UiSortDirection } from '@/utils/ui/table'
+import type { UiAlign, UiCardRole, UiHideBelow } from '@/utils/ui/table'
 
 /** Props for UiTableHeader. */
 const props = withDefaults(defineProps<{
@@ -37,19 +37,22 @@ const props = withDefaults(defineProps<{
   sortTestid?: string
   /** Heads a number or money column: right aligned like its cells. */
   numeric?: boolean
-  /** Heads the row actions column: right aligned at the shared actions column width. */
+  /** Heads the row actions column: right aligned and compact, its caption visible to assistive technology only. */
   actions?: boolean
+  /** Width of the column: as narrow as its content, one line (the default), or the one column that takes the rest and truncates. */
+  size?: UiColumnSize
   /** Hides the column below this breakpoint; set it on the header and on every cell of the column. */
   hideBelow?: UiHideBelow
   /** Heads the checkbox column of a selectable table: narrow, like its cells. */
   select?: boolean
-  /** What the column is on a card (below `sm`): the heading, the badge, a labelled field, a control or left out. A field when omitted, left out when `hideBelow` is set. */
+  /** What the column is on a card (below `sm`): the heading, the badge, a labelled field, a control or left out. When omitted the table picks the heading (its `Grow` column, else its first) and every other column is a labelled field. */
   cardRole?: UiCardRole
   /** Position of the header among the cells of its row; set by `UiTableRow`, never by a screen. */
   columnIndex?: number
 }>(), {
   cardRole: undefined,
   columnIndex: undefined,
+  size: UiColumnSize.Auto,
   hideBelow: undefined,
   select: false,
   numeric: false,
@@ -99,6 +102,7 @@ const column = computed<UiTableColumn>(() => ({
   align: props.align,
   numeric: props.numeric,
   actions: props.actions,
+  size: props.size,
   hideBelow: props.hideBelow,
   select: props.select,
   label: label.value,
@@ -125,10 +129,10 @@ onBeforeUnmount(() => {
   unregisterColumn?.()
 })
 
-/** Padding and alignment classes; below `sm` only the select-all cell is drawn. */
+/** Padding and alignment classes. */
 const classes = computed<string[]>(() => [
   headerDensityClasses[context.density],
-  props.select ? '' : 'max-sm:hidden',
+  columnSizeOf(column.value),
   ...columnClasses(column.value),
 ])
 
@@ -142,7 +146,9 @@ const arrow = computed<string>(() => {
 </script>
 
 <template>
+  <span v-if="context.phone" ref="captionElement" hidden><slot /></span>
   <th
+    v-else
     role="columnheader"
     :aria-sort="sortable ? direction : undefined"
     class="shadow-[inset_0_-1px_0_var(--border-subtle)] [:where(&)]:text-xs [:where(&)]:font-semibold [:where(&)]:text-text-muted"
@@ -158,6 +164,6 @@ const arrow = computed<string>(() => {
       <span ref="captionElement" class="contents"><slot /></span>
       <span aria-hidden="true">{{ arrow }}</span>
     </button>
-    <span v-else ref="captionElement" class="contents"><slot /></span>
+    <span v-else ref="captionElement" :class="actions ? 'sr-only' : 'contents'"><slot /></span>
   </th>
 </template>

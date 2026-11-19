@@ -11,8 +11,8 @@ import UiChart from '@/components/ui/UiChart.vue'
 import UiMetric from '@/components/ui/UiMetric.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { formatDayCaption } from '@/lib/dashboardOverview'
+import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
 import type { DashboardDailyCount } from '@/types/dashboardcharts'
-import { UiChartHeight, UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 import { UiSize } from '@/utils/ui/size'
 
@@ -25,6 +25,9 @@ const props = defineProps<{
   /** Whether the figures are still loading. */
   loading: boolean
 }>()
+
+/** Kind and height of the chart, the same entry the dashboard skeleton draws the panel from. */
+const chart = PANEL_CHARTS[PanelChart.Growth]
 
 const { t, locale } = useI18n()
 
@@ -64,11 +67,11 @@ const clientsTotal = computed<number>(() => sumOf(props.newClients))
       </UiStack>
     </template>
     <UiChart
-      :type="UiChartType.Line"
+      :kind="chart.kind"
       :labels="labels"
       :series="series"
       :loading="loading || waiting"
-      :height="UiChartHeight.Short"
+      :height="chart.height"
     />
   </DashboardChartCard>
 </template>

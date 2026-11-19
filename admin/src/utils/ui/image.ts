@@ -1,5 +1,5 @@
 /**
- * Image vocabulary for `UiImage`.
+ * Image vocabulary for `UiImage` and `UiImagePreview`.
  */
 
 /** Closed set of fits. */
@@ -29,3 +29,14 @@ export const UiImageRounded = {
 
 /** One of the UiImageRounded values. */
 export type UiImageRounded = (typeof UiImageRounded)[keyof typeof UiImageRounded]
+
+/** Closed set of the stages a picture is previewed on (`UiImagePreview`). */
+export const UiImageBackdrop = {
+  /** A light checkerboard, where a dark picture reads. */
+  Light: 'light',
+  /** A dark checkerboard, where a light picture reads. */
+  Dark: 'dark',
+} as const
+
+/** One of the UiImageBackdrop values. */
+export type UiImageBackdrop = (typeof UiImageBackdrop)[keyof typeof UiImageBackdrop]

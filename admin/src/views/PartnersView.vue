@@ -7,6 +7,7 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiImage from '@/components/ui/UiImage.vue'
@@ -14,12 +15,14 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
+import { storefrontColumnCaptions } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { usePartnersStore } from '@/stores/partners'
 import type { Partner } from '@/types/partner'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { EMPTY_VALUE } from '@/lib/format'
+import schema from '@/views/PartnersView.schema'
 
 const { t } = useI18n()
 
@@ -33,12 +36,7 @@ const store = usePartnersStore()
 const list = useStorefrontList<Partner>(store)
 
 /** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => [
-  t('storefront.partners.logo'),
-  t('storefront.partners.name'),
-  t('storefront.partners.website'),
-  t('shared.status'),
-])
+const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
 
 /**
  * The name to show for a partner: the first written locale, an empty string when none.
@@ -74,7 +72,7 @@ const editRoute = (item: Partner): string => editPath(AppRoute.StorefrontPartner
 <template>
   <StorefrontListTable
     :testids="testids"
-    :title="t('storefront.partners.title')"
+    :title="t(navTitleKey(AppRoute.StorefrontPartners))"
     :subtitle="t('storefront.partners.subtitle')"
     :add-label="t('storefront.partners.add')"
     :empty-label="t('storefront.partners.empty')"

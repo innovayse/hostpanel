@@ -24,6 +24,20 @@ public sealed class GetSslMonitoringTests(IntegrationTestFactory factory) : ICla
         body.TryGetProperty("groups", out _).Should().BeTrue();
     }
 
+    /// <summary>Every group is named by its stable enum code, in the order the panel draws them, never by a worded name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task NamesTheGroupsByTheirCodes()
+    {
+        var client = await ReportsTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.GetAsync("/api/reports/ssl-monitoring");
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var codes = body.GetProperty("groups").EnumerateArray().Select(g => g.GetProperty("group").GetString());
+        codes.Should().Equal("Within30Days", "Within90Days", "Within180Days", "Over180Days", "NoSsl");
+    }
+
     /// <summary>The route is not for anonymous callers.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

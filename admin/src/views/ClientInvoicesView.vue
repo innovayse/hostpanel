@@ -20,7 +20,6 @@ import { invoiceStatusTone } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceOpenAction } from '@/types/invoice'
-import type { InvoiceBulkAction } from '@/types/invoice'
 import InvoiceBulkBar from '@/components/billing/InvoiceBulkBar.vue'
 import InvoiceFilterFields from '@/components/billing/InvoiceFilterFields.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -51,10 +50,10 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import type { Invoice, InvoiceItemInput } from '@/types/invoice'
+import schema from '@/views/ClientInvoicesView.schema'
+import type { Invoice, InvoiceBulkAction, InvoiceItemInput } from '@/types/invoice'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
@@ -65,6 +64,8 @@ import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { invoicePath } from '@/lib/routes'
 import { nextRowKey } from '@/lib/rowKey'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -302,6 +303,7 @@ const openInvoice = (id: number, mode: InvoiceOpenAction): void => {
 const invoiceActions = (invoice: Invoice): UiMenuAction[] => [
   {
     label: t('shared.view'),
+    icon: Icon.Eye,
     testid: `client-invoices-view-${invoice.id}`,
     /**
      * Opens this invoice to view it.
@@ -314,6 +316,7 @@ const invoiceActions = (invoice: Invoice): UiMenuAction[] => [
   },
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `client-invoices-edit-${invoice.id}`,
     /**
      * Opens this invoice to edit it.
@@ -326,6 +329,7 @@ const invoiceActions = (invoice: Invoice): UiMenuAction[] => [
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `client-invoices-delete-${invoice.id}`,
     /**
      * Asks for confirmation, then deletes this row.
@@ -348,7 +352,7 @@ list.loadOnChange(fetchInvoices)
     <UiSectionHeader :level="1" variant="card">
       {{ t('shared.invoices') }}
       <template #actions>
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           type="button"
           :variant="UiButtonVariant.Primary"
           data-testid="invoice-create-toggle"
@@ -430,7 +434,7 @@ list.loadOnChange(fetchInvoices)
           </UiField>
 
           <UiStack direction="row" :justify="UiJustify.End" gap="sm">
-            <UiButton
+            <UiButton :action="UiActionKind.Cancel"
               type="button"
               :variant="UiButtonVariant.Secondary"
               data-testid="invoice-create-cancel"
@@ -438,7 +442,7 @@ list.loadOnChange(fetchInvoices)
             >
               {{ t('shared.cancel') }}
             </UiButton>
-            <UiButton
+            <UiButton :action="UiActionKind.Add"
               type="button"
               :variant="UiButtonVariant.Primary"
               :loading="creating"
@@ -492,18 +496,7 @@ list.loadOnChange(fetchInvoices)
           select-all-testid="client-invoices-select-all"
           data-testid="client-invoices-table"
         >
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.invoiceDate') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.dueDate') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.datePaid') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+          <UiSchemaTableHead :columns="schema.table.columns" />
           <UiTableBody divided>
             <UiTableRow
               v-for="invoice in store.clientInvoices"

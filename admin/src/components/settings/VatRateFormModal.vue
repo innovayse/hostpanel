@@ -24,6 +24,7 @@ import { VatRateKind } from '@/types/vatrate'
 import type { SaveVatRatePayload, VatRateDto } from '@/types/vatrate'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translates the dialog's text into the operator's language. */
 const { t } = useI18n()
@@ -144,10 +145,10 @@ const handleSubmit = (): void => {
       </UiField>
 
       <UiFormActions>
-        <UiButton type="button" variant="secondary" data-testid="vat-rate-form-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="vat-rate-form-cancel" @click="emit('close')">
           {{ t('vatRates.form.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :loading="saving" :disabled="!complete" data-testid="vat-rate-form-save">
+        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" :disabled="!complete" data-testid="vat-rate-form-save">
           {{ submitLabel }}
         </UiButton>
       </UiFormActions>

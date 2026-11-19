@@ -5,8 +5,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import TransactionForm from '@/components/billing/TransactionForm.vue'
 import { blankTransactionForm } from '@/lib/transactionForm'
+import schema from '@/views/AddTransactionView.schema'
 import type { ClientOption } from '@/types/clientoption'
 import { mountWithApp } from '../../helpers/mount'
+import { fieldsOf } from '../../helpers/schemaParity'
 
 /** One client the picker can offer. */
 const clients: ClientOption[] = [{ id: 7, name: 'Ada Lovelace', email: 'ada@example.com', status: 'Active' }]
@@ -19,7 +21,7 @@ const clients: ClientOption[] = [{ id: 7, name: 'Ada Lovelace', email: 'ada@exam
  */
 const mountForm = (props: Record<string, unknown> = {}) =>
   mountWithApp(TransactionForm, {
-    props: { modelValue: blankTransactionForm(), clients, submitLabel: 'Save it', ...props },
+    props: { modelValue: blankTransactionForm(), columns: schema.columns, clients, submitLabel: 'Save it', ...props },
   })
 
 describe('TransactionForm', () => {
@@ -56,5 +58,14 @@ describe('TransactionForm', () => {
     await wrapper.get('[data-testid="billing-transaction-description"]').setValue('Domain renewal')
 
     expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ description: 'Domain renewal' }))
+  })
+
+  it('draws every field of the schema it was given and the message of a refused field', () => {
+    const wrapper = mountForm({ fieldErrors: { amountIn: 'Amount is wrong.' } })
+
+    for (const field of fieldsOf(schema)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.get('[data-testid="ui-form-field-amountIn"]').text()).toContain('Amount is wrong.')
   })
 })

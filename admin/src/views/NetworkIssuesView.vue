@@ -15,7 +15,6 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
@@ -28,9 +27,9 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/NetworkIssuesView.schema'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { NETWORK_ISSUE_PRIORITY_OPTIONS, NETWORK_ISSUE_STATUS_OPTIONS, NETWORK_ISSUE_TYPE_OPTIONS } from '@/lib/constants'
@@ -45,8 +44,17 @@ import { AppRoute, editPath } from '@/lib/routes'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTextSize } from '@/utils/ui/text'
+import { Icon } from '@/lib/icons'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('support.networkIssues.createNew'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'network-issues-create', to: AppRoute.SupportNetworkIssuesNew },
+])
 
 /** The filter fields the dialog edits; each is one query key and one `NetworkIssueListFilters` member. */
 const FilterKey = {
@@ -175,27 +183,15 @@ const rowActions = (issue: NetworkIssue): UiMenuAction[] => {
     deleteTarget.value = issue.id
   }
   return [
-    { label: t('shared.edit'), testid: `network-issues-${issue.id}-edit`, to: editPath(AppRoute.SupportNetworkIssues, issue.id) },
-    { label: t('shared.delete'), testid: `network-issues-${issue.id}-delete`, danger: true, onSelect: onDelete },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `network-issues-${issue.id}-edit`, to: editPath(AppRoute.SupportNetworkIssues, issue.id) },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `network-issues-${issue.id}-delete`, danger: true, onSelect: onDelete },
   ]
 }
 </script>
 
 <template>
   <UiStack>
-    <UiPageHeader
-      :title="t('shared.networkIssues')"
-      :subtitle="t('support.networkIssues.manageNetworkStatusAndIncident')"
-    >
-      <template #actions>
-        <UiLink
-          :to="AppRoute.SupportNetworkIssuesNew"
-          :variant="UiButtonVariant.Primary"
-          data-testid="network-issues-create"
-        >
-          {{ t('support.networkIssues.createNew') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)" >
     </UiPageHeader>
 
     <UiListToolbar
@@ -269,17 +265,7 @@ const rowActions = (issue: NetworkIssue): UiMenuAction[] => {
         :empty="!store.loading && store.issues.length === 0"
         data-testid="network-issues-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('support.networkIssues.startDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('support.networkIssues.endDate') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="issue in store.issues"

@@ -744,6 +744,19 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`IPluginRegistry.GetRefusedPlugins`); `GET /api/admin/plugins` lists it with `status: "Refused"`, `refusedRule` and
   `refusedDetail`, never as loaded, and it can be removed like any upload. A removed plugin that still keeps data is listed
   with `status: "Removed"` so the operator can purge it. Needs no database migration.
+- **Install records (`InstalledPlugins`).** An uploaded or registry plugin has one row, `InstalledPlugin` (Domain, unique per
+  `PluginId`): when it was first installed and by whom (`InstalledAt`, `InstalledByUserId`, `InstalledByName`), when a later
+  package was accepted (`UpdatedAt`, null until one is; an upgrade stays staged until the restart, so the package facts describe
+  the latest accepted package), and what that package was: `Source` (`PluginSource`: `BuiltIn` is never stored, `Uploaded`,
+  `Registry`), `Signer` (`PluginSignerKind`: `Unsigned`, `VerifiedPublisher` for a maintainers' key, `OwnKey` for an operator key)
+  with `SignerKeyId`, `PackageSizeBytes` and `PackageSha256`. Both install use cases write it through the one
+  `InstalledPluginRecorder` (Application `Admin/Plugins/Common`, in the save that writes the audit line), from the
+  `PluginPackageResult` the store fills (`SizeBytes`, and `SignerKeyId`, which `PluginSignatureVerifier.VerifiedKeyId` names only
+  after the signature verified, so a claim in an unsigned package is never recorded). A removal deletes the row. `ListPlugins`
+  reads it into `PluginListItemDto` (`Source`, `InstalledAt`, `UpdatedAt`, `InstalledBy`, `Signer`, `SignerKeyId`,
+  `PackageSizeBytes`, `PackageSha256`, all null for a plugin installed before the table existed and for a refused or removed
+  row; a built-in plugin reports `BuiltIn` and nothing else). The manifest carries no homepage, documentation or licence
+  member, so the admin overview takes those links and the licence name from the registry details only.
 - **Plugin package checks come from `Hostpanel.Sdk.Packaging` (SDK 3.1.0).** The checks a plugin package must pass are written
   once, in the SDK repository's second package (MIT, versioned in step with `Hostpanel.Sdk`, project reference at
   `backend/src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging`): the signature format, signing and verification (`PluginSignatureFile`,
@@ -2754,7 +2767,7 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   (`UiIcon` builds SVG nodes with `h()` from a whitelist); Tailwind 4 classes are literals and colours
   are theme tokens in `assets/main.css`. Every input-like has a `placeholder` (`local/require-placeholder`)
   and every interactive element a `data-testid` (`<area>-<element>[-<id>]`). chart.js is only used
-  behind `UiChart`; reports share one scaffold (`ReportPage`, `ReportTable`, `ReportQueryPage`).
+  behind `UiChart`; reports share one scaffold (`ReportPage`, `ReportTable`, `ReportQueryPage`), and `ReportPage` draws everything the report's skeleton schema (`views/<Name>.schema.ts`) lists: the header buttons (`actions`, a closed `ReportAction` list of Refresh, Export and Print), the filters (the month, year and currency dropdowns need no slot), the tiles, the chart, the table (`size` per column, `grouped` heading rows) with its pager, the parts only the data fills in (`map`, `alert`, `summary`, `closing`, drawn as a placeholder while the report loads), the `note` naming the base currency and the `emptyText` sentence, so a view passes only the data and the slots of its custom controls and cells and `UiSkeletonOf` draws the same blocks.
 - **Closed sets are enums or `as const` objects with a derived union** (`AuthMode`, `TicketStatus`,
   `InvoiceBulkAction`, `CancellationType`, `UiTone` and so on); tones for API status words live in
   `lib/tones.ts`. A screen whose feature is not built (affiliates, addons, disputes, offline card
@@ -2766,6 +2779,13 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `` t(`area.${x}`) `` prefix counts as use of the keys under it) and a literal `t('...')` /
   `translate('...')` with no `en` entry; `tests/locales/parity.test.ts` also checks values and
   `{placeholders}`. A server-decided sentence is never copied into a locale file.
+- **A value written once per language is one `UiLocalizedField`, never one field per language.** The kit's
+  `UiLocalizedField` is the only language tab strip of the admin: tabs for `STOREFRONT_LOCALES` (the one shared list),
+  a marker on a tab whose value is empty (`filled`), a red one on a tab the server refused (`errors`), the control of the
+  language on screen in its slot. A form with several fields per language draws the strip alone (no slot) and shows its
+  fields from the bound locale. A setting stored once per language (`portal.contact.address`, `.ru`, `.hy`) takes its drafts
+  from `useLocalizedSettingDrafts`; the saved keys and payloads are unchanged. A label such as "(Russian)" or a key such
+  as `addressRu` in a locale file is the sign someone wrote the second implementation.
 - **Plugin pages and the Add-ons menu (#647).** A page a serving plugin adds to the admin lives at
   `/apps/<plugin>/<path>` (`views/PluginPageView.vue`, route `apps/:plugin/:page*`); the store asks the API's
   lookup by path (`GET /api/admin/plugins/ui/{plugin}/pages/by-path`) and shows its `PLUGIN_PAGE_NOT_FOUND`

@@ -5,22 +5,22 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiCard from '@/components/ui/UiCard.vue'
+import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
+import { schemaHeader } from '@/lib/schemaHeader'
 import UiChart from '@/components/ui/UiChart.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatTile from '@/components/ui/UiStatTile.vue'
+import UiStatRow from '@/components/ui/UiStatRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useSupportStore } from '@/stores/support'
 import { SupportOverviewPeriod } from '@/types/supportoverviewstats'
-import { UiChartType } from '@/utils/ui/chart'
+import type { UiStatFigure } from '@/utils/ui/statRow'
 import { UiTone } from '@/utils/ui/tone'
+import schema, { SUPPORT_PANELS_ROW } from '@/views/SupportOverviewView.schema'
 
 const { t } = useI18n()
 
@@ -42,16 +42,19 @@ const averageFirstResponse = computed<string>(
   () => store.overviewStats?.averageFirstResponse ?? t('support.supportOverview.noData'),
 )
 
-/** Stat tiles in display order. */
-const statTiles = computed(() => [
-  { key: 'new-tickets', label: t('support.supportOverview.newTickets'), value: store.overviewStats?.newTickets ?? 0, tone: UiTone.Primary },
-  { key: 'client-replies', label: t('support.supportOverview.clientReplies'), value: store.overviewStats?.clientReplies ?? 0, tone: UiTone.Info },
-  { key: 'staff-replies', label: t('support.supportOverview.staffReplies'), value: store.overviewStats?.staffReplies ?? 0, tone: UiTone.Success },
-  { key: 'without-reply', label: t('support.supportOverview.ticketsWithoutReply'), value: store.overviewStats?.ticketsWithoutReply ?? 0, tone: UiTone.Warning },
-  { key: 'average-first-response', label: t('support.supportOverview.averageFirstResponse'), value: averageFirstResponse.value, tone: UiTone.Neutral },
-])
+/** Kind and height of the hours chart, the same entry the skeleton draws its card from. */
+const hoursChart = PANEL_CHARTS[PanelChart.TicketsByHour]
 
-/** Whether the first overview is still loading; the tiles and cards stay in place with placeholders meanwhile. */
+/** What each tile of the schema shows, by tile key: its figure and the tone of it. */
+const figures = computed<Readonly<Record<string, UiStatFigure>>>(() => ({
+  'new-tickets': { value: store.overviewStats?.newTickets ?? 0, tone: UiTone.Primary },
+  'client-replies': { value: store.overviewStats?.clientReplies ?? 0, tone: UiTone.Info },
+  'staff-replies': { value: store.overviewStats?.staffReplies ?? 0, tone: UiTone.Success },
+  'without-reply': { value: store.overviewStats?.ticketsWithoutReply ?? 0, tone: UiTone.Warning },
+  'average-first-response': { value: averageFirstResponse.value, tone: UiTone.Neutral },
+}))
+
+/** Whether the first overview is still loading; the tiles and cards draw their skeleton meanwhile. */
 const overviewLoading = computed<boolean>(() => store.loading && !store.overviewStats)
 
 /** Hour labels 00-23 for the distribution chart. */
@@ -76,10 +79,7 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiPageHeader
-      :title="t('support.supportOverview.supportOverview')"
-      :subtitle="t('support.supportOverview.keyMetricsForTheSelected')"
-    >
+    <UiPageHeader v-bind="schemaHeader(schema, t)" >
       <template #actions>
         <UiSelect
           v-model="selectedPeriod"
@@ -98,46 +98,28 @@ onMounted(() => {
     />
 
     <template v-else>
-      <UiGrid :columns="4">
-        <UiStatTile
-          v-for="tile in statTiles"
-          :key="tile.key"
-          :label="tile.label"
-          :value="tile.value"
-          :tone="tile.tone"
-          :loading="overviewLoading"
-          :data-testid="`support-overview-stat-${tile.key}`"
-        />
-      </UiGrid>
+      <UiStatRow :stats="schema.stats" :figures="figures" :loading="overviewLoading" testid-prefix="support-overview-stat" />
 
-      <UiGrid :columns="2">
-        <UiCard padding="md" :aria-busy="overviewLoading ? 'true' : undefined">
-          <UiHeading :level="2" variant="card">{{ t('support.supportOverview.averageFirstReplyTime') }}</UiHeading>
-          <UiSkeletonBar v-if="overviewLoading" class="mt-3 h-4 w-20 rounded-md" aria-hidden="true" data-testid="support-overview-average-loading" />
-          <UiText v-else tone="muted" size="md" class="mt-3" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
-        </UiCard>
-
-        <UiCard padding="md">
-          <UiStack>
-            <UiHeading :level="2" variant="card">{{ t('support.supportOverview.ticketsSubmittedByHour') }}</UiHeading>
-            <UiChart
-              v-if="overviewLoading || hasHourData"
-              :loading="overviewLoading"
-              :type="UiChartType.Bar"
-              :labels="hourLabels"
-              :series="hourSeries"
-              horizontal
-              height="lg"
-              data-testid="support-overview-hours"
-            />
-            <UiEmptyState
-              v-else
-              :title="t('support.supportOverview.noData')"
-              data-testid="support-overview-hours-empty"
-            />
-          </UiStack>
-        </UiCard>
-      </UiGrid>
+      <UiDetailCards :columns="SUPPORT_PANELS_ROW.columns" :loading="overviewLoading">
+        <template #card-average>
+          <UiText tone="muted" size="md" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
+        </template>
+        <template #card-hours>
+          <UiChart
+            v-if="hasHourData"
+            :kind="hoursChart.kind"
+            :labels="hourLabels"
+            :series="hourSeries"
+            :height="hoursChart.height"
+            data-testid="support-overview-hours"
+          />
+          <UiEmptyState
+            v-else
+            :title="t('support.supportOverview.noData')"
+            data-testid="support-overview-hours-empty"
+          />
+        </template>
+      </UiDetailCards>
     </template>
   </UiStack>
 </template>

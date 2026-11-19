@@ -29,12 +29,22 @@ export enum NavSectionId {
   System = 'system',
 }
 
+/** What a sub-menu link can flag as waiting for the operator, each kind counted by the dashboard statistics. */
+export enum NavAttention {
+  /** Tickets awaiting a reply. */
+  OpenTickets = 'openTickets',
+}
+
 /** A sub-menu child item. */
 export interface NavChild {
   /** Route path. */
   to: string
-  /** i18n key for the display label. */
+  /** i18n key for the short menu label. */
   labelKey: string
+  /** i18n key for the full title of the page, when it is longer than the menu label; the page is titled by `labelKey` when absent. */
+  titleKey?: string
+  /** What the link counts as waiting for the operator; a count badge is drawn on it only while that count is above zero. */
+  attention?: NavAttention
 }
 
 /** What every top-level item carries besides its label. */
@@ -45,6 +55,8 @@ interface NavItemBase {
   icon: string
   /** Optional sub-menu items. */
   children?: NavChild[]
+  /** i18n key for the full title of the page, when it is longer than the menu label; the page is titled by `labelKey` when absent. */
+  titleKey?: string
 }
 
 /**
@@ -96,13 +108,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         icon: Icon.Users,
         children: [
           { to: AppRoute.Clients, labelKey: 'nav.clientsChildren.view' },
-          { to: AppRoute.ClientsUsers, labelKey: 'nav.clientsChildren.users' },
-          { to: AppRoute.ClientsGroups, labelKey: 'nav.clientsChildren.groups' },
-          { to: AppRoute.ClientsSharedHostings, labelKey: 'nav.clientsChildren.sharedHostings' },
-          { to: AppRoute.ClientsAddons, labelKey: 'nav.clientsChildren.addons' },
-          { to: AppRoute.ClientsCancellations, labelKey: 'nav.clientsChildren.cancellations' },
+          { to: AppRoute.ClientsUsers, labelKey: 'nav.clientsChildren.users', titleKey: 'clients.manageUsers.manageUsers' },
+          { to: AppRoute.ClientsGroups, labelKey: 'nav.clientsChildren.groups', titleKey: 'clients.clientGroups.title' },
+          { to: AppRoute.ClientsSharedHostings, labelKey: 'nav.clientsChildren.sharedHostings', titleKey: 'services.servicesList.services' },
+          { to: AppRoute.ClientsAddons, labelKey: 'nav.clientsChildren.addons', titleKey: 'clients.serviceAddons.serviceAddons' },
+          { to: AppRoute.ClientsCancellations, labelKey: 'nav.clientsChildren.cancellations', titleKey: 'clients.cancellationRequests.cancellationRequests' },
           { to: AppRoute.ClientsPlanChanges, labelKey: 'nav.clientsChildren.planChanges' },
-          { to: AppRoute.ClientsAffiliates, labelKey: 'nav.clientsChildren.affiliates' },
+          { to: AppRoute.ClientsAffiliates, labelKey: 'nav.clientsChildren.affiliates', titleKey: 'clients.manageAffiliates.manageAffiliates' },
         ],
       },
       {
@@ -114,16 +126,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         icon: Icon.CreditCard,
         children: [
           { to: AppRoute.BillingTransactions, labelKey: 'nav.billingChildren.transactions' },
-          { to: AppRoute.BillingInvoices, labelKey: 'nav.billingChildren.invoices' },
-          { to: AppRoute.BillingBillableItems, labelKey: 'nav.billingChildren.billableItems' },
-          { to: AppRoute.BillingQuotes, labelKey: 'nav.billingChildren.quotes' },
-          { to: AppRoute.BillingOfflineCc, labelKey: 'nav.billingChildren.offlineCc' },
-          { to: AppRoute.BillingDisputes, labelKey: 'nav.billingChildren.disputes' },
-          { to: AppRoute.BillingGatewayLog, labelKey: 'nav.billingChildren.gatewayLog' },
-          { to: AppRoute.BillingPaymentClaims, labelKey: 'nav.billingChildren.paymentClaims' },
-          { to: AppRoute.BillingBankTransfers, labelKey: 'nav.billingChildren.bankTransfers' },
-          { to: AppRoute.BillingCreditNotes, labelKey: 'nav.billingChildren.creditNotes' },
-          { to: AppRoute.BillingRenewals, labelKey: 'nav.billingChildren.renewals' },
+          { to: AppRoute.BillingInvoices, labelKey: 'nav.billingChildren.invoices', titleKey: 'shared.invoices' },
+          { to: AppRoute.BillingBillableItems, labelKey: 'nav.billingChildren.billableItems', titleKey: 'billing.billableItems.billableItems' },
+          { to: AppRoute.BillingQuotes, labelKey: 'nav.billingChildren.quotes', titleKey: 'shared.quotes' },
+          { to: AppRoute.BillingOfflineCc, labelKey: 'nav.billingChildren.offlineCc', titleKey: 'billing.offlineCC.offlineCreditCardProcessing' },
+          { to: AppRoute.BillingDisputes, labelKey: 'nav.billingChildren.disputes', titleKey: 'billing.disputes.listDisputes' },
+          { to: AppRoute.BillingGatewayLog, labelKey: 'nav.billingChildren.gatewayLog', titleKey: 'billing.gatewayLog.gatewayTransactionLog' },
+          { to: AppRoute.BillingPaymentClaims, labelKey: 'nav.billingChildren.paymentClaims', titleKey: 'billing.paymentClaims.heading' },
+          { to: AppRoute.BillingBankTransfers, labelKey: 'nav.billingChildren.bankTransfers', titleKey: 'billing.bankTransfers.heading' },
+          { to: AppRoute.BillingCreditNotes, labelKey: 'nav.billingChildren.creditNotes', titleKey: 'billing.creditNotes.heading' },
+          { to: AppRoute.BillingRenewals, labelKey: 'nav.billingChildren.renewals', titleKey: 'billing.renewals.heading' },
         ],
       },
       {
@@ -140,15 +152,15 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         to: AppRoute.Support, labelKey: 'nav.support',
         icon: Icon.LifeBuoy,
         children: [
-          { to: AppRoute.SupportOverview, labelKey: 'nav.supportChildren.overview' },
-          { to: AppRoute.SupportTickets, labelKey: 'nav.supportChildren.tickets' },
-          { to: AppRoute.SupportTicketsNew, labelKey: 'nav.supportChildren.newTicket' },
-          { to: AppRoute.SupportPredefinedReplies, labelKey: 'nav.supportChildren.predefinedReplies' },
+          { to: AppRoute.SupportOverview, labelKey: 'nav.supportChildren.overview', titleKey: 'support.supportOverview.supportOverview' },
+          { to: AppRoute.SupportTickets, labelKey: 'nav.supportChildren.tickets', titleKey: 'support.supportTickets.supportTickets', attention: NavAttention.OpenTickets },
+          { to: AppRoute.SupportTicketsNew, labelKey: 'nav.supportChildren.newTicket', titleKey: 'shared.openNewTicket' },
+          { to: AppRoute.SupportPredefinedReplies, labelKey: 'nav.supportChildren.predefinedReplies', titleKey: 'support.predefinedReplies.predefinedReplies' },
           { to: AppRoute.SupportAnnouncements, labelKey: 'nav.supportChildren.announcements' },
           { to: AppRoute.SupportEmailCampaigns, labelKey: 'nav.supportChildren.emailCampaigns' },
           { to: AppRoute.SupportDownloads, labelKey: 'nav.supportChildren.downloads' },
           { to: AppRoute.SupportKnowledgebase, labelKey: 'nav.supportChildren.knowledgebase' },
-          { to: AppRoute.SupportNetworkIssues, labelKey: 'nav.supportChildren.networkIssues' },
+          { to: AppRoute.SupportNetworkIssues, labelKey: 'nav.supportChildren.networkIssues', titleKey: 'shared.networkIssues' },
         ],
       },
     ],
@@ -164,8 +176,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           { to: AppRoute.StorefrontTestimonials, labelKey: 'nav.storefrontChildren.testimonials' },
           { to: AppRoute.StorefrontPartners, labelKey: 'nav.storefrontChildren.partners' },
           { to: AppRoute.StorefrontProjects, labelKey: 'nav.storefrontChildren.projects' },
-          { to: AppRoute.StorefrontFaqs, labelKey: 'nav.storefrontChildren.faqs' },
-          { to: AppRoute.StorefrontLocations, labelKey: 'nav.storefrontChildren.locations' },
+          { to: AppRoute.StorefrontFaqs, labelKey: 'nav.storefrontChildren.faqs', titleKey: 'nav.storefrontTitles.faqs' },
+          { to: AppRoute.StorefrontLocations, labelKey: 'nav.storefrontChildren.locations', titleKey: 'nav.storefrontTitles.locations' },
         ],
       },
     ],
@@ -183,7 +195,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         icon: Icon.Zap,
       },
       {
-        to: AppRoute.Plugins, labelKey: 'nav.plugins',
+        to: AppRoute.Plugins, labelKey: 'nav.plugins', titleKey: 'plugins.plugins.pluginManager',
         icon: Icon.Puzzle,
       },
     ],
@@ -206,29 +218,29 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         to: AppRoute.Settings, labelKey: 'nav.settings',
         icon: Icon.Settings,
         children: [
-          { to: AppRoute.SettingsGeneral, labelKey: 'nav.settingsChildren.general' },
+          { to: AppRoute.SettingsGeneral, labelKey: 'nav.settingsChildren.general', titleKey: 'settings.systemSettings' },
           { to: AppRoute.SettingsProducts, labelKey: 'nav.settingsChildren.products' },
           { to: AppRoute.SettingsProductBundles, labelKey: 'nav.settingsChildren.productBundles' },
-          { to: AppRoute.SettingsTldPricing, labelKey: 'nav.settingsChildren.tldPricing' },
+          { to: AppRoute.SettingsTldPricing, labelKey: 'nav.settingsChildren.tldPricing', titleKey: 'settings.tldConfigs.tldPricing' },
           { to: AppRoute.SettingsSlides, labelKey: 'nav.settingsChildren.slides' },
-          { to: AppRoute.SettingsEmailTemplates, labelKey: 'nav.settingsChildren.emailTemplates' },
+          { to: AppRoute.SettingsEmailTemplates, labelKey: 'nav.settingsChildren.emailTemplates', titleKey: 'settings.emailTemplates.emailTemplates' },
           { to: AppRoute.IntegrationsPayments, labelKey: 'nav.settingsChildren.gateways' },
           { to: AppRoute.SettingsCurrencies, labelKey: 'nav.settingsChildren.currencies' },
-          { to: AppRoute.SettingsTaxRules, labelKey: 'nav.settingsChildren.taxRules' },
-          { to: AppRoute.SettingsVatRates, labelKey: 'nav.settingsChildren.vatRates' },
+          { to: AppRoute.SettingsTaxRules, labelKey: 'nav.settingsChildren.taxRules', titleKey: 'taxRules.title' },
+          { to: AppRoute.SettingsVatRates, labelKey: 'nav.settingsChildren.vatRates', titleKey: 'vatRates.title' },
         ],
       },
       {
         to: AppRoute.Fraud, labelKey: 'nav.fraud',
         icon: Icon.Shield,
         children: [
-          { to: AppRoute.FraudSettings, labelKey: 'nav.fraudChildren.settings' },
+          { to: AppRoute.FraudSettings, labelKey: 'nav.fraudChildren.settings', titleKey: 'fraud.settings.title' },
           { to: AppRoute.FraudBlockLists, labelKey: 'nav.fraudChildren.blockLists' },
           { to: AppRoute.FraudLog, labelKey: 'nav.fraudChildren.log' },
         ],
       },
       {
-        to: AppRoute.Migration, labelKey: 'nav.migration',
+        to: AppRoute.Migration, labelKey: 'nav.migration', titleKey: 'migration.migration.migrationTools',
         icon: Icon.Upload,
       },
     ],
@@ -255,4 +267,28 @@ export const withAddons = (sections: readonly NavSection[], links: readonly Plug
   const system = sections.findIndex((section) => section.id === NavSectionId.System)
   const at = system === -1 ? sections.length : system
   return [...sections.slice(0, at), addons, ...sections.slice(at)]
+}
+
+/**
+ * The i18n key of the title a navigation entry's page shows in its header: the entry's full `titleKey`, or its
+ * menu `labelKey` when the page is titled as the menu says. The sidebar, the breadcrumb and the page header all
+ * read the names from the same entry, so the menu and the page cannot drift apart.
+ *
+ * @param to - Route path of the entry (an `AppRoute` value).
+ * @returns The locale key of the page title.
+ * @throws Error when no entry of the panel's own navigation has that path.
+ */
+export const navTitleKey = (to: string): string => {
+  for (const section of NAV_SECTIONS) {
+    for (const item of section.items) {
+      const entry = item.to === to ? item : item.children?.find((child) => child.to === to)
+      if (entry) {
+        const key = entry.titleKey ?? entry.labelKey
+        if (key) {
+          return key
+        }
+      }
+    }
+  }
+  throw new Error(`No navigation entry for ${to}`)
 }

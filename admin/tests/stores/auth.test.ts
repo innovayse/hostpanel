@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
 import { readRecent, rememberRecent } from '@/lib/commandPalette'
-import { AuthMode } from '@/types/auth'
+import { AccountRole, AuthMode } from '@/types/auth'
 import { callOf, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 import { NO_ANSWER } from '../helpers/storeHooks'
@@ -312,5 +312,28 @@ describe('auth store accountKey', () => {
 
     expect(store.accountKey).toBe(first)
     expect(store.user.roles).toEqual(['Admin', 'Reseller'])
+  })
+})
+
+describe('auth store primary role', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('ranks the roles instead of taking the first one listed', () => {
+    const store = useAuthStore()
+    expect(store.primaryRole).toBeNull()
+
+    store.user = { email: 'a@b.c', firstName: '', lastName: '', roles: ['Client', 'Admin'] }
+    expect(store.primaryRole).toBe(AccountRole.Admin)
+
+    store.user = { email: 'a@b.c', firstName: '', lastName: '', roles: ['Client', 'Reseller'] }
+    expect(store.primaryRole).toBe(AccountRole.Reseller)
+
+    store.user = { email: 'a@b.c', firstName: '', lastName: '', roles: ['Reseller', 'Admin', 'Client'] }
+    expect(store.primaryRole).toBe(AccountRole.Admin)
+
+    store.user = { email: 'a@b.c', firstName: '', lastName: '', roles: [] }
+    expect(store.primaryRole).toBeNull()
   })
 })

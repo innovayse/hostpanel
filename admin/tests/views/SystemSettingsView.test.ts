@@ -55,7 +55,7 @@ describe('SystemSettingsView', () => {
 
     expect(wrapper.get('h1').text()).toBe('System Settings')
     expect(wrapper.get('[role="tablist"]').attributes('aria-label')).toBe('Settings sections')
-    expect(wrapper.findAll('[role="tab"]').map((tab) => tab.text())).toEqual(['General', 'Appearance', 'Integrations', 'Advanced'])
+    expect(wrapper.get('[role="tablist"]').findAll('[role="tab"]').map((tab) => tab.text())).toEqual(['General', 'Appearance', 'Integrations', 'Advanced'])
     expect(wrapper.get('[data-testid="settings-tab-general"]').attributes('aria-selected')).toBe('true')
     expect((wrapper.get('[data-testid="site-identity-name"]').element as HTMLInputElement).value).toBe('Acme')
     expect(isShown(wrapper, 'general')).toBe(true)

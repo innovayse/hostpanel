@@ -83,6 +83,11 @@ public sealed class CreateProductHandler
             product.Deactivate();
         }
 
+        if (cmd.Trial is { } trial)
+        {
+            product.ConfigureTrial(trial.ToDomain());
+        }
+
         if (cmd.IsFeatured)
         {
             await product.UnfeatureSiblingsAsync(_context, ct);

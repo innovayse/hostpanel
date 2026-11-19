@@ -7,14 +7,17 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ClientProfileView from '@/views/ClientProfileView.vue'
+import schema, { PROFILE_CONTACTS_TABLE, PROFILE_FORM_PART } from '@/views/ClientProfileView.schema'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { useClientsStore } from '@/stores/clients'
 import { ClientStatus, type ClientDetail } from '@/types/client'
+import type { Contact } from '@/types/contact'
 import { createTestI18n } from '../helpers/i18n'
 import { mountClientView } from '../helpers/clientViews'
 import { json } from '../helpers/fetch'
 import { stubPathRoutes, stubRouteTable } from '../helpers/routes'
+import { fieldsOf } from '../helpers/schemaParity'
 
 /** The test id of the status select on the form. */
 const STATUS_SELECT = 'client-profile-status'
@@ -265,5 +268,34 @@ describe('ClientProfileView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="client-profile-error"]').text()).toBe(refusal)
+  })
+
+  it('draws every section and field of its schema', async () => {
+    const { wrapper } = await mountProfile()
+
+    for (const section of PROFILE_FORM_PART.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+    }
+    for (const field of fieldsOf(schema)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
+  })
+  it('heads the contacts table with the columns of its schema', async () => {
+    const contact: Contact = {
+      id: 1,
+      firstName: 'Bob',
+      lastName: 'Ray',
+      email: 'bob@example.test',
+      type: 'Billing',
+      address: {},
+      notifications: detail.notifications,
+      createdAt: '2026-01-01T00:00:00Z',
+    }
+    const { wrapper } = await mountProfile({ ...detail, contacts: [contact] })
+
+    const captions = wrapper.get('[data-testid="client-profile-contacts"]').findAll('[role="columnheader"]').map((header) => header.text())
+    expect(captions).toEqual(['Name', 'Email', 'Phone', 'Type'])
+    expect(PROFILE_CONTACTS_TABLE.columns).toHaveLength(captions.length)
+    expect(wrapper.get('[data-testid="ui-detail-card-contacts"]').text()).toContain('Contacts (1)')
   })
 })

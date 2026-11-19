@@ -7,6 +7,7 @@
  */
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -25,7 +26,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UiButton
+  <UiButton :action="UiActionKind.Save"
     type="button"
     variant="primary"
     :loading="saving"

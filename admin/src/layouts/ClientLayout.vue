@@ -6,7 +6,7 @@
  * the name, the status and the figures, and the tabs are already there; the sub-page waits for the client.
  */
 import { computed, onMounted, watch, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientsStore } from '@/stores/clients'
 import { clientStatusTone } from '@/lib/tones'
@@ -18,22 +18,24 @@ import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
 import ClientSectionTabs from '@/components/clients/ClientSectionTabs.vue'
 import RoutedView from '@/components/layout/RoutedView.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import UiBackLink from '@/components/ui/UiBackLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatRow from '@/components/ui/UiStatRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiDirection } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import { UiStatRowVariant } from '@/utils/ui/statRow'
+import type { UiStatFigure } from '@/utils/ui/statRow'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
+import schema, { ClientStatKey } from '@/layouts/ClientLayout.schema'
 
 const { t } = useI18n()
 
@@ -43,40 +45,22 @@ const showExportModal = ref(false)
 /** Current route, source of the client id. */
 const route = useRoute()
 
-/** Router, used to leave for the clients list. */
-const router = useRouter()
-
 /** Clients store, owner of the loaded client. */
 const store = useClientsStore()
 
-/** One figure of the header card: a caption over its value. */
-interface HeaderStat {
-  /** Key of the figure; also the suffix of its `data-testid`. */
-  key: string
-  /** Translated caption. */
-  label: string
-  /** The value as it is read; null while the client is being read. */
-  value: string | null
-}
-
-/** The key figures of the open client, in the order the card shows them. */
-const stats = computed<HeaderStat[]>(() => {
+/** The key figures of the open client by the key the schema gives them; empty while the client is being read (the row then draws bars). */
+const figures = computed((): Record<string, UiStatFigure> => {
   const client = store.current
-  return [
-    { key: 'id', label: t('shared.id'), value: client ? String(client.id) : null },
-    { key: 'email', label: t('shared.email'), value: client ? client.email : null },
-    { key: 'joined', label: t('clients.clientsList.joined'), value: client ? formatDate(client.createdAt) : null },
-    {
-      key: 'two-factor',
-      label: t('clients.clientsList.2fa'),
-      value: client ? (client.twoFactorEnabled ? t('clients.clientsList.on') : t('clients.clientsList.off')) : null,
-    },
-    {
-      key: 'credit',
-      label: t('clients.clientCredit.credit'),
-      value: client ? formatPlainAmount(client.creditBalance ?? 0, client.preferences.currency) : null,
-    },
-  ]
+  if (!client) {
+    return {}
+  }
+  return {
+    [ClientStatKey.Id]: { value: String(client.id) },
+    [ClientStatKey.Email]: { value: client.email },
+    [ClientStatKey.Joined]: { value: formatDate(client.createdAt) },
+    [ClientStatKey.TwoFactor]: { value: client.twoFactorEnabled ? t('clients.clientsList.on') : t('clients.clientsList.off') },
+    [ClientStatKey.Credit]: { value: formatPlainAmount(client.creditBalance ?? 0, client.preferences.currency) },
+  }
 })
 
 /**
@@ -88,15 +72,6 @@ const stats = computed<HeaderStat[]>(() => {
 const loadClient = async (id: string): Promise<void> => {
   await store.fetchById(id)
   store.fetchCurrencies()
-}
-
-/**
- * Leaves the client for the clients list.
- *
- * @returns Nothing.
- */
-const goBack = (): void => {
-  router.push(AppRoute.Clients)
 }
 
 // Re-fetch when client ID changes in the route
@@ -128,9 +103,7 @@ onMounted(() => {
         <UiStack gap="md">
           <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" reflow-below-md>
             <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" class="min-w-0 flex-1">
-              <UiIconButton :label="t('shared.back')" data-testid="client-layout-back" @click="goBack">
-                <UiIcon :markup="Icon.Back" />
-              </UiIconButton>
+              <UiBackLink :to="AppRoute.Clients" :label="t('shared.clients')" mobile-only data-testid="client-layout-back" />
               <UiBadge v-if="store.current" :tone="UiTone.Primary" data-testid="client-layout-avatar">
                 {{ store.current.firstName.charAt(0) }}{{ store.current.lastName.charAt(0) }}
               </UiBadge>
@@ -157,35 +130,25 @@ onMounted(() => {
                 </UiStack>
               </UiStack>
             </UiStack>
-            <UiButton
+            <UiButton :icon="Icon.Download"
               :variant="UiButtonVariant.Secondary"
               :size="UiSize.Sm"
               class="self-end md:self-auto"
               :disabled="!store.current"
               data-testid="client-layout-export"
               @click="showExportModal = true"
-            >
-              <UiIcon :markup="Icon.Download" :size="UiSize.Sm" />
-              {{ t('clients.clientLayout.exportData') }}
+            >{{ t('clients.clientLayout.exportData') }}
             </UiButton>
           </UiStack>
-          <UiGrid :columns="6" gap="sm" data-testid="client-layout-stats">
-            <UiStack
-              v-for="stat in stats"
-              :key="stat.key"
-              gap="xs"
-              class="min-w-0"
-              :data-testid="`client-layout-stat-${stat.key}`"
-            >
-              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">
-                {{ stat.label }}
-              </UiText>
-              <UiSkeletonBar v-if="stat.value === null" class="h-4 w-20 rounded-md" aria-hidden="true" />
-              <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="truncate font-medium">
-                {{ stat.value }}
-              </UiText>
-            </UiStack>
-          </UiGrid>
+          <UiStatRow
+            v-if="schema.stats"
+            :stats="schema.stats"
+            :figures="figures"
+            :columns="schema.statColumns"
+            :variant="UiStatRowVariant.Inline"
+            testid-prefix="client-layout-stat"
+            data-testid="client-layout-stats"
+          />
         </UiStack>
       </UiCard>
 

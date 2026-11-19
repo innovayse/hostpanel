@@ -66,3 +66,19 @@ describe('FLOATING_PANEL_CLASSES', () => {
     expect(FLOATING_PANEL_CLASSES).not.toMatch(/glass|backdrop-blur|bg-surface-card|\/\d/)
   })
 })
+
+describe('computeFloatingPlace with the measured panel width', () => {
+  it('flips an end aligned panel to the trigger left edge when it would leave the screen on the left', () => {
+    const corner = { left: 16, right: 52, top: 700, bottom: 736, width: 36 }
+
+    expect(computeFloatingPlace(corner, viewport, { align: FloatingAlign.End, minRoom: 160, gap: 4 }, 192))
+      .toEqual({ left: 16, bottom: 104, width: 36 })
+    expect(computeFloatingPlace(anchor, viewport, { align: FloatingAlign.End, minRoom: 160, gap: 4 }, 192).right).toBe(700)
+  })
+
+  it('pulls a start aligned panel back inside the right edge', () => {
+    const near = { left: 950, right: 990, top: 0, bottom: 40, width: 40 }
+
+    expect(computeFloatingPlace(near, viewport, { align: FloatingAlign.Start, minRoom: 0, gap: 4 }, 200).left).toBe(784)
+  })
+})

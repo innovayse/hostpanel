@@ -24,6 +24,7 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant } from '@/utils/ui/text'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -385,7 +386,7 @@ onMounted(() => {
       </UiGrid>
 
       <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-        <UiButton
+        <UiButton :action="UiActionKind.Delete"
           v-if="isEditing"
           type="button"
           :variant="UiButtonVariant.Danger"
@@ -395,7 +396,7 @@ onMounted(() => {
           {{ t('clients.contactForm.deleteContact') }}
         </UiButton>
         <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
-          <UiButton
+          <UiButton :action="UiActionKind.Cancel"
             type="button"
             :variant="UiButtonVariant.Secondary"
             data-testid="clients-contact-cancel"
@@ -403,7 +404,7 @@ onMounted(() => {
           >
             {{ t('shared.cancel') }}
           </UiButton>
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             type="submit"
             :variant="UiButtonVariant.Primary"
             :loading="saving"

@@ -6,10 +6,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientTicketDetailView from '@/views/ClientTicketDetailView.vue'
+import { CONVERSATION_CARD, REPLY_CARD, SETTINGS_CARD } from '@/views/ClientTicketDetailView.schema'
 import { mountClientView } from '../helpers/clientViews'
 import { json, problem } from '../helpers/fetch'
+import { createTestI18n } from '../helpers/i18n'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** Ticket 4 of client 7, open, without replies. */
 const ticket = () =>
@@ -46,9 +49,11 @@ describe('ClientTicketDetailView', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountTicket()
 
-    expect(wrapper.find('[data-testid="client-ticket-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-page-header-skeleton"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="client-ticket-message-loading"]')).toHaveLength(2)
-    expect(wrapper.text()).toContain('Ticket Settings')
+    for (const card of [SETTINGS_CARD, REPLY_CARD, CONVERSATION_CARD]) {
+      expect(wrapper.text()).toContain(createTestI18n().global.t(card.title))
+    }
     expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
     expect(wrapper.get('[data-testid="client-ticket-save"]').attributes('disabled')).toBeDefined()
   })
@@ -76,7 +81,7 @@ describe('ClientTicketDetailView', () => {
     await wrapper.get('[data-testid="client-ticket-close"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-ticket-feedback"]').text()).toBe('Ticket closed.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Ticket closed.'])
   })
 
   it('deletes only after the confirmation and leaves for the tickets list', async () => {
@@ -156,5 +161,14 @@ describe('ClientTicketDetailView', () => {
 
     expect(wrapper.find('[data-testid="client-ticket-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="client-ticket-close"]').exists()).toBe(true)
+  })
+
+  it('returns to the tickets of its client with the back pill', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountTicket()
+    const back = wrapper.get('[data-testid="client-ticket-back"]')
+
+    expect(back.attributes('href')).toBe('/clients/7/tickets')
+    expect(back.text()).toBe('Tickets')
   })
 })

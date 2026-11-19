@@ -5,9 +5,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PredefinedRepliesView from '@/views/PredefinedRepliesView.vue'
+import { REPLIES_CATEGORIES_TABLE, REPLIES_TABLE, REPLIES_TABS_PART, REPLY_FORM_PART } from '@/views/PredefinedRepliesView.schema'
 import { mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** One category as the endpoint returns it. */
 const category = { id: 1, name: 'Greetings', parentCategoryId: null, replyCount: 1 }
@@ -32,6 +34,24 @@ afterEach(() => {
 })
 
 describe('PredefinedRepliesView', () => {
+  it('draws the tabs, the add category card and the categories card of its schema', async () => {
+    stubPathRoutes(loadRoutes)
+    const wrapper = await mountView(PredefinedRepliesView)
+
+    for (const tab of REPLIES_TABS_PART.tabs) {
+      expect(wrapper.find(`[data-testid="predefined-replies-tab-${tab.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.find('[data-testid="ui-form-field-name"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-detail-card-categories"]').findAll('[role="columnheader"]')).toHaveLength(REPLIES_CATEGORIES_TABLE.columns.length)
+
+    await wrapper.get('[data-testid="predefined-replies-tab-reply"]').trigger('click')
+
+    for (const field of REPLY_FORM_PART.columns.flat().flatMap((section) => section.fields)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.get('[data-testid="ui-detail-card-replies"]').findAll('[role="columnheader"]')).toHaveLength(REPLIES_TABLE.columns.length)
+  })
+
   it('lists the categories', async () => {
     stubPathRoutes(loadRoutes)
 
@@ -50,7 +70,7 @@ describe('PredefinedRepliesView', () => {
 
     const post = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.method === 'POST')
     expect(post).toMatchObject({ url: '/api/predefined-replies/categories', body: { name: 'Billing' } })
-    expect(wrapper.get('[data-testid="predefined-replies-feedback"]').text()).toBe('Record created.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record created.'])
   })
 
   it('shows the API sentence when adding a category is refused', async () => {
@@ -117,7 +137,7 @@ describe('PredefinedRepliesView', () => {
 
     const removal = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.method === 'DELETE')
     expect(removal).toMatchObject({ url: '/api/predefined-replies/categories/1' })
-    expect(wrapper.get('[data-testid="predefined-replies-feedback"]').text()).toBe('Record deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
   })
 
   it('keeps the category when the delete is refused or dismissed', async () => {

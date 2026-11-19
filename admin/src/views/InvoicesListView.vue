@@ -39,10 +39,9 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/InvoicesListView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { bucketAmountText, summarizeInvoices } from '@/lib/invoices'
@@ -53,8 +52,9 @@ import { pageFirstRow, pageLastRow } from '@/lib/paging'
 import type { InvoiceBulkAction } from '@/types/invoice'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { invoiceEditPath, invoiceViewPath } from '@/lib/routes'
-import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { Icon } from '@/lib/icons'
+import { schemaHeader } from '@/lib/schemaHeader'
 
 const { t } = useI18n()
 
@@ -195,16 +195,19 @@ const dismissDelete = (): void => {
 const invoiceActions = (id: number): UiMenuAction[] => [
   {
     label: t('shared.view'),
+    icon: Icon.Eye,
     testid: `billing-invoice-view-${id}`,
     to: invoiceViewPath(id),
   },
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `billing-invoice-edit-${id}`,
     to: invoiceEditPath(id),
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `billing-invoice-delete-${id}`,
     danger: true,
     /**
@@ -226,7 +229,7 @@ onMounted(loadClients)
 
 <template>
   <UiStack data-testid="billing-invoices-view">
-    <UiPageHeader :title="t('shared.invoices')" :subtitle="t('billing.invoicesList.manageBillingInvoices')">
+    <UiPageHeader v-bind="schemaHeader(schema, t)">
       <template #actions>
         <PageHelpLink :url="guideUrl" />
       </template>
@@ -300,7 +303,7 @@ onMounted(loadClients)
       {{ t('billing.invoicesList.totalcountRecordsFoundShowingValue', { totalCount: store.totalCount, value: firstShown, value2: lastShown }) }}
     </UiText>
 
-    <UiCard>
+    <UiCard clip>
       <UiTable
         :loading="store.loading && store.invoices.length === 0"
         :empty="!store.loading && store.invoices.length === 0"
@@ -309,18 +312,7 @@ onMounted(loadClients)
         select-all-testid="billing-invoices-select-all"
         data-testid="billing-invoices-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.invoice') }}</UiTableHeader>
-            <UiTableHeader hide-below="sm" :card-role="UiCardRole.Field">{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader hide-below="md">{{ t('shared.invoiceDate') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('shared.dueDate') }}</UiTableHeader>
-            <UiTableHeader numeric hide-below="sm" :card-role="UiCardRole.Field">{{ t('shared.total') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('shared.paymentMethod') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="invoice in store.invoices"
@@ -331,9 +323,8 @@ onMounted(loadClients)
           >
             <UiTableCell muted>
               #{{ invoice.id }}
-              <UiText :size="UiTextSize.Xs" class="max-w-32 truncate sm:hidden">{{ invoice.clientName }}</UiText>
             </UiTableCell>
-            <UiTableCell hide-below="sm" truncate>
+            <UiTableCell hide-below="sm">
               <UiText class="truncate">{{ invoice.clientName }}</UiText>
             </UiTableCell>
             <UiTableCell muted hide-below="md">{{ formatDate(invoice.createdAt) }}</UiTableCell>

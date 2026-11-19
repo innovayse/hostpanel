@@ -8,11 +8,14 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import ClientQuotesView from '@/views/ClientQuotesView.vue'
+import schema from '@/views/ClientQuotesView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { quoteRowFixture } from '../helpers/billingFixtures'
 import { mountClientView } from '../helpers/clientViews'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The one-quote page of client 7. */
 const listPage = () => json({ items: [quoteRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 })
@@ -85,6 +88,15 @@ describe('ClientQuotesView', () => {
     expect(wrapper.find('[data-testid="client-quotes-create"]').exists()).toBe(true)
   })
 
+  it('gives the remaining width to the subject column and keeps the id column as narrow as its content', async () => {
+    stubRoutes({ 'GET /api/billing/quotes/client/7': listPage })
+    const wrapper = await mountQuotes()
+
+    const headers = wrapper.findAll('th')
+    expect(headers[0]?.classes()).toContain('w-px')
+    expect(headers[1]?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0']))
+  })
+
   it('shows the refusal sentence from the API', async () => {
     const wrapper = await mountClientView(ClientQuotesView, 'Server said no')
 
@@ -101,7 +113,7 @@ describe('ClientQuotesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-quotes-feedback"]').text()).toBe('Quote deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Quote deleted.'])
   })
 
   it('shows the API sentence when the delete is refused, without the load error', async () => {
@@ -218,5 +230,21 @@ describe('ClientQuotesView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="client-quotes-error"]').exists()).toBe(false)
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/billing/quotes/client/7': listPage })
+    const wrapper = await mountQuotes()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientQuotesView, '/clients/:id/quotes', '/clients/7/quotes')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

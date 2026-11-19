@@ -9,6 +9,7 @@ import EmailForwardingTable from '@/components/clients/EmailForwardingTable.vue'
 import type { EmailForwardingRuleItem } from '@/types/domain'
 import { createTestI18n } from '../../helpers/i18n'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
+import { useToastStore } from '@/stores/toast'
 
 /**
  * Builds a forwarding rule fixture.
@@ -69,7 +70,7 @@ describe('EmailForwardingTable', () => {
   it('edits a rule through the same row', async () => {
     const wrapper = mountTable([rule()])
 
-    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    // Two or more row actions sit behind the "…" menu, so it is opened first.
     await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-edit-3"]').trigger('click')
 
@@ -80,7 +81,7 @@ describe('EmailForwardingTable', () => {
     const fetchMock = stubFetch(json({}))
     const wrapper = mountTable([rule()])
 
-    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    // Two or more row actions sit behind the "…" menu, so it is opened first.
     await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     expect(fetchMock).not.toHaveBeenCalled()
@@ -95,20 +96,20 @@ describe('EmailForwardingTable', () => {
     stubFetch(new Response(null, { status: 204 }))
     const wrapper = mountTable([rule()])
 
-    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    // Two or more row actions sit behind the "…" menu, so it is opened first.
     await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="clients-forwarding-feedback"]').text()).toBe('Forwarding rule deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Forwarding rule deleted.'])
   })
 
   it('shows the API sentence when the delete is refused and asks for no refresh', async () => {
     stubFetch(problem('The registrar refused the change.', 502))
     const wrapper = mountTable([rule()])
 
-    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    // Two or more row actions sit behind the "…" menu, so it is opened first.
     await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -122,7 +123,7 @@ describe('EmailForwardingTable', () => {
     const fetchMock = stubFetch(json({}))
     const wrapper = mountTable([rule()])
 
-    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    // Two or more row actions sit behind the "…" menu, so it is opened first.
     await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
@@ -136,12 +137,12 @@ describe('EmailForwardingTable', () => {
     stubFetch(json({}))
     const wrapper = mountTable([rule()])
 
-    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    // Two or more row actions sit behind the "…" menu, so it is opened first.
     await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-edit-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-draft-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="clients-forwarding-feedback"]').text()).toBe('Forwarding rule saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Forwarding rule saved.'])
   })
 })

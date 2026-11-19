@@ -6,11 +6,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import NetworkIssuesView from '@/views/NetworkIssuesView.vue'
+import schema from '@/views/NetworkIssuesView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted, mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** One network issue as the list endpoint returns it. */
 const issue = {
@@ -55,6 +58,14 @@ afterEach(() => {
 })
 
 describe('NetworkIssuesView', () => {
+  it('draws the table head of its schema columns, in order', async () => {
+    stubPathRoutes([{ path: '/network-issues', body: { items: [issue], totalCount: 1 } }])
+
+    const wrapper = await mountView(NetworkIssuesView)
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('loads every issue first and lists the issue with its type, priority and status', async () => {
     const mock = stubPathRoutes([{ path: '/network-issues', body: { items: [issue], totalCount: 1 } }])
 
@@ -161,7 +172,7 @@ describe('NetworkIssuesView', () => {
     await flushPromises()
 
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/network-issues/2', method: 'DELETE' })
-    expect(wrapper.get('[data-testid="network-issues-feedback"]').text()).toBe('Record deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
   })
 
   it('steps back one page when a delete empties the last page', async () => {

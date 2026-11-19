@@ -33,8 +33,32 @@ public sealed class PluginSignatureVerifierTests
 
             PluginSigningTestSeeds.Verifier(enforced: true).Inspect(folder).Should().BeNull();
             PluginSigningTestSeeds.Verifier(enforced: true)
-                .Check(folder, "valid-plugin", PluginOrigin.Uploaded, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t"))
+                .Check(folder, "valid-plugin", PluginOrigin.Uploaded, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t")).Refusal
                 .Should().BeNull();
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    /// <summary>One check names the trusted key of a verified signature, and an unsigned package admitted by policy names none.</summary>
+    [Fact]
+    public void Check_NamesTheKeyOfAVerifiedSignatureOnly()
+    {
+        var folder = PluginSigningTestSeeds.NewFolder("verify-key-id");
+        try
+        {
+            PluginSigningTestSeeds.WritePackage(folder, "valid-plugin", new Dictionary<string, string>());
+            var logger = new RecordingLoggerProvider().CreateLogger("t");
+            PluginSigningTestSeeds.Verifier(enforced: true)
+                .Check(folder, "valid-plugin", PluginOrigin.Uploaded, allowUnsigned: true, logger).VerifiedKeyId.Should().BeNull();
+
+            PluginSigningTestSeeds.Sign(folder);
+
+            PluginSigningTestSeeds.Verifier(enforced: true)
+                .Check(folder, "valid-plugin", PluginOrigin.Uploaded, allowUnsigned: false, logger).VerifiedKeyId
+                .Should().Be(PluginSigningTestSeeds.TrustedKeyId);
         }
         finally
         {
@@ -289,7 +313,7 @@ public sealed class PluginSignatureVerifierTests
         try
         {
             var refusal = PluginSigningTestSeeds.Verifier(enforced: true)
-                .Check(folder, "bad-plugin", PluginOrigin.Uploaded, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t"));
+                .Check(folder, "bad-plugin", PluginOrigin.Uploaded, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t")).Refusal;
 
             refusal!.Rule.Should().Be(rule);
         }
@@ -313,7 +337,7 @@ public sealed class PluginSignatureVerifierTests
         {
             var logs = new RecordingLoggerProvider();
             var refusal = PluginSigningTestSeeds.Verifier(enforced: true)
-                .Check(folder, "bad-plugin", PluginOrigin.Uploaded, allowUnsigned: true, logs.CreateLogger("t"));
+                .Check(folder, "bad-plugin", PluginOrigin.Uploaded, allowUnsigned: true, logs.CreateLogger("t")).Refusal;
 
             refusal.Should().BeNull();
             logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning
@@ -334,7 +358,7 @@ public sealed class PluginSignatureVerifierTests
         try
         {
             PluginSigningTestSeeds.Verifier(enforced: false)
-                .Check(folder, "bad-plugin", PluginOrigin.Uploaded, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t"))
+                .Check(folder, "bad-plugin", PluginOrigin.Uploaded, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t")).Refusal
                 .Should().BeNull();
         }
         finally
@@ -354,7 +378,7 @@ public sealed class PluginSignatureVerifierTests
         try
         {
             PluginSigningTestSeeds.Verifier(enforced: true)
-                .Check(folder, "bad-plugin", PluginOrigin.BuiltIn, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t"))
+                .Check(folder, "bad-plugin", PluginOrigin.BuiltIn, allowUnsigned: false, new RecordingLoggerProvider().CreateLogger("t")).Refusal
                 .Should().BeNull();
         }
         finally

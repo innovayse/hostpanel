@@ -27,8 +27,8 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/CreditNotesListView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useListQuery } from '@/composables/useListQuery'
@@ -36,6 +36,7 @@ import { formatDateTime } from '@/lib/format'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { formatPlainAmount } from '@/lib/money'
 import { clientPath, creditNotePath, invoicePath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useCreditNotesStore } from '@/stores/creditNotes'
 import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
 
@@ -127,7 +128,7 @@ onMounted(loadClients)
 
 <template>
   <UiStack data-testid="billing-credit-notes-view">
-    <UiPageHeader :title="t('billing.creditNotes.heading')" :subtitle="t('billing.creditNotes.subtitle')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiAlert variant="info" data-testid="billing-credit-notes-explain">{{ t('billing.creditNotes.explain') }}</UiAlert>
 
@@ -186,21 +187,12 @@ onMounted(loadClients)
 
     <UiCard>
       <UiTable
+        :empty-text="t('billing.creditNotes.empty')"
         :loading="store.loading && store.notes.length === 0"
         :empty="!store.loading && loadError === null && store.notes.length === 0"
         data-testid="billing-credit-notes-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('billing.creditNotes.number') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.invoice') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.statusLabel') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.methodLabel') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('billing.creditNotes.total') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.issuedAt') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="note in store.notes" :key="note.id" hoverable>
             <UiTableCell>
@@ -220,9 +212,6 @@ onMounted(loadClients)
             <UiTableCell muted>{{ formatDateTime(note.issuedAt) }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('billing.creditNotes.empty') }}
-        </template>
       </UiTable>
     </UiCard>
 

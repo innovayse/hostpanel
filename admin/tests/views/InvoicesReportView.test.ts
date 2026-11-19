@@ -5,6 +5,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import InvoicesReportView from '@/views/InvoicesReportView.vue'
+import schema from '@/views/InvoicesReportView.schema'
+import { DateRangePreset, presetIsoRange } from '@/utils/ui/datePicker'
 import { json } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { runReportCase } from '../helpers/reportViews'
@@ -15,6 +17,8 @@ vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJs
 runReportCase({
   name: 'InvoicesReportView',
   view: InvoicesReportView,
+  schema,
+  emptyResult: true,
   routes: { 'GET /reports/invoices': () => json({ items: [], pageNumber: 1, pageSize: 50, totalCount: 0, totalPages: 0 }) },
   expected: ['Invoices', '0 invoice(s) found', 'No invoices found.'],
 })
@@ -35,8 +39,10 @@ describe('InvoicesReportView actions', () => {
     await wrapper.get('[data-testid="report-export"]').trigger('click')
     await flushPromises()
 
-    expect(requestsOf(mock)).toEqual(['GET /reports/invoices?page=1&pageSize=50', 'GET /reports/invoices?page=1&pageSize=50'])
-    expect(open).toHaveBeenCalledWith('/api/reports/invoices/export', '_blank')
+    const [from, to] = presetIsoRange(DateRangePreset.ThisMonth)
+    const request = `GET /reports/invoices?createdFrom=${from}&createdTo=${to}&page=1&pageSize=50`
+    expect(requestsOf(mock)).toEqual([request, request])
+    expect(open).toHaveBeenCalledWith(`/api/reports/invoices/export?createdFrom=${from}&createdTo=${to}`, '_blank')
   })
 
   it('offers only date ranges the endpoint filters by', async () => {

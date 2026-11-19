@@ -6,17 +6,86 @@
  * configures the chart library and a theme switch recolours every chart.
  */
 import type { BarElement, Chart, ChartArea, ChartType, Plugin, ScriptableContext } from 'chart.js'
+import { UiTone } from '@/utils/ui/tone'
 
-/** Closed set of chart kinds `UiChart` draws. */
-export const UiChartType = {
-  Bar: 'bar',
+/** Closed set of the shapes a report or dashboard chart takes; the report picks one by what its numbers say. */
+export const ChartKind = {
+  /** Lines over time, one per series (a trend of a few counters). */
   Line: 'line',
-  Pie: 'pie',
-  Doughnut: 'doughnut',
+  /** A line filled down to the axis (a running total or a forecast). */
+  Area: 'area',
+  /** Bars of several series stacked on one another (parts of a total per category). */
+  StackedBar: 'stackedBar',
+  /** Bars of one or more series side by side (a value per category, vertical). */
+  GroupedBar: 'groupedBar',
+  /** A ring split into slices (shares of one total). */
+  Donut: 'donut',
+  /** Bars that grow sideways (a ranking, long category names). */
+  HorizontalBar: 'horizontalBar',
+  /** One row of squares shaded by size (a value per day in a compact row). */
+  HeatStrip: 'heatStrip',
+  /** One stacked bar with a legend (how a total splits into parts). */
+  Distribution: 'distribution',
+  /** A half ring showing one value against its scale. */
+  Gauge: 'gauge',
 } as const
 
 /** One of the chart kinds. */
-export type UiChartType = (typeof UiChartType)[keyof typeof UiChartType]
+export type ChartKind = (typeof ChartKind)[keyof typeof ChartKind]
+
+/** The chart.js controllers a kind can be drawn with. */
+export const CanvasChartType = {
+  Bar: 'bar',
+  Line: 'line',
+  Doughnut: 'doughnut',
+} as const
+
+/** One of the chart.js controllers. */
+export type CanvasChartType = (typeof CanvasChartType)[keyof typeof CanvasChartType]
+
+/** How a canvas kind is set up in chart.js. */
+export interface CanvasChartShape {
+  /** The chart.js controller. */
+  type: CanvasChartType
+  /** Whether the bars of several series stack. */
+  stacked: boolean
+  /** Whether the bars grow sideways. */
+  horizontal: boolean
+  /** Whether the area under a line is filled. */
+  filled: boolean
+}
+
+/** The canvas kinds and their chart.js setup; the kinds absent here are drawn as markup. */
+const CANVAS_SHAPES: Partial<Record<ChartKind, CanvasChartShape>> = {
+  [ChartKind.Line]: { type: CanvasChartType.Line, stacked: false, horizontal: false, filled: false },
+  [ChartKind.Area]: { type: CanvasChartType.Line, stacked: false, horizontal: false, filled: true },
+  [ChartKind.StackedBar]: { type: CanvasChartType.Bar, stacked: true, horizontal: false, filled: false },
+  [ChartKind.GroupedBar]: { type: CanvasChartType.Bar, stacked: false, horizontal: false, filled: false },
+  [ChartKind.Donut]: { type: CanvasChartType.Doughnut, stacked: false, horizontal: false, filled: false },
+  [ChartKind.HorizontalBar]: { type: CanvasChartType.Bar, stacked: false, horizontal: true, filled: false },
+}
+
+/**
+ * Looks up how a kind is drawn on the canvas.
+ *
+ * @param kind - The chart kind.
+ * @returns The chart.js setup, or undefined for the kinds drawn as markup (heat strip, distribution, gauge).
+ */
+export const canvasShapeOf = (kind: ChartKind): CanvasChartShape | undefined => CANVAS_SHAPES[kind]
+
+/** Fill of the area under a line, as a share of the line colour. */
+const AREA_FILL_SHARE = 18
+
+/**
+ * Builds the translucent fill under an area line.
+ *
+ * @param color - The line colour.
+ * @returns A CSS colour: the line colour at a low share over transparent.
+ */
+export const areaFill = (color: string): string => `color-mix(in srgb, ${color} ${AREA_FILL_SHARE}%, transparent)`
+
+/** The cut-out of a donut as a share of its radius. */
+export const DONUT_CUTOUT = '68%'
 
 /** Closed set of chart heights. */
 export const UiChartHeight = {
@@ -32,6 +101,57 @@ export const UiChartHeight = {
 
 /** One of the UiChartHeight values. */
 export type UiChartHeight = (typeof UiChartHeight)[keyof typeof UiChartHeight]
+
+/** Plot height classes, literal so Tailwind emits them; the chart and its loading placeholder share them. */
+export const chartHeightClasses: Record<UiChartHeight, string> = {
+  [UiChartHeight.Short]: 'h-52',
+  [UiChartHeight.Sm]: 'h-40',
+  [UiChartHeight.Md]: 'h-64',
+  [UiChartHeight.Lg]: 'h-80',
+}
+
+/** Plot heights on a phone (below `sm`), a step shorter than the wide ones, as literal classes so Tailwind emits them. */
+export const chartPhoneHeightClasses: Record<UiChartHeight, string> = {
+  [UiChartHeight.Short]: 'max-sm:h-44',
+  [UiChartHeight.Sm]: 'max-sm:h-36',
+  [UiChartHeight.Md]: 'max-sm:h-56',
+  [UiChartHeight.Lg]: 'max-sm:h-64',
+}
+
+/**
+ * Gives every height step the same phone class.
+ *
+ * @param classes - The literal phone class.
+ * @returns A phone class per height step.
+ */
+const samePhoneClassAtEveryHeight = (classes: string): Record<UiChartHeight, string> => ({
+  [UiChartHeight.Short]: classes,
+  [UiChartHeight.Sm]: classes,
+  [UiChartHeight.Md]: classes,
+  [UiChartHeight.Lg]: classes,
+})
+
+/**
+ * Phone heights of the kinds whose content does not follow the plain step: the donut keeps room for its legend under the
+ * ring, the heat strip and the distribution are one row (and a key) that sets its own height, the gauge is a half ring.
+ */
+const CHART_PHONE_KIND_HEIGHTS: Partial<Record<ChartKind, Record<UiChartHeight, string>>> = {
+  [ChartKind.Donut]: { [UiChartHeight.Short]: 'max-sm:h-64', [UiChartHeight.Sm]: 'max-sm:h-56', [UiChartHeight.Md]: 'max-sm:h-72', [UiChartHeight.Lg]: 'max-sm:h-80' },
+  [ChartKind.HeatStrip]: samePhoneClassAtEveryHeight('max-sm:h-auto'),
+  [ChartKind.Distribution]: samePhoneClassAtEveryHeight('max-sm:h-auto'),
+  [ChartKind.Gauge]: { [UiChartHeight.Short]: 'max-sm:h-40', [UiChartHeight.Sm]: 'max-sm:h-36', [UiChartHeight.Md]: 'max-sm:h-44', [UiChartHeight.Lg]: 'max-sm:h-52' },
+}
+
+/**
+ * Height classes of a chart box: the plot height on a wide screen, and the phone height of its kind below `sm`. The
+ * chart and its loading placeholder both take their box from here, so they are always the same height.
+ *
+ * @param kind - The chart kind.
+ * @param height - The plot height step.
+ * @returns The classes to put on the box.
+ */
+export const chartHeightClassOf = (kind: ChartKind, height: UiChartHeight): string =>
+  `${chartHeightClasses[height]} ${CHART_PHONE_KIND_HEIGHTS[kind]?.[height] ?? chartPhoneHeightClasses[height]}`
 
 /** Closed set of chart looks. */
 export const UiChartVariant = {
@@ -52,6 +172,16 @@ export interface UiChartSeries {
   data: number[]
   /** Explicit colour; omitted, the series takes the next colour of the theme palette. */
   color?: string
+}
+
+/** One part of a distribution bar. */
+export interface UiChartPart {
+  /** What the part counts. */
+  count: number
+  /** Its colour. */
+  tone: UiTone
+  /** Tooltip of the part (already translated). */
+  tooltip: string
 }
 
 /** Concrete colours resolved from the theme tokens. */
@@ -224,6 +354,12 @@ export const chartSkeletonBars: readonly string[] = [
   'h-[64%]', 'h-[52%]', 'h-[60%]', 'h-[78%]', 'h-[88%]', 'h-[72%]', 'h-[68%]', 'h-[80%]', 'h-[94%]', 'h-[76%]',
 ]
 
+/** Widths of the placeholder bars of a horizontal bar chart, as literal classes so Tailwind emits them. */
+export const chartSkeletonRows: readonly string[] = ['w-[88%]', 'w-[72%]', 'w-[60%]', 'w-[48%]', 'w-[36%]', 'w-[24%]']
+
+/** How many squares the placeholder of a heat strip draws. */
+export const chartSkeletonSquares = 24
+
 /** Blur radius of the glow behind a bar, in pixels. */
 const BAR_GLOW_BLUR = 18
 
@@ -286,3 +422,17 @@ export const barGlowPlugin: Plugin<'bar'> = {
     })
   },
 }
+
+/** Tones the parts of a distribution take in order, cycled when there are more parts than tones. */
+const DISTRIBUTION_TONES: readonly UiTone[] = [UiTone.Primary, UiTone.Success, UiTone.Warning, UiTone.Danger, UiTone.Info, UiTone.Neutral]
+
+/**
+ * Picks the tone of a distribution part.
+ *
+ * @param index - Zero based index of the part.
+ * @returns The tone of that place in the cycle.
+ */
+export const distributionTone = (index: number): UiTone => DISTRIBUTION_TONES[index % DISTRIBUTION_TONES.length] ?? UiTone.Neutral
+
+/** The full scale of a gauge, in percent, when the caller sets none. */
+export const GAUGE_DEFAULT_MAX = 100

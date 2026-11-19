@@ -1,11 +1,6 @@
 {
   "pluginCard": {
     "builtIn": "Built-in",
-    "capabilities": {
-      "endpoints": "Serves pages",
-      "paymentReturn": "Completes payments after a step in the browser",
-      "storedCredentials": "Saved payment methods"
-    },
     "pendingRestart": "Pending restart",
     "remove": "Remove",
     "refused": "Refused",

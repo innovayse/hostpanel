@@ -37,21 +37,10 @@ const mountHeader = (options: HeaderOptions = {}) =>
   })
 
 describe('PluginDetailsHeader', () => {
-  it('draws the card with bars instead of the plugin while the list loads', () => {
-    const wrapper = mount(PluginDetailsHeader, {
-      props: { plugin: null, registry: null, busy: false },
-      global: { plugins: [createTestI18n()] },
-    })
-
-    expect(wrapper.find('[data-testid="plugin-details-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="plugin-details-name"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="plugin-details-update"]').exists()).toBe(false)
-  })
-
-  it('shows the name, author, description, verified and price badges', () => {
+  it('shows the author, description, verified and price badges, and no heading of its own (the page header owns the h1)', () => {
     const wrapper = mountHeader()
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.find('h1').exists()).toBe(false)
     expect(wrapper.get('[data-testid="plugin-details-author"]').text()).toContain('Hostpanel')
     expect(wrapper.get('[data-testid="plugin-details-description"]').text()).toBe('Card payments')
     expect(wrapper.find('[data-testid="plugin-details-verified"]').exists()).toBe(true)
@@ -68,7 +57,6 @@ describe('PluginDetailsHeader', () => {
   it('shows the installed plugin alone, without badges or actions of the registry, when there are no registry details', () => {
     const wrapper = mountHeader({ registry: null })
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
     expect(wrapper.get('[data-testid="plugin-details-installed"]').text()).toContain('2.0.0')
     expect(wrapper.find('[data-testid="plugin-details-verified"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-details-pricing"]').exists()).toBe(false)

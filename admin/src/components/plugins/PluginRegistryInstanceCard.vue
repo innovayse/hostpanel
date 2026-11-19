@@ -22,6 +22,7 @@ import { RegistryInstanceState } from '@/types/plugin'
 import type { RegistryInstanceDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -72,7 +73,7 @@ const problem = computed<string | null>(() => props.error ?? props.instance?.mes
         <UiBadge :tone="stateTones[state]" data-testid="plugin-registry-instance-state">
           {{ t(`plugins.registryInstance.states.${state}`) }}
         </UiBadge>
-        <UiButton
+        <UiButton :action="UiActionKind.Refresh"
           v-if="canRetry"
           :variant="UiButtonVariant.Secondary"
           size="sm"

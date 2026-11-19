@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
-import { UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 
 describe('UiTableHeader', () => {
   it('hides the column below its breakpoint and shows it as a table cell from there', () => {
@@ -35,13 +35,32 @@ describe('UiTableHeader', () => {
     expect(classes.some(name => name.startsWith('bg-'))).toBe(false)
   })
 
+  it('keeps its caption on one line by default', () => {
+    expect(mount(UiTableHeader).classes()).toContain('whitespace-nowrap')
+  })
+
+  it('shrinks to its content when compact', () => {
+    expect(mount(UiTableHeader, { props: { size: UiColumnSize.Compact } }).classes()).toEqual(expect.arrayContaining(['w-px', 'whitespace-nowrap']))
+  })
+
+  it('takes the remaining width and truncates when it is the growing column', () => {
+    expect(mount(UiTableHeader, { props: { size: UiColumnSize.Grow } }).classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0', 'min-w-36', 'truncate']))
+  })
+
   it('aligns on request', () => {
     expect(mount(UiTableHeader, { props: { align: 'center' } }).classes()).toContain('text-center')
   })
 
   it('matches the numeric and actions cells below it', () => {
     expect(mount(UiTableHeader, { props: { numeric: true } }).classes()).toEqual(expect.arrayContaining(['text-end', 'tabular-nums']))
-    expect(mount(UiTableHeader, { props: { actions: true } }).classes()).toEqual(expect.arrayContaining(['w-16', 'sm:w-28', 'text-end']))
+    expect(mount(UiTableHeader, { props: { actions: true } }).classes()).toEqual(expect.arrayContaining(['w-px', 'text-end']))
+  })
+
+  it('keeps the caption of an actions column for assistive technology only', () => {
+    const wrapper = mount(UiTableHeader, { props: { actions: true }, slots: { default: 'Actions' } })
+
+    expect(wrapper.get('span').classes()).toContain('sr-only')
+    expect(wrapper.get('span').classes()).not.toContain('contents')
   })
 
   it('is a column header for assistive technology whatever the layout', () => {
@@ -57,16 +76,11 @@ describe('UiTableHeader', () => {
     expect(sortable.get('button span.contents').text()).toBe('Name')
   })
 
-  it('is not drawn on a card, except the select column that holds select-all', () => {
-    expect(mount(UiTableHeader).classes()).toContain('max-sm:hidden')
-    expect(mount(UiTableHeader, { props: { select: true } }).classes()).not.toContain('max-sm:hidden')
-  })
-
   it('takes a card role without changing its own look', () => {
     const wrapper = mount(UiTableHeader, { props: { cardRole: UiCardRole.Title }, slots: { default: 'Name' } })
 
     expect(wrapper.text()).toBe('Name')
-    expect(wrapper.classes()).toContain('max-sm:hidden')
+    expect(wrapper.element.tagName).toBe('TH')
   })
 
   it('has no sort button or aria-sort unless sortable', () => {

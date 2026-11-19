@@ -1,11 +1,12 @@
 /**
  * Unit tests for UiFieldSelector: count on the trigger, checkbox list and the three actions.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiFieldSelector from '@/components/ui/UiFieldSelector.vue'
 import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import { createTestI18n } from '../../helpers/i18n'
+import { stubPhone } from '../../helpers/phone'
 
 /** Fields offered to the selector. */
 const fields = [
@@ -24,11 +25,11 @@ const mountSelector = (selected: string[]) =>
 
 describe('UiFieldSelector', () => {
   it('shows how many fields are selected', () => {
-    expect(mountSelector(['a']).get('[data-testid="field-selector-trigger"]').text()).toContain('1/2')
+    expect(mountSelector(['a']).get('[data-testid="field-selector-trigger"]').text()).toContain('1 of 2 fields')
   })
 
   it('hides the count when nothing is selected', () => {
-    expect(mountSelector([]).get('[data-testid="field-selector-trigger"]').text()).not.toContain('/')
+    expect(mountSelector([]).get('[data-testid="field-selector-trigger"]').text()).not.toContain('of')
   })
 
   it('opens the list with a checkbox per field reflecting the selection', async () => {
@@ -109,5 +110,36 @@ describe('UiFieldSelector', () => {
     await wrapper.vm.$nextTick()
     expect(document.body.querySelector('[role="group"]')).toBeNull()
     wrapper.unmount()
+  })
+})
+
+describe('UiFieldSelector on a phone', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('opens its fields as a bottom sheet titled with the caption, with the actions inside', async () => {
+    stubPhone(true)
+    const wrapper = mountSelector(['a'])
+
+    await wrapper.get('[data-testid="field-selector-trigger"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
+    expect(wrapper.get('h2').text()).toBe('Fields to Include')
+    expect(wrapper.find('[data-testid="drawer-body"] [role="group"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="field-selector-field-b"]').attributes('aria-checked')).toBe('false')
+
+    await wrapper.get('[data-testid="field-selector-apply"]').trigger('click')
+    expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
+  })
+
+  it('stays a popover on a wide screen', async () => {
+    stubPhone(false)
+    const wrapper = mountSelector([])
+
+    await wrapper.get('[data-testid="field-selector-trigger"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
+    expect(wrapper.find('[role="group"]').exists()).toBe(true)
   })
 })

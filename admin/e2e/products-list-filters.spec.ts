@@ -50,6 +50,7 @@ const productRow = (id: number, name: string, type: ProductType, status: Product
   isDigitalService: false,
   maxActiveServices: null,
   onePerClient: false,
+  trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 })
 
 /** An active shared hosting plan. */

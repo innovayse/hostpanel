@@ -4,6 +4,8 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ClientsListView from '@/views/ClientsListView.vue'
+import schema from '@/views/ClientsListView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { mountClientView } from '../helpers/clientViews'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
@@ -110,6 +112,23 @@ describe('ClientsListView', () => {
     const row = wrapper.get('[data-testid="client-row"]')
     expect(row.text()).toContain('VIP')
     expect(row.get('circle').attributes('fill')).toBe('#112233')
+  })
+
+  it('shows two-factor sign-in as one icon named for assistive technology, in a narrow column', async () => {
+    const { wrapper } = await mountGrouped()
+
+    const icon = wrapper.get('[data-testid="client-row"] [role="img"]')
+    expect(icon.attributes('aria-label')).toMatch(/disabled/i)
+    expect(icon.text()).toBe('')
+    expect(wrapper.findAll('th').find((header) => header.text().includes('2FA'))?.classes()).toContain('w-px')
+  })
+
+  it('lets the name column take the remaining width and clips the card to its rounded corners', async () => {
+    const { wrapper } = await mountGrouped()
+
+    const nameHeader = wrapper.findAll('th').find((header) => header.text().includes('Name'))
+    expect(nameHeader?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0']))
+    expect(wrapper.get('[data-testid="clients-list-table"]').element.closest('.overflow-clip')).not.toBeNull()
   })
 
   it('opens a client from its row action as a real link', async () => {
@@ -219,5 +238,14 @@ describe('ClientsListView loading and phone layout', () => {
     expect(cells[1]?.classes()).not.toContain('hidden')
     expect(cells[1]?.text()).toContain('ada@example.test')
     expect(cells[2]?.classes()).toContain('hidden')
+  })
+
+  it('draws the table skeleton under the schema head while the first load is in flight', async () => {
+    stubPendingFetch()
+    const wrapper = mount(ClientsListView, { global: { plugins: [createTestI18n(), createPinia(), createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }] })], stubs: { teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

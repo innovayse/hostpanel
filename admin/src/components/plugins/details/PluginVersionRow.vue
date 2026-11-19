@@ -23,6 +23,7 @@ import { PluginVersionStatus, VersionRelation } from '@/types/plugin'
 import type { RegistryPluginVersionDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -138,7 +139,7 @@ const installVariant = computed<UiButtonVariant>(() =>
             {{ compatibilityText }}
           </UiBadge>
         </UiStack>
-        <UiButton
+        <UiButton :action="UiActionKind.Refresh"
           v-if="!isInstalled && !isStaged"
           type="button"
           :variant="installVariant"

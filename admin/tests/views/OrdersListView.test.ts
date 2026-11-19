@@ -6,12 +6,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import OrdersListView from '@/views/OrdersListView.vue'
+import schema from '@/views/OrdersListView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { OrderStatus } from '@/types/order'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { applyListFilter } from '../helpers/listFilter'
 import { optionValues } from '../helpers/select'
 import { json, problem } from '../helpers/fetch'
+import { useToastStore } from '@/stores/toast'
 
 /** One pending order as the list endpoint returns it. */
 const pendingOrder = {
@@ -73,6 +76,13 @@ describe('OrdersListView', () => {
     expect(wrapper.get('[data-testid="orders-view-1"]').attributes('href')).toBe('/orders/1')
   })
 
+  it('draws the headers of the schema columns, in order', async () => {
+    stubRoutes({ 'GET /api/orders': () => json({ items: [pendingOrder, activeOrder], totalCount: 2 }) })
+    const wrapper = await mountList()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('flags an incomplete order with the number of lines that failed', async () => {
     const incomplete = { ...activeOrder, id: 3, orderNumber: 'ORD-0003', status: OrderStatus.Incomplete, failedLineCount: 2 }
     stubRoutes({ 'GET /api/orders': () => json({ items: [activeOrder, incomplete], totalCount: 2 }) })
@@ -129,7 +139,7 @@ describe('OrdersListView', () => {
     const requests = mock.mock.calls.map(([url, init]) => `${(init as RequestInit | undefined)?.method ?? 'GET'} ${url as string}`)
     expect(requests).toContain('POST /api/orders/1/accept')
     expect(requests.filter((line) => line.startsWith('GET /api/orders?')).length).toBe(2)
-    expect(wrapper.get('[data-testid="orders-action-feedback"]').text()).toContain('Order accepted.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Order accepted.')
   })
 
   it('cancels a pending order only after the danger confirmation', async () => {
@@ -148,7 +158,7 @@ describe('OrdersListView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([url]) => (url as string).endsWith('/api/orders/1/cancel'))).toBe(true)
-    expect(wrapper.get('[data-testid="orders-action-feedback"]').text()).toContain('Order cancelled.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Order cancelled.')
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
   })
 

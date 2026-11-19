@@ -21,24 +21,24 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import UiAlert from '@/components/ui/UiAlert.vue'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
+import UiTooltip from '@/components/ui/UiTooltip.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useListQuery } from '@/composables/useListQuery'
 import { useDocsGuide } from '@/composables/useDocsGuide'
@@ -55,10 +55,19 @@ import { EnabledFilter } from '@/types/enabledfilter'
 import { RegistrarModule } from '@/types/registrarmodule'
 import type { TldConfigListFilters, TldConfigListItem } from '@/types/tldconfig'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTableDensity } from '@/utils/ui/injection'
+import schema from '@/views/TldConfigsView.schema'
 import { UiTextSize } from '@/utils/ui/text'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('settings.tldConfigs.syncPrices'), icon: Icon.Refresh, variant: UiButtonVariant.Secondary, testid: 'tld-configs-sync', loading: syncing.value, onSelect: handleSync },
+  { label: t('settings.tldConfigs.addTld'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'tld-configs-add', to: createRoute },
+])
 
 /** The filter fields the dialog edits; each is one query key and one `TldConfigListFilters` member. */
 const FilterKey = {
@@ -77,9 +86,6 @@ const { guideUrl } = useDocsGuide()
 /** The filters, the search text and the page of the list, kept in the address. */
 const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
-
-/** Tone of the result banner: danger for a refusal, success otherwise. */
-const bannerTone = computed<UiTone>(() => (banner.isError.value ? UiTone.Danger : UiTone.Success))
 
 /** Whether an import operation is in progress. */
 const importing = ref(false)
@@ -252,15 +258,15 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
    */
   const onDelete = (): void => promptDelete(item)
   return [
-    { label: t('settings.tldConfigs.editTld'), testid: `tld-edit-${item.tld}`, to: editPath(AppRoute.SettingsTldPricing, item.id) },
-    { label: t('settings.tldConfigs.deleteTld'), testid: `tld-delete-${item.tld}`, onSelect: onDelete, danger: true },
+    { label: t('settings.tldConfigs.editTld'), icon: Icon.Edit, testid: `tld-edit-${item.tld}`, to: editPath(AppRoute.SettingsTldPricing, item.id) },
+    { label: t('settings.tldConfigs.deleteTld'), icon: Icon.Trash, testid: `tld-delete-${item.tld}`, onSelect: onDelete, danger: true },
   ]
 }
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="tld-configs-view">
-    <UiPageHeader :title="t('settings.tldConfigs.tldPricing')" :subtitle="t('settings.tldConfigs.configureDomainExtensionPricingAnd')">
+  <UiStack data-testid="tld-configs-view">
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
       <template #actions>
         <PageHelpLink :url="guideUrl" />
         <!-- Import from a provider: choosing one starts the import -->
@@ -273,24 +279,14 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
           class="w-40"
           @update:model-value="handleImport"
         />
-        <UiButton
-          type="button"
-          variant="secondary"
-          :loading="syncing"
-          data-testid="tld-configs-sync"
-          @click="handleSync"
-        >
-          <UiIcon :markup="Icon.Refresh" size="sm" />
-          {{ t('settings.tldConfigs.syncPrices') }}
-        </UiButton>
-        <UiLink :to="createRoute" :variant="UiButtonVariant.Primary" data-testid="tld-configs-add">
-          <UiIcon :markup="Icon.Add" size="sm" />
-          {{ t('settings.tldConfigs.addTld') }}
-        </UiLink>
+        
+        
       </template>
     </UiPageHeader>
 
-    <UiStatusMessage :message="banner.message.value" :tone="bannerTone" class="mb-5" data-testid="tld-configs-result" />
+    <UiAlert v-if="banner.message.value" :variant="UiTone.Danger" data-testid="tld-configs-result">
+      {{ banner.message.value }}
+    </UiAlert>
 
     <UiListToolbar
       v-model:search="search"
@@ -339,21 +335,9 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" class="overflow-hidden">
+    <UiCard v-else-if="hasRows || store.loading" clip>
       <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="tld-configs-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader align="left">{{ t('settings.tldConfigs.tld') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('settings.tldConfigs.provider') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('settings.tldConfigs.cost1yr') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('settings.tldConfigs.sell1yr') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('settings.tldConfigs.margin') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('shared.categories') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('settings.tldConfigs.lastSynced') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="item in store.configs"
@@ -364,13 +348,17 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
             <UiTableCell class="font-semibold text-text-primary">.{{ item.tld }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="providerTone(item.registrarModule)" small>
-                {{ item.registrarModule }}
+                {{ statusLabel(REGISTRAR_MODULE_OPTIONS, item.registrarModule) }}
               </UiBadge>
             </UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="item.isEnabled ? 'success' : 'danger'" small>
-                {{ item.isEnabled ? t('shared.enabled') : t('shared.disabled') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="item.isEnabled"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.enabled')"
+                :off-label="t('shared.disabled')"
+              />
             </UiTableCell>
             <UiTableCell numeric muted>
               {{ formatTldPrice(item.costRegister1yr, item.currency) }}
@@ -379,7 +367,13 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
               {{ formatTldPrice(item.sellRegister1yr, item.sellCurrency) }}
             </UiTableCell>
             <UiTableCell numeric>
-              <UiText :tone="marginPercentTone(item.marginPercent)" size="lg" class="font-medium">
+              <!-- No margin means no rate between the cost and the sell currency, or no price: the dash says why on hover. -->
+              <UiTooltip v-if="item.marginPercent === null" :text="t('settings.tldConfigs.marginUnavailable')">
+                <UiText tone="muted" size="lg" class="font-medium" tabindex="0" :data-testid="`tld-margin-${item.tld}`">
+                  {{ formatMarginPercent(item.marginPercent) }}
+                </UiText>
+              </UiTooltip>
+              <UiText v-else :tone="marginPercentTone(item.marginPercent)" size="lg" class="font-medium" :data-testid="`tld-margin-${item.tld}`">
                 {{ formatMarginPercent(item.marginPercent) }}
               </UiText>
             </UiTableCell>

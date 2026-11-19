@@ -39,8 +39,8 @@ export interface MountWithAppOptions {
   props?: Record<string, unknown>
   /** Components to stub by name (a chart cannot draw without a canvas, for example). */
   stubs?: Record<string, boolean>
-  /** Slot content by slot name, as markup. */
-  slots?: Record<string, string>
+  /** Slot content by slot name: markup, or a function of the slot's scope. */
+  slots?: Record<string, string | ((scope: never) => unknown)>
 }
 
 /** Where the mounted view sits in the router. */

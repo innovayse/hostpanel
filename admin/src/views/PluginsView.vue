@@ -17,11 +17,12 @@
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { navTitleKey } from '@/lib/navigation'
 import { useRouter } from 'vue-router'
 import { useFilterQuery } from '@/composables/useFilterQuery'
 import { useListQuery } from '@/composables/useListQuery'
 import { enumValueOf } from '@/lib/enumValue'
-import { pluginPath } from '@/lib/routes'
+import { AppRoute, pluginPath } from '@/lib/routes'
 import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
@@ -35,7 +36,6 @@ import PluginRegistryTrustCard from '@/components/plugins/PluginRegistryTrustCar
 import PluginUploader from '@/components/plugins/PluginUploader.vue'
 import PluginUpdateChanges from '@/components/plugins/details/PluginUpdateChanges.vue'
 import RestartBanner from '@/components/plugins/RestartBanner.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
@@ -48,12 +48,19 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
-import { PluginCategory, PluginCategoryAll, PluginProcessingStep } from '@/types/plugin'
+import { PluginCategory, PluginCategoryAll, PluginProcessingStep, PluginsTab } from '@/types/plugin'
 import type { PluginActionOutcome } from '@/types/plugin'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** Translation function. */
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('plugins.plugins.uploadPlugin'), icon: actionIcons[UiActionKind.Upload], variant: UiButtonVariant.Primary, testid: 'plugins-upload-open', onSelect: openUpload },
+])
 
 /** Router: opens a plugin's details page. */
 const router = useRouter()
@@ -189,19 +196,6 @@ const handleConfirmInstall = async (): Promise<void> => {
     handsOff: () => store.downgradeFile !== null,
   })
 }
-
-/** Closed set of the page's tabs; the strings are the tab values kept in the address. */
-const PluginsTab = {
-  /** The installed plugins. */
-  Installed: 'installed',
-  /** The registry browser. */
-  Browse: 'browse',
-  /** What applies to every plugin: the signature policy and the data removed plugins kept. */
-  Settings: 'settings',
-} as const
-
-/** One of the {@link PluginsTab} values. */
-type PluginsTab = (typeof PluginsTab)[keyof typeof PluginsTab]
 
 /** The tab kept in the address, under its own search and page keys so it does not collide with the lists'. */
 const tabQuery = reactive(useFilterQuery(['tab'] as const, { searchKey: 'tabSearch', pageKey: 'tabPage' }))
@@ -393,17 +387,12 @@ onMounted(() => Promise.all([
 
 <template>
   <UiStack gap="lg" class="w-full">
-    <UiPageHeader
-      :title="t('plugins.plugins.pluginManager')"
+    <UiPageHeader :actions="headerActions"
+      :title="t(navTitleKey(AppRoute.Plugins))"
       :subtitle="store.installed.length > 0
         ? `${t('plugins.plugins.installAndManageProviderPlugins')} ${t('plugins.plugins.lengthInstalled', { length: store.installed.length })}`
         : t('plugins.plugins.installAndManageProviderPlugins')"
     >
-      <template #actions>
-        <UiButton type="button" :variant="UiButtonVariant.Primary" data-testid="plugins-upload-open" @click="openUpload">
-          {{ t('plugins.plugins.uploadPlugin') }}
-        </UiButton>
-      </template>
     </UiPageHeader>
 
     <!-- Restart banner -->

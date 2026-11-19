@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import IntegrationDetailView from '@/views/IntegrationDetailView.vue'
+import { useToastStore } from '@/stores/toast'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
@@ -40,18 +41,19 @@ describe('IntegrationDetailView', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountDetail('bank-transfer')
 
-    expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="integration-config-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-detail-card-config"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="ui-detail-identity"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(4)
-    expect(wrapper.find('[data-testid="integration-save"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.find('[data-testid="integration-status-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-save"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-detail-card-status"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="ui-detail-row"]').text()).toContain('Connection Status')
   })
 
-  it('shows the breadcrumb, the form and the status sidebar', async () => {
+  it('shows the form and the status sidebar, with no trail of its own', async () => {
     stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()) })
     const wrapper = await mountDetail('bank-transfer')
 
-    expect(wrapper.get('[data-testid="integration-breadcrumb"]').text()).toContain('Bank Transfer')
+    expect(wrapper.find('[data-testid="integration-breadcrumb"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-status"]').exists()).toBe(true)
   })
@@ -77,7 +79,7 @@ describe('IntegrationDetailView', () => {
 
     const put = mock.mock.calls.find(([, init]) => init?.method === 'PUT')
     expect(JSON.parse(String(put?.[1]?.body)).config.secretKey).toBe('sk_new')
-    expect(wrapper.get('[data-testid="integration-feedback"]').text()).toBe('Settings saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Settings saved.'])
   })
 
   it('shows the API sentence above the form when the save is refused and keeps the form', async () => {

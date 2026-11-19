@@ -2,9 +2,10 @@
 /**
  * Full CWP integration configuration page.
  *
- * Renders CwpBrandHeader, IntegrationConfigForm, and the provider status card in a two-column
- * layout. Fetches config and server-info in parallel on mount; a refused load shows the API's
- * sentence with a Retry, and a save reports its outcome (success, or the sentence) under the form.
+ * Draws the three cards of `CwpIntegrationView.schema` with `UiDetailCards`: the bodies of the brand header, the config
+ * form and the provider status are the slots of those cards, and while the config is read the cards are placeholders.
+ * Fetches config and server-info in parallel on mount; a refused load shows the API's sentence with a Retry, and a save
+ * reports its outcome (success, or the sentence) under the form.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,15 +16,15 @@ import type { IntegrationConfigPayload } from '@/types/integration'
 import { ProviderConnectionState } from '@/types/providerstatus'
 import type { ProviderMetric } from '@/types/providerstatus'
 import CwpBrandHeader from '@/components/integrations/CwpBrandHeader.vue'
-import IntegrationBreadcrumb from '@/components/integrations/IntegrationBreadcrumb.vue'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import ProviderStatusCard from '@/components/integrations/ProviderStatusCard.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiTone } from '@/utils/ui/tone'
+import schema from '@/views/CwpIntegrationView.schema'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -123,12 +124,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiStack gap="md" class="w-full">
-    <IntegrationBreadcrumb :name="t('integrations.cwpIntegration.centosWebPanel')" />
+  <!-- The three cards of the schema: placeholders while the config is read, their bodies after -->
+  <UiDetailCards :columns="schema.columns" :ratio="schema.ratio" :loading="loadError === null && store.current === null">
+    <template #card-brand>
+      <CwpBrandHeader :version="store.cwpServerInfo?.version ?? null" :status="headerStatus" />
+    </template>
 
-    <CwpBrandHeader :version="store.cwpServerInfo?.version ?? null" :status="headerStatus" />
-
-    <UiSplit>
+    <template #card-config>
       <UiStack gap="md">
         <UiErrorState
           v-if="loadError !== null"
@@ -154,8 +156,10 @@ onMounted(() => {
           {{ testError }}
         </UiAlert>
       </UiStack>
+    </template>
 
+    <template #card-status>
       <ProviderStatusCard :info="store.cwpServerInfo" :metrics="metrics" :testing="testing" @test="handleTest" />
-    </UiSplit>
-  </UiStack>
+    </template>
+  </UiDetailCards>
 </template>

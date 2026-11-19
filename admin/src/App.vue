@@ -4,9 +4,11 @@
  *
  * Also the one place the operator's branding is applied to the document. It runs here
  * rather than in a layout because the login screen has no layout: a white-labelled
- * deployment has to show its own mark on the very first page, before any session exists.
+ * deployment has to show its own mark on the very first page, before any session exists. It also mounts the toast host,
+ * the one place a toast is drawn, so a confirmation survives the screen that raised it.
  */
 import RoutedView from '@/components/layout/RoutedView.vue'
+import UiToastHost from '@/components/ui/UiToastHost.vue'
 import { useFavicon } from '@/composables/useFavicon'
 import { useDemoStore } from '@/stores/demo'
 import { useThemeStore } from '@/stores/theme'
@@ -22,4 +24,5 @@ void useDemoStore().load()
 
 <template>
   <RoutedView />
+  <UiToastHost />
 </template>

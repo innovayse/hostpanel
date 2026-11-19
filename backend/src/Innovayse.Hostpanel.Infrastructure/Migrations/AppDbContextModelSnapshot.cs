@@ -3197,6 +3197,63 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("PartnerTranslations");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Plugins.InstalledPlugin", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("InstalledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InstalledByName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("InstalledByUserId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("PackageSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("PackageSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Signer")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("SignerKeyId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PluginId")
+                        .IsUnique();
+
+                    b.ToTable("InstalledPlugins");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Plugins.PluginDataEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -3395,6 +3452,29 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<bool>("TrialAutoConvert")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TrialDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(14);
+
+                    b.Property<bool>("TrialEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TrialGracePeriodDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
+                    b.Property<string>("TrialReminderDays")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("3,1");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -3417,6 +3497,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
 
                             t.HasCheckConstraint("CK_Products_MaxActiveServices", "\"MaxActiveServices\" IS NULL OR \"MaxActiveServices\" >= 1");
+
+                            t.HasCheckConstraint("CK_Products_TrialDays", "\"TrialDays\" BETWEEN 1 AND 365");
+
+                            t.HasCheckConstraint("CK_Products_TrialGracePeriodDays", "\"TrialGracePeriodDays\" BETWEEN 0 AND 30");
                         });
                 });
 

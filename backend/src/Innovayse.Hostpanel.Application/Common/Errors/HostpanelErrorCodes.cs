@@ -1679,6 +1679,12 @@ public static class HostpanelErrorCodes
     public const string PRODUCT_GRACE_PERIOD_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductGracePeriodOutOfRange;
 
     /// <summary>
+    /// The free-trial settings of a product are outside what is accepted (400):
+    /// <see cref="Domain.Products.Product.ConfigureTrial"/>.
+    /// </summary>
+    public const string PRODUCT_TRIAL_INVALID = Domain.Products.ProductsErrors.ProductTrialInvalid;
+
+    /// <summary>
     /// The cap on live services is negative (400): <see cref="Domain.Products.Product.SetMaxActiveServices"/>. Zero is
     /// the unlimited cap on the command and never reaches the aggregate.
     /// </summary>

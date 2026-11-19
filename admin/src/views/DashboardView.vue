@@ -26,23 +26,18 @@ import UiSplit from '@/components/ui/UiSplit.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSegmented from '@/components/ui/UiSegmented.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatTile from '@/components/ui/UiStatTile.vue'
+import UiStatRow from '@/components/ui/UiStatRow.vue'
 import { dayPartOf, formatChange } from '@/lib/dashboardOverview'
 import { formatCurrencyWhole } from '@/lib/money'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useDashboardStore } from '@/stores/dashboard'
 import { DashboardPeriod } from '@/types/dashboardcharts'
-import type { DashboardFigure } from '@/types/dashboardstats'
-import { UiSplitRatio } from '@/utils/ui/layout'
+import type { SkeletonStat } from '@/utils/ui/skeletonSchema'
+import type { UiStatFigure } from '@/utils/ui/statRow'
+import { gridColumnsOf } from '@/utils/ui/skeletonLayout'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
-
-/** One KPI tile of the dashboard. */
-interface StatTileConfig {
-  /** Field of `DashboardStats` the tile shows. */
-  key: DashboardFigure
-  /** Locale key of the tile caption. */
-  labelKey: string
-}
+import schema, { DASHBOARD_CHARTS_ROW, DASHBOARD_MAIN_ROW, DASHBOARD_PANELS_ROW, PERIOD_REVENUE_STAT_KEY } from '@/views/DashboardView.schema'
 
 /** Dashboard store: the headline numbers, the chart series and the panel lists. */
 const store = useDashboardStore()
@@ -79,13 +74,6 @@ const period = computed<string>({
 /** The greeting for the part of the day it is now. */
 const greeting = computed<string>(() => t(`dashboard.greeting.${dayPartOf(new Date().getHours())}`))
 
-/** The tiles that read the statistics, in display order. */
-const statConfig: StatTileConfig[] = [
-  { key: 'activeServices', labelKey: 'dashboard.stats.activeServices' },
-  { key: 'overdueInvoices', labelKey: 'dashboard.stats.overdueInvoices' },
-  { key: 'openTickets', labelKey: 'dashboard.stats.openTickets' },
-]
-
 /** Change of the period's income against the period before in percent; null while unknown. */
 const incomeChange = computed<number | null>(() => store.charts?.income.changePercent ?? null)
 
@@ -99,12 +87,28 @@ const incomeDeltaTone = computed<UiTone>(() => ((incomeChange.value ?? 0) < 0 ? 
 const incomeValue = computed<string>(() => (store.charts === null ? '' : formatCurrencyWhole(store.charts.income.total, store.charts.currency)))
 
 /**
- * The text of a statistics tile; empty while the statistics are not here yet (the tile then shows its placeholders).
+ * What a tile of the schema shows: the revenue tile names the chosen period and carries the change of the income, and each
+ * tile waits for its own data (the revenue for the chart series, the others for the statistics).
  *
- * @param stat - The tile.
- * @returns The formatted figure.
+ * @param stat - The tile of the schema.
+ * @returns The tile's figure, caption, change and loading state.
  */
-const valueOf = (stat: StatTileConfig): string => (store.stats === null ? '' : store.stats[stat.key].toString())
+const figureOf = (stat: SkeletonStat): UiStatFigure => {
+  if (stat.key === PERIOD_REVENUE_STAT_KEY) {
+    return {
+      value: incomeValue.value,
+      label: t(`dashboard.stats.revenue.${store.period}`),
+      delta: incomeDelta.value,
+      deltaTone: incomeDeltaTone.value,
+      loading: store.charts === null,
+    }
+  }
+  const figure = store.stats === null ? undefined : Object.entries(store.stats).find(([name]) => name === stat.key)
+  return { value: figure === undefined ? '' : String(figure[1]), loading: store.stats === null }
+}
+
+/** What every tile of the schema shows, by tile key. */
+const figures = computed<Record<string, UiStatFigure>>(() => Object.fromEntries(schema.stats.map((stat) => [stat.key, figureOf(stat)])))
 
 onMounted(() => {
   void store.fetchStats()
@@ -115,7 +119,7 @@ onMounted(() => {
 
 <template>
   <UiStack gap="none">
-    <UiPageHeader :title="greeting" :subtitle="t('dashboard.subtitle')" data-testid="dashboard-header">
+    <UiPageHeader v-bind="schemaHeader(schema, t, { title: greeting })" data-testid="dashboard-header">
       <template #actions>
         <UiSegmented v-model="period" :items="periodItems" :aria-label="t('dashboard.period.label')" data-testid="dashboard-period" />
       </template>
@@ -130,24 +134,7 @@ onMounted(() => {
     />
 
     <UiStack v-else gap="none" class="gap-5.5">
-      <UiGrid :columns="4" data-testid="dashboard-stats">
-        <UiStatTile
-          :label="t(`dashboard.stats.revenue.${store.period}`)"
-          :value="incomeValue"
-          :loading="store.charts === null"
-          :delta="incomeDelta"
-          :delta-tone="incomeDeltaTone"
-          data-testid="dashboard-stat-periodRevenue"
-        />
-        <UiStatTile
-          v-for="stat in statConfig"
-          :key="stat.key"
-          :label="t(stat.labelKey)"
-          :value="valueOf(stat)"
-          :loading="store.stats === null"
-          :data-testid="`dashboard-stat-${stat.key}`"
-        />
-      </UiGrid>
+      <UiStatRow :stats="schema.stats" :figures="figures" testid-prefix="dashboard-stat" data-testid="dashboard-stats" />
 
       <UiAlert v-if="store.chartsError" variant="warning" data-testid="dashboard-charts-error">
         {{ store.chartsError }}
@@ -157,7 +144,7 @@ onMounted(() => {
         {{ store.overviewError }}
       </UiAlert>
 
-      <UiSplit :ratio="UiSplitRatio.WideMain" gap="md" data-testid="dashboard-main">
+      <UiSplit :ratio="DASHBOARD_MAIN_ROW.ratio" gap="md" data-testid="dashboard-main">
         <DashboardRevenueCard
           :income="store.charts?.income ?? null"
           :currency="store.charts?.currency ?? ''"
@@ -172,7 +159,7 @@ onMounted(() => {
         />
       </UiSplit>
 
-      <UiGrid :columns="3" gap="md" data-testid="dashboard-charts">
+      <UiGrid :columns="gridColumnsOf(DASHBOARD_CHARTS_ROW.columns.length)" gap="md" data-testid="dashboard-charts">
         <DashboardGrowthCard
           :new-orders="store.charts?.newOrders ?? null"
           :new-clients="store.charts?.newClients ?? null"
@@ -186,7 +173,7 @@ onMounted(() => {
         <DashboardTicketPriorityCard :priorities="store.charts?.openTickets ?? null" :loading="store.chartsLoading" />
       </UiGrid>
 
-      <UiSplit :ratio="UiSplitRatio.WideAside" gap="md" data-testid="dashboard-panels">
+      <UiSplit :ratio="DASHBOARD_PANELS_ROW.ratio" gap="md" data-testid="dashboard-panels">
         <DashboardServerLoad :servers="store.overview.servers" :loading="store.overviewLoading" />
         <DashboardRecentInvoices :invoices="store.overview.recentInvoices" :loading="store.overviewLoading" />
       </UiSplit>

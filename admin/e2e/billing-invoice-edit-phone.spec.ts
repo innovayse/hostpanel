@@ -6,6 +6,7 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { unpaidInvoiceDetail } from './fixtures/invoices'
 import type { InvoiceDetail, InvoiceItemUpdate } from '../src/types/invoice'
+import { toastWith } from './support/locators'
 import { stubApi } from './support/stubApi'
 
 test.use({ viewport: { width: 390, height: 800 } })
@@ -50,7 +51,7 @@ test('the invoice lines are editable cards on a phone', async ({ page }) => {
   await expect(page.getByTestId('billing-invoice-item-select-1')).toHaveAttribute('aria-checked', 'true')
 
   // The description input takes the width of its card (the card's padding is all that is left).
-  const card = page.getByTestId('billing-invoice-item-description-0').locator('xpath=ancestor::tr[1]')
+  const card = page.getByTestId('billing-invoice-item-description-0').locator('xpath=ancestor::*[@role="listitem"][1]')
   const cardWidth = (await card.boundingBox())?.width ?? Number.POSITIVE_INFINITY
   const inputWidth = (await page.getByTestId('billing-invoice-item-description-0').boundingBox())?.width ?? 0
   expect(inputWidth).toBeGreaterThanOrEqual(cardWidth - 40)
@@ -62,7 +63,7 @@ test('the invoice lines are editable cards on a phone', async ({ page }) => {
   await page.getByTestId('billing-invoice-item-description-0').fill('Managed hosting')
   await page.getByTestId('billing-invoice-items-save').click()
 
-  await expect(page.getByTestId('billing-invoice-items-feedback')).toHaveText('Changes saved successfully.')
+  await expect(toastWith(page, 'Changes saved successfully.')).toBeVisible()
   expect(api.callsTo(HttpMethod.Put, `/api/billing/${stored.id}/items`)).toHaveLength(1)
   await expect(page.getByTestId('billing-invoice-item-description-0')).toHaveValue('Managed hosting')
 })

@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest'
 import {
   BILLABLE_ITEM_TYPE_OPTIONS,
   BILLING_CYCLE_OPTIONS,
-  BLOCK_LIST_TYPE_OPTIONS,
   CAMPAIGN_STATUS_OPTIONS,
   CLIENT_STATUS_OPTIONS,
   CURRENCY_OPTIONS,
@@ -44,7 +43,7 @@ import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { CampaignStatus } from '@/types/emailcampaign'
 import { EmailLogOutcome } from '@/types/emaillog'
 import { EnabledFilter } from '@/types/enabledfilter'
-import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
+import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { PaymentGateway } from '@/types/gateway'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { InvoiceStatus } from '@/types/invoice'
@@ -128,14 +127,12 @@ describe('option lists', () => {
     expect(ORDER_STATUS_OPTIONS.find((option) => option.value === OrderStatus.UnderReview)?.label).toBe('Pending review')
   })
 
-  it('name every fraud decision, check kind and block list type once, each under its own sentence', () => {
+  it('name every fraud decision and check kind once, each under its own sentence', () => {
     expect(valuesOf(FRAUD_DECISION_OPTIONS)).toEqual(membersOf(FraudDecision))
     expect(valuesOf(FRAUD_CHECK_KIND_OPTIONS)).toEqual(membersOf(FraudCheckKind))
-    expect(valuesOf(BLOCK_LIST_TYPE_OPTIONS)).toEqual(membersOf(BlockListType))
-    for (const options of [FRAUD_DECISION_OPTIONS, FRAUD_CHECK_KIND_OPTIONS, BLOCK_LIST_TYPE_OPTIONS]) {
+    for (const options of [FRAUD_DECISION_OPTIONS, FRAUD_CHECK_KIND_OPTIONS]) {
       expect(new Set(options.map((option) => option.label)).size).toBe(options.length)
     }
-    expect(BLOCK_LIST_TYPE_OPTIONS.find((option) => option.value === BlockListType.Cidr)?.label).toBe('IP range (CIDR)')
   })
 
   it('draw payment methods from the payment method set', () => {

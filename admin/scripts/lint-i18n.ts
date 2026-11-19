@@ -3,12 +3,13 @@
  *
  * Loads `src/locales/{en,ru,hy}/<area>.json` (every key prefixed with the file name, the area),
  * then reports keys missing in a language, extra keys, unused keys and `t('literal')` calls whose key
- * is absent from `en`. The comparison itself lives in `scripts/lib/i18nCheck.ts`.
+ * is absent from `en`; keys written as data in the screen schemas and the key tables (see `declaredKeys`) count as used and
+ * must exist in `en`. The comparison itself lives in `scripts/lib/i18nCheck.ts`.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { basename, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { checkI18n, flattenKeys, LANGUAGES, type Catalogues, type Language } from './lib/i18nCheck'
+import { checkI18n, declaredKeys, flattenKeys, LANGUAGES, type Catalogues, type Language, type SourceFile } from './lib/i18nCheck'
 
 /** Admin root: the folder above `scripts/`. */
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -35,24 +36,24 @@ const loadLanguage = (language: Language): Set<string> => {
 }
 
 /**
- * Concatenates every `.vue` and `.ts` file under a directory.
+ * Lists every `.vue` and `.ts` file under a directory.
  *
  * @param dir - Directory to walk.
- * @returns The joined source text.
+ * @param base - The directory the paths are given relative to.
+ * @returns Each file with its path under `base` (forward slashes) and its text.
  */
-const readSource = (dir: string): string =>
-  readdirSync(dir)
-    .map((name) => {
-      const path = join(dir, name)
-      if (statSync(path).isDirectory()) {
-        return readSource(path)
-      }
-      return /\.(vue|ts)$/.test(name) ? readFileSync(path, 'utf8') : ''
-    })
-    .join('\n')
+const readSources = (dir: string, base: string): SourceFile[] =>
+  readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name)
+    if (statSync(path).isDirectory()) {
+      return readSources(path, base)
+    }
+    return /\.(vue|ts)$/.test(name) ? [{ path: relative(base, path).replaceAll('\\', '/'), text: readFileSync(path, 'utf8') }] : []
+  })
 
 const catalogues = Object.fromEntries(LANGUAGES.map((l) => [l, loadLanguage(l)])) as Catalogues
-const problems = checkI18n({ catalogues, source: readSource(join(root, 'src')) })
+const sources = readSources(join(root, 'src'), join(root, 'src'))
+const problems = checkI18n({ catalogues, source: sources.map((file) => file.text).join('\n'), declared: declaredKeys(sources) })
 
 if (problems.length > 0) {
   console.error(problems.join('\n'))

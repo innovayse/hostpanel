@@ -24,8 +24,8 @@ const props = withDefaults(defineProps<{
   as: UiTextTag.P,
 })
 
-/** Classes of the chosen tone and size. */
-const classes = computed<string[]>(() => [textToneClasses[props.tone], textSizeClasses[props.size]])
+/** Classes of the chosen tone and size; a long unbroken word (an id, an address, a hash) wraps instead of widening the page on a phone. */
+const classes = computed<string[]>(() => ['break-words', textToneClasses[props.tone], textSizeClasses[props.size]])
 </script>
 
 <template>

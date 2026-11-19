@@ -34,6 +34,7 @@ import { BundleDiscountType, ProductType } from '@/types/productenums'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDirection } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for ProductBundleFormDialog. */
 const props = defineProps<{
@@ -324,7 +325,7 @@ watch(
               class="min-w-0 flex-1"
               data-testid="product-bundle-form-product"
             />
-            <UiButton
+            <UiButton :action="UiActionKind.Remove"
               :variant="UiButtonVariant.Ghost"
               size="sm"
               data-testid="product-bundle-form-remove"
@@ -334,7 +335,7 @@ watch(
             </UiButton>
           </UiStack>
           <UiStack :direction="UiDirection.Row">
-            <UiButton
+            <UiButton :action="UiActionKind.Add"
               :variant="UiButtonVariant.Secondary"
               size="sm"
               data-testid="product-bundle-form-add-component"
@@ -419,10 +420,10 @@ watch(
       </UiStack>
     </UiStack>
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="product-bundle-form-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="product-bundle-form-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         :variant="UiButtonVariant.Primary"
         :loading="saving"
         :disabled="!canSave"

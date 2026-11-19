@@ -1,5 +1,5 @@
 /**
- * Tests for StorefrontFormShell: the breadcrumb, the slot, the loading and error states, the
+ * Tests for StorefrontFormShell: the slot, the loading and error states, the
  * Cancel / Save events and the question asked when leaving with unsaved edits.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -10,8 +10,8 @@ import { mountScreen } from '../../helpers/mount'
 
 /** Props every mount starts from. */
 const baseProps = {
-  breadcrumb: [{ label: 'Widgets', to: '/widgets' }, { label: 'Create widget' }],
   testid: 'widget',
+  title: 'Create widget',
   saveLabel: 'Create widget',
   loading: false,
   saving: false,
@@ -31,12 +31,22 @@ const hostWith = (overrides: Record<string, unknown> = {}) =>
   })
 
 describe('StorefrontFormShell', () => {
-  it('draws the trail, the body and the save button label', async () => {
+  it('draws the body and the save button label, and no trail of its own (the top bar draws it)', async () => {
     const { wrapper } = await mountScreen(hostWith())
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Create widget')
+    expect(wrapper.find('[data-testid="settings-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="body"]').text()).toBe('Fields')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create widget')
+  })
+
+  it('draws the one page heading, also while the entry fails to load', async () => {
+    const ready = await mountScreen(hostWith())
+    expect(ready.wrapper.findAll('h1')).toHaveLength(1)
+    expect(ready.wrapper.get('h1').text()).toBe('Create widget')
+
+    const failed = await mountScreen(hostWith({ loadError: 'Not found' }))
+    expect(failed.wrapper.findAll('h1')).toHaveLength(1)
   })
 
   it('keeps the body and the bar while loading, with the fields as skeletons and Save disabled', async () => {

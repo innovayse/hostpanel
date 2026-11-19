@@ -1,66 +1,121 @@
 <script setup lang="ts">
 /**
- * Admin VAT Rates settings view: a search box on the country code and a paged table of the VAT rates of the EU member
- * states (country, kind, rate and the day it applies from) with add, edit and delete.
+ * Admin VAT Rates settings view: a search box on the country code, filters on the kind of rate and on whether the row is
+ * in force, superseded or upcoming, and a paged table of the VAT rates of the EU member states (country, kind, rate and
+ * the day it applies from) with add, edit and delete.
  *
- * The search text and the page live in the address (`useListQuery`), so a reload, a shared link and the back button
- * restore the same list, and the API applies the search before it pages. The add and edit dialog shows a refused save
- * inside itself; a result banner reports a delete, which a confirmation dialog guards. A save or a delete reads the
- * page the address names again.
+ * The search text, the filters and the page live in the address (`useListQuery`), so a reload, a shared link and the
+ * back button restore the same list, and the API applies them before it pages. The add and edit dialog shows a refused
+ * save inside itself; a delete is confirmed by a dialog and answered by a toast, and a refusal by a banner. A save or a
+ * delete reads the page the address names again.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import VatRateFormModal from '@/components/settings/VatRateFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiField from '@/components/ui/UiField.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
+import UiSelect from '@/components/ui/UiSelect.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { formatDate } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { reportCountryName } from '@/lib/reportsCountry'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useVatRatesStore } from '@/stores/vatRates'
-import { VatRateKind } from '@/types/vatrate'
-import type { SaveVatRatePayload, VatRateDto } from '@/types/vatrate'
+import { VatRateKind, VatRateStatus } from '@/types/vatrate'
+import type { SaveVatRatePayload, VatRateDto, VatRateListFilters } from '@/types/vatrate'
 import { UiTableDensity } from '@/utils/ui/injection'
+import schema from '@/views/VatRatesView.schema'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('vatRates.addRate'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'vat-rates-add', onSelect: openCreate },
+])
 
 /** VAT rates store: the page, the loading flag and the refusal sentences. */
 const store = useVatRatesStore()
 
-/** The search text and the page of the list, kept in the address. */
-const { search, appliedSearch, page, setPage, narrowed, loadOnChange, stepBackWhenEmpty }
-  = useListQuery([])
+/** The filter fields the dialog edits; each is one query key and one `VatRateListFilters` member. */
+const FilterKey = {
+  Kind: 'kind',
+  Status: 'status',
+} as const
+
+/** The filters, the search text and the page of the list, kept in the address. */
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
+  = useListQuery(Object.values(FilterKey))
+
+/** Kind filter options; the empty value means any. */
+const kindOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...Object.values(VatRateKind).map((kind) => ({ value: kind, label: t(`vatRates.kind.${kind}`) })),
+])
+
+/** Status filter options; the empty value means any. */
+const statusOptions = computed(() => [
+  { value: '', label: t('shared.any') },
+  ...Object.values(VatRateStatus).map((status) => ({ value: status, label: t(`vatRates.status.${status}`) })),
+])
+
+/** The kind in the address as a kind of rate, undefined when none is set or the value is not one. */
+const kindOfAddress = enumOf(FilterKey.Kind, VatRateKind)
+
+/** The status in the address as a standing, undefined when none is set or the value is not one. */
+const statusOfAddress = enumOf(FilterKey.Status, VatRateStatus)
+
+/** What the address narrows the list by, as the store sends it to the API. */
+const filters = computed<VatRateListFilters>(() => ({
+  search: appliedSearch.value,
+  kind: kindOfAddress.value,
+  status: statusOfAddress.value,
+}))
+
+/** One chip per applied filter, with the value as the operator reads it. */
+const chips = chipsOf(() => [
+  {
+    key: FilterKey.Kind,
+    label: t('vatRates.table.kind'),
+    value: kindOfAddress.value === undefined ? undefined : t(`vatRates.kind.${kindOfAddress.value}`),
+  },
+  {
+    key: FilterKey.Status,
+    label: t('vatRates.filters.status'),
+    value: statusOfAddress.value === undefined ? undefined : t(`vatRates.status.${statusOfAddress.value}`),
+  },
+])
 
 /**
- * Loads the page the address names with the search it holds.
+ * Loads the page the address names with the filters and search it holds.
  *
  * @returns True when loaded; false when refused (see `store.error`).
  */
-const load = (): Promise<boolean> => store.fetchAll(page.value, appliedSearch.value)
+const load = (): Promise<boolean> => store.fetchAll(page.value, filters.value)
 
-// Every change of the search or the page loads the list the address names.
+// Every change of a filter, the search or the page loads the list the address names.
 loadOnChange(load)
 
 /** Whether the current page has any row to list. */
@@ -159,6 +214,7 @@ const dismissDelete = (): void => {
 const rateActions = (rate: VatRateDto): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `vat-rate-edit-${rate.id}`,
     /**
      * Opens the edit dialog for this row.
@@ -171,6 +227,7 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `vat-rate-delete-${rate.id}`,
     danger: true,
     /**
@@ -186,20 +243,13 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="vat-rates-view">
-    <UiPageHeader :title="t('vatRates.title')" :subtitle="t('vatRates.description')">
-      <template #actions>
-        <UiButton type="button" variant="primary" data-testid="vat-rates-add" @click="openCreate">
-          <UiIcon :markup="Icon.Add" size="sm" />
-          {{ t('vatRates.addRate') }}
-        </UiButton>
-      </template>
+  <UiStack data-testid="vat-rates-view">
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiAlert
       v-if="banner.message.value"
-      :variant="banner.isError.value ? UiTone.Danger : UiTone.Success"
-      class="mb-5"
+      :variant="UiTone.Danger"
       data-testid="vat-rates-result"
     >
       {{ banner.message.value }}
@@ -209,8 +259,40 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
       v-model:search="search"
       search-testid="vat-rates-search"
       :search-placeholder="t('vatRates.searchPlaceholder')"
+      :active-count="activeCount"
+      :chips="chips"
       :loading="initialLoading"
-    />
+      @apply="apply"
+      @reset="reset"
+      @cancel="cancel"
+      @remove="remove"
+      @clear="clearAll"
+    >
+      <UiStack>
+        <UiField :label="t('vatRates.table.kind')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.kind"
+              :options="kindOptions"
+              :placeholder="t('shared.any')"
+              data-testid="vat-rates-filter-kind"
+            />
+          </template>
+        </UiField>
+        <UiField :label="t('vatRates.filters.status')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="draft.status"
+              :options="statusOptions"
+              :placeholder="t('shared.any')"
+              data-testid="vat-rates-filter-status"
+            />
+          </template>
+        </UiField>
+      </UiStack>
+    </UiListToolbar>
 
     <UiErrorState
       v-if="store.error"
@@ -220,17 +302,9 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" class="overflow-hidden">
+    <UiCard v-else-if="hasRows || store.loading" clip>
       <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="vat-rates-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader align="left">{{ t('vatRates.table.country') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('vatRates.table.kind') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('vatRates.table.rate') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('vatRates.table.validFrom') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('vatRates.table.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="rate in store.vatRates"

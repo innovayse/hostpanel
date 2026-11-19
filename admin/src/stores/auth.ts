@@ -8,7 +8,7 @@ import { ref, computed } from 'vue'
 import { useAuthApi } from '@/composables/apis/useAuthApi'
 import { clearPluginChatDrafts } from '@/composables/usePluginChatDraft'
 import { clearRecent } from '@/lib/commandPalette'
-import { AuthMode } from '@/types/auth'
+import { AccountRole, AuthMode } from '@/types/auth'
 import type { MeResponse, SignInResult } from '@/types/auth'
 import { errorSentence } from '@/lib/errorHandler'
 import { runAction } from '@/lib/runAction'
@@ -17,6 +17,13 @@ import { getRuntimeConfig } from '@/lib/runtimeConfig'
 
 /** Query parameter the SSO end-session endpoint reads the address to send the browser back to. */
 const POST_LOGOUT_PARAM = 'post_logout_redirect_uri'
+
+/** How privileged each role is, the most privileged first; the account card names the role with the lowest rank. */
+const ROLE_RANK: Record<AccountRole, number> = {
+  [AccountRole.Admin]: 0,
+  [AccountRole.Reseller]: 1,
+  [AccountRole.Client]: 2,
+}
 
 /**
  * What a sign-in attempt ended in. The store reports an expected failure as a return
@@ -104,7 +111,19 @@ export const useAuthStore = defineStore('auth', () => {
    * True when the signed-in account holds the Admin role. Any customer can sign in through the
    * shared sign-on, so a session alone says nothing about access to this panel.
    */
-  const isAdmin = computed(() => user.value?.roles.includes('Admin') === true)
+  const isAdmin = computed(() => user.value?.roles.includes(AccountRole.Admin) === true)
+
+  /**
+   * The most privileged role the signed-in account holds, which the account card names. The server lists the roles in
+   * the order the rows were granted, so an operator who first bought a service lists Client before Admin; the rank of
+   * {@link ROLE_RANK} decides, never the position and never the order the enum is declared in. Null when signed out or
+   * holding none of them.
+   */
+  const primaryRole = computed<AccountRole | null>(() => {
+    const held = user.value?.roles ?? []
+    const known = Object.values(AccountRole).filter((role) => held.includes(role))
+    return known.sort((a, b) => ROLE_RANK[a] - ROLE_RANK[b])[0] ?? null
+  })
 
   /**
    * Identifies the signed-in account and its roles as one string, or null when signed out. It
@@ -411,6 +430,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     displayName,
     isAdmin,
+    primaryRole,
     accountKey,
     emailVerified,
     sessionChecked,

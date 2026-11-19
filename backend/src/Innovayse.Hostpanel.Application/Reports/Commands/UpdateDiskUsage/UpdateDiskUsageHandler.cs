@@ -23,7 +23,7 @@ public sealed class UpdateDiskUsageHandler
     /// </summary>
     /// <param name="command">The command. Carries no input.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The refreshed report, grouped by server. Never refuses: a server that cannot be reached is logged and skipped.</returns>
+    /// <returns>The refreshed report, grouped by server. Never refuses: a server that cannot be read is logged and listed in the report's failures.</returns>
     public async Task<Result<DiskUsageDto>> HandleAsync(UpdateDiskUsageCommand command, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(command);

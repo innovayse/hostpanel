@@ -1,5 +1,5 @@
 /**
- * Mount tests for ServerCard: the module, name, flags, address, load and last connection state of a server, the
+ * Mount tests for ServerCard: the module, name, flags, address, load, facts and last connection state of a server, the
  * running test and its outcome, the row actions, and the same layout drawn with placeholder bars while there is no
  * server yet.
  */
@@ -8,9 +8,11 @@ import ServerCard from '@/components/servers/ServerCard.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { serverDto } from '../../helpers/serverFixtures'
 import { mountWithApp } from '../../helpers/mount'
+import { formatDateTime } from '@/lib/format'
+import { Icon } from '@/lib/icons'
 
 /** Two row actions, so the card draws its menu trigger. */
-const actions: UiMenuAction[] = [{ label: 'Edit', onSelect: () => undefined }, { label: 'Delete', danger: true, onSelect: () => undefined }]
+const actions: UiMenuAction[] = [{ label: 'Edit', icon: Icon.Edit, onSelect: () => undefined }, { label: 'Delete', icon: Icon.Trash, danger: true, onSelect: () => undefined }]
 
 describe('ServerCard', () => {
   it('shows the module, name, address, load and state of a server', () => {
@@ -22,6 +24,31 @@ describe('ServerCard', () => {
     expect(wrapper.get('[data-testid="ui-progress-value"]').text()).toBe('12 / 100')
     expect(wrapper.get('[data-testid="server-state-1"]').text()).toBe('Online')
     expect(wrapper.find('[data-testid="server-actions-1"]').exists()).toBe(true)
+  })
+
+  it('draws the facts of the server in a compact grid', () => {
+    const wrapper = mountWithApp(ServerCard, { props: { server: serverDto({ serverGroupName: 'Shared' }) } })
+
+    expect(wrapper.get('[data-testid="server-facts-1"]').text()).toContain('Shared')
+    expect(wrapper.get('[data-testid="server-fact-services"]').text()).toContain('3')
+    expect(wrapper.get('[data-testid="server-fact-revenue"]').text()).toContain('45.00 USD / month')
+    expect(wrapper.get('[data-testid="server-fact-connection"]').text()).toContain('API over HTTPS')
+    expect(wrapper.find('[data-testid="server-fact-datacenter"]').exists()).toBe(false)
+  })
+
+  it('names the default badge and explains it in a tooltip', () => {
+    const wrapper = mountWithApp(ServerCard, { props: { server: serverDto() } })
+
+    expect(wrapper.get('[data-testid="server-default-badge"]').text()).toBe('Default')
+    expect(wrapper.find('[role="tooltip"]').text()).toBe('The default server for CWP7.')
+  })
+
+  it('shows the last check as relative time with the full date in a tooltip', () => {
+    const wrapper = mountWithApp(ServerCard, { props: { server: serverDto({ lastTestedAt: '2026-01-02T10:00:00Z' }) } })
+
+    const checked = wrapper.get('[data-testid="server-last-checked-1"]')
+    expect(checked.text()).toMatch(/^Checked .*ago$/)
+    expect(wrapper.findAll('[role="tooltip"]').map((tip) => tip.text())).toContain(formatDateTime('2026-01-02T10:00:00Z'))
   })
 
   it('flags a default and a disabled server', () => {
@@ -38,10 +65,13 @@ describe('ServerCard', () => {
     expect(wrapper.text()).toContain('12')
   })
 
-  it('shows the running test in place of the state', () => {
+  it('shows the running test in place of the state, as placeholder bars announced as busy', () => {
     const wrapper = mountWithApp(ServerCard, { props: { server: serverDto(), testing: true } })
 
-    expect(wrapper.find('[data-testid="server-testing-1"]').exists()).toBe(true)
+    const testing = wrapper.get('[data-testid="server-testing-1"]')
+    expect(testing.attributes('role')).toBe('status')
+    expect(testing.attributes('aria-busy')).toBe('true')
+    expect(testing.findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(2)
     expect(wrapper.find('[data-testid="server-state-1"]').exists()).toBe(false)
   })
 
@@ -58,7 +88,8 @@ describe('ServerCard', () => {
     expect(wrapper.attributes('aria-busy')).toBe('true')
     expect(wrapper.find('[data-testid="server-card-loading"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="ui-progress-skeleton"]').exists()).toBe(true)
-    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThanOrEqual(8)
+    expect(wrapper.find('[data-testid="server-facts-loading"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThanOrEqual(16)
     expect(wrapper.find('[data-testid="server-actions-1"]').exists()).toBe(false)
   })
 })

@@ -12,6 +12,7 @@ import UiDateTimePicker from '@/components/ui/UiDateTimePicker.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -53,10 +54,10 @@ const confirm = (): void => {
       />
     </UiField>
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="email-campaign-schedule-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-schedule-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Send"
         :variant="UiButtonVariant.Primary"
         :loading="loading"
         :disabled="at === null"

@@ -2,12 +2,13 @@
  * Unit tests for UiDatePicker: typed dates, the displayed value, both quick-choice directions,
  * grid selection, clearing and the disabled state.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import type { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { createTestI18n } from '../../helpers/i18n'
+import { stubPhone } from '../../helpers/phone'
 
 /**
  * Mounts the picker with the English catalogue.
@@ -177,5 +178,64 @@ describe('UiDatePicker', () => {
     await nextTick()
     expect(document.body.querySelector('[data-testid="date-picker-prev"]')).toBeNull()
     wrapper.unmount()
+  })
+})
+
+describe('UiDatePicker on a phone', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('opens the calendar as a bottom sheet by a tap, titled with the hint, and raises no keyboard', async () => {
+    stubPhone(true)
+    const wrapper = mountPicker(null, { placeholder: 'Pick a date' })
+
+    expect(wrapper.get('input').attributes('inputmode')).toBe('none')
+    await wrapper.get('input').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
+    expect(wrapper.get('h2').text()).toBe('Pick a date')
+    expect(wrapper.find('[data-testid="drawer-body"] [data-testid="date-picker-day-10"]').exists()).toBe(true)
+  })
+
+  it('does not open on focus, so closing the sheet (focus returns to the field) never reopens it', async () => {
+    stubPhone(true)
+    const wrapper = mountPicker(null)
+
+    await wrapper.get('input').trigger('focus')
+
+    expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
+  })
+
+  it('picks a day and closes the sheet', async () => {
+    stubPhone(true)
+    const wrapper = mountPicker('2024-03-15')
+    await wrapper.get('input').trigger('click')
+
+    await wrapper.findAll('button').find(b => b.text() === '20')?.trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['2024-03-20'])
+    expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
+  })
+
+  it('stacks the quick choices above the grid inside the sheet', async () => {
+    stubPhone(true)
+    const wrapper = mountPicker(null)
+    await wrapper.get('input').trigger('click')
+
+    const quick = wrapper.get('[data-testid="date-picker-quick-today"]').element.parentElement
+    expect(quick?.className).toContain('flex-row')
+    expect(quick?.parentElement?.className).toContain('flex-col')
+  })
+
+  it('opens on focus and leaves the keyboard alone on a wide screen', async () => {
+    stubPhone(false)
+    const wrapper = mountPicker(null)
+
+    expect(wrapper.get('input').attributes('inputmode')).toBeUndefined()
+    await wrapper.get('input').trigger('focus')
+
+    expect(wrapper.find('[data-testid="date-picker-prev"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
   })
 })

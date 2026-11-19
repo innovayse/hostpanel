@@ -81,4 +81,12 @@ describe('EmailTemplateDialog', () => {
 
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
+
+  it('marks the language tabs that have no version yet', async () => {
+    const { wrapper } = await mountScreen(EmailTemplateDialog, { slug: 'welcome', versions: [en, ru], saving: false, error: null })
+
+    expect(wrapper.find('[data-testid="email-template-tab-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="email-template-tab-ru-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="email-template-tab-hy-empty"]').exists()).toBe(true)
+  })
 })

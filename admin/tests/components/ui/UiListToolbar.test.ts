@@ -129,4 +129,20 @@ describe('UiListToolbar', () => {
     expect(wrapper.emitted('remove')?.[0]).toEqual(['from'])
     expect(wrapper.emitted('clear')).toHaveLength(1)
   })
+
+  it('shows the kit clear button once there is search text, and clearing reports an empty search', async () => {
+    const wrapper = mountWithApp(UiListToolbar, {
+      props: { searchTestid: 'list-search', search: 'ada' },
+      stubs: { teleport: true },
+    })
+
+    expect(wrapper.get('[data-testid="list-search"]').classes()).toContain('[&::-webkit-search-cancel-button]:hidden')
+    await wrapper.get('[data-testid="input-clear"]').trigger('click')
+
+    expect(wrapper.emitted('update:search')?.[0]).toEqual([''])
+  })
+
+  it('shows no clear button while the search box is empty', () => {
+    expect(mountToolbar().find('[data-testid="input-clear"]').exists()).toBe(false)
+  })
 })

@@ -10,20 +10,23 @@
  * toggles the row and Shift extends the range from the last toggled row. A ticked row gets the selected look (soft accent
  * background, accent bar on the left edge) and `aria-selected`.
  *
- * Below `sm` a body row is a card (see `UiTable`); the header row keeps only its select-all cell. The row counts its cells at render
+ * On a phone (see `UiTable`) a body row is a `UiRecordCard` and not a `<tr>`: the row sorts its cells by their column's role into the card's parts (the
+ * heading, the subtitle, the badge, the actions, the select checkbox and the body of field lines; a `hidden` column is left out), and the header row draws
+ * nothing, its select-all checkbox being in the card list's header. The row counts its cells at render
  * time (the checkbox cell first, a `colspan` cell as many as it spans, a cell behind a false `v-if` not at all) and hands each header and
  * data cell its position, which is how a cell finds its column in the table. A cell that spans more than one column gets no position: it
  * has no column of its own and is a full width line of the card. Cells are found in the row's own slot, through fragments (`v-for`,
  * `v-if`, a slot of a wrapping component); a cell rendered inside another component of its own is not counted.
  */
 import { cloneVNode, computed, Fragment, h, inject, isVNode } from 'vue'
-import type { FunctionalComponent, VNodeArrayChildren } from 'vue'
+import type { FunctionalComponent, VNode, VNodeArrayChildren } from 'vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiRecordCard from '@/components/ui/UiRecordCard.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import type { RowId } from '@/composables/useRowSelection'
 import { UI_TABLE_CONTEXT, UI_TABLE_HEAD } from '@/utils/ui/injection'
-import { cardHeadRowClasses, cardRowClasses, selectedRowClasses } from '@/utils/ui/table'
+import { cardRoleOf, selectedRowClasses, UiCardRole } from '@/utils/ui/table'
 
 /** Props for UiTableRow. */
 const props = withDefaults(defineProps<{
@@ -107,12 +110,95 @@ const IndexedCells: FunctionalComponent<{ start: number }> = (props, { slots }) 
 
 IndexedCells.props = ['start']
 
+/**
+ * The cell nodes of a rendered slot, in order, through the fragments and arrays a `v-for`, a `v-if` or a wrapping component make.
+ *
+ * @param nodes - The nodes a slot rendered, their cells already carrying their position.
+ * @returns The `UiTableCell` nodes among them.
+ */
+const cellsOf = (nodes: VNodeArrayChildren): VNode[] =>
+  nodes.flatMap((node) => {
+    if (Array.isArray(node)) {
+      return cellsOf(node)
+    }
+    if (!isVNode(node)) {
+      return []
+    }
+    if (node.type === Fragment && Array.isArray(node.children)) {
+      return cellsOf(node.children)
+    }
+    return node.type === UiTableCell ? [node] : []
+  })
+
+/**
+ * The phone shape of a body row: a record card whose parts hold the row's cells by the role of their column.
+ *
+ * @param cardProps - The position of the first cell of the slot.
+ * @param context - The render context holding the row's slot.
+ * @param context.slots - The slots of the wrapper.
+ * @returns The `UiRecordCard` with the checkbox, heading, subtitle, badge, actions and body slots that have something to draw.
+ */
+const RecordCard: FunctionalComponent<{ start: number }> = (cardProps, { slots }) => {
+  const parts: Record<'title' | 'subtitle' | 'badge' | 'actions' | 'default', VNode[]> = { title: [], subtitle: [], badge: [], actions: [], default: [] }
+  for (const cell of cellsOf(indexCells(slots.default?.() ?? [], { next: cardProps.start }))) {
+    const index = cell.props?.columnIndex as number | undefined
+    const column = index === undefined ? undefined : table?.columnAt?.(index)
+    if (!column) {
+      parts.default.push(cell)
+    } else if (column.actions) {
+      parts.actions.push(cell)
+    } else {
+      switch (cardRoleOf(column)) {
+        case UiCardRole.Title:
+          parts.title.push(cell)
+          break
+        case UiCardRole.Subtitle:
+          parts.subtitle.push(cell)
+          break
+        case UiCardRole.Badge:
+          parts.badge.push(cell)
+          break
+        case UiCardRole.Hidden:
+          break
+        default:
+          parts.default.push(cell)
+      }
+    }
+  }
+  const cardSlots: Record<string, () => VNode[]> = {}
+  if (showsCheckbox.value) {
+    /**
+     * Draws the card's selection checkbox.
+     *
+     * @returns The checkbox node.
+     */
+    cardSlots.select = () => [h(UiCheckbox, {
+      modelValue: isSelected.value,
+      ariaLabel: table?.selectRowLabel,
+      'data-testid': props.selectTestid,
+      onChange: toggleRow,
+    })]
+  }
+  for (const [name, nodes] of Object.entries(parts)) {
+    if (nodes.length > 0) {
+      /**
+       * Hands the nodes of one part to the card.
+       *
+       * @returns The nodes of the part.
+       */
+      cardSlots[name] = () => nodes
+    }
+  }
+  return h(UiRecordCard, { selected: isSelected.value }, cardSlots)
+}
+
+RecordCard.props = ['start']
+
 /** State classes. */
 const classes = computed<string[]>(() => [
   props.hoverable ? 'hover:bg-surface-hover transition-colors' : '',
   isSelected.value ? selectedRowClasses : '',
   props.bordered ? 'border-b border-border-subtle last:border-0' : '',
-  inHead ? cardHeadRowClasses : cardRowClasses,
 ])
 
 /**
@@ -128,7 +214,13 @@ const toggleRow = (event: MouseEvent): void => {
 </script>
 
 <template>
-  <tr role="row" :class="classes" :aria-selected="showsCheckbox ? isSelected : undefined">
+  <IndexedCells v-if="table?.phone && inHead" :start="drawsSelectCell ? 1 : 0">
+    <slot />
+  </IndexedCells>
+  <RecordCard v-else-if="table?.phone" :start="drawsSelectCell ? 1 : 0">
+    <slot />
+  </RecordCard>
+  <tr v-else role="row" :class="classes" :aria-selected="showsCheckbox ? isSelected : undefined">
     <UiTableHeader v-if="showsSelectAll" select :column-index="0">
       <UiCheckbox
         :model-value="table?.selection?.allSelected.value === true"

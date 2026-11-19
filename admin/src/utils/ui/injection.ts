@@ -6,7 +6,7 @@
  */
 import type { InjectionKey, Ref } from 'vue'
 import type { RowSelection } from '@/composables/useRowSelection'
-import type { UiAlign, UiCardRole, UiHideBelow, UiSortDirection } from '@/utils/ui/table'
+import type { UiAlign, UiCardRole, UiColumnSize, UiHideBelow, UiSortDirection } from '@/utils/ui/table'
 
 /** Closed set of table paddings. */
 export const UiTableDensity = {
@@ -27,13 +27,15 @@ export interface UiTableColumn {
   numeric?: boolean
   /** The column is the row actions column. */
   actions?: boolean
+  /** Width the column takes; `Auto` when omitted. */
+  size?: UiColumnSize
   /** Breakpoint below which the column is hidden. */
   hideBelow?: UiHideBelow
   /** The column is the checkbox column of a selectable table. */
   select?: boolean
   /** Caption of the column (the text of its header), the label of its value on a card. */
   label?: string
-  /** What the column is on a card; when omitted a field, or left out when the column is hidden below a breakpoint. */
+  /** What the column is on a card; when omitted the heading for the `Grow` column and a field for any other. */
   cardRole?: UiCardRole
   /** The header is a sort button; the sort control of a card layout lists such columns. */
   sortable?: boolean
@@ -47,8 +49,12 @@ export interface UiTableColumn {
 export interface UiTableContext {
   /** Padding applied to header and data cells. */
   density: UiTableDensity
+  /** True below `sm`, where the table is drawn as a list of cards (`UiCardList`) and its parts draw no table markup. */
+  phone?: boolean
   /** True while the table draws placeholder rows: the body and foot groups render nothing then. */
   loading?: boolean
+  /** True while the table shows its empty state: the head group hides its captions then (they stay registered). */
+  empty?: boolean
   /**
    * Registers a header column at its position in the header row and returns the function that removes it. The getter
    * is read on every render so the column follows its header's props. Absent outside a table.

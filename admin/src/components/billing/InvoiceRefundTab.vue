@@ -31,6 +31,7 @@ import { InvoiceRefundType, InvoiceTransactionType, InvoiceStatus } from '@/type
 import type { InvoiceDetail, InvoiceTransaction } from '@/types/invoice'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -314,7 +315,7 @@ const refund = async (): Promise<void> => {
           </UiStack>
 
           <UiFormActions>
-            <UiButton
+            <UiButton :action="UiActionKind.Reset"
               type="submit"
               variant="primary"
               :loading="processing"

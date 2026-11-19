@@ -13,8 +13,8 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import { createTestI18n } from '../../helpers/i18n'
 
 const actions = [
-  { label: 'Edit', testid: 'action-edit', onSelect: vi.fn() },
-  { label: 'Delete', testid: 'action-delete', onSelect: vi.fn(), danger: true },
+  { label: 'Edit', icon: Icon.Edit, testid: 'action-edit', onSelect: vi.fn() },
+  { label: 'Delete', icon: Icon.Trash, testid: 'action-delete', onSelect: vi.fn(), danger: true },
 ]
 
 afterEach(() => {
@@ -22,13 +22,20 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** Mounts the component with the standard action list. */
-const mountIt = () =>
-  mount(UiRowActions, {
+/**
+ * Mounts the component with the standard action list, its trigger placed well inside the screen so the end aligned
+ * menu has room to grow leftwards (jsdom has no layout, a trigger at 0 would make the menu flip to the start edge).
+ */
+const mountIt = () => {
+  const wrapper = mount(UiRowActions, {
     props: { actions },
     global: { plugins: [createTestI18n()], stubs: { teleport: true } },
     attachTo: document.body,
   })
+  const trigger = wrapper.get<HTMLElement>('[data-testid="row-actions-trigger"]')
+  vi.spyOn(trigger.element, 'getBoundingClientRect').mockReturnValue({ left: 300, right: 340, top: 10, bottom: 50, width: 40, height: 40, x: 300, y: 10, toJSON: () => ({}) })
+  return wrapper
+}
 
 describe('UiRowActions', () => {
   it('hides the menu by default', () => {
@@ -222,7 +229,7 @@ describe('UiRowActions', () => {
       wrapper.unmount()
     })
 
-    it('shows the icon of a menu action beside its label', async () => {
+    it('shows the icon of every menu action beside its label', async () => {
       const wrapper = mount(UiRowActions, {
         props: { actions: [{ label: 'Edit', testid: 'action-edit', icon: Icon.Edit, onSelect: vi.fn() }, ...actions.slice(1)] },
         global: { plugins: [createTestI18n()], stubs: { teleport: true } },
@@ -231,7 +238,7 @@ describe('UiRowActions', () => {
       await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
 
       expect(wrapper.get('[data-testid="action-edit"]').find('svg').exists()).toBe(true)
-      expect(wrapper.get('[data-testid="action-delete"]').find('svg').exists()).toBe(false)
+      expect(wrapper.get('[data-testid="action-delete"]').find('svg').exists()).toBe(true)
       wrapper.unmount()
     })
   })
@@ -302,10 +309,10 @@ describe('UiRowActions', () => {
   })
 
   describe('one action against many', () => {
-    it('shows one action as its own labelled button with no menu trigger', async () => {
+    it('shows one action as its own icon button with no menu trigger', async () => {
       const onSelect = vi.fn()
       const wrapper = mount(UiRowActions, {
-        props: { actions: [{ label: 'Open', testid: 'action-open', onSelect }] },
+        props: { actions: [{ label: 'Open', icon: Icon.Eye, testid: 'action-open', onSelect }] },
         global: { plugins: [createTestI18n()], stubs: { teleport: true } },
       })
 
@@ -333,10 +340,22 @@ describe('UiRowActions', () => {
       wrapper.unmount()
     })
 
+    it('shows the hint of a single action as its tooltip while the label stays the accessible name', () => {
+      const wrapper = mount(UiRowActions, {
+        props: { actions: [{ label: 'Invoice', hint: 'Invoice every due renewal of this client', testid: 'action-invoice', icon: Icon.File }] },
+        global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+      })
+
+      const button = wrapper.get('[data-testid="action-invoice"]')
+      expect(button.attributes('title')).toBe('Invoice every due renewal of this client')
+      expect(button.get('.sr-only').text()).toBe('Invoice')
+      wrapper.unmount()
+    })
+
     it('does not fire a disabled single action', async () => {
       const onSelect = vi.fn()
       const wrapper = mount(UiRowActions, {
-        props: { actions: [{ label: 'Open', testid: 'action-open', onSelect, disabled: true }] },
+        props: { actions: [{ label: 'Open', icon: Icon.Eye, testid: 'action-open', onSelect, disabled: true }] },
         global: { plugins: [createTestI18n()], stubs: { teleport: true } },
       })
 
@@ -345,12 +364,14 @@ describe('UiRowActions', () => {
       wrapper.unmount()
     })
 
-    it('puts two or more actions behind one labelled kebab trigger', () => {
+    it('puts two or more actions behind one labelled "…" trigger', () => {
       const wrapper = mountIt()
 
       const trigger = wrapper.get('[data-testid="row-actions-trigger"]')
       expect(trigger.attributes('aria-label')).toBeTruthy()
       expect(trigger.attributes('aria-haspopup')).toBe('menu')
+      expect(trigger.findAll('svg circle')).toHaveLength(3)
+      expect(trigger.find('svg circle').attributes('cy')).toBe('12')
       expect(wrapper.find('[data-testid="action-edit"]').exists()).toBe(false)
       wrapper.unmount()
     })
@@ -359,9 +380,9 @@ describe('UiRowActions', () => {
       const wrapper = mount(UiRowActions, {
         props: {
           actions: [
-            { label: 'Delete', testid: 'first-delete', onSelect: vi.fn(), danger: true },
-            { label: 'Edit', testid: 'then-edit', onSelect: vi.fn() },
-            { label: 'View', testid: 'then-view', onSelect: vi.fn() },
+            { label: 'Delete', icon: Icon.Trash, testid: 'first-delete', onSelect: vi.fn(), danger: true },
+            { label: 'Edit', icon: Icon.Edit, testid: 'then-edit', onSelect: vi.fn() },
+            { label: 'View', icon: Icon.Eye, testid: 'then-view', onSelect: vi.fn() },
           ],
         },
         global: { plugins: [createTestI18n()], stubs: { teleport: true } },
@@ -424,8 +445,8 @@ describe('UiRowActions', () => {
 
     /** A link action and a destructive button action, the mix a billing row has. */
     const linkAndDelete = () => [
-      { label: 'View', testid: 'action-view', to: '/items/4' },
-      { label: 'Delete', testid: 'action-delete', onSelect: vi.fn(), danger: true },
+      { label: 'View', icon: Icon.Eye, testid: 'action-view', to: '/items/4' },
+      { label: 'Delete', icon: Icon.Trash, testid: 'action-delete', onSelect: vi.fn(), danger: true },
     ]
 
     it('renders a menu action with a route as a menuitem anchor with its href', async () => {
@@ -466,8 +487,8 @@ describe('UiRowActions', () => {
       const wrapper = mount(UiRowActions, {
         props: {
           actions: [
-            { label: 'Edit', testid: 'action-edit', onSelect: vi.fn() },
-            { label: 'View', testid: 'action-view', to: '/items/4' },
+            { label: 'Edit', icon: Icon.Edit, testid: 'action-edit', onSelect: vi.fn() },
+            { label: 'View', icon: Icon.Eye, testid: 'action-view', to: '/items/4' },
           ],
         },
         global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
@@ -484,7 +505,7 @@ describe('UiRowActions', () => {
     it('renders a single link action as an anchor, not a button', async () => {
       const router = await makeRouter()
       const wrapper = mount(UiRowActions, {
-        props: { actions: [{ label: 'Open', testid: 'action-open', to: '/items/2' }] },
+        props: { actions: [{ label: 'Open', icon: Icon.Eye, testid: 'action-open', to: '/items/2' }] },
         global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
       })
 
@@ -497,7 +518,7 @@ describe('UiRowActions', () => {
     it('renders a disabled link action as a disabled button, so it cannot be followed', async () => {
       const router = await makeRouter()
       const wrapper = mount(UiRowActions, {
-        props: { actions: [{ label: 'Open', testid: 'action-open', to: '/items/2', disabled: true }] },
+        props: { actions: [{ label: 'Open', icon: Icon.Eye, testid: 'action-open', to: '/items/2', disabled: true }] },
         global: { plugins: [createTestI18n(), router], stubs: { teleport: true } },
       })
 

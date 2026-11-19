@@ -5,6 +5,8 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ClientEmailsView from '@/views/ClientEmailsView.vue'
+import schema from '@/views/ClientEmailsView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { mountClientView } from '../helpers/clientViews'
 import { json, stubFetch } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
@@ -165,5 +167,21 @@ describe('ClientEmailsView', () => {
 
     expect(router.currentRoute.value.query).toEqual({ page: '2' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/email-logs/client/7?page=2&pageSize=20')
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/admin/email-logs/client/7': () => json(pageOf([delivered])) })
+    const { wrapper } = await mountEmailsAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientEmailsView, '/clients/:id/emails', '/clients/7/emails')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

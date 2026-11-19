@@ -5,9 +5,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import AddQuoteView from '@/views/AddQuoteView.vue'
+import schema, { QUOTE_GENERAL_FORM_PART, QUOTE_NOTES_FORM_PART } from '@/views/AddQuoteView.schema'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { fieldsOf } from '../helpers/schemaParity'
 
 /** The clients endpoint answer: nobody (the client comes from the query). */
 const noClients = () => json({ items: [], totalCount: 0 })
@@ -53,5 +55,22 @@ describe('AddQuoteView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('0.00 AMD')
+  })
+
+  it('draws every section and field of its schema, with the line items between the cards', async () => {
+    stubRoutes({ 'GET /api/clients': noClients })
+    const { wrapper } = await mountRouted(AddQuoteView, '/billing/quotes/add', '/billing/quotes/add')
+    await flushPromises()
+
+    for (const section of [...QUOTE_GENERAL_FORM_PART.columns.flat(), ...QUOTE_NOTES_FORM_PART.columns.flat()]) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+    }
+    for (const field of fieldsOf(schema)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
+    const html = wrapper.html()
+    expect(html.indexOf('ui-form-section-general')).toBeLessThan(html.indexOf('billing-quote-items'))
+    expect(html.indexOf('billing-quote-items')).toBeLessThan(html.indexOf('ui-form-section-notes'))
+    expect(wrapper.find('[data-testid="ui-detail-card-items"] [data-testid="billing-quote-items"]').exists()).toBe(true)
   })
 })

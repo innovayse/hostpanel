@@ -31,6 +31,7 @@ import { UiInputType } from '@/utils/ui/input'
 import { UiAlignItems, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiHeadingVariant, UiLabelVariant, UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for PluginFormBlock. */
 const props = defineProps<{
@@ -231,7 +232,7 @@ const submit = async (): Promise<void> => {
       </template>
       <UiStatusMessage :message="message || null" :tone="messageTone" data-testid="plugin-form-message" />
       <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm">
-        <UiButton :type="UiButtonType.Submit" :loading="sending" :disabled="sending" data-testid="plugin-form-submit">{{ block.submit.label }}</UiButton>
+        <UiButton :action="UiActionKind.Save" :type="UiButtonType.Submit" :loading="sending" :disabled="sending" data-testid="plugin-form-submit">{{ block.submit.label }}</UiButton>
       </UiStack>
     </UiForm>
   </UiCard>

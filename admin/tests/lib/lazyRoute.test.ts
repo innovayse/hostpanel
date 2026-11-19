@@ -1,11 +1,11 @@
 /**
- * Tests for lazy route loaders: a failed download is repeated with a growing pause, the plain import
- * behind a retrying loader stays reachable, and a route lists only the loaders the router still has
+ * Tests for lazy route loaders: a failed or stalled download is repeated with a growing pause, the plain import
+ * behind a retrying loader stays reachable, a loader answers for the file it was tagged with, and a route lists only the loaders the router still has
  * to call.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteLocationNormalized } from 'vue-router'
-import { LOAD_RETRIES, RETRY_STEP_MS, isLazyLoader, lazyLoadersOf, originalLoader, withRetry } from '@/lib/lazyRoute'
+import { LOAD_RETRIES, LOAD_TIMEOUT_MS, RETRY_STEP_MS, isLazyLoader, lazyLoadersOf, originalLoader, viewFileOf, withRetry, withViewFile } from '@/lib/lazyRoute'
 
 /**
  * Builds the slice of a resolved route the helpers read.
@@ -50,6 +50,68 @@ describe('withRetry', () => {
 
     expect(await result).toBe('ok')
     expect(loader).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects an attempt that stalls after the time limit and repeats it', async () => {
+    const loader = vi.fn()
+      .mockReturnValueOnce(new Promise<string>(() => undefined))
+      .mockResolvedValue('ok')
+    const result = withRetry(loader)()
+
+    await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS - 1)
+    expect(loader).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1 + RETRY_STEP_MS)
+
+    expect(await result).toBe('ok')
+    expect(loader).toHaveBeenCalledTimes(2)
+  })
+
+  it('gives up with a timeout error when every attempt stalls', async () => {
+    const loader = vi.fn(() => new Promise<string>(() => undefined))
+    const settled = withRetry(loader)().catch((error: Error) => error.message)
+
+    await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS * (LOAD_RETRIES + 1) + RETRY_STEP_MS * 3)
+
+    expect(await settled).toContain('took longer than')
+    expect(loader).toHaveBeenCalledTimes(LOAD_RETRIES + 1)
+  })
+
+  it('does not time out a download that finishes within the limit', async () => {
+    const loader = vi.fn(() => new Promise<string>((resolve) => setTimeout(() => resolve('late'), LOAD_TIMEOUT_MS - 1)))
+    const result = withRetry(loader)()
+
+    await vi.advanceTimersByTimeAsync(LOAD_TIMEOUT_MS)
+
+    expect(await result).toBe('late')
+    expect(loader).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves no time limit running once an attempt succeeds', async () => {
+    expect(await withRetry(vi.fn().mockResolvedValue('ok'))()).toBe('ok')
+
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('leaves no time limit running once the last attempt fails', async () => {
+    const result = withRetry(vi.fn().mockRejectedValue(new Error('gone')))()
+    const settled = expect(result).rejects.toThrow('gone')
+
+    await vi.advanceTimersByTimeAsync(RETRY_STEP_MS * 3)
+    await settled
+
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('leaves no time limit running when the loader throws instead of rejecting', async () => {
+    const result = withRetry(() => {
+      throw new Error('broken')
+    })()
+    const settled = expect(result).rejects.toThrow('broken')
+
+    await vi.advanceTimersByTimeAsync(RETRY_STEP_MS * 3)
+    await settled
+
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('returns the result of a first-time success without waiting', async () => {
@@ -107,5 +169,30 @@ describe('lazyLoadersOf', () => {
 
   it('finds nothing for a route that matched nothing', () => {
     expect(lazyLoadersOf(routeOf())).toEqual([])
+  })
+})
+
+describe('withViewFile', () => {
+  it('tags a loader with its file and hands the same loader back', () => {
+    /** Loader of a view. */
+    const view = (): Promise<unknown> => Promise.resolve({})
+
+    expect(withViewFile(view, 'views/AddClientView.vue')).toBe(view)
+    expect(viewFileOf(view)).toBe('views/AddClientView.vue')
+  })
+
+  it('keeps the tag on a retrying wrapper, not on the import behind it', () => {
+    /** The plain import. */
+    const view = (): Promise<unknown> => Promise.resolve({})
+    const wrapped = withViewFile(withRetry(view), 'layouts/ClientLayout.vue')
+
+    expect(viewFileOf(wrapped)).toBe('layouts/ClientLayout.vue')
+    expect(viewFileOf(view)).toBeUndefined()
+  })
+
+  it('knows no file for an untagged loader or for a value that is not a function', () => {
+    expect(viewFileOf(() => Promise.resolve({}))).toBeUndefined()
+    expect(viewFileOf({ render: () => null })).toBeUndefined()
+    expect(viewFileOf(undefined)).toBeUndefined()
   })
 })

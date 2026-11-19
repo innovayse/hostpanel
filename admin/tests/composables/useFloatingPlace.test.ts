@@ -40,7 +40,7 @@ describe('useFloatingPlace', () => {
     await nextTick()
     await nextTick()
     const panel = wrapper.get<HTMLElement>('[data-testid="panel"]').element
-    expect(panel.style.getPropertyValue('--fp-left')).toBe('0px')
+    expect(panel.style.getPropertyValue('--fp-left')).toBe('8px')
 
     // The panel's own list scrolling is not the page moving.
     panel.style.removeProperty('--fp-left')
@@ -48,7 +48,7 @@ describe('useFloatingPlace', () => {
     expect(panel.style.getPropertyValue('--fp-left')).toBe('')
 
     window.dispatchEvent(new Event('scroll'))
-    expect(panel.style.getPropertyValue('--fp-left')).toBe('0px')
+    expect(panel.style.getPropertyValue('--fp-left')).toBe('8px')
     wrapper.unmount()
   })
 

@@ -31,9 +31,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ClientServicesListView.schema'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize } from '@/utils/ui/text'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
@@ -42,6 +42,7 @@ import { useListQuery } from '@/composables/useListQuery'
 import { ServiceFilterKey, useServiceFilters } from '@/composables/useServiceFilters'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -138,7 +139,7 @@ onMounted(() => settingsStore.fetchProducts())
 <template>
   <UiStack>
     <UiStack direction="row" :justify="UiJustify.End">
-      <UiButton size="sm" data-testid="client-services-add-existing" @click="showAddExisting = true">
+      <UiButton :action="UiActionKind.Add" size="sm" data-testid="client-services-add-existing" @click="showAddExisting = true">
         {{ t('clients.addExistingService.open') }}
       </UiButton>
     </UiStack>
@@ -186,17 +187,7 @@ onMounted(() => settingsStore.fetchProducts())
         :loading="initialLoading"
         data-testid="client-services-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.clientServicesList.nextDue') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="service in services"

@@ -4,13 +4,14 @@
  * shown next to the save button.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
 import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
+import { INVOICE_ITEMS_TABLE } from '@/views/InvoiceDetailView.schema'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -46,6 +47,8 @@ describe('InvoiceItemsSection', () => {
 
     const headers = wrapper.get('[data-testid="billing-invoice-items-table"]').findAll('th').map((th) => th.text())
     expect(headers).toEqual(['Description', 'Amount'])
+    // The captions are drawn from the invoice screen's schema, so the skeleton and the real card cannot differ.
+    expect(headers).toHaveLength(INVOICE_ITEMS_TABLE.columns.length)
   })
 
   it('adds a line, removes it again, and deletes a ticked line', async () => {
@@ -76,7 +79,7 @@ describe('InvoiceItemsSection', () => {
     expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toEqual({
       items: [{ id: 11, description: 'Managed hosting', unitPrice: 100, quantity: 1, isDeleted: false }],
     })
-    expect(wrapper.get('[data-testid="billing-invoice-items-feedback"]').text()).toBe('Changes saved successfully.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
   })
 
   it('sends a removed line as a deletion and keeps the quantity and price of the others', async () => {
@@ -166,24 +169,5 @@ describe('InvoiceItemsSection', () => {
     const table = wrapper.get('[data-testid="billing-invoice-items-editor"]').text()
     expect(table).toContain('2000.00 AMD')
     expect(table).not.toContain('$')
-  })
-
-  it('draws the real columns with placeholder rows and total bars while the invoice loads', async () => {
-    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: null, loading: true, readonly: true } })
-    // The table headers register their columns while mounting; the placeholder cells follow on the next tick.
-    await nextTick()
-
-    const table = wrapper.get('[data-testid="billing-invoice-items-table"]')
-    expect(table.findAll('th').map((th) => th.text())).toEqual(['Description', 'Amount'])
-    expect(table.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(0)
-    expect(wrapper.find('[data-testid="billing-invoice-total-total"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="billing-invoice-total-total-skeleton"]').exists()).toBe(true)
-  })
-
-  it('disables the editor controls while the invoice loads', () => {
-    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: null, loading: true } })
-
-    expect(wrapper.get('[data-testid="billing-invoice-items-add"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[data-testid="billing-invoice-items-save"]').attributes('disabled')).toBeDefined()
   })
 })

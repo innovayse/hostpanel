@@ -1,9 +1,9 @@
 /**
  * Lazy route loaders that survive a dropped download, and the helpers that find them in a route.
  *
- * Every routed screen and layout is its own chunk, handed to vue-router as a plain `() => import()`
+ * Every routed screen and layout but the eager shell layout (`AppLayout`) is its own chunk, handed to vue-router as a plain `() => import()`
  * loader, which is the only lazy form the router supports. The loader is wrapped by
- * {@link withRetry} so a failed download is repeated before the navigation gives up. The plain
+ * {@link withRetry} so a failed or stalled download is repeated before the navigation gives up. The plain
  * import behind a wrapper stays reachable through {@link originalLoader}, and
  * {@link lazyLoadersOf} lists the loaders a route still has to call, which is what prefetching and
  * the pending-navigation state read.
@@ -15,6 +15,15 @@ export type RouteLoader = () => Promise<unknown>
 
 /** How many times a failed download is repeated before the navigation fails. */
 export const LOAD_RETRIES = 2
+
+/**
+ * How long one load attempt may take, in milliseconds, before it counts as failed.
+ *
+ * A download that stalls never settles, so without a limit the navigation stays pending for good and
+ * the screen shows the skeleton forever. An attempt that overruns it is abandoned and handled like any
+ * other failed download: repeated, and after the repeats reported to the router.
+ */
+export const LOAD_TIMEOUT_MS = 15_000
 
 /** Wait before the first repeat, in milliseconds; each further repeat waits one step longer. */
 export const RETRY_STEP_MS = 400
@@ -31,32 +40,60 @@ const originals = new WeakMap<object, RouteLoader>()
 const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
- * Makes a loader repeat itself when the download fails.
+ * Runs a loader once and rejects when it has not settled within {@link LOAD_TIMEOUT_MS}.
+ *
+ * The browser keeps one download per chunk address, so an attempt after a stalled one may join that
+ * same download rather than start a new request; the limit still ends the wait either way.
+ *
+ * @param loader - The dynamic `import()` function.
+ * @returns What the loader resolves to.
+ * @throws The loader's own error, or a timeout error when the attempt stalled.
+ */
+const attempt = <T>(loader: () => Promise<T>): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    // Only for logs: the screen shows its own translated load error.
+    const timer = setTimeout(() => {
+      reject(new Error(`Loading a screen took longer than ${LOAD_TIMEOUT_MS} ms`))
+    }, LOAD_TIMEOUT_MS)
+    // The loader runs at once, so a prefetch starts the download straight away; running it inside a promise
+    // executor turns a loader that throws instead of rejecting into a rejection, which still clears the timer.
+    new Promise<T>((run) => {
+      run(loader())
+    })
+      .then(resolve, reject)
+      .finally(() => {
+        clearTimeout(timer)
+      })
+  })
+
+/**
+ * Makes a loader repeat itself when the download fails or stalls.
  *
  * A gateway timeout or a dropped connection on one small chunk is common on a long path, and
- * without a repeat it leaves the click with no effect at all.
+ * without a repeat it leaves the click with no effect at all. Each attempt has a time limit, so a
+ * download that never answers fails like one that errors.
  *
  * @param loader - The dynamic `import()` function.
  * @returns A loader that tries up to {@link LOAD_RETRIES} more times before it gives up with the last error.
  */
 export const withRetry = <T>(loader: () => Promise<T>): (() => Promise<T>) => {
   /**
-   * Runs the loader, repeating it after a growing pause while it fails.
+   * Runs the loader with a time limit per attempt, repeating it after a growing pause while it fails.
    *
    * @returns What the loader resolves to.
    * @throws The last error once the repeats are used up.
    */
   const retrying = async (): Promise<T> => {
-    let attempt = 0
+    let repeats = 0
     for (;;) {
       try {
-        return await loader()
+        return await attempt(loader)
       } catch (error) {
-        if (attempt >= LOAD_RETRIES) {
+        if (repeats >= LOAD_RETRIES) {
           throw error
         }
-        attempt += 1
-        await pause(RETRY_STEP_MS * attempt)
+        repeats += 1
+        await pause(RETRY_STEP_MS * repeats)
       }
     }
   }
@@ -97,3 +134,30 @@ export const isLazyLoader = (candidate: unknown): candidate is RouteLoader => {
  */
 export const lazyLoadersOf = (route: Pick<RouteLocationNormalized, 'matched'>): RouteLoader[] =>
   route.matched.flatMap((record) => Object.values(record.components ?? {}).filter(isLazyLoader))
+
+/** The file under `src/` (`views/AddClientView.vue`) each routed loader was made for. */
+const viewFiles = new WeakMap<object, string>()
+
+/**
+ * Tags a loader with the file it imports.
+ *
+ * The loader of a screen is an opaque `import()` closure, so the file it stands for would otherwise be unknown to
+ * everything that holds only the loader: the router table, which looks up the skeleton schema of the screen by file.
+ *
+ * @param loader - A route loader.
+ * @param file - Path under `src/`, such as `views/AddClientView.vue`.
+ * @returns The same loader, now answering {@link viewFileOf}.
+ */
+export const withViewFile = <T extends RouteLoader>(loader: T, file: string): T => {
+  viewFiles.set(loader, file)
+  return loader
+}
+
+/**
+ * Finds the file a loader was tagged with by {@link withViewFile}.
+ *
+ * @param loader - A route loader or any other value found in a route record.
+ * @returns The file under `src/`, or undefined when the value is not a tagged loader.
+ */
+export const viewFileOf = (loader: unknown): string | undefined =>
+  typeof loader === 'function' ? viewFiles.get(loader) : undefined

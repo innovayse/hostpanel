@@ -26,13 +26,15 @@ describe('SettingsSection', () => {
     expect(withText.get('p').text()).toBe('What this does')
   })
 
-  it('lays the controls out in one column by default and in two from md when asked', () => {
+  it('lays the controls out in one column by default and in two once the card is wide when asked', () => {
     const single = mount(SettingsSection, { props: { title: 'A' } })
     const double = mount(SettingsSection, { props: { title: 'A', columns: 2 } })
 
     expect(single.get('.grid').classes()).toContain('grid-cols-1')
-    expect(single.get('.grid').classes()).not.toContain('md:grid-cols-2')
-    expect(double.get('.grid').classes()).toEqual(expect.arrayContaining(['grid-cols-1', 'md:grid-cols-2']))
+    expect(single.get('.grid').classes()).not.toContain('@3xl:grid-cols-2')
+    expect(double.get('.grid').classes()).toEqual(expect.arrayContaining(['grid-cols-1', '@3xl:grid-cols-2']))
+    expect(double.get('.grid').classes()).not.toContain('md:grid-cols-2')
+    expect(double.html()).toContain('@container')
   })
 
   it('keeps the real title and description and draws its fields as placeholders while loading', () => {

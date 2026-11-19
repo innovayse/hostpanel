@@ -45,6 +45,44 @@ export interface Product {
   maxActiveServices: number | null
   /** Whether a client may hold only one live service of the product. */
   onePerClient: boolean
+  /** The free-trial settings; the trial is off for a product that has none. */
+  trial: ProductTrial
+}
+
+/** The free-trial settings of a product. */
+export interface ProductTrial {
+  /** Whether the product is offered as a free trial a client can start without paying. */
+  enabled: boolean
+  /** How long a trial lasts, in days, 1 to 365. */
+  days: number
+  /** Whether a trial turns into a paid service at its end; when false the service is ended instead. */
+  autoConvert: boolean
+  /** The days before the end a reminder is emailed, each before the end of the trial, at most five. */
+  reminderDays: number[]
+  /** Days the invoice of a converted trial may stay unpaid before the service is ended, 0 to 30. */
+  gracePeriodDays: number
+}
+
+/** The defaults and limits of the free-trial settings, as the API holds them. */
+export interface ProductTrialDefaults {
+  /** Trial length a new product starts with, in days. */
+  days: number
+  /** Whether a new product's trial converts to a paid service at its end. */
+  autoConvert: boolean
+  /** Reminder days a new product starts with. */
+  reminderDays: number[]
+  /** Grace period a new product starts with, in days. */
+  gracePeriodDays: number
+  /** Shortest trial, in days. */
+  minDays: number
+  /** Longest trial, in days. */
+  maxDays: number
+  /** Shortest grace period, in days. */
+  minGracePeriodDays: number
+  /** Longest grace period, in days. */
+  maxGracePeriodDays: number
+  /** Most reminders a trial may have. */
+  maxReminders: number
 }
 
 /** What narrows the product list: the search text, the group, the type and the status; each member left out means no narrowing. */
@@ -137,6 +175,8 @@ export interface CreateProductPayload {
   maxActiveServices?: number
   /** Allows one live service per client; omitted keeps the stored setting on update. */
   onePerClient?: boolean
+  /** The free-trial settings; omitted creates the product with the trial off and the default settings. */
+  trial?: ProductTrial
 }
 
 /** Payload for updating an existing product. */
@@ -173,4 +213,6 @@ export interface UpdateProductPayload {
   maxActiveServices?: number
   /** Allows one live service per client; omitted keeps the stored setting on update. */
   onePerClient?: boolean
+  /** The free-trial settings; omitted keeps the stored ones. */
+  trial?: ProductTrial
 }

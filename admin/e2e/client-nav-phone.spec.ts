@@ -19,27 +19,23 @@ const emptyPage = { items: [], pageNumber: 1, pageSize: 5, totalCount: 0, totalP
 
 test.use({ viewport: { width: 390, height: 800 } })
 
-/** Most a box can sit past its scroller's edge because the browser rounds a scroll offset to whole pixels. */
+/** Most a box can sit past its scroller's (or list's) edge because the browser rounds layout to whole pixels. */
 const SCROLL_ROUNDING_PX = 1
 
 /**
- * Tells whether a list, and every box around it up to the page, holds its content without a sideways scroll.
+ * Tells whether everything drawn inside a list stays within the list's right edge.
  *
- * Below `sm` a table is drawn as cards that wrap inside their box, so neither the list nor any ancestor has anything to scroll.
+ * Below `sm` a table is drawn as cards that wrap inside their box, so nothing sits past it. Boxes are measured, not the
+ * scroll width, which also counts absolutely positioned boxes (such as visually hidden labels) that are not drawn.
  *
  * @param list - The list (table or card list) under test.
- * @returns True when the list and each sideways scroller around it hold their content within their own box.
+ * @returns True when no element inside the list ends past the list's right edge.
  */
-const fitsItsBoxes = (list: Locator): Promise<boolean> =>
-  list.evaluate((el) => {
-    for (let node: Element | null = el; node !== null; node = node.parentElement) {
-      const scrolls = node === el || ['auto', 'scroll'].includes(getComputedStyle(node).overflowX)
-      if (scrolls && node.scrollWidth > node.clientWidth) {
-        return false
-      }
-    }
-    return true
-  })
+const fitsItsBox = (list: Locator): Promise<boolean> =>
+  list.evaluate((el, tolerance) => {
+    const right = el.getBoundingClientRect().right
+    return [...el.querySelectorAll('*')].every((child) => child.getBoundingClientRect().right <= right + tolerance)
+  }, SCROLL_ROUNDING_PX)
 
 test('the client sections are a tab strip above the content on a phone', async ({ page }) => {
   await stubApi(page, {
@@ -274,7 +270,7 @@ test('the contacts table on the profile page is cards that fit their card and do
   await expect(table).toBeVisible()
 
   // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
-  expect(await fitsItsBoxes(table)).toBe(true)
+  expect(await fitsItsBox(table)).toBe(true)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
@@ -359,5 +355,5 @@ test('the billing card lines its counts and amounts up in columns, and the summa
   // The services table is drawn as cards on a phone, so its box has nothing to scroll.
   await expect(page.getByTestId('client-summary-services')).toBeVisible()
   // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
-  expect(await fitsItsBoxes(page.getByTestId('client-summary-services'))).toBe(true)
+  expect(await fitsItsBox(page.getByTestId('client-summary-services'))).toBe(true)
 })

@@ -50,10 +50,10 @@ export const settingsPanel = (page: Page, tab: string): Locator => page.getByTes
  * The toast that carries a sentence.
  *
  * A success is confirmed in a self-dismissing toast drawn by `UiToastHost`, not in an inline banner; several toasts can be on
- * screen at once, so the locator narrows to the one holding the text.
+ * screen at once (a repeated save leaves two with the same text), so the locator narrows to the newest one holding the text.
  *
  * @param page - The page under test.
  * @param text - The sentence, or a part of it, the toast must show.
- * @returns A locator for the toast with that text.
+ * @returns A locator for the newest toast with that text.
  */
-export const toastWith = (page: Page, text: string): Locator => page.getByTestId('ui-toast').filter({ hasText: text })
+export const toastWith = (page: Page, text: string): Locator => page.getByTestId('ui-toast').filter({ hasText: text }).last()

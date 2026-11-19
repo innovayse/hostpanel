@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 

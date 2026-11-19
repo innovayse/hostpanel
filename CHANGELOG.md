@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-20
+
 ### Added
 
 - Plugins: an action block of a plugin view can open an address in a new browser tab (#1333, plugin SDK 3.10.0). The new optional member `openUrlFrom` of an action that calls a route names a field of the route's JSON reply, 1 to 64 letters, digits or underscores, that holds an absolute address, and the admin opens that address in a new tab once the call succeeds. It is refused on an action without a route and together with `navigate`, and a plugin view that breaks this is refused with 400 and `PLUGIN_VIEW_OPEN_URL_INVALID`. A view without it renders as before.
@@ -412,7 +414,8 @@ Upgrade notes, read before upgrading:
 - Backend sources were tracked as a submodule; they are now part of the repository.
 - Repository URLs in the README and clone instructions.
 
-[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/innovayse/hostpanel/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/innovayse/hostpanel/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/innovayse/hostpanel/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/innovayse/hostpanel/compare/v0.4.0...v0.5.0

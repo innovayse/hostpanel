@@ -110,13 +110,13 @@ afterEach(async () => {
 const backendRequests = (): StubRequest[] => stub.requests.filter((request) => request.url.startsWith('/api/'))
 
 describe('backendLanguage', () => {
-  it.each(['en', 'ru', 'hy'])('passes the supported language %s through', (language) => {
+  it.each(['en', 'ru', 'hy', 'fr'])('passes the supported language %s through', (language) => {
     expect(backendLanguage(makeEvent({ 'x-language': language }))).toBe(language)
   })
 
   it('falls back to the default when the header is missing, unsupported, or the retired x-locale', () => {
     expect(backendLanguage(makeEvent())).toBe('en')
-    expect(backendLanguage(makeEvent({ 'x-language': 'fr' }))).toBe('en')
+    expect(backendLanguage(makeEvent({ 'x-language': 'de' }))).toBe('en')
     expect(backendLanguage(makeEvent({ 'x-locale': 'ru' }))).toBe('en')
   })
 })

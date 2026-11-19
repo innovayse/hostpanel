@@ -50,13 +50,13 @@ public sealed class PluginViewDocumentsTests
     {
         var views = Views();
 
-        var texts = InCulture("fr", () => PluginUiTexts.For(Manifest()));
-        var french = views.Localised(ViewPath, texts);
+        var texts = InCulture("de", () => PluginUiTexts.For(Manifest()));
+        var german = views.Localised(ViewPath, texts);
         var english = InCulture("en", () => views.Localised(ViewPath, PluginUiTexts.For(Manifest())));
 
         texts.Language.Should().Be("en");
-        Title(french!.Value).Should().Be("Reports");
-        french.Value.GetRawText().Should().Be(english!.Value.GetRawText());
+        Title(german!.Value).Should().Be("Reports");
+        german.Value.GetRawText().Should().Be(english!.Value.GetRawText());
     }
 
     /// <summary>The language the texts are cached under is the language their labels are resolved in.</summary>

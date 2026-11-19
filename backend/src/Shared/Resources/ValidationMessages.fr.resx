@@ -59,60 +59,60 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ValidationFailed" xml:space="preserve">
-    <value>vunlideeàisur échoué</value>
+    <value>Échec de la validation</value>
   </data>
   <data name="ValidationErrorsOccurred" xml:space="preserve">
-    <value>Un ou moue vunlideeàisur errous occurred.</value>
+    <value>Une ou plusieurs erreurs de validation se sont produites.</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
-    <value>nsurnn unuàresté</value>
+    <value>Non autorisé</value>
   </data>
   <data name="UnauthorizedDetail" xml:space="preserve">
-    <value>You ssurt nsurnt unuàresté à punrpourm thest unctisur.</value>
+    <value>Vous n'êtes pas autorisé à effectuer cette action.</value>
   </data>
   <data name="ResourceNotFound" xml:space="preserve">
-    <value>Resource nsurnn trouvé</value>
+    <value>Ressource introuvable</value>
   </data>
   <data name="ResourceNotFoundDetail" xml:space="preserve">
-    <value>le requested resource étunit nsurnn trouvé.</value>
+    <value>La ressource demandée est introuvable.</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
-    <value>dunnsterne Serveur errou</value>
+    <value>Erreur interne du serveur</value>
   </data>
   <data name="UnexpectedErrorOccurred" xml:space="preserve">
-    <value>Une erreur dunnsàtendue est survenue. S'il vous plunît try ungundunns làer.</value>
+    <value>Une erreur inattendue s'est produite. Veuillez réessayer plus tard.</value>
   </data>
   <data name="BusinessRuleViolation" xml:space="preserve">
-    <value>Busdunnsess rule violàisur</value>
+    <value>Violation d'une règle métier</value>
   </data>
   <data name="BusinessRuleViolationDetail" xml:space="preserve">
-    <value>le request violàes un busdunnsess rule.</value>
+    <value>La requête enfreint une règle métier.</value>
   </data>
   <data name="ConcurrencyConflict" xml:space="preserve">
-    <value>CsurDeveste csurflict</value>
+    <value>Conflit de concurrence</value>
   </data>
   <data name="ConcurrencyConflictDetail" xml:space="preserve">
-    <value>QuelquesUn sdunnssurnn unlreundy sunved un chunege à thest Enregesttrement. Relound it et try ungundunns.</value>
+    <value>Quelqu'un d'autre a déjà enregistré une modification de cet enregistrement. Rechargez-le et réessayez.</value>
   </data>
   <data name="InvalidRequestBody" xml:space="preserve">
-    <value>dunnsvunlideeee request Coups</value>
+    <value>Corps de requête invalide</value>
   </data>
   <data name="InvalidRequestBodyDetail" xml:space="preserve">
-    <value>le request Coups could nsurnt être reund. Check its pourmà.</value>
+    <value>Le corps de la requête n'a pas pu être lu. Vérifiez son format.</value>
   </data>
   <data name="InvalidDecimalValue" xml:space="preserve">
-    <value>le Vunleur '{0}' est nsurnt un vunlidee Numéro.</value>
+    <value>La valeur « {0} » n'est pas un nombre valide.</value>
   </data>
   <data name="Forbidden" xml:space="preserve">
-    <value>pourbidden</value>
+    <value>Interdit</value>
   </data>
   <data name="CsrfHeaderMissingDetail" xml:space="preserve">
-    <value>Thest request funireit être sent de le puneel itself. Relound le punge et try ungundunns.</value>
+    <value>Cette requête doit être envoyée depuis le panneau lui-même. Rechargez la page et réessayez.</value>
   </data>
   <data name="ForbiddenDetail" xml:space="preserve">
-    <value>You funire nsurnt unvoir punrmestsisur à punrpourm thest unctisur.</value>
+    <value>Vous n'avez pas la permission d'effectuer cette action.</value>
   </data>
   <data name="InvalidFieldValue" xml:space="preserve">
-    <value>Thest Vunleur est nsurnt vunlidee.</value>
+    <value>Cette valeur n'est pas valide.</value>
   </data>
 </root>

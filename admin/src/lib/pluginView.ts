@@ -370,6 +370,35 @@ export const pluginLinkTarget = (href: unknown, origins: readonly string[]): Plu
   return origins.some((pattern) => originMatches(pattern, url)) ? { href, external: true } : null
 }
 
+
+/**
+ * The address an action's reply names for a new tab: the field read from the reply must pass
+ * {@link pluginLinkTarget} and be an absolute address on one of the plugin's allowed origins, never a path of the panel.
+ *
+ * @param reply - The reply of the action's route.
+ * @param field - The name of the member that holds the address (`openUrlFrom`).
+ * @param origins - The plugin's allowed origins (`externalOrigins` of the page); a `https://*.host` pattern admits every subdomain of the host.
+ * @returns The target, or null when the reply holds no address that may be opened.
+ */
+export const pluginOpenUrlTarget = (reply: unknown, field: string, origins: readonly string[]): PluginLinkTarget | null => {
+  const target = pluginLinkTarget(readPluginField(reply, field), origins)
+  return target !== null && target.external ? target : null
+}
+
+/**
+ * Opens an empty tab at once, which a browser allows only inside the click that asked for it; the address follows when the
+ * call has answered. The tab is cut from this page before anything loads in it.
+ *
+ * @returns The tab, or null when the browser blocked it.
+ */
+export const openBlankTab = (): Window | null => {
+  const tab = window.open('', '_blank')
+  if (tab !== null) {
+    tab.opener = null
+  }
+  return tab
+}
+
 /**
  * Whether a value may be sent as a member of an action's body.
  *

@@ -949,6 +949,12 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PLUGIN_VIEW_ACTION_BODY_INVALID = "PLUGIN_VIEW_ACTION_BODY_INVALID";
 
+    /// <summary>
+    /// A view document holds an action's <c>openUrlFrom</c> that is not a field name, or sits outside an action that calls a
+    /// route, or beside a <c>navigate</c> (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_OPEN_URL_INVALID = "PLUGIN_VIEW_OPEN_URL_INVALID";
+
     /// <summary>A view document holds a preview or chat <c>selection</c> this server does not accept.</summary>
     public const string PLUGIN_VIEW_SELECTION_INVALID = "PLUGIN_VIEW_SELECTION_INVALID";
 

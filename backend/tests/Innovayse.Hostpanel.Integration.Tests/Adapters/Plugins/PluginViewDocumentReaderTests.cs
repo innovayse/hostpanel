@@ -705,6 +705,35 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         AssertBreaks(StateManifest(), PluginManifestRule.ViewActionBodyInvalid);
     }
 
+    /// <summary>An action that opens an address from a field of its reply is a valid view.</summary>
+    [Fact]
+    public void Read_ActionOpenUrlFromFieldName_IsValid()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","label":"Open","route":{"method":"post","path":"/publish"},"openUrlFrom":"login_url"}]}""");
+
+        var read = PluginViewDocumentReader.Read(_folder, ClientActionManifest(), MaxViewBytes);
+
+        read.Violation.Should().BeNull();
+    }
+
+    /// <summary>An open-URL member that is no field name, is off an action, has no route or sits beside navigate breaks ViewOpenUrlInvalid.</summary>
+    /// <param name="block">The block JSON.</param>
+    [Theory]
+    [InlineData("""{"kind":"action","label":"O","route":{"method":"post","path":"/publish"},"openUrlFrom":""}""")]
+    [InlineData("""{"kind":"action","label":"O","route":{"method":"post","path":"/publish"},"openUrlFrom":"a.b"}""")]
+    [InlineData("""{"kind":"action","label":"O","route":{"method":"post","path":"/publish"},"openUrlFrom":"a b"}""")]
+    [InlineData("""{"kind":"action","label":"O","route":{"method":"post","path":"/publish"},"openUrlFrom":5}""")]
+    [InlineData("""{"kind":"action","label":"O","route":{"method":"post","path":"/publish"},"openUrlFrom":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}""")]
+    [InlineData("""{"kind":"action","label":"O","openUrlFrom":"u"}""")]
+    [InlineData("""{"kind":"action","label":"O","route":{"method":"post","path":"/publish"},"openUrlFrom":"u","navigate":{"page":"overview"}}""")]
+    [InlineData("""{"kind":"text","text":"Hi","openUrlFrom":"u"}""")]
+    public void Read_ActionOpenUrlFromMalformed_BreaksViewOpenUrlInvalid(string block)
+    {
+        Write("views/a.json", $"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewOpenUrlInvalid);
+    }
+
     /// <summary>A manifest whose client page shows <c>views/a.json</c> and whose client api declares GET /site and POST /publish.</summary>
     /// <returns>The manifest.</returns>
     private static PluginManifest ClientActionManifest()

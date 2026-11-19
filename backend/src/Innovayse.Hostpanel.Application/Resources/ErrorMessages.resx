@@ -1336,6 +1336,9 @@
   <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
     <value>One of this plugin's view documents builds an action's body from page data in a shape or place this server does not accept.</value>
   </data>
+  <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents opens an address from a reply in a shape or place this server does not accept.</value>
+  </data>
   <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
     <value>One of this plugin's view documents declares element selection in a shape or place this server does not accept.</value>
   </data>

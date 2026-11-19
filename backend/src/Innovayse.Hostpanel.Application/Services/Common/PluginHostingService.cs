@@ -233,13 +233,24 @@ public sealed class PluginHostingService
             return PluginHostOutcome<HostedWebsite>.Refused(PluginHostAccessFailure.NotAllowed);
         }
 
-        var staged = await StageWebsiteAsync(context, account, binding.PluginId, hostname, documentRoot, php, spec.DocumentRootMayBeLink, ct);
+        var staged = await StageAsync(
+            context,
+            account,
+            binding.PluginId,
+            () => FindLiveWebsiteAsync(context.Service.Id, hostname, ct),
+            () => _context.ServiceWebsites.CountAsync(
+                w => w.ClientServiceId == context.Service.Id && w.State != HostingResourceState.Removed, ct),
+            HostingResourceLimits.MaxWebsitesPerService,
+            service => ServiceWebsite.Create(
+                service.Id, account.ServerId, account.Username, binding.PluginId, hostname, documentRoot, php, spec.DocumentRootMayBeLink),
+            website => _context.ServiceWebsites.Add(website),
+            ct);
         if (staged.Failure is { } refused)
         {
             return PluginHostOutcome<HostedWebsite>.Refused(refused);
         }
 
-        var website = staged.Website!;
+        var website = staged.Resource!;
         if (!staged.IsNew && website.State is HostingResourceState.Active && website.Matches(documentRoot, php, spec.DocumentRootMayBeLink))
         {
             // Another call of the same plugin finished the same website while this one waited.
@@ -286,7 +297,12 @@ public sealed class PluginHostingService
         // website. Asked once more after the save: a plugin that is gone has the website taken back here.
         if (staged.IsNew && !await _gate.IsStillAvailableAsync(binding, ct))
         {
-            await RemoveRecordedAsync(provider, website, new WebsiteRemoval(account, website.WebsiteId, hostname), ct);
+            await RemoveRecordedAsync(
+                website,
+                "website",
+                website.WebsiteId,
+                account.ServerId,
+                () => provider.RemoveWebsiteAsync(new WebsiteRemoval(account, website.WebsiteId, hostname), ct));
             await _context.SaveChangesAsync(CancellationToken.None);
             return PluginHostOutcome<HostedWebsite>.Refused(PluginHostAccessFailure.NotAllowed);
         }
@@ -304,46 +320,21 @@ public sealed class PluginHostingService
     /// <c>NotFound</c> (also for another plugin's website), <c>Unavailable</c> or <c>ServerUnavailable</c> (the record
     /// then says the removal failed).
     /// </returns>
-    public async Task<PluginHostAccessFailure?> RemoveWebsiteAsync(
+    public Task<PluginHostAccessFailure?> RemoveWebsiteAsync(
         PluginCallBinding binding, int serviceId, Guid websiteId, CancellationToken ct)
     {
-        if (!_gate.Declares(binding, PluginHostAccess.Websites))
-        {
-            return PluginHostAccessFailure.NotAllowed;
-        }
-
-        var context = await ResolveOwnedAsync(binding, serviceId, ct);
-        if (context is null)
-        {
-            return PluginHostAccessFailure.NotFound;
-        }
-
-        var website = await _context.ServiceWebsites.FirstOrDefaultAsync(
-            w => w.ClientServiceId == context.Service.Id && w.WebsiteId == websiteId && w.IssuedToPluginId == binding.PluginId, ct);
-        if (website is null)
-        {
-            return PluginHostAccessFailure.NotFound;
-        }
-
-        if (website.State is HostingResourceState.Removed)
-        {
-            return null;
-        }
-
-        if (UsableProvider(context) is not { } usable || !website.IsBoundTo(usable.Account.ServerId, usable.Account.Username))
-        {
-            return PluginHostAccessFailure.Unavailable;
-        }
-
-        if (!await TryTakeBudgetAsync(binding, context, ct))
-        {
-            return PluginHostAccessFailure.ServerUnavailable;
-        }
-
-        var removed = await RemoveRecordedAsync(
-            usable.Provider, website, new WebsiteRemoval(usable.Account, website.WebsiteId, website.Hostname), ct);
-        await RecordRemovalAsync(binding, context, $"website {website.Hostname}", removed, ct);
-        return removed ? null : PluginHostAccessFailure.ServerUnavailable;
+        return RemoveHeldAsync(
+            binding,
+            serviceId,
+            PluginHostAccess.Websites,
+            context => _context.ServiceWebsites.FirstOrDefaultAsync(
+                w => w.ClientServiceId == context.Service.Id && w.WebsiteId == websiteId && w.IssuedToPluginId == binding.PluginId, ct),
+            new HeldResourceKind<ServiceWebsite>(
+                "website",
+                website => website.WebsiteId,
+                website => website.Hostname,
+                (provider, account, website) => provider.RemoveWebsiteAsync(new WebsiteRemoval(account, website.WebsiteId, website.Hostname), ct)),
+            ct);
     }
 
     /// <summary>Makes sure a database exists on <paramref name="serviceId"/> for <paramref name="label"/>.</summary>
@@ -412,13 +403,23 @@ public sealed class PluginHostingService
             return PluginHostOutcome<HostedDatabase>.Refused(PluginHostAccessFailure.NotAllowed);
         }
 
-        var staged = await StageDatabaseAsync(context, account, binding.PluginId, trimmed, ct);
+        var staged = await StageAsync(
+            context,
+            account,
+            binding.PluginId,
+            () => FindLiveDatabaseAsync(context.Service.Id, trimmed, binding.PluginId, ct),
+            () => _context.ServiceDatabases.CountAsync(
+                d => d.ClientServiceId == context.Service.Id && d.State != HostingResourceState.Removed, ct),
+            HostingResourceLimits.MaxDatabasesPerService,
+            service => ServiceDatabase.Create(service.Id, account.ServerId, account.Username, binding.PluginId, trimmed),
+            database => _context.ServiceDatabases.Add(database),
+            ct);
         if (staged.Failure is { } refused)
         {
             return PluginHostOutcome<HostedDatabase>.Refused(refused);
         }
 
-        var database = staged.Database!;
+        var database = staged.Resource!;
         if (!staged.IsNew && database.State is HostingResourceState.Active)
         {
             // Another call of the same plugin finished the same database while this one waited.
@@ -453,7 +454,12 @@ public sealed class PluginHostingService
         if (staged.IsNew && !await _gate.IsStillAvailableAsync(binding, ct))
         {
             await RemoveRecordedAsync(
-                provider, database, new DatabaseRemoval(account, database.DatabaseId, database.Label, database.Name, database.Username), ct);
+                database,
+                "database",
+                database.DatabaseId,
+                account.ServerId,
+                () => provider.RemoveDatabaseAsync(
+                    new DatabaseRemoval(account, database.DatabaseId, database.Label, database.Name, database.Username), ct));
             await _context.SaveChangesAsync(CancellationToken.None);
             return PluginHostOutcome<HostedDatabase>.Refused(PluginHostAccessFailure.NotAllowed);
         }
@@ -471,49 +477,22 @@ public sealed class PluginHostingService
     /// <c>NotFound</c> (also for another plugin's database), <c>Unavailable</c> or <c>ServerUnavailable</c> (the record
     /// then says the removal failed).
     /// </returns>
-    public async Task<PluginHostAccessFailure?> RemoveDatabaseAsync(
+    public Task<PluginHostAccessFailure?> RemoveDatabaseAsync(
         PluginCallBinding binding, int serviceId, Guid databaseId, CancellationToken ct)
     {
-        if (!_gate.Declares(binding, PluginHostAccess.Databases))
-        {
-            return PluginHostAccessFailure.NotAllowed;
-        }
-
-        var context = await ResolveOwnedAsync(binding, serviceId, ct);
-        if (context is null)
-        {
-            return PluginHostAccessFailure.NotFound;
-        }
-
-        var database = await _context.ServiceDatabases.FirstOrDefaultAsync(
-            d => d.ClientServiceId == context.Service.Id && d.DatabaseId == databaseId && d.IssuedToPluginId == binding.PluginId, ct);
-        if (database is null)
-        {
-            return PluginHostAccessFailure.NotFound;
-        }
-
-        if (database.State is HostingResourceState.Removed)
-        {
-            return null;
-        }
-
-        if (UsableProvider(context) is not { } usable || !database.IsBoundTo(usable.Account.ServerId, usable.Account.Username))
-        {
-            return PluginHostAccessFailure.Unavailable;
-        }
-
-        if (!await TryTakeBudgetAsync(binding, context, ct))
-        {
-            return PluginHostAccessFailure.ServerUnavailable;
-        }
-
-        var removed = await RemoveRecordedAsync(
-            usable.Provider,
-            database,
-            new DatabaseRemoval(usable.Account, database.DatabaseId, database.Label, database.Name, database.Username),
+        return RemoveHeldAsync(
+            binding,
+            serviceId,
+            PluginHostAccess.Databases,
+            context => _context.ServiceDatabases.FirstOrDefaultAsync(
+                d => d.ClientServiceId == context.Service.Id && d.DatabaseId == databaseId && d.IssuedToPluginId == binding.PluginId, ct),
+            new HeldResourceKind<ServiceDatabase>(
+                "database",
+                database => database.DatabaseId,
+                database => database.Name,
+                (provider, account, database) => provider.RemoveDatabaseAsync(
+                    new DatabaseRemoval(account, database.DatabaseId, database.Label, database.Name, database.Username), ct)),
             ct);
-        await RecordRemovalAsync(binding, context, $"database {database.Name}", removed, ct);
-        return removed ? null : PluginHostAccessFailure.ServerUnavailable;
     }
 
     /// <summary>Resolves the service's SSH context when it belongs to the binding's client, through the gate's ownership rule.</summary>
@@ -576,29 +555,39 @@ public sealed class PluginHostingService
     }
 
     /// <summary>
-    /// Decides what the website request means against the service's live websites and, for a new one, records it as
+    /// Decides what the request means against the service's live resources of the kind and, for a new one, records it as
     /// pending in the save that moves the service's resource revision, so two adds cannot both pass the limit.
     /// </summary>
+    /// <typeparam name="TResource">The kind of resource: a website or a database.</typeparam>
     /// <param name="context">The service's context.</param>
     /// <param name="account">The service's current account.</param>
     /// <param name="pluginId">The plugin asking.</param>
-    /// <param name="hostname">The host name, lower case.</param>
-    /// <param name="documentRoot">The document root.</param>
-    /// <param name="php">The PHP version, or <see langword="null"/>.</param>
-    /// <param name="mayBeLink">Whether the document root may be a link.</param>
+    /// <param name="findLive">Reads the service's live resource of the requested name, or <see langword="null"/>.</param>
+    /// <param name="countLive">Counts the service's resources of the kind that are not removed.</param>
+    /// <param name="limit">The most resources of the kind a service may hold.</param>
+    /// <param name="create">Builds the pending resource for the service row read for this attempt.</param>
+    /// <param name="add">Starts tracking the new resource.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The website to call the server for and whether it is new, or the refusal: <c>Conflict</c> (another plugin's host
-    /// name), <c>Unavailable</c> (the website sits on another server or its removal failed), <c>LimitReached</c> or
+    /// The resource to call the server for and whether it is new, or the refusal: <c>Conflict</c> (another plugin's name),
+    /// <c>Unavailable</c> (the resource sits on another server or its removal failed), <c>LimitReached</c> or
     /// <c>ServerUnavailable</c> (the save kept losing to other adds).
     /// </returns>
-    private async Task<(ServiceWebsite? Website, bool IsNew, PluginHostAccessFailure? Failure)> StageWebsiteAsync(
-        SshServiceContext context, SshAccount account, string pluginId, string hostname,
-        string documentRoot, string? php, bool mayBeLink, CancellationToken ct)
+    private async Task<(TResource? Resource, bool IsNew, PluginHostAccessFailure? Failure)> StageAsync<TResource>(
+        SshServiceContext context,
+        SshAccount account,
+        string pluginId,
+        Func<Task<TResource?>> findLive,
+        Func<Task<int>> countLive,
+        int limit,
+        Func<ClientService, TResource> create,
+        Action<TResource> add,
+        CancellationToken ct)
+        where TResource : HostingResource
     {
         for (var attempt = 1; ; attempt++)
         {
-            var existing = await FindLiveWebsiteAsync(context.Service.Id, hostname, ct);
+            var existing = await findLive();
             if (existing is not null)
             {
                 return ResumeFailure(existing, account, pluginId) is { } failure
@@ -609,26 +598,24 @@ public sealed class PluginHostingService
             // The service row is read before the count: its xmin token then covers the count, so a change saved
             // after this read (and before the count) makes this save conflict instead of passing the limit unseen.
             var service = await _context.ClientServices.FirstAsync(s => s.Id == context.Service.Id, ct);
-            var live = await _context.ServiceWebsites
-                .CountAsync(w => w.ClientServiceId == context.Service.Id && w.State != HostingResourceState.Removed, ct);
-            if (live >= HostingResourceLimits.MaxWebsitesPerService)
+            if (await countLive() >= limit)
             {
                 return (null, false, PluginHostAccessFailure.LimitReached);
             }
 
-            var website = ServiceWebsite.Create(service.Id, account.ServerId, account.Username, pluginId, hostname, documentRoot, php, mayBeLink);
+            var resource = create(service);
             service.RecordHostingResourceChanged();
-            _context.ServiceWebsites.Add(website);
+            add(resource);
             try
             {
                 await _context.SaveChangesAsync(ct);
-                return (website, true, null);
+                return (resource, true, null);
             }
             catch (ConcurrencyConflictException)
             {
-                // Another add of this service saved first (the service row's token moved, or the same host name won the
+                // Another add of this service saved first (the service row's token moved, or the same name won the
                 // unique index): drop only what this attempt staged and decide again from a fresh read.
-                _context.Detach(website);
+                _context.Detach(resource);
                 _context.Detach(service);
                 if (attempt >= MaxSaveAttempts)
                 {
@@ -636,65 +623,6 @@ public sealed class PluginHostingService
                 }
 
                 // Not a secret, so the shared generator is fine: it only spreads two racing retries apart.
-                await Task.Delay(Random.Shared.Next(MaxRetryJitterMilliseconds + 1), ct);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Decides what the database request means against the service's live databases and, for a new one, records it as
-    /// pending in the save that moves the service's resource revision, so two adds cannot both pass the limit.
-    /// </summary>
-    /// <param name="context">The service's context.</param>
-    /// <param name="account">The service's current account.</param>
-    /// <param name="pluginId">The plugin asking.</param>
-    /// <param name="label">The label.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// The database to call the server for and whether it is new, or the refusal: <c>Conflict</c> (another plugin's
-    /// label), <c>Unavailable</c> (the database sits on another server or its removal failed), <c>LimitReached</c> or
-    /// <c>ServerUnavailable</c> (the save kept losing to other adds).
-    /// </returns>
-    private async Task<(ServiceDatabase? Database, bool IsNew, PluginHostAccessFailure? Failure)> StageDatabaseAsync(
-        SshServiceContext context, SshAccount account, string pluginId, string label, CancellationToken ct)
-    {
-        for (var attempt = 1; ; attempt++)
-        {
-            var existing = await FindLiveDatabaseAsync(context.Service.Id, label, pluginId, ct);
-            if (existing is not null)
-            {
-                return ResumeFailure(existing, account, pluginId) is { } failure
-                    ? (null, false, failure)
-                    : (existing, false, null);
-            }
-
-            // The service row is read before the count: its xmin token then covers the count, so a change saved
-            // after this read (and before the count) makes this save conflict instead of passing the limit unseen.
-            var service = await _context.ClientServices.FirstAsync(s => s.Id == context.Service.Id, ct);
-            var live = await _context.ServiceDatabases
-                .CountAsync(d => d.ClientServiceId == context.Service.Id && d.State != HostingResourceState.Removed, ct);
-            if (live >= HostingResourceLimits.MaxDatabasesPerService)
-            {
-                return (null, false, PluginHostAccessFailure.LimitReached);
-            }
-
-            var database = ServiceDatabase.Create(service.Id, account.ServerId, account.Username, pluginId, label);
-            service.RecordHostingResourceChanged();
-            _context.ServiceDatabases.Add(database);
-            try
-            {
-                await _context.SaveChangesAsync(ct);
-                return (database, true, null);
-            }
-            catch (ConcurrencyConflictException)
-            {
-                _context.Detach(database);
-                _context.Detach(service);
-                if (attempt >= MaxSaveAttempts)
-                {
-                    return (null, false, PluginHostAccessFailure.ServerUnavailable);
-                }
-
                 await Task.Delay(Random.Shared.Next(MaxRetryJitterMilliseconds + 1), ct);
             }
         }
@@ -717,48 +645,94 @@ public sealed class PluginHostingService
             : null;
     }
 
-    /// <summary>Removes a website on the server and records the outcome on it. Does not save.</summary>
-    /// <param name="provider">The server's provider.</param>
-    /// <param name="website">The tracked website.</param>
-    /// <param name="removal">What the provider is asked to take down.</param>
+    /// <summary>
+    /// Removes a resource the plugin holds on a service: the shared flow of a website and a database removal, which asks the
+    /// gate, finds the plugin's own record, takes a change from the budget, removes it on the server and saves the outcome.
+    /// </summary>
+    /// <typeparam name="TResource">The kind of resource: a website or a database.</typeparam>
+    /// <param name="binding">The call: plugin, area and the client it acts for.</param>
+    /// <param name="serviceId">The service the resource is on.</param>
+    /// <param name="access">The host access kind the plugin's manifest must declare.</param>
+    /// <param name="find">Reads the plugin's own record of the resource on the service, or <see langword="null"/>.</param>
+    /// <param name="kind">What differs between the kinds: the name, the ids and the server call.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> once the server confirmed it is gone; otherwise the website records the failed removal.</returns>
-    private async Task<bool> RemoveRecordedAsync(
-        IHostingResourceProvider provider, ServiceWebsite website, WebsiteRemoval removal, CancellationToken ct)
+    /// <returns>
+    /// <see langword="null"/> once the resource is gone (also when it already was), otherwise <c>NotAllowed</c>,
+    /// <c>NotFound</c>, <c>Unavailable</c> or <c>ServerUnavailable</c> (the record then says the removal failed).
+    /// </returns>
+    private async Task<PluginHostAccessFailure?> RemoveHeldAsync<TResource>(
+        PluginCallBinding binding,
+        int serviceId,
+        string access,
+        Func<SshServiceContext, Task<TResource?>> find,
+        HeldResourceKind<TResource> kind,
+        CancellationToken ct)
+        where TResource : HostingResource
     {
-        try
+        if (!_gate.Declares(binding, access))
         {
-            await provider.RemoveWebsiteAsync(removal, ct);
-            website.MarkRemoved();
-            return true;
+            return PluginHostAccessFailure.NotAllowed;
         }
-        catch (SshProviderException ex)
+
+        var context = await ResolveOwnedAsync(binding, serviceId, ct);
+        if (context is null)
         {
-            _logger.LogWarning(ex, "Removing website {WebsiteId} on server {ServerId} failed: {Failure}", website.WebsiteId, removal.Account.ServerId, ex.Failure);
-            website.MarkRemoveFailed();
-            return false;
+            return PluginHostAccessFailure.NotFound;
         }
+
+        var resource = await find(context);
+        if (resource is null)
+        {
+            return PluginHostAccessFailure.NotFound;
+        }
+
+        if (resource.State is HostingResourceState.Removed)
+        {
+            return null;
+        }
+
+        if (UsableProvider(context) is not { } usable || !resource.IsBoundTo(usable.Account.ServerId, usable.Account.Username))
+        {
+            return PluginHostAccessFailure.Unavailable;
+        }
+
+        if (!await TryTakeBudgetAsync(binding, context, ct))
+        {
+            return PluginHostAccessFailure.ServerUnavailable;
+        }
+
+        var removed = await RemoveRecordedAsync(
+            resource,
+            kind.Name,
+            kind.IdOf(resource),
+            usable.Account.ServerId,
+            () => kind.RemoveOnServer(usable.Provider, usable.Account, resource));
+        await RecordRemovalAsync(binding, context, $"{kind.Name} {kind.LabelOf(resource)}", removed, ct);
+        return removed ? null : PluginHostAccessFailure.ServerUnavailable;
     }
 
-    /// <summary>Removes a database on the server and records the outcome on it. Does not save.</summary>
-    /// <param name="provider">The server's provider.</param>
-    /// <param name="database">The tracked database.</param>
-    /// <param name="removal">What the provider is asked to drop.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> once the server confirmed it is gone; otherwise the database records the failed removal.</returns>
-    private async Task<bool> RemoveRecordedAsync(
-        IHostingResourceProvider provider, ServiceDatabase database, DatabaseRemoval removal, CancellationToken ct)
+    /// <summary>Removes a resource on the server and records the outcome on it. Does not save.</summary>
+    /// <typeparam name="TResource">The kind of resource: a website or a database.</typeparam>
+    /// <param name="resource">The tracked resource.</param>
+    /// <param name="kind">The kind's name, for the log, for example <c>website</c>.</param>
+    /// <param name="resourceId">The id the plugin knows the resource by.</param>
+    /// <param name="serverId">The server the resource is on.</param>
+    /// <param name="removeOnServer">Asks the server's provider to take the resource down.</param>
+    /// <returns><see langword="true"/> once the server confirmed it is gone; otherwise the resource records the failed removal.</returns>
+    private async Task<bool> RemoveRecordedAsync<TResource>(
+        TResource resource, string kind, Guid resourceId, int serverId, Func<Task> removeOnServer)
+        where TResource : HostingResource
     {
         try
         {
-            await provider.RemoveDatabaseAsync(removal, ct);
-            database.MarkRemoved();
+            await removeOnServer();
+            resource.MarkRemoved();
             return true;
         }
         catch (SshProviderException ex)
         {
-            _logger.LogWarning(ex, "Removing database {DatabaseId} on server {ServerId} failed: {Failure}", database.DatabaseId, removal.Account.ServerId, ex.Failure);
-            database.MarkRemoveFailed();
+            _logger.LogWarning(ex, "Removing {Kind} {ResourceId} on server {ServerId} failed: {Failure}", kind, resourceId, serverId, ex.Failure);
+            resource.MarkRemoveFailed();
             return false;
         }
     }

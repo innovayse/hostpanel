@@ -615,7 +615,7 @@
 <data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
     <value>Մանիֆեստում սերվերի հաշվի նույնացուցչի պիտակը պետք է լինի 1-ից 60 նիշ՝ առանց կառավարող նիշերի։</value>
   </data>
-<data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
+  <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Մանիֆեստի agentProfile-ը պետք է լինի SDK-ի սահմանած SSH բանալիների գործակալի պրոֆիլներից մեկը՝ գրված ճշգրիտ։</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">

@@ -46,7 +46,7 @@ describe('useLocalizedSettingDrafts', () => {
     ])
 
     expect(drafts.en.value.value).toBe('1 Main St')
-    expect(filled.value).toEqual({ en: true, ru: false, hy: false })
+    expect(filled.value).toEqual({ en: true, ru: false, hy: false, es: false })
   })
 
   it('follows an edit in the marks', () => {

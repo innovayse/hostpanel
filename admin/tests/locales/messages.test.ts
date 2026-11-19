@@ -19,7 +19,7 @@ describe('buildMessages', () => {
   })
 
   it('ignores a folder that is not a shipped language', () => {
-    expect(buildMessages({ './de/nav.json': { home: 'Start' } })).toEqual({ en: {}, ru: {}, hy: {} })
+    expect(buildMessages({ './de/nav.json': { home: 'Start' } })).toEqual({ en: {}, ru: {}, hy: {}, es: {} })
   })
 })
 

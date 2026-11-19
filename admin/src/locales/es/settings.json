@@ -53,11 +53,11 @@
     },
     "contactPhone": {
       "label": "Teléfono de contacto",
-      "hint": "+1 555 000 0000"
+      "hint": "1 555 000 0000"
     },
     "contactWhatsapp": {
       "label": "Número de WhatsApp",
-      "hint": "+1 555 000 0000"
+      "hint": "1 555 000 0000"
     },
     "contactTelegram": {
       "label": "Usuario de Telegram",

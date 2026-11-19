@@ -63,6 +63,7 @@ describe('TrackingChatCard', () => {
       'tracking-chat-token-tab-en',
       'tracking-chat-token-tab-ru',
       'tracking-chat-token-tab-hy',
+      'tracking-chat-token-tab-es',
     ])
     expect(wrapper.find('[data-testid="tracking-chat-token-tab-en-empty"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="tracking-chat-token-tab-hy-empty"]').exists()).toBe(false)

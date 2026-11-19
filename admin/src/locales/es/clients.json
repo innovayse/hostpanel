@@ -144,7 +144,7 @@
   "clientBillableItems": {
     "billableItems": "Ítems Facturables",
     "addTimeBillingEntries": "Agregar Entradas de Facturación por Tiempo",
-    "addBillableItem": "+ Agregar Ítem Facturable",
+    "addBillableItem": "Agregar Ítem Facturable",
     "uninvoicedItemsLength": "Ítems No Facturados ({length})",
     "uninvoicedItemsAmountLength": "Ítems No Facturados — {amount} ({length})",
     "invoiceSelectedItems": "Facturar Ítems Seleccionados",
@@ -168,7 +168,7 @@
   },
   "clientContacts": {
     "contactsLength": "Contactos ({length})",
-    "addContact": "+ Agregar Contacto",
+    "addContact": "Agregar Contacto",
     "noContactsAddedYet": "No se han agregado contactos todavía",
     "deleteContact": "Eliminar Contacto",
     "areYouSureYouWant": "¿Estás seguro de que quieres eliminar este contacto? Esto no se puede deshacer.",
@@ -242,11 +242,11 @@
     "searchEmails": "Buscar correos"
   },
   "clientInvoices": {
-    "createInvoice": "+ Crear Factura",
+    "createInvoice": "Crear Factura",
     "newInvoice": "Factura Nueva",
     "selectDueDate": "Seleccionar fecha de vencimiento",
     "createAsDraft": "Crear como Borrador",
-    "addItem": "+ Agregar Ítem",
+    "addItem": "Agregar Ítem",
     "createInvoice2": "Crear Factura",
     "allStatuses": "Todos los Estados",
     "clientinvoicestotalInvoiceValue": "Facturas: {clientInvoicesTotal}",
@@ -301,7 +301,7 @@
     "noContactsAddedYet": "No se han agregado contactos todavía"
   },
   "clientQuotes": {
-    "createNewQuote": "+ Crear Nueva Cotización",
+    "createNewQuote": "Crear Nueva Cotización",
     "createDate": "Fecha de Creación",
     "noQuotesFound": "No se encontraron cotizaciones.",
     "clientquotestotalQuoteValue": "Cotizaciones: {clientQuotesTotal}",
@@ -470,7 +470,7 @@
     "totalcountTicketValue": "Tickets: {totalCount}"
   },
   "clientTransactions": {
-    "addNewTransaction": "+ Agregar Nueva Transacción",
+    "addNewTransaction": "Agregar Nueva Transacción",
     "totalIn": "Total Ingreso",
     "totalFees": "Total Comisiones",
     "totalOut": "Total Egreso",
@@ -484,7 +484,7 @@
   },
   "clientUsers": {
     "usersLength": "Usuarios ({length})",
-    "addUser": "+ Agregar Usuario",
+    "addUser": "Agregar Usuario",
     "addUserToAccount": "Agregar Usuario a la Cuenta",
     "searchExisting": "Buscar Existente",
     "inviteByEmail": "Invitar por Correo Electrónico",

@@ -112,7 +112,7 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Gestionar estado de red e informes de incidentes",
-    "createNew": "(+) Crear Nuevo",
+    "createNew": "Crear nuevo",
     "startDate": "Fecha de Inicio",
     "endDate": "Fecha de Fin",
     "deleteNetworkIssue": "Eliminar Problema de Red",

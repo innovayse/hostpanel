@@ -206,7 +206,7 @@
     "state": "NY",
     "postalCode": "10001",
     "countryCode": "US",
-    "phone": "+1.5551234567",
+    "phone": "1.5551234567",
     "ipAddress": "192.168.1.1",
     "hostingAccount": "account-name",
     "hostingUser": "account_user",

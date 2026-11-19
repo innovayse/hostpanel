@@ -101,8 +101,8 @@ describe('UiLocalizedField', () => {
      *
      * @param value - The language the strip reported.
      */
-    const follow = (value: MessageLanguage): void => {
-      active.value = value
+    const follow = (value: string | undefined): void => {
+      active.value = value as MessageLanguage
     }
     /** Parent that binds the strip to the active language, as a form does. */
     const host = defineComponent({

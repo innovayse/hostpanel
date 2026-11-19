@@ -25,8 +25,6 @@ export const blankTranslations = <T>(blank: () => T): Record<ContentLanguage, T>
   [ContentLanguage.Hy]: blank(),
   [ContentLanguage.De]: blank(),
   [ContentLanguage.Es]: blank(),
-  [ContentLanguage.De]: blank(),
-  [ContentLanguage.Es]: blank(),
 })
 
 /**

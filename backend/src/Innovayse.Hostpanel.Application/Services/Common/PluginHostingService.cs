@@ -389,6 +389,7 @@ public sealed class PluginHostingService
         var (provider, account) = usable;
         var existing = await FindLiveDatabaseAsync(context.Service.Id, trimmed, binding.PluginId, ct);
         if (existing is not null
+            && existing.IsIssuedTo(binding.PluginId)
             && existing.State is HostingResourceState.Active
             && existing.IsBoundTo(account.ServerId, account.Username))
         {
@@ -605,6 +606,9 @@ public sealed class PluginHostingService
                     : (existing, false, null);
             }
 
+            // The service row is read before the count: its xmin token then covers the count, so a change saved
+            // after this read (and before the count) makes this save conflict instead of passing the limit unseen.
+            var service = await _context.ClientServices.FirstAsync(s => s.Id == context.Service.Id, ct);
             var live = await _context.ServiceWebsites
                 .CountAsync(w => w.ClientServiceId == context.Service.Id && w.State != HostingResourceState.Removed, ct);
             if (live >= HostingResourceLimits.MaxWebsitesPerService)
@@ -612,7 +616,6 @@ public sealed class PluginHostingService
                 return (null, false, PluginHostAccessFailure.LimitReached);
             }
 
-            var service = await _context.ClientServices.FirstAsync(s => s.Id == context.Service.Id, ct);
             var website = ServiceWebsite.Create(service.Id, account.ServerId, account.Username, pluginId, hostname, documentRoot, php, mayBeLink);
             service.RecordHostingResourceChanged();
             _context.ServiceWebsites.Add(website);
@@ -665,6 +668,9 @@ public sealed class PluginHostingService
                     : (existing, false, null);
             }
 
+            // The service row is read before the count: its xmin token then covers the count, so a change saved
+            // after this read (and before the count) makes this save conflict instead of passing the limit unseen.
+            var service = await _context.ClientServices.FirstAsync(s => s.Id == context.Service.Id, ct);
             var live = await _context.ServiceDatabases
                 .CountAsync(d => d.ClientServiceId == context.Service.Id && d.State != HostingResourceState.Removed, ct);
             if (live >= HostingResourceLimits.MaxDatabasesPerService)
@@ -672,7 +678,6 @@ public sealed class PluginHostingService
                 return (null, false, PluginHostAccessFailure.LimitReached);
             }
 
-            var service = await _context.ClientServices.FirstAsync(s => s.Id == context.Service.Id, ct);
             var database = ServiceDatabase.Create(service.Id, account.ServerId, account.Username, pluginId, label);
             service.RecordHostingResourceChanged();
             _context.ServiceDatabases.Add(database);

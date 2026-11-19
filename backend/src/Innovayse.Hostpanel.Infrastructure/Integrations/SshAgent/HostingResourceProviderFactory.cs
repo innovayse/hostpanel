@@ -9,7 +9,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 /// a server is supported exactly when <see cref="ISshKeyProviderFactory"/> supports its module: the one mapping from a
 /// server module to an agent profile stays in that factory and is not repeated here.
 /// </summary>
-internal sealed class HostingResourceProviderFactory : IHostingResourceProviderFactory
+public sealed class HostingResourceProviderFactory : IHostingResourceProviderFactory
 {
     /// <summary>Tells which server modules have an agent profile.</summary>
     private readonly ISshKeyProviderFactory _agents;

@@ -66,8 +66,10 @@ public sealed class RemovePluginWebsiteTests(PluginHostAccessFixture fixture) : 
     [Fact]
     public async Task NotTheCallersOwnWebsite_IsNotFoundAsync()
     {
-        var owner = await fixture.OwnerWithDomainBoundToAsync("rmsite-foreign", fixture.HostingPluginId, fixture.OtherHostingPluginId);
-        var other = await fixture.OwnerWithDomainBoundToAsync("rmsite-foreign-b", fixture.HostingPluginId);
+        var owner = await fixture.OwnerWithDomainAsync("rmsite-foreign");
+        var other = await fixture.OwnerWithDomainAsync("rmsite-foreign-b");
+        await fixture.BindProductsOfAsync(fixture.HostingPluginId, owner.ServiceId, other.ServiceId);
+        await fixture.BindProductsOfAsync(fixture.OtherHostingPluginId, owner.ServiceId);
         var website = await EnsureAsync(owner, "app.rmsite-foreign.example.test");
         var otherSite = await EnsureAsync(other, "app.rmsite-foreign-b.example.test");
 
@@ -173,7 +175,9 @@ public sealed class RemovePluginWebsiteTests(PluginHostAccessFixture fixture) : 
         var owner = await fixture.OwnerWithDomainBoundToAsync("rmsite-budget", fixture.HostingPluginId);
         var website = await EnsureAsync(owner, "app.rmsite-budget.example.test");
         var binding = PluginHostAccessFixture.ClientCall(fixture.HostingPluginId, owner.ClientId);
-        using var budgeted = fixture.HostWithHostingBudget(0);
+        using var budgeted = fixture.HostWithHostingBudget(1);
+        await PluginHostAccessFixture.AsPluginAsync(
+            budgeted, binding, api => ((IPluginHostHostingApi)api).GetHostingCapabilitiesAsync(owner.ServiceId, CancellationToken.None));
 
         var failure = await PluginHostAccessFixture.AsPluginAsync(budgeted, binding, async api =>
         {

@@ -171,13 +171,26 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
     /// <returns>The owner, server and service.</returns>
     public async Task<SshOwnerScenario> OwnerWithDomainBoundToAsync(string label, params string[] pluginIds)
     {
-        var owner = await OwnerWithServiceAsync(label);
-        await SetDomainAsync(owner.ServiceId, $"{label}.example.test");
+        var owner = await OwnerWithDomainAsync(label);
         foreach (var pluginId in pluginIds)
         {
             await BindProductsOfAsync(pluginId, owner.ServiceId);
         }
 
+        return owner;
+    }
+
+    /// <summary>
+    /// Seeds a client with one active service on a fresh server, whose domain is <c>{label}.example.test</c>, bound to no
+    /// plugin. A binding replaces the plugin's whole product list, so a test with several services binds them in one
+    /// <see cref="BindProductsOfAsync"/> call after seeding all of them.
+    /// </summary>
+    /// <param name="label">Label for the generated e-mail and the service's domain.</param>
+    /// <returns>The owner, server and service.</returns>
+    public async Task<SshOwnerScenario> OwnerWithDomainAsync(string label)
+    {
+        var owner = await OwnerWithServiceAsync(label);
+        await SetDomainAsync(owner.ServiceId, $"{label}.example.test");
         return owner;
     }
 

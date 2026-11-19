@@ -67,8 +67,10 @@ public sealed class RemovePluginDatabaseTests(PluginHostAccessFixture fixture) :
     [Fact]
     public async Task NotTheCallersOwnDatabase_IsNotFoundAsync()
     {
-        var owner = await fixture.OwnerWithDomainBoundToAsync("rmdb-foreign", fixture.HostingPluginId, fixture.OtherHostingPluginId);
-        var other = await fixture.OwnerWithDomainBoundToAsync("rmdb-foreign-b", fixture.HostingPluginId);
+        var owner = await fixture.OwnerWithDomainAsync("rmdb-foreign");
+        var other = await fixture.OwnerWithDomainAsync("rmdb-foreign-b");
+        await fixture.BindProductsOfAsync(fixture.HostingPluginId, owner.ServiceId, other.ServiceId);
+        await fixture.BindProductsOfAsync(fixture.OtherHostingPluginId, owner.ServiceId);
         var database = await EnsureAsync(owner, "shop");
         var otherDatabase = await EnsureAsync(other, "shop");
 
@@ -173,7 +175,9 @@ public sealed class RemovePluginDatabaseTests(PluginHostAccessFixture fixture) :
         var owner = await fixture.OwnerWithDomainBoundToAsync("rmdb-budget", fixture.HostingPluginId);
         var database = await EnsureAsync(owner, "shop");
         var binding = PluginHostAccessFixture.ClientCall(fixture.HostingPluginId, owner.ClientId);
-        using var budgeted = fixture.HostWithHostingBudget(0);
+        using var budgeted = fixture.HostWithHostingBudget(1);
+        await PluginHostAccessFixture.AsPluginAsync(
+            budgeted, binding, api => ((IPluginHostHostingApi)api).GetHostingCapabilitiesAsync(owner.ServiceId, CancellationToken.None));
 
         var failure = await PluginHostAccessFixture.AsPluginAsync(budgeted, binding, async api =>
         {

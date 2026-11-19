@@ -383,8 +383,9 @@ public sealed class EnsurePluginWebsiteTests(PluginHostAccessFixture fixture) : 
     [Fact]
     public async Task WebsiteIsAlwaysSetUpOnTheServicesOwnServerAndAccountAsync()
     {
-        var first = await fixture.OwnerWithDomainBoundToAsync("site-own-a", fixture.HostingPluginId);
-        var second = await fixture.OwnerWithDomainBoundToAsync("site-own-b", fixture.HostingPluginId);
+        var first = await fixture.OwnerWithDomainAsync("site-own-a");
+        var second = await fixture.OwnerWithDomainAsync("site-own-b");
+        await fixture.BindProductsOfAsync(fixture.HostingPluginId, first.ServiceId, second.ServiceId);
 
         await EnsureAsync(first, fixture.HostingPluginId, Spec("app.site-own-a.example.test"));
 

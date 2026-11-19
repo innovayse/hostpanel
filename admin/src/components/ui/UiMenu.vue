@@ -2,11 +2,12 @@
 /**
  * Dropdown menu of named actions behind one trigger button.
  *
- * The trigger shows the `default` slot (a kebab ⋮ icon when the slot is empty) and carries an accessible label
+ * The trigger shows the `default` slot (a horizontal ellipsis icon when the slot is empty) and carries an accessible label
  * (`ariaLabel`, "Actions" by default). Destructive actions move to the end of the list in the danger tone; each still
  * asks for confirmation in its own `onSelect`. The menu closes on Escape, on a click outside the component, and after
  * any action is activated. The list is drawn in the page body (a teleport), because a frosted card around it would
- * otherwise become the containing block of a fixed box. Disabled actions are shown faded and cannot be selected. An
+ * otherwise become the containing block of a fixed box; on a phone (below `sm`) the same list is a bottom sheet titled with
+ * the trigger's label ({@link UiFloatingSurface}). Disabled actions are shown faded and cannot be selected. An
  * action with a `to` route is a real link (an anchor via RouterLink), so middle click, Ctrl/Cmd click and "open in new
  * tab" work and assistive technology announces a link. No actions render nothing.
  *
@@ -20,21 +21,21 @@
  * - Tab moving focus out of the component closes the menu without taking focus back.
  */
 import { computed, nextTick, watch } from 'vue'
-import UiTransition from '@/components/ui/UiTransition.vue'
-import { UiTransitionKind } from '@/utils/ui/transition'
+import UiFloatingSurface from '@/components/ui/UiFloatingSurface.vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { Icon } from '@/lib/icons'
+import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
 import { useDropdown } from '@/composables/useDropdown'
-import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PANEL_CLASSES, FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
+import { FloatingAlign } from '@/utils/ui/floating'
 import { Key } from '@/utils/ui/keys'
 import { elementAttrs, isLink, itemRole, toneClasses } from '@/utils/ui/menu'
 import type { UiMenuAction } from '@/utils/ui/menu'
 
 /** Props for UiMenu. */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** The actions to show in the menu. */
   actions: UiMenuAction[]
   /** Accessible label of the trigger; the shared "Actions" text when not given. */
@@ -43,8 +44,13 @@ const props = defineProps<{
   testid?: string
   /** `data-testid` of the open menu panel; `ui-menu-panel` when not given. */
   menuTestid?: string
-}>()
+  /** The trigger edge the menu lines up with: the end edge (growing leftwards) by default, the start edge for a trigger at the left of the screen. */
+  align?: FloatingAlign
+}>(), {
+  align: FloatingAlign.End,
+})
 
+/** Resolves the locale keys of the menu's own captions. */
 const { t } = useI18n()
 
 /** The actions in display order: the destructive ones last, each group keeping the order it was given in. */
@@ -63,7 +69,7 @@ const triggerTestid = computed<string>(() => props.testid ?? 'ui-menu-trigger')
 const panelTestid = computed<string>(() => props.menuTestid ?? 'ui-menu-panel')
 
 /** Look of one row of the open menu. */
-const MENU_ITEM_CLASSES = 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40'
+const MENU_ITEM_CLASSES = 'flex w-full items-center gap-2 px-3 py-2 max-sm:py-3 text-left text-sm transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40'
 
 /** Selector of the focusable, enabled menu items, buttons and link anchors alike. */
 const ITEM_SELECTOR = '[role^="menuitem"]:not([disabled])'
@@ -71,16 +77,14 @@ const ITEM_SELECTOR = '[role^="menuitem"]:not([disabled])'
 /** Open flag, outside-pointer and Escape handling shared with the other floating lists; `panel` is the teleported menu. */
 const { open, root, trigger, panel, isInside, hide, toggle, onEscape } = useDropdown()
 
+/** The shape the list takes now: on a phone it is a modal sheet that owns its own dismissal (Escape, backdrop, close button). */
+const presentation = useDrawerPresentation()
+
 /** Gap between the trigger and the menu, in pixels. */
 const MENU_GAP_PX = 4
 
 /** Free room below the trigger, in pixels, under which the menu opens above it. */
 const MENU_MIN_ROOM_PX = 160
-
-// The menu is `fixed` and in the page body, so a table that scrolls inside its card (`overflow-x-auto`) cannot clip
-// it or grow a scrollbar for it; it opens above the trigger when there is little room below and follows the trigger
-// while the page scrolls.
-useFloatingPlace(trigger, panel, open, { align: FloatingAlign.End, minRoom: MENU_MIN_ROOM_PX, gap: MENU_GAP_PX })
 
 /**
  * Activates an action and closes the menu.
@@ -99,11 +103,13 @@ const select = (action: UiMenuAction): void => {
 /**
  * Closes the menu when focus moves to something outside the component (Tab out of the menu), leaving focus where
  * the user sent it. Focus moving between the trigger and the items stays inside the component and keeps the menu open.
+ * Not applied to the phone sheet: the drawer moves focus into its own panel as it opens and traps it there, which
+ * is not a Tab out, and it closes itself on Escape, the backdrop and its close button.
  *
  * @param e - The focusout event; `relatedTarget` is the element receiving focus, or null when focus leaves the page.
  */
 const onFocusOut = (e: FocusEvent): void => {
-  if (open.value && e.relatedTarget && !isInside(e.relatedTarget)) {
+  if (presentation.value === UiDrawerPresentation.Side && open.value && e.relatedTarget && !isInside(e.relatedTarget)) {
     hide()
   }
 }
@@ -144,7 +150,7 @@ watch(open, async (val) => {
 
 <template>
   <div v-if="ordered.length > 0" ref="root" class="relative inline-block" @focusout="onFocusOut">
-    <!-- Trigger: the slot content, a kebab by default -->
+    <!-- Trigger: the slot content, an ellipsis by default -->
     <button
       ref="trigger"
       type="button"
@@ -158,41 +164,43 @@ watch(open, async (val) => {
     >
       <slot>
         <span class="inline-flex size-8 items-center justify-center rounded-control text-text-muted transition-colors group-hover:bg-surface-hover group-hover:text-text-primary">
-          <UiIcon :markup="Icon.MoreVertical" size="sm" />
+          <UiIcon :markup="Icon.MoreHorizontal" size="sm" />
         </span>
       </slot>
     </button>
 
-    <!-- Dropdown: in the page body, so no card around the trigger can clip it or re-anchor its fixed place -->
-    <Teleport to="body">
-      <UiTransition :kind="UiTransitionKind.Dropdown">
-        <div
-          v-if="open"
-          ref="panel"
-          role="menu"
-          :class="[FLOATING_PLACE_CLASSES, FLOATING_PANEL_CLASSES, 'z-50 min-w-[12rem] rounded-control p-1.5']"
-          :data-testid="panelTestid"
-          @focusout="onFocusOut"
-          @keydown="onKeydown"
-        >
-          <component
-            :is="isLink(action) ? RouterLink : 'button'"
-            v-for="action in ordered"
-            :key="action.testid ?? action.label"
-            v-bind="elementAttrs(action)"
-            :role="itemRole(action)"
-            :aria-checked="action.checked"
-            :data-testid="action.testid"
-            class="rounded-lg"
-            :class="[MENU_ITEM_CLASSES, toneClasses(action)]"
-            @click="select(action)"
-          >
-            <UiIcon v-if="action.icon" :markup="action.icon" size="sm" />
-            {{ action.label }}
-            <UiIcon v-if="action.checked" :markup="Icon.Check" size="sm" class="ml-auto" />
-          </component>
-        </div>
-      </UiTransition>
-    </Teleport>
+    <!-- The list: a popover in the page body (no card around the trigger can clip it or re-anchor its fixed place) or a bottom sheet on a phone -->
+    <UiFloatingSurface
+      :open="open"
+      :anchor="trigger"
+      :title="triggerLabel"
+      :align="align"
+      :min-room="MENU_MIN_ROOM_PX"
+      :gap="MENU_GAP_PX"
+      popover-class="min-w-[12rem] rounded-control p-1.5"
+      role="menu"
+      :data-testid="panelTestid"
+      @close="hide(true)"
+      @panel="panel = $event"
+      @focusout="onFocusOut"
+      @keydown="onKeydown"
+    >
+      <component
+        :is="isLink(action) ? RouterLink : 'button'"
+        v-for="action in ordered"
+        :key="action.testid ?? action.label"
+        v-bind="elementAttrs(action)"
+        :role="itemRole(action)"
+        :aria-checked="action.checked"
+        :data-testid="action.testid"
+        class="rounded-lg"
+        :class="[MENU_ITEM_CLASSES, toneClasses(action)]"
+        @click="select(action)"
+      >
+        <UiIcon :markup="action.icon" size="sm" />
+        {{ action.label }}
+        <UiIcon v-if="action.checked" :markup="Icon.Check" size="sm" class="ml-auto" />
+      </component>
+    </UiFloatingSurface>
   </div>
 </template>

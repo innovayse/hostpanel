@@ -1,63 +1,55 @@
 <script setup lang="ts">
 /**
- * Ticket tags report: how many tickets carry each tag in a date range, as a bar chart and a table.
+ * Ticket tags report: how many tickets carry each tag in a date range, as a bar chart and a table. The title, the
+ * filter captions and the table columns are the ones of its schema, which the skeleton draws too.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportChartCard from '@/components/reports/ReportChartCard.vue'
-import ReportField from '@/components/reports/ReportField.vue'
-import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import { useReport } from '@/composables/useReport'
 import { reportPath } from '@/lib/reportsQuery'
-import { currentYearRange } from '@/lib/reportsPeriod'
-import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportTags } from '@/types/reporttags'
-import { UiChartType } from '@/utils/ui/chart'
-import type { UiChartSeries } from '@/utils/ui/chart'
-import { UiAlign } from '@/utils/ui/table'
+import { DateRangePreset, presetIsoRange } from '@/utils/ui/datePicker'
+import type { ReportChartData } from '@/types/reportchartdata'
+import { ReportCellFormat } from '@/types/reportcolumn'
+import type { ReportTagRow, ReportTags } from '@/types/reporttags'
+import type { ReportTableData } from '@/types/reporttabledata'
+import { ReportFieldWidth } from '@/utils/ui/reportField'
+import schema from '@/views/TicketTagsView.schema'
 
 const { t } = useI18n()
 
+/** Width of the date range filter. */
+const FILTER_WIDTHS = { dateRange: ReportFieldWidth.Grow }
+
 /** The period to report; the current year at first. */
-const dateRange = ref<[string, string] | null>(currentYearRange())
+const dateRange = ref<[string, string] | null>(presetIsoRange(DateRangePreset.ThisYear))
 
 const { data, load } = useReport<ReportTags>(() =>
   reportPath('/reports/ticket-tags', { from: dateRange.value?.[0], to: dateRange.value?.[1] }),
 )
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'tag', label: t('reports.ticketTags.tag') },
-  { key: 'count', label: t('reports.ticketTags.count'), align: UiAlign.Right },
-])
+/** The tags with their ticket counts; none until the report is read. */
+const rows = computed<ReportTagRow[]>(() => data.value?.rows ?? [])
 
-/** Chart labels: the tags. */
-const labels = computed<string[]>(() => (data.value?.rows ?? []).map(row => row.tag))
+/** The table of the tags, with the tooltip that explains the count. */
+const table = computed<ReportTableData<ReportTagRow>>(() => ({
+  rows: rows.value,
+  rowKey: 'tag',
+  extras: { count: { format: ReportCellFormat.Integer, hint: t('reports.ticketTags.countHint') } },
+}))
 
-/** Chart series: the ticket count per tag. */
-const series = computed<UiChartSeries[]>(() => [
-  { label: t('reports.ticketTags.count'), data: (data.value?.rows ?? []).map(row => row.count) },
-])
+/** The bar chart: the ticket count per tag. */
+const chart = computed<ReportChartData>(() => ({
+  labels: rows.value.map(row => row.tag),
+  series: [{ label: t('reports.ticketTags.count'), data: rows.value.map(row => row.count) }],
+}))
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.ticketTags.ticketTagsOverview')" :description="t('reports.ticketTags.thisReportProvidesAnOverview')">
-    <template #filters>
-      <ReportFilterBar :generate-label="t('shared.generateReport')" @generate="load">
-        <template #fields>
-          <ReportField :label="t('shared.dateRange')" width="grow">
-            <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
-          </ReportField>
-        </template>
-      </ReportFilterBar>
-    </template>
-
-    <template v-if="data">
-      <ReportChartCard v-if="data.rows.length > 0" :type="UiChartType.Bar" :labels="labels" :series="series" horizontal />
-      <ReportTable :columns="columns" :rows="data.rows" row-key="tag" :empty-text="t('shared.noDataFoundForThis2')" />
+  <ReportPage :retry="load" :schema="schema" :widths="FILTER_WIDTHS" :chart="chart" :table="table" @generate="load">
+    <template #field-dateRange>
+      <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
     </template>
   </ReportPage>
 </template>

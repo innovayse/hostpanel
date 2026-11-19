@@ -10,6 +10,16 @@ export enum VatRateKind {
   Reduced = 'Reduced',
 }
 
+/** Where a row stands today among the rows of its country and kind; the API spells it as the member name. */
+export enum VatRateStatus {
+  /** The row in force: its first day has come and no later row of the same country and kind has started. */
+  Active = 'Active',
+  /** A later row of the same country and kind has started, so this one no longer applies. */
+  Superseded = 'Superseded',
+  /** The row's first day has not come yet. */
+  Upcoming = 'Upcoming',
+}
+
 /** A VAT rate as the admin VAT rates page sees it. */
 export interface VatRateDto {
   /** Row primary key. */
@@ -24,14 +34,22 @@ export interface VatRateDto {
   validFrom: string
 }
 
+/** What narrows the VAT rate list: the search text and the filters of the filter dialog; each member left out means no narrowing. */
+export interface VatRateListFilters {
+  /** Search term over the country code; empty for none. */
+  search?: string
+  /** Keep only the rows of this kind. */
+  kind?: VatRateKind
+  /** Keep only the rows with this standing today. */
+  status?: VatRateStatus
+}
+
 /** Filter and paging of the VAT rate list. */
-export interface VatRateFilter {
+export interface VatRateFilter extends VatRateListFilters {
   /** Page, 1-based. */
   page: number
   /** Items per page. */
   pageSize: number
-  /** Search term over the country code; empty for none. */
-  search?: string
 }
 
 /** Body of `POST /api/admin/vat-rates` and `PUT /api/admin/vat-rates/{id}`: every field of a row except its id. */

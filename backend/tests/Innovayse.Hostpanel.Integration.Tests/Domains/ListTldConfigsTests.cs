@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -32,22 +31,63 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
         totalCount.Should().Be(0);
     }
 
-    /// <summary>A newly created configuration shows up in the list, with its margin worked out from the one-year prices.</summary>
+    /// <summary>
+    /// The margin compares the sell price with the cost converted into the sell currency through the stored rates, so a
+    /// cost stated in a small currency is not read against a sell price in a large one.
+    /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task List_IncludesANewlyCreatedConfigurationWithItsMarginAsync()
+    public async Task List_MarginComparesTheSellPriceWithTheCostConvertedIntoTheSellCurrencyAsync()
     {
-        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
-        var (tld, body) = DomainsTestSeeds.NewTldBody();
-        await admin.PostAsJsonAsync(Route, body);
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "ZQA", "964", 0.5m);
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "ZQB", "965", 1m);
+        var tld = $"m{Guid.NewGuid():N}"[..10];
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            await DomainsTestSeeds.SeedPricedTldConfigAsync(context, tld, "ZQA", "ZQB", 5m, 10m);
+        }
 
-        var response = await admin.GetAsync($"{Route}?page=1&pageSize=20&search={tld}");
+        var margin = await MarginOfAsync(tld);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        using var page = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var row = page.RootElement.GetProperty("items").EnumerateArray().Single();
-        row.GetProperty("tld").GetString().Should().Be(tld);
-        row.GetProperty("marginPercent").GetDecimal().Should().Be(100m);
+        // 5 ZQA is 2.5 ZQB; selling at 10 ZQB earns 300 percent, not the 100 percent the raw numbers suggest.
+        margin.GetDecimal().Should().Be(300m);
+    }
+
+    /// <summary>A cost in the sell currency needs no conversion: the margin is the plain difference.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task List_MarginOfASingleCurrencyNeedsNoConversionAsync()
+    {
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "ZQB", "965", 1m);
+        var tld = $"s{Guid.NewGuid():N}"[..10];
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            await DomainsTestSeeds.SeedPricedTldConfigAsync(context, tld, "ZQB", "ZQB", 5m, 10m);
+        }
+
+        var margin = await MarginOfAsync(tld);
+
+        margin.GetDecimal().Should().Be(100m);
+    }
+
+    /// <summary>A cost whose currency has no stored rate has no margin: it is null, never a guess.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task List_MarginIsNullWhenTheCostCurrencyHasNoRateAsync()
+    {
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, "ZQB", "965", 1m);
+        var tld = $"n{Guid.NewGuid():N}"[..10];
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            await DomainsTestSeeds.SeedPricedTldConfigAsync(context, tld, "ZQN", "ZQB", 5m, 10m);
+        }
+
+        var margin = await MarginOfAsync(tld);
+
+        margin.ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
@@ -243,6 +283,18 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
         var first = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}a", RegistrarModule.NameAm, true, 2);
         var second = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}b", RegistrarModule.Namecheap, false, 2);
         return new TldMix(token, underscored, first, second);
+    }
+
+    /// <summary>Reads the margin the list answers for one TLD.</summary>
+    /// <param name="tld">The extension, without its dot.</param>
+    /// <returns>The row's <c>marginPercent</c> member.</returns>
+    private async Task<JsonElement> MarginOfAsync(string tld)
+    {
+        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var response = await admin.GetAsync($"{Route}?page=1&pageSize=20&search={tld}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var page = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return page.RootElement.GetProperty("items").EnumerateArray().Single().GetProperty("marginPercent").Clone();
     }
 
     /// <summary>Lists the configurations the admin list answers for a query string.</summary>

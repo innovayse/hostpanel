@@ -13,6 +13,10 @@ describe('UiMetric', () => {
     expect(wrapper.get('p').classes()).toEqual(expect.arrayContaining(['font-display', 'tabular-nums', 'text-[1.875rem]']))
   })
 
+  it('wraps a long unbroken value instead of widening the page', () => {
+    expect(mount(UiMetric, { props: { value: 'a'.repeat(80) } }).get('p').classes()).toContain('break-words')
+  })
+
   it('shows the label and the caption only when given', () => {
     expect(mount(UiMetric, { props: { value: 1 } }).text()).toBe('1')
 

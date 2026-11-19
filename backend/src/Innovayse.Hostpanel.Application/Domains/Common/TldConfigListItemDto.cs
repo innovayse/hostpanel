@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Common;
 /// <param name="IsEnabled">Whether this TLD is enabled for sale to clients.</param>
 /// <param name="CostRegister1yr">1-year registrar cost for registration, or null if not set.</param>
 /// <param name="SellRegister1yr">1-year client-facing sell price for registration, or null if not set.</param>
-/// <param name="MarginPercent">Margin percentage between cost and sell price, or null if cost is zero/missing.</param>
+/// <param name="MarginPercent">Margin percentage between cost and sell price, or null when the cost is missing or zero, or cannot be converted into the sell currency.</param>
 /// <param name="Currency">ISO 4217 currency code for cost prices.</param>
 /// <param name="SellCurrency">ISO 4217 currency code for sell prices.</param>
 /// <param name="Categories">Marketing categories this TLD belongs to.</param>

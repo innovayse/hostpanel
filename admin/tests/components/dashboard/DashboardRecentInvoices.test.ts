@@ -32,4 +32,13 @@ describe('DashboardRecentInvoices', () => {
     expect(wrapper.findAll('li [data-testid="ui-skeleton-bar"]')).toHaveLength(20)
     expect(wrapper.text()).not.toContain('No invoices yet.')
   })
+
+  it('gives the client name a line of its own on a phone, with the number, total and status under it', () => {
+    const invoice = { id: 11, clientName: 'Ada', status: 'Paid', total: 50, currency: 'USD' } as Invoice
+    const wrapper = mountWithApp(DashboardRecentInvoices, { props: { invoices: [invoice], loading: false } })
+
+    expect(wrapper.get('li').classes()).toContain('max-sm:grid-cols-[auto_1fr_auto]')
+    expect(wrapper.get('li span.truncate').classes()).toEqual(expect.arrayContaining(['max-sm:col-span-3', 'max-sm:row-start-1']))
+    expect(wrapper.get('[data-testid="dashboard-invoice-11"]').classes()).toContain('max-sm:row-start-2')
+  })
 })

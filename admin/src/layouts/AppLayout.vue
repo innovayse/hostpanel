@@ -2,12 +2,14 @@
 /**
  * Main authenticated layout: sidebar + topbar + content area, over the glowing ground.
  *
- * The shell fills the viewport and never scrolls itself; the content area (`<main>`) is the one scroller. The demo
+ * The shell fills the viewport and never scrolls itself; the content area (`<main>`) is the one scroller, and a size
+ * container so a section layout with an inner sidebar can be exactly as tall as it (`UiSidebarLayout`). The demo
  * strip, when shown, spans the full width above the sidebar and the main column, so their header lines stay aligned.
  * Responsive sidebar state:
  * - Desktop (lg+): a full-height column against the left edge, open or folded to an icon rail
- * - Below lg: hidden, opened from the topbar menu button as a bottom sheet (grab handle, drag to close, backdrop,
- *   focus trap, Escape closes: the drawer surface provides them)
+ * - Tablet (md up to lg): the same column, always the icon rail (no room to unfold it); an entry with a sub-menu opens the menu sheet
+ * - Below lg: opened from the topbar menu button as a bottom sheet (grip, safe area, drag down, Escape or a backdrop tap
+ *   closes it, focus trap: the drawer surface provides them); on a phone the sidebar is hidden until then
  */
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -20,7 +22,7 @@ import EmailVerificationBanner from '@/components/layout/EmailVerificationBanner
 import RoutedView from '@/components/layout/RoutedView.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { UiDrawerSheetBelow } from '@/utils/ui/drawer'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { UiBreakpoint } from '@/utils/ui/layout'
 import { useLinkPrefetch } from '@/composables/useLinkPrefetch'
 import { useAuthStore } from '@/stores/auth'
@@ -86,13 +88,13 @@ const closeDrawer = (): void => {
     <DemoBanner />
 
     <UiStack direction="row" gap="none" align="stretch" class="min-h-0 flex-1">
-      <!-- Sidebar: only from lg up (UiStack swaps its own flex for the breakpoint pair, so it takes no room below lg), flush with the left edge and the full height -->
-      <UiStack gap="none" :visible-from="UiBreakpoint.Lg" data-testid="app-sidebar-desktop">
-        <AppSidebar />
+      <!-- Sidebar: only from md up (UiStack swaps its own flex for the breakpoint pair, so it takes no room on a phone), flush with the left edge and the full height; an icon rail below lg -->
+      <UiStack gap="none" :visible-from="UiBreakpoint.Md" data-testid="app-sidebar-desktop">
+        <AppSidebar @open-menu="drawerOpen = true" />
       </UiStack>
 
       <!-- Sidebar: a bottom sheet below lg (the persistent sidebar above takes over from there) -->
-      <UiDrawer :open="drawerOpen" side="left" :title="t('layout.menu')" flush narrow sheet :sheet-below="UiDrawerSheetBelow.Lg" @close="closeDrawer">
+      <UiDrawer :open="drawerOpen" :presentation="UiDrawerPresentation.Sheet" :title="t('layout.menu')" flush @close="closeDrawer">
         <AppSidebar embedded @navigate="closeDrawer" />
       </UiDrawer>
 
@@ -103,7 +105,7 @@ const closeDrawer = (): void => {
       <UiStack gap="none" class="min-h-0 min-w-0 flex-1">
         <AppTopbar @toggle-sidebar="toggleSidebar" />
 
-        <main class="relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <main class="container-size relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           <!--
             The content gutter lives here, once, rather than being repeated on
             every view root. A flex column with min-h-full so a nested module

@@ -29,6 +29,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant } from '@/utils/ui/text'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -211,7 +212,7 @@ onMounted(async () => {
         </UiGrid>
 
         <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" gap="sm">
-          <UiButton
+          <UiButton :action="UiActionKind.Cancel"
             type="button"
             :variant="UiButtonVariant.Secondary"
             data-testid="clients-add-transaction-cancel"
@@ -219,7 +220,7 @@ onMounted(async () => {
           >
             {{ t('shared.cancel') }}
           </UiButton>
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             type="submit"
             :variant="UiButtonVariant.Primary"
             :loading="internalSaving"

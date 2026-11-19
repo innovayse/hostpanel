@@ -8,9 +8,10 @@
  * Emits `save` with the payload on submit, and `close` on cancel, Escape or a backdrop click. A
  * refused save (the `error` prop) shows next to the save button; the API's per-field messages
  * (the `fieldErrors` prop) show under their inputs and go away, through `clearFieldError`, as
- * soon as the operator changes that field. The API is the only validator.
+ * soon as the operator changes that field. The API is the only validator. While the lists the form
+ * is built from load, every field is drawn as a placeholder under its real caption (`UI_FIELD_LOADING`).
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFieldErrorClear } from '@/composables/useFieldErrorClear'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -21,7 +22,6 @@ import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -33,8 +33,8 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiTableDensity } from '@/utils/ui/injection'
-import { UiCardRole } from '@/utils/ui/table'
+import { UI_FIELD_LOADING, UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
@@ -46,6 +46,7 @@ import { PRODUCT_PRICE_CYCLES } from '@/types/product'
 import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle, ProductTrial, ProductTrialDefaults } from '@/types/product'
 import { ProductField, ProductStatus, ProductType } from '@/types/productenums'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -230,6 +231,11 @@ const resetPriceRows = (existingPrices?: ProductPrice[]): void => {
   priceRows.value = rows
 }
 
+/** True while the server groups, the currencies and the trial defaults are being read; every field draws as a placeholder meanwhile. */
+const loading = ref(true)
+
+provide(UI_FIELD_LOADING, loading)
+
 /** Fetches the available server groups and the configured currencies on mount. */
 onMounted(async () => {
   await serversStore.fetchGroups()
@@ -241,6 +247,7 @@ onMounted(async () => {
     applyTrialDefaults()
   }
   resetPriceRows(props.product?.prices)
+  loading.value = false
 })
 
 /**
@@ -541,12 +548,12 @@ const handleSubmit = (): void => {
             v-for="pt in productTypes"
             :key="pt.value"
             type="button"
+            :icon="pt.icon"
             :variant="type === pt.value ? 'primary' : 'secondary'"
             :aria-pressed="type === pt.value"
             :data-testid="`product-form-type-${pt.value}`"
             @click="type = pt.value"
           >
-            <UiIcon :markup="pt.icon" />
             {{ pt.label }}
           </UiButton>
         </UiGrid>
@@ -742,12 +749,12 @@ const handleSubmit = (): void => {
 
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
-        <UiCard class="overflow-hidden">
+        <UiCard clip>
           <UiTable :density="UiTableDensity.Compact" data-testid="product-form-prices">
             <UiTableHead>
               <UiTableRow>
-                <UiTableHeader>{{ t('shared.enabled') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.currency') }}</UiTableHeader>
+                <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.enabled') }}</UiTableHeader>
+                <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.currency') }}</UiTableHeader>
                 <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric :card-role="UiCardRole.Control">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
@@ -818,10 +825,10 @@ const handleSubmit = (): void => {
       <UiStatusMessage :message="error ?? null" :tone="UiTone.Danger" data-testid="product-form-error" />
 
       <UiFormActions>
-        <UiButton type="button" variant="secondary" data-testid="product-form-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="product-form-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :loading="saving" data-testid="product-form-save">
+        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="product-form-save">
           {{ isEditMode ? t('shared.saveChanges') : t('settings.productForm.createProduct') }}
         </UiButton>
       </UiFormActions>

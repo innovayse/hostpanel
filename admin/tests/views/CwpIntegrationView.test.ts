@@ -10,6 +10,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { integrationDetail } from '../helpers/integrationFixtures'
+import { useToastStore } from '@/stores/toast'
 
 /** Live server info of a connected CWP server. */
 const connectedInfo = { connected: true, accountsCount: 21, version: '0.9.8', lastTestedAt: null, errorMessage: null }
@@ -31,6 +32,19 @@ describe('CwpIntegrationView', () => {
     expect(wrapper.get('[data-testid="cwp-status"]').text()).toBe('Connected')
     expect(wrapper.get('[data-testid="provider-status"]').text()).toContain('21')
     expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
+  })
+
+  it('puts the brand header, the form and the status in the three cards of the schema', async () => {
+    stubRoutes({
+      'GET /api/admin/integrations/cwp/server-info': () => json(connectedInfo),
+      'GET /api/admin/integrations/cwp': () => json(integrationDetail({ slug: 'cwp', name: 'CWP' })),
+    })
+    const wrapper = await mountView(CwpIntegrationView)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-detail-card-brand"] [data-testid="cwp-brand-header"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-detail-card-config"] [data-testid="integration-config-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-detail-card-status"] [data-testid="provider-status"]').exists()).toBe(true)
   })
 
   it('shows the message of a failed test under the form', async () => {
@@ -60,7 +74,7 @@ describe('CwpIntegrationView', () => {
     await wrapper.get('[data-testid="integration-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="cwp-save-feedback"]').text()).toBe('Settings saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Settings saved.'])
   })
 
   it('shows the API sentence under the form when the save is refused', async () => {

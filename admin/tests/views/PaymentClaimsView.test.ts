@@ -7,8 +7,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PaymentClaimsView from '@/views/PaymentClaimsView.vue'
+import schema from '@/views/PaymentClaimsView.schema'
 import { mountRouted } from '../helpers/mount'
 import { callOf, json, stubFetch, problem } from '../helpers/fetch'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 
 /** A page with one held claim. */
 const page = {
@@ -65,6 +67,15 @@ describe('PaymentClaimsView', () => {
     expect(table).not.toContain('Currency')
     expect(wrapper.get('[data-testid="billing-payment-claim-invoice-3"]').attributes('href')).toBe('/billing/5')
     expect(wrapper.get('[data-testid="billing-payment-claim-client-3"]').attributes('href')).toBe('/clients/9')
+  })
+
+  it('draws the headers of the schema columns, in order', async () => {
+    setActivePinia(createPinia())
+    stubFetch(json(page))
+    const { wrapper } = await mountRouted(PaymentClaimsView, '/billing/payment-claims', '/billing/payment-claims')
+    await flushPromises()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
   it('loads again from the Retry of a refused load', async () => {

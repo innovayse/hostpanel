@@ -9,11 +9,11 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBulkBar from '@/components/ui/UiBulkBar.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import { Icon } from '@/lib/icons'
 import { InvoiceBulkAction } from '@/types/invoice'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiSize } from '@/utils/ui/size'
+import type { UiBulkAction } from '@/utils/ui/bulkBar'
 
 const { t } = useI18n()
 
@@ -41,24 +41,27 @@ const processing = ref(false)
 /** True when the pending action is the delete (otherwise it is the cancel). */
 const pendingIsDelete = computed<boolean>(() => pending.value === InvoiceBulkAction.Delete)
 
-/** The buttons of the bar, in display order; the first is the primary action. `suffix` ends the button's test id. */
-const actions = computed(() => [
-  { action: InvoiceBulkAction.MarkPaid, suffix: 'paid', label: t('billing.invoicesList.markPaid'), variant: UiButtonVariant.Primary, confirmed: false },
-  { action: InvoiceBulkAction.MarkUnpaid, suffix: 'unpaid', label: t('billing.invoicesList.markUnpaid'), variant: UiButtonVariant.Secondary, confirmed: false },
-  { action: InvoiceBulkAction.MarkCancelled, suffix: 'cancelled', label: t('shared.markCancelled'), variant: UiButtonVariant.Secondary, confirmed: true },
-  { action: InvoiceBulkAction.Duplicate, suffix: 'duplicate', label: t('billing.invoicesList.duplicateInvoice'), variant: UiButtonVariant.Secondary, confirmed: false },
-  { action: InvoiceBulkAction.Delete, suffix: 'delete', label: t('shared.delete'), variant: UiButtonVariant.Danger, confirmed: true },
+/** The actions that wait for the operator's confirmation before they run. */
+const CONFIRMED_ACTIONS: readonly InvoiceBulkAction[] = [InvoiceBulkAction.MarkCancelled, InvoiceBulkAction.Delete]
+
+/** The actions of the bar, in display order; the first is the primary one. The key is the action itself. */
+const actions = computed<UiBulkAction[]>(() => [
+  { key: InvoiceBulkAction.MarkPaid, label: t('billing.invoicesList.bulkPaid'), title: t('billing.invoicesList.markPaid'), icon: Icon.Check, variant: UiButtonVariant.Primary, testid: `${props.testid}-paid` },
+  { key: InvoiceBulkAction.MarkUnpaid, label: t('billing.invoicesList.bulkUnpaid'), title: t('billing.invoicesList.markUnpaid'), icon: Icon.Close, variant: UiButtonVariant.Secondary, testid: `${props.testid}-unpaid` },
+  { key: InvoiceBulkAction.MarkCancelled, label: t('billing.invoicesList.bulkCancelled'), title: t('shared.markCancelled'), icon: Icon.Remove, variant: UiButtonVariant.Secondary, testid: `${props.testid}-cancelled` },
+  { key: InvoiceBulkAction.Duplicate, label: t('billing.invoicesList.bulkDuplicate'), title: t('billing.invoicesList.duplicateInvoice'), icon: Icon.Copy, variant: UiButtonVariant.Secondary, testid: `${props.testid}-duplicate` },
+  { key: InvoiceBulkAction.Delete, label: t('shared.delete'), title: t('shared.delete'), icon: Icon.Trash, variant: UiButtonVariant.Danger, testid: `${props.testid}-delete` },
 ])
 
 /**
  * Runs an action now, or asks first when it cancels or deletes.
  *
- * @param action - The chosen action.
- * @param confirmed - True when the action needs the operator's confirmation.
+ * @param key - The key of the chosen action, one of the `InvoiceBulkAction` values.
  * @returns Resolves when the action has settled, or at once when it waits for confirmation.
  */
-const choose = async (action: InvoiceBulkAction, confirmed: boolean): Promise<void> => {
-  if (confirmed) {
+const choose = async (key: string): Promise<void> => {
+  const action = key as InvoiceBulkAction
+  if (CONFIRMED_ACTIONS.includes(action)) {
     pending.value = action
     return
   }
@@ -90,18 +93,7 @@ const dismiss = (): void => {
 </script>
 
 <template>
-  <UiBulkBar :count="count" :data-testid="testid" @clear="emit('clear')">
-    <UiButton
-      v-for="entry in actions"
-      :key="entry.action"
-      :variant="entry.variant"
-      :size="UiSize.Sm"
-      :data-testid="`${testid}-${entry.suffix}`"
-      @click="choose(entry.action, entry.confirmed)"
-    >
-      {{ entry.label }}
-    </UiButton>
-  </UiBulkBar>
+  <UiBulkBar :count="count" :actions="actions" :data-testid="testid" @clear="emit('clear')" @action="choose" />
 
   <UiDialog
     variant="confirm"

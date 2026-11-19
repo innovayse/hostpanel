@@ -99,16 +99,14 @@ const copyCommand = async (): Promise<void> => {
         <code class="block break-all font-mono text-[0.7rem] text-text-secondary leading-relaxed pr-6">
           {{ releaseStatus.status.upgradeCommand }}
         </code>
-        <UiButton
+        <UiButton :icon="COPY_ICON"
           variant="ghost"
           size="sm"
           class="absolute right-1.5 top-1.5 p-0.5 text-text-muted hover:text-text-primary"
           :aria-label="t('layout.releaseUpdate.copy')"
           data-testid="release-update-copy"
           @click="copyCommand"
-        >
-          <UiIcon :markup="COPY_ICON" size="sm" />
-        </UiButton>
+        ></UiButton>
       </div>
 
       <!-- Copied feedback -->

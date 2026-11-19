@@ -10,6 +10,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -53,7 +54,7 @@ describe('InvoicePaymentTab', () => {
 
     const post = mock.mock.calls.find(([url]) => String(url).endsWith('/billing/1/payment'))
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toMatchObject({ amount: 25, fees: 0 })
-    expect(wrapper.get('[data-testid="billing-invoice-payment-feedback"]').text()).toBe('Payment recorded.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Payment recorded.'])
   })
 
   it('shows the API sentence under the form when the payment is refused', async () => {

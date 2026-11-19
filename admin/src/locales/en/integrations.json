@@ -11,17 +11,34 @@
     "notConfigured": "Not configured"
   },
   "categories": {
-    "fulfilment": "Fulfilment",
+    "payments": "Payment gateways",
+    "provisioning": "Hosting panels",
+    "registrars": "Domain registrars",
+    "email": "Email / SMTP",
+    "fulfilment": "Order fulfilment",
+    "fraud": "Fraud protection",
     "identity": "Identity",
-    "hosted": "Background workers"
+    "hosted": "Background jobs"
   },
-  "pluginType": {
-    "provisioning": "Provisioning",
-    "payment": "Payment",
-    "registrar": "Registrar",
-    "identity": "Identity",
+  "categoryMenu": {
+    "payments": "Payments",
+    "provisioning": "Hosting panels",
+    "registrars": "Registrars",
+    "email": "Email",
     "fulfilment": "Fulfilment",
-    "hosted": "Background worker"
+    "fraud": "Fraud",
+    "identity": "Identity",
+    "hosted": "Background jobs"
+  },
+  "categoryEmpty": {
+    "payments": "Payment gateways take card and bank payments for invoices. None is installed yet.",
+    "provisioning": "Hosting panels create and manage hosting accounts on your servers. None is installed yet.",
+    "registrars": "Domain registrars register and renew the domains your clients order. None is installed yet.",
+    "email": "Email providers deliver the mail the panel sends. None is installed yet.",
+    "fulfilment": "Fulfilment plugins deliver digital products once an invoice is paid. None is installed yet.",
+    "fraud": "Fraud protection screens new orders for risk. None is installed yet.",
+    "identity": "Identity plugins decide which client a signed-in person acts for. None is installed yet.",
+    "hosted": "Background job plugins run workers that start and stop with the server. None is installed yet."
   },
   "integrationStatusSidebar": {
     "connectionStatus": "Connection Status",
@@ -50,13 +67,12 @@
     "addYourFirstServer": "Add your first server →",
     "accountsUsage": "{usage} accounts"
   },
-  "cwpIntegration": {
-    "centosWebPanel": "CentOS Web Panel"
-  },
   "integrations": {
     "lengthIntegrationValue": "Integrations: {length}",
     "activecountActive": "· {activeCount} active",
-    "noIntegrationsInThisCategory": "No integrations in this category"
+    "noIntegrationsInThisCategory": "No integrations in this category",
+    "emptyHint": "Install a plugin from the catalogue or upload a plugin package to add one.",
+    "browsePlugins": "Browse plugins"
   },
   "common": {
     "never": "Never"

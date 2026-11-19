@@ -8,12 +8,17 @@ import {
   cardCellClasses,
   cardLabelClasses,
   cardRoleOf,
+  cardSkeletonOf,
   cellDensityClasses,
+  columnSizeOf,
+  growControlClasses,
   headerDensityClasses,
   UiAlign,
   UiCardRole,
+  UiColumnSize,
   UiHideBelow,
   UiSortDirection,
+  withCardTitle,
 } from '@/utils/ui/table'
 
 describe('table vocabulary', () => {
@@ -38,39 +43,74 @@ describe('table vocabulary', () => {
 })
 
 describe('card layout vocabulary', () => {
-  it('is a field unless the header says otherwise', () => {
+  it('is a field unless the header says otherwise, whatever breakpoint it is hidden below', () => {
     expect(cardRoleOf({})).toBe(UiCardRole.Field)
     expect(cardRoleOf({ cardRole: UiCardRole.Control })).toBe(UiCardRole.Control)
+    expect(cardRoleOf({ hideBelow: UiHideBelow.Lg })).toBe(UiCardRole.Field)
   })
 
-  it('leaves a column hidden below a breakpoint out of the card unless its header sets a role', () => {
-    expect(cardRoleOf({ hideBelow: UiHideBelow.Lg })).toBe(UiCardRole.Hidden)
-    expect(cardRoleOf({ hideBelow: UiHideBelow.Sm, cardRole: UiCardRole.Field })).toBe(UiCardRole.Field)
+  it('picks the growing column as the heading, else the first one, and never the checkbox or the actions', () => {
+    const grow = withCardTitle([{ label: 'Id' }, { label: 'Name', size: UiColumnSize.Grow }])
+    expect(grow.map(cardRoleOf)).toEqual([UiCardRole.Field, UiCardRole.Title])
+
+    const first = withCardTitle([{ select: true }, { label: 'Id' }, { label: 'Name' }, { actions: true }])
+    expect(first.map(cardRoleOf)).toEqual([UiCardRole.Field, UiCardRole.Title, UiCardRole.Field, UiCardRole.Field])
   })
 
-  it('gives every role its own card classes and the select and actions columns theirs over any role', () => {
-    expect(cardCellClasses({ cardRole: UiCardRole.Title })).toContain('max-sm:font-semibold')
-    expect(cardCellClasses({ cardRole: UiCardRole.Badge })).toContain('max-sm:order-3')
-    expect(cardCellClasses({ cardRole: UiCardRole.Control })).toContain('max-sm:flex-col')
-    expect(cardCellClasses({ cardRole: UiCardRole.Hidden })).toBe('max-sm:hidden')
-    expect(cardCellClasses({})).toContain('max-sm:justify-between')
-    expect(cardCellClasses({ select: true, cardRole: UiCardRole.Title })).toContain('max-sm:order-1')
-    expect(cardCellClasses({ actions: true, cardRole: UiCardRole.Title })).toContain('max-sm:border-t')
+  it('keeps the heading a header names and picks none for a table whose columns all name a role', () => {
+    const named = withCardTitle([{ label: 'Id' }, { label: 'Name', cardRole: UiCardRole.Title }, { label: 'X', size: UiColumnSize.Grow }])
+    expect(named.map(cardRoleOf)).toEqual([UiCardRole.Field, UiCardRole.Title, UiCardRole.Field])
+
+    const controls = withCardTitle([{ cardRole: UiCardRole.Control }, { cardRole: UiCardRole.Control }])
+    expect(controls.map(cardRoleOf)).toEqual([UiCardRole.Control, UiCardRole.Control])
   })
 
-  it('makes a cell with no column a full width line of the card', () => {
-    expect(cardCellClasses(undefined)).toContain('max-sm:w-full')
+  it('boxes only a field, a control and a cell with no column, which the card places itself otherwise', () => {
+    expect(cardCellClasses({})).toContain('justify-between')
+    expect(cardCellClasses({ cardRole: UiCardRole.Control })).toContain('flex-col')
+    expect(cardCellClasses(undefined)).toBe('w-full')
+    expect(cardCellClasses({ cardRole: UiCardRole.Title })).toBe('')
+    expect(cardCellClasses({ cardRole: UiCardRole.Badge })).toBe('')
+    expect(cardCellClasses({ actions: true })).toBe('')
+    expect(cardCellClasses({ select: true })).toBe('')
   })
 
-  it('draws the caption of a field or control, hides a title or badge one for assistive technology, and none for the rest', () => {
-    expect(cardLabelClasses({ label: 'Email' })).toContain('sm:hidden')
+  it('draws the caption of a field or control, hides a heading, subtitle or badge one for assistive technology, and none for the rest', () => {
+    expect(cardLabelClasses({ label: 'Email' })).toContain('text-xs')
     expect(cardLabelClasses({ label: 'Email', cardRole: UiCardRole.Control })).toContain('text-xs')
-    expect(cardLabelClasses({ label: 'Name', cardRole: UiCardRole.Title })).toBe('sr-only sm:hidden')
-    expect(cardLabelClasses({ label: 'Status', cardRole: UiCardRole.Badge })).toBe('sr-only sm:hidden')
+    expect(cardLabelClasses({ label: 'Name', cardRole: UiCardRole.Title })).toBe('sr-only')
+    expect(cardLabelClasses({ label: 'Mail', cardRole: UiCardRole.Subtitle })).toBe('sr-only')
+    expect(cardLabelClasses({ label: 'Status', cardRole: UiCardRole.Badge })).toBe('sr-only')
     expect(cardLabelClasses({ label: 'Id', cardRole: UiCardRole.Hidden })).toBe('')
     expect(cardLabelClasses({ label: 'Pick', select: true })).toBe('')
     expect(cardLabelClasses({ label: 'Actions', actions: true })).toBe('')
     expect(cardLabelClasses({ label: '' })).toBe('')
     expect(cardLabelClasses(undefined)).toBe('')
+  })
+
+  it('describes the loading card by the parts the columns give it', () => {
+    const shape = cardSkeletonOf(withCardTitle([
+      { select: true },
+      { label: 'Name' },
+      { label: 'Email', cardRole: UiCardRole.Subtitle },
+      { label: 'Status', cardRole: UiCardRole.Badge },
+      { label: 'Id', cardRole: UiCardRole.Hidden },
+      { label: 'Joined' },
+      { label: 'Plan', cardRole: UiCardRole.Control },
+      { actions: true },
+    ]))
+
+    expect(shape).toEqual({ select: true, subtitle: true, badge: true, actions: true, fields: 2 })
+  })
+
+  it('makes an actions column compact, whatever size it asks for', () => {
+    expect(columnSizeOf({ label: 'Actions', actions: true })).toBe(columnSizeOf({ label: 'Id', size: UiColumnSize.Compact }))
+    expect(columnSizeOf({ label: 'Actions', actions: true, size: UiColumnSize.Grow })).not.toContain('truncate')
+  })
+
+  it('truncates a growing column, except one of form controls, whose focus ring truncation would clip', () => {
+    expect(columnSizeOf({ label: 'Name', size: UiColumnSize.Grow })).toContain('truncate')
+    expect(columnSizeOf({ label: 'Description', size: UiColumnSize.Grow, cardRole: UiCardRole.Control })).toBe(growControlClasses)
+    expect(growControlClasses).not.toContain('truncate')
   })
 })

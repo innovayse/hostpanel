@@ -15,6 +15,7 @@ import type { PluginPackagePreviewDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -116,10 +117,10 @@ const rangeText = computed<string>(() => {
     </UiStack>
 
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="plugin-install-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="plugin-install-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Upload"
         v-if="preview.compatible"
         :variant="UiButtonVariant.Primary"
         :disabled="loading"

@@ -9,9 +9,12 @@ import type { VueWrapper } from '@vue/test-utils'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import BillableItemsView from '@/views/BillableItemsView.vue'
+import schema from '@/views/BillableItemsView.schema'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
+import { useToastStore } from '@/stores/toast'
 
 /**
  * Builds a billable item as the list endpoint returns it.
@@ -101,7 +104,24 @@ describe('BillableItemsView', () => {
     const rows = wrapper.findAll('[data-testid="billing-billable-items-table"] tbody tr')
     expect(rows).toHaveLength(2)
     expect(rows[0]?.text()).toContain('12.00 USD')
-    expect(rows[0]?.text()).toContain('No')
+    expect(rows[0]?.get('[role="img"]').attributes('aria-label')).toBe('No')
+  })
+
+  it('makes the description column the one that grows and the invoiced state an icon column', async () => {
+    stubRoutes({ 'GET /api/billing/billable-items': itemsPage, 'GET /api/clients': noClients })
+    const wrapper = await mountList()
+
+    const headers = wrapper.findAll('[data-testid="billing-billable-items-table"] thead th')
+    expect(headers.filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(headers.find((header) => header.text() === 'Description')?.classes()).toContain('w-full')
+    expect(headers.find((header) => header.text() === 'Invoiced')?.classes()).toContain('w-px')
+  })
+
+  it('draws the headers of the schema columns, in order', async () => {
+    stubRoutes({ 'GET /api/billing/billable-items': itemsPage, 'GET /api/clients': noClients })
+    const wrapper = await mountList()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
   it('counts every match the API reports, not only the rows on the page', async () => {
@@ -284,7 +304,7 @@ describe('BillableItemsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-billable-items-feedback"]').text()).toBe('Billable items deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Billable items deleted.'])
   })
 
   it('shows the API sentence when a delete is refused, without the load error', async () => {

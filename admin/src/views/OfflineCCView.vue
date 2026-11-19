@@ -10,21 +10,21 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { useInvoicePaymentForm } from '@/composables/useInvoicePaymentForm'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { invoiceViewPath } from '@/lib/routes'
 import { useBillingStore } from '@/stores/billing'
+import { UiActionKind } from '@/utils/ui/actions'
+import schema from '@/views/OfflineCCView.schema'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -88,96 +88,79 @@ const openInvoice = async (): Promise<void> => {
 
 <template>
   <UiStack>
-    <UiPageHeader
-      :title="t('billing.offlineCC.offlineCreditCardProcessing')"
-      :subtitle="t('billing.offlineCC.processOfflineCreditCardPayments')"
-      data-testid="offline-cc-header"
-    />
-    <UiCard padding="md">
-      <UiForm stacked data-testid="offline-cc-form" @submit="submit">
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.invoice')" :error="store.fieldErrors.invoiceId">
-            <template #default="{ id, invalid }">
-              <UiNumberInput
-                :id="id"
-                v-model="invoiceId"
-                :step="1"
-                :min="0"
-                :invalid="invalid"
-                placeholder="0"
-                data-testid="offline-cc-invoice"
-              />
-            </template>
-          </UiField>
-          <UiField :label="t('shared.date')" :error="store.fieldErrors.date">
-            <UiDatePicker v-model="form.paymentDate.value" :placeholder="t('shared.selectDate')" />
-          </UiField>
-          <UiField :label="t('shared.amount')" :error="store.fieldErrors.amount">
-            <template #default="{ id, invalid }">
-              <UiNumberInput
-                :id="id"
-                v-model="form.amount.value"
-                :step="0.01"
-                :min="0"
-                :invalid="invalid"
-                placeholder="0.00"
-                data-testid="offline-cc-amount"
-              />
-            </template>
-          </UiField>
-          <UiField :label="t('shared.transactionFees')" :error="store.fieldErrors.fees">
-            <template #default="{ id, invalid }">
-              <UiNumberInput
-                :id="id"
-                v-model="form.fees.value"
-                :step="0.01"
-                :min="0"
-                :invalid="invalid"
-                placeholder="0.00"
-                data-testid="offline-cc-fees"
-              />
-            </template>
-          </UiField>
-          <UiField :label="t('shared.paymentMethod')" :error="store.fieldErrors.gateway">
-            <template #default="{ id, invalid }">
-              <UiSelect
-                :id="id"
-                v-model="form.gateway.value"
-                :options="form.gatewayOptions.value"
-                :invalid="invalid"
-                :placeholder="t('shared.paymentMethod')"
-              />
-            </template>
-          </UiField>
-          <UiField :label="t('shared.transactionId')" required :error="store.fieldErrors.transactionId">
-            <template #default="{ id, invalid }">
-              <UiInput
-                :id="id"
-                v-model="form.transactionId.value"
-                type="text"
-                :invalid="invalid"
-                :placeholder="t('billing.invoicePaymentTab.gatewayReference')"
-                data-testid="offline-cc-reference"
-              />
-            </template>
-          </UiField>
-        </UiGrid>
-        <UiFormActions>
-          <UiButton
-            type="submit"
-            variant="primary"
-            :loading="form.submitting.value"
-            :disabled="!canSubmit"
-            data-testid="offline-cc-submit"
-          >
-            {{ t('billing.offlineCC.processPayment') }}
-          </UiButton>
-          <UiButton v-if="paidInvoiceId !== null" variant="secondary" data-testid="offline-cc-open-invoice" @click="openInvoice">
-            {{ t('billing.offlineCC.viewInvoice', { id: paidInvoiceId }) }}
-          </UiButton>
-        </UiFormActions>
-        <UiStatusMessage :message="form.feedback.message.value" :tone="form.feedbackTone.value" data-testid="offline-cc-feedback" />
-      </UiForm>
-    </UiCard>
+    <UiPageHeader v-bind="schemaHeader(schema, t)" data-testid="offline-cc-header" />
+    <UiSchemaForm :columns="schema.columns" :errors="store.fieldErrors" class="max-w-3xl" data-testid="offline-cc-form" @submit="submit">
+      <template #field-invoiceId="{ id, invalid }">
+        <UiNumberInput
+          :id="id"
+          v-model="invoiceId"
+          :step="1"
+          :min="0"
+          :invalid="invalid"
+          placeholder="0"
+          data-testid="offline-cc-invoice"
+        />
+      </template>
+      <template #field-date>
+        <UiDatePicker v-model="form.paymentDate.value" :placeholder="t('shared.selectDate')" />
+      </template>
+      <template #field-amount="{ id, invalid }">
+        <UiNumberInput
+          :id="id"
+          v-model="form.amount.value"
+          :step="0.01"
+          :min="0"
+          :invalid="invalid"
+          placeholder="0.00"
+          data-testid="offline-cc-amount"
+        />
+      </template>
+      <template #field-fees="{ id, invalid }">
+        <UiNumberInput
+          :id="id"
+          v-model="form.fees.value"
+          :step="0.01"
+          :min="0"
+          :invalid="invalid"
+          placeholder="0.00"
+          data-testid="offline-cc-fees"
+        />
+      </template>
+      <template #field-gateway="{ id, invalid }">
+        <UiSelect
+          :id="id"
+          v-model="form.gateway.value"
+          :options="form.gatewayOptions.value"
+          :invalid="invalid"
+          :placeholder="t('shared.paymentMethod')"
+        />
+      </template>
+      <template #field-transactionId="{ id, invalid }">
+        <UiInput
+          :id="id"
+          v-model="form.transactionId.value"
+          type="text"
+          :invalid="invalid"
+          :placeholder="t('billing.invoicePaymentTab.gatewayReference')"
+          data-testid="offline-cc-reference"
+        />
+      </template>
+      <UiFormActions>
+        <UiButton
+          :action="UiActionKind.Confirm"
+          type="submit"
+          variant="primary"
+          :loading="form.submitting.value"
+          :disabled="!canSubmit"
+          data-testid="offline-cc-submit"
+        >
+          {{ t('billing.offlineCC.processPayment') }}
+        </UiButton>
+        <UiButton v-if="paidInvoiceId !== null" :action="UiActionKind.View" variant="secondary" data-testid="offline-cc-open-invoice" @click="openInvoice">
+          {{ t('billing.offlineCC.viewInvoice', { id: paidInvoiceId }) }}
+        </UiButton>
+      </UiFormActions>
+      <UiStatusMessage :message="form.feedback.message.value" :tone="form.feedbackTone.value" data-testid="offline-cc-feedback" />
+    </UiSchemaForm>
   </UiStack>
 </template>

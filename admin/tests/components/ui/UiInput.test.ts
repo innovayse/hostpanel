@@ -123,4 +123,37 @@ describe('UiInput', () => {
     expect(wrapper.attributes('aria-describedby')).toBe('msg')
     expect(wrapper.attributes('aria-invalid')).toBe('true')
   })
+
+  it('hides the browser cancel mark of a search field and shows the kit clear button only while it holds text', () => {
+    const empty = mount(UiInput, { props: { type: 'search', modelValue: '' } })
+    const filled = mount(UiInput, { props: { type: 'search', modelValue: 'ada' } })
+
+    expect(filled.get('input').classes()).toContain('[&::-webkit-search-cancel-button]:hidden')
+    expect(empty.find('[data-testid="input-clear"]').exists()).toBe(false)
+    expect(filled.get('[data-testid="input-clear"]').attributes('aria-label')).toBe('Clear')
+    expect(mount(UiInput, { props: { type: 'text', modelValue: 'ada' } }).find('[data-testid="input-clear"]').exists()).toBe(false)
+  })
+
+  it('empties the search field with the clear button and puts the caret back in it', async () => {
+    const wrapper = mount(UiInput, { props: { type: 'search', modelValue: 'ada' }, attachTo: document.body })
+
+    await wrapper.get('[data-testid="input-clear"]').trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([''])
+    expect(document.activeElement).toBe(wrapper.get('input').element)
+    wrapper.unmount()
+  })
+
+  it('draws the clear button as the round 20px icon button with the close icon', () => {
+    const button = mount(UiInput, { props: { type: 'search', modelValue: 'ada' } }).get('[data-testid="input-clear"]')
+
+    expect(button.classes()).toEqual(expect.arrayContaining(['w-5', 'h-5', 'rounded-full']))
+    expect(button.find('svg').exists()).toBe(true)
+  })
+
+  it('disables the clear button with the field', () => {
+    const wrapper = mount(UiInput, { props: { type: 'search', modelValue: 'ada' }, attrs: { disabled: '' } })
+
+    expect(wrapper.get('[data-testid="input-clear"]').attributes('disabled')).toBeDefined()
+  })
 })

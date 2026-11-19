@@ -29,6 +29,7 @@ import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -546,10 +547,10 @@ const handleSubmit = (): void => {
     </UiStack>
 
     <template #footer>
-      <UiButton type="button" variant="secondary" data-testid="server-form-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="server-form-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         type="button"
         variant="primary"
         :loading="props.saving"

@@ -4,6 +4,7 @@
  */
 import { vi } from 'vitest'
 import MonthlyOrdersView from '@/views/MonthlyOrdersView.vue'
+import schema from '@/views/MonthlyOrdersView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
 
@@ -15,6 +16,7 @@ const productGroup = { groupName: 'Hosting', groupUnitsSold: 2, products: [{ pro
 runReportCase({
   name: 'MonthlyOrdersView',
   view: MonthlyOrdersView,
+  schema,
   routes: {
     'GET /reports/monthly-orders': () => json({
       month: 1, year: 2024, totalUnitsSold: 2, totalValue: 20, currency: 'USD',

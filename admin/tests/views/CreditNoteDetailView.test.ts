@@ -6,11 +6,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import CreditNoteDetailView from '@/views/CreditNoteDetailView.vue'
+import schema from '@/views/CreditNoteDetailView.schema'
 import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
 import { creditNoteDetailFixture } from '../helpers/creditNoteFixtures'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -28,6 +30,24 @@ const mountNote = async () => {
 }
 
 describe('CreditNoteDetailView', () => {
+  it('draws the cards of its schema as placeholders while the note is read', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountNote()
+
+    expect(wrapper.findAll('[data-testid^="ui-detail-card-"]')).toHaveLength(schema.columns.flat().length)
+    expect(wrapper.find('[data-testid="ui-page-header-skeleton"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Qty')
+    expect(wrapper.find('[data-testid="billing-credit-note-items"]').exists()).toBe(false)
+  })
+
+  it('draws the columns of the lines table from its schema', async () => {
+    stubRoutes({ 'GET /api/billing/credit-notes/3': () => json(creditNoteDetailFixture()) })
+    const wrapper = await mountNote()
+
+    const columns = schema.columns.flat().find((card) => card.key === 'items')?.table?.columns ?? []
+    expect(wrapper.get('[data-testid="billing-credit-note-items"]').findAll('th')).toHaveLength(columns.length)
+  })
+
   it('shows the number, the state, the invoice, the lines and the totals', async () => {
     stubRoutes({ 'GET /api/billing/credit-notes/3': () => json(creditNoteDetailFixture()) })
     const wrapper = await mountNote()
@@ -58,7 +78,7 @@ describe('CreditNoteDetailView', () => {
 
     const post = mock.mock.calls.find(([url, init]) => String(url).endsWith('/void') && (init as RequestInit | undefined)?.method === 'POST')
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toEqual({ reason: 'Mistake' })
-    expect(wrapper.get('[data-testid="billing-credit-note-feedback"]').text()).toBe('The credit note was voided.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['The credit note was voided.'])
     expect(wrapper.get('[data-testid="billing-credit-note-voided"]').text()).toContain('Mistake')
     expect(wrapper.find('[data-testid="billing-credit-note-void"]').exists()).toBe(false)
   })

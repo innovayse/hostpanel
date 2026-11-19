@@ -25,15 +25,13 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiLink from '@/components/ui/UiLink.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import type { ResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import { UiSplitRatio } from '@/utils/ui/layout'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import type { UpdateTicketPayload } from '@/types/ticket'
@@ -42,8 +40,24 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
+import schema, { COMPOSER_CARD, CONVERSATION_CARD, DETAILS_CARD } from '@/views/SupportTicketDetailView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Opens the delete confirmation. */
+const openDeleteDialog = (): void => {
+  showDeleteDialog.value = true
+}
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  ...(store.currentTicket?.status !== TicketStatus.Closed
+    ? [{ label: t('shared.close'), icon: actionIcons[UiActionKind.Close], variant: UiButtonVariant.Secondary, testid: 'ticket-close', disabled: !store.currentTicket, onSelect: handleClose }]
+    : [{ label: t('support.supportTicketDetail.reopen'), icon: actionIcons[UiActionKind.Refresh], variant: UiButtonVariant.Secondary, testid: 'ticket-reopen', onSelect: handleReopen }]),
+  { label: t('shared.delete'), icon: actionIcons[UiActionKind.Delete], variant: UiButtonVariant.Danger, testid: 'ticket-delete', disabled: !store.currentTicket, onSelect: openDeleteDialog },
+])
 
 
 /** Fallback text for fields the API leaves unresolved. */
@@ -235,71 +249,38 @@ onMounted(() => {
     />
 
     <template v-else>
-      <UiStack direction="row" justify="between" align="center" wrap :aria-busy="store.currentTicket ? undefined : 'true'">
-        <UiStack direction="row" align="center" wrap>
-          <UiLink
-            :to="AppRoute.SupportTickets"
-            :variant="UiButtonVariant.Secondary"
-            :size="UiSize.Sm"
-            data-testid="ticket-back"
-          >
-            <UiIcon :markup="Icon.Back" :size="UiSize.Sm" />
-            {{ t('shared.back') }}
-          </UiLink>
-          <template v-if="store.currentTicket">
-            <UiHeading :level="1" variant="card" data-testid="ticket-title">
-              {{ t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) }}
-            </UiHeading>
-            <SupportTicketStatusBadge :status="store.currentTicket.status" />
-            <SupportTicketPriorityBadge :priority="store.currentTicket.priority" />
-          </template>
-          <UiStack v-else direction="row" align="center" wrap aria-hidden="true" data-testid="ticket-loading">
-            <UiSkeletonBar class="h-6 w-64 max-w-full rounded-md" />
-            <UiSkeletonBar class="h-5 w-20 rounded-full" />
-            <UiSkeletonBar class="h-5 w-16 rounded-full" />
-          </UiStack>
+      <UiPageHeader :actions="headerActions"
+        :title="store.currentTicket ? t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) : undefined"
+        :loading="!store.currentTicket"
+        :back-to="AppRoute.SupportTickets"
+        :back-label="t('shared.tickets')"
+        back-mobile-only
+        back-testid="ticket-back"
+        data-testid="ticket-title"
+      >
+        <UiStack v-if="store.currentTicket" direction="row" align="center" wrap>
+          <SupportTicketStatusBadge :status="store.currentTicket.status" />
+          <SupportTicketPriorityBadge :priority="store.currentTicket.priority" />
         </UiStack>
-        <UiStack direction="row" gap="sm" wrap>
-          <UiButton
+        <template #actions>
+          <UiButton :icon="Icon.Clipboard"
             :variant="UiButtonVariant.Secondary"
             class="lg:hidden"
             :disabled="!store.currentTicket"
             data-testid="ticket-details-open"
             @click="detailsOpen = true"
-          >
-            <UiIcon :markup="Icon.Clipboard" :size="UiSize.Sm" />
-            {{ t('support.supportTicketDetail.details') }}
+          >{{ t('support.supportTicketDetail.details') }}
           </UiButton>
-          <UiButton
-            v-if="store.currentTicket?.status !== TicketStatus.Closed"
-            :variant="UiButtonVariant.Secondary"
-            :disabled="!store.currentTicket"
-            data-testid="ticket-close"
-            @click="handleClose"
-          >
-            {{ t('shared.close') }}
-          </UiButton>
-          <UiButton
-            v-else
-            :variant="UiButtonVariant.Secondary"
-            data-testid="ticket-reopen"
-            @click="handleReopen"
-          >
-            {{ t('support.supportTicketDetail.reopen') }}
-          </UiButton>
-          <UiButton :variant="UiButtonVariant.Danger" :disabled="!store.currentTicket" data-testid="ticket-delete" @click="showDeleteDialog = true">
-            {{ t('shared.delete') }}
-          </UiButton>
-        </UiStack>
-      </UiStack>
+        </template>
+      </UiPageHeader>
 
       <UiStatusMessage :message="headerFeedback.message.value" :tone="toneOf(headerFeedback)" data-testid="ticket-action-feedback" />
 
-      <UiSplit v-model:open="detailsOpen" :ratio="UiSplitRatio.ThreeQuarters" :aside-title="t('support.supportTicketDetail.ticketSettings')">
+      <UiSplit v-model:open="detailsOpen" :ratio="schema.ratio" :aside-title="t(DETAILS_CARD.title)">
         <UiStack>
           <UiCard padding="md" data-testid="ticket-thread">
             <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('support.supportTicketDetail.conversation') }}</UiHeading>
+              <UiHeading :level="2" variant="card">{{ t(CONVERSATION_CARD.title) }}</UiHeading>
 
               <template v-if="store.currentTicket">
                 <SupportTicketMessage
@@ -341,7 +322,7 @@ onMounted(() => {
             <UiStack gap="sm">
               <UiChatInput
                 v-model="replyMessage"
-                :label="t('shared.addReply')"
+                :label="t(COMPOSER_CARD.rows[0])"
                 :placeholder="t('support.supportTicketDetail.typeYourReply')"
                 :disabled="!store.currentTicket"
                 testid="ticket-reply-message"

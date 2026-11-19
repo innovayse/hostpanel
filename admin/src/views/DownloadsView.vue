@@ -2,7 +2,9 @@
 /**
  * Downloads management: categories and downloadable files, with nested category navigation and
  * add, edit and delete for both. Every change reports its outcome (success, or the API's sentence)
- * under the header, a delete is confirmed first, and a refused load shows the sentence with a Retry.
+ * under the header, a delete is confirmed first, and a refused load shows the sentence with a Retry. The tab strip, the add
+ * forms, the cards of the two tables and their column heads are the ones of `DownloadsView.schema`, which `UiSkeletonOf`
+ * also draws while the view downloads.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -10,26 +12,25 @@ import DownloadCategoryEditDialog from '@/components/support/DownloadCategoryEdi
 import DownloadItemEditDialog from '@/components/support/DownloadItemEditDialog.vue'
 import SupportCheckboxField from '@/components/support/SupportCheckboxField.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiBreadcrumb from '@/components/ui/UiBreadcrumb.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -44,11 +45,22 @@ import type { DownloadItem, DownloadItemPayload } from '@/types/downloaditem'
 import { DownloadsTab } from '@/types/supporttab'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiBreadcrumbItem } from '@/utils/ui/breadcrumb'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiSize } from '@/utils/ui/size'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
 import { EMPTY_VALUE } from '@/lib/format'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema, {
+  DOWNLOAD_CATEGORIES_PART,
+  DOWNLOAD_CATEGORIES_TABLE,
+  DOWNLOAD_CATEGORY_FORM_PART,
+  DOWNLOAD_FILE_FORM_PART,
+  DOWNLOAD_FILES_PART,
+  DOWNLOAD_FILES_TABLE,
+  DOWNLOADS_TABS_PART,
+} from '@/views/DownloadsView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -75,11 +87,10 @@ interface DeleteRequest {
 /** Currently active tab: add category or add download. */
 const activeTab = ref<DownloadsTab>(DownloadsTab.Category)
 
-/** Tab items for the kit's tab strip. */
-const tabItems = computed<UiTabItem[]>(() => [
-  { value: DownloadsTab.Category, label: t('shared.addCategory'), testid: 'downloads-tab-category' },
-  { value: DownloadsTab.Download, label: t('support.downloads.addDownload'), testid: 'downloads-tab-download' },
-])
+/** Tab items for the kit's tab strip, the tabs of the schema. */
+const tabItems = computed<UiTabItem[]>(() =>
+  DOWNLOADS_TABS_PART.tabs.map((tab) => ({ value: tab.key, label: t(tab.label), testid: `downloads-tab-${tab.key}` })),
+)
 
 /** Whether data is loading. */
 const loading = ref(false)
@@ -365,8 +376,8 @@ const categoryActions = (category: DownloadCategory): UiMenuAction[] => {
    */
   const onDelete = (): void => askToDeleteCategory(category)
   return [
-    { label: t('shared.edit'), testid: `downloads-category-${category.id}-edit`, onSelect: onEdit },
-    { label: t('shared.delete'), testid: `downloads-category-${category.id}-delete`, onSelect: onDelete, danger: true },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `downloads-category-${category.id}-edit`, onSelect: onEdit },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `downloads-category-${category.id}-delete`, onSelect: onDelete, danger: true },
   ]
 }
 
@@ -385,7 +396,7 @@ const downloadActions = (download: DownloadItem): UiMenuAction[] => {
   const onDelete = (): void => {
     deleteRequest.value = { type: DownloadTarget.Download, id: download.id, name: download.title }
   }
-  return [{ label: t('shared.delete'), testid: `downloads-download-${download.id}-delete`, onSelect: onDelete, danger: true }]
+  return [{ label: t('shared.delete'), icon: Icon.Trash, testid: `downloads-download-${download.id}-delete`, onSelect: onDelete, danger: true }]
 }
 
 /**
@@ -424,6 +435,16 @@ const navigateToBreadcrumb = (index: number): void => {
   fetchDownloads()
 }
 
+/** The trail as the kit draws it: the root, then each category drilled into; every step but the last takes the operator back to it. */
+const trail = computed<UiBreadcrumbItem[]>(() => [
+  { label: t('support.downloads.downloadHome'), onSelect: breadcrumbs.value.length > 0 ? navigateHome : undefined, testid: 'downloads-breadcrumb-home' },
+  ...breadcrumbs.value.map((crumb, index) => ({
+    label: crumb.name,
+    onSelect: index < breadcrumbs.value.length - 1 ? (): void => navigateToBreadcrumb(index) : undefined,
+    testid: `downloads-breadcrumb-${crumb.id}`,
+  })),
+])
+
 // The add-download form files new downloads under the level being browsed.
 watch(currentCategoryId, (id) => {
   newDownloadCategoryId.value = id ?? 0
@@ -437,10 +458,7 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiPageHeader
-      :title="t('support.downloads.downloads')"
-      :subtitle="t('support.downloads.manageDownloadableFilesAndCategories')"
-    />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="downloads-feedback" />
 
@@ -454,31 +472,35 @@ onMounted(() => {
 
     <UiTabs :items="tabItems" :model-value="activeTab" @update:model-value="selectTab" />
 
-    <UiCard v-if="activeTab === DownloadsTab.Category" padding="md">
-      <UiStack>
-        <UiStack direction="row" align="end" wrap>
-          <UiField :label="t('shared.categoryName')" :error="store.fieldErrors.name" class="flex-1">
-            <UiInput
-              v-model="newCategoryName"
-              :placeholder="t('shared.enterCategoryName')"
-              data-testid="downloads-category-name"
-            />
-          </UiField>
-          <SupportCheckboxField
-            v-model="newCategoryHidden"
-            :label="t('support.downloads.checkToHide')"
-            testid="downloads-category-hidden"
-          />
-        </UiStack>
-        <UiField :label="t('shared.description')">
-          <UiInput
-            v-model="newCategoryDescription"
-            :placeholder="t('support.downloads.categoryDescription')"
-            data-testid="downloads-category-description"
-          />
-        </UiField>
+    <UiSchemaForm
+      v-if="activeTab === DownloadsTab.Category"
+      :columns="DOWNLOAD_CATEGORY_FORM_PART.columns"
+      :errors="store.fieldErrors"
+    >
+      <template #field-name>
+        <UiInput
+          v-model="newCategoryName"
+          :placeholder="t('shared.enterCategoryName')"
+          data-testid="downloads-category-name"
+        />
+      </template>
+      <template #field-hidden>
+        <SupportCheckboxField
+          v-model="newCategoryHidden"
+          :label="t('support.downloads.checkToHide')"
+          testid="downloads-category-hidden"
+        />
+      </template>
+      <template #field-description>
+        <UiInput
+          v-model="newCategoryDescription"
+          :placeholder="t('support.downloads.categoryDescription')"
+          data-testid="downloads-category-description"
+        />
+      </template>
+      <template #section-category>
         <UiStack direction="row" justify="center">
-          <UiButton
+          <UiButton :action="UiActionKind.Add"
             :variant="UiButtonVariant.Primary"
             :loading="saving"
             :disabled="!newCategoryName.trim()"
@@ -488,69 +510,77 @@ onMounted(() => {
             {{ t('shared.addCategory') }}
           </UiButton>
         </UiStack>
-      </UiStack>
-    </UiCard>
+      </template>
+    </UiSchemaForm>
 
-    <UiCard v-if="activeTab === DownloadsTab.Download" padding="md">
-      <UiStack>
-        <UiField :label="t('shared.type')">
-          <UiSelect
-            v-model="newDownloadType"
-            :options="typeOptions"
-            :placeholder="t('support.downloads.selectType')"
-            data-testid="downloads-download-type"
-          />
-        </UiField>
-        <UiField :label="t('shared.title')" :error="store.fieldErrors.title">
-          <UiInput
-            v-model="newDownloadTitle"
-            :placeholder="t('support.downloads.enterDownloadTitle')"
-            data-testid="downloads-download-title"
-          />
-        </UiField>
-        <UiField :label="t('shared.description')">
-          <UiTextarea
-            v-model="newDownloadDescription"
-            rows="3"
-            :placeholder="t('support.downloads.enterDescription')"
-            data-testid="downloads-download-description"
-          />
-        </UiField>
-        <UiField :label="t('support.downloads.filename')" :error="store.fieldErrors.filename">
-          <UiInput
-            v-model="newDownloadFilename"
-            :placeholder="t('support.downloads.enterFilename')"
-            data-testid="downloads-download-filename"
-          />
-        </UiField>
-        <UiField :label="t('shared.category')">
-          <UiSelect
-            v-model="newDownloadCategoryId"
-            :options="categoryOptions"
-            :placeholder="t('shared.selectCategory')"
-            data-testid="downloads-download-category"
-          />
-        </UiField>
-        <UiStack direction="row" gap="lg" wrap>
-          <SupportCheckboxField
-            v-model="newDownloadClientsOnly"
-            :label="t('support.downloads.clientsOnly')"
-            testid="downloads-download-clients-only"
-          />
-          <SupportCheckboxField
-            v-model="newDownloadProductDownload"
-            :label="t('support.downloads.productDownload')"
-            testid="downloads-download-product"
-          />
-          <SupportCheckboxField
-            v-model="newDownloadHidden"
-            :label="t('shared.hidden')"
-            testid="downloads-download-hidden"
-          />
-        </UiStack>
+    <UiSchemaForm
+      v-if="activeTab === DownloadsTab.Download"
+      :columns="DOWNLOAD_FILE_FORM_PART.columns"
+      :errors="store.fieldErrors"
+    >
+      <template #field-type>
+        <UiSelect
+          v-model="newDownloadType"
+          :options="typeOptions"
+          :placeholder="t('support.downloads.selectType')"
+          data-testid="downloads-download-type"
+        />
+      </template>
+      <template #field-title>
+        <UiInput
+          v-model="newDownloadTitle"
+          :placeholder="t('support.downloads.enterDownloadTitle')"
+          data-testid="downloads-download-title"
+        />
+      </template>
+      <template #field-description>
+        <UiTextarea
+          v-model="newDownloadDescription"
+          rows="3"
+          :placeholder="t('support.downloads.enterDescription')"
+          data-testid="downloads-download-description"
+        />
+      </template>
+      <template #field-filename>
+        <UiInput
+          v-model="newDownloadFilename"
+          :placeholder="t('support.downloads.enterFilename')"
+          data-testid="downloads-download-filename"
+        />
+      </template>
+      <template #field-categoryId>
+        <UiSelect
+          v-model="newDownloadCategoryId"
+          :options="categoryOptions"
+          :placeholder="t('shared.selectCategory')"
+          data-testid="downloads-download-category"
+        />
+      </template>
+      <template #field-clientsOnly>
+        <SupportCheckboxField
+          v-model="newDownloadClientsOnly"
+          :label="t('support.downloads.clientsOnly')"
+          testid="downloads-download-clients-only"
+        />
+      </template>
+      <template #field-productDownload>
+        <SupportCheckboxField
+          v-model="newDownloadProductDownload"
+          :label="t('support.downloads.productDownload')"
+          testid="downloads-download-product"
+        />
+      </template>
+      <template #field-hidden>
+        <SupportCheckboxField
+          v-model="newDownloadHidden"
+          :label="t('shared.hidden')"
+          testid="downloads-download-hidden"
+        />
+      </template>
+      <template #section-download>
         <UiText tone="muted" size="sm">{{ t('support.downloads.clientsOnlyRestrictsToLogged') }}</UiText>
         <UiStack direction="row" gap="sm">
-          <UiButton
+          <UiButton :action="UiActionKind.Download"
             :variant="UiButtonVariant.Primary"
             :loading="saving"
             :disabled="!newDownloadTitle.trim()"
@@ -559,7 +589,7 @@ onMounted(() => {
           >
             {{ t('support.downloads.addDownload') }}
           </UiButton>
-          <UiButton
+          <UiButton :action="UiActionKind.Cancel"
             :variant="UiButtonVariant.Secondary"
             data-testid="downloads-download-reset"
             @click="resetDownloadForm"
@@ -567,46 +597,15 @@ onMounted(() => {
             {{ t('shared.cancel') }}
           </UiButton>
         </UiStack>
-      </UiStack>
-    </UiCard>
-
-    <UiStack direction="row" gap="xs" align="center" wrap data-testid="downloads-breadcrumbs">
-      <UiText tone="muted" size="md">{{ t('shared.youAreHere') }}</UiText>
-      <UiButton
-        :variant="breadcrumbs.length > 0 ? UiButtonVariant.Link : UiButtonVariant.Plain"
-        :size="UiSize.Sm"
-        data-testid="downloads-breadcrumb-home"
-        @click="navigateHome"
-      >
-        {{ t('support.downloads.downloadHome') }}
-      </UiButton>
-      <template v-for="(crumb, index) in breadcrumbs" :key="crumb.id">
-        <UiText tone="muted" size="md">&gt;</UiText>
-        <UiButton
-          v-if="index < breadcrumbs.length - 1"
-          :variant="UiButtonVariant.Link"
-          :size="UiSize.Sm"
-          :data-testid="`downloads-breadcrumb-${crumb.id}`"
-          @click="navigateToBreadcrumb(index)"
-        >
-          {{ crumb.name }}
-        </UiButton>
-        <UiText v-else tone="secondary" size="md" class="font-medium">{{ crumb.name }}</UiText>
       </template>
-    </UiStack>
+    </UiSchemaForm>
 
-    <UiStack v-if="loading || visibleCategories.length > 0" gap="sm">
-      <UiHeading :level="2" variant="card">{{ t('shared.categories') }}</UiHeading>
-      <UiCard data-testid="downloads-categories">
-        <UiTable :density="UiTableDensity.Comfortable" :loading="loading">
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+    <UiBreadcrumb :items="trail" data-testid="downloads-breadcrumbs" />
+
+    <UiDetailCards v-if="loading || visibleCategories.length > 0" :columns="DOWNLOAD_CATEGORIES_PART.columns" :loading="loading">
+      <template #card-categories>
+        <UiTable :density="UiTableDensity.Comfortable" data-testid="downloads-categories">
+          <UiSchemaTableHead :columns="DOWNLOAD_CATEGORIES_TABLE.columns" />
           <UiTableBody divided>
             <UiTableRow
               v-for="category in visibleCategories"
@@ -636,22 +635,13 @@ onMounted(() => {
             </UiTableRow>
           </UiTableBody>
         </UiTable>
-      </UiCard>
-    </UiStack>
+      </template>
+    </UiDetailCards>
 
-    <UiStack gap="sm">
-      <UiHeading :level="2" variant="card">{{ t('support.downloads.files') }}</UiHeading>
-      <UiCard data-testid="downloads-files">
-        <UiTable v-if="loading || store.downloads.length > 0" :density="UiTableDensity.Comfortable" :loading="loading">
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('support.downloads.downloads') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+    <UiDetailCards :columns="DOWNLOAD_FILES_PART.columns" :loading="loading">
+      <template #card-files>
+        <UiTable v-if="store.downloads.length > 0" :density="UiTableDensity.Comfortable" data-testid="downloads-files">
+          <UiSchemaTableHead :columns="DOWNLOAD_FILES_TABLE.columns" />
           <UiTableBody divided>
             <UiTableRow
               v-for="download in store.downloads"
@@ -694,8 +684,8 @@ onMounted(() => {
           :description="t('support.downloads.addADownloadUsingThe')"
           data-testid="downloads-files-empty"
         />
-      </UiCard>
-    </UiStack>
+      </template>
+    </UiDetailCards>
 
     <DownloadCategoryEditDialog
       :category="editingCategory"

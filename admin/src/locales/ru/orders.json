@@ -1,6 +1,5 @@
 {
   "orderDetail": {
-    "backToOrders": "Назад к заказам",
     "accept": "Принять",
     "orderInfo": "Информация о заказе",
     "overview": "Обзор",
@@ -33,7 +32,6 @@
     "refundClosed": "Позиция закрыта как возвращённая."
   },
   "ordersList": {
-    "orders": "Заказы",
     "manageCustomerOrders": "Управление заказами клиентов",
     "searchOrders": "Поиск заказов по номеру или id",
     "order": "Заказ №",

@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import DashboardInvoiceStatusCard from '@/components/dashboard/DashboardInvoiceStatusCard.vue'
+import { ChartKind } from '@/utils/ui/chart'
 import UiChart from '@/components/ui/UiChart.vue'
 import { dashboardCharts } from '../../helpers/dashboardFixtures'
 import { mountWithApp } from '../../helpers/mount'
@@ -15,7 +16,7 @@ describe('DashboardInvoiceStatusCard', () => {
     })
     const chart = wrapper.getComponent(UiChart)
 
-    expect(chart.props('type')).toBe('bar')
+    expect(chart.props('kind')).toBe(ChartKind.GroupedBar)
     expect(chart.props('labels')).toEqual(['Paid', 'Unpaid', 'Overdue', 'Cancelled'])
     expect(chart.props('series')).toEqual([{ label: 'Invoices', data: [7, 3, 2, 1] }])
   })

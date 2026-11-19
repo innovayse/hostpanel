@@ -9,6 +9,8 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import ServicesListView from '@/views/ServicesListView.vue'
+import schema from '@/views/ServicesListView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
@@ -110,6 +112,14 @@ describe('ServicesListView', () => {
     expect(row.text()).toContain('Monthly')
     expect(row.text()).toContain('Suspended')
     expect(wrapper.get('[data-testid="services-client-11"]').attributes('href')).toBe('/clients/3')
+    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+  })
+
+  it('draws the headers of the schema columns, in order', async () => {
+    stubRoutes({ 'GET /api/services': () => json({ items: [service], totalCount: 1 }) })
+    const wrapper = await mountList()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
   it('loads the next page from the pager', async () => {

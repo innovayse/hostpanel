@@ -8,9 +8,12 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import CancellationRequestsView from '@/views/CancellationRequestsView.vue'
+import schema from '@/views/CancellationRequestsView.schema'
 import { mountRouted, mountRoutedSettled } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
+import { useToastStore } from '@/stores/toast'
 
 /**
  * Mounts the list at an address and waits for its first load.
@@ -77,6 +80,13 @@ describe('CancellationRequestsView', () => {
     expect(wrapper.get('[data-testid="cancellations-client-5"]').attributes('href')).toBe('/clients/9')
   })
 
+  it('draws the headers of the schema columns, in order', async () => {
+    stubRoutes({ 'GET /api/admin/cancellation-requests': () => json({ items: [request], totalCount: 1 }) })
+    const wrapper = await mountRoutedSettled(CancellationRequestsView, '/clients/cancellations')
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('asks before deleting, then deletes and reloads', async () => {
     const mock = stubRoutes({
       'DELETE /api/admin/cancellation-requests/5': () => new Response(null, { status: 204 }),
@@ -115,7 +125,7 @@ describe('CancellationRequestsView', () => {
     await wrapper.get('[data-testid="cancellations-delete-dialog"] [data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="cancellations-feedback"]').text()).toBe('Cancellation request deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Cancellation request deleted.'])
   })
 
   it('shows the API sentence when the delete is refused and keeps the list', async () => {

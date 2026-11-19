@@ -2,55 +2,56 @@
 /**
  * OSS report (One Stop Shop): the invoiced value and VAT collected per EU member state, VAT rate and invoice
  * currency for a quarter, net of the refunds made in it. Each amount is shown in its own currency;
- * the footer sums the money only when every row shares one currency.
+ * the footer sums the money only when every row shares one currency. The title, the filter caption and the
+ * table columns are the ones of its schema, which the skeleton draws too; the line naming the period is the schema's summary.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportField from '@/components/reports/ReportField.vue'
-import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
 import { formatDate } from '@/lib/format'
+import { reportApiPath } from '@/lib/apiPaths'
 import { formatCurrencyCode } from '@/lib/money'
 import { reportCountryName } from '@/lib/reportsCountry'
+import { buildQuarterOptions, parseQuarterValue, quarterValue } from '@/lib/quarterOptions'
 import { reportPath } from '@/lib/reportsQuery'
 import { ossRowKey } from '@/lib/reportsRows'
 import { ReportCellFormat } from '@/types/reportcolumn'
-import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportOss } from '@/types/reportoss'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportColumnExtra } from '@/types/reportcolumn'
+import type { ReportOss, ReportOssRow } from '@/types/reportoss'
+import type { ReportTableData } from '@/types/reporttabledata'
+import { ReportFieldWidth } from '@/utils/ui/reportField'
+import schema from '@/views/OssReportView.schema'
 
 const { t, locale } = useI18n()
 
 /** Number of calendar years, ending with the current one, whose quarters are on offer. */
 const YEARS_ON_OFFER = 4
 
+/** Width of the quarter filter. */
+const FILTER_WIDTHS = { quarter: ReportFieldWidth.Lg }
+
+/** How the cells of the schema columns are written: the rate as a percent, every amount in its row's currency. */
+const COLUMN_EXTRAS: Readonly<Record<string, ReportColumnExtra>> = {
+  vatRate: { format: ReportCellFormat.Percent },
+  totalExclVat: { format: ReportCellFormat.Money, currencyKey: 'currency' },
+  totalVatCollected: { format: ReportCellFormat.Money, currencyKey: 'currency' },
+}
+
 /** The moment the screen opened; the offered quarters count back from it. */
 const now = new Date()
 
 /** The quarter being reported as `<year>-<quarter>`; the current one at first. */
-const quarter = ref(`${now.getFullYear()}-${Math.floor(now.getMonth() / 3) + 1}`)
+const quarter = ref(quarterValue(now.getFullYear(), Math.floor(now.getMonth() / 3) + 1))
 
-/** Quarters of the last few years, newest first. */
-const quarterOptions = computed(() => {
-  const options: { value: string; label: string }[] = []
-  for (let year = now.getFullYear(); year > now.getFullYear() - YEARS_ON_OFFER; year--) {
-    for (let number = 4; number >= 1; number--) {
-      options.push({
-        value: `${year}-${number}`,
-        label: t('reports.oss.quarterOption', { year, quarter: number, months: t(`reports.oss.quarter${number}`) }),
-      })
-    }
-  }
-  return options
-})
+/** Quarters of the last few years, newest first, grouped by year, the months named in the reader's language. */
+const quarterOptions = computed(() => buildQuarterOptions(now, YEARS_ON_OFFER, locale.value))
 
 const { data, load } = useReport<ReportOss>(() => {
-  const [year = '', number = ''] = quarter.value.split('-')
-  return reportPath('/reports/oss', { year, quarter: number })
+  const { year, quarter: number } = parseQuarterValue(quarter.value)
+  return reportPath(reportApiPath('oss'), { year, quarter: number })
 })
 
 /** The rows with the country named in the reader's language. */
@@ -63,17 +64,6 @@ const sharedCurrency = computed<string | null>(() => {
   const currencies = new Set(rows.value.map(row => row.currency))
   return currencies.size === 1 ? [...currencies][0] ?? null : null
 })
-
-/** Table columns; every amount is written in its row's currency. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'countryName', label: t('reports.oss.countryName') },
-  { key: 'countryCode', label: t('reports.oss.countryCode') },
-  { key: 'vatRate', label: t('reports.oss.vatRate'), align: UiAlign.Right, format: ReportCellFormat.Percent },
-  { key: 'numberOfInvoices', label: t('reports.oss.numberOfInvoices'), align: UiAlign.Right },
-  { key: 'totalExclVat', label: t('reports.oss.totalValueInvoicedExclVat'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
-  { key: 'totalVatCollected', label: t('reports.oss.totalVatCollected'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
-  { key: 'currency', label: t('shared.currency') },
-])
 
 /** Footer sums: the invoice count always, the money only when it is all in one currency. */
 const totals = computed<Record<string, number>>(() => {
@@ -95,36 +85,39 @@ const totals = computed<Record<string, number>>(() => {
  * @returns The formatted sum.
  */
 const formatTotal = (amount: number): string => formatCurrencyCode(amount, sharedCurrency.value ?? '')
+
+/** The table of the member states, with the footer sums. */
+const table = computed<ReportTableData<ReportOssRow & { countryName: string }>>(() => ({
+  rows: rows.value,
+  rowKey: ossRowKey,
+  extras: COLUMN_EXTRAS,
+  totals: totals.value,
+  totalsLabel: t('reports.oss.totals'),
+  formatMoney: formatTotal,
+}))
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.oss.ossReport')" :description="t('reports.oss.thisReportProvidesTheInformation')">
-    <template #filters>
-      <ReportFilterBar :generate-label="t('shared.generateReport')" @generate="load">
-        <template #fields>
-          <ReportField :label="t('reports.oss.selectQuarter')" width="lg">
-            <UiSelect v-model="quarter" :options="quarterOptions" :placeholder="t('reports.oss.selectQuarter')" data-testid="report-quarter" />
-          </ReportField>
-        </template>
-      </ReportFilterBar>
+  <ReportPage
+    :retry="load"
+    :schema="schema"
+    :widths="FILTER_WIDTHS"
+    :generate-label="t('shared.generateReport')"
+    :table="table"
+    @generate="load"
+  >
+    <template #field-quarter>
+      <UiSelect v-model="quarter" :options="quarterOptions" :placeholder="t('reports.oss.selectQuarter')" data-testid="report-quarter" />
     </template>
 
-    <template v-if="data">
-      <UiText tone="secondary" size="md" data-testid="report-period-label">
+    <template #summary>
+      <UiText v-if="data" tone="secondary" size="md" data-testid="report-period-label">
         {{ t('reports.oss.period', { from: formatDate(data.periodStart), to: formatDate(data.periodEnd) }) }}
       </UiText>
-      <ReportTable
-        :columns="columns"
-        :rows="rows"
-        :row-key="ossRowKey"
-        :totals="totals"
-        :totals-label="t('reports.oss.totals')"
-        :format-money="formatTotal"
-        :empty-text="t('shared.noDataFoundForThis2')"
-      />
-      <UiText tone="muted" size="sm">
-        {{ t('reports.oss.ifACountryDoesNot') }}
-      </UiText>
     </template>
+
+    <UiText tone="muted" size="sm">
+      {{ t('reports.oss.ifACountryDoesNot') }}
+    </UiText>
   </ReportPage>
 </template>

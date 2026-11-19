@@ -28,9 +28,9 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ServiceChangeRequestsView.schema'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { formatDate } from '@/lib/format'
@@ -38,6 +38,7 @@ import { Icon } from '@/lib/icons'
 import { formatPrice } from '@/lib/money'
 import { AppRoute, ClientSection, clientItemPath, clientPath, invoicePath } from '@/lib/routes'
 import { serviceChangeStatusLabel, serviceChangeStatusTone, serviceChangeTypeLabel, serviceChangeTypeTone } from '@/lib/tones'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useServiceChangeRequestsStore } from '@/stores/serviceChangeRequests'
 import { ServiceChangeDecision, ServiceChangeStatus } from '@/types/servicechangerequest'
 import type { ServiceChangeRequestItem } from '@/types/servicechangerequest'
@@ -175,6 +176,7 @@ const requestActions = (item: ServiceChangeRequestItem): UiMenuAction[] =>
     ? [
         {
           label: t('serviceChangeRequests.approve'),
+          icon: Icon.CheckCircle,
           testid: `plan-changes-approve-${item.id}`,
           /**
            * Opens the approval prompt for this row.
@@ -187,6 +189,7 @@ const requestActions = (item: ServiceChangeRequestItem): UiMenuAction[] =>
         },
         {
           label: t('serviceChangeRequests.reject'),
+          icon: Icon.Close,
           testid: `plan-changes-reject-${item.id}`,
           /**
            * Opens the rejection prompt for this row.
@@ -219,8 +222,7 @@ onMounted(() => {
 <template>
   <UiStack>
     <UiPageHeader
-      :title="store.serviceId === null ? t('serviceChangeRequests.title') : t('serviceChangeRequests.history')"
-      :subtitle="t('serviceChangeRequests.subtitle')"
+      v-bind="schemaHeader(schema, t, { title: store.serviceId === null ? undefined : t('serviceChangeRequests.history') })"
       data-testid="plan-changes-header"
     />
 
@@ -253,18 +255,7 @@ onMounted(() => {
 
     <UiCard v-if="hasRows || store.loading">
       <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" data-testid="plan-changes-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('serviceChangeRequests.service') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('serviceChangeRequests.plans') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader>{{ t('serviceChangeRequests.proration') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody>
           <UiTableRow
             v-for="item in store.requests"
@@ -289,8 +280,8 @@ onMounted(() => {
               </UiLink>
             </UiTableCell>
             <UiTableCell>
-              <UiText>{{ item.fromProductName }} → {{ item.toProductName }}</UiText>
-              <UiText v-if="item.note" tone="muted" size="xs">{{ t('serviceChangeRequests.note') }}: {{ item.note }}</UiText>
+              <UiText class="min-w-0 truncate">{{ item.fromProductName }} → {{ item.toProductName }}</UiText>
+              <UiText v-if="item.note" tone="muted" size="xs" class="min-w-0 truncate">{{ t('serviceChangeRequests.note') }}: {{ item.note }}</UiText>
             </UiTableCell>
             <UiTableCell>
               <UiBadge :tone="serviceChangeTypeTone(item.type)" small>{{ serviceChangeTypeLabel(item.type) }}</UiBadge>

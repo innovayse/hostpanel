@@ -11,6 +11,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ClientServiceDetailView from '@/views/ClientServiceDetailView.vue'
+import schema, { BILLING_COLUMNS, NOTES_COLUMNS } from '@/views/ClientServiceDetailView.schema'
 import { BillingCycle, ServiceStatus, type ServiceDetail } from '@/types/service'
 import { mountClientView } from '../helpers/clientViews'
 import { callOf, json, problem } from '../helpers/fetch'
@@ -110,15 +111,32 @@ afterEach(() => {
 })
 
 describe('ClientServiceDetailView', () => {
-  it('keeps the real header, tabs and sections as placeholders while the service loads', async () => {
+  it('keeps the real header, tabs and the cards of the schema as placeholders while the service loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountRouted(ClientServiceDetailView, '/clients/:id/services/:serviceId', '/clients/5/services/9')
 
     expect(wrapper.find('[data-testid="client-service-loading"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="client-service-tab-billing"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Service Info')
-    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
-    expect(wrapper.find('[data-testid="client-service-status-save"]').attributes('disabled')).toBeDefined()
+    for (const card of schema.columns.flat()) {
+      expect(wrapper.get(`[data-testid="ui-detail-card-${card.key}"]`).attributes('aria-busy')).toBe('true')
+    }
+    expect(wrapper.get('[data-testid="ui-detail-card-hosting"]').text()).toContain('Service Info')
+    expect(wrapper.get('[data-testid="ui-detail-card-hosting"]').text()).toContain('Domain')
+    expect(wrapper.find('[data-testid="client-service-hosting-form"]').exists()).toBe(false)
+  })
+
+  it('draws the cards of the billing and notes tabs from their schema columns', async () => {
+    const { wrapper } = await mountLoaded()
+
+    await openTab(wrapper, 'billing')
+    for (const card of BILLING_COLUMNS.flat()) {
+      expect(wrapper.find(`[data-testid="ui-detail-card-${card.key}"]`).exists()).toBe(true)
+    }
+
+    await openTab(wrapper, 'notes')
+    for (const card of NOTES_COLUMNS.flat()) {
+      expect(wrapper.find(`[data-testid="ui-detail-card-${card.key}"]`).exists()).toBe(true)
+    }
   })
 
   it('mounts without throwing', async () => {
@@ -403,5 +421,13 @@ describe('ClientServiceDetailView', () => {
     expect(putsOf(mock)).toEqual([
       expect.objectContaining({ url: '/api/services/9/termination-date', body: { terminatedAt: '2030-06-01' } }),
     ])
+  })
+
+  it('returns to the services of its client with the back pill', async () => {
+    const { wrapper } = await mountLoaded()
+    const back = wrapper.get('[data-testid="client-service-back"]')
+
+    expect(back.attributes('href')).toMatch(/^\/clients\/[^/]+\/services$/)
+    expect(back.text()).toBe('Services')
   })
 })

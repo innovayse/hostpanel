@@ -13,6 +13,13 @@ describe('UiFormActions', () => {
     expect(wrapper.text().indexOf('CANCEL')).toBeLessThan(wrapper.text().indexOf('SAVE'))
   })
 
+  it('is a sticky save bar above the bottom safe area on phones', () => {
+    const wrapper = mount(UiFormActions)
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['max-sm:sticky', 'max-sm:bottom-0']))
+    expect(wrapper.classes().some(name => name.includes('safe-area-inset-bottom'))).toBe(true)
+  })
+
   it('stacks the buttons at full width on phones, primary on top', () => {
     const wrapper = mount(UiFormActions)
 

@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
+using Innovayse.Hostpanel.Application.Reports.Common.Enums;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -10,10 +11,17 @@ namespace Innovayse.Hostpanel.Infrastructure.Monitoring;
 
 /// <summary>
 /// Disk usage service. Returns cached stats from the database.
-/// UpdateNowAsync polls all cPanel servers and upserts the cache.
+/// UpdateNowAsync polls all cPanel servers and upserts the cache; every other hosting server and every
+/// server that cannot be polled is answered as a failure instead of being left out silently.
 /// </summary>
 public sealed class DiskUsageService : IDiskUsageService
 {
+    /// <summary>Modules whose servers host client accounts; a server of any other module (licensing, VPS) is not part of this report.</summary>
+    private static readonly ServerModule[] HostingPanelModules =
+    [
+        ServerModule.CPanel, ServerModule.Plesk, ServerModule.DirectAdmin, ServerModule.Centos, ServerModule.Cwp7, ServerModule.Virtualmin,
+    ];
+
     /// <summary>The database the servers are read from and the cached figures are written to.</summary>
     private readonly AppDbContext _db;
 
@@ -43,16 +51,17 @@ public sealed class DiskUsageService : IDiskUsageService
     public async Task<DiskUsageDto> GetReportAsync(CancellationToken ct)
     {
         var stats = await _db.DiskUsageStats.OrderBy(s => s.ServerName).ThenBy(s => s.Domain).ToListAsync(ct);
-        return BuildReport(stats);
+        return BuildReport(stats, []);
     }
 
     /// <inheritdoc/>
     public async Task<DiskUsageDto> UpdateNowAsync(CancellationToken ct)
     {
-        // Load all cPanel servers
+        // Load every enabled hosting server; those whose panel cannot report usage are answered as failures below
         var servers = await _db.Servers
-            .Where(s => s.Module == ServerModule.CPanel && !s.IsDisabled)
+            .Where(s => HostingPanelModules.Contains(s.Module) && !s.IsDisabled)
             .ToListAsync(ct);
+        var failures = new List<DiskUsageFailureDto>();
 
         // Load all client services with client info (to map cPanel domain → client name)
         var serviceRows = await (
@@ -75,6 +84,12 @@ public sealed class DiskUsageService : IDiskUsageService
 
         foreach (var server in servers)
         {
+            if (server.Module != ServerModule.CPanel)
+            {
+                failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.UnsupportedModule));
+                continue;
+            }
+
             try
             {
                 CpanelWhmApi api;
@@ -89,6 +104,7 @@ public sealed class DiskUsageService : IDiskUsageService
                 else
                 {
                     _logger.LogWarning("Server {Name} has no ApiToken or AccessHash, so the disk usage poll is skipped.", server.Name);
+                    failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.MissingCredentials));
                     continue;
                 }
 
@@ -119,19 +135,21 @@ public sealed class DiskUsageService : IDiskUsageService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to fetch disk usage from server {Name} ({Hostname}).", server.Name, server.Hostname);
+                failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.Unreachable));
             }
         }
 
         await _db.SaveChangesAsync(ct);
 
         var allStats = await _db.DiskUsageStats.OrderBy(s => s.ServerName).ThenBy(s => s.Domain).ToListAsync(ct);
-        return BuildReport(allStats);
+        return BuildReport(allStats, failures);
     }
 
     /// <summary>Groups the stored stats per server and formats the figures for display.</summary>
     /// <param name="stats">The latest stat row for each hosted domain.</param>
+    /// <param name="failures">The servers the refresh could not read; empty for a plain read.</param>
     /// <returns>The report with per-server totals.</returns>
-    private static DiskUsageDto BuildReport(IReadOnlyList<Domain.Hosting.DiskUsageStat> stats)
+    private static DiskUsageDto BuildReport(IReadOnlyList<Domain.Hosting.DiskUsageStat> stats, IReadOnlyList<DiskUsageFailureDto> failures)
     {
         static string FormatMb(long mb)
         {
@@ -168,6 +186,6 @@ public sealed class DiskUsageService : IDiskUsageService
             .ToList();
 
         var lastUpdated = stats.Count > 0 ? stats.Max(s => s.UpdatedAt) : (DateTimeOffset?)null;
-        return new DiskUsageDto(servers, lastUpdated);
+        return new DiskUsageDto(servers, lastUpdated, failures);
     }
 }

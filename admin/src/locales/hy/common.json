@@ -7,5 +7,10 @@
   "viewAllNotifications": "Դիտել բոլոր ծանուցումները",
   "newCount": "{count} նոր | {count} նոր",
   "noNotifications": "Ծանուցումներ չկան",
-  "help": "Օժանդակություն"
+  "help": "Օժանդակություն",
+  "roles": {
+    "Admin": "Ադմինիստրատոր",
+    "Reseller": "Վերավաճառող",
+    "Client": "Հաճախորդ"
+  }
 }

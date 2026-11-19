@@ -12,16 +12,14 @@ import { computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RouteLocationRaw } from 'vue-router'
-import draggable from 'vuedraggable'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiLink from '@/components/ui/UiLink.vue'
-import UiLoader from '@/components/ui/UiLoader.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import UiSortableRows from '@/components/ui/UiSortableRows.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -35,9 +33,17 @@ import type { StorefrontEntity, StorefrontListTestIds, StorefrontOrderItem } fro
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: props.addLabel, icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: props.testids.add, to: props.addTo },
+])
 
 /** Props for StorefrontListTable. */
 const props = withDefaults(defineProps<{
@@ -75,7 +81,7 @@ const props = withDefaults(defineProps<{
   error: string | null
   /** Sentence for a failed create, update, delete or reorder, null when none. */
   actionError: string | null
-  /** True while a new order is being saved. */
+  /** True while a new order is being saved: the table then shows its row placeholders until the saved order is back. */
   savingOrder: boolean
   /** The entry staged for deletion, null when no question is open. */
   deleteTarget: T | null
@@ -181,10 +187,10 @@ const rowActions = (item: T, index: number): UiMenuAction[] => {
    */
   const onDelete = (): void => emit('stageDelete', item)
   return [
-    { label: props.moveUpLabel, disabled: index === 0, testid: `${props.testids.moveUp}-${item.id}`, onSelect: onMoveUp },
-    { label: props.moveDownLabel, disabled: index === local.value.length - 1, testid: `${props.testids.moveDown}-${item.id}`, onSelect: onMoveDown },
-    { label: props.editLabel, testid: `${props.testids.edit}-${item.id}`, to: props.editTo(item) },
-    { label: props.deleteLabel, danger: true, testid: `${props.testids.delete}-${item.id}`, onSelect: onDelete },
+    { label: props.moveUpLabel, icon: Icon.ArrowUp, disabled: index === 0, testid: `${props.testids.moveUp}-${item.id}`, onSelect: onMoveUp },
+    { label: props.moveDownLabel, icon: Icon.ArrowDown, disabled: index === local.value.length - 1, testid: `${props.testids.moveDown}-${item.id}`, onSelect: onMoveDown },
+    { label: props.editLabel, icon: Icon.Edit, testid: `${props.testids.edit}-${item.id}`, to: props.editTo(item) },
+    { label: props.deleteLabel, icon: Icon.Trash, danger: true, testid: `${props.testids.delete}-${item.id}`, onSelect: onDelete },
   ]
 }
 
@@ -198,42 +204,29 @@ const onDragEnd = (): void => {
   <UiStack gap="none" :data-testid="testids.view">
     <UiStatusMessage :message="outcomeMessage" :tone="outcomeTone" class="mb-4" :data-testid="testids.actionError" />
 
-    <UiPageHeader :title="title" :subtitle="subtitle">
-      <template #actions>
-        <UiLoader v-if="savingOrder" :data-testid="testids.savingOrder" />
-        <UiLink :to="addTo" :variant="UiButtonVariant.Primary" :data-testid="testids.add">
-          {{ addLabel }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" :title="title" :subtitle="subtitle">
     </UiPageHeader>
 
     <UiErrorState v-if="error" :message="error" :testid="testids.error" @retry="emit('retry')" />
 
-    <UiCard v-else class="overflow-hidden">
+    <UiCard v-else clip>
       <UiTable
+        :empty-text="emptyLabel"
         :density="UiTableDensity.Comfortable"
-        :loading="loading"
+        :loading="loading || savingOrder"
         :empty="!loading && local.length === 0"
       >
-        <template #empty>
-          {{ emptyLabel }}
-        </template>
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader class="w-10"><span class="sr-only">{{ t('storefront.list.reorder') }}</span></UiTableHeader>
-            <UiTableHeader v-for="column in columns" :key="column">{{ column }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Hidden"><span class="sr-only">{{ t('storefront.list.reorder') }}</span></UiTableHeader>
+            <UiTableHeader v-for="(column, index) in columns" :key="column" :size="index === 0 ? UiColumnSize.Grow : undefined">{{ column }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
-        <draggable
-          v-if="!loading"
+        <UiSortableRows
+          v-if="!loading && !savingOrder"
           v-model="local"
-          tag="tbody"
           item-key="id"
-          handle=".drag-handle"
-          ghost-class="opacity-40"
-          :animation="200"
-          class="divide-y divide-border"
           @end="onDragEnd"
         >
           <template #item="{ element, index }">
@@ -251,7 +244,7 @@ const onDragEnd = (): void => {
               </UiTableCell>
             </UiTableRow>
           </template>
-        </draggable>
+        </UiSortableRows>
       </UiTable>
     </UiCard>
 

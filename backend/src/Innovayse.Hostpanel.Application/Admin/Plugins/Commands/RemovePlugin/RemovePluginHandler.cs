@@ -113,6 +113,13 @@ public sealed class RemovePluginHandler
             pluginSwitch.SwitchOffRemovedPlugin(command.Id, _clock.UtcNow);
         }
 
+        // The install record describes a package that is no longer there; a reinstall starts a fresh one.
+        var installRecord = await _context.InstalledPlugins.FirstOrDefaultAsync(p => p.PluginId == command.Id, ct);
+        if (installRecord is not null)
+        {
+            _context.InstalledPlugins.Remove(installRecord);
+        }
+
         var description = packageRemoved
             ? $"Removed Plugin - Plugin ID: {command.Id}"
             : $"Switched Off Removed Plugin - Plugin ID: {command.Id} - Package already gone";

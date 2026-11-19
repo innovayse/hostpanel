@@ -10,6 +10,7 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -87,10 +88,10 @@ const close = (): void => {
     </UiField>
 
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="order-reject-cancel" @click="close">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="order-reject-cancel" @click="close">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Confirm"
         :variant="UiButtonVariant.Danger"
         :loading="loading"
         :disabled="loading"

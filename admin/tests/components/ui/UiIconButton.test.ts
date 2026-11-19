@@ -32,3 +32,17 @@ describe('UiIconButton', () => {
     expect(wrapper.attributes('data-testid')).toBe('probe')
   })
 })
+
+describe('UiIconButton badge', () => {
+  it('lays the badge on the top-right corner, a dot below sm and the count from sm up, and draws none without one', () => {
+    const plain = mount(UiIconButton, { props: { label: 'a' } })
+    const wrapper = mount(UiIconButton, { props: { label: 'a', badge: '9+', badgeTestid: 'probe' } })
+
+    expect(plain.find('[data-testid="icon-button-badge-count"]').exists()).toBe(false)
+    expect(wrapper.classes()).toContain('relative')
+    expect(wrapper.get('[data-testid="probe-count"]').text()).toBe('9+')
+    expect(wrapper.get('[data-testid="probe-count"]').classes()).toContain('max-sm:hidden')
+    expect(wrapper.get('[data-testid="probe-count"]').element.parentElement?.className).toContain('-right-1')
+    expect(wrapper.get('[data-testid="probe-dot"]').classes()).toContain('sm:hidden')
+  })
+})

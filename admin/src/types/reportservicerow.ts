@@ -24,6 +24,8 @@ export interface ReportServiceRow {
   firstPaymentAmount: number
   /** Amount of each renewal. */
   recurringAmount: number
+  /** ISO 4217 code of the currency both amounts are in: the client's billing currency. */
+  currencyCode: string
   /** Payment method, when set. */
   paymentMethod: string | null
   /** Registration date. */

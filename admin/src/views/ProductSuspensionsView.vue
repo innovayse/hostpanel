@@ -1,38 +1,29 @@
 <script setup lang="ts">
 /**
- * Product suspensions report: every suspended service with the reason recorded for it.
+ * Product suspensions report: every suspended service with the reason recorded for it. The title, the refresh
+ * action and the table columns are the ones of its schema, which the skeleton draws too.
  */
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import { useReport } from '@/composables/useReport'
-import type { ReportColumn } from '@/types/reportcolumn'
+import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportSuspensionRow } from '@/types/reportsuspension'
-
-const { t } = useI18n()
+import type { ReportTableData } from '@/types/reporttabledata'
+import schema from '@/views/ProductSuspensionsView.schema'
 
 const { data, load } = useReport<ReportSuspensionRow[]>(() => '/reports/product-suspensions')
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'serviceId', label: t('reports.productSuspensions.serviceId') },
-  { key: 'clientName', label: t('shared.clientName') },
-  { key: 'productName', label: t('shared.productName') },
-  { key: 'domain', label: t('shared.domain') },
-  { key: 'nextDueDate', label: t('shared.nextDueDate') },
-  { key: 'suspendReason', label: t('reports.productSuspensions.suspendReason') },
-])
+/** The suspended services, the id and the next due date formatted. */
+const table = computed<ReportTableData<ReportSuspensionRow>>(() => ({
+  rows: data.value ?? [],
+  rowKey: 'serviceId',
+  extras: {
+    serviceId: { format: ReportCellFormat.Id },
+    nextDueDate: { format: ReportCellFormat.Date },
+  },
+}))
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.productSuspensions.productSuspensions')" :description="t('reports.productSuspensions.thisReportAllowsYouTo')">
-    <ReportTable
-      v-if="data"
-      :columns="columns"
-      :rows="data"
-      row-key="serviceId"
-      :empty-text="t('shared.noDataFoundForThis')"
-    />
-  </ReportPage>
+  <ReportPage :retry="load" :schema="schema" :table="table" />
 </template>

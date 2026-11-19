@@ -12,7 +12,7 @@
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Manage client-facing announcements",
-    "addNewAnnouncement": "Add New Announcement",
+    "addNewAnnouncement": "New Announcement",
     "noAnnouncementsFound": "No announcements found",
     "createYourFirstAnnouncementTo": "Create your first announcement to get started.",
     "deleteAnnouncement": "Delete Announcement",
@@ -55,7 +55,6 @@
     "deleted": "Deleted."
   },
   "knowledgebase": {
-    "knowledgebase": "Knowledgebase",
     "manageKnowledgebaseArticlesAndCategories": "Manage knowledgebase articles and categories",
     "checkToHide": "Check to Hide",
     "categoryDescription": "Category description",
@@ -113,7 +112,7 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Manage network status and incident reports",
-    "createNew": "(+) Create New",
+    "createNew": "Create New",
     "startDate": "Start Date",
     "endDate": "End Date",
     "deleteNetworkIssue": "Delete Network Issue",
@@ -188,6 +187,7 @@
     "totalcountRecordsFoundShowingShowingfrom": "{totalCount} Records Found, Showing {showingFrom} to {showingTo}",
     "flag": "Flag",
     "unflag": "Unflag",
+    "noRepliesYet": "No replies yet",
     "requestor": "Requestor",
     "noTicketsFound": "No tickets found",
     "noTicketsMatchYourFilters": "No tickets match your filters",

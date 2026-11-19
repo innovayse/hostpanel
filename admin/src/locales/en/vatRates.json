@@ -17,6 +17,14 @@
     "Standard": "Standard",
     "Reduced": "Reduced"
   },
+  "filters": {
+    "status": "Status"
+  },
+  "status": {
+    "Active": "In force",
+    "Superseded": "Superseded",
+    "Upcoming": "Upcoming"
+  },
   "deleteModal": {
     "title": "Delete VAT Rate",
     "message": "Delete the {kind} rate of {country} that applies from {validFrom}? Invoices already issued keep the rate they were taxed at.",

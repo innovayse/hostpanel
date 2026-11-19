@@ -1,13 +1,15 @@
 /**
  * Unit tests for UiFilterTrigger: the button and its count badge, the surface it opens (a centred dialog on a
- * desktop, a bottom sheet on a phone) and the Apply, Reset and Cancel paths.
+ * desktop, the Filters bottom sheet on a phone) and the Apply, Clear and Cancel paths.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiFilterTrigger from '@/components/ui/UiFilterTrigger.vue'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { createTestI18n } from '../../helpers/i18n'
+import { stubPhone } from '../../helpers/phone'
 
 /**
  * Mounts the trigger with the teleport inlined so the surface is queryable.
@@ -21,16 +23,6 @@ const mountTrigger = (props: { count: number; title?: string; disabled?: boolean
     slots: { default: '<p data-testid="fields">Fields</p>' },
     global: { plugins: [createTestI18n()], stubs: { teleport: true } },
   })
-
-/**
- * Makes the screen a phone or not.
- *
- * @param phone - Whether the sheet query matches.
- * @returns Nothing; `matchMedia` is stubbed.
- */
-const stubPhone = (phone: boolean): void => {
-  vi.stubGlobal('matchMedia', () => ({ matches: phone, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
-}
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -73,6 +65,7 @@ describe('UiFilterTrigger', () => {
     expect(wrapper.findComponent(UiDialog).exists()).toBe(true)
     expect(wrapper.findComponent(UiDrawer).exists()).toBe(false)
     expect(wrapper.get('h2').text()).toBe('Client filters')
+    expect(wrapper.find('[data-testid="filter-cancel"]').exists()).toBe(true)
   })
 
   it('opens a bottom sheet on a phone', async () => {
@@ -81,9 +74,12 @@ describe('UiFilterTrigger', () => {
 
     await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
 
-    expect(wrapper.findComponent(UiDrawer).props('sheet')).toBe(true)
-    expect(wrapper.findComponent(UiDialog).exists()).toBe(false)
+    expect(wrapper.findComponent(UiDrawer).props('presentation')).toBe(UiDrawerPresentation.Sheet)
+    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
     expect(wrapper.get('h2').text()).toBe('Filters')
+    expect(wrapper.get('[data-testid="filter-apply"]').text()).toBe('Apply')
+    expect(wrapper.get('[data-testid="filter-reset"]').text()).toBe('Clear')
+    expect(wrapper.get('[data-testid="filter-cancel"]').classes()).toContain('max-sm:hidden')
   })
 
   it('applies and closes', async () => {
@@ -136,5 +132,19 @@ describe('UiFilterTrigger', () => {
     })
 
     expect(wrapper.find('[data-testid="clients-filters"]').exists()).toBe(true)
+  })
+})
+
+describe('UiFilterTrigger without a Clear button', () => {
+  it('leaves Clear out when the screen has nothing to clear', async () => {
+    const wrapper = mount(UiFilterTrigger, {
+      props: { count: 0, resettable: false },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+    })
+
+    await wrapper.get('[data-testid="filter-trigger"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="filter-reset"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="filter-apply"]').exists()).toBe(true)
   })
 })

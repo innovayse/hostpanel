@@ -6,14 +6,14 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportPeriodFilter from '@/components/reports/ReportPeriodFilter.vue'
 import ReportProductSalesTable from '@/components/reports/ReportProductSalesTable.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
-import { formatCurrencyCode } from '@/lib/money'
+import { reportApiPath } from '@/lib/apiPaths'
+import { baseCurrencyFormatter } from '@/lib/money'
 import { currentMonthNumber, currentYear, monthName } from '@/lib/reportsPeriod'
 import { reportPath } from '@/lib/reportsQuery'
 import type { ReportIncomeByProduct, ReportSalesGroup } from '@/types/reportproductsales'
+import schema from '@/views/IncomeByProductView.schema'
 
 const { t } = useI18n()
 
@@ -24,14 +24,12 @@ const year = ref(currentYear())
 const month = ref(currentMonthNumber())
 
 const { data, load } = useReport<ReportIncomeByProduct>(() =>
-  reportPath('/reports/income-by-product-grouped', { year: year.value, month: month.value }),
+  reportPath(reportApiPath('income-by-product-grouped'), { year: year.value, month: month.value }),
 )
 
-/** Title naming the month once a report is loaded. */
-const title = computed<string>(() =>
-  data.value
-    ? t('reports.titles.incomeByProductFor', { month: monthName(data.value.month), year: data.value.year })
-    : t('reports.titles.reports.incomeByProduct'),
+/** Title naming the month once a report is loaded; the schema's own title until then. */
+const title = computed<string | undefined>(() =>
+  data.value ? t('reports.titles.incomeByProductFor', { month: monthName(data.value.month), year: data.value.year }) : undefined,
 )
 
 /** The groups in the shape the shared table reads. */
@@ -52,29 +50,27 @@ const groups = computed<ReportSalesGroup[]>(() =>
 /** Base currency the figures are converted to; empty until loaded. */
 const currency = computed<string>(() => data.value?.currency ?? '')
 
-/**
- * Formats an amount in the base currency the API converted the report to.
- *
- * @param amount - Amount in the report currency.
- * @returns The amount with its currency symbol.
- */
-const formatMoney = (amount: number): string => formatCurrencyCode(amount, currency.value)
+/** Formats an amount in the base currency the API converted the report to. */
+const formatMoney = baseCurrencyFormatter(() => currency.value)
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="title" :description="t('reports.incomeByProduct.thisReportGivesABreakdown')">
-    <template #filters>
-      <ReportPeriodFilter v-model:year="year" v-model:month="month" show-month :years-back="2" :years-ahead="2" @generate="load" />
-    </template>
+  <ReportPage
+    v-model:year="year"
+    v-model:month="month"
+    :retry="load"
+    :schema="schema"
+    :title="title"
+    :years-back="2"
+    :years-ahead="2"
+    :base-currency="currency"
+    @generate="load"
+  >
     <ReportProductSalesTable
-      v-if="data"
       :groups="groups"
-      :total-units-sold="data.totalUnitsSold"
-      :total-value="data.totalIncome"
+      :total-units-sold="data?.totalUnitsSold ?? 0"
+      :total-value="data?.totalIncome ?? 0"
       :format-money="formatMoney"
     />
-    <UiText v-if="data" tone="muted" size="sm">
-      {{ t('reports.common.convertedToBaseCurrency', { currency }) }}
-    </UiText>
   </ReportPage>
 </template>

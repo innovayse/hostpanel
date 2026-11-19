@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import DashboardGrowthCard from '@/components/dashboard/DashboardGrowthCard.vue'
+import { ChartKind } from '@/utils/ui/chart'
 import UiChart from '@/components/ui/UiChart.vue'
 import { dashboardCharts } from '../../helpers/dashboardFixtures'
 import { mountWithApp } from '../../helpers/mount'
@@ -13,7 +14,7 @@ describe('DashboardGrowthCard', () => {
     const wrapper = mountWithApp(DashboardGrowthCard, { props: { newOrders, newClients, loading: false }, stubs: { UiChart: true } })
     const chart = wrapper.getComponent(UiChart)
 
-    expect(chart.props('type')).toBe('line')
+    expect(chart.props('kind')).toBe(ChartKind.Line)
     expect(chart.props('labels')).toEqual(['Mar 10', 'Mar 11', 'Mar 12'])
     expect(chart.props('series')).toEqual([
       { label: 'New orders', data: [0, 2, 1] },

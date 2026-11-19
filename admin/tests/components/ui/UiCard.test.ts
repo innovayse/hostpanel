@@ -33,6 +33,12 @@ describe('UiCard', () => {
     expect(wrapper.classes()).not.toContain('rounded-card')
   })
 
+  it('clips its content at the rounded corners only on request, without becoming a scroll container', () => {
+    expect(mount(UiCard).classes()).not.toContain('overflow-clip')
+    expect(mount(UiCard, { props: { clip: true } }).classes()).toContain('overflow-clip')
+    expect(mount(UiCard, { props: { clip: true } }).classes()).not.toContain('overflow-hidden')
+  })
+
   it('draws the frosted glass surface, which carries the light theme card shadow', () => {
     expect(mount(UiCard).classes()).toContain('glass')
   })

@@ -36,8 +36,9 @@ import { UiTone } from '@/utils/ui/tone'
 import type { DnsRecordItem } from '@/types/domain'
 import { DnsRecordType } from '@/types/domain'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import { EMPTY_VALUE } from '@/lib/format'
+import { Icon } from '@/lib/icons'
 
 const { t } = useI18n()
 
@@ -284,6 +285,7 @@ const dismissDelete = (): void => {
 const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `clients-dns-edit-${record.id}`,
     /**
      * Starts editing this row.
@@ -296,6 +298,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `clients-dns-delete-${record.id}`,
     /**
      * Asks for confirmation, then deletes this row.
@@ -330,14 +333,14 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
 
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-dns-feedback" />
 
-      <UiTable :density="UiTableDensity.Compact" :scrollable="false" :empty="isEmpty" data-testid="clients-dns-table">
+      <UiTable :empty-text="t('clients.dnsRecordsTable.noDnsRecordsFound')" :density="UiTableDensity.Compact" :scrollable="false" :empty="isEmpty" data-testid="clients-dns-table">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.type') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Control">{{ t('shared.type') }}</UiTableHeader>
             <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.dnsRecordsTable.host') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.value') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.dnsRecordsTable.ttl') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.priority') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow" :card-role="UiCardRole.Control">{{ t('shared.value') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Control">{{ t('clients.dnsRecordsTable.ttl') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Control">{{ t('shared.priority') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
@@ -409,9 +412,6 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
             </template>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('clients.dnsRecordsTable.noDnsRecordsFound') }}
-        </template>
       </UiTable>
     </UiStack>
 

@@ -30,8 +30,6 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
@@ -42,10 +40,9 @@ import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/TransactionsListView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
@@ -53,8 +50,16 @@ import { formatPlainAmount } from '@/lib/money'
 import { useTransactionsStore } from '@/stores/billingTransactions'
 import type { TransactionFilters } from '@/types/transaction'
 import { AppRoute, transactionEditPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('billing.transactionsList.addTransaction'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-transactions-add', to: AppRoute.BillingAddTransaction },
+])
 
 /** The filter fields kept in the address: the transaction filters every transaction list has, and the client this list adds. */
 const FilterKey = {
@@ -160,11 +165,13 @@ const dismissDelete = (): void => {
 const transactionActions = (id: number): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `billing-transaction-edit-${id}`,
     to: transactionEditPath(id),
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `billing-transaction-delete-${id}`,
     danger: true,
     /**
@@ -181,13 +188,7 @@ const transactionActions = (id: number): UiMenuAction[] => [
 
 <template>
   <UiStack data-testid="billing-transactions-view">
-    <UiPageHeader :title="t('shared.transactions')" :subtitle="t('billing.transactionsList.paymentTransactionsAndRecords')">
-      <template #actions>
-        <UiLink :to="AppRoute.BillingAddTransaction" variant="primary" data-testid="billing-transactions-add">
-          <UiIcon :markup="Icon.Add" size="sm" />
-          {{ t('billing.transactionsList.addTransaction') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiGrid :columns="4">
@@ -257,18 +258,7 @@ const transactionActions = (id: number): UiMenuAction[] => [
         :empty="!store.loading && store.transactions.length === 0"
         data-testid="billing-transactions-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.amountIn') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.fees') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.amountOut') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="transaction in store.transactions" :key="transaction.id" hoverable>
             <UiTableCell>{{ transaction.clientName }}</UiTableCell>

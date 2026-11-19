@@ -4,24 +4,20 @@
  * means edit and loads the issue first. A refused load offers a retry instead of an empty form; a
  * refused save shows the API's sentence next to the save button, a saved issue returns to the list.
  */
-import { computed, onMounted, provide, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { NETWORK_ISSUE_PRIORITY_OPTIONS, NETWORK_ISSUE_STATUS_OPTIONS, NETWORK_ISSUE_TYPE_OPTIONS } from '@/lib/constants'
 import { toDateInputValue, toIsoDay } from '@/lib/format'
@@ -29,6 +25,9 @@ import { useNetworkIssuesStore } from '@/stores/networkIssues'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { AppRoute } from '@/lib/routes'
+import { withoutFields } from '@/lib/formSchema'
+import schema, { NETWORK_ISSUE_STATUS_FIELD } from '@/views/NetworkIssueFormView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -82,11 +81,11 @@ const form = ref<NetworkIssueForm>({
 /** Whether the form is being submitted. */
 const saving = ref(false)
 
-/** Whether the existing issue is being loaded. */
+/** Whether the existing issue is being loaded; the form draws its fields as placeholders meanwhile. */
 const loading = ref(false)
 
-// While the issue loads every field of the form draws a placeholder in place of its control.
-provide(UI_FIELD_LOADING, loading)
+/** The columns of the form: the schema's, with the status only when an existing issue is edited. */
+const columns = computed(() => (isEditMode.value ? schema.columns : withoutFields(schema.columns, [NETWORK_ISSUE_STATUS_FIELD])))
 
 /** Whether the last load of the issue was refused. */
 const loadFailed = ref(false)
@@ -160,14 +159,6 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiStack direction="row" gap="sm" align="center">
-      <UiLink :to="AppRoute.SupportNetworkIssues" :variant="UiButtonVariant.Link" data-testid="network-issue-form-breadcrumb">
-        {{ t('shared.networkIssues') }}
-      </UiLink>
-      <UiText tone="muted" size="md">/</UiText>
-      <UiText tone="secondary" size="md">{{ pageTitle }}</UiText>
-    </UiStack>
-
     <UiPageHeader
       :title="pageTitle"
       :subtitle="isEditMode ? t('support.networkIssueForm.updateTheNetworkIssueDetails') : t('support.networkIssueForm.reportANewNetworkIssue')"
@@ -180,99 +171,94 @@ onMounted(() => {
       @retry="fetchIssue"
     />
 
-    <UiCard v-else padding="md" :aria-busy="loading ? 'true' : undefined">
-      <UiStack>
-        <UiField :label="t('shared.title')" :error="store.fieldErrors.title">
-          <UiInput
-            v-model="form.title"
-            :placeholder="t('support.networkIssueForm.issueTitle')"
-            data-testid="network-issue-form-title"
-          />
-        </UiField>
+    <UiSchemaForm v-else :columns="columns" :loading="loading" :errors="store.fieldErrors">
+      <template #field-title>
+        <UiInput
+          v-model="form.title"
+          :placeholder="t('support.networkIssueForm.issueTitle')"
+          data-testid="network-issue-form-title"
+        />
+      </template>
 
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.type')">
-            <UiSelect
-              v-model="form.type"
-              :options="NETWORK_ISSUE_TYPE_OPTIONS"
-              :placeholder="t('support.networkIssueForm.selectType')"
-              data-testid="network-issue-form-type"
-            />
-          </UiField>
-          <UiField :label="t('support.networkIssueForm.server')">
-            <UiInput
-              v-model="form.server"
-              :placeholder="t('support.networkIssueForm.serverNameOptional')"
-              data-testid="network-issue-form-server"
-            />
-          </UiField>
-        </UiGrid>
+      <template #field-type>
+        <UiSelect
+          v-model="form.type"
+          :options="NETWORK_ISSUE_TYPE_OPTIONS"
+          :placeholder="t('support.networkIssueForm.selectType')"
+          data-testid="network-issue-form-type"
+        />
+      </template>
 
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.priority')">
-            <UiSelect
-              v-model="form.priority"
-              :options="NETWORK_ISSUE_PRIORITY_OPTIONS"
-              :placeholder="t('shared.selectPriority')"
-              data-testid="network-issue-form-priority"
-            />
-          </UiField>
-          <UiField v-if="isEditMode" :label="t('shared.status')">
-            <UiSelect
-              v-model="form.status"
-              :options="NETWORK_ISSUE_STATUS_OPTIONS"
-              :placeholder="t('support.networkIssueForm.selectStatus')"
-              data-testid="network-issue-form-status"
-            />
-          </UiField>
-        </UiGrid>
+      <template #field-server>
+        <UiInput
+          v-model="form.server"
+          :placeholder="t('support.networkIssueForm.serverNameOptional')"
+          data-testid="network-issue-form-server"
+        />
+      </template>
 
-        <UiGrid :columns="2">
-          <UiField :label="t('support.networkIssueForm.startDate')" :error="store.fieldErrors.startDate">
-            <UiDatePicker
-              v-model="form.startDate"
-              :placeholder="t('support.networkIssueForm.selectStartDate')"
-              data-testid="network-issue-form-start"
-            />
-          </UiField>
-          <UiField :label="t('support.networkIssueForm.endDate')">
-            <UiDatePicker
-              v-model="form.endDate"
-              :placeholder="t('support.networkIssueForm.selectEndDate')"
-              data-testid="network-issue-form-end"
-            />
-          </UiField>
-        </UiGrid>
+      <template #field-priority>
+        <UiSelect
+          v-model="form.priority"
+          :options="NETWORK_ISSUE_PRIORITY_OPTIONS"
+          :placeholder="t('shared.selectPriority')"
+          data-testid="network-issue-form-priority"
+        />
+      </template>
 
-        <UiField :label="t('shared.description')" :error="store.fieldErrors.description">
-          <UiTextarea
-            v-model="form.description"
-            rows="12"
-            :placeholder="t('support.networkIssueForm.describeTheIssueInDetail')"
-            data-testid="network-issue-form-description"
-          />
-        </UiField>
+      <template #field-status>
+        <UiSelect
+          v-model="form.status"
+          :options="NETWORK_ISSUE_STATUS_OPTIONS"
+          :placeholder="t('support.networkIssueForm.selectStatus')"
+          data-testid="network-issue-form-status"
+        />
+      </template>
 
-        <UiStack direction="row" gap="sm">
-          <UiButton
-            :variant="UiButtonVariant.Primary"
-            :loading="saving"
-            :disabled="!form.title.trim()"
-            data-testid="network-issue-form-save"
-            @click="handleSave"
-          >
-            {{ isEditMode ? t('support.networkIssueForm.updateIssue') : t('support.networkIssueForm.createIssue') }}
-          </UiButton>
-          <UiLink
-            :to="AppRoute.SupportNetworkIssues"
-            :variant="UiButtonVariant.Secondary"
-            data-testid="network-issue-form-cancel"
-          >
-            {{ t('shared.cancel') }}
-          </UiLink>
-        </UiStack>
-        <UiStatusMessage :message="saveError" :tone="UiTone.Danger" data-testid="network-issue-form-save-error" />
+      <template #field-startDate>
+        <UiDatePicker
+          v-model="form.startDate"
+          :placeholder="t('support.networkIssueForm.selectStartDate')"
+          data-testid="network-issue-form-start"
+        />
+      </template>
+
+      <template #field-endDate>
+        <UiDatePicker
+          v-model="form.endDate"
+          :placeholder="t('support.networkIssueForm.selectEndDate')"
+          data-testid="network-issue-form-end"
+        />
+      </template>
+
+      <template #field-description>
+        <UiTextarea
+          v-model="form.description"
+          rows="12"
+          :placeholder="t('support.networkIssueForm.describeTheIssueInDetail')"
+          data-testid="network-issue-form-description"
+        />
+      </template>
+
+      <UiStack direction="row" gap="sm">
+        <UiButton :action="UiActionKind.Add"
+          :variant="UiButtonVariant.Primary"
+          :loading="saving"
+          :disabled="!form.title.trim()"
+          data-testid="network-issue-form-save"
+          @click="handleSave"
+        >
+          {{ isEditMode ? t('support.networkIssueForm.updateIssue') : t('support.networkIssueForm.createIssue') }}
+        </UiButton>
+        <UiLink :action="UiActionKind.Cancel"
+          :to="AppRoute.SupportNetworkIssues"
+          :variant="UiButtonVariant.Secondary"
+          data-testid="network-issue-form-cancel"
+        >
+          {{ t('shared.cancel') }}
+        </UiLink>
       </UiStack>
-    </UiCard>
+      <UiStatusMessage :message="saveError" :tone="UiTone.Danger" data-testid="network-issue-form-save-error" />
+    </UiSchemaForm>
   </UiStack>
 </template>

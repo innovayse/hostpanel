@@ -25,8 +25,8 @@ test('the summary page shows the client and its rollups', async ({ page }) => {
   await page.goto('/clients/7/summary')
 
   await expect(page.getByTestId('client-header-name')).toHaveText(`${adaDetail.firstName} ${adaDetail.lastName}`)
-  await expect(page.getByTestId('client-summary-info')).toContainText(adaDetail.email)
-  await expect(page.getByTestId('client-summary-billing')).toBeVisible()
+  await expect(page.getByTestId('ui-detail-card-info')).toContainText(adaDetail.email)
+  await expect(page.getByTestId('ui-detail-card-billing')).toBeVisible()
 })
 
 test('editing the profile saves the new value and confirms it', async ({ page }) => {

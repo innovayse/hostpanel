@@ -125,6 +125,28 @@ export const gridColumnClasses: Record<UiGridColumns, string> = {
   6: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
 }
 
+/**
+ * Column classes that follow the width of the nearest `@container` instead of the screen: one column below 48rem
+ * (768px), the full count from 56rem. A card inside a sidebar layout or beside another card is far narrower than the
+ * screen, so only its own width says whether its fields still fit side by side.
+ */
+export const containerGridColumnClasses: Record<UiGridColumns, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 @3xl:grid-cols-2',
+  3: 'grid-cols-1 @3xl:grid-cols-2 @4xl:grid-cols-3',
+  4: 'grid-cols-1 @3xl:grid-cols-2 @4xl:grid-cols-4',
+  6: 'grid-cols-2 @3xl:grid-cols-3 @4xl:grid-cols-6',
+}
+
+/** Responsive column classes of a grid of small tiles: two columns on a phone, the full count from `lg`. */
+export const pairedGridColumnClasses: Record<UiGridColumns, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-2 lg:grid-cols-4',
+  6: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
+}
+
 /** Closed set of minimum card widths for a grid that fills its row with as many columns as fit. */
 export const UiGridMinWidth = {
   Sm: 'sm',
@@ -151,6 +173,8 @@ export const UiSplitRatio = {
   WideMain: 'wide-main',
   /** Main 1 : aside 1.7, the mirror of `WideMain`. */
   WideAside: 'wide-aside',
+  /** Main 1 : aside 2, a list beside the wide detail it opens (a history and the chosen job). */
+  OneThird: 'one-third',
 } as const
 
 /** One of the split ratios. */
@@ -163,4 +187,5 @@ export const splitRatioClasses: Record<UiSplitRatio, string> = {
   'three-quarters': 'grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]',
   'wide-main': 'grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]',
   'wide-aside': 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]',
+  'one-third': 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]',
 }

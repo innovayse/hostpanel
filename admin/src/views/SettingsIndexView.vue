@@ -7,6 +7,7 @@
  * phones, two on tablets and three on wide screens.
  */
 import { useI18n } from 'vue-i18n'
+import { schemaHeader } from '@/lib/schemaHeader'
 import VersionLabel from '@/components/layout/VersionLabel.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
@@ -17,13 +18,14 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { SETTINGS_INDEX } from '@/lib/settingsIndex'
+import schema from '@/views/SettingsIndexView.schema'
 
 const { t } = useI18n()
 </script>
 
 <template>
   <UiStack gap="none" data-testid="settings-index-view">
-    <UiPageHeader :title="t('settings.index.title')" :subtitle="t('settings.index.subtitle')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
     <!-- The installed version, quietly under the title; absent when it could not be loaded. -->
     <VersionLabel testid="settings-version" class="-mt-4 mb-4" />
 

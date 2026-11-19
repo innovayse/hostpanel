@@ -65,4 +65,12 @@ describe('GroupFormModal', () => {
 
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
+
+  it('marks a server of the group as removable with the close icon, not a text cross', () => {
+    const wrapper = mountModal({ group: serverGroupDto({ servers: [serverDto({ id: 1, name: 'host1' })] }) })
+    const remove = wrapper.get('[data-testid="group-form-remove-1"]')
+
+    expect(remove.find('svg').exists()).toBe(true)
+    expect(remove.text()).toBe('host1')
+  })
 })

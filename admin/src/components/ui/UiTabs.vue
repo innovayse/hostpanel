@@ -6,9 +6,12 @@
  * (`v-if="tab === 'x'"`) or from the scoped slot's `active` value. The slot is drawn in a panel
  * 22px under the tab line (the standard section gap), so content never touches it. Left/Right arrow keys move
  * between enabled tabs and move focus with the selection (roving tabindex: only the selected tab is in the tab order).
+ * A strip wider than its box fades the side that still hides tabs, so a cut label reads as more to scroll to.
  */
+import { ref } from 'vue'
+import { useScrollEdges } from '@/composables/useScrollEdges'
 import type { UiTabItem } from '@/utils/ui/tabs'
-import { neighbourValue } from '@/utils/ui/tabs'
+import { neighbourValue, UiTabMarker } from '@/utils/ui/tabs'
 
 /** Props for UiTabs. */
 const props = withDefaults(defineProps<{
@@ -32,6 +35,12 @@ const emit = defineEmits<{
   /** Emitted with the value of the tab the user selected. */
   'update:modelValue': [value: string]
 }>()
+
+/** The scrolling tab list, watched for the sides that hide tabs. */
+const tablist = ref<HTMLElement | null>(null)
+
+/** The fade of the sides of the tab list that hide tabs. */
+const { fadeClass } = useScrollEdges(tablist)
 
 /** The tab buttons by tab value, so a key press can move focus to the tab it selects. */
 const buttons = new Map<string, HTMLElement>()
@@ -69,10 +78,11 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
 <template>
   <div>
     <div
+      ref="tablist"
       role="tablist"
       :aria-label="ariaLabel"
       class="flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden"
-      :class="hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''"
+      :class="[hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : '', fadeClass]"
     >
       <button
         v-for="(item, index) in items"
@@ -92,6 +102,16 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
         @keydown="onKeydown($event, index)"
       >
         {{ item.label }}
+        <span
+          v-if="item.marker"
+          :title="item.markerLabel"
+          :aria-label="item.markerLabel"
+          :role="item.markerLabel ? 'img' : undefined"
+          :aria-hidden="item.markerLabel ? undefined : true"
+          class="ml-1.5 inline-block size-1.5 rounded-full align-middle"
+          :class="item.marker === UiTabMarker.Invalid ? 'bg-status-red' : 'bg-status-yellow'"
+          :data-testid="item.testid ? `${item.testid}-${item.marker}` : undefined"
+        />
       </button>
     </div>
     <div v-if="$slots.default" role="tabpanel" class="mt-5.5" data-testid="ui-tabs-panel">

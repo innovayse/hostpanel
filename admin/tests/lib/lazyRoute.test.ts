@@ -1,11 +1,11 @@
 /**
  * Tests for lazy route loaders: a failed or stalled download is repeated with a growing pause, the plain import
- * behind a retrying loader stays reachable, and a route lists only the loaders the router still has
+ * behind a retrying loader stays reachable, a loader answers for the file it was tagged with, and a route lists only the loaders the router still has
  * to call.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteLocationNormalized } from 'vue-router'
-import { LOAD_RETRIES, LOAD_TIMEOUT_MS, RETRY_STEP_MS, isLazyLoader, lazyLoadersOf, originalLoader, withRetry } from '@/lib/lazyRoute'
+import { LOAD_RETRIES, LOAD_TIMEOUT_MS, RETRY_STEP_MS, isLazyLoader, lazyLoadersOf, originalLoader, viewFileOf, withRetry, withViewFile } from '@/lib/lazyRoute'
 
 /**
  * Builds the slice of a resolved route the helpers read.
@@ -169,5 +169,30 @@ describe('lazyLoadersOf', () => {
 
   it('finds nothing for a route that matched nothing', () => {
     expect(lazyLoadersOf(routeOf())).toEqual([])
+  })
+})
+
+describe('withViewFile', () => {
+  it('tags a loader with its file and hands the same loader back', () => {
+    /** Loader of a view. */
+    const view = (): Promise<unknown> => Promise.resolve({})
+
+    expect(withViewFile(view, 'views/AddClientView.vue')).toBe(view)
+    expect(viewFileOf(view)).toBe('views/AddClientView.vue')
+  })
+
+  it('keeps the tag on a retrying wrapper, not on the import behind it', () => {
+    /** The plain import. */
+    const view = (): Promise<unknown> => Promise.resolve({})
+    const wrapped = withViewFile(withRetry(view), 'layouts/ClientLayout.vue')
+
+    expect(viewFileOf(wrapped)).toBe('layouts/ClientLayout.vue')
+    expect(viewFileOf(view)).toBeUndefined()
+  })
+
+  it('knows no file for an untagged loader or for a value that is not a function', () => {
+    expect(viewFileOf(() => Promise.resolve({}))).toBeUndefined()
+    expect(viewFileOf({ render: () => null })).toBeUndefined()
+    expect(viewFileOf(undefined)).toBeUndefined()
   })
 })

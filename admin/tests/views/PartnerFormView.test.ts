@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PartnerFormView from '@/views/PartnerFormView.vue'
+import schema from '@/views/PartnerFormView.schema'
 import type { Partner, PartnerPayload } from '@/types/partner'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -44,7 +45,9 @@ describe('PartnerFormView', () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(PartnerFormView, {}, '/storefront/partners/create', '/storefront/partners/create')
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Create partner')
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Create partner')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create partner')
     expect(wrapper.find('[role="tablist"]').exists()).toBe(true)
   })
@@ -109,5 +112,39 @@ describe('PartnerFormView', () => {
       expect((wrapper.get('[data-testid="partner-form-logo-url"]').element as HTMLInputElement).value).toBe('/img/logo.png')
     })
     expect(wrapper.find('[data-testid="partner-form-logo-preview"]').exists()).toBe(true)
+  })
+
+  it('draws every section and field of its schema', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(PartnerFormView, {}, '/storefront/partners/create', '/storefront/partners/create')
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+      for (const field of section.fields) {
+        expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+      }
+    }
+  })
+
+  it('keeps the fields of its schema as placeholders while the entry loads', async () => {
+    stubRouteTable({ 'GET /admin/partners': () => new Promise<Response>(() => undefined) })
+    const { wrapper } = await mountScreen(PartnerFormView, {}, '/storefront/partners/3/edit', '/storefront/partners/:id/edit')
+
+    expect(wrapper.findAll('[data-testid="ui-form-section-general"][aria-busy="true"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="partner-form-name"]').exists()).toBe(false)
+  })
+
+  it('marks the language tabs with no text and drops the mark of a language once it is written', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(PartnerFormView, {}, '/storefront/partners/create', '/storefront/partners/create')
+
+    for (const locale of ['en', 'ru', 'hy']) {
+      expect(wrapper.find(`[data-testid="partner-form-tab-${locale}-empty"]`).exists()).toBe(true)
+    }
+
+    await wrapper.get('[data-testid="partner-form-name"]').setValue('Written')
+
+    expect(wrapper.find('[data-testid="partner-form-tab-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="partner-form-tab-ru-empty"]').exists()).toBe(true)
   })
 })

@@ -11,7 +11,6 @@ describe('storefrontTestIds', () => {
       add: 'faqs-add',
       error: 'faqs-error',
       actionError: 'faqs-action-error',
-      savingOrder: 'faqs-saving-order',
       row: 'faq-row',
       actions: 'faq-actions',
       edit: 'faq-edit',

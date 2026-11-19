@@ -7,25 +7,24 @@
  * before leaving with unsaved edits. A refused load shows the API's sentence with a retry instead of
  * the form; a refused save shows next to the save bar, a saved configuration returns to the list.
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
-import SettingsSection from '@/components/settings/SettingsSection.vue'
 import TldPricingTable from '@/components/settings/TldPricingTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStepper from '@/components/ui/UiStepper.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiTone } from '@/utils/ui/tone'
 import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
+import { useFormDirty } from '@/composables/useFormDirty'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { REGISTRAR_MODULE_OPTIONS } from '@/lib/constants'
 import { CURRENCY_CODES, currencyLabel, currencySymbol } from '@/lib/money'
@@ -35,6 +34,7 @@ import { useTldConfigsStore } from '@/stores/tldConfigs'
 import { RegistrarModule } from '@/types/registrarmodule'
 import type { CreateTldConfigPayload, UpdateTldConfigPayload } from '@/types/tldconfig'
 import { AppRoute } from '@/lib/routes'
+import schema from '@/views/TldConfigFormView.schema'
 
 const { t } = useI18n()
 
@@ -50,15 +50,14 @@ const store = useTldConfigsStore()
 /** Whether we are in edit mode (TLD config ID present in the route). */
 const isEditMode = computed<boolean>(() => !!route.params.id)
 
-/** Page title based on create/edit mode. */
-const pageTitle = computed<string>(() => (isEditMode.value ? t('settings.tldConfigForm.editTld') : t('settings.tldConfigForm.addTld')))
-
-/** The trail above the form. */
-const breadcrumb = computed(() => [
-  { label: t('shared.settings'), to: AppRoute.Settings },
-  { label: t('settings.tldConfigForm.tldPricing'), to: AppRoute.SettingsTldPricing },
-  { label: pageTitle.value },
-])
+/** Help lines of the form's fields, by field key of the schema. */
+const hints = computed<Record<string, string>>(() => ({
+  tld: t('settings.tldConfigForm.domainExtensionWithoutTheDot'),
+  costCurrency: t('settings.tldConfigForm.currencyUsedByTheRegistrar'),
+  sellCurrency: t('settings.tldConfigForm.currencyShownToClientsFor'),
+  enabled: t('settings.tldConfigForm.makeThisTldAvailableFor'),
+  categories: t('settings.tldConfigForm.commaSeparatedCategoryTagsFor'),
+}))
 
 /** Currency options of the cost and sell currency dropdowns. */
 const currencyOptions = CURRENCY_CODES.map((code) => ({ value: code as string, label: currencyLabel(code) }))
@@ -74,9 +73,6 @@ const saveError = ref<string | null>(null)
 
 /** Sentence for a failed load of the configuration being edited, null when none. */
 const loadError = ref<string | null>(null)
-
-/** Tracks whether the form has been modified since loading. */
-const isDirty = ref(false)
 
 /** TLD input value (e.g. "com"). */
 const tld = ref('')
@@ -123,18 +119,17 @@ const costSymbol = computed<string>(() => currencySymbol(currency.value))
 /** Symbol of the sell currency. */
 const sellSymbol = computed<string>(() => currencySymbol(sellCurrency.value))
 
+/** Whether cost and sell price are stated in one currency, the only case the form can work a margin out in. */
+const sameCurrency = computed<boolean>(() => currency.value === sellCurrency.value)
+
+/** Tracks whether the form has been modified since loading, and settles it once populated or saved. */
+const { isDirty, settle } = useFormDirty([
+  tld, registrarModule, currency, sellCurrency, isEnabled, sortOrder, categoriesInput,
+  costRegister, costTransfer, costRenew, sellRegister, sellTransfer, sellRenew,
+])
+
 /** Parks a route change while the reader is asked about unsaved edits. */
 const leaveGuard = useUnsavedChangesGuard(() => isDirty.value && !saving.value)
-
-/** Marks the form as dirty on any change. */
-watch(
-  [tld, registrarModule, currency, sellCurrency, isEnabled, sortOrder, categoriesInput,
-    costRegister, costTransfer, costRenew, sellRegister, sellTransfer, sellRenew],
-  () => {
-    isDirty.value = true
-  },
-  { deep: true },
-)
 
 /**
  * Loads the configuration being edited into the form; a refusal is kept in `loadError`.
@@ -168,7 +163,7 @@ const loadConfig = async (): Promise<void> => {
   sellRenew.value = fromApiMap(config.sells.renew)
 
   // Populating the form is not an edit.
-  isDirty.value = false
+  await settle()
 }
 
 onMounted(async () => {
@@ -239,7 +234,7 @@ const handleSave = async (): Promise<void> => {
   saving.value = false
 
   if (saved) {
-    isDirty.value = false
+    await settle()
     void router.push(AppRoute.SettingsTldPricing)
   } else {
     saveError.value = store.actionError
@@ -254,130 +249,118 @@ const handleCancel = (): void => {
 
 <template>
   <UiStack gap="none" data-testid="tld-config-form-view">
-    <SettingsBreadcrumb :items="breadcrumb" />
+    <UiPageHeader :title="isEditMode ? t('settings.tldConfigForm.editTld') : t('settings.tldConfigForm.createTld')" />
 
     <UiErrorState v-if="loadError" :message="loadError" testid="tld-config-form-load-error" @retry="loadConfig" />
 
-    <template v-else>
-
-      <UiGrid :columns="2" class="items-start">
-        <!-- Left: general settings -->
-        <SettingsSection :title="t('settings.tldConfigForm.generalSettings')" :loading="loadingConfig" data-testid="tld-config-form-general">
-          <UiField :label="t('settings.tldConfigForm.tld')" :hint="t('settings.tldConfigForm.domainExtensionWithoutTheDot')">
-            <template #default="{ id, describedby }">
-              <UiStack direction="row" align="center" gap="sm">
-                <UiText tone="muted" size="lg">.</UiText>
-                <UiInput
-                  :id="id"
-                  :model-value="tld"
-                  type="text"
-                  :placeholder="t('shared.examples.tld')"
-                  :disabled="isEditMode"
-                  :aria-describedby="describedby"
-                  data-testid="tld-config-form-tld"
-                  class="flex-1 lowercase"
-                  @update:model-value="onTldInput"
-                />
-              </UiStack>
-            </template>
-          </UiField>
-
-          <UiField :label="t('settings.tldConfigForm.registrarProvider')">
-            <UiSelect
-              v-model="registrarModule"
-              :options="REGISTRAR_MODULE_OPTIONS"
-              :placeholder="t('settings.tldConfigForm.registrarProvider')"
-              data-testid="tld-config-form-provider"
-            />
-          </UiField>
-
-          <UiField :label="t('settings.tldConfigForm.costCurrency')" :hint="t('settings.tldConfigForm.currencyUsedByTheRegistrar')">
-            <UiSelect
-              v-model="currency"
-              :options="currencyOptions"
-              :placeholder="t('settings.tldConfigForm.costCurrency')"
-              data-testid="tld-config-form-cost-currency"
-            />
-          </UiField>
-
-          <UiField :label="t('settings.tldConfigForm.sellCurrency')" :hint="t('settings.tldConfigForm.currencyShownToClientsFor')">
-            <UiSelect
-              v-model="sellCurrency"
-              :options="currencyOptions"
-              :placeholder="t('settings.tldConfigForm.sellCurrency')"
-              data-testid="tld-config-form-sell-currency"
-            />
-          </UiField>
-
-          <UiStack direction="row" align="center" justify="between">
-            <UiStack gap="xs">
-              <UiText tone="primary" size="md">{{ t('shared.enabled') }}</UiText>
-              <UiText tone="muted" size="sm">{{ t('settings.tldConfigForm.makeThisTldAvailableFor') }}</UiText>
-            </UiStack>
-            <UiToggle v-model="isEnabled" data-testid="tld-config-form-enabled" />
-          </UiStack>
-
-          <UiField :label="t('settings.tldConfigForm.sortOrder')">
-            <UiStepper
-              v-model="sortOrder"
-              :min="0"
-              :step="1"
-              placeholder="0"
-              data-testid="tld-config-form-sort-order"
-            />
-          </UiField>
-
-          <UiField :label="t('shared.categories')" :hint="t('settings.tldConfigForm.commaSeparatedCategoryTagsFor')">
-            <template #default="{ id, describedby }">
-              <UiInput
-                :id="id"
-                v-model="categoriesInput"
-                type="text"
-                :aria-describedby="describedby"
-                :placeholder="t('settings.tldConfigForm.popularBusinessTech')"
-                data-testid="tld-config-form-categories"
-              />
-            </template>
-          </UiField>
-        </SettingsSection>
-
-        <!-- Right: pricing -->
-        <UiStack gap="none">
-          <TldPricingTable
-            :title="t('settings.tldConfigForm.registrationPricing')"
-            testid="tld-register"
-            :cost-symbol="costSymbol"
-            :sell-symbol="sellSymbol"
-            :loading="loadingConfig"
-            :cost="costRegister"
-            :sell="sellRegister"
-            @update:cost="(period, value) => setPrice(costRegister, period, value)"
-            @update:sell="(period, value) => setPrice(sellRegister, period, value)"
-          />
-          <TldPricingTable
-            :title="t('settings.tldConfigForm.transferPricing')"
-            testid="tld-transfer"
-            :cost-symbol="costSymbol"
-            :sell-symbol="sellSymbol"
-            :loading="loadingConfig"
-            :cost="costTransfer"
-            :sell="sellTransfer"
-            @update:cost="(period, value) => setPrice(costTransfer, period, value)"
-            @update:sell="(period, value) => setPrice(sellTransfer, period, value)"
-          />
-          <TldPricingTable
-            :title="t('settings.tldConfigForm.renewalPricing')"
-            testid="tld-renew"
-            :cost-symbol="costSymbol"
-            :sell-symbol="sellSymbol"
-            :loading="loadingConfig"
-            :cost="costRenew"
-            :sell="sellRenew"
-            @update:cost="(period, value) => setPrice(costRenew, period, value)"
-            @update:sell="(period, value) => setPrice(sellRenew, period, value)"
+    <UiSchemaForm v-else :columns="schema.columns" :loading="loadingConfig" :hints="hints" data-testid="tld-config-form" @submit="handleSave">
+      <template #field-tld="{ id, describedby }">
+        <UiStack direction="row" align="center" gap="sm">
+          <UiText tone="muted" size="lg">.</UiText>
+          <UiInput
+            :id="id"
+            :model-value="tld"
+            type="text"
+            :placeholder="t('shared.examples.tld')"
+            :disabled="isEditMode"
+            :aria-describedby="describedby"
+            data-testid="tld-config-form-tld"
+            class="flex-1 lowercase"
+            @update:model-value="onTldInput"
           />
         </UiStack>
-      </UiGrid>
+      </template>
+
+      <template #field-registrarModule>
+        <UiSelect
+          v-model="registrarModule"
+          :options="REGISTRAR_MODULE_OPTIONS"
+          :placeholder="t('settings.tldConfigForm.registrarProvider')"
+          data-testid="tld-config-form-provider"
+        />
+      </template>
+
+      <template #field-costCurrency>
+        <UiSelect
+          v-model="currency"
+          :options="currencyOptions"
+          :placeholder="t('settings.tldConfigForm.costCurrency')"
+          data-testid="tld-config-form-cost-currency"
+        />
+      </template>
+
+      <template #field-sellCurrency>
+        <UiSelect
+          v-model="sellCurrency"
+          :options="currencyOptions"
+          :placeholder="t('settings.tldConfigForm.sellCurrency')"
+          data-testid="tld-config-form-sell-currency"
+        />
+      </template>
+
+      <template #field-enabled>
+        <UiToggle v-model="isEnabled" data-testid="tld-config-form-enabled" />
+      </template>
+
+      <template #field-sortOrder>
+        <UiStepper
+          v-model="sortOrder"
+          :min="0"
+          :step="1"
+          placeholder="0"
+          data-testid="tld-config-form-sort-order"
+        />
+      </template>
+
+      <template #field-categories="{ id, describedby }">
+        <UiInput
+          :id="id"
+          v-model="categoriesInput"
+          type="text"
+          :aria-describedby="describedby"
+          :placeholder="t('settings.tldConfigForm.popularBusinessTech')"
+          data-testid="tld-config-form-categories"
+        />
+      </template>
+
+      <template #field-register>
+        <TldPricingTable
+          testid="tld-register"
+          :cost-symbol="costSymbol"
+          :sell-symbol="sellSymbol"
+          :comparable="sameCurrency"
+          :cost="costRegister"
+          :sell="sellRegister"
+          @update:cost="(period, value) => setPrice(costRegister, period, value)"
+          @update:sell="(period, value) => setPrice(sellRegister, period, value)"
+        />
+      </template>
+
+      <template #field-transfer>
+        <TldPricingTable
+          testid="tld-transfer"
+          :cost-symbol="costSymbol"
+          :sell-symbol="sellSymbol"
+          :comparable="sameCurrency"
+          :cost="costTransfer"
+          :sell="sellTransfer"
+          @update:cost="(period, value) => setPrice(costTransfer, period, value)"
+          @update:sell="(period, value) => setPrice(sellTransfer, period, value)"
+        />
+      </template>
+
+      <template #field-renew>
+        <TldPricingTable
+          testid="tld-renew"
+          :cost-symbol="costSymbol"
+          :sell-symbol="sellSymbol"
+          :comparable="sameCurrency"
+          :cost="costRenew"
+          :sell="sellRenew"
+          @update:cost="(period, value) => setPrice(costRenew, period, value)"
+          @update:sell="(period, value) => setPrice(sellRenew, period, value)"
+        />
+      </template>
 
       <UiStatusMessage :message="saveError" :tone="UiTone.Danger" class="mb-5" data-testid="tld-config-form-error" />
 
@@ -388,7 +371,7 @@ const handleCancel = (): void => {
         @cancel="handleCancel"
         @save="handleSave"
       />
-    </template>
+    </UiSchemaForm>
 
     <!-- Unsaved-changes question, asked while the route change waits -->
     <UiDialog

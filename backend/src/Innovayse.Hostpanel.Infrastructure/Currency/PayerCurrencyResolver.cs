@@ -31,6 +31,28 @@ public sealed class PayerCurrencyResolver : IPayerCurrencyResolver
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyDictionary<int, Domain.Billing.Currency>> ForClientsAsync(
+        IReadOnlyCollection<int> clientIds, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(clientIds);
+
+        var recorded = await _context.Clients.AsNoTracking()
+            .Where(c => clientIds.Contains(c.Id))
+            .Select(c => new { c.Id, c.Currency })
+            .ToDictionaryAsync(c => c.Id, c => c.Currency, ct);
+        var configured = await _context.Currencies.AsNoTracking().ToDictionaryAsync(c => c.Code, ct);
+        var baseCurrency = await _context.GetBaseCurrencyAsync(ct);
+
+        // The same fallback as ResolveAsync: no recorded code, or one that is not configured, bills in the base.
+        return clientIds.Distinct().ToDictionary(
+            id => id,
+            id => recorded.GetValueOrDefault(id) is { Length: > 0 } code
+                && configured.TryGetValue(code.ToUpperInvariant(), out var currency)
+                    ? currency
+                    : baseCurrency);
+    }
+
+    /// <inheritdoc/>
     public async Task<Domain.Billing.Currency> ForCallerAsync(CancellationToken ct)
     {
         var access = await _callerClient.ResolveAsync(ct);

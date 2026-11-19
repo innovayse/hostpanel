@@ -9,7 +9,6 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import draggable from 'vuedraggable'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
@@ -18,15 +17,15 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
-import UiLink from '@/components/ui/UiLink.vue'
-import UiLoader from '@/components/ui/UiLoader.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiSortableRows from '@/components/ui/UiSortableRows.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/SlidesView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
@@ -40,8 +39,16 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { EMPTY_VALUE } from '@/lib/format'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('settings.slides.addSlide'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'slides-add', to: createRoute },
+])
 
 /** Slides store: the list, the loading flag and the refusal sentences. */
 const store = useSlidesStore()
@@ -225,8 +232,8 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
    */
   const onDelete = (): void => handleDelete(slide)
   return [
-    { label: t('settings.slides.editSlide'), testid: `slide-edit-${slide.id}`, to: editPath(AppRoute.SettingsSlides, slide.id) },
-    { label: t('settings.slides.deleteSlide'), testid: `slide-delete-${slide.id}`, onSelect: onDelete, danger: true },
+    { label: t('settings.slides.editSlide'), icon: Icon.Edit, testid: `slide-edit-${slide.id}`, to: editPath(AppRoute.SettingsSlides, slide.id) },
+    { label: t('settings.slides.deleteSlide'), icon: Icon.Trash, testid: `slide-delete-${slide.id}`, onSelect: onDelete, danger: true },
   ]
 }
 </script>
@@ -235,42 +242,18 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
   <UiStack gap="none" data-testid="slides-view">
     <UiStatusMessage :message="outcomeMessage" :tone="outcomeTone" class="mb-4" data-testid="slides-action-error" />
 
-    <UiPageHeader :title="t('settings.slides.slides')" :subtitle="t('settings.slides.manageHomepageHeroSlidesDrag')">
-      <template #actions>
-        <UiLoader v-if="savingOrder" data-testid="slides-saving-order" />
-        <UiLink :to="createRoute" :variant="UiButtonVariant.Primary" data-testid="slides-add">
-          {{ t('settings.slides.addSlide') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiErrorState v-if="store.error" :message="store.error" testid="slides-error" @retry="loadSlides" />
 
-    <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :empty="localSlides.length === 0" :loading="store.loading">
-        <template #empty>
-          {{ t('settings.slides.noSlidesFoundAddYour') }}
-        </template>
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader class="w-10" />
-            <UiTableHeader>{{ t('settings.slides.image') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
-            <UiTableHeader>{{ t('settings.slides.audience') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('settings.slides.visibility') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
-        <draggable
-          v-if="!store.loading"
+    <UiCard v-else clip>
+      <UiTable :empty-text="t('settings.slides.noSlidesFoundAddYour')" :density="UiTableDensity.Comfortable" :empty="localSlides.length === 0" :loading="store.loading || savingOrder">
+        <UiSchemaTableHead :columns="schema.table.columns" />
+        <UiSortableRows
+          v-if="!store.loading && !savingOrder"
           v-model="localSlides"
-          tag="tbody"
           item-key="id"
-          handle=".drag-handle"
-          ghost-class="opacity-40"
-          :animation="200"
-          class="divide-y divide-border"
           @end="onDragEnd"
         >
           <template #item="{ element: slide }">
@@ -311,9 +294,13 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
 
               <!-- Active -->
               <UiTableCell>
-                <UiBadge :tone="slide.isActive ? UiTone.Success : UiTone.Neutral" small>
-                  {{ slide.isActive ? t('shared.active') : t('shared.inactive') }}
-                </UiBadge>
+                <UiStatusIcon
+                  :state="slide.isActive"
+                  :on-icon="Icon.CheckCircle"
+                  :off-icon="Icon.Close"
+                  :on-label="t('shared.active')"
+                  :off-label="t('shared.inactive')"
+                />
               </UiTableCell>
 
               <!-- Date range -->
@@ -327,7 +314,7 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
               </UiTableCell>
             </UiTableRow>
           </template>
-        </draggable>
+        </UiSortableRows>
       </UiTable>
     </UiCard>
 

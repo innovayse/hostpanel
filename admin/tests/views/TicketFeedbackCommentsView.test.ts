@@ -4,10 +4,14 @@
  */
 import { vi } from 'vitest'
 import TicketFeedbackCommentsView from '@/views/TicketFeedbackCommentsView.vue'
+import schema from '@/views/TicketFeedbackCommentsView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
+import { runReportSchemaCases, schemaCaptionsOf } from '../helpers/reportSchema'
 
 vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
+
+runReportSchemaCases([{ name: 'TicketFeedbackCommentsView', view: TicketFeedbackCommentsView, schema }])
 
 runReportCase({
   name: 'TicketFeedbackCommentsView',
@@ -20,6 +24,6 @@ runReportCase({
       }],
     }),
   },
-  expected: ['Ticket Feedback Comments', 'Great service', 'Beta', '01/02/2024'],
+  expected: [...schemaCaptionsOf(schema), 'Ticket Feedback Comments', 'Great service', 'Beta', '01/02/2024'],
   retryable: true,
 })

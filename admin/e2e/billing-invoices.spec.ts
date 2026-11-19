@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test'
 import { failedFulfilment, invoicesPage, paidInvoice, unpaidInvoice, unpaidInvoiceDetail } from './fixtures/invoices'
 import { FulfilmentStatus } from '../src/types/invoice'
 import type { FulfilmentRecord, Invoice } from '../src/types/invoice'
+import { toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 test('marking the ticked invoices paid posts their ids and reloads the list', async ({ page }) => {
@@ -120,7 +121,7 @@ test('the Fulfilment tab lists the records and a confirmed retry posts and reloa
   expect(api.callsTo(HttpMethod.Post, `/api/billing/${unpaidInvoice.id}/fulfilment/${stored.id}/retry`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()
 
-  await expect(page.getByTestId('billing-invoice-fulfilment-feedback')).toBeVisible()
+  await expect(toastWith(page, 'Retry requested.')).toBeVisible()
   await expect(page.getByTestId(`billing-invoice-fulfilment-retry-${stored.id}`)).toHaveCount(0)
   await expect(page.getByTestId('billing-invoice-fulfilment-table')).toContainText('Pending')
 })

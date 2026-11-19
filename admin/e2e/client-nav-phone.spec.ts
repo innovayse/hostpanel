@@ -11,6 +11,7 @@ import type { Locator, Page } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
 import { servicesPage } from './fixtures/orders'
 import { emptyClientSummary } from './fixtures/clientSummary'
+import { boxOf } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 /** An empty page of a paged list. */
@@ -18,23 +19,23 @@ const emptyPage = { items: [], pageNumber: 1, pageSize: 5, totalCount: 0, totalP
 
 test.use({ viewport: { width: 390, height: 800 } })
 
-/** Most a box can sit past its scroller's edge because the browser rounds a scroll offset to whole pixels. */
+/** Most a box can sit past its scroller's (or list's) edge because the browser rounds layout to whole pixels. */
 const SCROLL_ROUNDING_PX = 1
 
 /**
- * Measures an element that must be on screen.
+ * Tells whether everything drawn inside a list stays within the list's right edge.
  *
- * @param locator - The element.
- * @returns Its bounding box.
- * @throws When the element is not rendered, so a missing element fails the test with its name instead of a null read.
+ * Below `sm` a table is drawn as cards that wrap inside their box, so nothing sits past it. Boxes are measured, not the
+ * scroll width, which also counts absolutely positioned boxes (such as visually hidden labels) that are not drawn.
+ *
+ * @param list - The list (table or card list) under test.
+ * @returns True when no element inside the list ends past the list's right edge.
  */
-const boxOf = async (locator: Locator): Promise<{ x: number, y: number, width: number, height: number }> => {
-  const box = await locator.boundingBox()
-  if (box === null) {
-    throw new Error(`${String(locator)} has no box: it is not rendered`)
-  }
-  return box
-}
+const fitsItsBox = (list: Locator): Promise<boolean> =>
+  list.evaluate((el, tolerance) => {
+    const right = el.getBoundingClientRect().right
+    return [...el.querySelectorAll('*')].every((child) => child.getBoundingClientRect().right <= right + tolerance)
+  }, SCROLL_ROUNDING_PX)
 
 test('the client sections are a tab strip above the content on a phone', async ({ page }) => {
   await stubApi(page, {
@@ -55,7 +56,7 @@ test('the client sections are a tab strip above the content on a phone', async (
 
   // The strip sits above the content and scrolls on its own; the page itself does not.
   const stripBox = await boxOf(strip)
-  const cardBox = await boxOf(page.getByTestId('client-summary-info'))
+  const cardBox = await boxOf(page.getByTestId('ui-detail-card-info'))
   expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(cardBox.y)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
@@ -268,15 +269,8 @@ test('the contacts table on the profile page is cards that fit their card and do
   const table = page.getByTestId('client-profile-contacts')
   await expect(table).toBeVisible()
 
-  const scrolling = await table.evaluate((el) => {
-    let node: HTMLElement | null = el.parentElement
-    while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
-      node = node.parentElement
-    }
-    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth }
-  })
   // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
-  expect(scrolling?.scrollWidth).toBeLessThanOrEqual(scrolling?.clientWidth ?? 0)
+  expect(await fitsItsBox(table)).toBe(true)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
@@ -338,7 +332,7 @@ test('the billing card lines its counts and amounts up in columns, and the summa
   })
 
   await page.goto('/clients/7/summary')
-  await expect(page.getByTestId('client-summary-billing')).toBeVisible()
+  await expect(page.getByTestId('ui-detail-card-billing')).toBeVisible()
 
   // Every amount ends on the same line, whatever its width, and so does every count.
   const edges = async (testid: string): Promise<number[]> =>
@@ -360,14 +354,6 @@ test('the billing card lines its counts and amounts up in columns, and the summa
   })).toBe(true)
   // The services table is drawn as cards on a phone, so its box has nothing to scroll.
   await expect(page.getByTestId('client-summary-services')).toBeVisible()
-  const scrolling = await page.getByTestId('client-summary-services').evaluate((table) => {
-    let node: HTMLElement | null = table.parentElement
-    while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
-      node = node.parentElement
-    }
-    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth }
-  })
-  expect(scrolling).not.toBeNull()
   // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
-  expect(scrolling?.scrollWidth).toBeLessThanOrEqual(scrolling?.clientWidth ?? 0)
+  expect(await fitsItsBox(page.getByTestId('client-summary-services'))).toBe(true)
 })

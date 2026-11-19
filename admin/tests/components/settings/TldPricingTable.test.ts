@@ -9,7 +9,6 @@ import { mountScreen } from '../../helpers/mount'
 
 /** Props for a table whose first period is priced. */
 const props = {
-  title: 'Registration pricing',
   testid: 'tld-register',
   costSymbol: '$',
   sellSymbol: '€',
@@ -18,22 +17,12 @@ const props = {
 }
 
 describe('TldPricingTable', () => {
-  it('has a titled section, the symbols in the headers and a row per period', async () => {
+  it('has the symbols in the headers and a row per period', async () => {
     const { wrapper } = await mountScreen(TldPricingTable, props)
 
-    expect(wrapper.get('h2').text()).toBe('Registration pricing')
     expect(wrapper.text()).toContain('Cost ($)')
     expect(wrapper.text()).toContain('Sell (€)')
     expect(wrapper.findAll('tbody tr')).toHaveLength(TLD_PERIODS.length)
-  })
-
-  it('keeps the title and header and draws a placeholder row per period while loading', async () => {
-    const { wrapper } = await mountScreen(TldPricingTable, { ...props, loading: true })
-
-    expect(wrapper.get('h2').text()).toBe('Registration pricing')
-    expect(wrapper.text()).toContain('Cost ($)')
-    expect(wrapper.findAll('[data-testid="ui-table-skeleton"] tr')).toHaveLength(TLD_PERIODS.length)
-    expect(wrapper.find('[data-testid="tld-register-cost-1"]').exists()).toBe(false)
   })
 
   it('writes the singular for one year and the plural after', async () => {
@@ -49,6 +38,13 @@ describe('TldPricingTable', () => {
 
     expect(wrapper.get('[data-testid="tld-register-margin-1"]').text()).toBe('+25.0%')
     expect(wrapper.get('[data-testid="tld-register-margin-2"]').text()).toBe('—')
+  })
+
+  it('shows a dash with a hint instead of a margin when cost and sell are in different currencies', async () => {
+    const { wrapper } = await mountScreen(TldPricingTable, { ...props, comparable: false })
+
+    expect(wrapper.get('[data-testid="tld-register-margin-1"]').text()).toBe('—')
+    expect(wrapper.get('[role="tooltip"]').text()).toContain('different currencies')
   })
 
   it('tones a loss red', async () => {

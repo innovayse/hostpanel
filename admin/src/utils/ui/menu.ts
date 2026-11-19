@@ -13,7 +13,9 @@ export interface UiMenuAction {
   /** Route the action opens. When set (and the action is enabled) the item renders as a RouterLink anchor. */
   to?: RouteLocationRaw
   /** Inner SVG markup of the action's icon (an `Icon` entry); shown beside the label in the menu and alone for a single action. */
-  icon?: string
+  icon: string
+  /** Longer explanation of the action, shown as the tooltip of a single-action button so its label can stay short. */
+  hint?: string
   /** Styles the item as a destructive (red) action. */
   danger?: boolean
   /** Prevents the item from being selected; it is shown faded. */

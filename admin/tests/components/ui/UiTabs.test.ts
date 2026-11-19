@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiTabs from '@/components/ui/UiTabs.vue'
+import { UiTabMarker } from '@/utils/ui/tabs'
 
 /** Three tabs, the middle one disabled. */
 const items = [
@@ -11,6 +12,23 @@ const items = [
   { value: 'b', label: 'Beta', disabled: true, testid: 'tab-b' },
   { value: 'c', label: 'Gamma', testid: 'tab-c' },
 ]
+
+describe('UiTabs markers', () => {
+  it('draws a dot with its accessible text on a marked tab and none on the others', () => {
+    const marked = [
+      { value: 'a', label: 'A', testid: 'tab-a', marker: UiTabMarker.Empty, markerLabel: 'Not filled in' },
+      { value: 'b', label: 'B', testid: 'tab-b', marker: UiTabMarker.Invalid, markerLabel: 'Needs attention' },
+      { value: 'c', label: 'C', testid: 'tab-c' },
+    ]
+    const wrapper = mount(UiTabs, { props: { items: marked, modelValue: 'a' } })
+
+    expect(wrapper.get('[data-testid="tab-a-empty"]').attributes('aria-label')).toBe('Not filled in')
+    expect(wrapper.get('[data-testid="tab-b-invalid"]').classes()).toContain('bg-status-red')
+    expect(wrapper.get('[data-testid="tab-a-empty"]').classes()).toContain('bg-status-yellow')
+    expect(wrapper.find('[data-testid="tab-c-empty"]').exists()).toBe(false)
+    expect(wrapper.findAll('[role="tab"]').map(tab => tab.text())).toEqual(['A', 'B', 'C'])
+  })
+})
 
 describe('UiTabs scrollbar', () => {
   it('keeps its scrollbar unless asked to hide it, so it cannot run into the selected tab\'s underline', () => {

@@ -108,6 +108,16 @@ describe('UiNumberInput', () => {
     expect(wrapper.get('input').attributes('aria-invalid')).toBeUndefined()
   })
 
+  it('writes the unit inside the field and leaves room for it, none by default', () => {
+    const plain = mount(UiNumberInput, { props: { modelValue: 5 } })
+    const withUnit = mount(UiNumberInput, { props: { modelValue: 5, suffix: 'min' } })
+
+    expect(plain.find('[data-testid="number-suffix"]').exists()).toBe(false)
+    expect(plain.get('input').classes()).toContain('pr-8')
+    expect(withUnit.get('[data-testid="number-suffix"]').text()).toBe('min')
+    expect(withUnit.get('input').classes()).toContain('pr-20')
+  })
+
   it('ties the field to its message and shows a disabled look without opacity', () => {
     const wrapper = mount(UiNumberInput, { props: { modelValue: 1, describedby: 'msg', invalid: true, disabled: true } })
     const input = wrapper.get('input')

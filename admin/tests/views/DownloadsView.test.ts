@@ -6,9 +6,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import DownloadsView from '@/views/DownloadsView.vue'
 import { DownloadType } from '@/types/downloaditem'
+import { DOWNLOAD_CATEGORIES_TABLE, DOWNLOAD_FILE_FORM_PART, DOWNLOAD_FILES_TABLE, DOWNLOADS_TABS_PART } from '@/views/DownloadsView.schema'
 import { mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** One top-level category as the endpoint returns it. */
 const category = { id: 1, name: 'Drivers', description: 'Hardware drivers', isHidden: false, parentCategoryId: null, downloadCount: 2 }
@@ -48,6 +50,26 @@ describe('DownloadsView', () => {
     expect(wrapper.get('[data-testid="downloads-category-1"]').text()).toContain('Drivers')
     expect(wrapper.get('[data-testid="downloads-download-9"]').text()).toContain('Setup')
     expect(wrapper.get('[data-testid="downloads-download-9"]').text()).toContain('Clients Only')
+  })
+
+  it('draws the tabs, the add forms and the table heads of its schema', async () => {
+    stubPathRoutes(loadRoutes)
+    const wrapper = await mountView(DownloadsView)
+
+    for (const tab of DOWNLOADS_TABS_PART.tabs) {
+      expect(wrapper.find(`[data-testid="downloads-tab-${tab.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.find('[data-testid="ui-form-section-category"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-form-section-download"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="ui-detail-card-categories"]').findAll('[role="columnheader"]')).toHaveLength(DOWNLOAD_CATEGORIES_TABLE.columns.length)
+    expect(wrapper.get('[data-testid="ui-detail-card-files"]').findAll('[role="columnheader"]')).toHaveLength(DOWNLOAD_FILES_TABLE.columns.length)
+
+    await wrapper.get('[data-testid="downloads-tab-download"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="ui-form-section-download"]').exists()).toBe(true)
+    for (const field of DOWNLOAD_FILE_FORM_PART.columns.flat().flatMap((section) => section.fields)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
   })
 
   it('goes into a category, loads its files and adds a breadcrumb', async () => {
@@ -128,7 +150,7 @@ describe('DownloadsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="downloads-feedback"]').text()).toBe('Deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Deleted.'])
   })
 
   it('shows the API sentence when the delete is refused, without the load error', async () => {

@@ -1,8 +1,4 @@
 {
-  "reportComingSoon": {
-    "comingSoon": "Скоро",
-    "thisReportIsUnderDevelopment": "Этот отчёт находится в разработке."
-  },
   "reportTimestamp": {
     "reportGeneratedOnTimestamp": "Отчёт сформирован: {timestamp}"
   },
@@ -25,7 +21,12 @@
     "income": "Доход",
     "totalIncome": "Общий доход",
     "averageMonth": "В среднем за месяц",
-    "bestMonth": "Лучший месяц"
+    "bestMonth": "Лучший месяц",
+    "tooltips": {
+      "total": "Платежи за год за вычетом возвратов в базовой валюте.",
+      "average": "Доход за год, делённый на число перечисленных месяцев.",
+      "best": "Месяц с наибольшим доходом за год."
+    }
   },
   "clientsByCountry": {
     "clientsByCountry": "Клиенты по странам",
@@ -34,12 +35,15 @@
     "clearSelection": "Сбросить выбор",
     "activeClients": "Активные клиенты",
     "totalClients": "Всего клиентов:",
-    "mapHint": "Наведите на точку, чтобы увидеть город."
+    "legendNoData": "Нет данных",
+    "legendFewer": "Меньше",
+    "legendMore": "Больше: до {count}"
   },
   "clientsReport": {
     "thisReportCanBeUsed": "Этот отчёт позволяет сформировать пользовательский экспорт клиентов, применив до 5 фильтров. Экспорт в CSV доступен через меню «Инструменты» справа.",
     "creationDateRange": "Период создания",
     "totalcountClientSFound": "Найдено клиентов: {totalCount}",
+    "creditBalance": "Баланс кредита",
     "noClientsFoundClickFilter": "Клиенты не найдены. Нажмите «Фильтр», чтобы загрузить результаты."
   },
   "clientStatement": {
@@ -85,7 +89,13 @@
     "paidInvoices": "Оплаченные счета",
     "openedTickets": "Открытые тикеты",
     "ticketReplies": "Ответы на тикеты",
-    "cancellationRequests": "Запросы на отмену"
+    "cancellationRequests": "Запросы на отмену",
+    "tooltips": {
+      "completedOrders": "Заказы, завершённые в выбранные дни.",
+      "paidInvoices": "Счета, оплаченные в выбранные дни.",
+      "openedTickets": "Тикеты поддержки, открытые в выбранные дни.",
+      "cancellationRequests": "Запросы на отмену, отправленные в выбранные дни."
+    }
   },
   "directDebit": {
     "directDebitProcessing": "Обработка прямого дебета",
@@ -102,7 +112,12 @@
     "diskSpaceBandwidthUsageSummary": "Сводка по дисковому пространству и трафику",
     "thisReportShowsTheDisk": "Этот отчёт показывает статистику использования дискового пространства и трафика хостинг-аккаунтов.",
     "diskSpaceUsageStatsLast": "Статистика использования диска обновлена: {value}",
-    "noDataYetClickUpdate": "Данных пока нет. Нажмите «Обновить», чтобы получить их с серверов.",
+    "failuresTitle": "Эти серверы не дали данных:",
+    "failure": {
+      "unsupportedModule": "его панель управления пока не отдаёт диск и трафик.",
+      "missingCredentials": "не задан API-токен или ключ доступа.",
+      "unreachable": "сервер не ответил или отклонил запрос."
+    },
     "updateNow": "Обновить",
     "clientNameDomain": "Клиент / домен",
     "diskUsage": "Использование диска",
@@ -111,12 +126,12 @@
     "bwUsage": "Использование трафика",
     "bwLimit": "Лимит трафика",
     "noAccountsOnThisServer": "На этом сервере нет аккаунтов.",
-    "noData": "Данные не найдены. Нажмите «Обновить», чтобы получить статистику с ваших хостинг-серверов."
+    "noData": "Данные не найдены.",
+    "noDataHint": "Нажмите «Обновить», чтобы получить статистику с ваших хостинг-серверов."
   },
   "domainRenewalEmails": {
     "domainRenewalReminderEmails": "Письма-напоминания о продлении доменов",
     "thisReportCanBeUsed": "Этот отчёт позволяет сформировать пользовательский экспорт писем-напоминаний о продлении доменов.",
-    "optional": "Необязательно",
     "dateSent": "Дата отправки",
     "reminder": "Напоминание",
     "recipients": "Получатели",
@@ -143,7 +158,14 @@
     "quarterly": "Ежеквартально",
     "semiAnnual": "Раз в полгода",
     "annual": "Ежегодно",
-    "incomePerMonthWithTrailingWindows": "Доход по месяцам, с суммами за последний квартал, полугодие и с начала года."
+    "incomePerMonthWithTrailingWindows": "Доход по месяцам, с суммами за последний квартал, полугодие и с начала года.",
+    "hints": {
+      "monthly": "Доход, полученный в этом месяце.",
+      "quarterly": "Доход этого месяца и двух предыдущих.",
+      "semiAnnual": "Доход этого месяца и пяти предыдущих.",
+      "annual": "Доход этого месяца и одиннадцати предыдущих.",
+      "total": "Нарастающий итог с января по этот месяц."
+    }
   },
   "invoicesReport": {
     "thisReportCanBeUsed": "Этот отчёт позволяет сформировать пользовательский экспорт счетов, применив до 5 фильтров.",
@@ -164,19 +186,29 @@
     "monthlyNewSignupsAndOrder": "Ежемесячные новые регистрации и активность заказов",
     "newSignups": "Новые регистрации",
     "ordersPlaced": "Размещено заказов",
-    "ordersCompleted": "Выполнено заказов"
-  },
-  "pdfBatch": {
-    "pdfBatch": "Пакет PDF"
+    "ordersCompleted": "Выполнено заказов",
+    "conversionRate": "Конверсия",
+    "newSignupsHint": "Клиентские аккаунты, созданные за месяц.",
+    "ordersPlacedHint": "Заказы, размещённые за месяц.",
+    "ordersCompletedHint": "Заказы месяца, которые выполнены.",
+    "conversionRateHint": "Заказы месяца в процентах от числа регистраций месяца."
   },
   "productSuspensions": {
     "productSuspensions": "Приостановки продуктов",
     "thisReportAllowsYouTo": "Этот отчёт позволяет просмотреть все приостановленные продукты и указанные причины их приостановки.",
     "serviceId": "ID услуги",
-    "suspendReason": "Причина приостановки"
+    "suspendReason": "Причина приостановки",
+    "noSuspendedServices": "Приостановленных услуг нет."
   },
   "promotions": {
-    "promotions": "Акции"
+    "promotions": "Акции",
+    "thisReportShowsHowOften": "Как часто используется каждый промокод и на какую сумму продлеваются активные услуги с ним.",
+    "code": "Код",
+    "services": "Услуги",
+    "activeServices": "Активные услуги",
+    "monthlyRevenue": "Доход в месяц",
+    "monthlyRevenueHint": "На какую сумму каждый месяц продлеваются активные услуги с этим кодом, годовая услуга считается как одна двенадцатая.",
+    "noPromotionCodesUsed": "Ни одна услуга не использует промокоды."
   },
   "salesTax": {
     "salesTaxLiability": "Обязательства по налогу с продаж",
@@ -188,7 +220,16 @@
     "thisReportExcludesInvoicesThat": "Этот отчёт не включает счета, влияющие на кредитный баланс клиента, поскольку этот доход учитывается и отражается при его применении к счетам за продукты/услуги."
   },
   "serverRevenueForecasts": {
-    "serverRevenueForecasts": "Прогноз доходов по серверам"
+    "serverRevenueForecasts": "Прогноз доходов по серверам",
+    "thisReportShowsWhatTheActive": "На какую сумму продлеваются активные услуги на каждом сервере: в месяц и за год.",
+    "server": "Сервер",
+    "hostname": "Имя хоста",
+    "activeServices": "Активные услуги",
+    "monthlyRevenue": "Доход в месяц",
+    "annualRevenue": "Доход в год",
+    "monthlyRevenueHint": "На какую сумму каждый месяц продлеваются активные услуги сервера, годовая услуга считается как одна двенадцатая.",
+    "annualRevenueHint": "Двенадцать месячных доходов.",
+    "noServers": "Серверов нет."
   },
   "servicesReport": {
     "services": "Услуги",
@@ -200,24 +241,36 @@
     "productId": "ID продукта",
     "terminatedAt": "Дата завершения"
   },
-  "smartyCompatibility": {
-    "smartyCompatibility": "Совместимость со Smarty"
-  },
   "sslMonitoring": {
     "sslCertificateMonitoring": "Мониторинг SSL-сертификатов",
     "displaysAListOfDomains": "Показывает список доменов и статус их SSL, если он доступен.",
-    "hideInactiveDomains": "Скрыть неактивные домены",
-    "showInactiveDomains": "Показать неактивные домены",
-    "reValidateSslStatus": "Перепроверить статус SSL",
     "issuer": "Издатель",
     "expiry": "Срок действия",
     "lastUpdate": "Последнее обновление",
     "valid": "Действителен",
-    "noSsl": "Нет SSL"
+    "noSsl": "Нет SSL",
+    "groups": {
+      "within30Days": "Истекает в течение 30 дней",
+      "within90Days": "Истекает в течение 90 дней",
+      "within180Days": "Истекает в течение 180 дней",
+      "over180Days": "Истекает более чем через 180 дней",
+      "noSsl": "SSL не обнаружен"
+    },
+    "showInactive": "Показывать неактивные домены",
+    "showInactiveHint": "Показать также домены, которые не активны.",
+    "recheck": "Перепроверить SSL",
+    "recheckHint": "Проверить сертификаты заново сейчас.",
+    "noDomains": "Нет доменов для мониторинга.",
+    "summary": "Домены по сроку истечения"
   },
   "supportTicketsReport": {
     "thisReportShowsABreakdown": "Этот отчёт показывает разбивку обработанных тикетов поддержки по администраторам за выбранный месяц.",
-    "admin": "Администратор"
+    "admin": "Администратор",
+    "averagePerDay": "В среднем за день",
+    "byDay": "По дням",
+    "totalHint": "Ответы на тикеты, написанные администратором за месяц.",
+    "averagePerDayHint": "Ответы за месяц, делённые на число дней месяца.",
+    "dayReplies": "День {day}: {count} ответов | День {day}: {count} ответ | День {day}: {count} ответов"
   },
   "ticketFeedbackComments": {
     "ticketFeedbackComments": "Комментарии клиентов к тикетам",
@@ -226,28 +279,40 @@
     "ticketId": "ID тикета",
     "feedbackLeft": "Оставлен отзыв",
     "rating": "Оценка",
-    "comments": "Комментарии"
+    "comments": "Комментарии",
+    "ratingHint": "Оценка по шкале от 1 (худшая) до 10 (лучшая)."
   },
   "ticketFeedbackScores": {
     "ticketFeedbackScores": "Оценки по тикетам",
     "thisReportProvidesASummary": "Этот отчёт содержит сводку оценок по каждому сотруднику за выбранный период.",
     "staffName": "Имя сотрудника",
     "totalRatings": "Всего оценок",
-    "averageRating": "Средняя оценка"
+    "averageRating": "Средняя оценка",
+    "distribution": "Оценки (от 1 до 10)",
+    "distributionHint": "Как оценки делятся на низкие, средние и высокие. Наведите на часть, чтобы увидеть число.",
+    "totalRatingsHint": "Оценки, полученные сотрудником за период.",
+    "averageRatingHint": "Среднее всех оценок по шкале от 1 до 10.",
+    "bands": {
+      "poor": "Низкие (от {from} до {to})",
+      "fair": "Средние (от {from} до {to})",
+      "good": "Высокие (от {from} до {to})"
+    }
   },
   "ticketRatingsReviewer": {
     "supportTicketRatingsReviewer": "Проверка оценок тикетов поддержки",
-    "thisReportIsShowingAll": "Этот отчёт показывает все ответы по тикетам с оценкой 1 за выбранный период для проверки.",
+    "thisReportIsShowingAll": "Ответы на тикеты, оценённые клиентами в выбранном периоде, для проверки. Выберите оценку, чтобы видеть только ответы с такой или более высокой.",
     "rating": "Оценка",
     "ticket": "Тикет №",
     "admin": "Администратор",
-    "ratingAtLeast": "{rating}+"
+    "ratingAtLeast": "{rating}+",
+    "ratingHint": "Оценка по шкале от 1 (худшая) до 10 (лучшая)."
   },
   "ticketTags": {
     "ticketTagsOverview": "Обзор тегов тикетов",
     "thisReportProvidesAnOverview": "Этот отчёт содержит обзор тегов, назначенных тикетам за выбранный период.",
     "tag": "Тег",
-    "count": "Количество"
+    "count": "Количество",
+    "countHint": "Тикеты с этим тегом за период."
   },
   "topClients": {
     "top10ClientsByIncome": "Топ-10 клиентов по доходу",
@@ -255,7 +320,10 @@
     "noData": "Нет данных",
     "leader": "Лучший клиент",
     "totalIncome": "Общий доход",
-    "rankedClients": "Клиентов в рейтинге"
+    "rankedClients": "Клиентов в рейтинге",
+    "leaderHint": "Клиент с наибольшим чистым доходом в рейтинге.",
+    "totalIncomeHint": "Чистый доход всех клиентов рейтинга вместе, в базовой валюте.",
+    "rankedClientsHint": "Сколько клиентов в рейтинге, не более десяти."
   },
   "transactionsReport": {
     "thisReportCanBeUsed": "Этот отчёт позволяет сформировать пользовательский экспорт транзакций, применив до 5 фильтров.",
@@ -275,12 +343,7 @@
     "totalVatCollected": "Всего собрано НДС",
     "totals": "Итого",
     "ifACountryDoesNot": "* Если страны нет в отчёте, значит, в выбранном периоде НДС с клиентов этой страны не взимался.",
-    "period": "За период с {from} по {to}",
-    "quarter1": "Январь-март",
-    "quarter2": "Апрель-июнь",
-    "quarter3": "Июль-сентябрь",
-    "quarter4": "Октябрь-декабрь",
-    "quarterOption": "{year} Q{quarter} - {months}"
+    "period": "За период с {from} по {to}"
   },
   "titles": {
     "reports": {
@@ -305,6 +368,54 @@
   "common": {
     "years": "{count} г.",
     "clientCount": "{count} клиент | {count} клиента | {count} клиентов",
-    "convertedToBaseCurrency": "Суммы указаны в {currency} и пересчитаны из валюты каждого счёта по настроенным курсам."
+    "convertedToBaseCurrency": "Суммы указаны в {currency} и пересчитаны из валюты каждого счёта по настроенным курсам.",
+    "recurringInBaseCurrency": "Регулярные суммы пересчитаны в {currency}, длинные циклы распределены по месяцам."
+  },
+  "menu": {
+    "dailyPerformance": "Ежедневно",
+    "annualIncome": "Годовой доход",
+    "incomeForecast": "Прогноз",
+    "incomeByProduct": "По продуктам",
+    "invoices": "Счета",
+    "agingInvoices": "Просроченные",
+    "monthlyTransactions": "Транзакции / мес.",
+    "transactions": "Транзакции",
+    "salesTax": "Налог с продаж",
+    "oss": "OSS",
+    "directDebit": "Прямой дебет",
+    "creditsReviewer": "Кредиты",
+    "clients": "Клиенты",
+    "newCustomers": "Новые клиенты",
+    "topClients": "Топ клиентов",
+    "clientsByCountry": "По странам",
+    "customerRetention": "Удержание",
+    "clientStatement": "Выписка",
+    "monthlyOrders": "Заказы / мес.",
+    "services": "Услуги",
+    "productSuspensions": "Приостановки",
+    "promotions": "Акции",
+    "domains": "Домены",
+    "domainRenewalEmails": "Письма о продлении",
+    "sslMonitoring": "Мониторинг SSL",
+    "supportTicketReplies": "Ответы на тикеты",
+    "ticketTags": "Теги",
+    "ticketFeedbackScores": "Оценки отзывов",
+    "ticketFeedbackComments": "Комментарии к отзывам",
+    "ticketRatingsReviewer": "Оценки по рецензентам",
+    "diskUsage": "Диск",
+    "serverRevenueForecasts": "Доход серверов"
+  },
+  "groups": {
+    "overview": "Обзор",
+    "finance": "Финансы",
+    "clients": "Клиенты",
+    "ordersServices": "Заказы и услуги",
+    "domains": "Домены",
+    "support": "Поддержка",
+    "servers": "Серверы"
+  },
+  "sidebar": {
+    "search": "Поиск отчётов",
+    "empty": "Отчёты не найдены"
   }
 }

@@ -3,7 +3,8 @@
  * Themed number input with increment/decrement buttons.
  *
  * Replaces `<input type="number">`, whose spinner arrows cannot be themed. Emits a clamped number,
- * or `null` when a `nullable` field is cleared.
+ * or `null` when a `nullable` field is cleared. A `suffix` (a unit such as "min") is drawn inside the field, left of the
+ * spinner buttons, so the number is read with its unit.
  * `data-testid` and classes land on the root element.
  */
 import { computed } from 'vue'
@@ -30,6 +31,8 @@ const props = withDefaults(defineProps<{
   step?: number
   /** Hint shown while the field is empty. */
   placeholder?: string
+  /** Unit written inside the field after the number (already translated); none when omitted. */
+  suffix?: string
   /** Disables the input. */
   disabled?: boolean
   /** Id of the native input, so a caption can point at it (`UiField` hands one out). */
@@ -48,6 +51,7 @@ const props = withDefaults(defineProps<{
   max: undefined,
   step: 1,
   placeholder: '0',
+  suffix: undefined,
   disabled: false,
   id: undefined,
   invalid: false,
@@ -70,7 +74,7 @@ const numericValue = computed<number>(() => Number(props.modelValue))
 
 /** Classes of the typed text: the kit's field look, room on the right for the spinner column. */
 const inputClasses = computed<string[]>(() => [
-  'w-full pr-8 [appearance:textfield]',
+  props.suffix === undefined ? 'w-full pr-8 [appearance:textfield]' : 'w-full pr-20 [appearance:textfield]',
   fieldBaseClasses,
   fieldSizeClasses.md,
   props.invalid ? fieldInvalidClasses : '',
@@ -169,6 +173,11 @@ const increment = (): void => {
       @input="onInput"
       @blur="onBlur"
     >
+    <span
+      v-if="suffix !== undefined"
+      class="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 text-sm text-text-muted"
+      data-testid="number-suffix"
+    >{{ suffix }}</span>
     <!-- Spinner buttons -->
     <div class="absolute right-0 top-0 bottom-0 flex flex-col w-6 border-l border-border">
       <button

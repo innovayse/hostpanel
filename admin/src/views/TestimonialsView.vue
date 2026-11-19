@@ -7,6 +7,7 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiImage from '@/components/ui/UiImage.vue'
@@ -15,12 +16,14 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
+import { storefrontColumnCaptions } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useTestimonialsStore } from '@/stores/testimonials'
 import type { Testimonial } from '@/types/testimonial'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { EMPTY_VALUE } from '@/lib/format'
+import schema from '@/views/TestimonialsView.schema'
 
 const { t } = useI18n()
 
@@ -34,12 +37,7 @@ const store = useTestimonialsStore()
 const list = useStorefrontList<Testimonial>(store)
 
 /** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => [
-  t('storefront.testimonials.author'),
-  t('storefront.testimonials.quote'),
-  t('storefront.testimonials.rating'),
-  t('shared.status'),
-])
+const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
 
 /** The question shown for the staged testimonial. */
 const deleteMessage = computed<string>(() =>
@@ -84,7 +82,7 @@ const editRoute = (item: Testimonial): string => editPath(AppRoute.StorefrontTes
 <template>
   <StorefrontListTable
     :testids="testids"
-    :title="t('storefront.testimonials.title')"
+    :title="t(navTitleKey(AppRoute.StorefrontTestimonials))"
     :subtitle="t('storefront.testimonials.subtitle')"
     :add-label="t('storefront.testimonials.add')"
     :empty-label="t('storefront.testimonials.empty')"

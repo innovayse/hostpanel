@@ -11,6 +11,14 @@
   "userMenu": "Account menu",
   "menu": "Menu",
   "openMenu": "Open menu",
+  "breadcrumb": {
+    "label": "Breadcrumb",
+    "hidden": "Show hidden pages",
+    "new": "New",
+    "edit": "Edit",
+    "details": "Details",
+    "configure": "Configure"
+  },
   "navigation": "Main navigation",
   "viewLoadFailed": "This page could not be loaded. Check your connection and try again.",
   "reload": "Reload",

@@ -91,7 +91,7 @@ describe('BlockListAddForm', () => {
   it('shows the messages the API refused the fields with', () => {
     const wrapper = mountForm({ value: 'nope', errors: { value: 'Enter a valid IP address.', note: 'The note is too long.' } })
 
-    expect(wrapper.get('[data-testid="fraud-block-list-value-error"]').text()).toBe('Enter a valid IP address.')
-    expect(wrapper.get('[data-testid="fraud-block-list-note-error"]').text()).toBe('The note is too long.')
+    expect(wrapper.get('[data-testid="ui-form-field-value-error"]').text()).toBe('Enter a valid IP address.')
+    expect(wrapper.get('[data-testid="ui-form-field-note-error"]').text()).toBe('The note is too long.')
   })
 })

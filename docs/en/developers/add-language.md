@@ -162,7 +162,7 @@ The backend list above covers the core error and validation messages. The follow
 
 - `admin/src/lib/constants.ts`: add an entry to the `LANGUAGE_OPTIONS` list for the new language so it appears in the language selectors of the client and user forms. Its label reads a new key, `clients.clientForm.french` (use the name of your language), which you add to every language file of `admin/src/locales/<lang>/clients.json`, next to `english`, `russian` and `armenian`.
 - `admin/src/lib/storefrontTranslations.ts`: add the new locale to `STOREFRONT_LOCALES` and add a `[MessageLanguage.Fr]: blank()` entry to `blankTranslations` so storefront content forms carry a tab for the new language.
-- `admin/src/composables/useStorefrontLocaleTabs.ts`: add a tab entry for the new locale to the `tabs` computed array.
+- `admin/src/components/ui/UiLocalizedField.vue`: add the caption of the new locale to the `captions` computed object, which every language tab strip in the admin reads. The same new `Record<MessageLanguage, ...>` entries are asked of `filledLocales` in `storefrontTranslations.ts` and of `useLocalizedSettingDrafts`, and the compiler lists each one.
 
 **Settings with a language suffix (optional):**
 

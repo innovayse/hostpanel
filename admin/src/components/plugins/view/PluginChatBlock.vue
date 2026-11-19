@@ -39,7 +39,6 @@ import PluginChatMessage from '@/components/plugins/view/PluginChatMessage.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { usePluginChatTurn } from '@/composables/usePluginChatTurn'
@@ -52,6 +51,7 @@ import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for PluginChatBlock. */
 const props = defineProps<{
@@ -132,7 +132,7 @@ const logClasses = computed<string>(() => (inPane ? 'max-h-[50dvh]' : 'max-h-[60
             <UiAlert v-if="error" :variant="UiTone.Danger">
               <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center" :justify="UiJustify.Between">
                 <UiText :size="UiTextSize.Sm" data-testid="plugin-chat-error">{{ error }}</UiText>
-                <UiButton
+                <UiButton :action="UiActionKind.Refresh"
                   v-if="retryable"
                   :variant="UiButtonVariant.Secondary"
                   :size="UiSize.Sm"
@@ -145,15 +145,13 @@ const logClasses = computed<string>(() => (inPane ? 'max-h-[50dvh]' : 'max-h-[60
           </UiStack>
         </div>
         <UiStack v-if="!following" :align="UiAlignItems.Center" class="pointer-events-none absolute inset-x-0 bottom-2">
-          <UiButton
+          <UiButton :icon="Icon.ArrowDown"
             :variant="UiButtonVariant.Secondary"
             :size="UiSize.Sm"
             class="pointer-events-auto shadow-popover"
             data-testid="plugin-chat-jump"
             @click="jumpToLatest"
-          >
-            <UiIcon :markup="Icon.ArrowDown" :size="UiSize.Sm" />
-            {{ t('plugins.pluginPage.chatJumpToLatest') }}
+          >{{ t('plugins.pluginPage.chatJumpToLatest') }}
           </UiButton>
         </UiStack>
       </UiStack>

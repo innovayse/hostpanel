@@ -4,10 +4,14 @@
  */
 import { vi } from 'vitest'
 import SalesTaxView from '@/views/SalesTaxView.vue'
+import schema from '@/views/SalesTaxView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
+import { runReportSchemaCases, schemaCaptionsOf } from '../helpers/reportSchema'
 
 vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
+
+runReportSchemaCases([{ name: 'SalesTaxView', view: SalesTaxView, schema }])
 
 runReportCase({
   name: 'SalesTaxView',
@@ -21,6 +25,6 @@ runReportCase({
       },
     }),
   },
-  expected: ['Sales Tax Liability', 'Beta', '€11.00', 'EUR'],
+  expected: [...schemaCaptionsOf(schema), 'Sales Tax Liability', 'Beta', '€11.00', 'EUR'],
   retryable: true,
 })

@@ -8,8 +8,24 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { integrationDto } from '../helpers/integrationFixtures'
-import { PluginType } from '@/types/plugin'
+import { PluginErrorCode, PluginType, RegistryInstanceState } from '@/types/plugin'
+import type { RegistryInstanceDto } from '@/types/plugin'
 import { flushPromises } from '@vue/test-utils'
+
+/**
+ * Builds the state of a server the plugin registry knows.
+ *
+ * @returns The registry instance, verified.
+ */
+const registryInstance = (): RegistryInstanceDto => ({
+  state: RegistryInstanceState.Verified,
+  instanceId: 'instance-1',
+  baseUrl: 'https://panel.example.com',
+  errorCode: null,
+  message: null,
+  verifiedAt: '2026-11-01T10:00:00Z',
+  nextAttemptAt: null,
+})
 
 describe('IntegrationsView', () => {
   afterEach(() => {
@@ -33,7 +49,7 @@ describe('IntegrationsView', () => {
     expect(wrapper.text()).toContain('1 active')
   })
 
-  it('shows a fulfilment plugin on the fulfilment page, labelled with its type', async () => {
+  it('shows a fulfilment plugin on the fulfilment page, without a badge for its type', async () => {
     stubRoutes({
       'GET /api/admin/integrations': () => json([
         integrationDto(),
@@ -44,7 +60,7 @@ describe('IntegrationsView', () => {
 
     expect(wrapper.find('[data-testid="integration-card-deliver"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-card-bank-transfer"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="integration-type-deliver"]').text()).toBe('Fulfilment')
+    expect(wrapper.find('[data-testid="integration-type-deliver"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Integrations: 1')
   })
 
@@ -60,6 +76,55 @@ describe('IntegrationsView', () => {
     const wrapper = await mountView(IntegrationsView, { path: '/integrations/fraud', pattern: '/integrations/:category?' })
 
     expect(wrapper.find('[data-testid="integrations-empty"]').exists()).toBe(true)
+  })
+
+  it('says what an empty category holds instead of counting zero, with the category icon', async () => {
+    stubRoutes({
+      'GET /api/admin/integrations': () => json([integrationDto()]),
+      'GET /api/admin/plugins/registry-instance': () => json(registryInstance()),
+    })
+    const wrapper = await mountView(IntegrationsView, { path: '/integrations/identity', pattern: '/integrations/:category?' })
+    await flushPromises()
+
+    expect(wrapper.get('header').text()).toContain('Identity plugins decide which client a signed-in person acts for.')
+    expect(wrapper.text()).not.toContain('Integrations: 0')
+    expect(wrapper.find('[data-testid="ui-empty-state-icon"]').exists()).toBe(true)
+  })
+
+  it('offers the catalogue filtered by the registry category, and the upload, while the registry is on', async () => {
+    stubRoutes({
+      'GET /api/admin/integrations': () => json([integrationDto()]),
+      'GET /api/admin/plugins/registry-instance': () => json(registryInstance()),
+    })
+    const wrapper = await mountView(IntegrationsView, { path: '/integrations/registrars', pattern: '/integrations/:category?' })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="integrations-empty-browse"]').attributes('href')).toBe('/plugins?tab=browse&category=Registrar')
+    expect(wrapper.get('[data-testid="integrations-empty-upload"]').attributes('href')).toBe('/plugins')
+  })
+
+  it('browses the whole catalogue for a category the registry has no category for', async () => {
+    stubRoutes({
+      'GET /api/admin/integrations': () => json([integrationDto()]),
+      'GET /api/admin/plugins/registry-instance': () => json(registryInstance()),
+    })
+    const wrapper = await mountView(IntegrationsView, { path: '/integrations/identity', pattern: '/integrations/:category?' })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="integrations-empty-browse"]').attributes('href')).toBe('/plugins?tab=browse')
+  })
+
+  it('offers only the upload while the registry is off', async () => {
+    stubRoutes({
+      'GET /api/admin/integrations': () => json([integrationDto()]),
+      'GET /api/admin/plugins/registry-instance': () =>
+        json({ type: PluginErrorCode.RegistryDisabled, title: 'Disabled', status: 404, detail: 'The registry is off.' }, 404),
+    })
+    const wrapper = await mountView(IntegrationsView, { path: '/integrations/hosted', pattern: '/integrations/:category?' })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="integrations-empty-browse"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="integrations-empty-upload"]').exists()).toBe(true)
   })
 
   it('shows the API sentence when the load is refused', async () => {

@@ -116,4 +116,12 @@ describe('ClientLayout', () => {
     expect(wrapper.findAll('[data-testid="client-nav-strip"] [role="tab"]')).toHaveLength(14)
     expect(wrapper.get('[data-testid="client-tab-summary"]').attributes('aria-selected')).toBe('true')
   })
+
+  it('returns to the clients list with the back pill in the header card', async () => {
+    const wrapper = await mountLoaded()
+    const back = wrapper.get('[data-testid="client-layout-back"]')
+
+    expect(back.attributes('href')).toBe('/clients')
+    expect(back.text()).toBe('Clients')
+  })
 })

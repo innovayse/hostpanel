@@ -1,11 +1,14 @@
 /**
  * Unit tests for UiDialog: plain and confirm variants, closing paths and accessibility.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { h, nextTick, ref } from 'vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import UiDrawer from '@/components/ui/UiDrawer.vue'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { createTestI18n } from '../../helpers/i18n'
+import { stubPhone } from '../../helpers/phone'
 
 /**
  * Mounts the dialog with the teleport inlined so its content is queryable.
@@ -20,6 +23,10 @@ const mountDialog = (props: InstanceType<typeof UiDialog>['$props'] = {}, slots:
     slots,
     global: { plugins: [createTestI18n()], stubs: { teleport: true } },
   })
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('UiDialog', () => {
   it('renders a labelled modal dialog with a title and body', () => {
@@ -169,6 +176,60 @@ describe('UiDialog on a phone and while work runs', () => {
     const classes = mountDialog({ title: 'x', size: 'md' }).get('[role="dialog"]').classes()
 
     expect(classes).toEqual(expect.arrayContaining(['max-w-[calc(100vw-2rem)]', 'sm:max-w-md']))
+  })
+
+  it('is a bottom sheet on a phone for a plain dialog, with its slots, attributes and footer', () => {
+    stubPhone(true)
+    const wrapper = mount(UiDialog, {
+      props: { title: 'Edit client' },
+      attrs: { 'data-testid': 'edit-dialog' },
+      slots: { default: '<p data-testid="body">Hello</p>', footer: '<b data-testid="footer" />' },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+    })
+
+    expect(wrapper.findComponent(UiDrawer).props('presentation')).toBe(UiDrawerPresentation.Sheet)
+    expect(wrapper.get('[data-testid="edit-dialog"]').classes()).toContain('rounded-t-panel')
+    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
+    expect(wrapper.get('h2').text()).toBe('Edit client')
+    expect(wrapper.find('[data-testid="body"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="footer"]').exists()).toBe(true)
+  })
+
+  it('stays a centred card on a phone for a confirm prompt and on a wide screen for a plain dialog', () => {
+    stubPhone(true)
+    const confirm = mountDialog({ title: 'x', variant: 'confirm', message: 'Sure?' })
+    expect(confirm.findComponent(UiDrawer).exists()).toBe(false)
+    expect(confirm.find('[data-testid="dialog-backdrop"]').exists()).toBe(true)
+
+    stubPhone(false)
+    const plain = mountDialog({ title: 'x' })
+    expect(plain.findComponent(UiDrawer).exists()).toBe(false)
+    expect(plain.find('[data-testid="dialog-backdrop"]').exists()).toBe(true)
+  })
+
+  it('closes the phone sheet from the close button, Escape and the backdrop, and honours closeOnBackdrop', async () => {
+    stubPhone(true)
+    const wrapper = mountDialog({ title: 'x' })
+
+    await wrapper.get('[data-testid="drawer-close"]').trigger('click')
+    await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await wrapper.get('.fixed').trigger('click')
+    expect(wrapper.emitted('close')).toHaveLength(3)
+
+    const pinned = mountDialog({ title: 'x', closeOnBackdrop: false })
+    await pinned.get('.fixed').trigger('click')
+    expect(pinned.emitted('close')).toBeUndefined()
+  })
+
+  it('cannot be dismissed as a phone sheet while it is not dismissible', async () => {
+    stubPhone(true)
+    const wrapper = mountDialog({ title: 'Working', dismissible: false })
+
+    expect(wrapper.find('[data-testid="drawer-close"]').exists()).toBe(false)
+    await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await wrapper.get('.fixed').trigger('click')
+
+    expect(wrapper.emitted('close')).toBeUndefined()
   })
 
   it('stacks the confirm buttons at full width on a phone', () => {

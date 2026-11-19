@@ -162,7 +162,7 @@ describe('AppSidebar', () => {
 
     expect(header()?.className).toContain('h-(--shell-header-h)')
     expect(header()?.className).toContain('shrink-0')
-    expect(header()?.className).not.toMatch(/p[tb]-/)
+    expect(header()?.className).not.toMatch(/\bp[tb]-/)
     await wrapper.get('[data-testid="sidebar-collapse-toggle"]').trigger('click')
     expect(header()?.className).toContain('h-(--shell-header-h)')
     expect(wrapper.get('nav').classes()).toContain('min-h-0')
@@ -240,36 +240,40 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="nav-section-infrastructure"]').classes()).toContain('gap-0.5')
   })
 
-  it('lights the elbows up to the active sub-menu link and leaves the rest a muted hairline', async () => {
+  it('lights the guide segments up to the active sub-menu link, the active one down to its curve, and leaves the rest muted', async () => {
     const wrapper = await mountSidebar('/billing/invoices')
 
     const above = wrapper.get('[data-testid="nav-billing-transactions"]').classes()
     const active = wrapper.get('[data-testid="nav-billing-invoices"]').classes()
     const below = wrapper.get('[data-testid="nav-billing-quotes"]').classes()
 
-    expect(above).toEqual(expect.arrayContaining(['nav-guide-lit', '[--i:0]', 'before:border-(--nav-guide-from)']))
-    expect(active).toEqual(expect.arrayContaining(['nav-guide-lit', '[--i:1]', 'before:border-(--nav-guide-from)']))
-    expect(below).toContain('before:border-border-strong')
+    expect(above).toEqual(expect.arrayContaining(['nav-guide-row', 'nav-guide-lit', '[--i:0]']))
+    expect(above).not.toContain('nav-guide-active')
+    expect(active).toEqual(expect.arrayContaining(['nav-guide-row', 'nav-guide-lit', 'nav-guide-active', '[--i:1]']))
+    expect(below).toContain('nav-guide-row')
     expect(below).not.toContain('nav-guide-lit')
   })
 
-  it('draws one muted rail per sub-menu list and a lit overlay down to the active link, and a small rounded elbow per link', async () => {
+  it('gives every sub-menu link its own guide segment on a row that grows with its label, with no fixed row height or list rail', async () => {
     const wrapper = await mountSidebar('/billing/invoices')
 
-    const list = wrapper.get('[data-testid="nav-billing-submenu"] .relative').classes()
+    const list = wrapper.get('[data-testid="nav-billing-submenu"] .pl-9').classes()
     const link = wrapper.get('[data-testid="nav-billing-quotes"]').classes()
 
-    expect(list).toEqual(expect.arrayContaining(['[--n:1]', 'before:bg-border-strong', 'after:from-(--nav-guide-start)', 'after:to-(--nav-guide-end)']))
-    expect(list).not.toContain('after:hidden')
-    expect(link).toEqual(expect.arrayContaining(['h-8', 'before:rounded-bl-lg', 'before:border-b-[1.5px]', 'before:border-l-[1.5px]']))
+    expect(list).toEqual(expect.arrayContaining(['[--n:1]', 'py-(--nav-guide-gap)', 'gap-(--nav-guide-gap)']))
+    expect(list.some((name) => name.startsWith('before:') || name.startsWith('after:'))).toBe(false)
+    expect(link).toContain('min-h-8')
+    expect(link).not.toContain('h-8')
+    expect(link.some((name) => name.startsWith('before:') || name.startsWith('after:'))).toBe(false)
   })
 
-  it('draws no lit overlay in a sub-menu without an active link', async () => {
+  it('lights no segment in a sub-menu without an active link', async () => {
     const wrapper = await mountSidebar('/dashboard')
 
     await wrapper.get('[data-testid="nav-billing"]').trigger('click')
 
-    expect(wrapper.get('[data-testid="nav-billing-submenu"] .relative').classes()).toContain('after:hidden')
+    expect(wrapper.get('[data-testid="nav-billing-submenu"] .pl-9').classes().some((name) => name.startsWith('[--n:'))).toBe(false)
+    expect(wrapper.get('[data-testid="nav-billing-transactions"]').classes()).not.toContain('nav-guide-lit')
   })
 
   it('emits navigate when a link is clicked', async () => {
@@ -291,16 +295,33 @@ describe('AppSidebar', () => {
     expect(wrapper.find('[data-testid="nav-clients"] > svg').exists()).toBe(true)
   })
 
-  it('shows the client and open ticket totals as count badges once the statistics are loaded', async () => {
+  it('puts the open ticket count on the Tickets link only, with its wording as tooltip and accessible name', async () => {
     const wrapper = await mountSidebar('/dashboard')
-    expect(wrapper.find('[data-testid="nav-clients-count"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="nav-support-tickets-count"]').exists()).toBe(false)
 
-    useDashboardStore().stats = { activeServices: 0, overdueInvoices: 0, openTickets: 7, totalClients: 120 }
+    useDashboardStore().stats = { activeServices: 0, overdueInvoices: 0, openTickets: 2, totalClients: 120 }
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="nav-clients-count"]').text()).toBe('120')
-    expect(wrapper.get('[data-testid="nav-support-count"]').text()).toBe('7')
-    expect(wrapper.find('[data-testid="nav-orders-count"]').exists()).toBe(false)
+    const badge = wrapper.get('[data-testid="nav-support-tickets-count"]')
+    expect(badge.text()).toBe('2')
+    expect(badge.attributes('title')).toBe('2 open tickets')
+    expect(badge.attributes('aria-label')).toBe('2 open tickets')
+    expect(wrapper.find('[data-testid="nav-clients-count"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="nav-support-count"]').exists()).toBe(false)
+  })
+
+  it('shows a dot with the same wording on the closed Support entry, and none once nothing waits', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+    useDashboardStore().stats = { activeServices: 0, overdueInvoices: 0, openTickets: 1, totalClients: 0 }
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="nav-support-attention"]').attributes('title')).toBe('1 open ticket')
+
+    useDashboardStore().stats = { activeServices: 0, overdueInvoices: 0, openTickets: 0, totalClients: 0 }
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="nav-support-attention"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="nav-support-tickets-count"]').exists()).toBe(false)
   })
 
   it('shows the signed-in account card at the bottom', async () => {
@@ -407,6 +428,19 @@ describe('AppSidebar icon rail', () => {
 
     expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-62')
     expect(wrapper.get('[data-testid="nav-billing"]').attributes('aria-expanded')).toBe('true')
+  })
+
+  it('is always the rail on a tablet, without the fold button, and asks for the menu drawer for a sub-menu', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    const wrapper = await mountSidebar('/dashboard')
+
+    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-18')
+    expect(wrapper.find('[data-testid="sidebar-collapse-toggle"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="nav-billing"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-18')
+    expect(wrapper.findComponent(AppSidebar).emitted('open-menu')).toHaveLength(1)
   })
 
   it('draws the phone drawer in full even when the desktop panel is folded, without the fold button', async () => {

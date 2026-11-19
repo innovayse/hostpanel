@@ -9,10 +9,13 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import TransactionsListView from '@/views/TransactionsListView.vue'
+import schema from '@/views/TransactionsListView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { transactionFixture } from '../helpers/billingFixtures'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 // The chart library needs a canvas the test environment does not have; TransactionChart has its own test.
 vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
@@ -113,6 +116,7 @@ describe('TransactionsListView', () => {
     expect(wrapper.get('[data-testid="billing-transactions-total-in"]').text()).toContain('120.00 EUR')
     expect(wrapper.get('[data-testid="billing-transactions-balance"]').text()).toContain('96.50 EUR')
     expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(2)
+    expect(wrapper.get('[data-testid="billing-transactions-table"]').findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
   })
 
   it('opens the edit page from the row actions menu', async () => {
@@ -266,7 +270,7 @@ describe('TransactionsListView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(true)
-    expect(wrapper.get('[data-testid="billing-transactions-feedback"]').text()).toBe('Record deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
   })
 
   it('shows the API sentence when a delete is refused, and sends nothing when dismissed', async () => {
@@ -323,5 +327,14 @@ describe('TransactionsListView', () => {
     expect(wrapper.get('[data-testid="billing-transaction-chart"]').find('[data-testid="chart-skeleton"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="ui-result-count-skeleton"]').text()).toBe('')
     expect(wrapper.find('[data-testid="billing-transactions-count"]').exists()).toBe(false)
+  })
+
+  it('draws the table skeleton under the schema head while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(TransactionsListView, '/billing/transactions', '/billing/transactions')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

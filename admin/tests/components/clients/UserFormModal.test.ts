@@ -78,6 +78,13 @@ describe('UserFormModal', () => {
     expect(mountModal({ user: { ...user, accounts: [] } }).find('[data-testid="clients-userform-accounts"]').exists()).toBe(false)
   })
 
+  it('shows ownership as a status icon and grows the name column', () => {
+    const table = mountModal().get('[data-testid="clients-userform-accounts"]')
+
+    expect(table.get('[role="img"]').attributes('aria-label')).toBe('Owner')
+    expect(table.findAll('th').some((th) => th.classes().includes('max-w-0'))).toBe(true)
+  })
+
   it('asks before deleting and emits delete only after confirming', async () => {
     const wrapper = mountModal()
 

@@ -4,10 +4,11 @@
  * list.
  */
 
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { useFormDirty } from '@/composables/useFormDirty'
 import type { StorefrontCrud } from '@/composables/useStorefrontCrud'
 import type { StorefrontEntity } from '@/types/storefront'
 
@@ -88,12 +89,8 @@ export const useStorefrontForm = <TItem extends StorefrontEntity, TPayload>(
   /** Sentence for a refused save, null when none. */
   const saveError = ref<string | null>(null)
 
-  /** True when the form has edits not yet saved. */
-  const isDirty = ref(false)
-
-  watch(options.form, () => {
-    isDirty.value = true
-  }, { deep: true })
+  /** The edits not yet saved, and the way to declare the form clean. */
+  const { isDirty, settle } = useFormDirty(options.form)
 
   /** Loads the stored entry into the form; a refusal or a missing entry is kept in `loadError`. */
   const reload = async (): Promise<void> => {
@@ -108,9 +105,7 @@ export const useStorefrontForm = <TItem extends StorefrontEntity, TPayload>(
       return
     }
     options.populate(item)
-    // The watcher above runs on the next flush; clearing the flag after it keeps loading from counting as an edit.
-    await nextTick()
-    isDirty.value = false
+    await settle()
   }
 
   onMounted(async () => {
@@ -134,7 +129,7 @@ export const useStorefrontForm = <TItem extends StorefrontEntity, TPayload>(
     }
     saving.value = false
     if (saved) {
-      isDirty.value = false
+      await settle()
       await router.push(options.listPath)
     } else {
       saveError.value = options.store.actionError

@@ -21,12 +21,13 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
+import schema from '@/views/ClientDomainsListView.schema'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize } from '@/utils/ui/text'
+import { Icon } from '@/lib/icons'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
 import { useFilterQuery } from '@/composables/useFilterQuery'
@@ -112,16 +113,7 @@ onMounted(() => fetchDomains())
         :loading="initialLoading"
         data-testid="client-domains-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.domainName') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.registrar') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.expiryDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="domain in domains"
@@ -139,9 +131,13 @@ onMounted(() => fetchDomains())
             </UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
             <UiTableCell>
-              <UiText :tone="domain.autoRenew ? UiTextTone.Success : UiTextTone.Muted">
-                {{ domain.autoRenew ? t('shared.yes') : t('shared.no') }}
-              </UiText>
+              <UiStatusIcon
+                :state="domain.autoRenew"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.yes')"
+                :off-label="t('shared.no')"
+              />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

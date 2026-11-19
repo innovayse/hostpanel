@@ -1,13 +1,16 @@
 /**
- * Tests for FraudSettingsView: the stored settings fill the form, an edit is checked in the
- * browser (review below reject) before anything is sent, a save sends the whole document and shows
- * what the API stored, and a refusal shows under its field or in the banner.
+ * Tests for FraudSettingsView: the stored settings fill the form in two sections with units and a risk band preview, an
+ * edit is checked in the browser (review below reject) before anything is sent, protection off disables the numbers
+ * with a note, the shared footer saves the whole document or discards the edits, and a refusal shows under its field
+ * or in the banner.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import FraudSettingsView from '@/views/FraudSettingsView.vue'
+import schema from '@/views/FraudSettingsView.schema'
 import type { FraudSettings } from '@/types/fraud'
+import { useToastStore } from '@/stores/toast'
 import { invalid, json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
@@ -33,6 +36,16 @@ const inputOf = (wrapper: VueWrapper, field: string): ReturnType<VueWrapper['get
   wrapper.get(`[data-testid="fraud-settings-${field}"] input`)
 
 /**
+ * The refusal line under a field of the form.
+ *
+ * @param wrapper - The mounted screen.
+ * @param field - The field's wire name.
+ * @returns The selector of the field's alert line.
+ */
+const errorOf = (wrapper: VueWrapper, field: string): ReturnType<VueWrapper['find']> =>
+  wrapper.find(`[data-testid="ui-form-field-${field}"] [role="alert"]`)
+
+/**
  * Finds the body of the PUT a stub received.
  *
  * @param mock - The stubbed fetch.
@@ -48,13 +61,19 @@ afterEach(() => {
 })
 
 describe('FraudSettingsView', () => {
-  it('keeps the switch, the fields and the save button in place as placeholders while the settings load', async () => {
+  it('draws every field of its schema with the captions in place and placeholders for the controls while the settings load', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountScreen(FraudSettingsView)
+    const fields = schema.columns.flat().flatMap((section) => section.fields)
 
     expect(wrapper.find('[data-testid="fraud-settings-form"]').exists()).toBe(true)
+    fields.forEach((field) => {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    })
+    expect(wrapper.text()).toContain('Review threshold')
+    expect(wrapper.find('[data-testid="fraud-settings-manualReviewRiskScore"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
-    expect(wrapper.get('[data-testid="fraud-settings-save"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-testid="settings-form-save"]').exists()).toBe(false)
   })
 
   it('fills the form with the stored settings', async () => {
@@ -67,6 +86,64 @@ describe('FraudSettingsView', () => {
     expect((inputOf(wrapper, 'velocityWindowMinutes').element as HTMLInputElement).value).toBe('60')
     expect((inputOf(wrapper, 'velocityMaxOrders').element as HTMLInputElement).value).toBe('5')
     expect((inputOf(wrapper, 'maxAccountsPerIp').element as HTMLInputElement).value).toBe('3')
+  })
+
+  it('splits the numbers into a risk score card and a velocity card, each number with its unit', async () => {
+    stubRouteTable({ 'GET /admin/fraud/settings': () => json(stored) })
+    const { wrapper } = await mountScreen(FraudSettingsView)
+    const thresholds = wrapper.get('[data-testid="ui-form-section-thresholds"]')
+    const velocity = wrapper.get('[data-testid="ui-form-section-velocity"]')
+
+    expect(thresholds.text()).toContain('Risk score thresholds')
+    expect(thresholds.find('[data-testid="fraud-settings-manualReviewRiskScore"]').exists()).toBe(true)
+    expect(thresholds.find('[data-testid="fraud-settings-autoRejectRiskScore"]').exists()).toBe(true)
+    expect(velocity.text()).toContain('Velocity limits per IP address')
+    expect(velocity.findAll('[data-testid="number-suffix"]').map((unit) => unit.text())).toEqual(['min', 'orders', 'accounts'])
+    expect(thresholds.findAll('[data-testid="number-suffix"]').map((unit) => unit.text())).toEqual(['pts', 'pts'])
+  })
+
+  it('previews the Allow, Review and Reject bands of the thresholds and follows an edit', async () => {
+    stubRouteTable({ 'GET /admin/fraud/settings': () => json(stored) })
+    const { wrapper } = await mountScreen(FraudSettingsView)
+
+    expect(wrapper.get('[data-testid="fraud-risk-band-caption-allow"]').text()).toBe('Allow, 0 to 49')
+    expect(wrapper.get('[data-testid="fraud-risk-band-caption-review"]').text()).toBe('Review, 50 to 79')
+    expect(wrapper.get('[data-testid="fraud-risk-band-caption-reject"]').text()).toBe('Reject, 80 to 100')
+
+    await inputOf(wrapper, 'manualReviewRiskScore').setValue('30')
+
+    expect(wrapper.get('[data-testid="fraud-risk-band-caption-allow"]').text()).toBe('Allow, 0 to 29')
+    expect(wrapper.get('[data-testid="fraud-risk-band-caption-review"]').text()).toBe('Review, 30 to 79')
+  })
+
+  it('disables the numbers and says nothing is applied while protection is off, keeping their values', async () => {
+    stubRouteTable({ 'GET /admin/fraud/settings': () => json({ ...stored, enabled: false }) })
+    const { wrapper } = await mountScreen(FraudSettingsView)
+
+    expect(wrapper.get('[data-testid="fraud-settings-off-note"]').text()).toContain('Fraud detection is off')
+    expect(inputOf(wrapper, 'manualReviewRiskScore').attributes('disabled')).toBeDefined()
+    expect(inputOf(wrapper, 'maxAccountsPerIp').attributes('disabled')).toBeDefined()
+    expect((inputOf(wrapper, 'velocityMaxOrders').element as HTMLInputElement).value).toBe('5')
+
+    await wrapper.get('[data-testid="fraud-settings-enabled"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="fraud-settings-off-note"]').exists()).toBe(false)
+    expect(inputOf(wrapper, 'manualReviewRiskScore').attributes('disabled')).toBeUndefined()
+  })
+
+  it('keeps the shared footer idle until an edit, then counts it and lets Cancel discard it', async () => {
+    stubRouteTable({ 'GET /admin/fraud/settings': () => json(stored) })
+    const { wrapper } = await mountScreen(FraudSettingsView)
+    expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="settings-form-status"]').text()).toBe('No unsaved changes')
+
+    await inputOf(wrapper, 'velocityMaxOrders').setValue('7')
+
+    expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.get('[data-testid="settings-form-status"]').text()).toBe('1 unsaved change')
+    await wrapper.get('[data-testid="settings-form-cancel"]').trigger('click')
+    expect((inputOf(wrapper, 'velocityMaxOrders').element as HTMLInputElement).value).toBe('5')
+    expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeDefined()
   })
 
   it('saves the whole document and shows what the API stored', async () => {
@@ -82,12 +159,13 @@ describe('FraudSettingsView', () => {
 
     await inputOf(wrapper, 'velocityMaxOrders').setValue('7')
     await wrapper.get('[data-testid="fraud-settings-enabled"]').trigger('click')
-    await wrapper.get('form').trigger('submit')
+    await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
+    await flushPromises()
     await flushPromises()
 
     expect(putBody(mock)).toEqual({ ...stored, enabled: false, velocityMaxOrders: 7 })
     expect(requestsOf(mock).slice(-1)).toEqual(['GET /admin/fraud/settings'])
-    expect(wrapper.get('[data-testid="fraud-settings-result"]').text()).toBe('Fraud settings saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Fraud settings saved.'])
     expect((inputOf(wrapper, 'velocityMaxOrders').element as HTMLInputElement).value).toBe('7')
   })
 
@@ -97,10 +175,9 @@ describe('FraudSettingsView', () => {
 
     await inputOf(wrapper, 'manualReviewRiskScore').setValue('90')
 
-    expect(wrapper.get('[data-testid="fraud-settings-manualReviewRiskScore-error"]').text()).toBe(
-      'Must be lower than the auto reject threshold.',
-    )
-    expect(wrapper.get('[data-testid="fraud-settings-save"]').attributes('disabled')).toBeDefined()
+    expect(errorOf(wrapper, 'manualReviewRiskScore').text()).toBe('Must be lower than the auto reject threshold.')
+    expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="settings-form-cancel"]').attributes('disabled')).toBeUndefined()
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(putBody(mock)).toBeUndefined()
@@ -113,8 +190,8 @@ describe('FraudSettingsView', () => {
 
     await inputOf(wrapper, 'autoRejectRiskScore').setValue('95')
 
-    expect(wrapper.find('[data-testid="fraud-settings-manualReviewRiskScore-error"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="fraud-settings-save"]').attributes('disabled')).toBeUndefined()
+    expect(errorOf(wrapper, 'manualReviewRiskScore').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeUndefined()
   })
 
   it('shows a refused field under the field and leaves the banner out', async () => {
@@ -127,7 +204,7 @@ describe('FraudSettingsView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="fraud-settings-velocityWindowMinutes-error"]').text()).toBe('The window is too long for this plan.')
+    expect(errorOf(wrapper, 'velocityWindowMinutes').text()).toBe('The window is too long for this plan.')
     expect(wrapper.find('[data-testid="fraud-settings-result"]').exists()).toBe(false)
   })
 

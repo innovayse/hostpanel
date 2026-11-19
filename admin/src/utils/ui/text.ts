@@ -113,6 +113,7 @@ export const labelVariantClasses: Record<UiLabelVariant, string> = {
  * `md` is the 30px concept tile value. The bar matches the value's line so a loading metric keeps its height.
  */
 export const metricSizeClasses: Record<UiSize, { value: string, bar: string }> = {
+  xs: { value: 'font-display text-base font-semibold leading-none tabular-nums', bar: 'h-4 w-12 rounded-md' },
   sm: { value: 'font-display text-xl font-semibold leading-none tabular-nums', bar: 'h-5 w-16 rounded-md' },
   md: { value: 'font-display text-[1.875rem] font-semibold leading-none tabular-nums', bar: 'h-[30px] w-36 rounded-md' },
   lg: { value: 'font-display text-4xl font-semibold leading-none tabular-nums', bar: 'h-9 w-44 rounded-md' },

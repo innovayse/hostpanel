@@ -18,6 +18,7 @@ import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { DemoAccountRole } from '@/types/demo'
 import type { DemoAccount } from '@/types/demo'
 import type { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for DemoAccountList. */
 const props = defineProps<{
@@ -77,7 +78,7 @@ const roleLabelKeys: Record<DemoAccountRole, string> = {
           {{ t('demo.login.password', { password: account.password }) }}
         </UiText>
       </UiStack>
-      <UiButton
+      <UiButton :action="UiActionKind.Confirm"
         v-if="account.role === DemoAccountRole.Admin"
         variant="secondary"
         size="sm"

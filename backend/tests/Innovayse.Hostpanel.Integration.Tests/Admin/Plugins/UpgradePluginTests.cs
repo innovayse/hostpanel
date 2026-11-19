@@ -100,6 +100,12 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
                 .Where(l => l.Description.StartsWith("Staged Plugin Upgrade") && l.Description.Contains(pluginId))
                 .Select(l => l.Description).ToListAsync();
             lines.Should().ContainSingle().Which.Should().Contain("1.0.0 to 2.0.0");
+
+            row.GetProperty("installedAt").GetDateTimeOffset().Should().BeBefore(row.GetProperty("updatedAt").GetDateTimeOffset(),
+                "the staged upgrade is the plugin's first update");
+            var record = await db.InstalledPlugins.AsNoTracking().SingleAsync(p => p.PluginId == pluginId);
+            record.UpdatedAt.Should().NotBeNull();
+            record.InstalledAt.Should().BeBefore(record.UpdatedAt!.Value);
         }
         finally
         {

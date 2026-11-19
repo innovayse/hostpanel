@@ -49,7 +49,7 @@ public static class CurrencyExtensions
     {
         ArgumentNullException.ThrowIfNull(ratesToBase);
 
-        return amount * ratesToBase.GetValueOrDefault(currency, 1m);
+        return Currency.ConvertAmount(amount, ratesToBase.GetValueOrDefault(currency, Currency.BaseRate), Currency.BaseRate);
     }
 
     /// <summary>Whether a code names a currency this panel is currently offering to clients.</summary>

@@ -9,6 +9,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -45,7 +46,7 @@ describe('InvoiceNotesTab', () => {
 
     const put = mock.mock.calls.find(([url]) => String(url).endsWith('/billing/1/notes'))
     expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toEqual({ notes: 'New notes' })
-    expect(wrapper.get('[data-testid="billing-invoice-notes-feedback"]').text()).toBe('Changes saved successfully.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
   })
 
   it('shows the API sentence under the editor when the save is refused', async () => {

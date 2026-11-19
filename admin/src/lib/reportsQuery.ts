@@ -7,7 +7,11 @@ import { buildQuery } from '@/composables/useApi'
 import type { QueryValue } from '@/composables/useApi'
 import type { ReportQueryConfig, ReportQueryRange, ReportRangeValue } from '@/types/reportquery'
 import { valueAtPath } from '@/lib/valueAtPath'
+import { DateRangePreset } from '@/utils/ui/datePicker'
 import { UiFilterCondition } from '@/utils/ui/filter'
+
+/** The preset every date range of a query report starts on, so the five reports open on the same period and the picker lights it up. */
+export const QUERY_REPORT_DEFAULT_PRESET = DateRangePreset.ThisMonth
 
 /** What the operator has chosen on a query report. */
 export interface ReportQueryState {

@@ -263,9 +263,11 @@ describe('UiDialog and its animation', () => {
   })
 
   it('plays the leave on an inert copy when a parent removes the dialog with v-if, and removes the copy when it ends', async () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: false }))
+    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
     const frame = holdFrames()
+    /** Whether the parent shows the dialog. */
     const show = ref(true)
+    /** Parent that shows the dialog until the flag is cleared, as a screen does with v-if. */
     const parent = mount(
       defineComponent({ render: () => (show.value ? h(UiDialog, { open: true, title: 'Edit' }, () => h('input')) : h('p', 'gone')) }),
       { attachTo: document.body, global: realGlobal },
@@ -287,8 +289,11 @@ describe('UiDialog and its animation', () => {
   })
 
   it('plays no copy under reduced motion', async () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: true }))
+    // Only the reduced-motion query matches: a screen that is not a phone keeps the dialog a dialog.
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('prefers-reduced-motion'), addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    /** Whether the parent shows the dialog. */
     const show = ref(true)
+    /** Parent that shows the dialog until the flag is cleared, as a screen does with v-if. */
     const parent = mount(
       defineComponent({ render: () => (show.value ? h(UiDialog, { open: true, title: 'Edit' }) : h('p', 'gone')) }),
       { attachTo: document.body, global: realGlobal },

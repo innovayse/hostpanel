@@ -12,7 +12,7 @@
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Управление объявлениями для клиентов",
-    "addNewAnnouncement": "Добавить новое объявление",
+    "addNewAnnouncement": "Новое объявление",
     "noAnnouncementsFound": "Объявления не найдены",
     "createYourFirstAnnouncementTo": "Создайте первое объявление, чтобы начать.",
     "deleteAnnouncement": "Удалить объявление",
@@ -55,7 +55,6 @@
     "deleted": "Удалено."
   },
   "knowledgebase": {
-    "knowledgebase": "База знаний",
     "manageKnowledgebaseArticlesAndCategories": "Управление статьями и категориями базы знаний",
     "checkToHide": "Отметьте, чтобы скрыть",
     "categoryDescription": "Описание категории",
@@ -113,7 +112,7 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Управление статусом сети и отчётами об инцидентах",
-    "createNew": "(+) Создать",
+    "createNew": "Создать",
     "startDate": "Дата начала",
     "endDate": "Дата окончания",
     "deleteNetworkIssue": "Удалить сетевую проблему",
@@ -188,6 +187,7 @@
     "totalcountRecordsFoundShowingShowingfrom": "Найдено записей: {totalCount}, показаны {showingFrom}-{showingTo}",
     "flag": "Пометить",
     "unflag": "Снять пометку",
+    "noRepliesYet": "Ответов пока нет",
     "requestor": "Инициатор",
     "noTicketsFound": "Тикеты не найдены",
     "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам",

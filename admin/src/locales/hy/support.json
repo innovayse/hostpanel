@@ -12,7 +12,7 @@
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Հաճախորդների համար հայտարարությունների կառավարում",
-    "addNewAnnouncement": "Ավելացնել նոր հայտարարություն",
+    "addNewAnnouncement": "Նոր հայտարարություն",
     "noAnnouncementsFound": "Հայտարարություններ չեն գտնվել",
     "createYourFirstAnnouncementTo": "Սկսելու համար ստեղծեք առաջին հայտարարությունը։",
     "deleteAnnouncement": "Ջնջել հայտարարությունը",
@@ -55,7 +55,6 @@
     "deleted": "Ջնջվեց։"
   },
   "knowledgebase": {
-    "knowledgebase": "Գիտելիքների բազա",
     "manageKnowledgebaseArticlesAndCategories": "Գիտելիքների բազայի հոդվածների և կատեգորիաների կառավարում",
     "checkToHide": "Նշեք՝ թաքցնելու համար",
     "categoryDescription": "Կատեգորիայի նկարագրություն",
@@ -113,7 +112,7 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Ցանցի կարգավիճակի և միջադեպերի հաշվետվությունների կառավարում",
-    "createNew": "(+) Ստեղծել",
+    "createNew": "Ստեղծել",
     "startDate": "Սկզբի ամսաթիվ",
     "endDate": "Ավարտի ամսաթիվ",
     "deleteNetworkIssue": "Ջնջել ցանցային խնդիրը",
@@ -188,6 +187,7 @@
     "totalcountRecordsFoundShowingShowingfrom": "Գտնվել է գրառում՝ {totalCount}, ցուցադրված են {showingFrom}-{showingTo}",
     "flag": "Նշել դրոշակով",
     "unflag": "Հանել դրոշակը",
+    "noRepliesYet": "Պատասխաններ դեռ չկան",
     "requestor": "Հայտատու",
     "noTicketsFound": "Տոմսեր չեն գտնվել",
     "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",

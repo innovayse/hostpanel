@@ -45,6 +45,15 @@ export const SheetPointerType = {
 /** One of the SheetPointerType values. */
 export type SheetPointerType = (typeof SheetPointerType)[keyof typeof SheetPointerType]
 
+/**
+ * Narrows the `pointerType` string of a DOM event to one of the kinds a drag knows.
+ *
+ * @param value - The `pointerType` of a pointer event.
+ * @returns True when it is touch, pen or mouse (any other kind never starts a drag).
+ */
+export const isSheetPointerType = (value: string): value is SheetPointerType =>
+  (Object.values(SheetPointerType) as string[]).includes(value)
+
 /** Closed set of outcomes of releasing a drag. */
 export const SheetRelease = {
   /** The sheet leaves. */
@@ -217,10 +226,11 @@ export const useSheetDrag = (options: SheetDragOptions) => {
     if (target?.closest(SHEET_IGNORED_SELECTOR) != null) {
       return false
     }
-    if (event.pointerType === SheetPointerType.Touch || event.pointerType === SheetPointerType.Pen) {
+    const kind = isSheetPointerType(event.pointerType) ? event.pointerType : undefined
+    if (kind === SheetPointerType.Touch || kind === SheetPointerType.Pen) {
       return true
     }
-    return event.pointerType === SheetPointerType.Mouse && target?.closest(SHEET_HANDLE_SELECTOR) != null
+    return kind === SheetPointerType.Mouse && target?.closest(SHEET_HANDLE_SELECTOR) != null
   }
 
   /**

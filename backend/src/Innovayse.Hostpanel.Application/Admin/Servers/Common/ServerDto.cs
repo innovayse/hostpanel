@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 /// <param name="LastTestedAt">UTC timestamp of the last connection test, or null if never tested.</param>
 /// <param name="AccountsCount">Account count reported by the server on last test, or null if unknown.</param>
 /// <param name="Credentials">Which secrets are stored; the secrets themselves are never returned.</param>
+/// <param name="Usage">What the active services on the server renew for; read by the list only, null where the server is shown inside its group.</param>
 public sealed record ServerDto(
     int Id,
     string Name,
@@ -35,4 +36,5 @@ public sealed record ServerDto(
     bool? IsOnline,
     DateTimeOffset? LastTestedAt,
     int? AccountsCount,
-    ServerCredentialStatusDto Credentials);
+    ServerCredentialStatusDto Credentials,
+    ServerUsageDto? Usage = null);

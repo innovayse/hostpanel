@@ -19,6 +19,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { CARD_OWNED_KEYS } from '@/lib/settingKeyOwnership'
 import type { Setting } from '@/types/setting'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiColumnSize } from '@/utils/ui/table'
 
 const { t } = useI18n()
 
@@ -35,16 +36,13 @@ const rows = computed<Setting[]>(() => props.settings.filter((setting) => !CARD_
 </script>
 
 <template>
-  <UiCard class="overflow-hidden" data-testid="raw-settings-table">
-    <UiTable :density="UiTableDensity.Comfortable" :empty="rows.length === 0" :loading="loading" :colspan="3">
-      <template #empty>
-        {{ t('settings.table.noSettings') }}
-      </template>
+  <UiCard clip data-testid="raw-settings-table">
+    <UiTable :empty-text="t('settings.table.noSettings')" :density="UiTableDensity.Comfortable" :empty="rows.length === 0" :loading="loading" :colspan="3">
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader>{{ t('settings.table.key') }}</UiTableHeader>
           <UiTableHeader>{{ t('settings.table.value') }}</UiTableHeader>
-          <UiTableHeader>{{ t('settings.table.description') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Grow">{{ t('settings.table.description') }}</UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody divided>

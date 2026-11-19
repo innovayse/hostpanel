@@ -134,19 +134,20 @@ describe('ClientSectionTabs', () => {
       const { wrapper } = await mountWithRouter('/clients/12/log')
       await flushPromises()
       scrolled.length = 0
-      expect(callbacks).toHaveLength(1)
+      // The strip's own scroll edge reader watches it too (the tab strip's child mounts first), then this component.
+      expect(callbacks).toHaveLength(2)
       // The list keeps its box when a tab changes width (it scrolls), so every tab is watched as well.
       expect(observed).toContain(wrapper.get('[role="tablist"]').element)
       for (const tab of wrapper.findAll('[role="tab"]')) {
         expect(observed).toContain(tab.element)
       }
 
-      callbacks[0]?.([], {} as ResizeObserver)
+      callbacks[1]?.([], {} as ResizeObserver)
       await flushPromises()
       expect(scrolled).toEqual(['client-tab-log'])
 
       wrapper.unmount()
-      expect(disconnected).toBe(1)
+      expect(disconnected).toBe(2)
     } finally {
       HTMLElement.prototype.scrollIntoView = original
       vi.unstubAllGlobals()

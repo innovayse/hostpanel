@@ -5,8 +5,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import SupportOverviewView from '@/views/SupportOverviewView.vue'
+import schema from '@/views/SupportOverviewView.schema'
 import { mountRouted, mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
+import { createTestI18n } from '../helpers/i18n'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 
 /** Overview figures with no tickets in any hour. */
@@ -31,8 +33,11 @@ describe('SupportOverviewView', () => {
 
     expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(5)
     expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="support-overview-average-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="chart-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="support-overview-average"]').exists()).toBe(false)
+    for (const panel of schema.panels.flatMap((row) => row.columns.flat())) {
+      expect(wrapper.get(`[data-testid="ui-detail-card-${panel.key}"]`).attributes('aria-busy')).toBe('true')
+      expect(wrapper.text()).toContain(createTestI18n().global.t(panel.title ?? ''))
+    }
   })
 
   it('asks for today and shows the figures', async () => {
@@ -78,12 +83,13 @@ describe('SupportOverviewView', () => {
     expect(wrapper.find('[data-testid="support-overview-error"]').exists()).toBe(false)
   })
 
-  it('draws a bar for the average first reply time while the overview loads', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
+  it('draws one tile per stat of its schema, with the schema caption', async () => {
+    stubPathRoutes([{ path: '/tickets/overview', body: stats }])
 
-    const { wrapper } = await mountRouted(SupportOverviewView, '/', '/')
+    const wrapper = await mountView(SupportOverviewView)
 
-    expect(wrapper.find('[data-testid="support-overview-average-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="support-overview-average"]').exists()).toBe(false)
+    for (const stat of schema.stats) {
+      expect(wrapper.get(`[data-testid="support-overview-stat-${stat.key}"]`).text()).toContain(createTestI18n().global.t(stat.label))
+    }
   })
 })

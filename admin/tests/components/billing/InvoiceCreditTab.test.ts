@@ -9,6 +9,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -69,7 +70,7 @@ describe('InvoiceCreditTab', () => {
 
     const post = mock.mock.calls.find(([url]) => String(url).endsWith('/billing/1/credit'))
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toEqual({ amount: 20 })
-    expect(wrapper.get('[data-testid="billing-invoice-credit-feedback"]').text()).toBe('Credit applied to the invoice.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Credit applied to the invoice.'])
   })
 
   it('takes credit back through the remove endpoint once confirmed', async () => {
@@ -85,7 +86,7 @@ describe('InvoiceCreditTab', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([url]) => String(url).endsWith('/billing/1/credit/remove'))).toBe(true)
-    expect(wrapper.get('[data-testid="billing-invoice-credit-feedback"]').text()).toBe('Credit removed from the invoice.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Credit removed from the invoice.'])
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
   })
 

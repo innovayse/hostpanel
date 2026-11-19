@@ -78,28 +78,36 @@ public sealed class PluginSignatureVerifier
     /// Whether the signature is checked even on a host that does not enforce signatures (Development, Testing). Set for a
     /// package fetched from the plugin registry; "allow unsigned" does not override it.
     /// </param>
-    /// <returns>The check the plugin fails and the host refuses it for, or <see langword="null"/> when it is admitted.</returns>
-    public PluginSignatureViolation? Check(
+    /// <returns>The refusal, or none when the plugin is admitted, with the key id of a verified signature.</returns>
+    public PluginSignatureCheck Check(
         string pluginDir, string pluginId, PluginOrigin origin, bool allowUnsigned, ILogger logger, bool require = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
 
         // The host's own files: authenticity is that of the image they shipped in.
-        if (origin == PluginOrigin.BuiltIn || (!Enforced && !require))
+        if (origin == PluginOrigin.BuiltIn)
         {
-            return null;
+            return new PluginSignatureCheck(null, null);
         }
 
-        var violation = Inspect(pluginDir);
+        // One read of the signature answers both the policy and the key the install record names.
+        var verified = Verify(pluginDir);
+        var violation = verified.Refusal;
+        var keyId = verified.VerifiedKeyId;
+        if (!Enforced && !require)
+        {
+            return new PluginSignatureCheck(null, keyId);
+        }
+
         if (violation is not null && allowUnsigned && !require)
         {
             logger.LogWarning(
                 "Plugin {PluginId} fails the signature check ({Rule}: {Detail}) and is admitted because allow unsigned plugins is on.",
                 pluginId, violation.Rule, violation.Detail);
-            return null;
+            return new PluginSignatureCheck(null, keyId);
         }
 
-        return violation;
+        return new PluginSignatureCheck(violation, keyId);
     }
 
     /// <summary>Checks the signature of the package in a folder against the trusted keys, whatever the policy.</summary>
@@ -107,6 +115,25 @@ public sealed class PluginSignatureVerifier
     /// <returns>The check the package fails, or <see langword="null"/> when it is signed by a trusted key and unchanged since.</returns>
     public PluginSignatureViolation? Inspect(string pluginDir)
     {
-        return PluginSignatureValidator.Verify(pluginDir, _keys);
+        return Verify(pluginDir).Refusal;
+    }
+
+    /// <summary>
+    /// Verifies the signature once and names the trusted key it is signed by: the key id is read only after the signature has
+    /// verified, so an unsigned or tampered package, or a claim naming an unknown key, has none.
+    /// </summary>
+    /// <param name="pluginDir">The plugin folder: the package root.</param>
+    /// <returns>The check the package fails, or none, with the key id of a verified signature.</returns>
+    private PluginSignatureCheck Verify(string pluginDir)
+    {
+        var violation = PluginSignatureValidator.Verify(pluginDir, _keys);
+        if (violation is not null)
+        {
+            return new PluginSignatureCheck(violation, null);
+        }
+
+        // A verified signature file is small and well formed: the validator has just parsed it.
+        var keyId = PluginSignatureFile.Parse(File.ReadAllText(Path.Combine(pluginDir, PluginSignatureFile.FileName))).KeyId;
+        return new PluginSignatureCheck(null, keyId);
     }
 }

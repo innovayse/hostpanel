@@ -2,18 +2,22 @@
 /**
  * Collapsible icon sidebar for a section's sub-navigation, drawn on the frosted `glass` surface.
  *
- * Shows icons only and expands on hover/focus to reveal the captions. Icons are drawn from stored
- * SVG markup by `UiIcon` (no `v-html`). The active entry is marked by `activeKey`, so the sidebar
- * knows nothing about the router state.
+ * Folded it is a rail of centred icons (each with its caption as tooltip and accessible name) and it opens on
+ * hover or focus to reveal the captions, which are cut with an ellipsis (the full caption is the tooltip) when they
+ * do not fit. Entries that share a `group` sit under one heading (a hairline in the rail). The optional `header` slot
+ * (a search box) is drawn only while the sidebar is open. The sidebar scrolls on its own when its entries are taller than
+ * it. Icons are drawn from stored SVG markup by `UiIcon` (no `v-html`). The active entry is marked by `activeKey`, so
+ * the sidebar knows nothing about the router state.
  */
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { navItemTextClasses } from '@/utils/ui/nav'
 import type { UiSidebarItem } from '@/utils/ui/sidebar'
+import { sidebarEntryClasses, sidebarListClasses, sidebarOpenWidthClass, sidebarRailWidthClass, sidebarRows, sidebarShellClasses } from '@/utils/ui/sidebar'
 
 /** Props for UiSidebar. */
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   /** Entries in order. */
   items: UiSidebarItem[]
   /** Key of the entry for the current page. */
@@ -28,39 +32,66 @@ withDefaults(defineProps<{
   ariaLabel: undefined,
 })
 
+const emit = defineEmits<{
+  /** The sidebar opened or folded; lets a caller whose header filters the entries show every entry in the rail. */
+  'update:expanded': [expanded: boolean]
+}>()
+
+/** Whether the pointer is over the sidebar. */
+const hovered = ref(false)
+
+/** Whether focus is inside the sidebar (a search box keeps it open while it is typed in). */
+const focused = ref(false)
+
 /** Whether the sidebar is expanded. */
-const expanded = ref(false)
+const expanded = computed<boolean>(() => hovered.value || focused.value)
+
+watch(expanded, value => {
+  emit('update:expanded', value)
+})
+
+/** The entries with the heading each group opens with. */
+const rows = computed(() => sidebarRows(props.items))
 </script>
 
 <template>
   <div
-    class="glass flex flex-col transition-all duration-200 ease-in-out overflow-y-auto overflow-x-hidden shrink-0"
-    :class="expanded ? 'w-[230px]' : 'w-[56px]'"
-    @mouseenter="expanded = true"
-    @mouseleave="expanded = false"
-    @focusin="expanded = true"
-    @focusout="expanded = false"
+    :class="[sidebarShellClasses, expanded ? sidebarOpenWidthClass : sidebarRailWidthClass]"
+    @mouseenter="hovered = true"
+    @mouseleave="hovered = false"
+    @focusin="focused = true"
+    @focusout="focused = false"
   >
-    <nav :aria-label="ariaLabel" class="flex flex-col gap-1.5 px-1 pt-2 pb-4">
-      <RouterLink
-        v-for="item in items"
-        :key="item.key"
-        :to="item.to"
-        :aria-current="item.key === activeKey ? 'page' : undefined"
-        :data-testid="`${testid}-${item.key}`"
-        class="relative flex items-center gap-2.5 rounded-control border px-3 py-2.5 transition-all duration-150 no-underline outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/60"
-        :class="[navItemTextClasses, item.key === activeKey
-          ? 'border-(--nav-active-border) bg-(--nav-active-bg) text-text-primary'
-          : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-hover']"
-      >
-        <UiIcon :markup="item.icon" size="lg" />
-        <span
-          class="whitespace-nowrap transition-opacity duration-200 flex-1"
-          :class="expanded ? 'opacity-100' : 'opacity-0'"
+    <div v-if="expanded && $slots.header" class="px-2 pt-2">
+      <slot name="header" />
+    </div>
+    <nav :aria-label="ariaLabel" :class="sidebarListClasses">
+      <template v-for="row in rows" :key="row.item.key">
+        <p
+          v-if="row.heading !== undefined && expanded"
+          class="truncate px-3 pt-2 text-xs font-semibold uppercase tracking-wider text-text-muted"
+          :data-testid="`${testid}-group-${row.item.key}`"
         >
-          {{ item.label }}
-        </span>
-      </RouterLink>
+          {{ row.heading }}
+        </p>
+        <div v-else-if="row.heading !== undefined" class="mx-2 mt-1 border-t border-border" aria-hidden="true" />
+        <RouterLink
+          :to="row.item.to"
+          :aria-current="row.item.key === activeKey ? 'page' : undefined"
+          :aria-label="row.item.label"
+          :title="row.item.title ?? row.item.label"
+          :data-testid="`${testid}-${row.item.key}`"
+          class="transition-all duration-150 no-underline outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/60"
+          :class="[sidebarEntryClasses, navItemTextClasses, expanded ? 'gap-2.5 px-3' : 'justify-center px-0', row.item.key === activeKey
+            ? 'border-(--nav-active-border) bg-(--nav-active-bg) text-text-primary'
+            : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-hover']"
+        >
+          <UiIcon :markup="row.item.icon" size="lg" class="shrink-0" />
+          <span v-if="expanded" class="min-w-0 flex-1 truncate">
+            {{ row.item.label }}
+          </span>
+        </RouterLink>
+      </template>
     </nav>
   </div>
 </template>

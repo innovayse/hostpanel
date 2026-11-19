@@ -54,6 +54,7 @@ const initial = computed<string>(() => props.name.trim().charAt(0).toUpperCase()
 
 /** Literal Tailwind classes of the square per size. */
 const sizeClasses: Record<UiSize, string> = {
+  xs: 'h-6 w-6',
   sm: 'h-8 w-8',
   md: 'h-10 w-10',
   lg: 'h-12 w-12',

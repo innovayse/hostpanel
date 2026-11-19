@@ -9,7 +9,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import type { UiTabItem } from '@/utils/ui/tabs'
-import { ClientSection, clientSectionPath } from '@/lib/routes'
+import { CLIENT_NAV } from '@/lib/clientSections'
+import { clientSectionPath } from '@/lib/routes'
 
 const { t } = useI18n()
 
@@ -25,43 +26,7 @@ const route = useRoute()
 /** Router, used to open the section a tab names. */
 const router = useRouter()
 
-/** Keys of the sections; also the suffix of each tab's `data-testid`. */
-const ClientNavKey = {
-  Summary: 'summary',
-  Profile: 'profile',
-  Services: 'services',
-  Domains: 'domains',
-  Users: 'users',
-  Contacts: 'contacts',
-  Billable: 'billable',
-  Invoices: 'invoices',
-  Quotes: 'quotes',
-  Transactions: 'transactions',
-  Credit: 'credit',
-  Tickets: 'tickets',
-  Emails: 'emails',
-  Log: 'log',
-} as const
-
-/** Client section per entry key (the route segment under `/clients/:id/`). */
-const SEGMENTS: Record<(typeof ClientNavKey)[keyof typeof ClientNavKey], ClientSection> = {
-  summary: ClientSection.Summary,
-  profile: ClientSection.Profile,
-  services: ClientSection.Services,
-  domains: ClientSection.Domains,
-  users: ClientSection.Users,
-  contacts: ClientSection.Contacts,
-  billable: ClientSection.BillableItems,
-  invoices: ClientSection.Invoices,
-  quotes: ClientSection.Quotes,
-  transactions: ClientSection.Transactions,
-  credit: ClientSection.Credit,
-  tickets: ClientSection.Tickets,
-  emails: ClientSection.Emails,
-  log: ClientSection.Log,
-}
-
-/** One section of the client: its key, caption and route path. */
+/** One section of the client as the tabs and the router read it: its key, translated caption and route path. */
 interface SectionEntry {
   /** Key of the section; also the tab value. */
   key: string
@@ -71,36 +36,14 @@ interface SectionEntry {
   path: string
 }
 
-/**
- * Builds one section entry.
- *
- * @param key - Section key.
- * @param label - Translated caption.
- * @returns The entry the tabs and the router read.
- */
-const entry = (key: (typeof ClientNavKey)[keyof typeof ClientNavKey], label: string): SectionEntry => ({
-  key,
-  label,
-  path: clientSectionPath(props.clientId, SEGMENTS[key]),
-})
-
-/** The sections in tab order. */
-const sections = computed<SectionEntry[]>(() => [
-  entry(ClientNavKey.Summary, t('clients.clientSummary.summary')),
-  entry(ClientNavKey.Profile, t('clients.contactForm.profile')),
-  entry(ClientNavKey.Services, t('clients.clientSummary.productsServices2')),
-  entry(ClientNavKey.Domains, t('shared.domains')),
-  entry(ClientNavKey.Users, t('clients.clientInnerSidebar.users')),
-  entry(ClientNavKey.Contacts, t('clients.clientSummary.contacts')),
-  entry(ClientNavKey.Billable, t('nav.billingChildren.billableItems')),
-  entry(ClientNavKey.Invoices, t('shared.invoices')),
-  entry(ClientNavKey.Quotes, t('shared.quotes')),
-  entry(ClientNavKey.Transactions, t('shared.transactions')),
-  entry(ClientNavKey.Credit, t('clients.clientCredit.credit')),
-  entry(ClientNavKey.Tickets, t('clients.clientTickets.tickets')),
-  entry(ClientNavKey.Emails, t('clients.clientEmails.emails')),
-  entry(ClientNavKey.Log, t('clients.clientInnerSidebar.log')),
-])
+/** The sections in tab order, captions read in the active language. */
+const sections = computed<SectionEntry[]>(() =>
+  CLIENT_NAV.map(entry => ({
+    key: entry.key,
+    label: t(entry.label),
+    path: clientSectionPath(props.clientId, entry.section),
+  })),
+)
 
 /** Key of the section whose path the current route starts with. */
 const activeKey = computed<string | undefined>(() => {

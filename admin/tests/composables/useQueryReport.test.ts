@@ -8,6 +8,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h, ref } from 'vue'
 import { useQueryReport } from '@/composables/useQueryReport'
 import type { ReportColumn } from '@/types/reportcolumn'
+import { DateRangePreset, presetIsoRange } from '@/utils/ui/datePicker'
 import type { ReportQueryConfig, ReportQueryRange } from '@/types/reportquery'
 import { json } from '../helpers/fetch'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
@@ -28,6 +29,9 @@ const config: ReportQueryConfig = {
   serverFields: ['status'],
   exportPath: '/reports/things/export',
   pageSize: 2,
+  defaultColumns: ['id'],
+  defaultRanges: {},
+  defaultFilterField: 'status',
 }
 
 /** Every column of the test report. */
@@ -42,14 +46,15 @@ const ranges = ref<ReportQueryRange[]>([{ key: 'created', label: 'Created', para
 /**
  * Mounts a host around the composable and hands back its state.
  *
+ * @param settings - What the report is; the plain test report by default.
  * @returns The wrapper and the report state.
  */
-const mountHost = () => {
+const mountHost = (settings: ReportQueryConfig = config) => {
   let state!: ReturnType<typeof useQueryReport<Row>>
   const wrapper = mount(
     defineComponent({
       setup() {
-        state = useQueryReport<Row>(config, { columns, ranges })
+        state = useQueryReport<Row>(settings, { columns, ranges })
         return () => h('p', state.rows.map(row => row.clientName).join(','))
       },
     }),
@@ -129,14 +134,25 @@ describe('useQueryReport', () => {
     expect(requestsOf(mock).at(-1)).toBe('GET /reports/things?createdFrom=2024-01-01&createdTo=2024-01-31&page=1&pageSize=2')
   })
 
-  it('shows no column until chosen, then toggles, selects and clears them', async () => {
+  it('starts a range on its default preset and sends it with the first page', async () => {
+    const mock = stubRouteTable({ 'GET /reports/things': () => json({ items: [], pageNumber: 1, pageSize: 50, totalCount: 0, totalPages: 0 }) })
+    const { state } = mountHost({ ...config, defaultRanges: { created: DateRangePreset.Last30Days } })
+    await flushPromises()
+
+    const [from, to] = presetIsoRange(DateRangePreset.Last30Days)
+    expect(state.ranges).toEqual({ created: [from, to] })
+    expect(requestsOf(mock)[0]).toBe(`GET /reports/things?createdFrom=${from}&createdTo=${to}&page=1&pageSize=2`)
+  })
+
+  it('starts with the default columns, then toggles, selects and clears them', async () => {
     stubRouteTable({ 'GET /reports/things': () => json({ items: [], pageNumber: 1, pageSize: 50, totalCount: 0, totalPages: 0 }) })
     const { state } = mountHost()
     await flushPromises()
 
-    expect(state.activeColumns).toEqual([])
+    expect(state.activeColumns.map(column => column.key)).toEqual(['id'])
     state.toggleColumn('clientName')
-    expect(state.activeColumns.map(column => column.key)).toEqual(['clientName'])
+    expect(state.activeColumns.map(column => column.key)).toEqual(['id', 'clientName'])
+    state.toggleColumn('id')
     state.toggleColumn('clientName')
     expect(state.activeColumns).toEqual([])
     state.selectAllColumns()

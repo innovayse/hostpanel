@@ -1,10 +1,10 @@
 /**
  * Unit tests for UiDrawer: shown only when open, closing paths, edge and footer.
  */
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
-import { UiDrawerSheetBelow } from '@/utils/ui/drawer'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { createTestI18n } from '../../helpers/i18n'
 
 /**
@@ -81,15 +81,54 @@ describe('UiDrawer header row', () => {
   })
 })
 
-/**
- * Makes the screen narrow or not for the sheet query.
- *
- * @param narrow - Whether the sheet query matches.
- * @returns Nothing; `matchMedia` is stubbed.
- */
-const stubNarrow = (narrow: boolean): void => {
-  vi.stubGlobal('matchMedia', () => ({ matches: narrow, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
-}
+describe('UiDrawer attributes and dismissal', () => {
+  it('puts the attributes a caller passes onto the panel', () => {
+    const wrapper = mount(UiDrawer, {
+      props: { open: true, title: 'x' },
+      attrs: { 'data-testid': 'filters-drawer' },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+    })
+
+    expect(wrapper.get('aside').attributes('data-testid')).toBe('filters-drawer')
+  })
+
+  it('cannot be dismissed while it is not dismissible: no close button, Escape and the backdrop do nothing', async () => {
+    const wrapper = mountDrawer({ open: true, title: 'x', dismissible: false })
+
+    expect(wrapper.find('[data-testid="drawer-close"]').exists()).toBe(false)
+    await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await wrapper.get('.fixed').trigger('click')
+
+    expect(wrapper.emitted('close')).toBeUndefined()
+  })
+
+  it('ignores a backdrop click when it does not close on the backdrop, and still closes from the button', async () => {
+    const wrapper = mountDrawer({ open: true, title: 'x', closeOnBackdrop: false })
+
+    await wrapper.get('.fixed').trigger('click')
+    expect(wrapper.emitted('close')).toBeUndefined()
+
+    await wrapper.get('[data-testid="drawer-close"]').trigger('click')
+    expect(wrapper.emitted('close')).toHaveLength(1)
+  })
+
+  it('keeps a pointer-down on its backdrop from reaching the page, so a surface opened from a floating panel leaves that panel open', async () => {
+    const onDown = vi.fn()
+    document.addEventListener('mousedown', onDown)
+    const wrapper = mount(UiDrawer, {
+      props: { open: true, title: 'x' },
+      attachTo: document.body,
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+    })
+
+    await wrapper.get('.fixed').trigger('mousedown')
+    document.removeEventListener('mousedown', onDown)
+    wrapper.unmount()
+
+    expect(onDown).not.toHaveBeenCalled()
+  })
+
+})
 
 describe('UiDrawer as a sheet', () => {
   beforeAll(() => {
@@ -101,58 +140,34 @@ describe('UiDrawer as a sheet', () => {
     Reflect.deleteProperty(HTMLElement.prototype, 'setPointerCapture')
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('is an opaque elevated surface, sheet or not', () => {
     expect(mountDrawer({ open: true, title: 'x' }).get('aside').classes()).toContain('glass-strong')
-    expect(mountDrawer({ open: true, title: 'x', sheet: true }).get('aside').classes()).toContain('glass-strong')
+    expect(mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet }).get('aside').classes()).toContain('glass-strong')
   })
 
-  it('is a bottom sheet on a narrow screen with the safe-area inset and rounded top corners', () => {
-    stubNarrow(true)
-    const classes = mountDrawer({ open: true, title: 'x', sheet: true }).get('aside').classes()
+  it('is a bottom sheet with the safe-area inset and rounded top corners, whatever the screen width', () => {
+    const classes = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet }).get('aside').classes()
 
     expect(classes).toEqual(expect.arrayContaining(['bottom-0', 'rounded-t-panel', 'max-h-[85dvh]', 'pb-[env(safe-area-inset-bottom)]']))
     expect(classes).not.toContain('top-0')
     expect(classes).not.toContain('max-w-md')
   })
 
-  it('is the side panel on a wide screen, and for a drawer that is not a sheet', () => {
-    stubNarrow(false)
-    const wide = mountDrawer({ open: true, title: 'x', sheet: true }).get('aside').classes()
-    expect(wide).toContain('top-0')
-    expect(wide).toContain('max-w-md')
-    expect(wide).not.toContain('rounded-t-panel')
+  it('is the side panel by default', () => {
+    const classes = mountDrawer({ open: true, title: 'x' }).get('aside').classes()
 
-    stubNarrow(true)
-    expect(mountDrawer({ open: true, title: 'x' }).get('aside').classes()).toContain('top-0')
+    expect(classes).toContain('top-0')
+    expect(classes).toContain('max-w-md')
+    expect(classes).not.toContain('rounded-t-panel')
   })
 
-  it('asks the media query of the breakpoint it was given', () => {
-    const queries: string[] = []
-    vi.stubGlobal('matchMedia', (query: string) => {
-      queries.push(query)
-      return { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }
-    })
-
-    mountDrawer({ open: true, title: 'x', sheet: true, sheetBelow: UiDrawerSheetBelow.Lg })
-
-    expect(queries).toEqual(['(max-width: 1023.98px)'])
-  })
-
-  it('draws a grip only for a sheet that is a bottom sheet', () => {
-    stubNarrow(true)
-    expect(mountDrawer({ open: true, title: 'x', sheet: true }).find('[data-testid="drawer-grip"]').exists()).toBe(true)
+  it('draws a grip only for a sheet', () => {
+    expect(mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet }).find('[data-testid="drawer-grip"]').exists()).toBe(true)
     expect(mountDrawer({ open: true, title: 'x' }).find('[data-testid="drawer-grip"]').exists()).toBe(false)
-    stubNarrow(false)
-    expect(mountDrawer({ open: true, title: 'x', sheet: true }).find('[data-testid="drawer-grip"]').exists()).toBe(false)
   })
 
   it('follows a drag down with the finger and closes past the distance', async () => {
-    stubNarrow(true)
-    const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
+    const wrapper = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet })
     const aside = wrapper.get('aside')
     Object.defineProperty(aside.element, 'offsetHeight', { value: 400 })
 
@@ -166,9 +181,21 @@ describe('UiDrawer as a sheet', () => {
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
+  it('springs back instead of closing when it may not be dismissed', async () => {
+    const wrapper = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet, dismissible: false })
+    const aside = wrapper.get('aside')
+    Object.defineProperty(aside.element, 'offsetHeight', { value: 400 })
+
+    await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0, pointerType: 'mouse' })
+    await aside.trigger('pointermove', { pointerId: 1, clientY: 160 })
+    await aside.trigger('pointerup', { pointerId: 1, clientY: 300 })
+
+    expect(wrapper.emitted('close')).toBeUndefined()
+    expect((aside.element as HTMLElement).style.getPropertyValue('--sheet-drag')).toBe('0px')
+  })
+
   it('springs back when the browser takes the touch over', async () => {
-    stubNarrow(true)
-    const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
+    const wrapper = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet })
     const aside = wrapper.get('aside')
 
     await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0, pointerType: 'mouse' })
@@ -181,8 +208,7 @@ describe('UiDrawer as a sheet', () => {
   })
 
   it('opens to full height when dragged up from a partial height', async () => {
-    stubNarrow(true)
-    const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
+    const wrapper = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet })
     const aside = wrapper.get('aside')
 
     await wrapper.get('[data-testid="drawer-grip"]').trigger('pointerdown', { pointerId: 1, clientY: 300, button: 0, pointerType: 'touch' })
@@ -194,8 +220,7 @@ describe('UiDrawer as a sheet', () => {
   })
 
   it('leaves a drag that starts in scrolled content to the content', async () => {
-    stubNarrow(true)
-    const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
+    const wrapper = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet })
     const aside = wrapper.get('aside')
     const body = wrapper.get('[data-testid="drawer-body"]')
     Object.defineProperty(body.element, 'scrollTop', { value: 40 })
@@ -208,24 +233,8 @@ describe('UiDrawer as a sheet', () => {
     expect(wrapper.emitted('close')).toBeUndefined()
   })
 
-  it('follows a change of the breakpoint it was given', async () => {
-    const queries: string[] = []
-    vi.stubGlobal('matchMedia', (query: string) => {
-      queries.push(query)
-      return { matches: query === '(max-width: 1023.98px)', addEventListener: vi.fn(), removeEventListener: vi.fn() }
-    })
-    const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
-    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(false)
-
-    await wrapper.setProps({ sheetBelow: UiDrawerSheetBelow.Lg })
-
-    expect(queries).toContain('(max-width: 1023.98px)')
-    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
-  })
-
   it('does not drag a side panel', async () => {
-    stubNarrow(false)
-    const wrapper = mountDrawer({ open: true, title: 'x', sheet: true })
+    const wrapper = mountDrawer({ open: true, title: 'x' })
     const aside = wrapper.get('aside')
 
     await aside.trigger('pointerdown', { pointerId: 1, clientY: 100, button: 0, pointerType: 'touch' })

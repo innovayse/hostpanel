@@ -4,7 +4,9 @@
  *
  * `variant="plain"` is a titled panel around the default slot (with an optional `footer` slot).
  * `dismissible="false"` makes it a modal the user cannot leave (no close button, Escape and the backdrop do nothing)
- * while work runs. On a phone the panel fills the row between the page gutters and its footer buttons stack full width.
+ * while work runs. On a phone (below `sm`) a plain dialog is a bottom sheet (`UiDrawer` with the sheet presentation: grip,
+ * safe area, drag down, Escape and backdrop tap close it, tall content scrolls inside it, the footer is pinned) and a confirm
+ * prompt stays a compact card between the page gutters; footer buttons stack full width on both.
  * `variant="confirm"` is the confirmation prompt: a `message`, a Cancel button and a confirm
  * button coloured by `tone`; it replaces the former confirmation modal. The panel is teleported to
  * `<body>`, is an opaque elevated surface (nothing shows through it), closes on Escape or a backdrop click, keeps Tab inside and returns focus to the opener.
@@ -19,15 +21,19 @@
 import { computed, onBeforeUnmount, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
+import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { toneSolidClasses } from '@/utils/ui/tone'
 import type { UiTone } from '@/utils/ui/tone'
 import { useModalSurface } from '@/utils/ui/modalSurface'
 import { modalPanelClasses, playGhostLeave, UiTransitionKind } from '@/utils/ui/transition'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
+import { ACTION_ROW_PHONE_CLASSES, UiActionKind } from '@/utils/ui/actions'
 
 /**
  * The root is a Teleport, which cannot take attributes, so a caller's `data-testid` or `aria-*`
@@ -96,6 +102,12 @@ const sizeClasses: Record<UiDialogSize, string> = {
   xl: 'max-w-[calc(100vw-2rem)] sm:max-w-4xl',
 }
 
+/** The shape the screen asks for: a phone shows a plain dialog as a bottom sheet. */
+const presentation = useDrawerPresentation()
+
+/** Whether the dialog is a bottom sheet now: a plain dialog on a phone (a confirm prompt stays a compact card). */
+const asSheet = computed<boolean>(() => props.variant === UiDialogVariant.Plain && presentation.value === UiDrawerPresentation.Sheet)
+
 /** Classes of the confirm button's colour. */
 const confirmClasses = computed<string>(() => toneSolidClasses[props.tone])
 
@@ -119,8 +131,11 @@ const confirm = (): void => {
   }
 }
 
-/** Keyboard handler (Escape closes, Tab stays inside), and the focus move for the end of the enter. */
-const { onKeydown, focusIn } = useModalSurface(panel, () => props.open, close)
+/**
+ * Keyboard handler (Escape closes, Tab stays inside), and the focus move for the end of the enter. A sheet is a drawer
+ * and keeps its own focus, Escape and scroll lock, so this surface stays idle then.
+ */
+const { onKeydown, focusIn } = useModalSurface(panel, () => props.open && !asSheet.value, close)
 
 /**
  * Moves focus to the first control once the enter has ended, unless the user already focused one inside.
@@ -177,7 +192,26 @@ const onBackdrop = (): void => {
 </script>
 
 <template>
-  <Teleport to="body">
+  <UiDrawer
+    v-if="asSheet"
+    data-testid="dialog-panel"
+    v-bind="$attrs"
+    :open="open"
+    :title="title ?? ''"
+    :presentation="UiDrawerPresentation.Sheet"
+    :dismissible="dismissible"
+    :close-on-backdrop="closeOnBackdrop"
+    flush
+    @close="close"
+  >
+    <div class="flex flex-col gap-4 px-6 py-2" data-testid="dialog-body">
+      <slot />
+    </div>
+    <template v-if="$slots.footer" #footer>
+      <slot name="footer" />
+    </template>
+  </UiDrawer>
+  <Teleport v-else to="body">
     <UiTransition
       :kind="UiTransitionKind.Dialog"
       appear
@@ -228,11 +262,12 @@ const onBackdrop = (): void => {
             </UiText>
             <slot />
           </div>
-          <div v-if="variant === UiDialogVariant.Confirm" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0 max-sm:flex-col-reverse max-sm:items-stretch">
-            <UiButton variant="secondary" data-testid="dialog-cancel" @click="close">
+          <div v-if="variant === UiDialogVariant.Confirm" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0" :class="ACTION_ROW_PHONE_CLASSES">
+            <UiButton :action="UiActionKind.Cancel" variant="secondary" data-testid="dialog-cancel" @click="close">
               {{ t('shared.cancel') }}
             </UiButton>
             <UiButton
+              :action="UiActionKind.Confirm"
               variant="plain"
               :loading="loading"
               data-testid="dialog-confirm"
@@ -243,7 +278,7 @@ const onBackdrop = (): void => {
               {{ confirmText }}
             </UiButton>
           </div>
-          <div v-else-if="$slots.footer" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0 max-sm:flex-col-reverse max-sm:items-stretch" data-testid="ui-dialog-footer">
+          <div v-else-if="$slots.footer" class="flex justify-end gap-2 px-6 pt-4 pb-6 shrink-0" :class="ACTION_ROW_PHONE_CLASSES" data-testid="ui-dialog-footer">
             <slot name="footer" />
           </div>
         </div>

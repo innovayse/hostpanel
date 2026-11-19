@@ -12,6 +12,7 @@ import { mountScreen, mountWithApp } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { flushPromises } from '@vue/test-utils'
 import { pickOption } from '../helpers/select'
+import { useToastStore } from '@/stores/toast'
 
 /** The base currency. */
 const usd: CurrencyDto = {
@@ -34,6 +35,17 @@ describe('CurrenciesView', () => {
     expect(wrapper.get('[data-testid="currency-row-USD"]').text()).toContain('2.99 → $2.99')
     expect(wrapper.get('[data-testid="currency-row-EUR"]').text()).toContain('0.92000000')
     expect(wrapper.get('[data-testid="currency-row-USD"]').text()).toContain('Base')
+  })
+
+  it('draws the enabled state as an icon with an accessible name instead of a pill', async () => {
+    stubRouteTable({ 'GET /admin/currencies': () => json([usd, { ...eur, isEnabled: false }]) })
+    const { wrapper } = await mountScreen(CurrenciesView)
+
+    const usdIcon = wrapper.get('[data-testid="currency-row-USD"] [role="img"]')
+    const eurIcon = wrapper.get('[data-testid="currency-row-EUR"] [role="img"]')
+    expect(usdIcon.attributes('aria-label')).toBe('Enabled')
+    expect(usdIcon.text()).toBe('')
+    expect(eurIcon.attributes('aria-label')).toBe('Disabled')
   })
 
   it('shows which bank the rates come from and saves another choice through the settings row', async () => {
@@ -96,6 +108,7 @@ describe('CurrenciesView', () => {
     stubRouteTable({ 'GET /admin/currencies': () => json([usd, eur]) })
     const { wrapper } = await mountScreen(CurrenciesView)
 
+    await wrapper.get('[data-testid="currency-actions-EUR"]').trigger('click')
     await wrapper.get('[data-testid="currency-edit-EUR"]').trigger('click')
     expect((wrapper.get('[data-testid="currency-form-prefix"]').element as HTMLInputElement).value).toBe('€')
 
@@ -110,6 +123,7 @@ describe('CurrenciesView', () => {
     })
     const { wrapper } = await mountScreen(CurrenciesView)
 
+    await wrapper.get('[data-testid="currency-actions-EUR"]').trigger('click')
     await wrapper.get('[data-testid="currency-edit-EUR"]').trigger('click')
     await wrapper.get('[data-testid="currency-form"]').trigger('submit')
     await vi.waitFor(() => {
@@ -126,14 +140,24 @@ describe('CurrenciesView', () => {
     })
     const { wrapper } = await mountScreen(CurrenciesView)
 
+    await wrapper.get('[data-testid="currency-actions-EUR"]').trigger('click')
     await wrapper.get('[data-testid="currency-make-base-EUR"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Make EUR the base currency?')
     expect(requestsOf(mock)).not.toContain('POST /admin/currencies/EUR/make-base')
 
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="currencies-result"]').text()).toBe('EUR is now the base currency.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['EUR is now the base currency.'])
     })
+  })
+
+  it('offers the base currency only its edit action, as one icon button', async () => {
+    stubRouteTable({ 'GET /admin/currencies': () => json([usd, eur]) })
+    const { wrapper } = await mountScreen(CurrenciesView)
+
+    expect(wrapper.find('[data-testid="currency-actions-USD"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="currency-edit-USD"]').find('svg').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="currency-make-base-USD"]').exists()).toBe(false)
   })
 
   it('refreshes the rates and names the codes that changed', async () => {
@@ -146,7 +170,7 @@ describe('CurrenciesView', () => {
     await wrapper.get('[data-testid="currencies-update-rates"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="currencies-result"]').text()).toBe('Rates updated: EUR; not quoted: AMD')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Rates updated: EUR; not quoted: AMD'])
     })
   })
 
@@ -180,7 +204,7 @@ describe('CurrenciesView', () => {
 
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="currencies-result"]').text()).toBe('4 product price rows recomputed.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['4 product price rows recomputed.'])
     })
     expect(requestsOf(mock)).toContain('POST /admin/currencies/update-product-prices')
   })

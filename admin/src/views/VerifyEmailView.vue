@@ -16,6 +16,7 @@ import UiLoader from '@/components/ui/UiLoader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -66,7 +67,7 @@ onMounted(async () => {
       <UiText tone="secondary" size="md">
         {{ t('auth.verifyEmail.yourEmailHasBeenSuccessfully') }}
       </UiText>
-      <UiLink
+      <UiLink :action="UiActionKind.Next"
         :to="AppRoute.Login"
         variant="primary"
         size="lg"

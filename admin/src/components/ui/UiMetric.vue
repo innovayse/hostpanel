@@ -37,7 +37,7 @@ const props = withDefaults(defineProps<{
 })
 
 /** Typography and colour classes of the value. */
-const valueClasses = computed<string>(() => `${metricSizeClasses[props.size].value} ${toneTextClasses[props.tone]}`)
+const valueClasses = computed<string>(() => `break-words ${metricSizeClasses[props.size].value} ${toneTextClasses[props.tone]}`)
 </script>
 
 <template>

@@ -4,9 +4,10 @@
  * a filter dialog (status, priority, department and flag) whose active choices show as removable chips,
  * flagging and bulk actions on the selected rows (`useRowSelection`, the floating `UiBulkBar`). The search, the
  * filters and the page live in the address (`useListQuery`), so a reload or a shared link shows the same list, and the
- * API applies them before it pages. A refused load offers a retry; a flag or bulk action shows its outcome
- * (success, or the API's sentence) above the list; a bulk delete is confirmed first in a
- * danger prompt.
+ * API applies them before it pages. A refused load offers a retry; a flag or bulk action confirms itself with a
+ * toast and a refusal shows the API's sentence above the list; a bulk delete is confirmed first in a
+ * danger prompt. The flag column shows nothing on an unflagged ticket until its row is hovered, and a filled warning
+ * flag on a flagged one; the last reply is a relative date, or "No replies yet" for a ticket nobody answered.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -17,13 +18,12 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import UiAlert from '@/components/ui/UiAlert.vue'
 import { useListQuery } from '@/composables/useListQuery'
 import { TicketFilterKey, useTicketFilters } from '@/composables/useTicketFilters'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useRowSelection } from '@/composables/useRowSelection'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import { UiTone } from '@/utils/ui/tone'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiBulkBar from '@/components/ui/UiBulkBar.vue'
@@ -38,23 +38,31 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
+import schema from '@/views/SupportTicketsView.schema'
 import UiText from '@/components/ui/UiText.vue'
-import { formatElapsed, EMPTY_VALUE } from '@/lib/format'
+import { formatRelativeFromNow, EMPTY_VALUE } from '@/lib/format'
 import { useSupportStore } from '@/stores/support'
 import { TicketBulkAction, TicketFlagFilter } from '@/types/ticket'
 import type { TicketListFilters } from '@/types/ticket'
 import { Icon } from '@/lib/icons'
+import type { UiBulkAction } from '@/utils/ui/bulkBar'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
-import { toneTextClasses } from '@/utils/ui/tone'
+import { toneTextClasses, UiTone } from '@/utils/ui/tone'
 import { AppRoute, supportTicketPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('shared.openNewTicket'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'support-tickets-open-new', to: AppRoute.SupportTicketsNew },
+])
 
 const store = useSupportStore()
 
@@ -62,11 +70,11 @@ const store = useSupportStore()
 const FilterKey = { ...TicketFilterKey, Flagged: 'flagged' } as const
 
 /** Bulk actions offered for the selected tickets. */
-const bulkActions = computed(() => [
-  { action: TicketBulkAction.Close, label: t('shared.close'), variant: UiButtonVariant.Primary },
-  { action: TicketBulkAction.Delete, label: t('shared.delete'), variant: UiButtonVariant.Danger },
-  { action: TicketBulkAction.Flag, label: t('support.supportTickets.flag'), variant: UiButtonVariant.Secondary },
-  { action: TicketBulkAction.Unflag, label: t('support.supportTickets.unflag'), variant: UiButtonVariant.Secondary },
+const bulkActions = computed<UiBulkAction[]>(() => [
+  { key: TicketBulkAction.Close, label: t('shared.close'), title: t('shared.close'), icon: Icon.Check, variant: UiButtonVariant.Primary, disabled: bulkRunning.value, testid: `support-tickets-bulk-${TicketBulkAction.Close}` },
+  { key: TicketBulkAction.Delete, label: t('shared.delete'), title: t('shared.delete'), icon: Icon.Trash, variant: UiButtonVariant.Danger, disabled: bulkRunning.value, testid: `support-tickets-bulk-${TicketBulkAction.Delete}` },
+  { key: TicketBulkAction.Flag, label: t('support.supportTickets.flag'), title: t('support.supportTickets.flag'), icon: Icon.Flag, variant: UiButtonVariant.Secondary, disabled: bulkRunning.value, testid: `support-tickets-bulk-${TicketBulkAction.Flag}` },
+  { key: TicketBulkAction.Unflag, label: t('support.supportTickets.unflag'), title: t('support.supportTickets.unflag'), icon: Icon.Remove, variant: UiButtonVariant.Secondary, disabled: bulkRunning.value, testid: `support-tickets-bulk-${TicketBulkAction.Unflag}` },
 ])
 
 /** The address-backed filters, search text and page of the list. */
@@ -105,11 +113,8 @@ const chips = chipsOf(() => [
 /** The selected tickets of the page. */
 const selection = useRowSelection(() => store.tickets.map((ticket) => ticket.id))
 
-/** The outcome line of the last flag or bulk action. */
+/** The outcome of the last flag or bulk action: a success is a toast, a refusal stays in the banner. */
 const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /** True while the bulk delete confirmation is open. */
 const confirmingBulkDelete = ref(false)
@@ -224,19 +229,7 @@ const dismissBulkDelete = (): void => {
 
 <template>
   <UiStack>
-    <UiPageHeader
-      :title="t('support.supportTickets.supportTickets')"
-      :subtitle="t('support.supportTickets.manageAllClientSupportRequests')"
-    >
-      <template #actions>
-        <UiLink
-          :to="AppRoute.SupportTicketsNew"
-          :variant="UiButtonVariant.Primary"
-          data-testid="support-tickets-open-new"
-        >
-          {{ t('shared.openNewTicket') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)" >
     </UiPageHeader>
 
     <UiListToolbar
@@ -279,7 +272,9 @@ const dismissBulkDelete = (): void => {
       {{ t('support.supportTickets.totalcountRecordsFoundShowingShowingfrom', { totalCount: store.totalCount, showingFrom, showingTo }) }}
     </UiText>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="support-tickets-feedback" />
+    <UiAlert v-if="feedback.message.value" :variant="UiTone.Danger" data-testid="support-tickets-feedback">
+      {{ feedback.message.value }}
+    </UiAlert>
 
     <UiErrorState
       v-if="store.error"
@@ -298,17 +293,7 @@ const dismissBulkDelete = (): void => {
         select-all-testid="support-tickets-select-all"
         data-testid="support-tickets-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Badge" />
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.subject') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.department') }}</UiTableHeader>
-            <UiTableHeader>{{ t('support.supportTickets.requestor') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.lastReply') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="ticket in store.tickets"
@@ -318,11 +303,12 @@ const dismissBulkDelete = (): void => {
             :select-testid="`support-tickets-select-${ticket.id}`"
             :data-testid="`support-tickets-row-${ticket.id}`"
           >
-            <UiTableCell>
+            <UiTableCell actions>
+              <!-- Unflagged: invisible until the row is hovered or the button is focused; flagged: a filled warning flag. -->
               <UiIconButton
-                :label="t('support.supportTickets.flag')"
+                :label="ticket.isFlagged ? t('support.supportTickets.unflag') : t('support.supportTickets.flag')"
                 :size="UiSize.Sm"
-                :class="ticket.isFlagged ? toneTextClasses[UiTone.Warning] : 'text-text-muted'"
+                :class="ticket.isFlagged ? toneTextClasses[UiTone.Warning] : 'text-text-muted opacity-0 focus-visible:opacity-100 [tr:hover_&]:opacity-100'"
                 :data-testid="`support-tickets-flag-${ticket.id}`"
                 @click="handleToggleFlag(ticket.id)"
               >
@@ -342,7 +328,9 @@ const dismissBulkDelete = (): void => {
             <UiTableCell muted>{{ ticket.clientName }}</UiTableCell>
             <UiTableCell><SupportTicketPriorityBadge :priority="ticket.priority" /></UiTableCell>
             <UiTableCell><SupportTicketStatusBadge :status="ticket.status" /></UiTableCell>
-            <UiTableCell muted>{{ formatElapsed(ticket.lastReplyAt) }}</UiTableCell>
+            <UiTableCell muted>
+              {{ ticket.lastReplyAt === null ? t('support.supportTickets.noRepliesYet') : formatRelativeFromNow(ticket.lastReplyAt, locale) }}
+            </UiTableCell>
           </UiTableRow>
         </UiTableBody>
         <template #empty>
@@ -369,19 +357,13 @@ const dismissBulkDelete = (): void => {
       @update:page="setPage"
     />
 
-    <UiBulkBar :count="selection.count.value" data-testid="support-tickets-bulk" @clear="selection.clear">
-      <UiButton
-        v-for="entry in bulkActions"
-        :key="entry.action"
-        :variant="entry.variant"
-        :size="UiSize.Sm"
-        :disabled="bulkRunning"
-        :data-testid="`support-tickets-bulk-${entry.action}`"
-        @click="handleBulkAction(entry.action)"
-      >
-        {{ entry.label }}
-      </UiButton>
-    </UiBulkBar>
+    <UiBulkBar
+      :count="selection.count.value"
+      :actions="bulkActions"
+      data-testid="support-tickets-bulk"
+      @clear="selection.clear"
+      @action="handleBulkAction($event as TicketBulkAction)"
+    />
 
     <UiDialog
       :open="confirmingBulkDelete"

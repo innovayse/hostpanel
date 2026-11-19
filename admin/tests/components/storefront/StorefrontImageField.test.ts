@@ -12,22 +12,33 @@ import { mountScreen } from '../../helpers/mount'
  * @param modelValue - The current address.
  * @param upload - The upload function.
  * @param uploadError - The store's upload sentence.
+ * @param label - The caption above the field, when it draws one.
  * @returns The wrapper.
  */
-const mountField = async (modelValue: string, upload: (file: File) => Promise<string | null> = () => Promise.resolve(null), uploadError?: string) =>
-  (await mountScreen(StorefrontImageField, { modelValue, label: 'Logo', testid: 'logo', upload, uploadError })).wrapper
+const mountField = async (modelValue: string, upload: (file: File) => Promise<string | null> = () => Promise.resolve(null), uploadError?: string, label?: string) =>
+  (await mountScreen(StorefrontImageField, { modelValue, label, alt: 'Logo', testid: 'logo', upload, uploadError })).wrapper
 
 describe('StorefrontImageField', () => {
-  it('shows no preview while the address is empty', async () => {
+  it('shows no preview while the address is empty and no caption unless it is given', async () => {
     const wrapper = await mountField('')
 
     expect(wrapper.find('[data-testid="logo-preview"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Logo')
+    // the one label left is the upload zone's own
+    expect(wrapper.findAll('label')).toHaveLength(1)
+  })
+
+  it('draws the caption it is given and names the preview with the alternative text', async () => {
+    const wrapper = await mountField('/img/a.png', undefined, undefined, 'Logo caption')
+
+    expect(wrapper.text()).toContain('Logo caption')
+    expect(wrapper.get('[data-testid="logo-preview"]').attributes('alt')).toBe('Logo')
   })
 
   it('previews the address and removes it with the button', async () => {
     const wrapper = await mountField('/img/a.png')
     expect(wrapper.get('[data-testid="logo-preview"]').attributes('src')).toBe('/img/a.png')
+    // a dark logo must stay readable on the dark card, so the preview sits on a checkerboard it can flip
+    expect(wrapper.find('[data-testid="ui-image-preview-flip"]').exists()).toBe(true)
 
     await wrapper.get('[data-testid="logo-remove"]').trigger('click')
 
@@ -74,5 +85,13 @@ describe('StorefrontImageField', () => {
       expect(wrapper.text()).toContain('The file is too large.')
     })
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('stacks the drop zone under the preview on a phone instead of cutting it at the edge', async () => {
+    const wrapper = await mountField('/img/a.png')
+    const row = wrapper.get('.flex-wrap')
+
+    expect(row.classes()).toContain('max-sm:flex-col')
+    expect(wrapper.html()).toContain('sm:min-w-56')
   })
 })

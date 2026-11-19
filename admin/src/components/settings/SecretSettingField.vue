@@ -16,6 +16,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiInputType } from '@/utils/ui/input'
 import type { UiSize } from '@/utils/ui/size'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -74,7 +75,7 @@ const cancelReplace = (): void => {
       <UiText tone="muted" size="sm" class="font-mono" :data-testid="`${testid}-masked`">
         {{ t('settings.secret.set') }}
       </UiText>
-      <UiButton
+      <UiButton :action="UiActionKind.Edit"
         type="button"
         variant="secondary"
         :size="size"
@@ -84,7 +85,7 @@ const cancelReplace = (): void => {
       >
         {{ t('settings.secret.replace') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Clear"
         type="button"
         variant="ghost"
         :size="size"
@@ -108,7 +109,7 @@ const cancelReplace = (): void => {
         :data-testid="`${testid}-input`"
         @update:model-value="emit('update:modelValue', String($event ?? ''))"
       />
-      <UiButton
+      <UiButton :action="UiActionKind.Cancel"
         v-if="hasValue"
         type="button"
         variant="ghost"

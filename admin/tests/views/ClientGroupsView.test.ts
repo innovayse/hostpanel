@@ -8,6 +8,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import ClientGroupFormDialog from '@/components/clients/ClientGroupFormDialog.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import ClientGroupsView from '@/views/ClientGroupsView.vue'
+import schema from '@/views/ClientGroupsView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { createTestI18n } from '../helpers/i18n'
 import { callsOf, json, problem, stubFetch } from '../helpers/fetch'
 
@@ -136,5 +138,22 @@ describe('ClientGroupsView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="client-groups-action-error"]').text()).toContain('Group still has clients.')
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    const { wrapper } = await mountView(json([GROUP]))
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const wrapper = mount(ClientGroupsView, {
+      global: { plugins: [createTestI18n(), createPinia()], stubs: { teleport: true } },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
+using Innovayse.Hostpanel.Application.Reports.Common.Enums;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Ssl;
@@ -29,8 +30,7 @@ public sealed class SslMonitoringService : ISslMonitoringService
     }
 
     /// <summary>Display order of the expiry groups, soonest expiry first and "no SSL" last.</summary>
-    private static readonly string[] GroupOrder =
-        ["Expires within 30 Days", "Expires within 90 Days", "Expires within 180 Days", "Expires in over 180 Days", "No SSL Detected"];
+    private static readonly SslExpiryGroup[] GroupOrder = Enum.GetValues<SslExpiryGroup>();
 
     /// <inheritdoc/>
     public async Task<SslMonitoringDto> GetReportAsync(bool includeInactive, CancellationToken ct)
@@ -137,30 +137,30 @@ public sealed class SslMonitoringService : ISslMonitoringService
     /// <returns>The report, one group per expiry bucket in <c>GroupOrder</c>.</returns>
     private static SslMonitoringDto BuildReport(IReadOnlyList<SslCheck> checks, DateTimeOffset now)
     {
-        string GetGroup(SslCheck c)
+        SslExpiryGroup GetGroup(SslCheck c)
         {
             if (!c.HasSsl || c.ExpiresAt is null)
             {
-                return "No SSL Detected";
+                return SslExpiryGroup.NoSsl;
             }
 
             var days = (c.ExpiresAt.Value - now).TotalDays;
             if (days <= 30)
             {
-                return "Expires within 30 Days";
+                return SslExpiryGroup.Within30Days;
             }
 
             if (days <= 90)
             {
-                return "Expires within 90 Days";
+                return SslExpiryGroup.Within90Days;
             }
 
             if (days <= 180)
             {
-                return "Expires within 180 Days";
+                return SslExpiryGroup.Within180Days;
             }
 
-            return "Expires in over 180 Days";
+            return SslExpiryGroup.Over180Days;
         }
 
         string FormatLastUpdate(DateTimeOffset checkedAt)
@@ -189,9 +189,9 @@ public sealed class SslMonitoringService : ISslMonitoringService
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var groups = GroupOrder
-            .Select(name => new SslMonitoringGroupDto(
-                name,
-                grouped.TryGetValue(name, out var rows)
+            .Select(group => new SslMonitoringGroupDto(
+                group,
+                grouped.TryGetValue(group, out var rows)
                     ? rows.Select(r => new SslDomainRowDto(
                         r.DomainName,
                         r.HasSsl,

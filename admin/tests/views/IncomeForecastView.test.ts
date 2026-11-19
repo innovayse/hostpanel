@@ -4,6 +4,7 @@
  */
 import { vi } from 'vitest'
 import IncomeForecastView from '@/views/IncomeForecastView.vue'
+import schema from '@/views/IncomeForecastView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
 
@@ -12,6 +13,7 @@ vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJs
 runReportCase({
   name: 'IncomeForecastView',
   view: IncomeForecastView,
+  schema,
   routes: {
     'GET /reports/income-forecast': () => json([{ month: 'Jan', monthly: 1, quarterly: 2, semiAnnual: 3, annual: 4, total: 10, currency: 'USD' }]),
   },

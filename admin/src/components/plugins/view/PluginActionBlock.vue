@@ -25,6 +25,7 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for PluginActionBlock. */
 const props = defineProps<{
@@ -122,7 +123,7 @@ const start = (): void => {
 
 <template>
   <UiStack :gap="UiGap.Xs" data-testid="plugin-action">
-    <UiButton
+    <UiButton :action="UiActionKind.Generate"
       :variant="variant"
       :size="UiSize.Sm"
       :loading="running"

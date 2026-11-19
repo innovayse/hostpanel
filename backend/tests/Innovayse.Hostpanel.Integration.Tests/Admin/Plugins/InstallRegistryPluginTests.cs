@@ -53,6 +53,14 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
             line.Description.Should().StartWith("Installed Plugin From Registry")
                 .And.Contain($"Plugin ID: {pluginId} - Version: 1.0.0")
                 .And.Contain(Convert.ToHexStringLower(SHA256.HashData(zip)));
+
+            var install = await db.InstalledPlugins.AsNoTracking().SingleAsync(p => p.PluginId == pluginId);
+            install.Source.Should().Be(PluginSource.Registry);
+            install.Signer.Should().Be(PluginSignerKind.VerifiedPublisher, "the key is a trusted one the operator did not add");
+            install.SignerKeyId.Should().Be(PluginSigningTestSeeds.TrustedKeyId);
+            install.PackageSizeBytes.Should().Be(zip.Length);
+            install.PackageSha256.Should().Be(Convert.ToHexStringLower(SHA256.HashData(zip)));
+            install.UpdatedAt.Should().BeNull("a first install is not an update");
         }
         finally
         {
@@ -181,6 +189,10 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
             var response = await client.PostAsJsonAsync(Route(pluginId), PluginRegistryTestSeeds.InstallBody("1.0.0"));
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            (await db.InstalledPlugins.AsNoTracking().SingleAsync(p => p.PluginId == pluginId)).Signer
+                .Should().Be(PluginSignerKind.OwnKey, "the key is one the operator added");
         }
         finally
         {

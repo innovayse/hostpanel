@@ -4,7 +4,13 @@
  * Under `src/views` and `src/components` (the kit in `components/ui` excepted) a template must not:
  * - render raw `table`, `thead`, `tbody`, `tfoot`, `tr`, `td` or `th` markup (UiTable and its parts draw those);
  * - put two or more UiIconButton or UiButton controls in one UiTableCell (row actions go through UiRowActions);
- * - caption a column "Actions" without the `actions` prop on its UiTableHeader (the shared actions column width).
+ * - caption a column "Actions" without the `actions` prop on its UiTableHeader (the shared compact actions column);
+ * - put a text action in any cell, not only an `actions` cell: a button or link (UiButton, UiLink, RouterLink, a) with
+ *   a button look (primary, secondary, danger, ghost, field), or whose label is a bare sentence ("Edit", "View",
+ *   `t('shared.view')`) instead of a record's own data. One action is an icon button and several are one "…" menu,
+ *   both drawn by UiRowActions, so a column never widens with a label. A link whose label is the record's data (a
+ *   client name, `#{{ id }}`, a `t` call with parameters) is navigation, not an action, and passes. A control in an
+ *   `actions` cell is always an action.
  *
  * A few files are allowed to break one rule, each named below with the reason. The list is checked too: an entry
  * whose file is gone or no longer breaks its rule fails, so the list cannot rot.
@@ -30,6 +36,8 @@ enum TableRule {
   CellButtons = 'cell-buttons',
   /** An "Actions" column header without the `actions` prop. */
   ActionsHeader = 'actions-header',
+  /** A text button or link in an actions cell instead of UiRowActions. */
+  TextAction = 'text-action',
 }
 
 /** One file allowed to break one rule, with the reason it may. */
@@ -50,6 +58,16 @@ const ALLOWED: readonly AllowedException[] = [
     reason: 'form row: a category renamed in place shows its Save and Cancel buttons in the edited row',
   },
   {
+    file: 'views/KnowledgebaseView.vue',
+    rule: TableRule.TextAction,
+    reason: 'form row: the Save and Cancel buttons of a category renamed in place are the form of the edited row, not row actions',
+  },
+  {
+    file: 'views/PredefinedRepliesView.vue',
+    rule: TableRule.TextAction,
+    reason: 'form row: the Save and Cancel buttons of a category or reply edited in place are the form of the edited row, not row actions',
+  },
+  {
     file: 'views/PredefinedRepliesView.vue',
     rule: TableRule.CellButtons,
     reason: 'form row: a category or reply edited in place shows its Save and Cancel buttons in the edited row',
@@ -68,6 +86,11 @@ const ALLOWED: readonly AllowedException[] = [
     file: 'views/OrderDetailView.vue',
     rule: TableRule.CellButtons,
     reason: 'feed: the fulfilment cell of an order line shows the fix for its state (retry, close refund) beside the badge',
+  },
+  {
+    file: 'views/OrderDetailView.vue',
+    rule: TableRule.TextAction,
+    reason: 'feed: the retry and close refund buttons carry the busy state of their line and sit in the fulfilment status cell, not in an actions column',
   },
 ]
 
@@ -107,6 +130,18 @@ const RAW_TAG = /<(table|thead|tbody|tfoot|tr|td|th)[\s>/]/g
 /** One UiTableCell with its content (cells do not nest). */
 const CELL = /<UiTableCell\b[^>]*>([\s\S]*?)<\/UiTableCell>/g
 
+/** One UiTableCell with its attributes (group 1) and its content (group 2). */
+const CELL_WITH_ATTRS = /<UiTableCell\b([^>]*)>([\s\S]*?)<\/UiTableCell>/g
+
+/** One control inside a cell: a kit button or link, a router link or an anchor, with its attributes (group 2) and label markup (group 3). */
+const CONTROL = /<(UiButton|UiLink|RouterLink|a)\b((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/\1>/g
+
+/** The button looks, which make a control an action whatever its label says. */
+const BUTTON_LOOK = /variant="(?:primary|secondary|danger|ghost|field)"|UiButtonVariant\.(?:Primary|Secondary|Danger|Ghost|Field)\b/
+
+/** A label that is only a translation key without parameters, such as `{{ t('shared.view') }}`. */
+const BARE_TRANSLATION = /^\{\{\s*t\(\s*(?:'[^']*'|"[^"]*"|`[^`]*`)\s*\)\s*\}\}$/
+
 /** A button of the kit opened inside a cell. */
 const BUTTON = /<(UiIconButton|UiButton)\b/g
 
@@ -115,6 +150,22 @@ const ACTIONS_HEADER = /<UiTableHeader\b([^>]*)>\s*\{\{\s*t\('shared\.actions'\)
 
 /** The bare `actions` prop among a tag's attributes. */
 const ACTIONS_PROP = /(?:^|\s)actions(?=\s|$)/
+
+/**
+ * Whether a control in a cell is an action rather than a data link.
+ *
+ * @param attrs - The control's attributes.
+ * @param content - The control's label markup.
+ * @param inActionsCell - Whether the cell carries the `actions` prop, where every control is an action.
+ * @returns True when the control is a text action.
+ */
+const isTextAction = (attrs: string, content: string, inActionsCell: boolean): boolean => {
+  if (inActionsCell || BUTTON_LOOK.test(attrs)) {
+    return true
+  }
+  const label = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  return label !== '' && (!label.includes('{{') || BARE_TRANSLATION.test(label))
+}
 
 /**
  * Finds which rules a template breaks.
@@ -130,6 +181,14 @@ const brokenRules = (template: string): TableRule[] => {
   for (const cell of template.matchAll(CELL)) {
     if ((cell[1]?.match(BUTTON)?.length ?? 0) >= 2) {
       broken.add(TableRule.CellButtons)
+    }
+  }
+  for (const cell of template.matchAll(CELL_WITH_ATTRS)) {
+    const inActionsCell = ACTIONS_PROP.test(cell[1] ?? '')
+    for (const control of (cell[2] ?? '').matchAll(CONTROL)) {
+      if (isTextAction(control[2] ?? '', control[3] ?? '', inActionsCell)) {
+        broken.add(TableRule.TextAction)
+      }
     }
   }
   for (const header of template.matchAll(ACTIONS_HEADER)) {
@@ -185,13 +244,42 @@ describe('table shape', () => {
     })
 
     it('catches two buttons in one cell', () => {
-      const template = '<UiTableCell><UiIconButton label="Edit" /><UiButton>Delete</UiButton></UiTableCell>'
+      const template = '<UiTableCell><UiIconButton label="Edit" /><UiButton @click="go">{{ row.name }}</UiButton></UiTableCell>'
 
       expect(brokenRules(template)).toEqual([TableRule.CellButtons])
     })
 
     it('catches an actions header without the actions prop', () => {
       expect(brokenRules(`<UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>`)).toEqual([TableRule.ActionsHeader])
+    })
+
+    it('catches a text button or link in an actions cell', () => {
+      expect(brokenRules('<UiTableCell actions><UiButton variant="link">View</UiButton></UiTableCell>')).toEqual([TableRule.TextAction])
+      expect(brokenRules('<UiTableCell actions><UiLink :to="p">View</UiLink></UiTableCell>')).toEqual([TableRule.TextAction])
+    })
+
+    it('catches a text action in a cell that is not an actions cell', () => {
+      expect(brokenRules('<UiTableCell><UiLink :to="p" variant="primary">{{ item.name }}</UiLink></UiTableCell>')).toEqual([TableRule.TextAction])
+      expect(brokenRules('<UiTableCell><UiButton :variant="UiButtonVariant.Secondary" @click="go">Open</UiButton></UiTableCell>')).toEqual([TableRule.TextAction])
+      expect(brokenRules('<UiTableCell><UiLink :to="p" variant="link">View</UiLink></UiTableCell>')).toEqual([TableRule.TextAction])
+      expect(brokenRules(`<UiTableCell><UiLink :to="p">{{ t('shared.edit') }}</UiLink></UiTableCell>`)).toEqual([TableRule.TextAction])
+      expect(brokenRules(`<UiTableCell><UiButton variant="link" @click="x">{{ t('shared.view') }}</UiButton></UiTableCell>`)).toEqual([TableRule.TextAction])
+      expect(brokenRules(`<UiTableCell><RouterLink :to="p">{{ t('shared.manage') }}</RouterLink></UiTableCell>`)).toEqual([TableRule.TextAction])
+      expect(brokenRules('<UiTableCell><a href="/x" class="y">Edit</a></UiTableCell>')).toEqual([TableRule.TextAction])
+      expect(brokenRules('<UiTableCell>{{ x }}<UiLink :to="p" variant="link">{{ item.name }}</UiLink> <UiButton variant="ghost">Edit</UiButton></UiTableCell>')).toEqual([TableRule.TextAction])
+    })
+
+    it('reads a control whose attribute holds a greater-than sign', () => {
+      expect(brokenRules('<UiTableCell><UiButton :disabled="a > b" variant="ghost" @click="() => go()">{{ row.name }}</UiButton></UiTableCell>')).toEqual([TableRule.TextAction])
+      expect(brokenRules('<UiTableCell><UiButton variant="link" @click="() => go()">{{ row.name }}</UiButton></UiTableCell>')).toEqual([])
+    })
+
+    it('passes a data link in a data cell and an icon button in an actions cell', () => {
+      expect(brokenRules('<UiTableCell><UiLink :to="p" variant="link">{{ client.name }}</UiLink></UiTableCell>')).toEqual([])
+      expect(brokenRules('<UiTableCell><UiLink :to="p" variant="link">#{{ invoice.id }}</UiLink></UiTableCell>')).toEqual([])
+      expect(brokenRules(`<UiTableCell><UiLink :to="p" variant="link">{{ t('x.invoice', { id: item.invoiceId }) }}</UiLink></UiTableCell>`)).toEqual([])
+      expect(brokenRules('<UiTableCell><UiButton variant="link" @click="open">{{ cell.text }}</UiButton></UiTableCell>')).toEqual([])
+      expect(brokenRules('<UiTableCell actions><UiIconButton label="Save" /></UiTableCell>')).toEqual([])
     })
 
     it('passes the kit shape', () => {
@@ -206,8 +294,8 @@ describe('table shape', () => {
       expect(brokenRules(template)).toEqual([])
     })
 
-    it('passes one button in a cell, a header named like the prop, and the draggable body tag', () => {
-      expect(brokenRules('<UiTableCell><UiButton>Retry</UiButton></UiTableCell>')).toEqual([])
+    it('passes one data button in a cell, a header named like the prop, and the draggable body tag', () => {
+      expect(brokenRules('<UiTableCell><UiButton>{{ row.label }}</UiButton></UiTableCell>')).toEqual([])
       expect(brokenRules('<UiTableHeader>{{ t(\'shared.actionsTaken\') }}</UiTableHeader>')).toEqual([])
       expect(brokenRules('<draggable tag="tbody" item-key="id" />')).toEqual([])
     })

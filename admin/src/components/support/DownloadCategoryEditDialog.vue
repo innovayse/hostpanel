@@ -14,6 +14,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import type { DownloadCategory, DownloadCategoryPayload } from '@/types/downloadcategory'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for DownloadCategoryEditDialog. */
 const props = defineProps<{
@@ -114,10 +115,10 @@ watch(
       />
     </UiStack>
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="downloads-edit-category-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="downloads-edit-category-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         :variant="UiButtonVariant.Primary"
         :loading="saving"
         :disabled="!name.trim()"

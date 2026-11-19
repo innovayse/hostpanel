@@ -10,6 +10,7 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -64,14 +65,14 @@ const handleSave = (): void => {
       </template>
     </UiField>
     <template #footer>
-      <UiButton
+      <UiButton :action="UiActionKind.Cancel"
         :variant="UiButtonVariant.Secondary"
         data-testid="clients-change-password-cancel"
         @click="emit('close')"
       >
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         :variant="UiButtonVariant.Primary"
         :loading="saving"
         data-testid="clients-change-password-save"

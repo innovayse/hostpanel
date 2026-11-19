@@ -35,6 +35,8 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
+import { UiActionKind } from '@/utils/ui/actions'
+import { Icon } from '@/lib/icons'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -204,7 +206,7 @@ onMounted(() => {
           data-testid="setup-password"
         />
 
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           variant="primary"
           block
           type="submit"
@@ -248,7 +250,7 @@ onMounted(() => {
           data-testid="setup-token"
         />
 
-        <UiButton
+        <UiButton :icon="Icon.ShieldCheck"
           variant="primary"
           block
           type="submit"

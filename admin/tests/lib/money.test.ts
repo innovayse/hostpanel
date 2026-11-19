@@ -9,6 +9,7 @@ import {
   REPORT_CURRENCY_RATES,
   ReportCurrency,
   currencyLabel,
+  baseCurrencyFormatter,
   currencySymbol,
   formatAffixed,
   formatCurrencyCode,
@@ -91,6 +92,18 @@ describe('formatCurrencyCode', () => {
 
   it('falls back to the number and the code for a malformed code', () => {
     expect(formatCurrencyCode(3, 'not-a-code')).toBe('3.00 not-a-code')
+  })
+})
+
+describe('baseCurrencyFormatter', () => {
+  it('formats in the currency read when the amount is formatted', () => {
+    let code = ''
+    const format = baseCurrencyFormatter(() => code)
+
+    code = 'USD'
+    expect(format(12.5)).toBe('$12.50')
+    code = 'EUR'
+    expect(format(12.5)).toBe('€12.50')
   })
 })
 

@@ -20,6 +20,21 @@ export const fieldOf = (page: Page, testId: string): Locator =>
   )
 
 /**
+ * Measures an element that must be on screen.
+ *
+ * @param locator - The element.
+ * @returns Its bounding box.
+ * @throws When the element is not rendered, so a missing element fails the test with its name instead of a null read.
+ */
+export const boxOf = async (locator: Locator): Promise<{ x: number, y: number, width: number, height: number }> => {
+  const box = await locator.boundingBox()
+  if (box === null) {
+    throw new Error(`${String(locator)} has no box: it is not rendered`)
+  }
+  return box
+}
+
+/**
  * One tab's panel on the system settings screen.
  *
  * Every panel stays mounted and only the selected one shows, so a test id such as the Save bar's

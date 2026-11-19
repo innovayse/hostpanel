@@ -10,6 +10,9 @@ import type { ServerLocation } from '@/types/serverlocation'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { renderedCaptions, stubPendingFetch } from '../helpers/schemaTable'
+import { storefrontHeadCaptions } from '../helpers/storefrontList'
+import schema from '@/views/LocationsView.schema'
 
 vi.mock('vuedraggable', async () => {
   const { defineComponent, h } = await import('vue')
@@ -141,5 +144,12 @@ describe('LocationsView', () => {
     expect(JSON.parse((put?.[1] as RequestInit | undefined)?.body as string)).toEqual({
       items: [{ id: 1, sortOrder: 0 }, { id: 2, sortOrder: 1 }],
     })
+  })
+
+  it('draws the table head from the schema columns while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountScreen(LocationsView)
+
+    expect(renderedCaptions(wrapper)).toEqual(storefrontHeadCaptions(schema.table.columns))
   })
 })

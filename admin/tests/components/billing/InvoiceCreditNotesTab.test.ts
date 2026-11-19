@@ -11,6 +11,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -87,7 +88,7 @@ describe('InvoiceCreditNotesTab', () => {
       method: 'AccountCredit',
       reason: 'Two days down',
     })
-    expect(wrapper.get('[data-testid="billing-invoice-credit-notes-feedback"]').text()).toBe('The credit note was issued.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['The credit note was issued.'])
     expect(wrapper.find('[data-testid="billing-credit-note-dialog"]').exists()).toBe(false)
     expect(mock.mock.calls.some(([url]) => String(url) === '/api/billing/1')).toBe(true)
   })

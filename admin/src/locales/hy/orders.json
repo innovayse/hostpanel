@@ -1,6 +1,5 @@
 {
   "orderDetail": {
-    "backToOrders": "Վերադառնալ պատվերներին",
     "accept": "Ընդունել",
     "orderInfo": "Տեղեկություններ պատվերի մասին",
     "overview": "Ակնարկ",
@@ -33,7 +32,6 @@
     "refundClosed": "Տողը փակվեց որպես վերադարձված։"
   },
   "ordersList": {
-    "orders": "Պատվերներ",
     "manageCustomerOrders": "Հաճախորդների պատվերների կառավարում",
     "searchOrders": "Պատվերների որոնում ըստ համարի կամ id-ի",
     "order": "Պատվեր №",

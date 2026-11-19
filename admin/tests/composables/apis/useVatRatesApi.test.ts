@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useVatRatesApi } from '@/composables/apis/useVatRatesApi'
-import { VatRateKind } from '@/types/vatrate'
+import { VatRateKind, VatRateStatus } from '@/types/vatrate'
 import type { SaveVatRatePayload } from '@/types/vatrate'
 import { callOf, json, problem, stubFetch } from '../../helpers/fetch'
 
@@ -23,6 +23,13 @@ describe('useVatRatesApi', () => {
 
     expect(await useVatRatesApi().listVatRates({ page: 2, pageSize: 20, search: 'de' })).toEqual(page)
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/vat-rates?page=2&pageSize=20&search=de', method: 'GET' })
+  })
+
+  it('listVatRates sends the kind and status filters', async () => {
+    const mock = stubFetch(json({ items: [] }))
+
+    await useVatRatesApi().listVatRates({ page: 1, pageSize: 20, kind: VatRateKind.Standard, status: VatRateStatus.Active })
+    expect(callOf(mock).url).toBe('/api/admin/vat-rates?page=1&pageSize=20&kind=Standard&status=Active')
   })
 
   it('listVatRates leaves out a search that is not set', async () => {

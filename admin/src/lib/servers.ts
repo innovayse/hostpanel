@@ -1,9 +1,12 @@
 /**
- * Pure helpers of the servers screens: a server's last known state, how full it is and how its account usage reads.
+ * Pure helpers of the servers screens: a server's last known state, how full it is, how its account usage reads and the facts of its card.
  */
 import { ServerState } from '@/types/server'
 import type { ServerDto } from '@/types/server'
 import { EMPTY_VALUE } from '@/lib/format'
+import { Icon } from '@/lib/icons'
+import { formatPlainAmount } from '@/lib/money'
+import { translate } from '@/lib/translate'
 import { UiTone } from '@/utils/ui/tone'
 
 /** What the state helper reads of a server; a list row and a lean option both have it. */
@@ -65,4 +68,84 @@ export const serverAccountsLabel = (server: ServerCapacitySource): string => {
     return EMPTY_VALUE
   }
   return server.limits.maxAccounts === null ? `${server.accountsCount}` : `${server.accountsCount} / ${server.limits.maxAccounts}`
+}
+
+/** The facts a server card shows beside its name, in display order. */
+export enum ServerFactKey {
+  /** The group the server belongs to. */
+  Group = 'group',
+  /** The datacenter the server is hosted in. */
+  Datacenter = 'datacenter',
+  /** How many active services run on the server. */
+  Services = 'services',
+  /** What those services renew for each month. */
+  Revenue = 'revenue',
+  /** How the panel reaches the server's API. */
+  Connection = 'connection',
+  /** The nameservers the server's accounts are delegated to. */
+  NameServers = 'nameServers',
+}
+
+/** How many fact placeholders the server card skeleton draws; the real count follows the data a server has. */
+export const SERVER_FACT_SLOTS = 4
+
+/** One fact of a server card: what it is, its icon and its already translated caption and value. */
+export interface ServerFact {
+  /** Which fact it is; part of its test id. */
+  key: ServerFactKey
+  /** Inner SVG markup of its icon. */
+  icon: string
+  /** Translated caption. */
+  label: string
+  /** Translated, formatted value. */
+  value: string
+}
+
+/** Locale key of the caption of each server fact. */
+const SERVER_FACT_LABEL_KEYS: Record<ServerFactKey, string> = {
+  [ServerFactKey.Group]: 'servers.servers.factGroup',
+  [ServerFactKey.Datacenter]: 'servers.servers.factDatacenter',
+  [ServerFactKey.Services]: 'servers.servers.factServices',
+  [ServerFactKey.Revenue]: 'servers.servers.factRevenue',
+  [ServerFactKey.Connection]: 'servers.servers.factConnection',
+  [ServerFactKey.NameServers]: 'servers.servers.factNameServers',
+}
+
+/**
+ * The nameserver host names a server's accounts are delegated to.
+ *
+ * @param server - The server.
+ * @returns The host names that are set, in order; empty when none is.
+ */
+export const serverNameServerHosts = (server: Pick<ServerDto, 'nameServers'>): string[] => {
+  const ns = server.nameServers
+  return [ns.ns1Hostname, ns.ns2Hostname, ns.ns3Hostname, ns.ns4Hostname, ns.ns5Hostname].filter((host): host is string => Boolean(host))
+}
+
+/**
+ * The facts a server card shows: group, datacenter, services and their monthly revenue, how the API is reached and the
+ * nameservers. A fact the server has no data for is left out, never filled with a made-up value.
+ *
+ * @param server - The server, as the list returns it.
+ * @returns The facts, in display order.
+ */
+export const serverFacts = (server: ServerDto): ServerFact[] => {
+  const nameServers = serverNameServerHosts(server)
+  const facts: [ServerFactKey, string, string | null][] = [
+    [ServerFactKey.Group, Icon.Folder, server.serverGroupName],
+    [ServerFactKey.Datacenter, Icon.Rack, server.hosting.datacenter],
+    [ServerFactKey.Services, Icon.Box, server.usage ? String(server.usage.activeServices) : null],
+    [
+      ServerFactKey.Revenue,
+      Icon.Dollar,
+      server.usage ? translate('servers.servers.perMonth', { amount: formatPlainAmount(server.usage.monthlyRevenue, server.usage.currency) }) : null,
+    ],
+    [
+      ServerFactKey.Connection,
+      server.endpoint.useSSL ? Icon.ShieldCheck : Icon.ShieldOff,
+      translate(server.endpoint.useSSL ? 'servers.servers.connectionHttps' : 'servers.servers.connectionHttp'),
+    ],
+    [ServerFactKey.NameServers, Icon.Globe, nameServers.length > 0 ? nameServers.join(', ') : null],
+  ]
+  return facts.flatMap(([key, icon, value]) => (value ? [{ key, icon, label: translate(SERVER_FACT_LABEL_KEYS[key]), value }] : []))
 }

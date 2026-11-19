@@ -302,6 +302,26 @@ public class PortalSettingKeysTests
         Assert.Equal(valid, pattern.Regex.IsMatch(value));
     }
 
+    /// <summary>The time zone accepts an IANA id (or UTC) and refuses the old free-text offset and anything else.</summary>
+    /// <param name="value">The value to test.</param>
+    /// <param name="valid">Whether the shape should accept it.</param>
+    [Theory]
+    [InlineData("Asia/Yerevan", true)]
+    [InlineData("America/Argentina/Buenos_Aires", true)]
+    [InlineData("Etc/GMT-4", true)]
+    [InlineData("UTC", true)]
+    [InlineData("UTC+4", false)]
+    [InlineData("GMT+4", false)]
+    [InlineData("Yerevan", false)]
+    [InlineData("Asia/Yerevan/../x/y", false)]
+    [InlineData("Asia/Yer evan", false)]
+    public void ContactTimezone_PatternAcceptsOnlyAnIanaId(string value, bool valid)
+    {
+        var pattern = PortalSettingKeys.Patterns[PortalSettingKeys.ContactTimezone];
+
+        Assert.Equal(valid, pattern.Regex.IsMatch(value));
+    }
+
     /// <summary>Every social and app launcher link has the https pattern, and it refuses anything else.</summary>
     /// <param name="value">The candidate value.</param>
     /// <param name="valid">Whether every link key must accept it.</param>

@@ -9,7 +9,8 @@
  * `loading` keeps the card where it will be: the `header` slot (the title row) stays, and the default
  * slot is swapped for placeholder lines, so the page keeps its layout while the data loads. The card is
  * marked `aria-busy`. The `footer` slot is the strip under the body (a pager, a total) with the standard divider and
- * padding; it stays while the body loads.
+ * padding; it stays while the body loads. `clip` cuts the content at the rounded corners with `overflow: clip`, which, unlike
+ * `overflow: hidden`, makes the card no scroll container, so a sticky table header inside it still sticks to the page.
  */
 import { computed } from 'vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
@@ -24,6 +25,8 @@ const props = withDefaults(defineProps<{
   radius?: UiCardRadius
   /** Raises the card onto the denser frosted surface with a deep shadow (menus, popovers). */
   elevated?: boolean
+  /** Cuts the content at the rounded corners (a table whose sticky header fill would poke out of them) without making the card a scroll container. */
+  clip?: boolean
   /** Shows placeholder lines in place of the body; the `header` slot stays. */
   loading?: boolean
   /** Number of placeholder lines drawn while loading. */
@@ -32,6 +35,7 @@ const props = withDefaults(defineProps<{
   padding: 'none',
   radius: UiCardRadius.Card,
   elevated: false,
+  clip: false,
   loading: false,
   skeletonLines: 3,
 })
@@ -58,6 +62,7 @@ const classes = computed<string[]>(() => [
   props.elevated ? 'glass-strong shadow-lg' : 'glass',
   radiusClasses[props.radius],
   paddingClasses[props.padding],
+  props.clip ? 'overflow-clip' : '',
 ])
 </script>
 

@@ -9,6 +9,9 @@
  * inside its dialog, a delete (confirmed first in a danger prompt) or a saved dialog in the outcome
  * line under the header. The SSH key management dialog confirms its own saves: it stays open, since
  * its later steps use what was saved.
+ *
+ * The placeholder cards of the grid, the card of the groups and the head of its table are the ones of `ServersView.schema`,
+ * which `UiSkeletonOf` also draws while the view downloads.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -21,25 +24,22 @@ import GroupFormModal from '@/components/servers/GroupFormModal.vue'
 import ServerFormModal from '@/components/servers/ServerFormModal.vue'
 import ServerSshSettingsModal from '@/components/servers/ServerSshSettingsModal.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -52,15 +52,24 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { EMPTY_VALUE } from '@/lib/format'
+import { Icon } from '@/lib/icons'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema, { SERVER_CARDS_PART, SERVER_GROUPS_PART, SERVER_GROUPS_TABLE } from '@/views/ServersView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** Translation function. */
 const { t } = useI18n()
 
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('servers.servers.createGroup'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Secondary, testid: 'servers-add-group', onSelect: openAddGroup },
+  { label: t('servers.servers.addNewServer'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'servers-add', onSelect: openAddServer },
+])
+
 /** Servers store: the lists, the refusal sentences and the actions. */
 const store = useServersStore()
-
-/** Placeholder cards drawn in the servers grid while the list loads. */
-const LOADING_CARD_COUNT = 3
 
 /** True while a server save is in flight. */
 const savingServer = ref(false)
@@ -375,10 +384,10 @@ const serverActions = (server: ServerDto): UiMenuAction[] => {
    */
   const onDelete = (): void => { deleteServerTarget.value = server }
   return [
-    { label: t('shared.testConnection'), testid: `server-test-${server.id}`, disabled: testingIds.value.includes(server.id), onSelect: onTest },
-    { label: t('servers.ssh.open'), testid: `server-ssh-${server.id}`, onSelect: onSsh },
-    { label: t('shared.edit'), testid: `server-edit-${server.id}`, onSelect: onEdit },
-    { label: t('shared.delete'), testid: `server-delete-${server.id}`, onSelect: onDelete, danger: true },
+    { label: t('shared.testConnection'), icon: Icon.Zap, testid: `server-test-${server.id}`, disabled: testingIds.value.includes(server.id), onSelect: onTest },
+    { label: t('servers.ssh.open'), icon: Icon.Terminal, testid: `server-ssh-${server.id}`, onSelect: onSsh },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `server-edit-${server.id}`, onSelect: onEdit },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `server-delete-${server.id}`, onSelect: onDelete, danger: true },
   ]
 }
 
@@ -400,8 +409,8 @@ const serverGroupActions = (group: ServerGroupDto): UiMenuAction[] => {
    */
   const onDelete = (): void => { deleteGroupTarget.value = group }
   return [
-    { label: t('shared.edit'), testid: `server-group-edit-${group.id}`, onSelect: onEdit },
-    { label: t('shared.delete'), testid: `server-group-delete-${group.id}`, onSelect: onDelete, danger: true },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `server-group-edit-${group.id}`, onSelect: onEdit },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `server-group-delete-${group.id}`, onSelect: onDelete, danger: true },
   ]
 }
 
@@ -415,18 +424,11 @@ onMounted(() => {
   <UiStack gap="lg" class="w-full">
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="servers-feedback" />
 
-    <UiPageHeader
-      :title="t('servers.servers.servers')"
-      :subtitle="t('servers.servers.manageProvisioningServersAndLoad')"
-    >
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)" >
       <template #actions>
         <PageHelpLink :url="guideUrl" />
-        <UiButton variant="secondary" data-testid="servers-add-group" @click="openAddGroup">
-          {{ t('servers.servers.createGroup') }}
-        </UiButton>
-        <UiButton variant="primary" data-testid="servers-add" @click="openAddServer">
-          {{ t('servers.servers.addNewServer') }}
-        </UiButton>
+        
+        
       </template>
     </UiPageHeader>
 
@@ -484,7 +486,7 @@ onMounted(() => {
         <!-- One grid for every module, so a module with a single server never leaves half the row empty -->
         <UiGrid min-item-width="md" gap="md">
           <template v-if="store.loading">
-            <ServerCard v-for="placeholder in LOADING_CARD_COUNT" :key="placeholder" />
+            <ServerCard v-for="placeholder in SERVER_CARDS_PART.count" :key="placeholder" />
           </template>
           <template v-else>
             <ServerCard
@@ -520,21 +522,13 @@ onMounted(() => {
       </template>
     </UiEmptyState>
 
-    <!-- Groups section -->
-    <UiStack gap="sm">
-      <UiHeading :level="2" variant="section">{{ t('servers.servers.groups') }}</UiHeading>
-      <UiText tone="secondary" size="sm">{{ t('servers.servers.serverGroupsAllowYouTo') }}</UiText>
+    <!-- The card of the groups: its placeholder while the lists load, the note and the table or the empty line after -->
+    <UiDetailCards :columns="SERVER_GROUPS_PART.columns" :loading="store.loading">
+      <template #card-groups>
+        <UiText tone="secondary" size="sm">{{ t('servers.servers.serverGroupsAllowYouTo') }}</UiText>
 
-      <UiCard v-if="store.loading || store.groups.length > 0">
-        <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" data-testid="server-groups-table">
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader :card-role="UiCardRole.Title">{{ t('servers.servers.groupName') }}</UiTableHeader>
-              <UiTableHeader>{{ t('servers.servers.fillType') }}</UiTableHeader>
-              <UiTableHeader>{{ t('servers.servers.servers') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+        <UiTable v-if="store.groups.length > 0" :density="UiTableDensity.Comfortable" data-testid="server-groups-table">
+          <UiSchemaTableHead :columns="SERVER_GROUPS_TABLE.columns" />
           <UiTableBody divided>
             <UiTableRow v-for="group in store.groups" :key="group.id" hoverable :data-testid="`server-group-row-${group.id}`">
               <UiTableCell>{{ group.name }}</UiTableCell>
@@ -548,16 +542,16 @@ onMounted(() => {
             </UiTableRow>
           </UiTableBody>
         </UiTable>
-      </UiCard>
 
-      <!-- Groups empty -->
-      <UiStack v-else direction="row" align="center" gap="xs" data-testid="server-groups-empty">
-        <UiText tone="muted" size="md">{{ t('servers.servers.noGroupsYet') }}</UiText>
-        <UiButton variant="link" data-testid="server-groups-create-first" @click="openAddGroup">
-          {{ t('servers.servers.createOne') }}
-        </UiButton>
-      </UiStack>
-    </UiStack>
+        <!-- Groups empty -->
+        <UiStack v-else direction="row" align="center" gap="xs" data-testid="server-groups-empty">
+          <UiText tone="muted" size="md">{{ t('servers.servers.noGroupsYet') }}</UiText>
+          <UiButton variant="link" data-testid="server-groups-create-first" @click="openAddGroup">
+            {{ t('servers.servers.createOne') }}
+          </UiButton>
+        </UiStack>
+      </template>
+    </UiDetailCards>
 
     <!-- Server form dialog -->
     <ServerSshSettingsModal

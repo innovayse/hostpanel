@@ -10,18 +10,15 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
-import UiField from '@/components/ui/UiField.vue'
-import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
@@ -31,6 +28,9 @@ import { useBillableItemsStore } from '@/stores/billableItems'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { CurrencyCode } from '@/types/currency'
 import { AppRoute } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema, { ITEM_SECTION_KEY, RECURRING_ITEM_SECTION } from '@/views/AddBillableItemView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translator for the screen's labels. */
 const { t } = useI18n()
@@ -68,9 +68,11 @@ const recurringPeriod = ref<RecurringPeriod>(RecurringPeriod.Monthly)
 /** True when the charge recurs, so the recurrence fields show. */
 const isRecurring = computed<boolean>(() => type.value === BillableItemType.Recurring)
 
-/** Label of the due date field: the invoice day of a one-time charge, the next due date of a recurring one. */
-const dueDateLabel = computed<string>(() =>
-  isRecurring.value ? t('billing.addBillableItem.nextDueDate') : t('billing.addBillableItem.invoiceOn'),
+/** The columns of the form: the schema's, with the card of a recurring charge while the charge recurs. */
+const columns = computed(() =>
+  schema.columns.map(column =>
+    column.map(section => (section.key === ITEM_SECTION_KEY && isRecurring.value ? RECURRING_ITEM_SECTION : section)),
+  ),
 )
 
 /** Creates the item and returns to the list when it was accepted. */
@@ -95,75 +97,64 @@ onMounted(loadClients)
 
 <template>
   <UiStack data-testid="billing-add-billable-item-view">
-    <UiPageHeader :title="t('shared.addBillableItem')" :subtitle="t('billing.addBillableItem.createANewBillableItem')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiCard padding="lg" class="max-w-3xl">
-      <UiForm stacked @submit="submit">
-        <UiAlert v-if="store.error" variant="error" data-testid="billing-add-billable-item-error">
-          {{ store.error }}
-        </UiAlert>
+    <UiAlert v-if="store.error" variant="error" data-testid="billing-add-billable-item-error">
+      {{ store.error }}
+    </UiAlert>
 
-        <UiField :label="t('shared.client')" :error="store.fieldErrors.clientId">
-          <UiClientSelect
-            v-model="clientId"
-            :clients="clients"
-            :placeholder="t('shared.selectAClient')"
-          />
-        </UiField>
+    <UiSchemaForm :columns="columns" :errors="store.fieldErrors" class="max-w-3xl" @submit="submit">
+      <template #field-clientId>
+        <UiClientSelect
+          v-model="clientId"
+          :clients="clients"
+          :placeholder="t('shared.selectAClient')"
+        />
+      </template>
+      <template #field-description="{ id, invalid }">
+        <UiInput
+          :id="id"
+          v-model="description"
+          type="text"
+          :invalid="invalid"
+          :placeholder="t('billing.addBillableItem.whatIsThisChargeFor')"
+          data-testid="billing-add-billable-item-description"
+        />
+      </template>
+      <template #field-amount>
+        <UiNumberInput v-model="amount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-add-billable-item-amount" />
+      </template>
+      <template #field-currency>
+        <UiSelect v-model="currency" :options="CURRENCY_OPTIONS" :placeholder="t('shared.currency')" />
+      </template>
+      <template #field-type>
+        <UiSelect v-model="type" :options="BILLABLE_ITEM_TYPE_OPTIONS" :placeholder="t('shared.type')" data-testid="billing-add-billable-item-type" />
+      </template>
+      <template #field-nextDueDate>
+        <UiDatePicker
+          v-model="nextDueDate"
+          :direction="UiDatePickerDirection.Future"
+          :placeholder="t('shared.selectDate')"
+          data-testid="billing-add-billable-item-next-due-date"
+        />
+      </template>
+      <template #field-recurringPeriod>
+        <UiSelect
+          v-model="recurringPeriod"
+          :options="RECURRING_PERIOD_OPTIONS"
+          :placeholder="t('billing.addBillableItem.recurringPeriod')"
+          data-testid="billing-add-billable-item-recurring-period"
+        />
+      </template>
 
-        <UiField :label="t('shared.description')" :error="store.fieldErrors.description">
-          <template #default="{ id, invalid }">
-            <UiInput
-              :id="id"
-              v-model="description"
-              type="text"
-              :invalid="invalid"
-              :placeholder="t('billing.addBillableItem.whatIsThisChargeFor')"
-              data-testid="billing-add-billable-item-description"
-            />
-          </template>
-        </UiField>
-
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.amount')" :error="store.fieldErrors.amount">
-            <UiNumberInput v-model="amount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-add-billable-item-amount" />
-          </UiField>
-          <UiField :label="t('shared.currency')" :error="store.fieldErrors.currency">
-            <UiSelect v-model="currency" :options="CURRENCY_OPTIONS" :placeholder="t('shared.currency')" />
-          </UiField>
-          <UiField :label="t('shared.type')" :error="store.fieldErrors.type">
-            <UiSelect v-model="type" :options="BILLABLE_ITEM_TYPE_OPTIONS" :placeholder="t('shared.type')" data-testid="billing-add-billable-item-type" />
-          </UiField>
-          <UiField :label="dueDateLabel" :error="store.fieldErrors.nextDueDate" data-testid="billing-add-billable-item-next-due-date-field">
-            <UiDatePicker
-              v-model="nextDueDate"
-              :direction="UiDatePickerDirection.Future"
-              :placeholder="t('shared.selectDate')"
-              data-testid="billing-add-billable-item-next-due-date"
-            />
-          </UiField>
-        </UiGrid>
-
-        <UiGrid v-if="isRecurring" :columns="2">
-          <UiField :label="t('billing.addBillableItem.recurringPeriod')" :error="store.fieldErrors.recurringPeriod">
-            <UiSelect
-              v-model="recurringPeriod"
-              :options="RECURRING_PERIOD_OPTIONS"
-              :placeholder="t('billing.addBillableItem.recurringPeriod')"
-              data-testid="billing-add-billable-item-recurring-period"
-            />
-          </UiField>
-        </UiGrid>
-
-        <UiFormActions>
-          <UiLink :to="AppRoute.BillingBillableItems" variant="ghost" data-testid="billing-add-billable-item-cancel">
-            {{ t('shared.cancel') }}
-          </UiLink>
-          <UiButton type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-billable-item-submit">
-            {{ t('shared.addBillableItem') }}
-          </UiButton>
-        </UiFormActions>
-      </UiForm>
-    </UiCard>
+      <UiFormActions>
+        <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingBillableItems" variant="ghost" data-testid="billing-add-billable-item-cancel">
+          {{ t('shared.cancel') }}
+        </UiLink>
+        <UiButton :action="UiActionKind.Add" type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-billable-item-submit">
+          {{ t('shared.addBillableItem') }}
+        </UiButton>
+      </UiFormActions>
+    </UiSchemaForm>
   </UiStack>
 </template>

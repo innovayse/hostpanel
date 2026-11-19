@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Plugins.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -26,18 +27,24 @@ public sealed class InstallPluginHandler
     /// <summary>Stages the audit line for the install.</summary>
     private readonly IActivityLogger _activityLogger;
 
-    /// <summary>Saves the audit line.</summary>
+    /// <summary>Saves the audit line and the install record.</summary>
     private readonly IHostpanelDbContext _db;
+
+    /// <summary>Stages the install record of the accepted package.</summary>
+    private readonly InstalledPluginRecorder _recorder;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Checks and unpacks the uploaded archive.</param>
     /// <param name="activityLogger">Stages the audit line for the install.</param>
-    /// <param name="db">Saves the audit line.</param>
-    public InstallPluginHandler(IPluginPackageStore store, IActivityLogger activityLogger, IHostpanelDbContext db)
+    /// <param name="db">Saves the audit line and the install record.</param>
+    /// <param name="recorder">Stages the install record of the accepted package.</param>
+    public InstallPluginHandler(
+        IPluginPackageStore store, IActivityLogger activityLogger, IHostpanelDbContext db, InstalledPluginRecorder recorder)
     {
         _store = store;
         _activityLogger = activityLogger;
         _db = db;
+        _recorder = recorder;
     }
 
     /// <summary>
@@ -99,6 +106,7 @@ public sealed class InstallPluginHandler
 
         var staged = outcome.Outcome == PluginPackageOutcome.Staged;
         await _activityLogger.RecordAsync(new ActivityLogEntry(null, DescribeAccepted(outcome, staged)), ct);
+        await _recorder.RecordAsync(outcome, PluginSource.Uploaded, ct);
         await _db.SaveChangesAsync(ct);
 
         return Result<PluginActionResultDto>.Success(

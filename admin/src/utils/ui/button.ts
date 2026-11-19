@@ -5,8 +5,7 @@
  * is fully owned by the kit and reads the theme tokens only.
  */
 import { focusRingClasses } from '@/utils/ui/input'
-import { controlRadiusClasses } from '@/utils/ui/size'
-import type { UiSize } from '@/utils/ui/size'
+import { controlRadiusClasses, iconButtonIconSize, UiSize } from '@/utils/ui/size'
 
 /** Closed set of button looks. */
 export const UiButtonVariant = {
@@ -70,13 +69,18 @@ export const buttonBaseClasses = `inline-flex items-center justify-center gap-1.
 export const iconTriggerClasses =
   'inline-flex h-10.5 min-w-10.5 items-center justify-center rounded-control text-text-secondary transition-colors group-hover:bg-surface-hover group-hover:text-text-primary'
 
+/** Size of the icon inside an icon trigger and the top bar's other 42px icon buttons: the icon size the kit pairs with the md button, written once. */
+export const iconTriggerIconSize = iconButtonIconSize[UiSize.Md]
+
 /**
  * Corner radius of a button-like control: the `field` look is always a pill, every other look takes the radius of its size.
- * Radius comes from this one function, so no two classes of the same property compete.
+ * A control asked to be a `pill` (a back link) is a pill whatever its look. Radius comes from this one function, so no two
+ * classes of the same property compete.
  *
  * @param variant - The look.
  * @param size - The size.
+ * @param pill - Whether the control is a pill whatever its look.
  * @returns The radius class.
  */
-export const buttonRadiusClasses = (variant: UiButtonVariant, size: UiSize): string =>
-  variant === UiButtonVariant.Field ? 'rounded-pill' : controlRadiusClasses[size]
+export const buttonRadiusClasses = (variant: UiButtonVariant, size: UiSize, pill = false): string =>
+  pill || variant === UiButtonVariant.Field ? 'rounded-pill' : controlRadiusClasses[size]

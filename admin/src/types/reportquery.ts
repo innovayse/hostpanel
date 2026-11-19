@@ -5,6 +5,7 @@
  */
 import type { FilterRow } from '@/components/ui/UiAdvancedFilters.vue'
 import type { ReportColumn } from '@/types/reportcolumn'
+import type { DateRangePreset } from '@/utils/ui/datePicker'
 
 /** A date range as the range picker holds it: from and to, or nothing chosen. */
 export type ReportRangeValue = [string, string] | null
@@ -32,6 +33,12 @@ export interface ReportQueryConfig {
   exportPath?: string
   /** Rows per page. */
   pageSize: number
+  /** Keys of the columns shown before the operator chooses any: the report's main ones, so the first result is a useful table. */
+  defaultColumns: readonly string[]
+  /** Preset each date range starts on, by range key; a range without an entry starts empty. */
+  defaultRanges: Readonly<Record<string, DateRangePreset>>
+  /** Key of the field the first advanced filter row starts on, so it is not left on "None". */
+  defaultFilterField: string
 }
 
 /** What the query report page reads from the state a screen builds with `useQueryReport`. */

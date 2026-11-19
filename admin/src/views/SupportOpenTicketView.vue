@@ -10,12 +10,9 @@ import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -26,12 +23,14 @@ import { useClientsStore } from '@/stores/clients'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority } from '@/types/ticket'
 import type { ClientListItem } from '@/types/client'
-import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
+import schema from '@/views/SupportOpenTicketView.schema'
 import { AppRoute, supportTicketPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -162,139 +161,121 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiPageHeader :title="t('shared.openNewTicket')">
-      <template #actions>
-        <UiLink
-          :to="AppRoute.SupportTickets"
-          :variant="UiButtonVariant.Secondary"
-          :size="UiSize.Sm"
-          data-testid="support-open-ticket-back"
-        >
-          <UiIcon :markup="Icon.Back" :size="UiSize.Sm" />
-          {{ t('shared.back') }}
-        </UiLink>
-      </template>
-    </UiPageHeader>
+    <UiPageHeader
+      v-bind="schemaHeader(schema, t)"
+      :back-to="AppRoute.SupportTickets"
+      :back-label="t('shared.tickets')"
+      back-testid="support-open-ticket-back"
+    />
 
-    <UiCard padding="lg">
-      <UiStack>
-        <UiField :label="t('shared.client')" :error="store.fieldErrors.clientId">
-          <UiStack class="relative" gap="xs">
-            <UiInput
-              :model-value="clientSearch"
-              :placeholder="t('support.supportOpenTicket.searchByNameEmailOr')"
-              data-testid="support-open-ticket-client"
-              @update:model-value="handleClientSearch"
-              @focus="showClientDropdown = clientResults.length > 0"
-            />
-            <UiStack v-if="selectedClientId !== null" direction="row" justify="end">
-              <UiButton
-                :variant="UiButtonVariant.Link"
-                :size="UiSize.Sm"
-                data-testid="support-open-ticket-clear-client"
-                @click="clearClient"
-              >
-                {{ t('shared.clear') }}
-              </UiButton>
-            </UiStack>
-            <UiCard
-              v-if="showClientDropdown"
-              elevated
-              class="absolute z-10 top-full mt-1 w-full"
-              data-testid="support-open-ticket-client-results"
-            >
-              <UiButton
-                v-for="client in clientResults"
-                :key="client.id"
-                block
-                class="justify-start"
-                :data-testid="`support-open-ticket-client-${client.id}`"
-                @click="selectClient(client)"
-              >
-                <UiText tone="primary" size="md">{{ client.firstName }} {{ client.lastName }}</UiText>
-                <UiText tone="muted" size="md">#{{ client.id }}</UiText>
-                <UiText tone="muted" size="md">{{ client.email }}</UiText>
-              </UiButton>
-            </UiCard>
-          </UiStack>
-        </UiField>
-
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.name')">
-            <UiInput
-              :model-value="clientName"
-              readonly
-              :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
-              data-testid="support-open-ticket-name"
-            />
-          </UiField>
-
-          <UiField :label="t('shared.emailAddress')">
-            <UiInput
-              :model-value="clientEmail"
-              readonly
-              :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
-              data-testid="support-open-ticket-email"
-            />
-          </UiField>
-        </UiGrid>
-
-        <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">
+    <UiSchemaForm :columns="schema.columns" :errors="store.fieldErrors">
+      <template #field-clientId>
+        <UiStack class="relative" gap="xs">
           <UiInput
-            v-model="subject"
-            :placeholder="t('support.supportOpenTicket.ticketSubject')"
-            data-testid="support-open-ticket-subject"
+            :model-value="clientSearch"
+            :placeholder="t('support.supportOpenTicket.searchByNameEmailOr')"
+            data-testid="support-open-ticket-client"
+            @update:model-value="handleClientSearch"
+            @focus="showClientDropdown = clientResults.length > 0"
           />
-        </UiField>
-
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.department')" :error="store.fieldErrors.departmentId">
-            <UiErrorState
-              v-if="store.departmentsError !== null"
-              :message="store.departmentsError"
-              testid="support-open-ticket-departments-error"
-              @retry="store.fetchDepartments"
-            />
-            <UiSelect
-              v-else
-              v-model="departmentId"
-              :options="departmentOptions"
-              :placeholder="t('shared.selectDepartment')"
-              data-testid="support-open-ticket-department"
-            />
-          </UiField>
-          <UiField :label="t('shared.priority')">
-            <UiSelect
-              v-model="priority"
-              :options="TICKET_PRIORITY_OPTIONS"
-              :placeholder="t('shared.selectPriority')"
-              data-testid="support-open-ticket-priority"
-            />
-          </UiField>
-        </UiGrid>
-
-        <UiField :label="t('shared.message')" :error="store.fieldErrors.message">
-          <UiTextarea
-            v-model="message"
-            rows="10"
-            :placeholder="t('support.supportOpenTicket.describeTheIssue')"
-            data-testid="support-open-ticket-message"
-          />
-        </UiField>
-
-        <UiStack direction="row">
-          <UiButton
-            :variant="UiButtonVariant.Primary"
-            :loading="store.loading"
-            :disabled="!canSubmit"
-            data-testid="support-open-ticket-submit"
-            @click="handleSubmit"
+          <UiStack v-if="selectedClientId !== null" direction="row" justify="end">
+            <UiButton
+              :variant="UiButtonVariant.Link"
+              :size="UiSize.Sm"
+              data-testid="support-open-ticket-clear-client"
+              @click="clearClient"
+            >
+              {{ t('shared.clear') }}
+            </UiButton>
+          </UiStack>
+          <UiCard
+            v-if="showClientDropdown"
+            elevated
+            class="absolute z-10 top-full mt-1 w-full"
+            data-testid="support-open-ticket-client-results"
           >
-            {{ t('support.supportOpenTicket.openTicket') }}
-          </UiButton>
+            <UiButton
+              v-for="client in clientResults"
+              :key="client.id"
+              block
+              class="justify-start"
+              :data-testid="`support-open-ticket-client-${client.id}`"
+              @click="selectClient(client)"
+            >
+              <UiText tone="primary" size="md">{{ client.firstName }} {{ client.lastName }}</UiText>
+              <UiText tone="muted" size="md">#{{ client.id }}</UiText>
+              <UiText tone="muted" size="md">{{ client.email }}</UiText>
+            </UiButton>
+          </UiCard>
         </UiStack>
-        <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="support-open-ticket-error" />
+      </template>
+      <template #field-name>
+        <UiInput
+          :model-value="clientName"
+          readonly
+          :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
+          data-testid="support-open-ticket-name"
+        />
+      </template>
+      <template #field-email>
+        <UiInput
+          :model-value="clientEmail"
+          readonly
+          :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
+          data-testid="support-open-ticket-email"
+        />
+      </template>
+      <template #field-subject>
+        <UiInput
+          v-model="subject"
+          :placeholder="t('support.supportOpenTicket.ticketSubject')"
+          data-testid="support-open-ticket-subject"
+        />
+      </template>
+      <template #field-departmentId>
+        <UiErrorState
+          v-if="store.departmentsError !== null"
+          :message="store.departmentsError"
+          testid="support-open-ticket-departments-error"
+          @retry="store.fetchDepartments"
+        />
+        <UiSelect
+          v-else
+          v-model="departmentId"
+          :options="departmentOptions"
+          :placeholder="t('shared.selectDepartment')"
+          data-testid="support-open-ticket-department"
+        />
+      </template>
+      <template #field-priority>
+        <UiSelect
+          v-model="priority"
+          :options="TICKET_PRIORITY_OPTIONS"
+          :placeholder="t('shared.selectPriority')"
+          data-testid="support-open-ticket-priority"
+        />
+      </template>
+      <template #field-message>
+        <UiTextarea
+          v-model="message"
+          rows="10"
+          :placeholder="t('support.supportOpenTicket.describeTheIssue')"
+          data-testid="support-open-ticket-message"
+        />
+      </template>
+
+      <UiStack direction="row">
+        <UiButton :action="UiActionKind.Add"
+          :variant="UiButtonVariant.Primary"
+          :loading="store.loading"
+          :disabled="!canSubmit"
+          data-testid="support-open-ticket-submit"
+          @click="handleSubmit"
+        >
+          {{ t('support.supportOpenTicket.openTicket') }}
+        </UiButton>
       </UiStack>
-    </UiCard>
+      <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="support-open-ticket-error" />
+    </UiSchemaForm>
   </UiStack>
 </template>

@@ -10,9 +10,11 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import type { ProductBundle, ProductBundlePayload } from '@/types/productbundle'
 import { BundleDiscountType } from '@/types/productenums'
 import ProductBundlesView from '@/views/ProductBundlesView.vue'
+import schema from '@/views/ProductBundlesView.schema'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 
 /** A bundle with a domain for two years and a percentage discount. */
 const PERCENT_BUNDLE: ProductBundle = {
@@ -86,6 +88,13 @@ afterEach(() => {
 })
 
 describe('ProductBundlesView', () => {
+  it('draws the table head from the schema columns', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(ProductBundlesView)
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('lists the bundles with their products, domain, discount and status', async () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(ProductBundlesView)
@@ -96,9 +105,10 @@ describe('ProductBundlesView', () => {
     expect(rows[0]?.text()).toContain('Starter, Mailbox')
     expect(rows[0]?.text()).toContain('2 years')
     expect(rows[0]?.text()).toContain('15%')
-    expect(rows[0]?.text()).toContain('Active')
+    expect(rows[0]?.get('[role="img"]').attributes('aria-label')).toBe('Active')
     expect(rows[1]?.text()).toContain('5 EUR')
-    expect(rows[1]?.text()).toContain('Inactive')
+    expect(rows[1]?.get('[role="img"]').attributes('aria-label')).toBe('Inactive')
+    expect(wrapper.get('[data-testid="product-bundles-table"] th').classes()).toContain('max-w-0')
   })
 
   it('shows the empty state when there are no bundles', async () => {

@@ -6,11 +6,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ServersView from '@/views/ServersView.vue'
+import { SERVER_GROUPS_CARD, SERVER_GROUPS_TABLE } from '@/views/ServersView.schema'
 import { mountRouted } from '../helpers/mount'
 import { applyListFilter } from '../helpers/listFilter'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { serverDto, serverGroupDto, serverOptionDto, serverSshSettingsDto, serverSshSetupDto } from '../helpers/serverFixtures'
+import { useToastStore } from '@/stores/toast'
 
 /** The address the screen is registered under. */
 const PATH = '/servers'
@@ -178,6 +180,18 @@ describe('ServersView', () => {
     expect(row.text()).toContain('host1')
   })
 
+  it('heads the groups table with the columns of its schema, inside the groups card', async () => {
+    stubRoutes({
+      'GET /api/admin/servers?': () => json(page([serverDto()])),
+      'GET /api/admin/server-groups': () => json([serverGroupDto()]),
+    })
+    const { wrapper } = await mountServers()
+
+    const card = wrapper.get(`[data-testid="ui-detail-card-${SERVER_GROUPS_CARD}"]`)
+    expect(card.findAll('[role="columnheader"]')).toHaveLength(SERVER_GROUPS_TABLE.columns.length)
+    expect(card.find('[data-testid="server-groups-table"]').exists()).toBe(true)
+  })
+
   it('shows the connection test result in the row and reads the page again for the new state', async () => {
     const mock = stubRoutes({
       'GET /api/admin/servers?': () => json(page([serverDto()])),
@@ -226,7 +240,7 @@ describe('ServersView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/servers/1' && init?.method === 'DELETE')).toBe(true)
-    expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('Record deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
     expect(listUrls(mock)).toHaveLength(2)
   })
 
@@ -411,7 +425,7 @@ describe('ServersView', () => {
 
     expect(wrapper.get('[data-testid="servers-list"]').findAll('[data-testid="server-card-loading"]')).toHaveLength(3)
     expect(wrapper.find('[data-testid="servers-search"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="server-groups-table"] [data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.find(`[data-testid="ui-detail-card-${SERVER_GROUPS_CARD}"] [data-testid="ui-table-skeleton"]`).exists()).toBe(true)
     expect(wrapper.find('[data-testid="servers-empty"]').exists()).toBe(false)
   })
 })

@@ -6,7 +6,7 @@
  * with no stored version starts blank (mail in it falls back to the default language until one is
  * saved). Emits `save` for the language on screen, and `close` on cancel, Escape or a backdrop click.
  */
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -15,12 +15,13 @@ import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiTabs from '@/components/ui/UiTabs.vue'
+import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { useStorefrontLocaleTabs } from '@/composables/useStorefrontLocaleTabs'
+import { filledLocales } from '@/lib/storefrontTranslations'
 import { MessageLanguage } from '@/locales/messages'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -43,8 +44,8 @@ const emit = defineEmits<{
   close: []
 }>()
 
-/** The language tab state. */
-const { activeLocale, tabs, select } = useStorefrontLocaleTabs('email-template-tab')
+/** The language whose version is on screen. */
+const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
 
 /**
  * Creates the words of a language with no stored version.
@@ -59,6 +60,9 @@ const forms = reactive<Record<MessageLanguage, EmailTemplateContent>>({
   [MessageLanguage.Ru]: blank(),
   [MessageLanguage.Hy]: blank(),
 })
+
+/** Whether each language has a subject written, for the markers on the tabs. */
+const filled = computed(() => filledLocales(forms, (form) => form.subject.trim() !== ''))
 
 /** Fills every tab from the stored versions, blank where a language has none. */
 watch(() => props.versions, (versions) => {
@@ -89,7 +93,7 @@ const handleSubmit = (): void => {
 <template>
   <UiDialog :title="slug" size="xl" @close="emit('close')">
     <UiForm stacked data-testid="email-template-form" @submit="handleSubmit">
-      <UiTabs :items="tabs" :model-value="activeLocale" @update:model-value="select" />
+      <UiLocalizedField v-model="activeLocale" :filled="filled" testid="email-template-tab" />
 
       <UiText v-if="!activeVersion" tone="muted" size="sm" data-testid="email-template-missing">
         {{ t('settings.emailTemplates.missingVersion') }}
@@ -139,10 +143,10 @@ const handleSubmit = (): void => {
       </UiAlert>
 
       <UiFormActions>
-        <UiButton type="button" variant="secondary" data-testid="email-template-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="email-template-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :loading="saving" data-testid="email-template-save">
+        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="email-template-save">
           {{ t('shared.save') }}
         </UiButton>
       </UiFormActions>

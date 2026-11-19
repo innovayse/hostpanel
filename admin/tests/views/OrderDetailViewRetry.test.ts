@@ -13,6 +13,7 @@ import { BillingCycle } from '@/types/service'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
+import { useToastStore } from '@/stores/toast'
 
 /** Test id of the region that shows the outcome of an order action. */
 const FEEDBACK = '[data-testid="order-action-feedback"]'
@@ -173,7 +174,7 @@ describe('OrderDetailView line retry', () => {
     await flushPromises()
 
     expect(closeCalls).toEqual(['close'])
-    expect(feedbackText(wrapper)).toBe('Line closed as refunded.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Line closed as refunded.'])
     expect(wrapper.find('[data-testid="order-item-close-refund-1"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Active')
   })

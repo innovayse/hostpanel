@@ -1,23 +1,20 @@
 <script setup lang="ts">
 /**
- * Card on the client summary to see, set or clear the link between the client and an account in
+ * Body of the external account card on the client summary (the card and its title are the schema's, drawn by
+ * `UiDetailCards`): see, set or clear the link between the client and an account in
  * another system. The operator types the system name and the account id; Save sends both,
  * Clear (after a confirmation, shown only while a link exists) removes it. The API is the only validator: its sentence
  * for a refused call (a conflict with another client included) shows under the buttons and its
  * per-field messages (the `fieldErrors` prop) show under their inputs, and go away, through
- * `clearFieldError`, as soon as the operator changes that field. While the client loads (`loading`) the card keeps its
- * real header and fields, disabled, with a placeholder bar for the current link.
+ * `clearFieldError`, as soon as the operator changes that field.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFieldErrorClear } from '@/composables/useFieldErrorClear'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -26,6 +23,7 @@ import type { ClientExternalAccount, SetClientExternalAccountPayload } from '@/t
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -33,8 +31,6 @@ const { t } = useI18n()
 const props = withDefaults(defineProps<{
   /** The link the client has now, null when there is none; Clear link shows only while there is one. */
   linked?: ClientExternalAccount | null
-  /** True while the client loads: the fields and buttons are disabled and the current link is a placeholder bar. */
-  loading?: boolean
   /** Whether a save or clear is in flight. */
   saving?: boolean
   /** The API's sentence for the last refused save or clear, null when none. */
@@ -45,7 +41,6 @@ const props = withDefaults(defineProps<{
   notice?: string | null
 }>(), {
   linked: null,
-  loading: false,
   saving: false,
   error: null,
   /**
@@ -126,73 +121,67 @@ useFieldErrorClear(
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="client-external-account">
-    <UiStack>
-      <UiHeading :level="2" variant="card">{{ t('clients.externalAccount.title') }}</UiHeading>
-      <UiSkeletonBar v-if="loading" class="h-4 w-56 rounded-md" aria-hidden="true" data-testid="client-external-account-skeleton" />
-      <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="client-external-account-current">
-        {{ linked ? t('clients.externalAccount.linkedTo', { provider: linked.provider, id: linked.id }) : t('clients.externalAccount.notLinked') }}
-      </UiText>
-      <UiField
-        :label="t('clients.externalAccount.provider')"
-        :hint="t('clients.externalAccount.providerHint')"
-        :error="fieldErrors[ExternalAccountField.Provider]"
-        error-testid="client-external-account-provider-error"
+  <UiStack data-testid="client-external-account">
+    <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="client-external-account-current">
+      {{ linked ? t('clients.externalAccount.linkedTo', { provider: linked.provider, id: linked.id }) : t('clients.externalAccount.notLinked') }}
+    </UiText>
+    <UiField
+      :label="t('clients.externalAccount.provider')"
+      :hint="t('clients.externalAccount.providerHint')"
+      :error="fieldErrors[ExternalAccountField.Provider]"
+      error-testid="client-external-account-provider-error"
+    >
+      <template #default="{ id, invalid, describedby }">
+        <UiInput
+          :id="id"
+          v-model="provider"
+          :invalid="invalid"
+          :aria-describedby="describedby"
+          :placeholder="t('clients.externalAccount.providerPlaceholder')"
+          data-testid="client-external-account-provider"
+        />
+      </template>
+    </UiField>
+    <UiField
+      :label="t('clients.externalAccount.accountId')"
+      :hint="t('clients.externalAccount.accountIdHint')"
+      :error="fieldErrors[ExternalAccountField.AccountId]"
+      error-testid="client-external-account-id-error"
+    >
+      <template #default="{ id, invalid, describedby }">
+        <UiInput
+          :id="id"
+          v-model="accountId"
+          :invalid="invalid"
+          :aria-describedby="describedby"
+          :placeholder="t('clients.externalAccount.accountIdPlaceholder')"
+          data-testid="client-external-account-id"
+        />
+      </template>
+    </UiField>
+    <UiStack direction="row">
+      <UiButton :action="UiActionKind.Save"
+        type="button"
+        :variant="UiButtonVariant.Primary"
+        :loading="saving"
+        :disabled="bothBlank"
+        data-testid="client-external-account-save"
+        @click="handleSave"
       >
-        <template #default="{ id, invalid, describedby }">
-          <UiInput
-            :id="id"
-            v-model="provider"
-            :invalid="invalid"
-            :disabled="loading"
-            :aria-describedby="describedby"
-            :placeholder="t('clients.externalAccount.providerPlaceholder')"
-            data-testid="client-external-account-provider"
-          />
-        </template>
-      </UiField>
-      <UiField
-        :label="t('clients.externalAccount.accountId')"
-        :hint="t('clients.externalAccount.accountIdHint')"
-        :error="fieldErrors[ExternalAccountField.AccountId]"
-        error-testid="client-external-account-id-error"
+        {{ t('shared.save') }}
+      </UiButton>
+      <UiButton :action="UiActionKind.Clear"
+        v-if="linked"
+        type="button"
+        :variant="UiButtonVariant.Secondary"
+        :disabled="saving"
+        data-testid="client-external-account-clear"
+        @click="confirmingClear = true"
       >
-        <template #default="{ id, invalid, describedby }">
-          <UiInput
-            :id="id"
-            v-model="accountId"
-            :invalid="invalid"
-            :disabled="loading"
-            :aria-describedby="describedby"
-            :placeholder="t('clients.externalAccount.accountIdPlaceholder')"
-            data-testid="client-external-account-id"
-          />
-        </template>
-      </UiField>
-      <UiStack direction="row">
-        <UiButton
-          type="button"
-          :variant="UiButtonVariant.Primary"
-          :loading="saving"
-          :disabled="loading || bothBlank"
-          data-testid="client-external-account-save"
-          @click="handleSave"
-        >
-          {{ t('shared.save') }}
-        </UiButton>
-        <UiButton
-          v-if="linked"
-          type="button"
-          :variant="UiButtonVariant.Secondary"
-          :disabled="saving"
-          data-testid="client-external-account-clear"
-          @click="confirmingClear = true"
-        >
-          {{ t('clients.externalAccount.clear') }}
-        </UiButton>
-      </UiStack>
-      <UiStatusMessage :message="statusMessage" :tone="statusTone" data-testid="client-external-account-status" />
+        {{ t('clients.externalAccount.clear') }}
+      </UiButton>
     </UiStack>
+    <UiStatusMessage :message="statusMessage" :tone="statusTone" data-testid="client-external-account-status" />
     <UiDialog
       v-if="confirmingClear"
       variant="confirm"
@@ -204,5 +193,5 @@ useFieldErrorClear(
       @confirm="handleConfirmClear"
       @close="confirmingClear = false"
     />
-  </UiCard>
+  </UiStack>
 </template>

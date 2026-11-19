@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Live status card of a hosting panel provisioning provider.
+ * Body of the live status card of a hosting panel provisioning provider.
  *
- * Displays the connection badge, the provider-specific figures the page passes in, the last test
+ * The card around it, and its skeleton while the config is still being read, is the status card of
+ * `CwpIntegrationView.schema`, which `UiDetailCards` draws. Displays the connection badge, the provider-specific figures the page passes in, the last test
  * time and the refusal the provider reported. Emits `test` when the admin asks for a new test.
  */
 import { computed } from 'vue'
@@ -12,10 +13,10 @@ import type { ProviderInfo, ProviderMetric } from '@/types/providerstatus'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiMetric from '@/components/ui/UiMetric.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function and the active locale (for time wording). */
 const { t, locale } = useI18n()
@@ -53,43 +54,41 @@ const lastTestedLabel = computed<string>(() =>
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="provider-status">
-    <UiStack gap="lg">
-      <UiBadge :tone="info?.connected ? 'success' : 'neutral'" dot data-testid="provider-status-connection">
-        {{ connectionLabel }}
-      </UiBadge>
+  <UiStack gap="lg" data-testid="provider-status">
+    <UiBadge :tone="info?.connected ? 'success' : 'neutral'" dot data-testid="provider-status-connection">
+      {{ connectionLabel }}
+    </UiBadge>
 
-      <template v-if="info?.connected">
-        <UiStack v-for="metric in metrics" :key="metric.label" gap="xs">
-          <UiText tone="muted" size="sm">{{ metric.label }}</UiText>
-          <UiMetric v-if="metric.large" :value="metric.value ?? EMPTY_VALUE" />
-          <UiText v-else tone="primary" size="md" :class="metric.mono ? 'font-mono' : ''">
-            {{ metric.value ?? EMPTY_VALUE }}
-          </UiText>
-        </UiStack>
-      </template>
-
-      <UiStack gap="xs">
-        <UiText tone="muted" size="sm">
-          {{ t('integrations.providerStatus.lastTested') }}
+    <template v-if="info?.connected">
+      <UiStack v-for="metric in metrics" :key="metric.label" gap="xs">
+        <UiText tone="muted" size="sm">{{ metric.label }}</UiText>
+        <UiMetric v-if="metric.large" :value="metric.value ?? EMPTY_VALUE" />
+        <UiText v-else tone="primary" size="md" :class="metric.mono ? 'font-mono' : ''">
+          {{ metric.value ?? EMPTY_VALUE }}
         </UiText>
-        <UiText tone="secondary" size="md" data-testid="provider-status-last-tested">{{ lastTestedLabel }}</UiText>
       </UiStack>
+    </template>
 
-      <UiAlert v-if="info && !info.connected && info.errorMessage" variant="error" data-testid="provider-status-error">
-        {{ info.errorMessage }}
-      </UiAlert>
-
-      <UiButton
-        type="button"
-        variant="secondary"
-        block
-        :loading="testing"
-        data-testid="provider-status-test"
-        @click="emit('test')"
-      >
-        {{ t('shared.testConnection') }}
-      </UiButton>
+    <UiStack gap="xs">
+      <UiText tone="muted" size="sm">
+        {{ t('integrations.providerStatus.lastTested') }}
+      </UiText>
+      <UiText tone="secondary" size="md" data-testid="provider-status-last-tested">{{ lastTestedLabel }}</UiText>
     </UiStack>
-  </UiCard>
+
+    <UiAlert v-if="info && !info.connected && info.errorMessage" variant="error" data-testid="provider-status-error">
+      {{ info.errorMessage }}
+    </UiAlert>
+
+    <UiButton :action="UiActionKind.Test"
+      type="button"
+      variant="secondary"
+      block
+      :loading="testing"
+      data-testid="provider-status-test"
+      @click="emit('test')"
+    >
+      {{ t('shared.testConnection') }}
+    </UiButton>
+  </UiStack>
 </template>

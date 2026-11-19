@@ -27,8 +27,8 @@ describe('UiText', () => {
     expect(wrapper.attributes('data-testid')).toBe('probe')
   })
 
-  it('adds no typography in the plain default', () => {
-    expect(mount(UiText).classes()).toEqual([])
+  it('adds no typography in the plain default, only the wrap of a long unbroken word', () => {
+    expect(mount(UiText).classes()).toEqual(['break-words'])
   })
 
   it('colours and sizes from the named props', () => {

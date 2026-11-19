@@ -1,6 +1,5 @@
 {
   "orderDetail": {
-    "backToOrders": "Back to orders",
     "accept": "Accept",
     "orderInfo": "Order Info",
     "overview": "Overview",
@@ -33,7 +32,6 @@
     "refundClosed": "Line closed as refunded."
   },
   "ordersList": {
-    "orders": "Orders",
     "manageCustomerOrders": "Manage customer orders",
     "searchOrders": "Search orders by number or id",
     "order": "Order #",

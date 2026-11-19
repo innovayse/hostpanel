@@ -1,23 +1,22 @@
 /**
- * The result banner of a list screen: one line saying how the last bulk action went, which clears
- * itself after a few seconds.
+ * The outcome line of a screen: how the last action went.
  *
- * The currencies and TLD screens both run actions (refresh rates, import, sync) whose outcome has
- * no row to attach to; they share this instead of each keeping a message, a flag and a timer.
+ * A success is a toast (`stores/toast.ts`): it confirms and dismisses itself, and takes no room in the page. A refusal
+ * stays inline, in the banner this composable keeps, because the reader has to act on it: it hides after a few seconds, as long as a toast stays
+ * or at once through `clear`. Screens that run actions with no row to attach an outcome to (refresh rates, import,
+ * sync, delete) share this instead of each keeping a message, a flag and a timer.
  */
 import { onBeforeUnmount, ref } from 'vue'
 import type { Ref } from 'vue'
-
-/** How long the banner stays, in milliseconds. */
-export const RESULT_BANNER_MS = 5000
+import { TOAST_MS, useToastStore } from '@/stores/toast'
 
 /** What {@link useResultBanner} hands back. */
 export interface ResultBanner {
-  /** The sentence on show, or null when the banner is hidden. */
+  /** The refusal on show, or null when the banner is hidden. A success never appears here, it is a toast. */
   message: Ref<string | null>
-  /** Whether the sentence reports a failure. */
+  /** Whether the sentence on show reports a failure; false while the banner is hidden. */
   isError: Ref<boolean>
-  /** Shows a sentence for {@link RESULT_BANNER_MS}, replacing any earlier one. */
+  /** Toasts a success, or shows a refusal for {@link TOAST_MS}, replacing any earlier one. */
   show: (text: string, failed: boolean) => void
   /** Hides the banner at once. */
   clear: () => void
@@ -30,10 +29,13 @@ export interface ResultBanner {
  * screen unmounts.
  */
 export const useResultBanner = (): ResultBanner => {
-  /** The sentence on show. */
+  /** The toasts a success is shown in. */
+  const toasts = useToastStore()
+
+  /** The refusal on show. */
   const message = ref<string | null>(null)
 
-  /** Whether the sentence reports a failure. */
+  /** Whether the sentence on show reports a failure. */
   const isError = ref(false)
 
   /** Handle of the pending auto-hide timer. */
@@ -57,16 +59,20 @@ export const useResultBanner = (): ResultBanner => {
   }
 
   /**
-   * Shows a sentence and schedules it to disappear.
+   * Toasts a success, or shows a refusal inline and schedules it to disappear. Either way an earlier refusal goes.
    *
    * @param text - The finished sentence.
    * @param failed - Whether it reports a failure.
    */
   const show = (text: string, failed: boolean): void => {
-    cancelTimer()
+    clear()
+    if (!failed) {
+      toasts.push(text)
+      return
+    }
     message.value = text
-    isError.value = failed
-    timer = setTimeout(clear, RESULT_BANNER_MS)
+    isError.value = true
+    timer = setTimeout(clear, TOAST_MS)
   }
 
   onBeforeUnmount(cancelTimer)

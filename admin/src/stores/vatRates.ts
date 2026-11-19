@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import { useVatRatesApi } from '@/composables/apis/useVatRatesApi'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { runAction } from '@/lib/runAction'
-import type { SaveVatRatePayload, VatRateDto } from '@/types/vatrate'
+import type { SaveVatRatePayload, VatRateDto, VatRateListFilters } from '@/types/vatrate'
 
 /** Manages the VAT rate list and the admin VAT rate operations. */
 export const useVatRatesStore = defineStore('vatRates', () => {
@@ -36,16 +36,17 @@ export const useVatRatesStore = defineStore('vatRates', () => {
   const actionError = ref<string | null>(null)
 
   /**
-   * Loads one page of VAT rates. The page and the search come from the list's address, so the store keeps no copy of them.
+   * Loads one page of VAT rates. The page, the search and the filters come from the list's address, so the store keeps
+   * no copy of them.
    *
    * @param page - Page to load, 1-based.
-   * @param search - The search text; empty for none.
+   * @param filters - The search text and the kind and status filters; empty for none.
    * @returns True when loaded; false when refused (see `error`).
    */
-  const fetchAll = async (page: number, search = ''): Promise<boolean> => {
+  const fetchAll = async (page: number, filters: VatRateListFilters = {}): Promise<boolean> => {
     loading.value = true
     const result = await runAction(error, () =>
-      api.listVatRates({ page, pageSize: pageSize.value, search: search.trim() }),
+      api.listVatRates({ ...filters, page, pageSize: pageSize.value, search: filters.search?.trim() }),
     )
     loading.value = false
     if (result.ok) {

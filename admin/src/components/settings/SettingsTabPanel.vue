@@ -48,10 +48,8 @@ const unsavedLabel = computed<string>(() =>
     <SettingsFormFooter
       v-if="!props.loading"
       class="mt-auto"
-      :save-label="t('settings.saveBar.saveAll')"
+      :save-label="t('settings.saveBar.save')"
       :cancel-label="t('settings.saveBar.discard')"
-      :save-label-compact="t('settings.saveBar.saveShort')"
-      :cancel-label-compact="t('settings.saveBar.discardShort')"
       :saving="registry.saving.value"
       :dirty="registry.dirtyCount.value > 0"
       :status="unsavedLabel"

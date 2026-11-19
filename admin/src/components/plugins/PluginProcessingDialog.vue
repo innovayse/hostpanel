@@ -20,6 +20,7 @@ import { usePluginsStore } from '@/stores/plugins'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -64,7 +65,7 @@ const outcomeMessage = computed<string | null>(() =>
       </UiText>
     </UiStack>
     <template v-if="!processing.running.value" #footer>
-      <UiButton type="button" :variant="UiButtonVariant.Primary" data-testid="plugin-processing-close" @click="processing.close()">
+      <UiButton :action="UiActionKind.Close" type="button" :variant="UiButtonVariant.Primary" data-testid="plugin-processing-close" @click="processing.close()">
         {{ t('plugins.processing.close') }}
       </UiButton>
     </template>

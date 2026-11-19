@@ -1,24 +1,24 @@
 <script setup lang="ts">
 /**
- * Date-range picker: a typed `DD/MM/YYYY - DD/MM/YYYY` field with two month grids and presets.
+ * Date-range picker: a typed `DD/MM/YYYY - DD/MM/YYYY` field with two month grids (one below `md`) and presets (a chip row on a phone).
  *
  * The model is a `[start, end]` pair of ISO `YYYY-MM-DD` strings (or null). Clicking two days
  * picks a range and Apply commits it; a preset commits at once; typing a complete range commits
  * it, a partial one moves the calendar. The popup is teleported to the body so a clipped parent
  * cannot cut it off, and is placed under the field (above it when there is no room below) through CSS variables
- * set from script (no inline style).
+ * set from script (no inline style); on a phone (below `sm`) it is a bottom sheet ({@link UiFloatingSurface}) and the field
+ * opens it by a tap and raises no keyboard.
  * Colours are theme tokens, so the popup follows the light/dark switch.
  */
-import { computed, onMounted, ref } from 'vue'
-import UiTransition from '@/components/ui/UiTransition.vue'
-import { UiTransitionKind } from '@/utils/ui/transition'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import UiFloatingSurface from '@/components/ui/UiFloatingSurface.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
 import { useDropdown } from '@/composables/useDropdown'
-import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { splitIsoDate } from '@/lib/format'
 import { translate } from '@/lib/translate'
 import {
@@ -29,21 +29,26 @@ import {
   dateCellEmptyClasses,
   dateCellIdleClasses,
   dateCellInRangeClasses,
+  dateCellRangeEndClasses,
+  dateCellRangeStartClasses,
   dateCellSelectedClasses,
   dateFieldClasses,
   datePopupClasses,
+  datePresetActiveClasses,
   datePresetIdleClasses,
   dateRangePresets,
   formatDisplayDate,
   formatIsoDate,
   getDayKeysForMonth,
   getDaysForMonth,
+  matchDateRangePreset,
   parsePartialDate,
   parseTypedDate,
   partialToDate,
   presetRange,
 } from '@/utils/ui/datePicker'
 import type { DateRangePreset } from '@/utils/ui/datePicker'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -72,10 +77,17 @@ const POPUP_GAP_PX = 8
 /** Open flag and outside-pointer handling shared with the other floating lists; `panel` is the teleported popup. */
 const { open: isOpen, root: wrapperRef, trigger: inputRef, panel, show, hide } = useDropdown()
 
-useFloatingPlace(inputRef, panel, isOpen, { align: FloatingAlign.Start, minRoom: POPUP_HEIGHT, gap: POPUP_GAP_PX, keepInsideWidth: POPUP_MAX_WIDTH })
+/** The shape the screen asks for: on a phone the popup is a bottom sheet. */
+const presentation = useDrawerPresentation()
 
-/** Classes of the popup: fixed at its place, over the cards of the page, in the kit's popup look (the lists of its month and year selects open later in the body, so they stay above it), as wide as the screen allows. */
-const popupClasses = `${FLOATING_PLACE_CLASSES} z-50 p-0 w-[900px] max-w-[calc(100vw-32px)] ${datePopupClasses}`
+/**
+ * Whether the popup is a bottom sheet. The field then opens it by a tap only and raises no keyboard (`inputmode="none"`), so
+ * closing the sheet, which gives the focus back to the field, never opens it again.
+ */
+const isSheet = computed<boolean>(() => presentation.value === UiDrawerPresentation.Sheet)
+
+/** Classes of the popover in the kit's popup look (the lists of its month and year selects open later in the body, so they stay above it), as wide as the screen allows; the place and the surface are the floating surface's. */
+const popupClasses = `p-0 w-[900px] max-w-[calc(100vw-32px)] ${datePopupClasses}`
 
 /** First day of the range being picked. */
 const selectedStart = ref<Date | null>(null)
@@ -197,6 +209,16 @@ const nextYearValue = computed<string>({
   },
 })
 
+/** The preset the picked range stands for, or null when it is a custom range or none is picked. */
+const activePreset = computed<DateRangePreset | null>(() =>
+  selectedStart.value && selectedEnd.value
+    ? matchDateRangePreset([formatIsoDate(selectedStart.value), formatIsoDate(selectedEnd.value)])
+    : null,
+)
+
+/** Whether a complete range is picked that no preset stands for, which marks "Custom". */
+const isCustomRange = computed<boolean>(() => Boolean(selectedStart.value && selectedEnd.value) && activePreset.value === null)
+
 /** The range being picked, rendered for the bottom bar; null until both ends are set. */
 const pickedLabel = computed<string | null>(() => {
   if (!selectedStart.value || !selectedEnd.value) {
@@ -218,6 +240,23 @@ const formatRangeText = (start: string, end: string): string =>
 /** Writes the model into the field text. */
 const syncInputText = (): void => {
   inputText.value = props.modelValue ? formatRangeText(props.modelValue[0], props.modelValue[1]) : ''
+}
+
+/** Loads the model into the picked range and opens the calendar at the month the range starts in. */
+const syncSelection = (): void => {
+  clearPreview()
+  if (!props.modelValue) {
+    selectedStart.value = null
+    selectedEnd.value = null
+    return
+  }
+  const [start, end] = props.modelValue.map(splitIsoDate)
+  if (!start || !end) {
+    return
+  }
+  selectedStart.value = new Date(start.year, start.month - 1, start.day)
+  selectedEnd.value = new Date(end.year, end.month - 1, end.day)
+  currentMonth.value = new Date(start.year, start.month - 1, 1)
 }
 
 /** Forgets the half-typed range highlight. */
@@ -269,6 +308,20 @@ const isBetween = (day: number, month: Date): boolean => {
 }
 
 /**
+ * Class list of a range edge: a cap square on the side that joins the band, or a full pill for a one-day range.
+ *
+ * @param edge - Which edge the day is.
+ * @returns Literal Tailwind classes for the cap.
+ */
+const edgeClasses = (edge: RangeEdge): string => {
+  const isOneDay = Boolean(selectedStart.value && selectedEnd.value && selectedStart.value.getTime() === selectedEnd.value.getTime())
+  if (isOneDay || !selectedEnd.value) {
+    return dateCellSelectedClasses
+  }
+  return edge === RangeEdge.Start ? dateCellRangeStartClasses : dateCellRangeEndClasses
+}
+
+/**
  * Class list of one grid cell.
  *
  * @param day - Day of the month, or null for padding.
@@ -279,8 +332,9 @@ const dayClasses = (day: number | null, month: Date): string[] => {
   if (day === null) {
     return [dateCellBaseClasses, dateCellEmptyClasses]
   }
-  if (edgeOf(day, month)) {
-    return [dateCellBaseClasses, dateCellSelectedClasses]
+  const edge = edgeOf(day, month)
+  if (edge) {
+    return [dateCellBaseClasses, edgeClasses(edge)]
   }
   if (isBetween(day, month)) {
     return [dateCellBaseClasses, dateCellInRangeClasses]
@@ -435,7 +489,21 @@ const nextMonth = (): void => {
   currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1)
 }
 
+/** Opens the popup when the field takes focus (tabbing in), except for a sheet, which a tap opens. */
+const openOnFocus = (): void => {
+  if (!isSheet.value) {
+    show()
+  }
+}
+
 onMounted(syncInputText)
+
+// A popup that opens shows the model, not a half-picked range left from before.
+watch(isOpen, (opened) => {
+  if (opened) {
+    syncSelection()
+  }
+})
 </script>
 
 <template>
@@ -446,94 +514,105 @@ onMounted(syncInputText)
       type="text"
       data-testid="date-range-input"
       :placeholder="fieldPlaceholder"
+      :inputmode="isSheet ? 'none' : undefined"
       :class="dateFieldClasses"
       @click="show"
-      @focus="show"
+      @focus="openOnFocus"
       @input="handleInput"
     >
 
-    <Teleport to="body">
-      <UiTransition :kind="UiTransitionKind.Dropdown">
-        <div
-          v-if="isOpen"
-          ref="panel"
-          :class="popupClasses"
-        >
-          <div class="flex h-[400px]">
-            <div class="w-[150px] border-r border-border p-4 flex flex-col gap-2">
-              <button
-                v-for="item in dateRangePresets"
-                :key="item.preset"
-                type="button"
-                :data-testid="`date-range-preset-${item.preset}`"
-                :class="datePresetIdleClasses"
-                class="text-left px-3 py-2 rounded text-sm transition-colors"
-                @click="selectPreset(item.preset)"
-              >
-                {{ t(item.labelKey) }}
-              </button>
-              <div class="text-left px-3 py-2 text-text-accent font-semibold rounded-lg text-sm bg-tint-blue">{{ t('shared.custom') }}</div>
-            </div>
+    <!-- The popup: in the page body (a clipped parent cannot cut it off) or a bottom sheet on a phone -->
+    <UiFloatingSurface
+      :open="isOpen"
+      :anchor="inputRef"
+      :title="fieldPlaceholder"
+      :min-room="POPUP_HEIGHT"
+      :gap="POPUP_GAP_PX"
+      :keep-inside-width="POPUP_MAX_WIDTH"
+      :popover-class="popupClasses"
+      @close="hide(true)"
+      @panel="panel = $event"
+    >
+      <div class="flex flex-col md:flex-row md:h-[400px]">
+        <div class="shrink-0 min-h-0 md:w-max flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible md:overflow-y-auto border-b md:border-b-0 md:border-r border-border p-3 md:p-4">
+          <button
+            v-for="item in dateRangePresets"
+            :key="item.preset"
+            type="button"
+            :data-testid="`date-range-preset-${item.preset}`"
+            :class="item.preset === activePreset ? datePresetActiveClasses : datePresetIdleClasses"
+            :aria-pressed="item.preset === activePreset"
+            class="shrink-0 whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm transition-colors"
+            @click="selectPreset(item.preset)"
+          >
+            {{ t(item.labelKey) }}
+          </button>
+          <div
+            data-testid="date-range-preset-custom"
+            :class="isCustomRange ? datePresetActiveClasses : 'text-text-secondary'"
+            class="shrink-0 whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm"
+          >
+            {{ t('shared.custom') }}
+          </div>
+        </div>
 
-            <div class="flex-1 p-4">
-              <div class="flex items-center justify-between mb-4">
-                <button type="button" data-testid="date-range-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
-                <div class="flex gap-8">
-                  <div class="flex items-center gap-2">
-                    <div class="w-[140px]">
-                      <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
-                    </div>
-                    <div class="w-[100px]">
-                      <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-[140px]">
-                      <UiSelect v-model="nextMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
-                    </div>
-                    <div class="w-[100px]">
-                      <UiSelect v-model="nextYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
-                    </div>
-                  </div>
+        <div class="flex-1 min-w-0 p-3 md:p-4">
+          <div class="flex items-center justify-between mb-4">
+            <button type="button" data-testid="date-range-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
+            <div class="flex min-w-0 gap-8">
+              <div class="flex min-w-0 items-center gap-2">
+                <div class="w-[140px] min-w-0">
+                  <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
                 </div>
-                <button type="button" data-testid="date-range-next" :class="dateArrowClasses" @click="nextMonth">›</button>
+                <div class="w-[100px]">
+                  <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
+                </div>
               </div>
-
-              <div class="flex gap-8">
-                <div v-for="(month, idx) in months" :key="formatIsoDate(month)" class="flex-1">
-                  <div class="grid grid-cols-7 gap-1 mb-2">
-                    <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
-                  </div>
-                  <div class="grid grid-cols-7 gap-1">
-                    <button
-                      v-for="(day, i) in monthCells[idx]"
-                      :key="monthCellKeys[idx]?.[i]"
-                      type="button"
-                      :data-testid="`date-range-day-${idx}-${i}`"
-                      :disabled="day === null"
-                      :class="dayClasses(day, month)"
-                      @click="selectDay(day, month)"
-                    >
-                      {{ day }}
-                    </button>
-                  </div>
+              <div class="flex items-center gap-2 max-md:hidden" data-testid="date-range-next-selects">
+                <div class="w-[140px]">
+                  <UiSelect v-model="nextMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
+                </div>
+                <div class="w-[100px]">
+                  <UiSelect v-model="nextYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
                 </div>
               </div>
             </div>
+            <button type="button" data-testid="date-range-next" :class="dateArrowClasses" @click="nextMonth">›</button>
           </div>
 
-          <div class="flex items-center justify-between border-t border-border p-4 bg-surface-hover rounded-b-control">
-            <span v-if="pickedLabel" class="text-sm text-text-secondary">{{ pickedLabel }}</span>
-            <span v-else class="text-sm text-text-secondary">{{ t('ui.uiDateRangePicker.selectDateRange') }}</span>
-            <div class="flex gap-2">
-              <UiButton :variant="UiButtonVariant.Ghost" type="button" data-testid="date-range-clear" @click="clearRange">{{ t('shared.clear') }}</UiButton>
-              <UiButton :variant="UiButtonVariant.Primary" type="button" data-testid="date-range-apply" @click="applyRange">
-                {{ t('shared.apply') }}
-              </UiButton>
+          <div class="flex gap-8">
+            <div v-for="(month, idx) in months" :key="formatIsoDate(month)" class="min-w-0 flex-1" :class="idx > 0 ? 'max-md:hidden' : ''" :data-testid="`date-range-month-${idx}`">
+              <div class="grid grid-cols-7 gap-1 mb-2">
+                <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
+              </div>
+              <div class="grid grid-cols-7 gap-y-1">
+                <button
+                  v-for="(day, i) in monthCells[idx]"
+                  :key="monthCellKeys[idx]?.[i]"
+                  type="button"
+                  :data-testid="`date-range-day-${idx}-${i}`"
+                  :disabled="day === null"
+                  :class="dayClasses(day, month)"
+                  @click="selectDay(day, month)"
+                >
+                  {{ day }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </UiTransition>
-    </Teleport>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border p-4 rounded-b-card">
+        <span v-if="pickedLabel" class="text-sm text-text-secondary">{{ pickedLabel }}</span>
+        <span v-else class="text-sm text-text-secondary">{{ t('ui.uiDateRangePicker.selectDateRange') }}</span>
+        <div class="flex gap-2 max-sm:w-full max-sm:justify-end">
+          <UiButton :action="UiActionKind.Clear" :variant="UiButtonVariant.Ghost" type="button" data-testid="date-range-clear" @click="clearRange">{{ t('shared.clear') }}</UiButton>
+          <UiButton :action="UiActionKind.Apply" :variant="UiButtonVariant.Primary" type="button" data-testid="date-range-apply" @click="applyRange">
+            {{ t('shared.apply') }}
+          </UiButton>
+        </div>
+      </div>
+    </UiFloatingSurface>
   </div>
 </template>

@@ -8,13 +8,12 @@
  * notes, email forwarding, DNS records and reminders). The form is one: a field on a tab that is not on show keeps
  * its value and is saved with the rest.
  */
-import { ref, computed, onMounted, onBeforeUnmount, provide, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDomainsStore } from '@/stores/domains'
 import { DOMAIN_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS } from '@/lib/constants'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
-import { Icon } from '@/lib/icons'
 import { DomainStatus } from '@/types/domain'
 import { formatDate, toDateInputValue, EMPTY_VALUE } from '@/lib/format'
 import DnsRecordsTable from '@/components/clients/DnsRecordsTable.vue'
@@ -24,35 +23,34 @@ import EmailForwardingTable from '@/components/clients/EmailForwardingTable.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UI_FIELD_LOADING } from '@/utils/ui/injection'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
+import { UiAlignItems } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
+import schema, { MANAGEMENT_COLUMNS, NAMESERVER_LABELS, REGISTRAR_COLUMNS } from '@/views/ClientDomainDetailView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** The tabs of the page. */
 enum DomainTab {
@@ -65,6 +63,12 @@ enum DomainTab {
 }
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('shared.cancel'), icon: actionIcons[UiActionKind.Cancel], variant: UiButtonVariant.Secondary, testid: 'client-domain-cancel', onSelect: handleCancel },
+  { label: t('shared.save'), icon: actionIcons[UiActionKind.Save], variant: UiButtonVariant.Primary, testid: 'client-domain-save', loading: saving.value, disabled: initialLoading.value, onSelect: handleSave },
+])
 
 /** The tab on show. */
 const tab = ref<DomainTab>(DomainTab.Details)
@@ -100,11 +104,8 @@ const domain = computed(() => store.current)
 /** True while the initial load is in flight (owned by the store). */
 const loading = computed(() => store.loading)
 
-/** True while the domain is read for the first time: the page keeps its real layout and draws it as placeholders. */
+/** True while the domain is read for the first time: the save button waits for it, and the cards show their skeleton. */
 const initialLoading = computed<boolean>(() => loading.value && domain.value === null)
-
-// Every field of the page stays a placeholder until the domain has arrived.
-provide(UI_FIELD_LOADING, initialLoading)
 
 /** Error message from the initial load (owned by the store). */
 const error = computed(() => store.error)
@@ -180,15 +181,6 @@ const status = ref<DomainStatus>(DomainStatus.Active)
 
 /** The nameserver hosts, one per field. */
 const nameservers = ref<string[]>(Array.from({ length: NAMESERVER_COUNT }, () => ''))
-
-/** Captions of the nameserver fields. */
-const nameserverLabels = computed<string[]>(() => [
-  t('clients.clientDomainDetail.nameserver1'),
-  t('clients.clientDomainDetail.nameserver2'),
-  t('clients.clientDomainDetail.nameserver3'),
-  t('clients.clientDomainDetail.nameserver4'),
-  t('clients.clientDomainDetail.nameserver5'),
-])
 
 /**
  * Copies the EPP code to the clipboard.
@@ -468,229 +460,184 @@ onBeforeUnmount(() => {
 
     <template v-else>
       <UiForm stacked :aria-busy="initialLoading ? 'true' : undefined" @submit="handleSave">
-        <UiCard padding="md" :data-testid="domain ? 'client-domain-header' : 'client-domain-loading'">
-          <UiStack direction="row" wrap :justify="UiJustify.Between" :align="UiAlignItems.Center">
-            <UiStack direction="row" wrap :align="UiAlignItems.Center">
-              <UiLink
-                :to="clientSectionPath(clientId, ClientSection.Domains)"
-                :variant="UiButtonVariant.Secondary"
-                data-testid="client-domain-back"
-              >
-                <UiIcon :markup="Icon.Back" :size="UiSize.Sm" />
-                {{ t('shared.back') }}
-              </UiLink>
-              <template v-if="domain">
-                <UiHeading :level="1" variant="page">
-                  {{ t('clients.clientDomainDetail.domainName', { name: domain.name }) }}
-                </UiHeading>
-                <UiBadge :tone="domainStatusTone(domain.status)" data-testid="client-domain-status-badge">
-                  {{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}
-                </UiBadge>
-              </template>
-              <UiStack v-else direction="row" :align="UiAlignItems.Center" aria-hidden="true">
-                <UiSkeletonBar class="h-9 w-56 rounded-md" />
-                <UiSkeletonBar class="h-5 w-20 rounded-full" />
-              </UiStack>
-            </UiStack>
-            <UiStack direction="row" wrap :align="UiAlignItems.Center" gap="sm">
-              <UiAlert v-if="saveSuccess" variant="success" data-testid="client-domain-saved">
-                {{ saveSuccess }}
-              </UiAlert>
-              <UiAlert v-if="saveError" variant="error" data-testid="client-domain-action-error">
-                {{ saveError }}
-              </UiAlert>
-              <UiButton
-                type="button"
-                :variant="UiButtonVariant.Secondary"
-                data-testid="client-domain-cancel"
-                @click="handleCancel"
-              >
-                {{ t('shared.cancel') }}
-              </UiButton>
-              <UiButton
-                type="submit"
-                :variant="UiButtonVariant.Primary"
-                :loading="saving"
-                :disabled="initialLoading"
-                data-testid="client-domain-save"
-              >
-                {{ t('shared.saveChanges') }}
-              </UiButton>
-            </UiStack>
-          </UiStack>
-        </UiCard>
+        <UiPageHeader :actions="headerActions"
+          :title="domain ? t('clients.clientDomainDetail.domainName', { name: domain.name }) : undefined"
+          :loading="!domain"
+          :back-to="clientSectionPath(clientId, ClientSection.Domains)"
+          :back-label="t('shared.domains')"
+          back-testid="client-domain-back"
+          :data-testid="domain ? 'client-domain-header' : 'client-domain-loading'"
+        >
+          <UiBadge v-if="domain" :tone="domainStatusTone(domain.status)" data-testid="client-domain-status-badge">
+            {{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}
+          </UiBadge>
+          <template #actions>
+            <UiAlert v-if="saveSuccess" variant="success" data-testid="client-domain-saved">
+              {{ saveSuccess }}
+            </UiAlert>
+            <UiAlert v-if="saveError" variant="error" data-testid="client-domain-action-error">
+              {{ saveError }}
+            </UiAlert>
+          </template>
+        </UiPageHeader>
 
         <UiTabs v-model="tab" :items="tabItems" :aria-label="t('clients.clientDomainDetail.domainInfo')" />
 
-        <UiGrid v-if="tab === DomainTab.Details" :columns="2">
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.clientDomainDetail.domainInfo') }}</UiHeading>
-              <UiSkeletonBar v-if="!domain" class="h-4 w-full max-w-md rounded-md" aria-hidden="true" />
-              <UiStack v-else direction="row" gap="lg" wrap>
-                <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-                  {{ t('clients.clientDomainDetail.order') }} {{ domain.origin.orderId ?? EMPTY_VALUE }}
-                </UiText>
-                <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-                  {{ t('clients.clientDomainDetail.orderType') }} {{ domain.origin.orderType }}
-                </UiText>
-                <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-                  {{ t('clients.clientDomainDetail.domain') }} {{ domain.name }}
-                </UiText>
-                <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-                  {{ t('clients.clientDomainDetail.registrar') }} {{ domain.registrar.module ?? EMPTY_VALUE }}
-                </UiText>
-              </UiStack>
-              <UiGrid :columns="2" gap="sm">
-                <UiField :label="t('clients.clientDomainDetail.firstPaymentAmount')">
-                  <UiNumberInput data-testid="client-domain-first-payment" v-model="firstPaymentAmount" :step="0.01" :min="0" placeholder="0.00" />
-                </UiField>
-                <UiField :label="t('clients.clientDomainDetail.recurringAmount')">
-                  <UiNumberInput data-testid="client-domain-recurring" v-model="recurringAmount" :step="0.01" :min="0" placeholder="0.00" />
-                </UiField>
-                <UiField :label="t('clients.clientDomainDetail.promotionCode')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="promotionCode"
-                      type="text"
-                      :placeholder="t('shared.examples.promoCode')"
-                      data-testid="client-domain-promotion"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('clients.clientDomainDetail.subscriptionId')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="subscriptionId"
-                      type="text"
-                      :placeholder="t('shared.examples.subscriptionId')"
-                      data-testid="client-domain-subscription"
-                    />
-                  </template>
-                </UiField>
-              </UiGrid>
+        <UiDetailCards v-if="tab === DomainTab.Details" :columns="schema.columns" :loading="!domain">
+          <template #card-info>
+            <UiStack v-if="domain" direction="row" gap="lg" wrap>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+                {{ t('clients.clientDomainDetail.order') }} {{ domain.origin.orderId ?? EMPTY_VALUE }}
+              </UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+                {{ t('clients.clientDomainDetail.orderType') }} {{ domain.origin.orderType }}
+              </UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+                {{ t('clients.clientDomainDetail.domain') }} {{ domain.name }}
+              </UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+                {{ t('clients.clientDomainDetail.registrar') }} {{ domain.registrar.module ?? EMPTY_VALUE }}
+              </UiText>
             </UiStack>
-          </UiCard>
-
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.clientDomainDetail.datesBilling') }}</UiHeading>
-              <UiGrid :columns="2" gap="sm">
-                <UiField :label="t('clients.clientDomainDetail.registrationPeriod')">
-                  <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-                    <UiNumberInput data-testid="client-domain-registration-period" v-model="registrationPeriod" :min="1" :max="MAX_YEARS" :step="1" placeholder="1" />
-                    <UiText :tone="UiTextTone.Muted">{{ t('clients.clientDomainDetail.years') }}</UiText>
-                  </UiStack>
-                </UiField>
-                <UiField :label="t('shared.registrationDate')">
-                  <UiText :tone="UiTextTone.Muted">{{ domain ? formatDate(domain.term.registeredAt) : '' }}</UiText>
-                </UiField>
-                <UiField :label="t('shared.expiryDate')">
-                  <UiDatePicker v-model="expiresAt" :direction="UiDatePickerDirection.Future" />
-                </UiField>
-                <UiField :label="t('shared.nextDueDate')">
-                  <UiDatePicker v-model="nextDueDate" :direction="UiDatePickerDirection.Future" />
-                </UiField>
-                <UiField :label="t('shared.paymentMethod')">
-                  <UiSelect data-testid="client-domain-payment-method" v-model="paymentMethod" :options="PAYMENT_METHOD_OPTIONS" :placeholder="t('shared.paymentMethod')" />
-                </UiField>
-                <UiField :label="t('shared.status')">
-                  <UiSelect data-testid="client-domain-status" v-model="status" :options="DOMAIN_STATUS_OPTIONS" :placeholder="t('shared.status')" />
-                </UiField>
-              </UiGrid>
-            </UiStack>
-          </UiCard>
-        </UiGrid>
-
-        <UiGrid v-else-if="domain && tab === DomainTab.Registrar" :columns="2">
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.clientDomainDetail.nameservers') }}</UiHeading>
-              <UiField v-for="(label, idx) in nameserverLabels" :key="label" :label="label">
+            <UiGrid :columns="2" gap="sm">
+              <UiField :label="t('clients.clientDomainDetail.firstPaymentAmount')">
+                <UiNumberInput data-testid="client-domain-first-payment" v-model="firstPaymentAmount" :step="0.01" :min="0" placeholder="0.00" />
+              </UiField>
+              <UiField :label="t('clients.clientDomainDetail.recurringAmount')">
+                <UiNumberInput data-testid="client-domain-recurring" v-model="recurringAmount" :step="0.01" :min="0" placeholder="0.00" />
+              </UiField>
+              <UiField :label="t('clients.clientDomainDetail.promotionCode')">
                 <template #default="{ id }">
                   <UiInput
                     :id="id"
-                    v-model="nameservers[idx]"
+                    v-model="promotionCode"
                     type="text"
-                    :placeholder="t('servers.serverForm.nsHostPlaceholder', { n: idx + 1 })"
-                    :data-testid="`client-domain-ns-${idx + 1}`"
+                    :placeholder="t('shared.examples.promoCode')"
+                    data-testid="client-domain-promotion"
                   />
                 </template>
               </UiField>
-            </UiStack>
-          </UiCard>
+              <UiField :label="t('clients.clientDomainDetail.subscriptionId')">
+                <template #default="{ id }">
+                  <UiInput
+                    :id="id"
+                    v-model="subscriptionId"
+                    type="text"
+                    :placeholder="t('shared.examples.subscriptionId')"
+                    data-testid="client-domain-subscription"
+                  />
+                </template>
+              </UiField>
+            </UiGrid>
+          </template>
 
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.clientDomainDetail.registrarCommands') }}</UiHeading>
-              <UiStack direction="row" wrap gap="sm">
-                <UiButton
-                  type="button"
-                  :variant="UiButtonVariant.Secondary"
-                  :loading="commandLoading"
-                  :disabled="domain.status === DomainStatus.Active"
-                  data-testid="client-domain-register"
-                  @click="handleRegister"
-                >
-                  {{ t('clients.clientDomainDetail.register') }}
-                </UiButton>
-                <UiButton
-                  type="button"
-                  :variant="UiButtonVariant.Secondary"
-                  :loading="commandLoading"
-                  data-testid="client-domain-renew"
-                  @click="handleRenew"
-                >
-                  {{ t('clients.clientDomainDetail.renew') }}
-                </UiButton>
-                <UiButton
-                  v-if="domain.status === DomainStatus.PendingTransfer"
-                  type="button"
-                  :variant="UiButtonVariant.Secondary"
-                  :loading="commandLoading"
-                  data-testid="client-domain-cancel-transfer"
-                  @click="showCancelTransferModal = true"
-                >
-                  {{ t('clients.clientDomainDetail.cancelTransfer') }}
-                </UiButton>
-                <UiButton
-                  type="button"
-                  :variant="UiButtonVariant.Secondary"
-                  :disabled="commandLoading"
-                  data-testid="client-domain-contact"
-                  @click="showContactModal = true"
-                >
-                  {{ t('clients.clientDomainDetail.modifyContactDetails') }}
-                </UiButton>
-                <UiButton
-                  type="button"
-                  :variant="UiButtonVariant.Secondary"
-                  :loading="commandLoading"
-                  data-testid="client-domain-epp"
-                  @click="handleGetEppCode"
-                >
-                  {{ t('clients.clientDomainDetail.getEppCode') }}
-                </UiButton>
-                <UiButton
-                  type="button"
-                  :variant="domain.features.whoisPrivacy ? UiButtonVariant.Danger : UiButtonVariant.Secondary"
-                  :loading="commandLoading"
-                  data-testid="client-domain-id-protection"
-                  @click="handleToggleIdProtection"
-                >
-                  {{ domain.features.whoisPrivacy ? t('clients.clientDomainDetail.disableIdProtection') : t('clients.clientDomainDetail.enableIdProtection') }}
-                </UiButton>
-              </UiStack>
-            </UiStack>
-          </UiCard>
-        </UiGrid>
+          <template #card-dates>
+            <UiGrid :columns="2" gap="sm">
+              <UiField :label="t('clients.clientDomainDetail.registrationPeriod')">
+                <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
+                  <UiNumberInput data-testid="client-domain-registration-period" v-model="registrationPeriod" :min="1" :max="MAX_YEARS" :step="1" placeholder="1" />
+                  <UiText :tone="UiTextTone.Muted">{{ t('clients.clientDomainDetail.years') }}</UiText>
+                </UiStack>
+              </UiField>
+              <UiField :label="t('shared.registrationDate')">
+                <UiText :tone="UiTextTone.Muted">{{ domain ? formatDate(domain.term.registeredAt) : '' }}</UiText>
+              </UiField>
+              <UiField :label="t('shared.expiryDate')">
+                <UiDatePicker v-model="expiresAt" :direction="UiDatePickerDirection.Future" />
+              </UiField>
+              <UiField :label="t('shared.nextDueDate')">
+                <UiDatePicker v-model="nextDueDate" :direction="UiDatePickerDirection.Future" />
+              </UiField>
+              <UiField :label="t('shared.paymentMethod')">
+                <UiSelect data-testid="client-domain-payment-method" v-model="paymentMethod" :options="PAYMENT_METHOD_OPTIONS" :placeholder="t('shared.paymentMethod')" />
+              </UiField>
+              <UiField :label="t('shared.status')">
+                <UiSelect data-testid="client-domain-status" v-model="status" :options="DOMAIN_STATUS_OPTIONS" :placeholder="t('shared.status')" />
+              </UiField>
+            </UiGrid>
+          </template>
+        </UiDetailCards>
 
-        <UiGrid v-else-if="domain" :columns="2">
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.clientDomainDetail.managementTools') }}</UiHeading>
+        <UiDetailCards v-else-if="tab === DomainTab.Registrar" :columns="REGISTRAR_COLUMNS" :loading="!domain">
+          <template #card-nameservers>
+            <UiField v-for="(label, idx) in NAMESERVER_LABELS" :key="label" :label="t(label)">
+              <template #default="{ id }">
+                <UiInput
+                  :id="id"
+                  v-model="nameservers[idx]"
+                  type="text"
+                  :placeholder="t('servers.serverForm.nsHostPlaceholder', { n: idx + 1 })"
+                  :data-testid="`client-domain-ns-${idx + 1}`"
+                />
+              </template>
+            </UiField>
+          </template>
+
+          <template #card-commands>
+            <UiStack v-if="domain" direction="row" wrap gap="sm">
+              <UiButton :action="UiActionKind.Add"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                :disabled="domain.status === DomainStatus.Active"
+                data-testid="client-domain-register"
+                @click="handleRegister"
+              >
+                {{ t('clients.clientDomainDetail.register') }}
+              </UiButton>
+              <UiButton :action="UiActionKind.Add"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                data-testid="client-domain-renew"
+                @click="handleRenew"
+              >
+                {{ t('clients.clientDomainDetail.renew') }}
+              </UiButton>
+              <UiButton :action="UiActionKind.Cancel"
+                v-if="domain.status === DomainStatus.PendingTransfer"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                data-testid="client-domain-cancel-transfer"
+                @click="showCancelTransferModal = true"
+              >
+                {{ t('clients.clientDomainDetail.cancelTransfer') }}
+              </UiButton>
+              <UiButton :action="UiActionKind.Edit"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :disabled="commandLoading"
+                data-testid="client-domain-contact"
+                @click="showContactModal = true"
+              >
+                {{ t('clients.clientDomainDetail.modifyContactDetails') }}
+              </UiButton>
+              <UiButton :action="UiActionKind.Download"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                data-testid="client-domain-epp"
+                @click="handleGetEppCode"
+              >
+                {{ t('clients.clientDomainDetail.getEppCode') }}
+              </UiButton>
+              <UiButton :action="UiActionKind.Stop"
+                type="button"
+                :variant="domain.features.whoisPrivacy ? UiButtonVariant.Danger : UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                data-testid="client-domain-id-protection"
+                @click="handleToggleIdProtection"
+              >
+                {{ domain.features.whoisPrivacy ? t('clients.clientDomainDetail.disableIdProtection') : t('clients.clientDomainDetail.enableIdProtection') }}
+              </UiButton>
+            </UiStack>
+          </template>
+        </UiDetailCards>
+
+        <UiDetailCards v-else :columns="MANAGEMENT_COLUMNS" :loading="!domain">
+          <template #card-tools>
+            <UiStack v-if="domain">
               <UiLabel :variant="UiLabelVariant.Inline">
                 <UiToggle
                   :model-value="domain.features.dnsManagement"
@@ -732,20 +679,17 @@ onBeforeUnmount(() => {
                 {{ t('clients.clientDomainDetail.registrarLock') }}
               </UiLabel>
             </UiStack>
-          </UiCard>
+          </template>
 
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('shared.adminNotes') }}</UiHeading>
-              <UiTextarea
-                v-model="adminNotes"
-                rows="6"
-                :placeholder="t('shared.internalNotesVisibleOnlyTo')"
-                data-testid="client-domain-admin-notes"
-              />
-            </UiStack>
-          </UiCard>
-        </UiGrid>
+          <template #card-notes>
+            <UiTextarea
+              v-model="adminNotes"
+              rows="6"
+              :placeholder="t('shared.internalNotesVisibleOnlyTo')"
+              data-testid="client-domain-admin-notes"
+            />
+          </template>
+        </UiDetailCards>
       </UiForm>
 
       <template v-if="domain && tab === DomainTab.Management">
@@ -782,14 +726,14 @@ onBeforeUnmount(() => {
           <UiNumberInput data-testid="client-domain-renew-years" v-model="renewYears" :min="1" :max="MAX_YEARS" placeholder="1" />
         </UiField>
         <template #footer>
-          <UiButton
+          <UiButton :action="UiActionKind.Cancel"
             :variant="UiButtonVariant.Secondary"
             data-testid="client-domain-renew-cancel"
             @click="showRenewModal = false"
           >
             {{ t('shared.cancel') }}
           </UiButton>
-          <UiButton
+          <UiButton :action="UiActionKind.Add"
             :variant="UiButtonVariant.Primary"
             data-testid="client-domain-renew-confirm"
             @click="confirmRenew"
@@ -834,7 +778,7 @@ onBeforeUnmount(() => {
           <UiText :tone="UiTextTone.Primary" class="flex-1 select-all font-mono tracking-widest" data-testid="client-domain-epp-code">
             {{ eppCode }}
           </UiText>
-          <UiButton
+          <UiButton :action="UiActionKind.Copy"
             :variant="UiButtonVariant.Secondary"
             :size="UiSize.Sm"
             data-testid="client-domain-epp-copy"
@@ -844,7 +788,7 @@ onBeforeUnmount(() => {
           </UiButton>
         </UiStack>
         <template #footer>
-          <UiButton
+          <UiButton :action="UiActionKind.Close"
             :variant="UiButtonVariant.Secondary"
             data-testid="client-domain-epp-close"
             @click="showEppModal = false"

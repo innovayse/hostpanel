@@ -2,25 +2,31 @@
 /**
  * Admin top navigation bar, a slim blurred strip under the ground.
  *
- * Shows the current page title, the wide search trigger (it announces Ctrl K and opens the command palette), the
+ * Shows the breadcrumb of the current page (the section down to the page; on a phone the page's own title), the search trigger (a wide field that announces Ctrl K and opens the command palette; as the bar narrows it drops the shortcut chip and then collapses to an icon, by the bar's own width, so a rail layout or a folded sidebar is followed), the
  * theme and language switches, the notification feed (in a side drawer, a bottom sheet on a phone) and the primary
  * action. The signed-in account lives in the sidebar. Below lg it carries the menu button, which emits `toggle-sidebar` to open the navigation sheet; from lg up the
  * sidebar's own header button folds the sidebar, so the bar has no second control for it.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { activityEventLink } from '@/lib/activityEventLink'
 import { formatRelativeFromNow } from '@/lib/format'
 import { placeholderRows } from '@/lib/placeholderRows'
+import { useBreadcrumb } from '@/composables/useBreadcrumb'
+import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useActivityStore } from '@/stores/activity'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
+import { usePageTitleStore } from '@/stores/pageTitle'
 import type { ActivityEvent } from '@/types/activityevent'
+import { UI_BELOW_MD_QUERY } from '@/utils/ui/breakpoints'
+import type { UiBreadcrumbItem } from '@/utils/ui/breadcrumb'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiBreadcrumb from '@/components/ui/UiBreadcrumb.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import ThemeMenu from '@/components/layout/ThemeMenu.vue'
@@ -31,9 +37,10 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { AppRoute } from '@/lib/routes'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { iconTriggerIconSize, UiButtonVariant } from '@/utils/ui/button'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiBreakpoint } from '@/utils/ui/layout'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Emitted by the hamburger button on a phone. */
 const emit = defineEmits<{
@@ -43,9 +50,6 @@ const emit = defineEmits<{
 
 /** Translation function and the active locale. */
 const { t, locale } = useI18n()
-
-/** Current route, to derive the page title. */
-const route = useRoute()
 
 /** Router, for the notification links. */
 const router = useRouter()
@@ -71,31 +75,23 @@ const MENU_MARKUP = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2
 /** Bell glyph. */
 const BELL_MARKUP = '<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>'
 
-/** Maps route paths to i18n keys for the page title. */
-const titleKeys: Record<string, string> = {
-  [AppRoute.Dashboard]: 'nav.dashboard',
-  [AppRoute.Clients]: 'nav.clients',
-  [AppRoute.Billing]: 'nav.billing',
-  [AppRoute.Services]: 'nav.servicesTitle',
-  [AppRoute.Domains]: 'nav.domains',
-  [AppRoute.Support]: 'nav.support',
-  [AppRoute.Plugins]: 'nav.pluginManager',
-  [AppRoute.Servers]: 'nav.servers',
-  [AppRoute.Integrations]: 'nav.integrations',
-  [AppRoute.Settings]: 'nav.settings',
-  [AppRoute.Reports]: 'nav.reports',
-  [AppRoute.Orders]: 'nav.orders',
-  [AppRoute.Notifications]: 'common.notifications',
-}
+/** The shape of the notification drawer: a bottom sheet on a phone, a side panel from `sm` up. */
+const presentation = useDrawerPresentation()
 
 /** Controls the notification drawer. */
 const showNotifications = ref(false)
 
-/** Current page title derived from the active route. */
-const pageTitle = computed<string>(() => {
-  const match = Object.entries(titleKeys).find(([k]) => route.path === k || route.path.startsWith(`${k}/`))
-  return match ? t(match[1]) : t('common.admin')
-})
+/** The breadcrumb of the current page, which replaces the plain section title. */
+const crumbs = useBreadcrumb()
+
+/** The heading of the screen on display, which a phone shows instead of the trail. */
+const pageTitle = usePageTitleStore()
+
+/** Whether the screen is below `md`, where the trail is cut to its last step, a generic word such as "Details". */
+const phone = useMediaQuery(UI_BELOW_MD_QUERY)
+
+/** What the bar names the page by: the trail, or on a phone the page's own title (the trail's last step when no header shows one yet). */
+const trail = computed<UiBreadcrumbItem[]>(() => (phone.value && pageTitle.title !== undefined ? [{ label: pageTitle.title }] : crumbs.value))
 
 /** Number of events in the feed, shown as the badge and header count. */
 const notificationCount = computed<number>(() => activity.events.length)
@@ -147,29 +143,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <header class="flex h-[calc(var(--shell-header-h)+env(safe-area-inset-top))] shrink-0 items-center gap-4 border-b border-border-shell bg-surface-topbar px-4 pt-[env(safe-area-inset-top)] backdrop-blur-[14px] lg:px-8" data-testid="app-topbar">
+  <header class="@container flex h-[calc(var(--shell-header-h)+env(safe-area-inset-top))] shrink-0 items-center gap-4 border-b border-border-shell bg-surface-topbar px-4 pt-[env(safe-area-inset-top)] backdrop-blur-[14px] lg:px-8" data-testid="app-topbar">
     <!-- Left: hamburger + page title -->
     <!-- The title may shrink (min-w-0) so it is cut with an ellipsis before the controls on the right are pushed off a phone screen; a long Armenian or Russian title would otherwise do that. -->
     <UiStack direction="row" align="center" gap="sm" class="min-w-0">
       <!-- Hamburger: opens the navigation drawer, so only below lg; from lg up the sidebar's own header button folds the sidebar -->
       <UiIconButton :label="t('layout.openMenu')" class="lg:hidden" data-testid="topbar-toggle-sidebar" @click="emit('toggle-sidebar')">
-        <UiIcon :markup="MENU_MARKUP" />
+        <UiIcon :markup="MENU_MARKUP" :size="iconTriggerIconSize" />
       </UiIconButton>
 
-      <UiHeading :level="2" class="min-w-0 truncate font-sans text-sm font-normal text-text-muted" data-testid="topbar-title">{{ pageTitle }}</UiHeading>
+      <UiBreadcrumb :items="trail" current-testid="topbar-title" />
     </UiStack>
 
-    <!-- Opens the command palette; the shortcut is only announced here. From a tablet up it is a wide field, on a phone the icon alone, drawn like the other icon triggers of the bar (ghost: no fill, no border). -->
+    <!-- Opens the command palette; the shortcut is only announced here. The bar's own width decides the shape (a container query, since the sidebar takes a different share of the screen in the rail layout and when folded): 4xl or more draws the wide field, 5xl or more adds the shortcut chip, and a narrower bar the icon alone, drawn like the other icon triggers of the bar (ghost: no fill, no border). -->
     <UiButton
+      :icon="Icon.Search"
       type="button"
       :aria-label="t('commandPalette.open')"
-      class="flex h-[2.625rem] min-w-0 items-center gap-2.5 rounded-control border border-border bg-surface-field px-3.5 text-sm text-text-muted transition-colors hover:bg-surface-hover max-md:w-10.5 max-md:justify-center max-md:border-transparent max-md:bg-transparent max-md:px-0 max-md:text-text-secondary max-md:hover:bg-surface-hover max-md:hover:text-text-primary md:ml-6 md:w-full md:max-w-[460px] md:flex-1"
+      class="flex h-[2.625rem] w-10.5 min-w-0 items-center justify-center gap-2.5 rounded-control border border-transparent bg-transparent px-0 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary @4xl:ml-6 @4xl:w-full @4xl:max-w-[460px] @4xl:flex-1 @4xl:justify-start @4xl:border-border @4xl:bg-surface-field @4xl:px-3.5 @4xl:text-text-muted"
       data-testid="topbar-search"
       @click="palette.open()"
-    >
-      <UiIcon :markup="Icon.Search" size="sm" class="shrink-0" />
-      <UiText :tone="UiTextTone.Muted" class="hidden flex-1 truncate text-left md:block">{{ t('commandPalette.placeholder') }}</UiText>
-      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="hidden shrink-0 rounded-md border border-border-strong px-[7px] py-0.5 md:block" data-testid="topbar-search-shortcut">{{ SEARCH_SHORTCUT }}</UiText>
+    ><UiText :tone="UiTextTone.Muted" class="hidden flex-1 truncate text-left @4xl:block">{{ t('commandPalette.placeholder') }}</UiText>
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="hidden shrink-0 rounded-md border border-border-strong px-[7px] py-0.5 @5xl:block" data-testid="topbar-search-shortcut">{{ SEARCH_SHORTCUT }}</UiText>
     </UiButton>
 
     <!-- Right: theme + language + notifications + the primary action -->
@@ -180,42 +175,21 @@ onMounted(() => {
         <LocaleMenu testid="topbar-locale" />
       </UiStack>
 
-      <!--
-        The badge is overlaid on the bell's top-right corner; the ring cuts it out of the bar surface. On a phone
-        it is a marker dot (the bar has no room for a number; the button's label still says how many).
-      -->
-      <UiStack direction="row" align="center" class="relative">
-        <UiIconButton :label="notificationLabel" data-testid="topbar-notifications" @click="openNotifications">
-          <UiIcon :markup="BELL_MARKUP" />
-        </UiIconButton>
-        <template v-if="notificationCount > 0">
-          <UiStack :hidden-from="UiBreakpoint.Sm" class="pointer-events-none absolute right-0.5 top-0.5">
-            <UiBadge tone="primary" marker aria-hidden="true" class="ring-2 ring-surface-elevated" data-testid="topbar-notification-dot" />
-          </UiStack>
-          <UiStack :visible-from="UiBreakpoint.Sm" class="pointer-events-none absolute -right-1 -top-1">
-            <UiBadge
-              tone="primary"
-              small
-              aria-hidden="true"
-              class="min-w-[1.125rem] justify-center ring-2 ring-surface-elevated"
-              data-testid="topbar-notification-count"
-            >
-              {{ notificationBadge }}
-            </UiBadge>
-          </UiStack>
-        </template>
-      </UiStack>
+      <!-- The count sits on the bell's top-right corner (the button draws it); on a phone it is a marker dot, the label still says how many. -->
+      <UiIconButton :label="notificationLabel" :badge="notificationCount > 0 ? notificationBadge : undefined" badge-testid="topbar-notification" data-testid="topbar-notifications" @click="openNotifications">
+        <UiIcon :markup="BELL_MARKUP" :size="iconTriggerIconSize" />
+      </UiIconButton>
 
       <!-- The primary action: the gradient button, from a tablet up. -->
       <UiStack :visible-from="UiBreakpoint.Md">
-        <UiLink :to="AppRoute.ClientsAdd" :variant="UiButtonVariant.Primary" class="h-[2.625rem] rounded-control px-[18px]" data-testid="topbar-primary-action">
+        <UiLink :action="UiActionKind.Add" :to="AppRoute.ClientsAdd" :variant="UiButtonVariant.Primary" class="h-[2.625rem] rounded-control px-[18px]" data-testid="topbar-primary-action">
           {{ t('layout.newClient') }}
         </UiLink>
       </UiStack>
     </UiStack>
 
     <!-- Notification feed -->
-    <UiDrawer :open="showNotifications" :title="t('common.notifications')" sheet @close="showNotifications = false">
+    <UiDrawer :open="showNotifications" :title="t('common.notifications')" :presentation="presentation" @close="showNotifications = false">
       <UiStack gap="sm" data-testid="notifications-drawer">
         <UiBadge tone="primary" small>{{ t('common.newCount', { count: notificationCount }, notificationCount) }}</UiBadge>
 

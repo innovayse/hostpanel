@@ -19,6 +19,7 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -91,7 +92,7 @@ watch(() => props.invoice.notes, populate)
           data-testid="billing-invoice-notes-input"
         />
         <UiStack direction="row" justify="center">
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             variant="primary"
             :loading="saving"
             data-testid="billing-invoice-notes-save"

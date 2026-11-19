@@ -3,27 +3,25 @@
  * Announcement form shared by create and edit. The mode comes from the route: an `:id` param
  * means edit and loads the announcement first.
  */
-import { computed, onMounted, provide, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { toDateInputValue } from '@/lib/format'
 import { useAnnouncementsStore } from '@/stores/announcements'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { AppRoute } from '@/lib/routes'
+import schema, { ANNOUNCEMENT_DATE_FIELD_KEY } from '@/views/AnnouncementFormView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -67,6 +65,18 @@ const saving = ref(false)
 
 /** Whether the existing announcement is being loaded; true from the first paint of an edit, so the form never flashes empty. */
 const loading = ref(isEditMode.value)
+
+/**
+ * The sections of the schema; a new announcement has no creation date yet, so its field is left out (the skeleton of an
+ * announcement being read keeps it, because the stored one will have it).
+ */
+const columns = computed(() =>
+  form.value.createdOn || loading.value
+    ? schema.columns
+    : schema.columns.map((column) =>
+      column.map((section) => ({ ...section, fields: section.fields.filter((field) => field.key !== ANNOUNCEMENT_DATE_FIELD_KEY) })),
+    ),
+)
 
 /** The sentence of a refused load of the announcement being edited, null when it loaded. */
 const loadError = ref<string | null>(null)
@@ -117,9 +127,6 @@ const handleSave = async (): Promise<void> => {
   }
 }
 
-// Every field of the form stays a placeholder while the announcement is read.
-provide(UI_FIELD_LOADING, loading)
-
 onMounted(() => {
   if (isEditMode.value) {
     fetchAnnouncement()
@@ -129,14 +136,6 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiStack direction="row" gap="sm" align="center">
-      <UiLink :to="AppRoute.SupportAnnouncements" :variant="UiButtonVariant.Link" data-testid="announcement-form-breadcrumb">
-        {{ t('shared.announcements') }}
-      </UiLink>
-      <UiText tone="muted" size="md">/</UiText>
-      <UiText tone="secondary" size="md">{{ pageTitle }}</UiText>
-    </UiStack>
-
     <UiPageHeader
       :title="pageTitle"
       :subtitle="isEditMode ? t('support.announcementForm.updateTheAnnouncementDetailsBelow') : t('support.announcementForm.createANewClientFacing')"
@@ -152,42 +151,53 @@ onMounted(() => {
 
     <UiAlert v-else-if="store.error" variant="error" data-testid="announcement-form-error">{{ store.error }}</UiAlert>
 
-    <UiCard v-if="loadError === null" padding="md" :aria-busy="loading ? 'true' : undefined" data-testid="announcement-form-loading">
-      <UiStack>
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.title')" :error="store.fieldErrors.title">
-            <UiInput
-              v-model="form.title"
-              :placeholder="t('support.announcementForm.announcementTitle')"
-              data-testid="announcement-form-title"
-            />
-          </UiField>
-          <UiField v-if="form.createdOn || loading" :label="t('shared.date')">
-            <UiInput
-              :model-value="form.createdOn"
-              readonly
-              :placeholder="t('shared.date')"
-              data-testid="announcement-form-created-on"
-            />
-          </UiField>
-        </UiGrid>
+    <UiSchemaForm
+      v-if="loadError === null"
+      :columns="columns"
+      :loading="loading"
+      :errors="store.fieldErrors"
+      data-testid="announcement-form-loading"
+    >
+      <template #field-title="{ id, invalid, describedby }">
+        <UiInput
+          :id="id"
+          v-model="form.title"
+          :invalid="invalid"
+          :aria-describedby="describedby"
+          :placeholder="t('support.announcementForm.announcementTitle')"
+          data-testid="announcement-form-title"
+        />
+      </template>
 
-        <UiField :label="t('support.announcementForm.announcement')" :error="store.fieldErrors.content">
-          <UiTextarea
-            v-model="form.content"
-            rows="12"
-            :placeholder="t('support.announcementForm.announcementContent')"
-            data-testid="announcement-form-content"
-          />
-        </UiField>
+      <template #field-createdOn="{ id }">
+        <UiInput
+          :id="id"
+          :model-value="form.createdOn"
+          readonly
+          :placeholder="t('shared.date')"
+          data-testid="announcement-form-created-on"
+        />
+      </template>
 
-        <UiStack direction="row" gap="sm" align="center">
-          <UiCheckbox v-model="form.published" data-testid="announcement-form-published" />
-          <UiText tone="secondary" size="md">{{ t('shared.published') }}</UiText>
-        </UiStack>
+      <template #field-content="{ id, invalid, describedby }">
+        <UiTextarea
+          :id="id"
+          v-model="form.content"
+          rows="12"
+          :invalid="invalid"
+          :aria-describedby="describedby"
+          :placeholder="t('support.announcementForm.announcementContent')"
+          data-testid="announcement-form-content"
+        />
+      </template>
 
+      <template #field-published="{ id }">
+        <UiCheckbox :id="id" v-model="form.published" :aria-label="t('shared.published')" data-testid="announcement-form-published" />
+      </template>
+
+      <template #section-announcement>
         <UiStack direction="row" gap="sm">
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             :variant="UiButtonVariant.Primary"
             :loading="saving"
             :disabled="!form.title.trim()"
@@ -196,7 +206,7 @@ onMounted(() => {
           >
             {{ isEditMode ? t('support.announcementForm.updateAnnouncement') : t('support.announcementForm.saveAnnouncement') }}
           </UiButton>
-          <UiLink
+          <UiLink :action="UiActionKind.Cancel"
             :to="AppRoute.SupportAnnouncements"
             :variant="UiButtonVariant.Secondary"
             data-testid="announcement-form-cancel"
@@ -204,7 +214,7 @@ onMounted(() => {
             {{ t('shared.cancel') }}
           </UiLink>
         </UiStack>
-      </UiStack>
-    </UiCard>
+      </template>
+    </UiSchemaForm>
   </UiStack>
 </template>

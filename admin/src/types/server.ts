@@ -129,6 +129,16 @@ export interface ServerCredentialClears {
   accessHash: boolean
 }
 
+/** What the active services provisioned on a server renew for, as the server list reports it. */
+export interface ServerUsage {
+  /** How many active services are provisioned on the server. */
+  activeServices: number
+  /** What those services renew for each month, in {@link ServerUsage.currency}. */
+  monthlyRevenue: number
+  /** ISO 4217 code of the base currency the revenue is converted to. */
+  currency: string
+}
+
 /** DTO for a single provisioning server. */
 export interface ServerDto {
   /** Unique server identifier. */
@@ -161,6 +171,8 @@ export interface ServerDto {
   accountsCount: number | null
   /** Which secrets are stored. */
   credentials: ServerCredentialStatus
+  /** What the active services on the server renew for; read by the server list only, null where a server is shown inside its group. */
+  usage: ServerUsage | null
 }
 
 /**

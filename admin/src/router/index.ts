@@ -3,14 +3,16 @@ import type { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { authMiddleware } from '@/middleware/auth'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
+import AppLayout from '@/layouts/AppLayout.vue'
 import { REPORTS } from '@/lib/reports'
 import { AppRoute } from '@/lib/routes'
-import { withRetry } from '@/lib/lazyRoute'
+import { withRetry, withViewFile } from '@/lib/lazyRoute'
+import { withSkeletons } from '@/lib/skeletonRegistry'
 import { prefetchRoute } from '@/lib/prefetchRoute'
 import { navigationAdmitted, navigationFailed, navigationSettled } from '@/middleware/navigation'
 
-/** Every view and layout as a lazy loader, keyed by its path relative to this file; Vite splits each into its own chunk. */
-const loaders = import.meta.glob<{ default: Component }>(['../views/*.vue', '../layouts/*.vue'])
+/** Every view and layout but the shell layout as a lazy loader, keyed by its path relative to this file; Vite splits each into its own chunk. */
+const loaders = import.meta.glob<{ default: Component }>(['../views/*.vue', '../layouts/*.vue', '!../layouts/AppLayout.vue'])
 
 /**
  * Looks up one routed file and makes it a lazy route component.
@@ -18,9 +20,10 @@ const loaders = import.meta.glob<{ default: Component }>(['../views/*.vue', '../
  * Views and layouts alike are plain `() => import()` loaders, the lazy form vue-router supports; the
  * router awaits them before it switches screens, and the navigation store tells the shell about that
  * wait (see `middleware/navigation.ts`). Each loader retries a failed download, so one dropped request
- * does not leave the click with no effect.
+ * does not leave the click with no effect. The loader is tagged with its file, which is how `withSkeletons` finds the
+ * skeleton schema of the screen it loads.
  *
- * @param file - Path under `src/`, such as `views/LoginView.vue` or `layouts/AppLayout.vue`.
+ * @param file - Path under `src/`, such as `views/LoginView.vue` or `layouts/ClientLayout.vue`.
  * @returns The loader to put in a route record.
  * @throws When no such file exists, so a typo fails when the table is built rather than on navigation.
  */
@@ -29,7 +32,7 @@ const lazy = (file: string): (() => Promise<{ default: Component }>) => {
   if (!loader) {
     throw new Error(`Unknown routed file: ${file}`)
   }
-  return withRetry(loader)
+  return withViewFile(withRetry(loader), file)
 }
 
 /**
@@ -52,7 +55,7 @@ const scrollToTop = (): { top: number } => ({ top: 0 })
 const router = createRouter({
   history: createWebHistory(getRuntimeConfig().basePath),
   scrollBehavior: scrollToTop,
-  routes: [
+  routes: withSkeletons([
     {
       // Not `public: true`. The guard judges this route on its own terms (setup still
       // outstanding, and a deployment that owns its own accounts) and the public rule
@@ -82,12 +85,14 @@ const router = createRouter({
     // /api/auth/callback, which the API answers using the client secret.
     {
       path: '/',
-      component: lazy('layouts/AppLayout.vue'),
-      meta: { requiresAuth: true },
+      // The one eager layout: it holds the sidebar and the topbar, so a hard load draws them at once and only the screen
+      // inside waits for its chunk (see RoutedView, which draws this record itself while the screen below it loads).
+      component: AppLayout,
+      meta: { requiresAuth: true, shell: true },
       children: [
         { path: '', redirect: AppRoute.Dashboard },
         { path: 'dashboard', component: lazy('views/DashboardView.vue') },
-        { path: 'notifications', component: lazy('views/NotificationsView.vue') },
+        { path: 'notifications', component: lazy('views/NotificationsView.vue'), meta: { crumb: 'common.notifications' } },
         { path: 'clients', component: lazy('views/ClientsListView.vue') },
         { path: 'clients/add', component: lazy('views/AddClientView.vue') },
         { path: 'clients/users', component: lazy('views/ManageUsersView.vue') },
@@ -158,7 +163,7 @@ const router = createRouter({
             // The report was named after the scheme it replaced; a saved link or bookmark to the old address lands on it.
             { path: 'vat-moss', redirect: AppRoute.ReportsOss },
             /** One route per catalogued report. */
-            ...REPORTS.map(r => ({ path: r.slug, component: withRetry(r.component) })),
+            ...REPORTS.map(r => ({ path: r.slug, component: lazy(r.file) })),
           ],
         },
         { path: 'orders', component: lazy('views/OrdersListView.vue') },
@@ -236,7 +241,7 @@ const router = createRouter({
       ],
     },
     { path: '/:pathMatch(.*)*', component: lazy('views/NotFoundView.vue') },
-  ],
+  ]),
 })
 
 // First: start downloading the target's chunks now. The session check below can take a few round trips

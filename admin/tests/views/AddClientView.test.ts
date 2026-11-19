@@ -8,7 +8,9 @@ import { describe, expect, it } from 'vitest'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { ClientStatus } from '@/types/client'
 import AddClientView from '@/views/AddClientView.vue'
+import schema from '@/views/AddClientView.schema'
 import { mountClientView } from '../helpers/clientViews'
+import { fieldsOf } from '../helpers/schemaParity'
 import { callOf, invalid, json, stubFetch } from '../helpers/fetch'
 
 describe('AddClientView', () => {
@@ -113,5 +115,34 @@ describe('AddClientView', () => {
 
     expect(mock).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="add-client-status-confirm"]').exists()).toBe(false)
+  })
+
+  it('returns to the clients list with the back pill in the header', async () => {
+    const wrapper = await mountClientView(AddClientView)
+    const back = wrapper.get('[data-testid="add-client-back"]')
+
+    expect(back.attributes('href')).toBe('/clients')
+    expect(back.text()).toBe('Clients')
+  })
+
+  it('draws every section and field of its schema, with the new user credentials in the owner card', async () => {
+    const wrapper = await mountClientView(AddClientView)
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+    }
+    for (const field of fieldsOf(schema)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
+  })
+
+  it('swaps the credentials for the user search when an existing user is associated', async () => {
+    const wrapper = await mountClientView(AddClientView)
+
+    await wrapper.get('[data-testid="add-client-owner-existing"]').setValue(true)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-form-field-email"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-form-field-existingUserId"]').exists()).toBe(true)
   })
 })

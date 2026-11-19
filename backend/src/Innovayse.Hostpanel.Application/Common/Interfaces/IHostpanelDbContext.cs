@@ -316,6 +316,13 @@ public interface IHostpanelDbContext
     /// </summary>
     public DbSet<PluginSlotProductBinding> PluginSlotProductBindings { get; }
 
+    /// <summary>
+    /// Gets the install records of the plugins an operator uploaded or fetched from the registry, one row per plugin:
+    /// when it was installed and last replaced, by whom, and what the latest accepted package was. Written by the
+    /// install use cases, deleted by the removal, read by the admin list.
+    /// </summary>
+    public DbSet<InstalledPlugin> InstalledPlugins { get; }
+
     /// <summary>Saves every tracked change in one transaction.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The number of rows written.</returns>

@@ -1,8 +1,8 @@
 /**
- * Unit tests for the card layout of UiTable (below `sm`): each cell finds its header column by its position in the row, takes the
- * column's role and caption, the table keeps its ARIA roles, sorting stays reachable and editable tables work as cards.
+ * Unit tests for the phone render of UiTable: below `sm` the table is a UiCardList of UiRecordCards built from the same header columns and row
+ * slots, each cell lands in the part of the card its column's role names, and no table markup is drawn.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import type { VNodeChild } from 'vue'
 import { createI18n, useI18n } from 'vue-i18n'
@@ -24,8 +24,24 @@ import { createTestI18n } from '../../helpers/i18n'
 /** Global options giving the table its i18n plugin. */
 const global = () => ({ plugins: [createTestI18n()] })
 
+/** The `matchMedia` of the test document before a test replaced it. */
+const originalMatchMedia = window.matchMedia
+
+beforeEach(() => {
+  // A phone: every media query of the table (below `sm`) matches.
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined }),
+  })
+})
+
+afterEach(() => {
+  Object.defineProperty(window, 'matchMedia', { configurable: true, writable: true, value: originalMatchMedia })
+})
+
 /**
- * A table with a title, a field, a badge, a hidden and an actions column and one row.
+ * A table with a heading, a field, a badge, a left out and an actions column and one row.
  *
  * @param tableProps Props of the table.
  * @param rowProps Props of the body row.
@@ -35,7 +51,7 @@ const cardHarness = (tableProps: Record<string, unknown> = {}, rowProps: Record<
   render: () => h(UiTable, tableProps, {
     default: () => [
       h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => [
-        h(UiTableHeader, { cardRole: UiCardRole.Title }, { default: () => 'Name' }),
+        h(UiTableHeader, null, { default: () => 'Name' }),
         h(UiTableHeader, null, { default: () => 'Email' }),
         h(UiTableHeader, { cardRole: UiCardRole.Badge }, { default: () => 'Status' }),
         h(UiTableHeader, { cardRole: UiCardRole.Hidden }, { default: () => 'Id' }),
@@ -46,7 +62,7 @@ const cardHarness = (tableProps: Record<string, unknown> = {}, rowProps: Record<
         h(UiTableCell, null, { default: () => 'ada@x.io' }),
         h(UiTableCell, null, { default: () => 'Active' }),
         h(UiTableCell, null, { default: () => '7' }),
-        h(UiTableCell, { actions: true }, { default: () => 'Edit' }),
+        h(UiTableCell, { actions: true }, { default: () => h('button', { 'data-testid': 'more' }, 'more') }),
       ] }) }),
     ],
   }),
@@ -73,135 +89,116 @@ const tableOf = (
   }),
 })
 
-describe('UiTable cards', () => {
-  it('gives every cell the role of its header column', async () => {
-    const wrapper = mount(cardHarness(), { global: global() })
-    await flushPromises()
-    const cells = wrapper.findAll('[data-testid="row"] td')
-
-    expect(cells[0]!.classes()).toContain('max-sm:font-semibold')
-    expect(cells[1]!.classes()).toContain('max-sm:justify-between')
-    expect(cells[2]!.classes()).toContain('max-sm:order-3')
-    expect(cells[3]!.classes()).toContain('max-sm:hidden')
-    expect(cells[4]!.classes()).toContain('max-sm:border-t')
-  })
-
-  it('names each value by the caption of its column in a real element, hidden from sm up', async () => {
-    const wrapper = mount(cardHarness(), { global: global() })
-    await flushPromises()
-    const cells = wrapper.findAll('[data-testid="row"] td')
-
-    expect(cells[0]!.find('span').text()).toBe('Name')
-    expect(cells[0]!.find('span').classes()).toEqual(expect.arrayContaining(['sr-only', 'sm:hidden']))
-    expect(cells[1]!.find('span').text()).toBe('Email')
-    expect(cells[1]!.find('span').classes()).toEqual(expect.arrayContaining(['text-xs', 'sm:hidden']))
-    expect(cells[2]!.find('span').text()).toBe('Status')
-    expect(cells[3]!.find('span').exists()).toBe(false)
-    expect(cells[4]!.find('span').exists()).toBe(false)
-  })
-
-  it('draws the body row as a card and drops the header captions', async () => {
+describe('UiTable as a card list', () => {
+  it('draws a list of record cards and no table markup', async () => {
     const wrapper = mount(cardHarness(), { global: global() })
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="row"]').classes()).toContain('max-sm:rounded-xl')
-    expect(wrapper.find('table').classes()).toContain('max-sm:block')
-    expect(wrapper.findAll('th').every((th) => th.classes().includes('max-sm:hidden'))).toBe(true)
+    expect(wrapper.find('table').exists()).toBe(false)
+    expect(wrapper.find('th').exists()).toBe(false)
+    expect(wrapper.find('td').exists()).toBe(false)
+    expect(wrapper.find('[role="list"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="row"]').attributes('role')).toBe('listitem')
   })
 
-  it('keeps the table semantics of every part as explicit roles', async () => {
-    const wrapper = mount(cardHarness({}, { selected: true }), { global: global() })
+  it('puts every cell in the part of the card its column plays, the first column being the heading by default', async () => {
+    const wrapper = mount(cardHarness(), { global: global() })
+    await flushPromises()
+    const card = wrapper.get('[data-testid="row"]')
+
+    expect(card.get('.font-semibold').text()).toContain('Ada')
+    expect(card.text()).toContain('Email')
+    expect(card.text()).toContain('ada@x.io')
+    expect(card.text()).toContain('Active')
+    expect(card.find('[data-testid="more"]').exists()).toBe(true)
+  })
+
+  it('leaves a column of the hidden role out and captions a field with real text', async () => {
+    const wrapper = mount(cardHarness(), { global: global() })
+    await flushPromises()
+    const card = wrapper.get('[data-testid="row"]')
+
+    expect(card.text()).not.toContain('7')
+    const caption = card.findAll('span').find((span) => span.text() === 'Email')
+    expect(caption?.classes()).toContain('text-xs')
+  })
+
+  it('picks the growing column as the heading when no header names one', async () => {
+    const wrapper = mount(tableOf(
+      [{ caption: 'Id' }, { caption: 'Name', props: { size: 'grow' } }],
+      () => [h(UiTableCell, null, { default: () => '7' }), h(UiTableCell, null, { default: () => 'Ada' })],
+    ), { global: global() })
+    await flushPromises()
+    const card = wrapper.get('[data-testid="row"]')
+
+    expect(card.get('.font-semibold').text()).toContain('Ada')
+    expect(card.text()).toContain('Id')
+  })
+
+  it('draws a subtitle as a muted line under the heading', async () => {
+    const wrapper = mount(tableOf(
+      [{ caption: 'Name' }, { caption: 'Email', props: { cardRole: UiCardRole.Subtitle } }],
+      () => [h(UiTableCell, null, { default: () => 'Ada' }), h(UiTableCell, null, { default: () => 'ada@x.io' })],
+    ), { global: global() })
     await flushPromises()
 
-    expect(wrapper.find('table').attributes('role')).toBe('table')
-    expect(wrapper.find('thead').attributes('role')).toBe('rowgroup')
-    expect(wrapper.find('tbody').attributes('role')).toBe('rowgroup')
-    expect(wrapper.find('thead tr').attributes('role')).toBe('row')
-    expect(wrapper.find('[data-testid="row"]').attributes('role')).toBe('row')
-    expect(wrapper.find('th').attributes('role')).toBe('columnheader')
-    expect(wrapper.find('[data-testid="row"] td').attributes('role')).toBe('cell')
+    expect(wrapper.get('[data-testid="row"] .text-text-muted').text()).toContain('ada@x.io')
   })
 
-  it('gives the foot, the empty row and the loading rows their roles too', async () => {
-    const foot = mount(defineComponent({
-      render: () => h(UiTable, null, { default: () => h(UiTableFoot, null, { default: () => h(UiTableRow) }) }),
-    }), { global: global() })
-    const empty = mount(cardHarness({ empty: true }), { global: global() })
-    const loading = mount(cardHarness({ loading: true, skeletonRows: 1 }), { global: global() })
-    await flushPromises()
-
-    expect(foot.find('tfoot').attributes('role')).toBe('rowgroup')
-    expect(empty.findAll('tbody')[1]!.attributes('role')).toBe('rowgroup')
-    expect(empty.findAll('tbody')[1]!.find('tr').attributes('role')).toBe('row')
-    expect(empty.findAll('tbody')[1]!.find('td').attributes('role')).toBe('cell')
-    expect(loading.find('[data-testid="ui-table-skeleton"]').attributes('role')).toBe('rowgroup')
-    expect(loading.find('[data-testid="ui-table-skeleton"] tr').attributes('role')).toBe('row')
-    expect(loading.find('[data-testid="ui-table-skeleton"] td').attributes('role')).toBe('cell')
-  })
-
-  it('keeps aria-selected on the row of a ticked card', async () => {
-    const selection = useRowSelection(() => [1])
-    selection.toggle(1, false)
-    const wrapper = mount(cardHarness({ selection }, { rowId: 1 }), { global: global() })
-    await flushPromises()
-
-    expect(wrapper.find('[data-testid="row"]').attributes('role')).toBe('row')
-    expect(wrapper.find('[data-testid="row"]').attributes('aria-selected')).toBe('true')
-  })
-
-  it('keeps the checkbox on the card and the select-all cell in the header', async () => {
-    const selection = useRowSelection(() => [1])
-    const wrapper = mount(cardHarness({ selection }, { rowId: 1 }), { global: global() })
-    await flushPromises()
-    const checkboxCell = wrapper.find('[data-testid="row"] td')
-
-    expect(checkboxCell.classes()).toContain('max-sm:order-1')
-    expect(checkboxCell.find('span').exists()).toBe(false)
-    expect(wrapper.find('thead th').classes()).not.toContain('max-sm:hidden')
-    expect(wrapper.findAll('[data-testid="row"] td')[1]!.find('span').text()).toBe('Name')
-  })
-
-  it('draws loading placeholders as cards with the same roles and captions', async () => {
-    const wrapper = mount(cardHarness({ loading: true, skeletonRows: 2 }), { global: global() })
-    await flushPromises()
-    const rows = wrapper.findAll('[data-testid="ui-table-skeleton"] tr')
-
-    expect(rows).toHaveLength(2)
-    expect(rows[0]!.classes()).toContain('max-sm:rounded-xl')
-    expect(rows[0]!.findAll('td')[1]!.find('span').text()).toBe('Email')
-    expect(rows[0]!.findAll('td')[3]!.classes()).toContain('max-sm:hidden')
-  })
-
-  it('reads the caption of a sortable header without its sort arrow', async () => {
-    const wrapper = mount(tableOf([{ caption: 'Date', props: { sortable: true } }], () => [h(UiTableCell, null, { default: () => 'x' })]), { global: global() })
-    await flushPromises()
-
-    expect(wrapper.find('[data-testid="row"] td span').text()).toBe('Date')
-  })
-
-  it('leaves a column hidden below a breakpoint out of the card', async () => {
+  it('shows a column that is hidden below a breakpoint in the wide table as a field of the card', async () => {
     const wrapper = mount(tableOf(
       [{ caption: 'Name' }, { caption: 'Email', props: { hideBelow: 'lg' } }],
       () => [h(UiTableCell, null, { default: () => 'Ada' }), h(UiTableCell, { hideBelow: 'lg' }, { default: () => 'ada@x.io' })],
     ), { global: global() })
     await flushPromises()
-    const cells = wrapper.findAll('[data-testid="row"] td')
 
-    expect(cells[1]!.classes()).toEqual(expect.arrayContaining(['hidden', 'lg:table-cell', 'max-sm:hidden']))
-    expect(cells[1]!.find('span').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="row"]').text()).toContain('ada@x.io')
   })
 
-  it('shows a hidden below column on the card when its header sets a role itself', async () => {
-    const wrapper = mount(tableOf(
-      [{ caption: 'Name' }, { caption: 'Total', props: { hideBelow: 'sm', cardRole: UiCardRole.Field } }],
-      () => [h(UiTableCell, null, { default: () => 'Ada' }), h(UiTableCell, { hideBelow: 'sm' }, { default: () => '$5' })],
-    ), { global: global() })
+  it('draws loading placeholders as record cards in a list', async () => {
+    const wrapper = mount(cardHarness({ loading: true, skeletonRows: 3 }), { global: global() })
     await flushPromises()
-    const total = wrapper.findAll('[data-testid="row"] td')[1]!
 
-    expect(total.classes()).toContain('max-sm:flex')
-    expect(total.classes()).not.toContain('max-sm:hidden')
-    expect(total.find('span').text()).toBe('Total')
+    expect(wrapper.get('[data-testid="ui-table-skeleton"]').attributes('role')).toBe('list')
+    expect(wrapper.findAll('[data-testid="ui-table-skeleton"] [role="listitem"]')).toHaveLength(3)
+    expect(wrapper.findAll('[data-testid="ui-record-card-skeleton"]')).toHaveLength(3)
+    expect(wrapper.find('table').exists()).toBe(false)
+  })
+
+  it('draws the empty state in place of the cards', async () => {
+    const wrapper = mount(cardHarness({ empty: true, emptyText: 'Nothing here' }), { global: global() })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="ui-table-empty"]').text()).toContain('Nothing here')
+  })
+
+  it('keeps the checkbox on the card and puts select-all in the list header', async () => {
+    const selection = useRowSelection(() => [1])
+    const wrapper = mount(cardHarness({ selection }, { rowId: 1 }), { global: global() })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="row"] [data-testid="ui-table-select-row"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-card-list-header"] [data-testid="ui-table-select-all"]').exists()).toBe(true)
+  })
+
+  it('marks a ticked card selected', async () => {
+    const selection = useRowSelection(() => [1])
+    selection.toggle(1, false)
+    const wrapper = mount(cardHarness({ selection }, { rowId: 1 }), { global: global() })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="row"]').classes()).toContain('ring-1')
+  })
+
+  it('reads the caption of a sortable header without its sort arrow', async () => {
+    const wrapper = mount(tableOf([{ caption: 'Name' }, { caption: 'Date', props: { sortable: true } }], () => [
+      h(UiTableCell, null, { default: () => 'x' }),
+      h(UiTableCell, null, { default: () => 'y' }),
+    ]), { global: global() })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="row"]').text()).toContain('Date')
+    expect(wrapper.get('[data-testid="row"]').text()).not.toContain('↕')
   })
 
   it('takes the card role of an editable column: the caption over a full width control', async () => {
@@ -210,28 +207,11 @@ describe('UiTable cards', () => {
       () => [h(UiTableCell, null, { default: () => h('input', { placeholder: 'x' }) })],
     ), { global: global() })
     await flushPromises()
-    const cell = wrapper.find('[data-testid="row"] td')
+    const card = wrapper.get('[data-testid="row"]')
 
-    expect(cell.classes()).toEqual(expect.arrayContaining(['max-sm:flex', 'max-sm:flex-col', 'max-sm:items-stretch', 'max-sm:w-full']))
-    expect(cell.find('span').text()).toBe('Description')
-    expect(cell.find('input').exists()).toBe(true)
-  })
-
-  it('makes a checkbox header of an editable table the select column, so select-all stays on a phone', async () => {
-    const wrapper = mount(tableOf(
-      [{ caption: '', props: { select: true } }, { caption: 'Description', props: { cardRole: UiCardRole.Control } }],
-      () => [
-        h(UiTableCell, { select: true }, { default: () => h('input', { type: 'checkbox' }) }),
-        h(UiTableCell, null, { default: () => h('textarea', { placeholder: 'x' }) }),
-      ],
-    ), { global: global() })
-    await flushPromises()
-    const cells = wrapper.findAll('[data-testid="row"] td')
-
-    expect(wrapper.find('thead th').classes()).not.toContain('max-sm:hidden')
-    expect(cells[0]!.classes()).toContain('max-sm:order-1')
-    expect(cells[0]!.find('span').exists()).toBe(false)
-    expect(cells[1]!.find('span').text()).toBe('Description')
+    expect(card.text()).toContain('Description')
+    expect(card.find('input').exists()).toBe(true)
+    expect(card.find('.flex-col.items-stretch').exists()).toBe(true)
   })
 
   it('counts cells at render time: a cell behind a false v-if does not shift the others', async () => {
@@ -253,15 +233,16 @@ describe('UiTable cards', () => {
     }), { global: global() })
     await flushPromises()
 
-    expect(wrapper.findAll('[data-testid="row"] td').map((td) => td.find('span').text())).toEqual(['A', 'B'])
+    expect(wrapper.get('[data-testid="row"]').text()).toContain('B')
+    expect(wrapper.get('[data-testid="row"]').text()).not.toContain('C')
 
     shown.value = true
     await flushPromises()
 
-    expect(wrapper.findAll('[data-testid="row"] td').map((td) => td.find('span').text())).toEqual(['A', 'B', 'C'])
+    expect(wrapper.get('[data-testid="row"]').text()).toContain('C')
   })
 
-  it('counts a cell through a fragment of a list and a cell that spans columns as a full width line', async () => {
+  it('draws a cell that spans columns as a full width line of the card', async () => {
     const wrapper = mount(tableOf(
       [{ caption: 'A' }, { caption: 'B' }, { caption: 'C' }],
       () => [
@@ -270,14 +251,13 @@ describe('UiTable cards', () => {
       ],
     ), { global: global() })
     await flushPromises()
-    const cells = wrapper.findAll('[data-testid="row"] td')
+    const card = wrapper.get('[data-testid="row"]')
 
-    expect(cells[0]!.classes()).toEqual(expect.arrayContaining(['max-sm:w-full', 'max-sm:block']))
-    expect(cells[0]!.find('span').exists()).toBe(false)
-    expect(cells[1]!.find('span').text()).toBe('C')
+    expect(card.get('.w-full').text()).toContain('span')
+    expect(card.text()).toContain('C')
   })
 
-  it('draws the totals of a foot as a card: a spanning label and the amount under its column', async () => {
+  it('draws the totals of a foot as a card', async () => {
     const wrapper = mount(defineComponent({
       render: () => h(UiTable, null, { default: () => [
         h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => [
@@ -285,18 +265,16 @@ describe('UiTable cards', () => {
           h(UiTableHeader, { numeric: true }, { default: () => 'Amount' }),
         ] }) }),
         h(UiTableFoot, null, { default: () => h(UiTableRow, { 'data-testid': 'foot-row' }, { default: () => [
-          h(UiTableCell, { colspan: 1 }, { default: () => 'Total' }),
+          h(UiTableCell, null, { default: () => 'Total' }),
           h(UiTableCell, { numeric: true }, { default: () => '$9' }),
         ] }) }),
       ] }),
     }), { global: global() })
     await flushPromises()
-    const cells = wrapper.findAll('[data-testid="foot-row"] td')
 
-    expect(wrapper.find('tfoot').classes()).toContain('max-sm:block')
-    expect(wrapper.find('[data-testid="foot-row"]').classes()).toContain('max-sm:rounded-xl')
-    expect(cells[1]!.find('span').text()).toBe('Amount')
-    expect(cells[1]!.text()).toContain('$9')
+    expect(wrapper.find('tfoot').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="foot-row"]').attributes('role')).toBe('listitem')
+    expect(wrapper.get('[data-testid="foot-row"]').text()).toContain('$9')
   })
 
   it('updates the captions of the cards when the language changes', async () => {
@@ -304,25 +282,31 @@ describe('UiTable cards', () => {
       legacy: false,
       locale: 'en',
       fallbackLocale: 'en',
-      messages: { en: { ...messages.en, caption: 'Email' }, ru: { ...messages.en, caption: 'Почта' } },
+      messages: { en: { ...messages.en, caption: 'Email' }, ru: { ...messages.en, caption: 'Mail ru' } },
     })
     const wrapper = mount(defineComponent({
       setup: () => {
         const { t } = useI18n()
         return () => h(UiTable, null, { default: () => [
-          h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => h(UiTableHeader, null, { default: () => t('caption') }) }) }),
-          h(UiTableBody, null, { default: () => h(UiTableRow, { 'data-testid': 'row' }, { default: () => h(UiTableCell, null, { default: () => 'x' }) }) }),
+          h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => [
+            h(UiTableHeader, null, { default: () => 'Name' }),
+            h(UiTableHeader, null, { default: () => t('caption') }),
+          ] }) }),
+          h(UiTableBody, null, { default: () => h(UiTableRow, { 'data-testid': 'row' }, { default: () => [
+            h(UiTableCell, null, { default: () => 'x' }),
+            h(UiTableCell, null, { default: () => 'y' }),
+          ] }) }),
         ] })
       },
     }), { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="row"] td span').text()).toBe('Email')
+    expect(wrapper.get('[data-testid="row"]').text()).toContain('Email')
 
     i18n.global.locale.value = 'ru'
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="row"] td span').text()).toBe('Почта')
+    expect(wrapper.get('[data-testid="row"]').text()).toContain('Mail ru')
   })
 })
 
@@ -358,10 +342,11 @@ describe('UiTable sort control on a phone', () => {
     ] }),
   })
 
-  it('offers the sortable columns above the cards, on phones only', async () => {
+  it('offers the sortable columns above the cards', async () => {
     const wrapper = mount(sortableHarness(vi.fn()), { global: global() })
     await flushPromises()
-    expect(wrapper.find('[data-testid="ui-table-sort"]').classes()).toContain('sm:hidden')
+
+    expect(wrapper.find('[data-testid="ui-card-list-header"]').exists()).toBe(true)
     expect(sortSelect(wrapper).options.map((option) => option.label)).toEqual(['Name', 'Date'])
   })
 
@@ -369,7 +354,7 @@ describe('UiTable sort control on a phone', () => {
     const wrapper = mount(cardHarness(), { global: global() })
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="ui-table-sort"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-sort-column"]').exists()).toBe(false)
   })
 
   it('asks the screen to sort by the picked column through the header sort request', async () => {

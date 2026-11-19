@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Application.Reports.Common;
 /// <param name="BillingCycle">The billing cycle.</param>
 /// <param name="FirstPaymentAmount">The first payment amount.</param>
 /// <param name="RecurringAmount">The recurring amount.</param>
+/// <param name="CurrencyCode">ISO 4217 code of the currency both amounts are in: the owning client's billing currency.</param>
 /// <param name="PaymentMethod">The payment method.</param>
 /// <param name="RegistrationDate">The registration date.</param>
 /// <param name="NextDueDate">The next due date.</param>
@@ -29,6 +30,7 @@ public record ServiceReportDto(
     BillingCycle BillingCycle,
     decimal FirstPaymentAmount,
     decimal RecurringAmount,
+    string CurrencyCode,
     string? PaymentMethod,
     string RegistrationDate,
     string? NextDueDate,

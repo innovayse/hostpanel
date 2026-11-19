@@ -10,6 +10,7 @@ import { CreditMovement } from '@/types/creditmovement'
 import { mountRouted } from '../helpers/mount'
 import { callOf, json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -106,7 +107,7 @@ describe('ClientCreditView', () => {
     expect(posted).toBeGreaterThanOrEqual(0)
     expect(JSON.parse(String(callOf(mock, posted).init?.body))).toEqual({ direction: 'Add', amount: 12.5, reason: 'Promo' })
     expect(lines(mock).filter((line) => line.startsWith('GET /api/clients/9/credit')).length).toBe(2)
-    expect(wrapper.get('[data-testid="client-credit-feedback"]').text()).toContain('adjusted')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('adjusted')
   })
 
   it('shows the API sentence when the adjustment is refused', async () => {
@@ -153,7 +154,7 @@ describe('ClientCreditView', () => {
 
     expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(2)
     expect(wrapper.get('[data-testid="client-credit-form"]').findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(3)
-    expect(wrapper.get('[data-testid="client-credit-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-detail-card-history"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="client-credit-submit"]').attributes('disabled')).toBeDefined()
   })
 })

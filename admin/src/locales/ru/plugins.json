@@ -1,11 +1,6 @@
 {
   "pluginCard": {
     "builtIn": "Встроенный",
-    "capabilities": {
-      "endpoints": "Обслуживает страницы",
-      "paymentReturn": "Завершает платежи после шага в браузере",
-      "storedCredentials": "Сохранённые способы оплаты"
-    },
     "pendingRestart": "Ожидает перезапуска",
     "remove": "Удалить",
     "refused": "Отклонён",

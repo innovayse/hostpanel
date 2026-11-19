@@ -6,6 +6,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import TldConfigsView from '@/views/TldConfigsView.vue'
+import schema from '@/views/TldConfigsView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { EnabledFilter } from '@/types/enabledfilter'
 import { RegistrarModule } from '@/types/registrarmodule'
 import type { TldConfigListItem } from '@/types/tldconfig'
@@ -14,6 +16,7 @@ import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The address the screen is registered under. */
 const PATH = '/settings/tld-pricing'
@@ -91,6 +94,13 @@ afterEach(() => {
 })
 
 describe('TldConfigsView', () => {
+  it('draws the table head of its schema columns, in order', async () => {
+    stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
+    const { wrapper } = await mountListAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('shows a row per TLD with prices in their symbols, margin, categories and sync state', async () => {
     stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com'), item('net', { id: 2, marginPercent: -5, isEnabled: false, categories: [] })])) })
     const { wrapper } = await mountListAt()
@@ -104,7 +114,8 @@ describe('TldConfigsView', () => {
     expect(com).toContain('popular')
     expect(com).toContain('Never')
     expect(wrapper.get('[data-testid="tld-row-net"]').text()).toContain('-5.0%')
-    expect(wrapper.get('[data-testid="tld-row-net"]').text()).toContain('Disabled')
+    expect(wrapper.get('[data-testid="tld-row-net"] [role="img"]').attributes('aria-label')).toBe('Disabled')
+    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
     expect(wrapper.text()).toContain('TLDs: 2')
   })
 
@@ -192,11 +203,29 @@ describe('TldConfigsView', () => {
     await pickOption(wrapper, 'tld-configs-import', 'Namecheap')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tld-configs-result"]').text()).toBe('Import complete: 2 imported, 1 updated.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Import complete: 2 imported, 1 updated.'])
     })
     expect(requestsOf(mock)).toContain('POST /api/admin/tld-configs/import/Namecheap')
     expect(listUrls(mock).length).toBe(before + 1)
     expect(listUrls(mock).at(-1)).toBe('/api/admin/tld-configs?page=1&pageSize=20&search=co')
+  })
+
+  it('names the provider as the registrar spells it, not as the API enum does', async () => {
+    stubRoutes({ 'GET /api/admin/tld-configs?': () => json(page([item('am')])) })
+    const { wrapper } = await mountListAt()
+
+    const row = wrapper.get('[data-testid="tld-row-am"]').text()
+    expect(row).toContain('Name.am')
+    expect(row).not.toContain('NameAm')
+  })
+
+  it('shows a dash with the reason on hover when the API worked out no margin', async () => {
+    stubRoutes({ 'GET /api/admin/tld-configs?': () => json(page([{ ...item('am'), marginPercent: null }])) })
+    const { wrapper } = await mountListAt()
+
+    const cell = wrapper.get('[data-testid="tld-row-am"]')
+    expect(cell.get('[data-testid="tld-margin-am"]').text()).toBe('—')
+    expect(cell.get('[role="tooltip"]').text()).toContain('exchange rate')
   })
 
   it('syncs prices and shows a refusal in the banner', async () => {
@@ -234,7 +263,7 @@ describe('TldConfigsView', () => {
     await vi.waitFor(() => {
       expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
     })
-    expect(wrapper.get('[data-testid="tld-configs-result"]').text()).toBe('Record deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
     expect(listUrls(mock).length).toBe(before + 1)
   })
 

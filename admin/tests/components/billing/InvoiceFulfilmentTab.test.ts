@@ -12,6 +12,7 @@ import { fulfilmentFixture, invoiceFixture } from '../../helpers/billingFixtures
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -172,7 +173,7 @@ describe('InvoiceFulfilmentTab', () => {
 
     expect(mock.mock.calls.filter(([url]) => String(url).endsWith('/retry'))).toHaveLength(1)
     expect(mock.mock.calls.filter(([url]) => String(url).endsWith('/fulfilment'))).toHaveLength(2)
-    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-feedback"]').text()).toContain('Retry requested.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Retry requested.')
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-31"]').exists()).toBe(false)
   })
 

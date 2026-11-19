@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import TldConfigFormView from '@/views/TldConfigFormView.vue'
+import schema from '@/views/TldConfigFormView.schema'
 import type { TldConfig } from '@/types/tldconfig'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -37,11 +38,38 @@ afterEach(() => {
 })
 
 describe('TldConfigFormView', () => {
+  it('draws every section and field of its schema', async () => {
+    stubRouteTable({})
+    const { wrapper } = await mountScreen(TldConfigFormView, {}, CREATE, CREATE)
+    const sections = schema.columns.flat()
+
+    expect(wrapper.findAll('[data-testid^="ui-form-section-"]')).toHaveLength(sections.length)
+    sections.forEach((section) => {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+      section.fields.forEach((field) => {
+        expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+      })
+    })
+  })
+
+  it('keeps the titles and draws the controls as placeholders while the configuration loads', async () => {
+    stubRouteTable({ 'GET /admin/tld-configs/5': () => new Promise<Response>(() => undefined) })
+    const { wrapper } = await mountScreen(TldConfigFormView, {}, '/settings/tld-pricing/5/edit', EDIT)
+
+    expect(wrapper.text()).toContain('General Settings')
+    expect(wrapper.text()).toContain('Registration Pricing')
+    expect(wrapper.find('[data-testid="tld-config-form-tld"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="tld-register-cost-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-field-skeleton"]').exists()).toBe(true)
+  })
+
   it('opens an empty create form with its trail and button', async () => {
     stubRouteTable({})
     const { wrapper } = await mountScreen(TldConfigFormView, {}, CREATE, CREATE)
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Add TLD')
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Create TLD')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create TLD')
     expect((wrapper.get('[data-testid="tld-config-form-tld"]').element as HTMLInputElement).value).toBe('')
   })
@@ -103,6 +131,13 @@ describe('TldConfigFormView', () => {
     })
   })
 
+  it('works the live margin out when cost and sell are stated in the same currency', async () => {
+    stubRouteTable({ 'GET /admin/tld-configs/5': () => json({ ...stored, currency: 'USD', sellCurrency: 'USD' }) })
+    const { wrapper } = await mountScreen(TldConfigFormView, {}, '/settings/tld-pricing/5/edit', EDIT)
+
+    expect(wrapper.get('[data-testid="tld-register-margin-1"]').text()).toBe('+25.0%')
+  })
+
   it('loads the configuration being edited, locks the TLD and updates with PUT', async () => {
     const mock = stubRouteTable({
       'GET /admin/tld-configs/5': () => json(stored),
@@ -114,7 +149,9 @@ describe('TldConfigFormView', () => {
     expect((tld.element as HTMLInputElement).value).toBe('net')
     expect(tld.attributes('disabled')).toBeDefined()
     expect((wrapper.get('[data-testid="tld-config-form-categories"]').element as HTMLInputElement).value).toBe('tech, popular')
-    expect(wrapper.get('[data-testid="tld-register-margin-1"]').text()).toBe('+25.0%')
+    // The stored cost is in one currency and the sell price in another, so no margin is worked out on the raw numbers.
+    expect(wrapper.get('[data-testid="tld-register-margin-1"]').text()).toBe('—')
+    expect(wrapper.get('[role="tooltip"]').text()).toContain('different currencies')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save Changes')
 
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
@@ -155,5 +192,15 @@ describe('TldConfigFormView', () => {
       expect(wrapper.get('[data-testid="tld-config-form-error"]').text()).toBe('That TLD already exists.')
     })
     expect(router.currentRoute.value.path).toBe(CREATE)
+  })
+
+  it('lets the reader leave a loaded configuration without a question when nothing was edited', async () => {
+    stubRouteTable({ 'GET /admin/tld-configs/5': () => json(stored) })
+    const { wrapper, router } = await mountScreen(TldConfigFormView, {}, '/settings/tld-pricing/5/edit', EDIT)
+
+    await router.push('/settings/tld-pricing')
+
+    expect(router.currentRoute.value.path).toBe('/settings/tld-pricing')
+    expect(wrapper.find('[data-testid="dialog-panel"]').exists()).toBe(false)
   })
 })

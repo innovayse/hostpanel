@@ -528,4 +528,13 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form-cancel"]').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
+
+  it('draws its fields as placeholders under their captions until the lists it is built from are read', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.text()).toContain('Product Name')
+    expect(wrapper.find('[data-testid="product-form-name"]').exists()).toBe(false)
+  })
 })

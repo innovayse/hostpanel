@@ -37,6 +37,8 @@ import UiText from '@/components/ui/UiText.vue'
 import { TWO_FACTOR_CODE_LENGTH } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
 import { REDIRECT_QUERY_PARAM, safeRedirectTarget } from '@/lib/redirectTarget'
+import { UiActionKind } from '@/utils/ui/actions'
+import { Icon } from '@/lib/icons'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -247,7 +249,7 @@ onMounted(async () => {
       <UiLoader v-if="resolvingMode" data-testid="login-resolving" />
 
       <!-- Mode lookup failed. Retry is the recovery action; it re-requests, not reloads. -->
-      <UiButton
+      <UiButton :action="UiActionKind.Refresh"
         v-else-if="authStore.mode === null"
         variant="secondary"
         block
@@ -285,7 +287,7 @@ onMounted(async () => {
           data-testid="login-setup-token"
         />
 
-        <UiButton
+        <UiButton :icon="Icon.ShieldCheck"
           variant="primary"
           block
           type="button"
@@ -295,7 +297,7 @@ onMounted(async () => {
         >
           {{ t('auth.login.claimTheAdminRole') }}
         </UiButton>
-        <UiButton
+        <UiButton :action="UiActionKind.Next"
           variant="secondary"
           block
           type="button"
@@ -327,7 +329,7 @@ onMounted(async () => {
           :disabled="authStore.loading"
           data-testid="login-totp"
         />
-        <UiButton
+        <UiButton :action="UiActionKind.Confirm"
           variant="primary"
           block
           type="submit"
@@ -336,7 +338,7 @@ onMounted(async () => {
         >
           {{ t('auth.login.verifyCode') }}
         </UiButton>
-        <UiButton
+        <UiButton :action="UiActionKind.Cancel"
           variant="secondary"
           block
           type="button"
@@ -382,7 +384,7 @@ onMounted(async () => {
           @use="handleUseDemoAccount"
         />
 
-        <UiButton
+        <UiButton :action="UiActionKind.Next"
           variant="primary"
           block
           data-testid="login-submit"
@@ -397,7 +399,7 @@ onMounted(async () => {
           in as and this form is a dead end. The way out is the first-run screen, and
           this is the only thing that routes to it.
         -->
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           v-if="authStore.setupRequired"
           variant="secondary"
           block
@@ -410,7 +412,7 @@ onMounted(async () => {
       </UiForm>
 
       <!-- SSO mode: one button that hands the browser to the SSO. -->
-      <UiButton
+      <UiButton :action="UiActionKind.Next"
         v-else
         variant="primary"
         block

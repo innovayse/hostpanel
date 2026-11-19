@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import UiChart from '@/components/ui/UiChart.vue'
+import { ChartKind } from '@/utils/ui/chart'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** The part of the chart.js configuration these tests read. */
@@ -17,7 +18,7 @@ interface CapturedConfig {
   options: {
     indexAxis: string
     plugins: {
-      legend: { display: boolean }
+      legend: { display: boolean; position: string }
       tooltip: { callbacks: { label: (context: { raw: number; label: string; dataset: { label: string } }) => string } }
     }
     scales: {
@@ -57,7 +58,6 @@ vi.mock('chart.js', () => {
     LineController: Registerable,
     LineElement: Registerable,
     LinearScale: Registerable,
-    PieController: Registerable,
     PointElement: Registerable,
     Tooltip: Registerable,
   }
@@ -78,7 +78,7 @@ beforeEach(() => {
 
 describe('UiChart', () => {
   it('builds a bar chart from labels and series', async () => {
-    mountChart({ type: 'bar', labels: ['Jan', 'Feb'], series: [{ label: 'Income', data: [1, 2] }] })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['Jan', 'Feb'], series: [{ label: 'Income', data: [1, 2] }] })
     await flushPromises()
 
     const config = created[0]?.config
@@ -90,7 +90,7 @@ describe('UiChart', () => {
 
   it('colours series from the theme palette unless one is given', async () => {
     mountChart({
-      type: 'line',
+      kind: ChartKind.Line,
       labels: ['a'],
       series: [{ label: 'A', data: [1] }, { label: 'B', data: [2], color: '#123456' }],
     })
@@ -102,8 +102,8 @@ describe('UiChart', () => {
   })
 
   it('fills bars with a gradient and lines with the plain colour', async () => {
-    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }] })
-    mountChart({ type: 'line', labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ kind: ChartKind.Line, labels: ['a'], series: [{ label: 'A', data: [1] }] })
     await flushPromises()
 
     expect(typeof created[0]?.config.data.datasets[0]?.backgroundColor).toBe('function')
@@ -111,7 +111,7 @@ describe('UiChart', () => {
   })
 
   it('draws an optional dashed target line across a vertical chart', async () => {
-    mountChart({ type: 'bar', labels: ['a', 'b'], series: [{ label: 'A', data: [1, 2] }], target: 5 })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a', 'b'], series: [{ label: 'A', data: [1, 2] }], target: 5 })
     await flushPromises()
 
     const datasets = created[0]?.config.data.datasets
@@ -120,7 +120,7 @@ describe('UiChart', () => {
   })
 
   it('rounds bars as the concept does and fades the ones below the target', async () => {
-    mountChart({ type: 'bar', labels: ['a', 'b'], series: [{ label: 'A', data: [1, 9] }], target: 5 })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a', 'b'], series: [{ label: 'A', data: [1, 9] }], target: 5 })
     await flushPromises()
 
     const dataset = created[0]?.config.data.datasets[0] as { borderRadius?: unknown, maxBarThickness?: number, backgroundColor?: (context: unknown) => unknown }
@@ -130,7 +130,7 @@ describe('UiChart', () => {
   })
 
   it('drops the value axis and adds the glow in the minimal look', async () => {
-    mountChart({ type: 'bar', labels: ['a', 'b'], series: [{ label: 'A', data: [1, 9] }], target: 5, variant: 'minimal' })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a', 'b'], series: [{ label: 'A', data: [1, 9] }], target: 5, variant: 'minimal' })
     await flushPromises()
 
     const options = created[0]?.config.options as unknown as { scales: { y: { display: boolean } }, plugins: { barGlow: unknown } }
@@ -139,7 +139,7 @@ describe('UiChart', () => {
   })
 
   it('keeps the value axis and draws no glow in the default look', async () => {
-    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5 })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5 })
     await flushPromises()
 
     const options = created[0]?.config.options as unknown as { scales: { y: { display: boolean } }, plugins: { barGlow: unknown } }
@@ -148,14 +148,36 @@ describe('UiChart', () => {
   })
 
   it('sizes the plot by the height option', async () => {
-    const wrapper = mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], height: 'short' })
+    const wrapper = mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }], height: 'short' })
     await flushPromises()
 
     expect(wrapper.classes()).toContain('h-52')
   })
 
+  it('takes the phone height of its kind below the plot height', async () => {
+    const wrapper = mountChart({ kind: ChartKind.Donut, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    await flushPromises()
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['h-64', 'max-sm:h-72']))
+  })
+
+  it('puts the legend above the plot on a wide screen and under it on a phone, for a donut and a bar chart alike', async () => {
+    mountChart({ kind: ChartKind.Donut, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    await flushPromises()
+    expect(created[0]?.config.options.plugins.legend.position).toBe('top')
+
+    vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    mountChart({ kind: ChartKind.Donut, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }, { label: 'B', data: [2] }] })
+    await flushPromises()
+    vi.unstubAllGlobals()
+
+    expect(created[1]?.config.options.plugins.legend.position).toBe('bottom')
+    expect(created[2]?.config.options.plugins.legend.position).toBe('bottom')
+  })
+
   it('draws placeholder bars and builds no chart while loading', async () => {
-    const wrapper = mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], loading: true })
+    const wrapper = mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }], loading: true })
     await flushPromises()
 
     expect(wrapper.find('[data-testid="chart-skeleton"]').exists()).toBe(true)
@@ -166,34 +188,37 @@ describe('UiChart', () => {
   })
 
   it('names the target line as the screen asks', async () => {
-    mountChart({ type: 'line', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 3, targetLabel: 'Goal' })
+    mountChart({ kind: ChartKind.Line, labels: ['a'], series: [{ label: 'A', data: [1] }], target: 3, targetLabel: 'Goal' })
     await flushPromises()
 
     expect(created[0]?.config.data.datasets[1]?.label).toBe('Goal')
   })
 
-  it('draws no target line without a target, on a horizontal chart or on a pie', async () => {
-    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }] })
-    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5, horizontal: true })
-    mountChart({ type: 'pie', labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5 })
+  it('draws no target line without a target, on a horizontal chart or on a donut', async () => {
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ kind: ChartKind.HorizontalBar, labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5 })
+    mountChart({ kind: ChartKind.Donut, labels: ['a'], series: [{ label: 'A', data: [1] }], target: 5 })
     await flushPromises()
 
     expect(created.map(chart => chart.config.data.datasets.length)).toEqual([1, 1, 1])
   })
 
-  it('colours each slice of a pie and drops the axes', async () => {
-    mountChart({ type: 'pie', labels: ['x', 'y', 'z'], series: [{ label: 'Share', data: [1, 2, 3] }] })
+  it('colours each slice of a donut, cuts its hole and drops the axes', async () => {
+    mountChart({ kind: ChartKind.Donut, labels: ['x', 'y', 'z'], series: [{ label: 'Share', data: [1, 2, 3] }] })
     await flushPromises()
 
     const config = created[0]?.config
     expect(config?.data.datasets[0]?.backgroundColor).toHaveLength(3)
+    expect(config?.type).toBe('doughnut')
+    const doughnut = config?.options as unknown as { cutout: string } | undefined
+    expect(doughnut?.cutout).toBe('68%')
     expect(config?.options.scales).toEqual({})
     expect(config?.options.plugins.legend.display).toBe(true)
   })
 
   it('shows the legend only when it says something', async () => {
-    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }] })
-    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], legend: true })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }], legend: true })
     await flushPromises()
 
     expect(created[0]?.config.options.plugins.legend.display).toBe(false)
@@ -202,7 +227,7 @@ describe('UiChart', () => {
 
   it('formats tooltip and axis numbers with the formatter', async () => {
     mountChart({
-      type: 'bar',
+      kind: ChartKind.GroupedBar,
       labels: ['a'],
       series: [{ label: 'Income', data: [5] }],
       valueFormatter: (v: number) => `$${v}`,
@@ -214,17 +239,95 @@ describe('UiChart', () => {
     expect(options?.scales.y?.ticks.callback(10)).toBe('$10')
   })
 
-  it('draws bars horizontally and stacks them on request', async () => {
-    mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }], horizontal: true, stacked: true })
+  it('draws the horizontal bar kind sideways and the vertical ones upright', async () => {
+    mountChart({ kind: ChartKind.HorizontalBar, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }] })
     await flushPromises()
 
-    const options = created[0]?.config.options
-    expect(options?.indexAxis).toBe('y')
-    expect(options?.scales.x?.stacked).toBe(true)
+    expect(created[0]?.config.type).toBe('bar')
+    expect(created[0]?.config.options.indexAxis).toBe('y')
+    expect(created[1]?.config.options.indexAxis).toBe('x')
+  })
+
+  it('stacks the bars of the stacked kind only', async () => {
+    mountChart({ kind: ChartKind.StackedBar, labels: ['a'], series: [{ label: 'A', data: [1] }, { label: 'B', data: [2] }] })
+    mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }, { label: 'B', data: [2] }] })
+    await flushPromises()
+
+    expect(created[0]?.config.options.scales.x?.stacked).toBe(true)
+    expect(created[1]?.config.options.scales.x?.stacked).toBe(false)
+  })
+
+  it('fills the area under the line of the area kind only', async () => {
+    mountChart({ kind: ChartKind.Area, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    mountChart({ kind: ChartKind.Line, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    await flushPromises()
+
+    const filled = created[0]?.config.data.datasets[0] as { fill?: boolean, backgroundColor?: string }
+    expect(created[0]?.config.type).toBe('line')
+    expect(filled.fill).toBe(true)
+    expect(filled.backgroundColor).toContain('transparent')
+    const unfilled = created[1]?.config.data.datasets[0] as { fill?: boolean } | undefined
+    expect(unfilled?.fill).toBe(false)
+  })
+
+  it('names the canvas for assistive technology', async () => {
+    const wrapper = mountChart({ kind: ChartKind.Line, labels: ['a'], series: [{ label: 'A', data: [1] }], label: 'Income per day' })
+    await flushPromises()
+
+    expect(wrapper.get('canvas').attributes('role')).toBe('img')
+    expect(wrapper.get('canvas').attributes('aria-label')).toBe('Income per day')
+  })
+
+  it('falls back to a generic name for the canvas', async () => {
+    const wrapper = mountChart({ kind: ChartKind.Line, labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    await flushPromises()
+
+    expect(wrapper.get('canvas').attributes('aria-label')).toBe('Chart')
+  })
+
+  describe('the kinds drawn as markup', () => {
+    it('draws the heat strip with one square per value and the label in its tooltip', async () => {
+      const wrapper = mountChart({ kind: ChartKind.HeatStrip, labels: ['Mon', 'Tue'], series: [{ label: 'Replies', data: [0, 4] }], valueFormatter: (v: number) => `${v} replies` })
+      await flushPromises()
+
+      expect(wrapper.findAll('[data-testid="ui-chart-heat-cell"]')).toHaveLength(2)
+      expect(wrapper.text()).toContain('Tue: 4 replies')
+      expect(wrapper.find('canvas').exists()).toBe(false)
+      expect(created).toHaveLength(0)
+    })
+
+    it('draws the distribution as one wide bar over its key', async () => {
+      const wrapper = mountChart({ kind: ChartKind.Distribution, labels: ['Poor', 'Good'], series: [{ label: 'Ratings', data: [1, 3] }] })
+      await flushPromises()
+
+      expect(wrapper.findAll('[data-testid="ui-chart-distribution-part"]')).toHaveLength(2)
+      expect(wrapper.get('[data-testid="ui-chart-distribution"]').classes()).toContain('w-full')
+      expect(wrapper.get('[data-testid="ui-chart-legend"]').text()).toContain('Good')
+      expect(wrapper.text()).toContain('Good: 3')
+    })
+
+    it('draws the gauge with its figure and scale', async () => {
+      const wrapper = mountChart({ kind: ChartKind.Gauge, labels: ['Load'], series: [{ label: 'Server load', data: [40] }], max: 80, valueFormatter: (v: number) => `${v}%` })
+      await flushPromises()
+
+      const meter = wrapper.get('[role="meter"]')
+      expect(meter.attributes('aria-valuenow')).toBe('40')
+      expect(meter.attributes('aria-valuemax')).toBe('80')
+      expect(wrapper.get('[data-testid="ui-chart-gauge-text"]').text()).toBe('40%')
+      expect(wrapper.get('[data-testid="ui-chart-gauge-arc"]').attributes('stroke-dasharray')).toBe('50 100')
+    })
+
+    it('draws the placeholder of the kind while loading', async () => {
+      const wrapper = mountChart({ kind: ChartKind.Gauge, labels: ['Load'], series: [{ label: 'Load', data: [1] }], loading: true })
+      await flushPromises()
+
+      expect(wrapper.get('[data-testid="chart-skeleton"]').attributes('data-kind')).toBe(ChartKind.Gauge)
+    })
   })
 
   it('shows the empty state and builds no chart without data', async () => {
-    const wrapper = mountChart({ type: 'bar', labels: [], series: [] })
+    const wrapper = mountChart({ kind: ChartKind.GroupedBar, labels: [], series: [] })
     await flushPromises()
 
     expect(wrapper.get('[data-testid="chart-empty"]').text()).toBe('No data to chart')
@@ -233,7 +336,7 @@ describe('UiChart', () => {
   })
 
   it('rebuilds when the data changes and destroys on unmount', async () => {
-    const wrapper = mountChart({ type: 'bar', labels: ['a'], series: [{ label: 'A', data: [1] }] })
+    const wrapper = mountChart({ kind: ChartKind.GroupedBar, labels: ['a'], series: [{ label: 'A', data: [1] }] })
     await flushPromises()
     const first = created[0]
 

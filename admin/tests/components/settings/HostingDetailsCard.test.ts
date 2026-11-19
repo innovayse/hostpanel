@@ -108,4 +108,23 @@ describe('HostingDetailsCard', () => {
     expect(warnings[0]?.text()).toContain('portal.stats.response_time')
     expect(wrapper.find('[data-testid="hosting-stats-response-time"]').exists()).toBe(false)
   })
+
+  it('groups the fields and switches under four headings', async () => {
+    const { wrapper } = await mountSettingsCard(HostingDetailsCard, rows)
+    /**
+     * Finds one headed group of the card.
+     *
+     * @param name - The group's test id suffix.
+     * @returns The group's wrapper.
+     */
+    const group = (name: string) => wrapper.get(`[data-testid="hosting-group-${name}"]`)
+
+    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual(['Performance figures', 'Guarantees', 'Support response', 'Features'])
+    expect(group('performance').find('[data-testid="hosting-stats-response-time"]').exists()).toBe(true)
+    expect(group('guarantees').find('[data-testid="hosting-guarantee-money-back-days"]').exists()).toBe(true)
+    expect(group('guarantees').find('[data-testid="hosting-guarantee-no-hidden-fees"]').exists()).toBe(true)
+    expect(group('support').find('[data-testid="hosting-support-response-chat"]').exists()).toBe(true)
+    expect(group('features').find('[data-testid="hosting-features-ssl"]').exists()).toBe(true)
+    expect(group('features').find('[data-testid="hosting-features-ddos"]').exists()).toBe(true)
+  })
 })

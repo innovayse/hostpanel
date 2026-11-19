@@ -17,11 +17,15 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiRadio from '@/components/ui/UiRadio.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { Icon } from '@/lib/icons'
+import { UiSize } from '@/utils/ui/size'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -186,7 +190,8 @@ const handleSubmit = (): void => {
                   :data-testid="`group-form-remove-${s.id}`"
                   @click="toggle(s.id)"
                 >
-                  {{ s.name }} ×
+                  {{ s.name }}
+                  <UiIcon :markup="Icon.Close" :size="UiSize.Xs" />
                 </UiButton>
                 <UiText v-if="selected().length === 0" tone="muted" size="sm">
                   {{ t('servers.groupForm.noneSelected') }}
@@ -199,10 +204,10 @@ const handleSubmit = (): void => {
     </UiForm>
 
     <template #footer>
-      <UiButton type="button" variant="secondary" data-testid="group-form-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="group-form-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         type="button"
         variant="primary"
         :loading="props.saving"

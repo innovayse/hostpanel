@@ -18,6 +18,48 @@ export interface I18nInput {
   catalogues: Catalogues
   /** Concatenated source text of every `.vue` and `.ts` file under `src`. */
   source: string
+  /** Locale keys the source declares as data rather than passes to `t()`: see {@link declaredKeys}. Optional. */
+  declared?: ReadonlySet<string>
+}
+
+/** One source file: its path under `src` with forward slashes, and its text. */
+export interface SourceFile {
+  /** Path under `src`, such as `views/AddClientView.schema.ts`. */
+  path: string
+  /** The file's text. */
+  text: string
+}
+
+/** The source files, besides the screen schemas, whose tables hold locale keys (the section tabs, the report menu, the integration categories). */
+export const KEY_TABLE_FILES: readonly string[] = ['lib/clientSections.ts', 'lib/reports.ts', 'types/integrationmeta.ts']
+
+/** A string literal that is a dotted locale key: letters and digits in two or more segments, no path or address characters, and not the value of a `key` property (a column's data path such as `dates.created`). */
+const KEY_LITERAL = /(?<!\bkey\s*:\s*)(['"])([a-z][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)+)\1/g
+
+/** A locale key written as the value of a key property (`label`, `labelKey`, `menuKey`, `titleKey`) in a key table. */
+const KEY_PROPERTY = /\b(?:label|labelKey|menuKey|titleKey)\s*:\s*(['"])([a-z][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)+)\1/g
+
+/**
+ * Collects the locale keys the source declares as data: every dotted key literal of a screen schema (`*.schema.ts`, whose
+ * texts are all keys) and the keys a key table writes under `label`, `labelKey`, `menuKey` or `titleKey`.
+ *
+ * @param files - The source files under `src`.
+ * @returns The declared keys, each of which must exist in `en`.
+ */
+export const declaredKeys = (files: readonly SourceFile[]): Set<string> => {
+  const found = new Set<string>()
+  for (const file of files) {
+    if (file.path.endsWith('.schema.ts')) {
+      for (const match of file.text.matchAll(KEY_LITERAL)) {
+        found.add(match[2] as string)
+      }
+    } else if (KEY_TABLE_FILES.includes(file.path)) {
+      for (const match of file.text.matchAll(KEY_PROPERTY)) {
+        found.add(match[2] as string)
+      }
+    }
+  }
+  return found
 }
 
 /**
@@ -93,6 +135,12 @@ export const checkI18n = (input: I18nInput): string[] => {
   for (const key of literalKeys(input.source)) {
     if (!en.has(key)) {
       problems.push(`t('${key}') is used but absent from en`)
+    }
+  }
+
+  for (const key of input.declared ?? []) {
+    if (!en.has(key)) {
+      problems.push(`declared key '${key}' is absent from en`)
     }
   }
 

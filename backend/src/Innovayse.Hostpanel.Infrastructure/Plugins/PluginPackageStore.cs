@@ -450,13 +450,19 @@ public sealed class PluginPackageStore : IPluginPackageStore
         }
 
         // The signature covers the unpacked files, so it is checked here, after the archive is unpacked and before the move into place.
-        var signature = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger, upload.RequireSignature);
+        var check = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger, upload.RequireSignature);
+        var signature = check.Refusal;
         if (signature is not null)
         {
             _logger.LogWarning(
                 "Plugin install refused: {PluginId} fails signature rule {Rule}: {Detail}.", id, signature.Rule, signature.Detail);
             return new PluginPackageResult(PluginPackageOutcome.SignatureRefused, id, sha256, SignatureRule: signature.Rule);
         }
+
+        // What the install record keeps of the package, read before the unpacked files are moved out of the work folder:
+        // the key is named only when its signature verifies, so an unsigned package admitted by policy names none.
+        var sizeBytes = new FileInfo(archivePath).Length;
+        var signerKeyId = check.VerifiedKeyId;
 
         // The folder of a plugin that is loaded is never overwritten in place: its assemblies are in use, so any upload
         // for it, an upgrade, a downgrade or the same version again, waits in the staged folder for the restart. The
@@ -482,12 +488,14 @@ public sealed class PluginPackageStore : IPluginPackageStore
             {
                 await StageAsync(contentDir, installRoot, id, ct);
                 return new PluginPackageResult(
-                    PluginPackageOutcome.Staged, id, sha256, Version: manifest.Version, PreviousVersion: reference);
+                    PluginPackageOutcome.Staged, id, sha256, Version: manifest.Version, PreviousVersion: reference,
+                    SizeBytes: sizeBytes, SignerKeyId: signerKeyId);
             }
         }
 
         await CommitAsync(contentDir, targetDir, work, installRoot, id, ct);
-        return new PluginPackageResult(PluginPackageOutcome.Installed, id, sha256, Version: manifest.Version);
+        return new PluginPackageResult(
+            PluginPackageOutcome.Installed, id, sha256, Version: manifest.Version, SizeBytes: sizeBytes, SignerKeyId: signerKeyId);
     }
 
     /// <summary>

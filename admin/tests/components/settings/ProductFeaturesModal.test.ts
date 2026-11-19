@@ -9,6 +9,7 @@ import type { ProductFeature } from '@/types/productfeature'
 import { json, problem } from '../../helpers/fetch'
 import { mountScreen } from '../../helpers/mount'
 import { requestsOf, stubRouteTable } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The product being specified. */
 const product: Product = {
@@ -107,7 +108,7 @@ describe('ProductFeaturesModal', () => {
       expect(requestsOf(mock)).toContain('DELETE /product-features/7')
     })
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="product-features-error"]').text()).toBe('Record deleted.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
     })
   })
 

@@ -30,6 +30,7 @@ import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { EMPTY_VALUE } from '@/lib/format'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** How many checklist rows the loading card draws. */
 const PLACEHOLDER_ROWS = 3
@@ -256,7 +257,7 @@ onUnmounted(() => {
         {{ t(migrationJobFailureLabelKey[job.failure]) }}
       </UiAlert>
       <UiStack v-if="job?.status === MigrationStatus.Failed" direction="row" gap="sm">
-        <UiButton
+        <UiButton :action="UiActionKind.Refresh"
           type="button"
           variant="primary"
           size="sm"
@@ -273,7 +274,7 @@ onUnmounted(() => {
         <UiBadge :tone="job.pluginConnected ? 'success' : 'neutral'" dot data-testid="migration-plugin-state">
           {{ job.pluginConnected ? t('migration.migrationProgressCard.pluginConnected') : t('migration.migrationProgressCard.waitingForPlugin') }}
         </UiBadge>
-        <UiButton
+        <UiButton :action="UiActionKind.Test"
           type="button"
           variant="secondary"
           size="sm"
@@ -290,7 +291,7 @@ onUnmounted(() => {
         >
           {{ checkOutcome === CheckOutcome.Reachable ? t('shared.connected') : t('migration.migrationProgressCard.notReachable') }}
         </UiBadge>
-        <UiButton
+        <UiButton :action="UiActionKind.Generate"
           v-if="job.status === MigrationStatus.Pending && job.pluginConnected"
           type="button"
           variant="primary"

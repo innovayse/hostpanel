@@ -18,6 +18,8 @@ import { useAuthStore } from '@/stores/auth'
 import { initialsOf } from '@/lib/format'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
+import { Icon } from '@/lib/icons'
+import { FloatingAlign } from '@/utils/ui/floating'
 
 /** Props of the account card. */
 defineProps<{
@@ -40,8 +42,8 @@ const accountLabel = computed<string>(() => auth.displayName ?? t('common.admin'
 /** The full address, shown as the tooltip of the name; empty before the profile has loaded. */
 const accountEmail = computed<string>(() => auth.user?.email ?? '')
 
-/** The role the account holds first, empty before the profile has loaded. */
-const roleLabel = computed<string>(() => auth.user?.roles[0] ?? '')
+/** The most privileged role the account holds, in the language on screen; empty before the profile has loaded. */
+const roleLabel = computed<string>(() => (auth.primaryRole === null ? '' : t(`common.roles.${auth.primaryRole}`)))
 
 /** The avatar's initials, taken from the name shown. */
 const initials = computed<string>(() => initialsOf(accountLabel.value))
@@ -58,8 +60,8 @@ const signOut = async (): Promise<void> => {
 
 /** The account menu: the settings page, then the sign-out action (the menu puts the destructive one last). */
 const accountActions = computed<UiMenuAction[]>(() => [
-  { label: t('nav.settings'), to: AppRoute.Settings, testid: 'sidebar-settings' },
-  { label: t('common.signOut'), danger: true, onSelect: signOut, testid: 'sidebar-sign-out' },
+  { label: t('nav.settings'), icon: Icon.Settings, to: AppRoute.Settings, testid: 'sidebar-settings' },
+  { label: t('common.signOut'), icon: Icon.SignOut, danger: true, onSelect: signOut, testid: 'sidebar-sign-out' },
 ])
 </script>
 
@@ -73,7 +75,7 @@ const accountActions = computed<UiMenuAction[]>(() => [
     data-testid="account-card"
   >
     <!-- The avatar is the menu trigger (settings, sign-out), so the folded rail reaches them too. -->
-    <UiMenu :actions="accountActions" :aria-label="t('layout.userMenu')" testid="sidebar-user-menu">
+    <UiMenu :actions="accountActions" :align="FloatingAlign.Start" :aria-label="t('layout.userMenu')" testid="sidebar-user-menu">
       <UiText
         :as="UiTextTag.Span"
         :tone="UiTextTone.Plain"

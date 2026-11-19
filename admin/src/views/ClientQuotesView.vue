@@ -34,9 +34,9 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ClientQuotesView.schema'
 import type { QuoteListItem } from '@/types/quote'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -46,6 +46,8 @@ import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { quoteAddPath, quotePath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -175,6 +177,7 @@ const editQuote = (id: number): void => {
 const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `client-quotes-edit-${quote.id}`,
     /**
      * Starts editing this row.
@@ -187,6 +190,7 @@ const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `client-quotes-delete-${quote.id}`,
     /**
      * Asks for confirmation, then deletes this row.
@@ -206,7 +210,7 @@ const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
     <UiSectionHeader :level="1" variant="card">
       {{ t('shared.quotes') }}
       <template #actions>
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           type="button"
           :variant="UiButtonVariant.Primary"
           data-testid="client-quotes-create"
@@ -256,17 +260,7 @@ const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
           :empty="!initialLoading && store.clientQuotes.length === 0"
           data-testid="client-quotes-table"
         >
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
-              <UiTableHeader>{{ t('clients.clientQuotes.createDate') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.validUntil') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.stage') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+          <UiSchemaTableHead :columns="schema.table.columns" />
           <UiTableBody divided>
             <UiTableRow v-for="quote in store.clientQuotes" :key="quote.id" hoverable>
               <UiTableCell muted>#{{ quote.id }}</UiTableCell>

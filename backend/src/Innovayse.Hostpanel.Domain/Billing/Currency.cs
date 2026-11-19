@@ -17,6 +17,9 @@ public sealed class Currency : BaseEntity, IAggregateRoot
     /// <summary>Length of an ISO 4217 alpha or numeric code.</summary>
     private const int CodeLength = 3;
 
+    /// <summary>The rate of the base currency to itself: the unit every other rate is stated in.</summary>
+    public const decimal BaseRate = 1m;
+
     /// <summary>ISO 4217 alpha code, upper case (e.g. "USD"). The identity of the row.</summary>
     public string Code { get; private set; } = string.Empty;
 
@@ -79,7 +82,7 @@ public sealed class Currency : BaseEntity, IAggregateRoot
             throw new ArgumentOutOfRangeException(nameof(rateToBase), "A rate must be positive.");
         }
 
-        if (isBase && rateToBase != 1m)
+        if (isBase && rateToBase != BaseRate)
         {
             throw new ArgumentException("The base currency's rate to itself is 1.", nameof(rateToBase));
         }
@@ -109,6 +112,18 @@ public sealed class Currency : BaseEntity, IAggregateRoot
     public decimal Round(decimal amount) => Math.Round(amount, Decimals, MidpointRounding.AwayFromZero);
 
     /// <summary>
+    /// The one conversion every money path uses: an amount of a currency worth <paramref name="fromRateToBase"/> base units a
+    /// unit, in a currency worth <paramref name="toRateToBase"/> base units a unit. Not rounded: each caller rounds to the
+    /// precision its own result needs.
+    /// </summary>
+    /// <param name="amount">The amount in the source currency.</param>
+    /// <param name="fromRateToBase">What one unit of the source currency is worth in the base currency.</param>
+    /// <param name="toRateToBase">What one unit of the target currency is worth in the base currency.</param>
+    /// <returns>The amount in the target currency.</returns>
+    public static decimal ConvertAmount(decimal amount, decimal fromRateToBase, decimal toRateToBase) =>
+        amount * fromRateToBase / toRateToBase;
+
+    /// <summary>
     /// Converts an amount in this currency into <paramref name="target"/> through the stored rates
     /// (both are expressed in the base currency), rounded to the target's decimals.
     /// </summary>
@@ -123,8 +138,7 @@ public sealed class Currency : BaseEntity, IAggregateRoot
             return target.Round(amount);
         }
 
-        // One unit of this currency is RateToBase base units; one target unit is target.RateToBase.
-        return target.Round(amount * RateToBase / target.RateToBase);
+        return target.Round(ConvertAmount(amount, RateToBase, target.RateToBase));
     }
 
     /// <summary>Replaces the rate to base.</summary>
@@ -138,7 +152,7 @@ public sealed class Currency : BaseEntity, IAggregateRoot
             throw new ArgumentOutOfRangeException(nameof(rateToBase), "A rate must be positive.");
         }
 
-        if (IsBase && rateToBase != 1m)
+        if (IsBase && rateToBase != BaseRate)
         {
             throw new InvalidOperationException("The base currency's rate is always 1.");
         }
@@ -150,7 +164,7 @@ public sealed class Currency : BaseEntity, IAggregateRoot
     public void MakeBase()
     {
         IsBase = true;
-        RateToBase = 1m;
+        RateToBase = BaseRate;
     }
 
     /// <summary>Stops this being the base. The caller promotes another row first.</summary>

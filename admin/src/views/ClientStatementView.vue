@@ -1,14 +1,12 @@
 <script setup lang="ts">
 /**
- * Client statement: the entries, debits, credits and running balance of one client account.
+ * Client statement: the entries, debits, credits and running balance of one client account. The table is drawn
+ * before a statement is asked for too (with a prompt to choose a client), so the screen has the blocks of its skeleton;
+ * the opening and closing balance lines are parts of the schema, with a placeholder while the statement loads.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportField from '@/components/reports/ReportField.vue'
-import ReportActions from '@/components/reports/ReportActions.vue'
-import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -19,10 +17,11 @@ import { formatCurrencyCode } from '@/lib/money'
 import { reportPath } from '@/lib/reportsQuery'
 import { statementLineKey } from '@/lib/reportsRows'
 import { ReportStatementLineType } from '@/types/reportclientstatement'
-import type { ReportClientStatement, ReportStatementLine } from '@/types/reportclientstatement'
+import type { ReportClientStatement, ReportStatementBalance, ReportStatementLine } from '@/types/reportclientstatement'
 import { ReportCellFormat } from '@/types/reportcolumn'
-import type { ReportColumn } from '@/types/reportcolumn'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportTableData } from '@/types/reporttabledata'
+import { ReportFieldWidth } from '@/utils/ui/reportField'
+import schema from '@/views/ClientStatementView.schema'
 
 const { t } = useI18n()
 
@@ -55,16 +54,27 @@ const print = (): void => {
   window.print()
 }
 
-/** Statement columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'type', label: t('shared.type'), format: ReportCellFormat.Status },
-  { key: 'date', label: t('shared.date') },
-  { key: 'description', label: t('shared.description') },
-  { key: 'currency', label: t('shared.currency') },
-  { key: 'debit', label: t('reports.clientStatement.debit'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
-  { key: 'credit', label: t('reports.directDebit.credit'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
-  { key: 'balance', label: t('shared.balance'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
-])
+/** The two pickers take the free width of the filter row. */
+const WIDTHS = { client: ReportFieldWidth.Grow, dateRange: ReportFieldWidth.Grow } as const
+
+/** Opening and closing balance per currency; none until a statement is read. */
+const balances = computed<ReportStatementBalance[]>(() => data.value?.balances ?? [])
+
+/** Sentence of the empty report: the prompt to choose a client until a statement is read, then the sentence for a period with no entries. */
+const emptyText = computed<string>(() => (data.value === null ? t('shared.selectAClient') : t('reports.clientStatement.noEntriesForThisPeriod')))
+
+/** The statement lines; the cell formats are the schema columns', and the money columns are in each line's own currency. */
+const table = computed<ReportTableData<ReportStatementLine>>(() => ({
+  rows: data.value?.lines ?? [],
+  rowKey: statementLineKey,
+  extras: {
+    type: { format: ReportCellFormat.Status },
+    date: { format: ReportCellFormat.Date },
+    debit: { format: ReportCellFormat.Money, currencyKey: 'currency' },
+    credit: { format: ReportCellFormat.Money, currencyKey: 'currency' },
+    balance: { format: ReportCellFormat.Money, currencyKey: 'currency' },
+  },
+}))
 
 /**
  * Text of a statement line's description cell.
@@ -84,46 +94,29 @@ const describeLine = (line: ReportStatementLine): string => {
 </script>
 
 <template>
-  <ReportPage
-    :title="t('reports.clientStatement.clientAccountRegisterBalance')"
-    :description="t('reports.clientStatement.thisReportProvidesAStatement')"
-    :retry="generate"
-  >
-    <template #actions>
-      <ReportActions printable @print="print" />
+  <ReportPage :schema="schema" :empty-text="emptyText" :retry="generate" :widths="WIDTHS" :table="table" @generate="generate" @print="print">
+    <template #field-client>
+      <UiClientSelect v-model="selectedClient" :clients="clients" :placeholder="t('shared.selectAClient')" />
+    </template>
+    <template #field-dateRange>
+      <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
     </template>
 
-    <template #filters>
-      <ReportFilterBar @generate="generate">
-        <template #fields>
-          <ReportField :label="t('reports.clientStatement.selectClient')" width="grow">
-            <UiClientSelect v-model="selectedClient" :clients="clients" :placeholder="t('shared.selectAClient')" />
-          </ReportField>
-          <ReportField :label="t('shared.dateRange')" width="grow">
-            <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
-          </ReportField>
-        </template>
-      </ReportFilterBar>
-    </template>
-
-    <template v-if="data">
+    <template #summary>
       <UiStack gap="xs" data-testid="report-previous-balance">
-        <UiText v-for="balance in data.balances" :key="balance.currency" tone="secondary" size="md" class="text-right">
+        <UiText v-for="balance in balances" :key="balance.currency" tone="secondary" size="md" class="text-right">
           {{ t('reports.clientStatement.previousBalance') }} {{ formatCurrencyCode(balance.previousBalance, balance.currency) }}
         </UiText>
       </UiStack>
-      <ReportTable
-        :columns="columns"
-        :rows="data.lines"
-        :row-key="statementLineKey"
-        :empty-text="t('reports.clientStatement.noEntriesForThisPeriod')"
-      >
-        <template #cell-description="{ row }">
-          {{ describeLine(row) }}
-        </template>
-      </ReportTable>
+    </template>
+
+    <template #cell-description="{ row }">
+      {{ describeLine(row) }}
+    </template>
+
+    <template #closing>
       <UiStack gap="xs" data-testid="report-ending-balance">
-        <UiText v-for="balance in data.balances" :key="balance.currency" tone="secondary" size="md" class="text-right">
+        <UiText v-for="balance in balances" :key="balance.currency" tone="secondary" size="md" class="text-right">
           {{ t('reports.clientStatement.endingBalance') }} {{ formatCurrencyCode(balance.endingBalance, balance.currency) }}
         </UiText>
       </UiStack>

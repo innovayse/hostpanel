@@ -10,6 +10,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -85,7 +86,7 @@ describe('InvoiceSummaryTab', () => {
 
     const post = mock.mock.calls.find(([url]) => String(url).endsWith('/billing/bulk'))
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toEqual({ invoiceIds: [1], action: 'MarkPaid' })
-    expect(wrapper.get('[data-testid="billing-invoice-summary-feedback"]').text()).toContain('Invoice marked as paid.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Invoice marked as paid.')
   })
 
   it('cancels only after the danger confirmation and does nothing when dismissed', async () => {
@@ -106,7 +107,7 @@ describe('InvoiceSummaryTab', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([url]) => String(url).endsWith('/billing/1/cancel'))).toBe(true)
-    expect(wrapper.get('[data-testid="billing-invoice-summary-feedback"]').text()).toContain('Invoice cancelled.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Invoice cancelled.')
   })
 
   it('publishes a draft without a prompt and says so', async () => {
@@ -119,7 +120,7 @@ describe('InvoiceSummaryTab', () => {
     await wrapper.get('[data-testid="billing-invoice-publish"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-summary-feedback"]').text()).toContain('Invoice published.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Invoice published.')
   })
 
   it('shows the API sentence next to the buttons when the action is refused', async () => {
@@ -143,19 +144,5 @@ describe('InvoiceSummaryTab', () => {
     const body = wrapper.get('[data-testid="dialog-body"]').text()
     expect(body).toContain('24000.00 AMD')
     expect(body).not.toContain('$')
-  })
-
-  it('draws the same layout with bars and no action buttons while the invoice is being read', () => {
-    const wrapper = mountWithApp(InvoiceSummaryTab, { props: { invoice: null } })
-
-    expect(wrapper.find('[data-testid="billing-invoice-client-loading"]').exists()).toBe(true)
-    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(4)
-    expect(wrapper.find('[data-testid="billing-invoice-status"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="billing-invoice-publish"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="billing-invoice-cancel"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="billing-invoice-mark-paid"]').exists()).toBe(false)
-    // The lines table and the two ledgers all keep their headers and draw placeholder rows.
-    expect(wrapper.findAll('[data-testid="ui-table-skeleton"]')).toHaveLength(3)
-    expect(wrapper.find('[data-testid="billing-invoice-payments-table"]').exists()).toBe(true)
   })
 })

@@ -4,7 +4,8 @@
  * Integrations, Advanced) that live in the address (`?tab=`), so a reload, a shared link and the back
  * button restore the same tab.
  *
- * Each tab is its own {@link SettingsTabPanel}: it renders the cards the catalogue lists for the tab and
+ * The tabs are the ones the screen's schema lists (the skeleton draws the same strip). Each tab is its own
+ * {@link SettingsTabPanel}: it renders the cards the catalogue lists for the tab and
  * owns the draft registry and the sticky bar of that tab only, so an edit in one tab never enables
  * the bar of another. Every panel stays mounted and only the selected one is shown, so switching tabs and
  * back keeps each tab's unsaved edits. The Advanced tab lists every key no card owns.
@@ -18,7 +19,6 @@ import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BrandingCard from '@/components/settings/BrandingCard.vue'
 import RawSettingsTable from '@/components/settings/RawSettingsTable.vue'
-import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsTabPanel from '@/components/settings/SettingsTabPanel.vue'
 import VersionLabel from '@/components/layout/VersionLabel.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -28,18 +28,14 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useRouteTab } from '@/composables/useRouteTab'
-import { AppRoute } from '@/lib/routes'
-import { DEFAULT_SETTINGS_TAB, SETTINGS_TABS, SettingsTab } from '@/lib/settingsTabs'
+import { DEFAULT_SETTINGS_TAB, cardsOfTab } from '@/lib/settingsTabs'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useSettingsStore } from '@/stores/settings'
+import { SettingsTab } from '@/types/setting'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import schema from '@/views/SystemSettingsView.schema'
 
 const { t } = useI18n()
-
-/** The trail back to the settings index. */
-const crumbs = computed(() => [
-  { label: t('nav.settings'), to: AppRoute.Settings },
-  { label: t('nav.settingsChildren.general') },
-])
 
 /** Settings store: the list, the loading flag and the refusal sentence. */
 const store = useSettingsStore()
@@ -47,12 +43,12 @@ const store = useSettingsStore()
 /** The selected tab, kept in the address, and the action that selects another. */
 const { tab, select } = useRouteTab(SettingsTab, DEFAULT_SETTINGS_TAB)
 
-/** The strip's tabs, in the catalogue's order. */
+/** The strip's tabs, in the schema's order. */
 const tabItems = computed<UiTabItem[]>(() =>
-  SETTINGS_TABS.map((definition) => ({
-    value: definition.tab,
-    label: t(definition.label),
-    testid: `settings-tab-${definition.tab}`,
+  schema.tabs.map((entry) => ({
+    value: entry.key,
+    label: t(entry.label),
+    testid: `settings-tab-${entry.key}`,
   })),
 )
 
@@ -75,17 +71,16 @@ const extraPropsOf = (card: Component): Record<string, unknown> => (card === Bra
  * @param value - The value of the chosen tab; one the strip itself was built from.
  */
 const onSelect = (value: string): void => {
-  const definition = SETTINGS_TABS.find((entry) => entry.tab === value)
-  if (definition) {
-    void select(definition.tab)
+  const chosen = Object.values(SettingsTab).find((entry) => entry === value)
+  if (chosen !== undefined) {
+    void select(chosen)
   }
 }
 </script>
 
 <template>
   <UiStack gap="none" class="flex-1" data-testid="system-settings-view">
-    <SettingsBreadcrumb :items="crumbs" />
-    <UiPageHeader :title="t('settings.systemSettings')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
     <!-- The installed version, quietly under the title; absent when it could not be loaded. -->
     <VersionLabel testid="settings-version" class="-mt-4 mb-4" />
 
@@ -105,14 +100,14 @@ const onSelect = (value: string): void => {
       <!-- Every panel stays mounted and only the selected one shows, so each tab keeps its own drafts and bar. -->
       <template v-else>
         <SettingsTabPanel
-          v-for="definition in SETTINGS_TABS"
-          v-show="definition.tab === tab"
-          :key="definition.tab"
+          v-for="entry in schema.tabs"
+          v-show="entry.key === tab"
+          :key="entry.key"
           :save="store.saveSetting"
           :loading="initialLoading"
-          :data-testid="`settings-panel-${definition.tab}`"
+          :data-testid="`settings-panel-${entry.key}`"
         >
-          <template v-if="definition.tab === SettingsTab.Advanced">
+          <template v-if="entry.key === SettingsTab.Advanced">
             <UiStack gap="xs" class="mb-4">
               <UiHeading :level="2" variant="section">
                 {{ t('settings.advanced.title') }}
@@ -127,7 +122,7 @@ const onSelect = (value: string): void => {
           <template v-else>
             <component
               :is="card"
-              v-for="(card, index) in definition.cards"
+              v-for="(card, index) in cardsOfTab(entry.key)"
               :key="index"
               :settings="store.settings"
               v-bind="extraPropsOf(card)"

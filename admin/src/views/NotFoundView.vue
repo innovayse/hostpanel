@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import AuthShell from '@/components/auth/AuthShell.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import { AppRoute } from '@/lib/routes'
+import { Icon } from '@/lib/icons'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -16,7 +17,7 @@ const { t } = useI18n()
 
 <template>
   <AuthShell :title="t('auth.notFound.title')" :subtitle="t('auth.notFound.description')">
-    <UiLink
+    <UiLink :icon="Icon.Back"
       :to="AppRoute.Dashboard"
       variant="primary"
       size="lg"

@@ -1,22 +1,28 @@
 <script setup lang="ts">
 /**
- * Storefront card: the home-page figures, the hero badge and the contact details the portal shows.
+ * Public site card: the home-page figures, the hero badge and the contact details the portal shows.
  *
- * The figures (clients, uptime, regions) and the badge are the numbers and the line in the hero;
- * the contact details feed the footer and the contact page. Every field is a draft the page's save bar
+ * The fields are grouped under four headings: Figures (the numbers and the line in the hero), Contacts, Messengers, and
+ * Address and hours (the footer and the contact page). Every field fills its column and is a draft the page's save bar
  * saves; a value that breaks its rule is flagged under the field. The site name and tagline sit in the identity
  * card above.
  */
 import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useLocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
+import type { LocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import type { SettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
+import SettingsSubsection from '@/components/settings/SettingsSubsection.vue'
+import SettingsTextField from '@/components/settings/SettingsTextField.vue'
+import SettingsTimezoneField from '@/components/settings/SettingsTimezoneField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiText from '@/components/ui/UiText.vue'
+import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import { MessageLanguage } from '@/locales/messages'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
 import { SHORT_TEXT_MAX_LENGTH } from '@/lib/limits'
@@ -34,8 +40,22 @@ const props = defineProps<{
 /** The settings list as a ref, which is what the draft composable watches. */
 const settings = toRef(props, 'settings')
 
+/** The groups of the card, in the order they are drawn; the value is the key of the group's heading. */
+enum StorefrontGroup {
+  /** The numbers and the line in the hero. */
+  Figures = 'figures',
+  /** Where visitors write or call. */
+  Contacts = 'contacts',
+  /** Messenger handles. */
+  Messengers = 'messengers',
+  /** The office address, its map, the working hours and their time zone. */
+  Address = 'address',
+}
+
 /** One editable field of the card. */
 interface StorefrontField {
+  /** The group the field is drawn in. */
+  group: StorefrontGroup
   /** Settings key the field edits. */
   key: SettingKey
   /** Environment variable the portal falls back to until the row exists. */
@@ -57,6 +77,7 @@ interface StorefrontField {
 /** The editable fields, each with its own draft. */
 const FIELDS: StorefrontField[] = [
   {
+    group: StorefrontGroup.Figures,
     key: SettingKey.StatsClients,
     env: SettingEnv[SettingKey.StatsClients],
     testid: 'stats-clients',
@@ -65,6 +86,7 @@ const FIELDS: StorefrontField[] = [
     draft: useSettingDraft(settings, SettingKey.StatsClients),
   },
   {
+    group: StorefrontGroup.Figures,
     key: SettingKey.StatsUptime,
     env: SettingEnv[SettingKey.StatsUptime],
     testid: 'stats-uptime',
@@ -73,6 +95,7 @@ const FIELDS: StorefrontField[] = [
     draft: useSettingDraft(settings, SettingKey.StatsUptime),
   },
   {
+    group: StorefrontGroup.Figures,
     key: SettingKey.StatsRegions,
     env: SettingEnv[SettingKey.StatsRegions],
     testid: 'stats-regions',
@@ -81,6 +104,7 @@ const FIELDS: StorefrontField[] = [
     draft: useSettingDraft(settings, SettingKey.StatsRegions),
   },
   {
+    group: StorefrontGroup.Figures,
     key: SettingKey.HeroBadge,
     env: SettingEnv[SettingKey.HeroBadge],
     testid: 'hero-badge',
@@ -89,6 +113,7 @@ const FIELDS: StorefrontField[] = [
     draft: useSettingDraft(settings, SettingKey.HeroBadge),
   },
   {
+    group: StorefrontGroup.Contacts,
     key: SettingKey.ContactEmail,
     env: SettingEnv[SettingKey.ContactEmail],
     testid: 'contact-email',
@@ -99,6 +124,7 @@ const FIELDS: StorefrontField[] = [
     invalidKey: 'settings.storefrontContent.contactEmail.invalid',
   },
   {
+    group: StorefrontGroup.Contacts,
     key: SettingKey.ContactPhone,
     env: SettingEnv[SettingKey.ContactPhone],
     testid: 'contact-phone',
@@ -107,6 +133,7 @@ const FIELDS: StorefrontField[] = [
     draft: useSettingDraft(settings, SettingKey.ContactPhone),
   },
   {
+    group: StorefrontGroup.Messengers,
     key: SettingKey.ContactWhatsapp,
     env: SettingEnv[SettingKey.ContactWhatsapp],
     testid: 'contact-whatsapp',
@@ -115,6 +142,7 @@ const FIELDS: StorefrontField[] = [
     draft: useSettingDraft(settings, SettingKey.ContactWhatsapp),
   },
   {
+    group: StorefrontGroup.Messengers,
     key: SettingKey.ContactTelegram,
     env: SettingEnv[SettingKey.ContactTelegram],
     testid: 'contact-telegram',
@@ -123,30 +151,7 @@ const FIELDS: StorefrontField[] = [
     draft: useSettingDraft(settings, SettingKey.ContactTelegram),
   },
   {
-    key: SettingKey.ContactAddress,
-    env: SettingEnv[SettingKey.ContactAddress],
-    testid: 'contact-address',
-    labelKey: 'settings.storefrontContent.contactAddress.label',
-    hintKey: 'settings.storefrontContent.contactAddress.hint',
-    draft: useSettingDraft(settings, SettingKey.ContactAddress),
-  },
-  {
-    key: SettingKey.ContactAddressRu,
-    env: SettingEnv[SettingKey.ContactAddressRu],
-    testid: 'contact-address-ru',
-    labelKey: 'settings.storefrontContent.contactAddressRu.label',
-    hintKey: 'settings.storefrontContent.contactAddressRu.hint',
-    draft: useSettingDraft(settings, SettingKey.ContactAddressRu),
-  },
-  {
-    key: SettingKey.ContactAddressHy,
-    env: SettingEnv[SettingKey.ContactAddressHy],
-    testid: 'contact-address-hy',
-    labelKey: 'settings.storefrontContent.contactAddressHy.label',
-    hintKey: 'settings.storefrontContent.contactAddressHy.hint',
-    draft: useSettingDraft(settings, SettingKey.ContactAddressHy),
-  },
-  {
+    group: StorefrontGroup.Address,
     key: SettingKey.ContactMapUrl,
     env: SettingEnv[SettingKey.ContactMapUrl],
     testid: 'contact-map-url',
@@ -156,82 +161,162 @@ const FIELDS: StorefrontField[] = [
     rule: SettingFieldRule.HttpsUrl,
     invalidKey: 'settings.storefrontContent.contactMapUrl.invalid',
   },
-  {
-    key: SettingKey.ContactHours,
-    env: SettingEnv[SettingKey.ContactHours],
-    testid: 'contact-hours',
-    labelKey: 'settings.storefrontContent.contactHours.label',
-    hintKey: 'settings.storefrontContent.contactHours.hint',
-    draft: useSettingDraft(settings, SettingKey.ContactHours),
-  },
-  {
-    key: SettingKey.ContactHoursRu,
-    env: SettingEnv[SettingKey.ContactHoursRu],
-    testid: 'contact-hours-ru',
-    labelKey: 'settings.storefrontContent.contactHoursRu.label',
-    hintKey: 'settings.storefrontContent.contactHoursRu.hint',
-    draft: useSettingDraft(settings, SettingKey.ContactHoursRu),
-  },
-  {
-    key: SettingKey.ContactHoursHy,
-    env: SettingEnv[SettingKey.ContactHoursHy],
-    testid: 'contact-hours-hy',
-    labelKey: 'settings.storefrontContent.contactHoursHy.label',
-    hintKey: 'settings.storefrontContent.contactHoursHy.hint',
-    draft: useSettingDraft(settings, SettingKey.ContactHoursHy),
-  },
-  {
-    key: SettingKey.ContactTimezone,
-    env: SettingEnv[SettingKey.ContactTimezone],
-    testid: 'contact-timezone',
-    labelKey: 'settings.storefrontContent.contactTimezone.label',
-    hintKey: 'settings.storefrontContent.contactTimezone.hint',
-    draft: useSettingDraft(settings, SettingKey.ContactTimezone),
-  },
+]
+
+/** The time zone the working hours are stated in: a list pick, not text, so it has its own field. */
+const TIMEZONE = useSettingDraft(settings, SettingKey.ContactTimezone)
+
+/** One contact detail written once per language, shown as a single field with a tab per language. */
+interface LocalizedStorefrontField {
+  /** The group the field is drawn in. */
+  group: StorefrontGroup
+  /** Suffix of the test ids: `<testid>` is the English input, `<testid>-ru` and `<testid>-hy` the others. */
+  testid: string
+  /** The settings row of each language. */
+  keys: Record<MessageLanguage, SettingKey>
+  /** Locale key of the label. */
+  labelKey: string
+  /** Locale key of the placeholder. */
+  hintKey: string
+  /** The drafts of the rows and what the tabs mark. */
+  localized: LocalizedSettingDrafts
+}
+
+/**
+ * Builds the config of one per-language field.
+ *
+ * @param group - The group the field is drawn in.
+ * @param testid - Suffix of the test ids.
+ * @param labelKey - Locale key of the label.
+ * @param hintKey - Locale key of the placeholder.
+ * @param keys - The settings row of each language.
+ * @returns The field with its drafts.
+ */
+const localizedField = (
+  group: StorefrontGroup,
+  testid: string,
+  labelKey: string,
+  hintKey: string,
+  keys: Record<MessageLanguage, SettingKey>,
+): LocalizedStorefrontField => ({ group, testid, keys, labelKey, hintKey, localized: useLocalizedSettingDrafts(settings, keys) })
+
+/** The contact details written per language: an empty language shows the English text on the storefront. */
+const LOCALIZED_FIELDS: LocalizedStorefrontField[] = [
+  localizedField(StorefrontGroup.Address, 'contact-address', 'settings.storefrontContent.contactAddress.label', 'settings.storefrontContent.contactAddress.hint', {
+    [MessageLanguage.En]: SettingKey.ContactAddress,
+    [MessageLanguage.Ru]: SettingKey.ContactAddressRu,
+    [MessageLanguage.Hy]: SettingKey.ContactAddressHy,
+  }),
+  localizedField(StorefrontGroup.Address, 'contact-hours', 'settings.storefrontContent.contactHours.label', 'settings.storefrontContent.contactHours.hint', {
+    [MessageLanguage.En]: SettingKey.ContactHours,
+    [MessageLanguage.Ru]: SettingKey.ContactHoursRu,
+    [MessageLanguage.Hy]: SettingKey.ContactHoursHy,
+  }),
 ]
 
 /**
- * Whether a field's current text breaks its rule.
+ * Test id of the input of one language of a per-language field; English keeps the bare suffix.
+ *
+ * @param field - The per-language field.
+ * @param locale - The language of the input.
+ * @returns The `data-testid` of the input.
+ */
+const localizedInputTestid = (field: LocalizedStorefrontField, locale: MessageLanguage): string =>
+  locale === MessageLanguage.En ? `storefront-${field.testid}` : `storefront-${field.testid}-${locale}`
+
+/**
+ * The sentence under a field whose current text breaks its rule.
  *
  * @param field - The field to check.
- * @returns True when the field has a rule and the text does not satisfy it.
+ * @returns The refusal sentence; undefined when the field has no rule, the text satisfies it or it is empty.
  */
-const isInvalid = (field: StorefrontField): boolean =>
-  field.rule !== undefined && !isValidSettingValue(field.rule, field.draft.value.value)
+const invalidMessageOf = (field: StorefrontField): string | undefined =>
+  field.rule !== undefined && field.invalidKey !== undefined && !isValidSettingValue(field.rule, field.draft.value.value)
+    ? t(field.invalidKey)
+    : undefined
 
+/** The groups in the order they are drawn, each with its heading key. */
+const GROUPS: readonly StorefrontGroup[] = [StorefrontGroup.Figures, StorefrontGroup.Contacts, StorefrontGroup.Messengers, StorefrontGroup.Address]
+
+/**
+ * The plain text fields of a group.
+ *
+ * @param group - The group.
+ * @returns Its fields in card order.
+ */
+const fieldsOf = (group: StorefrontGroup): StorefrontField[] => FIELDS.filter((field) => field.group === group)
+
+/**
+ * The per-language fields of a group.
+ *
+ * @param group - The group.
+ * @returns Its fields in card order.
+ */
+const localizedOf = (group: StorefrontGroup): LocalizedStorefrontField[] => LOCALIZED_FIELDS.filter((field) => field.group === group)
 </script>
 
 <template>
   <SettingsSection
-    :columns="2"
+    :columns="1"
     :title="t('settings.storefrontContent.title')"
     :description="t('settings.storefrontContent.description')"
   >
-    <template v-for="field in FIELDS" :key="field.key">
-      <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="field.env" />
-      <UiStack v-else gap="xs">
-        <UiStack direction="row" align="end" wrap>
-          <UiInput
-            v-model="field.draft.value.value"
-            :type="field.rule === SettingFieldRule.Email ? UiInputType.Email : UiInputType.Text"
-            :label="t(field.labelKey)"
-            :placeholder="t(field.hintKey)"
-            :maxlength="SHORT_TEXT_MAX_LENGTH"
-            :invalid="isInvalid(field)"
-            :data-testid="`storefront-${field.testid}`"
-            class="min-w-72 flex-1"
+    <SettingsSubsection
+      v-for="group in GROUPS"
+      :key="group"
+      :title="t(`settings.storefrontContent.groups.${group}`)"
+      :data-testid="`storefront-group-${group}`"
+    >
+      <UiLocalizedField
+        v-for="field in localizedOf(group)"
+        :key="field.testid"
+        :label="t(field.labelKey)"
+        :hint="t('settings.storefrontContent.localeFallbackHint')"
+        :filled="field.localized.filled.value"
+        :errors="field.localized.errors.value"
+        :testid="`storefront-${field.testid}-tab`"
+      >
+        <template #default="{ locale }">
+          <SettingNotSeeded
+            v-if="!field.localized.drafts[locale].setting.value"
+            :setting-key="field.keys[locale]"
+            :env-name="SettingEnv[field.keys[locale]]"
           />
-          <SettingOutcome :outcome="field.draft.outcome.value" />
-        </UiStack>
-        <UiText
-          v-if="isInvalid(field) && field.invalidKey"
-          tone="danger"
-          size="sm"
-          :data-testid="`storefront-${field.testid}-invalid`"
-        >
-          {{ t(field.invalidKey) }}
-        </UiText>
-      </UiStack>
-    </template>
+          <UiStack v-else gap="xs">
+            <UiInput
+              v-model="field.localized.drafts[locale].value.value"
+              :placeholder="t(field.hintKey)"
+              :maxlength="SHORT_TEXT_MAX_LENGTH"
+              :data-testid="localizedInputTestid(field, locale)"
+            />
+            <SettingOutcome :outcome="field.localized.drafts[locale].outcome.value?.saved ? field.localized.drafts[locale].outcome.value : null" />
+          </UiStack>
+        </template>
+      </UiLocalizedField>
+
+      <SettingsTextField
+        v-for="field in fieldsOf(group)"
+        :key="field.key"
+        :draft="field.draft"
+        :setting-key="field.key"
+        :env-name="field.env"
+        :type="field.rule === SettingFieldRule.Email ? UiInputType.Email : UiInputType.Text"
+        :label="t(field.labelKey)"
+        :placeholder="t(field.hintKey)"
+        :maxlength="SHORT_TEXT_MAX_LENGTH"
+        :invalid-message="invalidMessageOf(field)"
+        :testid="`storefront-${field.testid}`"
+      />
+
+      <SettingsTimezoneField
+        v-if="group === StorefrontGroup.Address"
+        :draft="TIMEZONE"
+        :setting-key="SettingKey.ContactTimezone"
+        :env-name="SettingEnv[SettingKey.ContactTimezone]"
+        :label="t('settings.storefrontContent.contactTimezone.label')"
+        :hint="t('settings.storefrontContent.contactTimezone.hint')"
+        testid="storefront-contact-timezone"
+      />
+    </SettingsSubsection>
   </SettingsSection>
 </template>

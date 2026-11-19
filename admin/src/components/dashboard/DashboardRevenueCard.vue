@@ -13,8 +13,9 @@ import UiMetric from '@/components/ui/UiMetric.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { formatChange, formatDayCaption } from '@/lib/dashboardOverview'
 import { formatCurrencyWhole } from '@/lib/money'
+import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
 import type { DashboardIncome } from '@/types/dashboardcharts'
-import { UiChartHeight, UiChartType, UiChartVariant } from '@/utils/ui/chart'
+import { UiChartVariant } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
@@ -28,6 +29,9 @@ const props = defineProps<{
   /** Whether the figures are still loading. */
   loading: boolean
 }>()
+
+/** Kind and height of the chart, the same entry the dashboard skeleton draws the panel from. */
+const chart = PANEL_CHARTS[PanelChart.Revenue]
 
 const { t, locale } = useI18n()
 
@@ -70,14 +74,14 @@ const formatValue = (value: number): string => formatCurrencyWhole(value, props.
       </UiStack>
     </template>
     <UiChart
-      :type="UiChartType.Bar"
+      :kind="chart.kind"
       :labels="labels"
       :series="series"
       :target="income?.dailyAverage"
       :target-label="t('dashboard.revenue.average')"
       :value-formatter="formatValue"
       :loading="loading || waiting"
-      :height="UiChartHeight.Short"
+      :height="chart.height"
       :variant="UiChartVariant.Minimal"
     />
   </DashboardChartCard>

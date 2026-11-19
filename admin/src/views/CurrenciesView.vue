@@ -15,31 +15,44 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { Icon } from '@/lib/icons'
+import { UiTone } from '@/utils/ui/tone'
 import { formatAffixed } from '@/lib/money'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { useSettingsStore } from '@/stores/settings'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
 import { UiTableDensity } from '@/utils/ui/injection'
+import schema, { CURRENCIES_TABLE, CURRENCY_PROVIDER_PART } from '@/views/CurrenciesView.schema'
 import { EMPTY_VALUE } from '@/lib/format'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('currencies.updateRates'), icon: Icon.Refresh, variant: UiButtonVariant.Secondary, testid: 'currencies-update-rates', loading: updatingRates.value, onSelect: handleUpdateRates },
+  { label: t('currencies.updateProductPrices'), icon: actionIcons[UiActionKind.Refresh], variant: UiButtonVariant.Secondary, testid: 'currencies-update-prices', disabled: updatingPrices.value || nonBaseCurrencies.value.length === 0, onSelect: openPricesPicker },
+  { label: t('currencies.addCurrency'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'currencies-add', onSelect: openCreate },
+])
 
 /** Currencies store: the list, the loading flag and the refusal sentences. */
 const store = useCurrenciesStore()
@@ -208,7 +221,8 @@ const handleUpdatePrices = async (): Promise<void> => {
 }
 
 /**
- * The one row action of a currency: edit it in the dialog.
+ * The row actions of a currency: edit it in the dialog, and, unless it already is the base, make it the base
+ * (confirmed in a dialog first).
  *
  * @param currency - The row.
  * @returns The action list passed to UiRowActions.
@@ -216,6 +230,7 @@ const handleUpdatePrices = async (): Promise<void> => {
 const currencyActions = (currency: CurrencyDto): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `currency-edit-${currency.code}`,
     /**
      * Opens the edit dialog for this currency.
@@ -226,6 +241,21 @@ const currencyActions = (currency: CurrencyDto): UiMenuAction[] => [
       openEdit(currency)
     },
   },
+  ...(currency.isBase
+    ? []
+    : [{
+      label: t('currencies.makeBase'),
+      icon: Icon.Star,
+      testid: `currency-make-base-${currency.code}`,
+      /**
+       * Opens the make base confirmation for this currency.
+       *
+       * @returns Nothing.
+       */
+      onSelect: (): void => {
+        makeBaseTarget.value = currency
+      },
+    }]),
 ]
 
 /** Loads the settings the rate source card reads and marks the first load finished. */
@@ -238,39 +268,13 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="currencies-view">
-    <UiPageHeader :title="t('currencies.title')" :subtitle="t('currencies.description')">
-      <template #actions>
-        <UiButton
-          type="button"
-          variant="secondary"
-          :loading="updatingRates"
-          data-testid="currencies-update-rates"
-          @click="handleUpdateRates"
-        >
-          <UiIcon :markup="Icon.Refresh" size="sm" />
-          {{ t('currencies.updateRates') }}
-        </UiButton>
-        <UiButton
-          type="button"
-          variant="secondary"
-          :disabled="updatingPrices || nonBaseCurrencies.length === 0"
-          data-testid="currencies-update-prices"
-          @click="openPricesPicker"
-        >
-          {{ t('currencies.updateProductPrices') }}
-        </UiButton>
-        <UiButton type="button" variant="primary" data-testid="currencies-add" @click="openCreate">
-          <UiIcon :markup="Icon.Add" size="sm" />
-          {{ t('currencies.addCurrency') }}
-        </UiButton>
-      </template>
+  <UiStack data-testid="currencies-view">
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiAlert
       v-if="banner.message.value"
-      :variant="banner.isError.value ? 'danger' : 'success'"
-      class="mb-5"
+      :variant="UiTone.Danger"
       data-testid="currencies-result"
     >
       {{ banner.message.value }}
@@ -284,8 +288,9 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
       testid="currencies-settings-error"
       @retry="settingsStore.fetchSettings()"
     />
+    <UiDetailCards v-else-if="!settingsLoaded" :columns="CURRENCY_PROVIDER_PART.columns" loading />
     <ExchangeRateProviderCard
-      v-else-if="settingsLoaded"
+      v-else
       :settings="settingsStore.settings"
       :save="settingsStore.saveSetting"
     />
@@ -298,23 +303,9 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
       @retry="store.fetchAll()"
     />
 
-    <UiCard v-else class="overflow-hidden">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" :empty="!store.loading && store.currencies.length === 0">
-        <template #empty>
-          {{ t('currencies.empty') }}
-        </template>
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader align="left">{{ t('currencies.table.code') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('currencies.table.numeric') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('currencies.table.format') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('currencies.table.decimals') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('currencies.table.rateToBase') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('currencies.table.base') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('currencies.table.enabled') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('currencies.table.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+    <UiCard v-else clip>
+      <UiTable :empty-text="t('currencies.empty')" :density="UiTableDensity.Comfortable" :loading="store.loading" :empty="!store.loading && store.currencies.length === 0">
+        <UiSchemaTableHead :columns="CURRENCIES_TABLE.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="c in store.currencies"
@@ -333,21 +324,15 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
               <UiBadge v-if="c.isBase" tone="primary" small>
                 {{ t('currencies.baseBadge') }}
               </UiBadge>
-              <UiButton
-                v-else
-                type="button"
-                variant="link"
-                size="sm"
-                :data-testid="`currency-make-base-${c.code}`"
-                @click="makeBaseTarget = c"
-              >
-                {{ t('currencies.makeBase') }}
-              </UiButton>
             </UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="c.isEnabled ? 'success' : 'danger'" small>
-                {{ c.isEnabled ? t('currencies.enabledBadge') : t('currencies.disabledBadge') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="c.isEnabled"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('currencies.enabledBadge')"
+                :off-label="t('currencies.disabledBadge')"
+              />
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="currencyActions(c)" :testid="`currency-actions-${c.code}`" />
@@ -399,10 +384,10 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
         </UiLabel>
       </UiStack>
       <template #footer>
-        <UiButton type="button" variant="secondary" data-testid="currencies-prices-cancel" @click="showPricesPicker = false">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="currencies-prices-cancel" @click="showPricesPicker = false">
           {{ t('currencies.pricesPicker.cancel') }}
         </UiButton>
-        <UiButton
+        <UiButton :action="UiActionKind.Next"
           type="button"
           variant="primary"
           :disabled="selectedPriceCurrencies.length === 0"

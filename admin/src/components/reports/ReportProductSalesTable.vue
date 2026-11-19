@@ -2,6 +2,9 @@
 /**
  * Table of units sold and value per product, grouped by product group with a sub total per group
  * and a grand total. Shared by the income by product and monthly orders reports.
+ *
+ * The columns are `PRODUCT_SALES_TABLE`, the very table both reports' schemas hold, so the captions are the ones the
+ * skeleton draws; the table adds only how its cells are formatted.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -10,6 +13,8 @@ import ReportTable from '@/components/reports/ReportTable.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { formatReportAmount } from '@/lib/money'
+import { reportColumns } from '@/lib/reportsSchema'
+import { PRODUCT_SALES_TABLE } from '@/lib/reportsSalesTable'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportSalesGroup } from '@/types/reportproductsales'
@@ -36,12 +41,10 @@ const props = withDefaults(defineProps<{
   formatMoney: (amount: number) => formatReportAmount(amount),
 })
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'productName', label: t('shared.productName') },
-  { key: 'unitsSold', label: t('reports.monthlyOrders.unitsSold'), numeric: true },
-  { key: 'value', label: t('shared.value'), format: ReportCellFormat.Money },
-])
+/** Table columns: the captions and alignment of the shared schema table, with the figures drawn as numbers and the value as money. */
+const columns = computed<ReportColumn[]>(() =>
+  reportColumns(PRODUCT_SALES_TABLE, t, { unitsSold: { numeric: true }, value: { format: ReportCellFormat.Money } }),
+)
 
 /** The grand total row, by column key. */
 const totals = computed<Record<string, number>>(() => ({ unitsSold: props.totalUnitsSold, value: props.totalValue }))
@@ -53,6 +56,7 @@ const totals = computed<Record<string, number>>(() => ({ unitsSold: props.totalU
     :empty="groups.length === 0"
     :totals="totals"
     :format-money="formatMoney"
+    :grouped="PRODUCT_SALES_TABLE.grouped"
     testid="report-sales-table"
   >
     <template #body>

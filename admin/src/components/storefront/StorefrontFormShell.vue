@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The page shell of a storefront content form: breadcrumb, loading state, the failed-load state with
+ * The page shell of a storefront content form: the page header (the one `<h1>`, the create or edit title), loading state, the failed-load state with
  * a retry, the Cancel / Save bar with the refusal of a save next to it, and the question asked when
  * the operator leaves with unsaved edits.
  *
@@ -9,10 +9,10 @@
  */
 import { provide, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UI_FIELD_LOADING } from '@/utils/ui/injection'
@@ -21,20 +21,12 @@ import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
 const { t } = useI18n()
 
-/** One step of the breadcrumb trail. */
-interface TrailStep {
-  /** Visible caption (already translated). */
-  label: string
-  /** Router destination; omitted for the current page. */
-  to?: string
-}
-
 /** Props for StorefrontFormShell. */
 const props = withDefaults(defineProps<{
-  /** The trail above the form. */
-  breadcrumb: TrailStep[]
   /** Prefix of the test ids: `<prefix>-form-view`, `<prefix>-form-load-error`, `<prefix>-form-error`. */
   testid: string
+  /** Title of the page (already translated): the create or edit wording of the form's mode. */
+  title: string
   /** Label of the save button (already translated). */
   saveLabel: string
   /** True while the stored entry is loading. */
@@ -69,7 +61,7 @@ const leaveGuard = useUnsavedChangesGuard(() => props.dirty && !props.saving)
 
 <template>
   <UiStack gap="none" class="pb-24" :data-testid="`${testid}-form-view`">
-    <SettingsBreadcrumb :items="breadcrumb" />
+    <UiPageHeader :title="title" />
 
     <UiErrorState v-if="loadError && !loading" :message="loadError" :testid="`${testid}-form-load-error`" @retry="emit('retry')" />
 

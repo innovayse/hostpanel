@@ -19,6 +19,7 @@ import { daysRangeOf } from '@/lib/emailCampaigns'
 import { CampaignFilterType } from '@/types/emailcampaign'
 import type { EmailCampaignSegmentDraft } from '@/types/emailcampaign'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** A product or a client group an audience rule can pick. */
 export interface CampaignOption {
@@ -153,7 +154,7 @@ const changeDays = (value: number | null): void => {
       <UiText tone="muted" size="sm">{{ daysSuffix }}</UiText>
     </UiStack>
 
-    <UiButton
+    <UiButton :action="UiActionKind.Remove"
       type="button"
       :variant="UiButtonVariant.Secondary"
       :data-testid="`${testid}-remove`"

@@ -7,10 +7,11 @@ import { HttpMethod } from '../src/types/http'
 import { AdminTheme } from '../src/types/admintheme'
 import { THEME_STORAGE_KEY } from '../src/lib/themeBoot'
 import { expect, test } from '@playwright/test'
-import type { Locator, Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
 import { servicesPage } from './fixtures/orders'
 import { emptyClientSummary } from './fixtures/clientSummary'
+import { boxOf } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 /** An empty page of a paged list. */
@@ -20,21 +21,6 @@ test.use({ viewport: { width: 390, height: 800 } })
 
 /** Most a box can sit past its scroller's edge because the browser rounds a scroll offset to whole pixels. */
 const SCROLL_ROUNDING_PX = 1
-
-/**
- * Measures an element that must be on screen.
- *
- * @param locator - The element.
- * @returns Its bounding box.
- * @throws When the element is not rendered, so a missing element fails the test with its name instead of a null read.
- */
-const boxOf = async (locator: Locator): Promise<{ x: number, y: number, width: number, height: number }> => {
-  const box = await locator.boundingBox()
-  if (box === null) {
-    throw new Error(`${String(locator)} has no box: it is not rendered`)
-  }
-  return box
-}
 
 test('the client sections are a tab strip above the content on a phone', async ({ page }) => {
   await stubApi(page, {
@@ -55,7 +41,7 @@ test('the client sections are a tab strip above the content on a phone', async (
 
   // The strip sits above the content and scrolls on its own; the page itself does not.
   const stripBox = await boxOf(strip)
-  const cardBox = await boxOf(page.getByTestId('client-summary-info'))
+  const cardBox = await boxOf(page.getByTestId('ui-detail-card-info'))
   expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(cardBox.y)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 
@@ -338,7 +324,7 @@ test('the billing card lines its counts and amounts up in columns, and the summa
   })
 
   await page.goto('/clients/7/summary')
-  await expect(page.getByTestId('client-summary-billing')).toBeVisible()
+  await expect(page.getByTestId('ui-detail-card-billing')).toBeVisible()
 
   // Every amount ends on the same line, whatever its width, and so does every count.
   const edges = async (testid: string): Promise<number[]> =>

@@ -19,7 +19,6 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
@@ -32,9 +31,9 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/EmailCampaignsListView.schema'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { CAMPAIGN_STATUS_OPTIONS } from '@/lib/constants'
@@ -42,6 +41,7 @@ import { formatDateTimeCompact } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { AppRoute, emailCampaignPath } from '@/lib/routes'
 import { campaignStatusTone, statusLabel } from '@/lib/tones'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useEmailCampaignsStore } from '@/stores/emailCampaigns'
 import { CampaignStatus } from '@/types/emailcampaign'
 import type { EmailCampaignListFilters, EmailCampaignListItem } from '@/types/emailcampaign'
@@ -49,8 +49,15 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('emailCampaigns.list.add'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'email-campaigns-add', to: AppRoute.SupportEmailCampaignsNew },
+])
 
 /** The filter field the dialog edits; it is one query key and one `EmailCampaignListFilters` member. */
 const FilterKey = {
@@ -162,6 +169,7 @@ const rowActions = (campaign: EmailCampaignListItem): UiMenuAction[] => {
   const actions: UiMenuAction[] = [
     {
       label: isDraft ? t('shared.edit') : t('shared.view'),
+      icon: isDraft ? Icon.Edit : Icon.Eye,
       testid: `email-campaigns-${campaign.id}-open`,
       to: emailCampaignPath(campaign.id),
     },
@@ -175,7 +183,7 @@ const rowActions = (campaign: EmailCampaignListItem): UiMenuAction[] => {
     const onDelete = (): void => {
       deleteTarget.value = campaign.id
     }
-    actions.push({ label: t('shared.delete'), testid: `email-campaigns-${campaign.id}-delete`, danger: true, onSelect: onDelete })
+    actions.push({ label: t('shared.delete'), icon: Icon.Trash, testid: `email-campaigns-${campaign.id}-delete`, danger: true, onSelect: onDelete })
   }
   return actions
 }
@@ -183,16 +191,7 @@ const rowActions = (campaign: EmailCampaignListItem): UiMenuAction[] => {
 
 <template>
   <UiStack>
-    <UiPageHeader :title="t('emailCampaigns.list.title')" :subtitle="t('emailCampaigns.list.subtitle')">
-      <template #actions>
-        <UiLink
-          :to="AppRoute.SupportEmailCampaignsNew"
-          :variant="UiButtonVariant.Primary"
-          data-testid="email-campaigns-add"
-        >
-          {{ t('emailCampaigns.list.add') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="email-campaigns-feedback" />
@@ -239,16 +238,7 @@ const rowActions = (campaign: EmailCampaignListItem): UiMenuAction[] => {
         :loading="initialLoading"
         data-testid="email-campaigns-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('emailCampaigns.list.scheduledAt') }}</UiTableHeader>
-            <UiTableHeader>{{ t('emailCampaigns.list.sentAt') }}</UiTableHeader>
-            <UiTableHeader>{{ t('emailCampaigns.list.delivery') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="campaign in store.campaigns"

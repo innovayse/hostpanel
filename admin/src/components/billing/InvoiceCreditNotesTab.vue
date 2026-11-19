@@ -24,6 +24,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { formatDateTime } from '@/lib/format'
@@ -35,6 +36,7 @@ import type { IssueCreditNotePayload } from '@/types/creditnote'
 import { InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -124,7 +126,7 @@ onMounted(load)
         <UiText data-testid="billing-invoice-creditable">
           {{ t('billing.creditNotes.creditable', { amount: formatPlainAmount(invoice.creditableAmount, invoice.currency) }) }}
         </UiText>
-        <UiButton v-if="!readonly" :disabled="!canIssue" data-testid="billing-invoice-credit-note-issue" @click="issuing = true">
+        <UiButton :action="UiActionKind.Confirm" v-if="!readonly" :disabled="!canIssue" data-testid="billing-invoice-credit-note-issue" @click="issuing = true">
           {{ t('billing.creditNotes.issueButton') }}
         </UiButton>
       </UiStack>
@@ -133,17 +135,18 @@ onMounted(load)
 
     <UiCard>
       <UiTable
+        :empty-text="t('billing.creditNotes.emptyForInvoice')"
         :loading="store.loading && store.notes.length === 0"
         :empty="!store.loading && store.notes.length === 0"
         data-testid="billing-invoice-credit-notes-table"
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('billing.creditNotes.number') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.statusLabel') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow">{{ t('billing.creditNotes.number') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('billing.creditNotes.statusLabel') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.creditNotes.methodLabel') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('billing.creditNotes.total') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.issuedAt') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('billing.creditNotes.total') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact">{{ t('billing.creditNotes.issuedAt') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -159,9 +162,6 @@ onMounted(load)
             <UiTableCell muted>{{ formatDateTime(note.issuedAt) }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('billing.creditNotes.emptyForInvoice') }}
-        </template>
       </UiTable>
     </UiCard>
 

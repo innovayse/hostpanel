@@ -11,7 +11,6 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { FRAUD_REASON_OPTIONS } from '@/lib/constants'
@@ -82,25 +81,21 @@ const underReview = computed<boolean>(() => props.order.status === OrderStatus.U
         </UiText>
       </UiStack>
       <UiStack v-if="underReview" direction="row" gap="sm" wrap>
-        <UiButton
+        <UiButton :icon="Icon.Check"
           :variant="UiButtonVariant.Secondary"
           size="sm"
           :disabled="busy"
           data-testid="order-fraud-approve"
           @click="emit('approve')"
-        >
-          <UiIcon :markup="Icon.Check" size="sm" />
-          {{ t('orders.fraud.approve') }}
+        >{{ t('orders.fraud.approve') }}
         </UiButton>
-        <UiButton
+        <UiButton :icon="Icon.Close"
           :variant="UiButtonVariant.Danger"
           size="sm"
           :disabled="busy"
           data-testid="order-fraud-reject"
           @click="emit('reject')"
-        >
-          <UiIcon :markup="Icon.Close" size="sm" />
-          {{ t('orders.fraud.reject') }}
+        >{{ t('orders.fraud.reject') }}
         </UiButton>
       </UiStack>
     </UiStack>

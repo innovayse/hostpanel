@@ -385,6 +385,12 @@
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
     <value>Գրանցողը պետք է լինի հետևյալներից մեկը՝ NameAm, Namecheap։</value>
   </data>
+  <data name="VatRateListKindInvalid" xml:space="preserve">
+    <value>Դրույքի տեսակը պետք է լինի հետևյալներից մեկը՝ Standard, Reduced։</value>
+  </data>
+  <data name="VatRateListStatusInvalid" xml:space="preserve">
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Active, Superseded, Upcoming։</value>
+  </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
   </data>

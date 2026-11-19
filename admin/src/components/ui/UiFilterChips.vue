@@ -12,6 +12,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import { Icon } from '@/lib/icons'
 import type { UiFilterChip } from '@/utils/ui/filter'
+import { UiSize } from '@/utils/ui/size'
 
 const { t } = useI18n()
 
@@ -47,11 +48,11 @@ const emit = defineEmits<{
         </span>
         <UiIconButton
           :label="t('ui.uiFilterChips.remove', { label: chip.label, value: chip.value })"
-          size="sm"
+          :size="UiSize.Xs"
           :data-testid="`filter-chip-remove-${chip.key}`"
           @click="emit('remove', chip.key)"
         >
-          <UiIcon :markup="Icon.Close" size="sm" />
+          <UiIcon :markup="Icon.Close" :size="UiSize.Xs" />
         </UiIconButton>
       </span>
     </li>

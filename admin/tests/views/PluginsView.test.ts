@@ -17,6 +17,7 @@ import { json, problem } from '../helpers/fetch'
 import { PluginErrorCode } from '@/types/plugin'
 import { makeDetails, makeVersion } from '../helpers/pluginDetails'
 import { PluginSettingKey } from '@/types/setting'
+import { useToastStore } from '@/stores/toast'
 
 /** One installed plugin as the list endpoint returns it. */
 const plugin = {
@@ -236,7 +237,7 @@ describe('PluginsView', () => {
     await flushPromises()
 
     expect(purgeCalls()).toHaveLength(1)
-    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin data purged.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Plugin data purged.')
     expect(wrapper.find('[data-testid="plugins-kept-data"]').exists()).toBe(false)
   })
 

@@ -1,145 +1,160 @@
 <script setup lang="ts">
 /**
- * World map with one dot per city that has active clients.
+ * World choropleth: every country with active clients is filled within its borders.
  *
- * Draws the country outlines from the map package and the city markers on top, sized by client
- * count. Hovering or focusing a dot names the city under the map; clicking it emits its country.
+ * Draws the country outlines from the map package and fills each one by its client count on a
+ * tone scale; countries without data stay neutral. Hovering or focusing a country highlights it
+ * and shows its name and clients in a tooltip; clicking it (or Enter / Space) emits its code.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import World from '@svg-maps/world'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiText from '@/components/ui/UiText.vue'
+import UiTooltip from '@/components/ui/UiTooltip.vue'
 import { reportCountryName } from '@/lib/reportsCountry'
-import type { ReportCityRow } from '@/types/reportcountry'
+import { MAP_ACTIVE_FILL, MAP_FILL_STEPS, MAP_NO_DATA_FILL, MAP_NO_DATA_SWATCH, mapFillClass } from '@/lib/reports'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import type { ReportCountryRow } from '@/types/reportcountry'
 
 const { t, locale } = useI18n()
 
 /** Props for WorldMap. */
 const props = defineProps<{
-  /** Cities with their country (ISO-2) and client count. */
-  cityData: ReportCityRow[]
+  /** Countries (ISO-2) with their client count. */
+  countryData: ReportCountryRow[]
 }>()
 
 const emit = defineEmits<{
-  /** A city dot was clicked; carries its ISO-2 country code. */
+  /** A country was chosen; carries its ISO-2 code. */
   'select-country': [country: string]
 }>()
 
-/** A city that has a place on the map. */
-interface CityMarker {
-  /** City name. */
-  city: string
-  /** ISO-2 country code. */
-  country: string
-  /** Active clients. */
-  count: number
-  /** Horizontal position in map units. */
-  x: number
-  /** Vertical position in map units. */
-  y: number
+/** A country that has data on the map. */
+interface MapCountry {
+  /** Upper-case ISO-2 code. */
+  code: string
+  /** SVG outline. */
+  path: string
+  /** Name and clients, for the tooltip and the accessible label. */
+  label: string
+  /** Fill class on the scale. */
+  fill: string
 }
 
-/** The marker under the pointer, if any. */
-const hovered = ref<CityMarker | null>(null)
+/** Upper-case ISO-2 code of the country under the pointer or focus, if any. */
+const active = ref<string | null>(null)
 
-/** Client count of the busiest city, so dot sizes are relative. */
-const maxCity = computed<number>(() => Math.max(1, ...props.cityData.map(c => c.clientCount)))
+/** Client count per upper-case ISO-2 code; rows with no resolved country are left out. */
+const counts = computed<Map<string, number>>(() => {
+  const map = new Map<string, number>()
+  for (const row of props.countryData) {
+    if (row.country !== null) {
+      const code = row.country.toUpperCase()
+      map.set(code, (map.get(code) ?? 0) + row.clientCount)
+    }
+  }
+  return map
+})
 
-/**
- * Position of each known city on the map, keyed `City|ISO2`.
- *
- * The map's viewBox is "0 0 1010 666". Positions were calibrated against the outlines of small
- * countries: svgX = 2.82 * lon + 472.25, svgY = -3.31 * lat + 463.68.
- */
-const cityCoords: Record<string, [number, number]> = {
-  'New York|US': [264, 329], 'San Francisco|US': [127, 338], 'Los Angeles|US': [139, 351],
-  'Chicago|US': [225, 325], 'Austin|US': [197, 363], 'Seattle|US': [127, 306],
-  'Miami|US': [246, 378], 'Houston|US': [203, 365], 'Boston|US': [272, 323],
-  'Denver|US': [176, 332], 'Toronto|CA': [248, 319], 'Vancouver|CA': [125, 300],
-  'Montreal|CA': [265, 313],
-  'London|GB': [472, 293], 'Paris|FR': [479, 302], 'Berlin|DE': [510, 290],
-  'Madrid|ES': [462, 330], 'Rome|IT': [507, 325], 'Amsterdam|NL': [486, 290],
-  'Stockholm|SE': [523, 267], 'Oslo|NO': [503, 265],
-  'Helsinki|FI': [543, 264], 'Warsaw|PL': [531, 291], 'Prague|CZ': [513, 298],
-  'Dublin|IE': [455, 287], 'Lisbon|PT': [446, 335], 'Brussels|BE': [485, 295],
-  'Copenhagen|DK': [508, 279],
-  'Yerevan|AM': [598, 330], 'Moscow|RU': [578, 279], 'Istanbul|TR': [554, 328],
-  'Dubai|AE': [628, 380], 'Seoul|KR': [830, 339], 'Tokyo|JP': [866, 345],
-  'Beijing|CN': [800, 331], 'Shanghai|CN': [815, 360], 'Mumbai|IN': [678, 400],
-  'Delhi|IN': [690, 369], 'Bangalore|IN': [691, 421], 'Singapore|SG': [765, 459],
-  'Bangkok|TH': [756, 418], 'Hong Kong|CN': [794, 390],
-  'Tel Aviv|IL': [570, 357], 'Tbilisi|GE': [599, 325],
-  'Sydney|AU': [899, 576], 'Melbourne|AU': [881, 589], 'Auckland|NZ': [965, 586],
-  'São Paulo|BR': [341, 542], 'Buenos Aires|AR': [308, 578],
-  'Santiago|CL': [273, 575], 'Lima|PE': [255, 504], 'Bogotá|CO': [263, 448],
-  'Cairo|EG': [560, 364], 'Cape Town|ZA': [524, 576], 'Lagos|NG': [482, 442],
-  'Nairobi|KE': [576, 468], 'Gangnam-gu|KR': [830, 339],
-}
+/** Client count of the busiest country, the top of the scale. */
+const maxCount = computed<number>(() => Math.max(0, ...counts.value.values()))
 
-/** Markers for the cities the map knows a position for; others are left off. */
-const markers = computed<CityMarker[]>(() =>
-  props.cityData.flatMap(c => {
-    const coords = cityCoords[`${c.city}|${c.country}`]
-    return coords ? [{ city: c.city, country: c.country, count: c.clientCount, x: coords[0], y: coords[1] }] : []
+/** Outlines of the countries with no data, drawn first. */
+const emptyPaths = computed<{ id: string; path: string }[]>(() =>
+  World.locations.filter(loc => !counts.value.has(loc.id.toUpperCase())).map(loc => ({ id: loc.id, path: loc.path })),
+)
+
+/** Countries with data, drawn over the neutral ones so a highlight is never cut by a neighbour. */
+const dataCountries = computed<MapCountry[]>(() =>
+  World.locations.flatMap(loc => {
+    const code = loc.id.toUpperCase()
+    const count = counts.value.get(code)
+    if (count === undefined) {
+      return []
+    }
+    const label = `${reportCountryName(code, locale.value)}: ${t('reports.common.clientCount', { count }, count)}`
+    return [{ code, path: loc.path, label, fill: mapFillClass(count, maxCount.value) }]
   }),
 )
 
-/**
- * Radius of a city dot, growing with its share of the busiest city.
- *
- * @param marker - The city marker.
- * @returns Radius in map units.
- */
-const radius = (marker: CityMarker): number => 3 + (marker.count / maxCity.value) * 3
+/** The country the tooltip describes. */
+const activeCountry = computed<MapCountry | null>(() => dataCountries.value.find(c => c.code === active.value) ?? null)
 
-/** Caption under the map: the hovered city, or a hint to hover one. */
-const caption = computed<string>(() => {
-  const marker = hovered.value
-  if (marker === null) {
-    return t('reports.clientsByCountry.mapHint')
-  }
-  const clients = t('reports.common.clientCount', { count: marker.count }, marker.count)
-  return `${marker.city}, ${reportCountryName(marker.country, locale.value)}: ${clients}`
-})
+/**
+ * Fill class of a country: the highlight when it is active, else its scale tone.
+ *
+ * @param country - The map country.
+ * @returns The Tailwind fill class.
+ */
+const fillOf = (country: MapCountry): string => (country.code === active.value ? MAP_ACTIVE_FILL : country.fill)
+
+/**
+ * Marks a country as the one under the pointer or focus.
+ *
+ * @param code - Its ISO-2 code.
+ */
+const activate = (code: string): void => {
+  active.value = code
+}
+
+/** Clears the highlight. */
+const deactivate = (): void => {
+  active.value = null
+}
 </script>
 
 <template>
   <UiCard padding="md" data-testid="report-world-map">
-    <svg
-      :viewBox="World.viewBox"
-      class="w-full aspect-[1010/666]"
-      role="img"
-      :aria-label="t('reports.clientsByCountry.clientsByCountry')"
-    >
-      <path
-        v-for="loc in World.locations"
-        :key="loc.id"
-        :d="loc.path"
-        class="fill-border stroke-surface-card"
-        stroke-width="0.3"
-      />
-      <g v-for="marker in markers" :key="marker.city + marker.country">
-        <circle
-          :cx="marker.x"
-          :cy="marker.y"
-          r="8"
-          class="fill-transparent cursor-pointer"
-          :data-testid="`report-map-city-${marker.city}`"
-          @mouseenter="hovered = marker"
-          @mouseleave="hovered = null"
-          @click="emit('select-country', marker.country)"
+    <UiTooltip class="w-full" :text="activeCountry?.label ?? ''" :open="activeCountry !== null">
+      <svg
+        :viewBox="World.viewBox"
+        class="w-full aspect-[1010/666]"
+        role="group"
+        :aria-label="t('reports.clientsByCountry.clientsByCountry')"
+      >
+        <path
+          v-for="empty in emptyPaths"
+          :key="empty.id"
+          :d="empty.path"
+          :class="MAP_NO_DATA_FILL"
+          class="stroke-surface-card"
+          stroke-width="0.3"
+          aria-hidden="true"
         />
-        <circle
-          :cx="marker.x"
-          :cy="marker.y"
-          :r="radius(marker)"
-          class="fill-status-green pointer-events-none"
+        <path
+          v-for="country in dataCountries"
+          :key="country.code"
+          :d="country.path"
+          :class="fillOf(country)"
+          class="stroke-surface-card cursor-pointer outline-none"
+          stroke-width="0.3"
+          role="button"
+          tabindex="0"
+          :aria-label="country.label"
+          :data-testid="`report-map-country-${country.code}`"
+          @mouseenter="activate(country.code)"
+          @mouseleave="deactivate"
+          @focus="activate(country.code)"
+          @blur="deactivate"
+          @click="emit('select-country', country.code)"
+          @keydown.enter.prevent="emit('select-country', country.code)"
+          @keydown.space.prevent="emit('select-country', country.code)"
         />
-      </g>
-    </svg>
-    <UiText tone="secondary" size="sm" class="mt-3 text-center" data-testid="report-map-caption">
-      {{ caption }}
-    </UiText>
+      </svg>
+    </UiTooltip>
+    <ul class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1" data-testid="report-map-legend">
+      <li class="flex items-center gap-1.5">
+        <span class="size-3 rounded-sm" :class="MAP_NO_DATA_SWATCH" aria-hidden="true" />
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('reports.clientsByCountry.legendNoData') }}</UiText>
+      </li>
+      <li class="flex items-center gap-1.5">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('reports.clientsByCountry.legendFewer') }}</UiText>
+        <span class="flex" aria-hidden="true">
+          <span v-for="step in MAP_FILL_STEPS" :key="step.swatch" class="h-3 w-5 first:rounded-l-sm last:rounded-r-sm" :class="step.swatch" />
+        </span>
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('reports.clientsByCountry.legendMore', { count: maxCount }) }}</UiText>
+      </li>
+    </ul>
   </UiCard>
 </template>

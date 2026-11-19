@@ -10,28 +10,22 @@ import { useClientTicketsStore } from '@/stores/clientTickets'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
 import { TicketPriority } from '@/types/ticket'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiLink from '@/components/ui/UiLink.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientItemPath, clientSectionPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema from '@/views/ClientOpenTicketView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
-
-/** Icon markup (shape tags) of the back link. */
-const BACK_ICON = '<polyline points="15 18 9 12 15 6"/>'
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -95,17 +89,12 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiStack direction="row" :align="UiAlignItems.Center">
-      <UiLink
-        :to="clientSectionPath(clientId, ClientSection.Tickets)"
-        :variant="UiButtonVariant.Secondary"
-        data-testid="client-open-ticket-back"
-      >
-        <UiIcon :markup="BACK_ICON" :size="UiSize.Sm" />
-        {{ t('shared.back') }}
-      </UiLink>
-      <UiHeading :level="1" variant="card">{{ t('shared.openNewTicket') }}</UiHeading>
-    </UiStack>
+    <UiPageHeader
+      v-bind="schemaHeader(schema, t)"
+      :back-to="clientSectionPath(clientId, ClientSection.Tickets)"
+      :back-label="t('shared.tickets')"
+      back-testid="client-open-ticket-back"
+    />
 
     <UiErrorState
       v-if="store.departmentsError !== null"
@@ -114,55 +103,45 @@ onMounted(() => {
       @retry="store.fetchDepartments"
     />
 
-    <UiCard v-else padding="lg">
-      <UiStack>
-        <UiField :label="t('shared.subject')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="subject"
-              type="text"
-              :placeholder="t('clients.clientOpenTicket.ticketSubject')"
-              data-testid="client-open-ticket-subject"
-            />
-          </template>
-        </UiField>
+    <UiSchemaForm v-else :columns="schema.columns">
+      <template #field-subject="{ id }">
+        <UiInput
+          :id="id"
+          v-model="subject"
+          type="text"
+          :placeholder="t('clients.clientOpenTicket.ticketSubject')"
+          data-testid="client-open-ticket-subject"
+        />
+      </template>
+      <template #field-departmentId>
+        <UiSelect v-model="departmentId" :options="departmentOptions" :placeholder="t('shared.selectDepartment')" data-testid="client-open-ticket-department" />
+      </template>
+      <template #field-priority>
+        <UiSelect v-model="priority" :options="TICKET_PRIORITY_OPTIONS" :placeholder="t('shared.selectPriority')" data-testid="client-open-ticket-priority" />
+      </template>
+      <template #field-message="{ id }">
+        <UiTextarea
+          :id="id"
+          v-model="message"
+          rows="8"
+          :placeholder="t('clients.clientOpenTicket.describeTheIssue')"
+          data-testid="client-open-ticket-message"
+        />
+      </template>
 
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.department')">
-            <UiSelect v-model="departmentId" :options="departmentOptions" :placeholder="t('shared.selectDepartment')" data-testid="client-open-ticket-department" />
-          </UiField>
-          <UiField :label="t('shared.priority')">
-            <UiSelect v-model="priority" :options="TICKET_PRIORITY_OPTIONS" :placeholder="t('shared.selectPriority')" data-testid="client-open-ticket-priority" />
-          </UiField>
-        </UiGrid>
-
-        <UiField :label="t('shared.message')">
-          <template #default="{ id }">
-            <UiTextarea
-              :id="id"
-              v-model="message"
-              rows="8"
-              :placeholder="t('clients.clientOpenTicket.describeTheIssue')"
-              data-testid="client-open-ticket-message"
-            />
-          </template>
-        </UiField>
-
-        <UiStack direction="row">
-          <UiButton
-            type="button"
-            :variant="UiButtonVariant.Primary"
-            :loading="store.loading"
-            :disabled="incomplete"
-            data-testid="client-open-ticket-submit"
-            @click="handleSubmit"
-          >
-            {{ t('clients.clientOpenTicket.openTicket') }}
-          </UiButton>
-        </UiStack>
-        <UiStatusMessage :message="store.error" :tone="UiTone.Danger" data-testid="client-open-ticket-error" />
+      <UiStack direction="row">
+        <UiButton :action="UiActionKind.Add"
+          type="button"
+          :variant="UiButtonVariant.Primary"
+          :loading="store.loading"
+          :disabled="incomplete"
+          data-testid="client-open-ticket-submit"
+          @click="handleSubmit"
+        >
+          {{ t('clients.clientOpenTicket.openTicket') }}
+        </UiButton>
       </UiStack>
-    </UiCard>
+      <UiStatusMessage :message="store.error" :tone="UiTone.Danger" data-testid="client-open-ticket-error" />
+    </UiSchemaForm>
   </UiStack>
 </template>

@@ -2,8 +2,7 @@
  * Unit tests for the drawer vocabulary.
  */
 import { describe, expect, it } from 'vitest'
-import { UI_BELOW_LG_QUERY, UI_BELOW_SM_QUERY } from '@/utils/ui/breakpoints'
-import { sheetQueries, UiDrawerSheetBelow, UiDrawerSide } from '@/utils/ui/drawer'
+import { UiDrawerPresentation, UiDrawerSide } from '@/utils/ui/drawer'
 
 describe('UiDrawerSide', () => {
   it('lists unique, non-empty values', () => {
@@ -15,9 +14,11 @@ describe('UiDrawerSide', () => {
   })
 })
 
-describe('sheetQueries', () => {
-  it('maps each sheet breakpoint to the width of its Tailwind max- variant', () => {
-    expect(sheetQueries[UiDrawerSheetBelow.Sm]).toBe(UI_BELOW_SM_QUERY)
-    expect(sheetQueries[UiDrawerSheetBelow.Lg]).toBe(UI_BELOW_LG_QUERY)
+describe('UiDrawerPresentation', () => {
+  it('is the closed pair of a side panel and a bottom sheet, with unique non-empty values', () => {
+    const values = Object.values(UiDrawerPresentation)
+
+    expect(values).toEqual(['side', 'sheet'])
+    expect(new Set(values).size).toBe(values.length)
   })
 })

@@ -6,6 +6,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientTicketsView from '@/views/ClientTicketsView.vue'
+import schema from '@/views/ClientTicketsView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import { mountClientView } from '../helpers/clientViews'
 import { applyListFilter } from '../helpers/listFilter'
@@ -116,6 +118,15 @@ describe('ClientTicketsView', () => {
     expect(row.text()).toContain('Open')
   })
 
+  it('shows the opened-tickets tiles from the schema captions and the stats the API answered', async () => {
+    stubTab()
+
+    const { wrapper } = await mountTabAt()
+
+    expect(wrapper.get('[data-testid="client-tickets-stat-openedThisYear"]').text()).toContain('4')
+    expect(wrapper.get('[data-testid="client-tickets-stat-openedLastYear"]').text()).toContain('2')
+  })
+
   it('puts the typed search in the address and sends it after the pause', async () => {
     const mock = stubTab()
     const { wrapper, router } = await mountTabAt()
@@ -202,5 +213,21 @@ describe('ClientTicketsView', () => {
     await wrapper.get('[data-testid="client-tickets-clear-empty"]').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.query).toEqual({ search: 'zzz' })
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubTab()
+    const { wrapper } = await mountTabAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientTicketsView, '/clients/:id/tickets', '/clients/7/tickets')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

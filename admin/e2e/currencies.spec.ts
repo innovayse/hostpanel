@@ -36,6 +36,7 @@ test('editing a currency saves the new prefix and rate and shows them in the tab
   await expect(page.getByTestId(`currency-row-${usd.code}`)).toBeVisible()
   await expect(page.getByTestId(`currency-row-${eur.code}`)).toBeVisible()
 
+  await page.getByTestId(`currency-actions-${eur.code}`).click()
   await page.getByTestId(`currency-edit-${eur.code}`).click()
   await expect(page.getByTestId('currency-form')).toBeVisible()
   await expect(fieldOf(page, 'currency-form-prefix')).toHaveValue(eur.prefix)

@@ -12,7 +12,9 @@ import { json, problem } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { optionValues } from '../helpers/select'
+import schema from '@/views/FraudLogView.schema'
 
 /** Request line of the unfiltered first page. */
 const FIRST_PAGE = 'GET /admin/fraud/log?page=1&pageSize=20'
@@ -231,5 +233,12 @@ describe('FraudLogView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  it('draws the table head from the schema columns while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountScreen(FraudLogView)
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

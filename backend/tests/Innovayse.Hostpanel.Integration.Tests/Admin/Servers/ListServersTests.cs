@@ -1,7 +1,10 @@
 using System.Net;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 
@@ -16,6 +19,15 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
 {
     /// <summary>The route under test.</summary>
     private const string Route = "/api/admin/servers";
+
+    /// <summary>The ISO 4217 code of the non-base currency one seeded client is billed in.</summary>
+    private const string ForeignCurrency = "XTS";
+
+    /// <summary>The ISO 4217 numeric code of <see cref="ForeignCurrency"/>.</summary>
+    private const string ForeignNumeric = "963";
+
+    /// <summary>What one unit of <see cref="ForeignCurrency"/> is worth in the base currency.</summary>
+    private const decimal ForeignRate = 0.5m;
 
     /// <summary>The servers one seeded mix holds, by the role each plays in the tests.</summary>
     /// <param name="Token">The text every seeded name and host name carries, so a search scopes a request to this mix.</param>
@@ -172,6 +184,42 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await PagedListReads.RefusedFieldsAsync(response)).Should().Contain(field);
+    }
+
+    /// <summary>
+    /// A row carries what the active services on the server renew for, spread over the months of their cycles; a suspended
+    /// service is left out and a server without services shows zero.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task List_RowCarriesTheActiveServicesAndTheirMonthlyRevenue()
+    {
+        var mix = await SeedMixAsync();
+        await BillingTestSeeds.EnsureCurrencyAsync(factory, ForeignCurrency, ForeignNumeric, ForeignRate);
+        var foreignClientId = await BillingTestSeeds.SeedClientAsync(factory, ForeignCurrency);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var ids = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: null);
+            await ServicesTestSeeds.AddActiveServiceOnServerAsync(db, ids.ClientId, ids.ProductId, mix.Online, BillingCycle.Monthly, 10m, suspend: false);
+            await ServicesTestSeeds.AddActiveServiceOnServerAsync(db, ids.ClientId, ids.ProductId, mix.Online, BillingCycle.Annual, 120m, suspend: false);
+            await ServicesTestSeeds.AddActiveServiceOnServerAsync(db, foreignClientId, ids.ProductId, mix.Online, BillingCycle.Monthly, 40m, suspend: false);
+            await ServicesTestSeeds.AddActiveServiceOnServerAsync(db, ids.ClientId, ids.ProductId, mix.Online, BillingCycle.Monthly, 500m, suspend: true);
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+        var admin = await ServersTestSeeds.AdminClientAsync(factory);
+
+        var page = await PagedListReads.PageAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}");
+
+        var rows = page.GetProperty("items").EnumerateArray().ToList();
+        var busy = rows.Single(r => r.GetProperty("id").GetInt32() == mix.Online).GetProperty("usage");
+        busy.GetProperty("activeServices").GetInt32().Should().Be(3);
+        // 10 + 120 / 12 in the base currency, plus 40 of the foreign currency converted at its rate.
+        busy.GetProperty("monthlyRevenue").GetDecimal().Should().Be(20m + (40m * ForeignRate));
+        busy.GetProperty("currency").GetString().Should().NotBeNullOrEmpty();
+        var idle = rows.Single(r => r.GetProperty("id").GetInt32() == mix.Offline).GetProperty("usage");
+        idle.GetProperty("activeServices").GetInt32().Should().Be(0);
+        idle.GetProperty("monthlyRevenue").GetDecimal().Should().Be(0m);
     }
 
     /// <summary>A search longer than the limit is refused with 400 on the field, not cut.</summary>

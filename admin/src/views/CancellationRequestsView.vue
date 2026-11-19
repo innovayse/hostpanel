@@ -35,9 +35,9 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/CancellationRequestsView.schema'
 import { CancellationStatus, CancellationType } from '@/types/service'
 import type { CancellationRequestFilters, CancellationRequestItem } from '@/types/service'
 import UiText from '@/components/ui/UiText.vue'
@@ -48,6 +48,7 @@ import { useCancellationRequestsStore } from '@/stores/cancellationRequests'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { clientPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTextSize } from '@/utils/ui/text'
 
@@ -200,6 +201,7 @@ const dismissDelete = (): void => {
 const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
   {
     label: t('clients.cancellationRequests.deleteRequest'),
+    icon: Icon.Trash,
     testid: `cancellations-delete-${item.id}`,
     /**
      * Asks for confirmation, then deletes this row.
@@ -217,8 +219,7 @@ const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
 <template>
   <UiStack>
     <UiPageHeader
-      :title="t('clients.cancellationRequests.cancellationRequests')"
-      :subtitle="t('clients.cancellationRequests.reviewAndProcessServiceCancellation')"
+      v-bind="schemaHeader(schema, t)"
       data-testid="cancellations-header"
     />
 
@@ -272,17 +273,7 @@ const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
 
     <UiCard v-if="hasRows || store.loading">
       <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="cancellations-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.reason') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody>
           <UiTableRow
             v-for="item in store.cancellations"

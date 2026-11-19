@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Plugins.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,6 +46,8 @@ public sealed class ListPluginsHandler
     {
         var packages = await _store.ListAsync(ct);
         var refused = _registry.GetRefusedPlugins().ToDictionary(r => r.PluginId, StringComparer.OrdinalIgnoreCase);
+        var installs = (await _context.InstalledPlugins.AsNoTracking().ToListAsync(ct))
+            .ToDictionary(p => p.PluginId, StringComparer.Ordinal);
         var shown = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var result = new List<PluginListItemDto>();
 
@@ -57,6 +60,9 @@ public sealed class ListPluginsHandler
             // A refusal is recorded under the plugin's folder name. A refused row is addressed by it too, because a
             // removal deletes that folder, and its manifest id may be the very thing that is wrong.
             refused.TryGetValue(package.FolderName, out var refusal);
+
+            // A refused row describes no running package, and a plugin that ships with the build has no install record.
+            var install = refusal is null && !package.IsBuiltIn ? installs.GetValueOrDefault(manifest.Id) : null;
             result.Add(new PluginListItemDto(
                 refusal is null ? manifest.Id : package.FolderName,
                 manifest.Name,
@@ -77,7 +83,15 @@ public sealed class ListPluginsHandler
                 refusal is null ? manifest.HostAccess : [],
                 refusal is null ? manifest.Changelog : null,
                 refusal is null ? manifest.MinHostVersion : null,
-                refusal is null ? manifest.MaxHostVersion : null));
+                refusal is null ? manifest.MaxHostVersion : null,
+                refusal is null ? (package.IsBuiltIn ? PluginSource.BuiltIn : install?.Source) : null,
+                install?.InstalledAt,
+                install?.UpdatedAt,
+                install?.InstalledByName,
+                install?.Signer,
+                install?.SignerKeyId,
+                install?.PackageSizeBytes,
+                install?.PackageSha256));
         }
 
         var scopeOwners = _context.PluginDataScopes.AsNoTracking().Select(s => s.PluginId);

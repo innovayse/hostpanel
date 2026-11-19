@@ -20,6 +20,8 @@ export interface UiSelectOption<T extends string | number | null> {
   description?: string
   /** Extra text the search matches without showing it (an id, an alias). */
   keywords?: string
+  /** Heading the row is listed under; a heading shows above the first row of each run of equal values. */
+  group?: string
   /** Draws the row and, once picked, the trigger dim: a "none" or "all" choice. */
   muted?: boolean
 }

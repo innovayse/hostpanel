@@ -12,6 +12,7 @@ import { mountClientView } from '../helpers/clientViews'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The items of client 7, in the API's `ClientBillableItemDto` shape: one uninvoiced charge and optionally invoiced ones, in the given currency. */
 const items = (currency = 'USD', invoiced: object[] = []) =>
@@ -228,7 +229,7 @@ describe('ClientBillableItemsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-billable-feedback"]').text()).toBe('Billable items deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Billable items deleted.'])
   })
 
   it('shows the API sentence when the delete is refused and keeps the lists', async () => {
@@ -271,8 +272,8 @@ describe('ClientBillableItemsView', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountItems()
 
-    expect(wrapper.get('[data-testid="client-billable-uninvoiced-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="client-billable-invoiced-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="client-billable-pagination-range"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-detail-card-uninvoiced"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-detail-card-invoiced"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-detail-card-invoiced"]').find('[data-testid="pagination-range"]').exists()).toBe(true)
   })
 })

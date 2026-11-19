@@ -10,6 +10,8 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json } from '../helpers/fetch'
 import { DomainStatus } from '@/types/domain'
+import schema from '@/views/ClientDomainsListView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 
 /** One domain of the client as the list endpoint returns it. */
 const domain = {
@@ -53,6 +55,18 @@ describe('ClientDomainsListView', () => {
     expect(mock.mock.calls.map(([url]) => url as string).at(-1)).toBe('/api/domains?clientId=5&page=3&pageSize=20')
   })
 
+  it('grows the domain column and shows the auto-renew state as an icon', async () => {
+    stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const { wrapper } = await mountRouted(ClientDomainsListView, '/clients/:id/domains', '/clients/5/domains')
+    await flushPromises()
+
+    const headers = wrapper.findAll('thead th')
+    expect(headers.filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(headers.find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-full')
+    expect(headers.find((header) => header.text() === 'Auto-Renew')?.classes()).toContain('w-px')
+    expect(wrapper.get('tbody tr [role="img"]').attributes('aria-label')).toBe('Yes')
+  })
+
   it('loads again from the Retry of a refused load', async () => {
     const wrapper = await mountClientView(ClientDomainsListView)
     await flushPromises()
@@ -63,5 +77,22 @@ describe('ClientDomainsListView', () => {
     await flushPromises()
 
     expect(fetchMock.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const { wrapper } = await mountRouted(ClientDomainsListView, '/clients/:id/domains', '/clients/5/domains')
+    await flushPromises()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientDomainsListView, '/clients/:id/domains', '/clients/5/domains')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

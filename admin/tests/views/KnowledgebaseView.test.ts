@@ -6,10 +6,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import KnowledgebaseView from '@/views/KnowledgebaseView.vue'
+import { KB_CATEGORIES_TABLE, KB_CATEGORY_FORM_PART, KB_TABS_PART } from '@/views/KnowledgebaseView.schema'
 import { callsOf, findCall, json, problem, stubFetch } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { pickOption } from '../helpers/select'
+import { useToastStore } from '@/stores/toast'
 
 /**
  * Builds the page of the article list the API answers.
@@ -48,6 +50,19 @@ describe('KnowledgebaseView', () => {
 
     expect((wrapper.get('[data-testid="knowledgebase-edit-name"]').element as HTMLInputElement).value).toBe('Billing')
     expect(wrapper.find('[data-testid="knowledgebase-category-1-actions"]').exists()).toBe(false)
+  })
+
+  it('draws the tabs, the add card and the categories card of its schema', async () => {
+    stubPathRoutes([{ path: '/admin/knowledgebase/categories', body: [category] }])
+    const wrapper = await mountView(KnowledgebaseView)
+
+    for (const tab of KB_TABS_PART.tabs) {
+      expect(wrapper.find(`[data-testid="knowledgebase-tab-${tab.key}"]`).exists()).toBe(true)
+    }
+    for (const field of KB_CATEGORY_FORM_PART.columns.flat().flatMap((section) => section.fields)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.get('[data-testid="ui-detail-card-categories"]').findAll('[role="columnheader"]')).toHaveLength(KB_CATEGORIES_TABLE.columns.length)
   })
 
   it('adds a category from the form', async () => {
@@ -116,7 +131,7 @@ describe('KnowledgebaseView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="knowledgebase-feedback"]').text()).toBe('Category deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Category deleted.'])
   })
 
   it('shows the API sentence when the delete is refused, without the load error', async () => {
@@ -339,8 +354,8 @@ describe('KnowledgebaseView article list and editing', () => {
     expect(row.text()).toContain('How to pay')
     expect(row.text()).toContain('how-to-pay')
     expect(row.text()).toContain('Billing')
-    expect(row.text()).toContain('Published')
-    expect(wrapper.get('[data-testid="knowledgebase-article-12"]').text()).toContain('Draft')
+    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Published')
+    expect(wrapper.get('[data-testid="knowledgebase-article-12"] [role="img"]').attributes('aria-label')).toBe('Draft')
   })
 
   it('shows the first language an article has when it has no English text', async () => {
@@ -385,7 +400,7 @@ describe('KnowledgebaseView article list and editing', () => {
         hy: { title: 'Ինչպես վճարել', content: 'Քարտով' },
       },
     })
-    expect(wrapper.get('[data-testid="knowledgebase-feedback"]').text()).toBe('Article saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Article saved.'])
     expect(wrapper.find('[data-testid="knowledgebase-article-cancel"]').exists()).toBe(false)
     // The store no longer re-reads the list itself: the screen asks the article list to read its page again.
     const listReads = mock.mock.calls.filter(([url, init]) => (init as RequestInit | undefined)?.method === undefined && String(url).startsWith('/api/admin/knowledgebase?'))
@@ -412,5 +427,15 @@ describe('KnowledgebaseView article list and editing', () => {
     expect((wrapper.get('[data-testid="knowledgebase-article-title"]').element as HTMLInputElement).value).toBe('')
     expect(wrapper.find('[data-testid="knowledgebase-article-published"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="knowledgebase-article-save"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('marks the language tabs with no text and drops the mark of a language once it is written', async () => {
+    const { wrapper } = await mountArticles()
+    expect(wrapper.find('[data-testid="knowledgebase-article-locale-en-empty"]').exists()).toBe(true)
+
+    await fillEnglish(wrapper)
+
+    expect(wrapper.find('[data-testid="knowledgebase-article-locale-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="knowledgebase-article-locale-ru-empty"]').exists()).toBe(true)
   })
 })

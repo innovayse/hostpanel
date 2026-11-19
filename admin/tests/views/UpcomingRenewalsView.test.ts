@@ -10,6 +10,15 @@ import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import UpcomingRenewalsView from '@/views/UpcomingRenewalsView.vue'
 import { useRenewalsStore } from '@/stores/renewals'
+import {
+  RENEWALS_CLAIMS_CARD,
+  RENEWALS_CLAIMS_TABLE,
+  RENEWALS_DOMAINS_CARD,
+  RENEWALS_DOMAINS_TABLE,
+  RENEWALS_SERVICES_CARD,
+  RENEWALS_SERVICES_TABLE,
+  RENEWALS_WINDOW_TABS_PART,
+} from '@/views/UpcomingRenewalsView.schema'
 import { mountRouted } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
@@ -66,6 +75,23 @@ describe('UpcomingRenewalsView', () => {
     expect(wrapper.get('[data-testid="renewals-domains-table"]').text()).toContain('example.test')
     expect(wrapper.get('[data-testid="renewals-claim-invoice-11"]').attributes('href')).toBe('/billing/5')
     expect(wrapper.get('[data-testid="renewals-claims-table"]').text()).toContain('example.test renewal')
+    expect(wrapper.get('[data-testid="renewals-claims-table"]').findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+  })
+
+  it('draws the window tabs and the three cards with the columns of its schema', async () => {
+    stubRoutes(lists)
+    const wrapper = await mountView()
+
+    for (const tab of RENEWALS_WINDOW_TABS_PART.tabs) {
+      expect(wrapper.find(`[data-testid="renewals-window-${tab.key}"]`).exists()).toBe(true)
+    }
+    for (const [card, testid, table] of [
+      [RENEWALS_SERVICES_CARD, 'renewals-services-table', RENEWALS_SERVICES_TABLE],
+      [RENEWALS_DOMAINS_CARD, 'renewals-domains-table', RENEWALS_DOMAINS_TABLE],
+      [RENEWALS_CLAIMS_CARD, 'renewals-claims-table', RENEWALS_CLAIMS_TABLE],
+    ] as const) {
+      expect(wrapper.get(`[data-testid="ui-detail-card-${card}"] [data-testid="${testid}"]`).findAll('[role="columnheader"]')).toHaveLength(table.columns.length)
+    }
   })
 
   it('shows the empty states', async () => {
@@ -176,11 +202,13 @@ describe('UpcomingRenewalsView', () => {
     expect(client.text()).not.toContain('#9')
   })
 
-  it('words the invoice button as acting on all of the client\'s due renewals', async () => {
+  it('keeps the invoice button short and explains it as acting on all due renewals of the client in its tooltip', async () => {
     stubRoutes({ ...lists })
     const wrapper = await mountView()
+    const button = wrapper.get('[data-testid="renewals-service-generate-4"]')
 
-    expect(wrapper.get('[data-testid="renewals-service-generate-4"]').text()).toBe('Invoice all due renewals for this client')
+    expect(button.text()).toBe('Invoice renewals')
+    expect(button.attributes('title')).toBe('Invoice all due renewals for this client')
   })
 
   it('leaves the switch where it was when the change is refused', async () => {

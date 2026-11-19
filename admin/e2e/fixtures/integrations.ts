@@ -18,6 +18,7 @@ export const bankTransfer: IntegrationDto = {
   pluginType: null,
   iconUrl: null,
   connection: null,
+  description: null,
 }
 
 /** The same integration with the fields its configuration form renders. */

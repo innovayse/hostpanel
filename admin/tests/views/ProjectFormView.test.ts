@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ProjectFormView from '@/views/ProjectFormView.vue'
+import schema from '@/views/ProjectFormView.schema'
 import type { Project, ProjectPayload } from '@/types/project'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -45,7 +46,9 @@ describe('ProjectFormView', () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(ProjectFormView, {}, '/storefront/projects/create', '/storefront/projects/create')
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Create project')
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Create project')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create project')
     expect(wrapper.find('[data-testid="project-form-image-0-url"]').exists()).toBe(false)
   })
@@ -133,5 +136,39 @@ describe('ProjectFormView', () => {
     await vi.waitFor(() => {
       expect(wrapper.get('[data-testid="project-form-error"]').text()).toBe('Not allowed.')
     })
+  })
+
+  it('draws every section and field of its schema', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(ProjectFormView, {}, '/storefront/projects/create', '/storefront/projects/create')
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+      for (const field of section.fields) {
+        expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+      }
+    }
+  })
+
+  it('keeps the fields of its schema as placeholders while the entry loads', async () => {
+    stubRouteTable({ 'GET /admin/projects': () => new Promise<Response>(() => undefined) })
+    const { wrapper } = await mountScreen(ProjectFormView, {}, '/storefront/projects/3/edit', '/storefront/projects/:id/edit')
+
+    expect(wrapper.findAll('[data-testid="ui-form-section-general"][aria-busy="true"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="project-form-title"]').exists()).toBe(false)
+  })
+
+  it('marks the language tabs with no text and drops the mark of a language once it is written', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(ProjectFormView, {}, '/storefront/projects/create', '/storefront/projects/create')
+
+    for (const locale of ['en', 'ru', 'hy']) {
+      expect(wrapper.find(`[data-testid="project-form-tab-${locale}-empty"]`).exists()).toBe(true)
+    }
+
+    await wrapper.get('[data-testid="project-form-title"]').setValue('Written')
+
+    expect(wrapper.find('[data-testid="project-form-tab-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="project-form-tab-ru-empty"]').exists()).toBe(true)
   })
 })

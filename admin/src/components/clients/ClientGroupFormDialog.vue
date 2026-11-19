@@ -18,6 +18,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import type { ClientGroup, ClientGroupPayload } from '@/types/clientgroup'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Colour a new group starts with. */
 const DEFAULT_COLOR = '#3B82F6'
@@ -141,10 +142,10 @@ watch(
       </UiField>
     </UiStack>
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="client-group-form-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="client-group-form-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         :variant="UiButtonVariant.Primary"
         :loading="saving"
         :disabled="!name.trim()"

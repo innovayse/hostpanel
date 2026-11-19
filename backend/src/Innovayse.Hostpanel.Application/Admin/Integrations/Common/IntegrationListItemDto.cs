@@ -24,6 +24,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon</c>) for a plugin entry that ships an icon;
 /// <see langword="null"/> for a built-in integration and for a plugin without an icon.
 /// </param>
+/// <param name="Description">
+/// The plugin's short description in the request language (a manifest locale key resolved, else the plain text);
+/// <see langword="null"/> for a built-in integration, whose card text the admin owns, and for a plugin whose manifest is not loaded.
+/// </param>
 public sealed record IntegrationListItemDto(
     string Slug,
     string Name,
@@ -33,4 +37,5 @@ public sealed record IntegrationListItemDto(
     bool IsPlugin = false,
     PluginType? PluginType = null,
     IntegrationConnectionDto? Connection = null,
-    string? IconUrl = null);
+    string? IconUrl = null,
+    string? Description = null);

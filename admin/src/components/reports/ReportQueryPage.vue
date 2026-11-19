@@ -2,12 +2,12 @@
 /**
  * Screen of a filterable query report (clients, domains, invoices, services, transactions).
  *
- * Draws the shared layout: the header with export and print, the column picker and date ranges, the advanced filters, the actions, the
+ * Draws the shared layout: the header with the buttons of its schema (export, print), the column picker and date ranges, the advanced filters, the actions, the
  * found-count line, the table of the chosen columns and the pager. The state and the loading live
  * in `useQueryReport`, which the screen calls and passes in as `report`.
  */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportActions from '@/components/reports/ReportActions.vue'
 import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportField from '@/components/reports/ReportField.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
@@ -21,6 +21,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportQueryRange, ReportQueryView } from '@/types/reportquery'
+import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 
 const { t } = useI18n()
 
@@ -28,11 +29,9 @@ const { t } = useI18n()
 const reports = useReportsStore()
 
 /** Props for ReportQueryPage. */
-defineProps<{
-  /** Report title (already translated). */
-  title: string
-  /** Line under the title (already translated). */
-  description: string
+const props = defineProps<{
+  /** The schema of the report, which names its title and description. */
+  schema: ReportSkeletonSchema
   /** State and actions from `useQueryReport`. */
   report: ReportQueryView
   /** Every column the operator can choose from. */
@@ -41,23 +40,20 @@ defineProps<{
   ranges: readonly ReportQueryRange[]
   /** Fields the advanced filters can target. */
   filterFields: FieldOption[]
+  /** Key of the field the first advanced filter row starts on. */
+  defaultFilterField: string
   /** The "N found" line (already translated). */
   foundText: string
-  /** Text of the table when there are no rows (already translated). */
-  emptyText: string
-  /** Whether the report has a CSV export. */
-  exportable?: boolean
 }>()
+
+/** How many filters are in force: the date ranges that are set plus the complete advanced rows; the phone's Filters button shows it. */
+const activeCount = computed<number>(() => Object.values(props.report.ranges).filter((range) => range !== null).length + props.report.filters.length)
 </script>
 
 <template>
-  <ReportPage :title="title" :description="description" :retry="report.load">
-    <template #actions>
-      <ReportActions printable :exportable="exportable" @print="report.print()" @export="report.exportCsv()" />
-    </template>
-
+  <ReportPage :schema="schema" :retry="report.load" @print="report.print()" @export="report.exportCsv()">
     <template #filters>
-      <ReportFilterBar @generate="report.generate()">
+      <ReportFilterBar :active-count="activeCount" @generate="report.generate()">
         <template #fields>
           <ReportField :label="t('shared.fieldsToInclude')" width="md">
             <UiFieldSelector
@@ -78,7 +74,7 @@ defineProps<{
           </ReportField>
         </template>
 
-        <UiAdvancedFilters :fields="filterFields" @update:filters="report.setFilters($event)" />
+        <UiAdvancedFilters :fields="filterFields" :default-field="defaultFilterField" :initial="report.filters" @update:filters="report.setFilters($event)" />
       </ReportFilterBar>
     </template>
 
@@ -86,7 +82,7 @@ defineProps<{
       {{ foundText }}
     </UiText>
 
-    <ReportTable :columns="report.activeColumns" :rows="report.rows" row-key="id" :empty-text="emptyText" />
+    <ReportTable :columns="report.activeColumns" :rows="report.rows" row-key="id" />
 
     <UiPagination
       :page="report.page"

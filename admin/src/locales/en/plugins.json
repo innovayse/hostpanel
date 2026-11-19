@@ -25,7 +25,9 @@
     "incompatible": "This plugin does not run on this server's version {host}. {range}",
     "install": "Install",
     "hostAccess": {
-      "ssh": "Run commands on a client's hosting account over SSH"
+      "ssh": "Run commands on a client's hosting account over SSH",
+      "websites": "Manage the websites of a client's hosting service",
+      "databases": "Manage the databases of a client's hosting service"
     },
     "capabilities": {
       "endpoints": "Add its own pages, menus and widgets to the panels",
@@ -196,6 +198,8 @@
     "chatCopy": "Copy reply",
     "chatCopyCode": "Copy code",
     "chatCopied": "Copied",
+    "openUrlBlocked": "This browser blocked the new tab. Allow pop-ups for this site and try again.",
+    "openUrlRefused": "The plugin answered with an address that cannot be opened.",
     "chatRetry": "Retry",
     "chatWriting": "Writing a reply"
   }

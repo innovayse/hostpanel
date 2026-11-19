@@ -80,17 +80,23 @@ stdin as one JSON document; the agent never executes a shell or takes a path fro
 
 | Request | Success response fields |
 |---|---|
-| `{"v":1,"op":"ping"}` | `agent_version`, `provider`, `binding` |
+| `{"v":1,"op":"ping"}` | `agent_version`, `provider`, `binding`, `capabilities` (1.5.0+: the ops of "Websites and databases" this server has a helper for), `php_versions` (the php versions the server offers, sorted, for example `["8.1","8.2","8.3"]`; `[]` without a `php-versions` helper) |
 | `{"v":1,"op":"status","account":"u"}` | `shell_enabled`, `managed_keys`, `unmanaged_keys`, `reason` when disabled |
 | `{"v":1,"op":"list","account":"u"}` | `keys: [{key_id, fingerprint}]`, `unmanaged_keys` |
 | `{"v":1,"op":"add","account":"u","key_id":"<uuid>","public_key":"ssh-ed25519 …"}` | `key_id`, `fingerprint`, `changed` |
 | `{"v":1,"op":"revoke","account":"u","key_id":"<uuid>"}` | `key_id`, `changed` |
+| `{"v":1,"op":"ensure-website","account":"u","hostname":"h","docroot":"d","php":"8.3","link_root":true}` (1.5.0+; `php`, `link_root` optional) | `changed` |
+| `{"v":1,"op":"remove-website","account":"u","hostname":"h"}` (1.5.0+) | `changed` |
+| `{"v":1,"op":"ensure-database","account":"u","label":"l"}` (1.5.0+) | `created`, `database`, `username`, `password` (only when `created` is true) |
+| `{"v":1,"op":"remove-database","account":"u","label":"l"}` (1.5.0+) | `changed` |
 
 Every response carries `"v":1` and `"ok"`. Refusals are `{"ok":false,"error":"<code>"}`:
 `invalid_request`, `unsupported_version`, `unknown_operation`, `request_too_large`,
 `invalid_account`, `account_not_found`, `account_not_eligible`, `account_suspended`,
 `invalid_key`, `duplicate_key`, `key_id_conflict`, `too_many_keys`, `ssh_disabled`, `unsafe_path`,
-`file_too_large`, `timeout`, `internal_error`. Unknown request fields are refused. `add` and
+`file_too_large`, `timeout`, `internal_error`; from the optional ops: `not_supported`, `site_not_owned`, `site_prepare_failed`
+(1.3.0+), `account_exists` (1.4.0+), and since 1.5.0 `website_conflict`, `php_version_unsupported`, `website_failed`,
+`database_failed`, `database_limit`. Unknown request fields are refused. `add` and
 `revoke` are idempotent by `key_id`. Fields added since 1.0 (`provider`, `binding`, `reason`) are
 additive; older HostPanels ignore them and older agents simply omit them.
 
@@ -121,6 +127,7 @@ additive; older HostPanels ignore them and older agents simply omit them.
 | `check_shadow_lock` | A locked password (`usermod -L`) makes the account `account_suspended`. `!!`/`*` alone is not a lock. |
 | `ssh_group` | Only members may receive keys, set it when only one group may log in over SSH (e.g. a jailed-shell group). |
 | `eligible_list` | Root-owned, not group/world-writable file, one account per line: an SSH opt-in list. |
+| `helper_dir` | Absolute directory of the provider helpers behind the 1.5.0 website and database ops (default `/usr/local/libexec/hostpanel-ssh-key-agent`). A missing helper makes its op `not_supported`. |
 
 ## Jailed SSH enrolment (`jail_enrol`, agent 1.2.0+)
 
@@ -192,6 +199,101 @@ jail's home mount unit, refuses if anything is still mounted inside the jail, an
 `rm -rf --one-file-system`. Answer: `{"ok":true,"removed":true|false}`. HostPanel sends it after a hosting account was
 terminated on the panel; an older agent answers `unknown_operation`, which HostPanel only logs.
 
+## Websites and databases (`ensure-website`, `remove-website`, `ensure-database`, `remove-database`, agent 1.5.0+)
+
+Four ops that give a hosting account a website (vhost, document root, php-fpm pool) and databases, without HostPanel
+knowing anything about the panel underneath. Each runs a provider helper from `helper_dir` (default
+`/usr/local/libexec/hostpanel-ssh-key-agent`) whose name is the op's name; no helper on the server means the op answers
+`not_supported`, and `ping` lists the ops that have one in `capabilities`. The CWP profile ships all four in
+`providers/cwp/` (plus the shared `hp-common.sh`). Like every op they run after the account checks and under the
+account's lock, and they write one audit line each with the outcome and the hostname or label, never a helper's answer.
+A fifth helper, `php-versions` (no arguments, one `N.N` per line on stdout, sorted by the agent), is not an op: ping runs it to report `php_versions`, and a server without it, or whose helper fails, reports `[]`. `ensure-website` accepts only a `php` the provider also lists there.
+`prepare-site` stays for now.
+
+### Requests
+
+| Field | Rule |
+|---|---|
+| `account` | as everywhere |
+| `hostname` | a lower case domain name (the same pattern as `prepare-site`'s `domain`). The CWP helper accepts only the account's own CWP domain or a subdomain of it |
+| `docroot` | relative to the home: 1 to 6 segments of `A-Za-z0-9._-`, no segment starting with a dot (so no `..`, `.ssh`, `.conf`), at most 200 characters. The helper also resolves it and refuses anything that leaves the home through a symlink |
+| `php` (optional) | `8.3` style; the helper maps it to the installed php-fpm of that version. Left out: no php-fpm pool and no handler |
+| `link_root` (optional, boolean) | the document root is a symlink that deploys switch (`current/public`). Needs `php`. Adds the pool lines such a switch needs behind Apache (`opcache.validate_timestamps=1`, `opcache.revalidate_freq=0`, `opcache.revalidate_path=1`, `realpath_cache_size=0`) and leaves the last path component to the deploys instead of creating a directory |
+| `label` | `^[a-z][a-z0-9]{0,14}$`; the database and its user are named `<account>_<label>` |
+
+Any other field, a wrong type, or `link_root` without `php` is `invalid_request`, before any helper runs.
+
+### Answers
+
+| Op | Success |
+|---|---|
+| `ensure-website`, `remove-website`, `remove-database` | `{"v":1,"ok":true,"changed":true\|false}` |
+| `ensure-database` | `{"v":1,"ok":true,"created":true,"database":"alice_shop","username":"alice_shop","password":"<40 hex>"}`; when it already existed (and the agent made it) `created` is false and there is no `password` |
+
+Failures are the stable codes of the table below. The helper's exit code is the whole signal: 3 not the account's or not
+created by the agent (`site_not_owned`), 4 the vhost serves another document root (`website_conflict`), 5 the php version
+is not installed (`php_version_unsupported`), 6 the account is at its database limit (`database_limit`), anything else, a
+timeout, a missing or doubled `RESULT` line, or a `RESULT` that fails its schema is `website_failed` or `database_failed`.
+
+| Code | Op | Meaning |
+|---|---|---|
+| `not_supported` | all | no helper for the op on this server |
+| `site_not_owned` | all | the hostname is not the account's domain, a vhost or database of that name exists but the agent did not create it, or a vhost belongs to another account |
+| `website_conflict` | ensure-website | a vhost CWP made serves a different document root; it is never rewritten |
+| `php_version_unsupported` | ensure-website | that php-fpm version is not installed |
+| `website_failed` | website ops | anything else; a configuration test that fails restores every edited file first |
+| `database_limit` | ensure-database | the account already has 10 databases the agent made |
+| `database_failed` | database ops | anything else; a failed creation drops what it made |
+
+### The helper contract
+
+A helper is called as root with a fixed environment (`PATH` only, no stdin, 50 second limit) and these arguments, all
+validated by the agent first and again by the helper:
+
+```
+ensure-website  <account> <hostname> <docroot> <php or empty> <link_root 0|1>
+remove-website  <account> <hostname>
+ensure-database <account> <label>
+remove-database <account> <label>
+```
+
+It prints progress lines for whoever runs it by hand and exactly one `RESULT {json}` line on stdout. The agent reads only
+that line, parses it and checks it against the op's schema (`changed` boolean; for `ensure-database`: `created`,
+`database`, `username` equal to `<account>_<label>`, and `password` of 40 lower case hex characters only when `created`).
+stderr is discarded. The database password is generated in the helper (`openssl rand -hex 20`), travels to MySQL on
+stdin so it is never on a command line, and exists only in that `RESULT` line and the response to the call that created
+the database: it is not written to the registry, the audit log or any other log. A lost password means dropping the
+database (`remove-database`) and creating it again.
+
+`HP_ROOT` is a test seam: it prefixes every path and tool the CWP helpers use. The agent never takes it from a request; it
+reaches a helper only through the agent's own fixed environment (`JAIL_ENV`), which holds `PATH` in production.
+
+### What the CWP helpers do
+
+* **Idempotent and minimal.** Each step is skipped when already done; the answer says `changed: false` when nothing was.
+* **Only what the agent created.** A root-owned registry in `/var/lib/hostpanel-ssh-key-agent/<account>/` (one
+  `website.<hostname>` or `database.<label>` file per thing, mode 0700 directory) records what was made. A `remove-*` for
+  something with no entry, whose vhost or database exists, is `site_not_owned`; with nothing there it succeeds with
+  `changed: false`. A vhost file written by the helper starts with `# hostpanel-ssh-key-agent managed`; the php block it
+  adds to a vhost CWP made is wrapped in `# hostpanel-ssh-key-agent php begin|end`, and removal strips only that. The
+  pool is removed only when it carries the marker and no other registered website of the account uses that php version;
+  a document root directory only when the helper created it and it is empty (customer files are never removed).
+* **Backup, test, restore, graceful.** Every file it edits is copied to `/var/lib/hostpanel-ssh-key-agent/backups/<account>-<time>-<pid>/`
+  first. Apache (`apachectl -t`) and php-fpm (`php-fpm -t`) configuration is tested before any reload, any failure restores
+  the files and answers `website_failed`, and the reload is graceful (`apachectl graceful`, `systemctl reload php-fpm<NN>`).
+* **PHP.** `php: "8.3"` means `/opt/alt/php-fpm83`; a version that is not one of ping's `php_versions` (the installed `/opt/alt/php-fpm<NN>` that hold a php-fpm binary, listed by the `php-versions` helper) is `php_version_unsupported`. The pool
+  (`<account>.conf`, socket `<account>.sock`) is made as CWP shapes its own, and CWP's per-domain record
+  `~/.conf/webservers/<hostname>.conf` is written (when absent) so a later CWP vhost rebuild keeps the version.
+* **Docroot.** Missing directories are created owned by the account with group `nobody` and mode 2750 (Apache serves static
+  files as `nobody`); with `link_root` the last component is left to the deploys. A vhost CWP made for the account's own
+  domain keeps its content and only gets the php block, provided its `DocumentRoot` already is `/home/<account>/<docroot>`;
+  otherwise `website_conflict`. Any other hostname of the account gets a vhost file the helper writes (HTTP; TLS is left to
+  the panel's own certificate handling).
+* **Uninstalling the agent** removes the helpers but keeps `/var/lib/hostpanel-ssh-key-agent/`, so a reinstall still knows
+  what the agent created; the websites and databases themselves stay until removed through the ops or by hand.
+* **Databases.** `CREATE DATABASE` (utf8mb4) and a user for `localhost` and `127.0.0.1` with all privileges on that database
+  only, at most 10 per account.
+
 ## Lifecycle
 
 | Task | Command (as root on the server, in the unpacked bundle) |
@@ -230,3 +332,7 @@ python3 -m unittest discover -s backend/agent/ssh-key-agent/tests
 ```
 
 They run unprivileged against a temporary home directory (no root, no real accounts).
+`tests/test_ops.py` also runs the CWP helpers for real against a stand-in server tree (`HP_ROOT`) with fake `apachectl`,
+`php-fpm`, `mysql`, `openssl`, `chown`, `chgrp` and `systemctl`, and checks the golden vectors in `tests/contract/*.json`
+(one file per op: request, what the helper printed, and the response the agent must give), which the HostPanel adapter
+tests reuse as fixtures.

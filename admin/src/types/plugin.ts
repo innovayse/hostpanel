@@ -103,6 +103,10 @@ export type PluginCapability = (typeof PluginCapability)[keyof typeof PluginCapa
 export const PluginHostAccess = {
   /** Runs commands on the client's hosting account over SSH. */
   Ssh: 'ssh',
+  /** Manages the websites of the client's hosting service. */
+  Websites: 'websites',
+  /** Manages the databases of the client's hosting service. */
+  Databases: 'databases',
 } as const
 
 /** One of the {@link PluginHostAccess} values. */

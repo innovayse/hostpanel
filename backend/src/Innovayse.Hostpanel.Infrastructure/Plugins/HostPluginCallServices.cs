@@ -41,6 +41,9 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <summary>Issues and revokes SSH identities for the host API's two SSH methods.</summary>
     private readonly PluginSshAccessService _ssh;
 
+    /// <summary>Reads what the hosting can do, and sets up and removes websites and databases for the host API's hosting methods.</summary>
+    private readonly PluginHostingService _hosting;
+
     /// <summary>Initializes the factory.</summary>
     /// <param name="context">The request's data context, written by the store.</param>
     /// <param name="facts">Reads the client, service and invoice rows the host API shares.</param>
@@ -48,15 +51,18 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <param name="payerCurrency">Resolves the currency the client is billed in.</param>
     /// <param name="options">The plugin API limits; the store's quota per scope is read from it.</param>
     /// <param name="ssh">Issues and revokes SSH identities for the host API's two SSH methods.</param>
+    /// <param name="hosting">Reads what the hosting can do, and sets up and removes websites and databases for the host API's hosting methods.</param>
     public HostPluginCallServices(
         AppDbContext context,
         IPluginHostFactsReader facts,
         IIdentityProvider identity,
         IPayerCurrencyResolver payerCurrency,
         IOptions<PluginApiOptions> options,
-        PluginSshAccessService ssh)
+        PluginSshAccessService ssh,
+        PluginHostingService hosting)
     {
         _ssh = ssh;
+        _hosting = hosting;
         _context = context;
         _facts = facts;
         _identity = identity;
@@ -70,7 +76,7 @@ public sealed class HostPluginCallServices : IPluginCallServices
         // One signal per call: a refusal in one call never colours another call's answer.
         var quota = new PluginStoreQuotaSignal();
         return new PluginCallServices(
-            new PluginHostApi(binding, _facts, _identity, _payerCurrency, _ssh),
+            new PluginHostApi(binding, _facts, _identity, _payerCurrency, _ssh, _hosting),
             new PluginStore(binding.PluginId, binding.ClientRef, _context, _options.Value.StoreQuota, quota),
             quota);
     }

@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-19
+
 ### Added
 
+- Plugins: a plugin can ask for access to the websites and databases of a client's hosting service (#1294, plugin SDK 3.9.0). The install confirmation lists the two new kinds of access, `websites` and `databases`, in words next to SSH, and a manifest naming either is accepted.
 - A product stores free-trial settings (#81, stage 1 of the trial automation): whether a trial is offered, its length in days, whether it turns into a paid service at its end, the reminder days before the end and the grace period of the invoice raised at conversion, set in the new Free trial block of the product form. `trial` (`enabled`, `days` 1 to 365, `autoConvert`, `reminderDays` at most five days each from 1 to days minus 1, `gracePeriodDays` 0 to 30) is part of the product create and update bodies, where leaving it out keeps the stored settings, and of the product answers, and a value outside these bounds is refused with 400 and `PRODUCT_TRIAL_INVALID`. `GET /api/products/trial-defaults` answers the defaults and bounds the form shows. This stage only stores the settings: a client cannot start a trial yet, and existing products keep the trial off.
 - A product can cap how many services of it are live at once (Max active services on the product form) and allow one live service per client (One per client). An order that is placed but not yet fulfilled holds a place too, and an unpaid order keeps it until the order is cancelled. When every place is taken the product is left off the public catalogue and a new order, or a service a client orders for itself, is refused with 409 and `ORDER_PRODUCT_SOLD_OUT` or `ORDER_PRODUCT_ONE_PER_CLIENT`. The count and the save that takes a place run under a per product lock, so parallel orders cannot pass the cap. `maxActiveServices` (0 or omitted is unlimited, a negative number is refused with `PRODUCT_MAX_ACTIVE_SERVICES_INVALID`) and `onePerClient` are part of the product create and update bodies and of the product answers; the public catalogue answers an error instead of listing a sold out product when the places cannot be counted.
 - The European Central Bank can be chosen as the exchange rate source per installation on the Currencies page. The choice is stored in the `billing.exchange_rates.provider` setting, defaults to the current bank so nothing changes for existing installations, and applies to the daily update and the Update Exchange Rates button from the next refresh. Rates are converted to the base currency, a base the bank does not publish is refused with `EXCHANGE_RATE_BASE_NOT_QUOTED`, and an unavailable source keeps the stored rates.
@@ -404,7 +407,8 @@ Upgrade notes, read before upgrading:
 - Backend sources were tracked as a submodule; they are now part of the repository.
 - Repository URLs in the README and clone instructions.
 
-[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/innovayse/hostpanel/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/innovayse/hostpanel/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/innovayse/hostpanel/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/innovayse/hostpanel/compare/v0.3.1...v0.4.0

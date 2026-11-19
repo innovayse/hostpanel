@@ -217,6 +217,9 @@ class BoundaryTests(AgentTestCase):
     def test_ping(self):
         self.assertEqual(self.call(op="ping")["agent_version"], agent.AGENT_VERSION)
 
+    def test_ping_without_a_php_versions_helper_offers_no_php(self):
+        self.assertEqual(self.call(op="ping")["php_versions"], [])
+
     def test_ping_reports_provider_and_binding(self):
         self.config["provider"] = "cwp"
         self.config["binding"] = KEY_ID_A

@@ -326,6 +326,8 @@ export interface PluginActionBlock extends PluginBlockBase {
   refresh?: string[]
   /** The page opened after a successful call, its parameters taken from the reply. */
   navigate?: PluginPageLink
+  /** The field of the reply that holds an absolute URL the call opens in a new tab; never together with `navigate`. */
+  openUrlFrom?: string
   /** The blocks read again after a successful call until a route read reaches a final value. */
   followUp?: PluginFollowUp
 }

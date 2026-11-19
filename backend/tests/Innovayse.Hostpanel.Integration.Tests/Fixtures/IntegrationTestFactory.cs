@@ -166,6 +166,8 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             // what the handlers sent to the server it seeded.
             services.RemoveAll<ISshKeyProviderFactory>();
             services.AddSingleton<ISshKeyProviderFactory, FakeSshKeyProviderFactory>();
+            services.RemoveAll<IHostingResourceProviderFactory>();
+            services.AddSingleton<IHostingResourceProviderFactory, FakeHostingResourceProviderFactory>();
             services.RemoveAll<ISshHostKeyScanner>();
             services.AddSingleton<ISshHostKeyScanner, FakeSshHostKeyScanner>();
 

@@ -100,7 +100,8 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
             sp.GetRequiredService<IIdentityProvider>(),
             sp.GetRequiredService<IPayerCurrencyResolver>(),
             oneKey,
-            sp.GetRequiredService<PluginSshAccessService>());
+            sp.GetRequiredService<PluginSshAccessService>(),
+            sp.GetRequiredService<PluginHostingService>());
 
         var over = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
         var other = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
@@ -161,17 +162,23 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
 
     /// <summary>
     /// The implementations expose exactly their interface's methods; no store method and no host read takes an id or a
-    /// scope, and the only id the host API names is the service of the two SSH members, which the host checks is the
+    /// scope, and the only id the host API names is the service of the SSH and hosting members, which the host checks is the
     /// caller's.
     /// </summary>
     [Fact]
     public void Surface_IsExactlyTheInterfaces_WithNoIdOrScopeParameter()
     {
-        PublicMethodNames(typeof(PluginHostApi)).Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginHostApi)));
+        PublicMethodNames(typeof(PluginHostApi))
+            .Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginHostApi)).Concat(InterfaceMethodNames(typeof(IPluginHostHostingApi))));
         PublicMethodNames(typeof(PluginStore)).Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginStore)));
 
-        string[] ssh = [nameof(IPluginHostApi.IssueSshAccessAsync), nameof(IPluginHostApi.RevokeSshAccessAsync)];
-        var parameters = typeof(IPluginHostApi).GetMethods().Where(m => !ssh.Contains(m.Name))
+        string[] named =
+        [
+            nameof(IPluginHostApi.IssueSshAccessAsync),
+            nameof(IPluginHostApi.RevokeSshAccessAsync),
+            .. InterfaceMethodNames(typeof(IPluginHostHostingApi)),
+        ];
+        var parameters = typeof(IPluginHostApi).GetMethods().Where(m => !named.Contains(m.Name))
             .Concat(typeof(IPluginStore).GetMethods()).SelectMany(m => m.GetParameters());
         parameters.Should().NotContain(p => p.ParameterType == typeof(int) || p.ParameterType == typeof(int?));
         parameters.Select(p => p.Name!.ToLowerInvariant())

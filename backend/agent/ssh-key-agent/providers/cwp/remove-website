@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# What: takes back what ensure-website made for ONE hostname of ONE CWP hosting account (agent op remove-website).
+#       Only what the agent created is touched: a vhost file carrying its marker is deleted, a CWP-made vhost only
+#       loses the marked php block, the php-fpm pool goes only when it is marked and no other registered website of
+#       the account uses that version, the CWP per-domain record and the document root directory only when the
+#       registry says this helper created them (the directory only when empty; the customer's files are never removed).
+#       A hostname the agent has no record of, whose vhost exists, is refused. Idempotent: nothing left to remove is
+#       a success with changed=false. Config is tested before the graceful reload and restored if a test fails.
+# Usage (root, called by hostpanel-ssh-key-agent): remove-website <account> <hostname>
+# Exit: 0 done, 2 bad arguments, 3 not created by the agent (or the vhost is another account's), other = failed.
+#       Prints one `RESULT {"changed":true|false}` line.
+set -euo pipefail
+HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=hp-common.sh
+. "$HELPER_DIR/hp-common.sh"
+
+[ $# -eq 2 ] || hp_die "$EXIT_BAD_ARGS" "usage: remove-website <account> <hostname>"
+HOSTN="$2"
+hp_require_account "$1"
+[[ "$HOSTN" =~ $HOSTNAME_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad hostname"
+
+FILES="$(hp_vhost_files "$HOSTN")"
+OURS=0
+if hp_reg_has website "$HOSTN"; then
+  OURS=1
+fi
+for f in $FILES; do
+  [ "$(hp_vhost_account "$f")" = "$ACCOUNT" ] || hp_die "$EXIT_NOT_OWNED" "$(basename "$f") belongs to another account"
+  if hp_is_managed "$f"; then
+    OURS=1
+  fi
+done
+if [ "$OURS" = 0 ]; then
+  [ -z "$FILES" ] || hp_die "$EXIT_NOT_OWNED" "$HOSTN was not created by the agent"
+  hp_result '{"changed":false}'
+  exit 0
+fi
+
+hp_guard
+VHOST_CHANGED=0; POOL_CHANGED=0
+NN="$(hp_reg_get website "$HOSTN" php)"
+DOCROOT="$(hp_reg_get website "$HOSTN" docroot)"
+DOCROOT_CREATED="$(hp_reg_get website "$HOSTN" docroot_created)"
+WEBCONF_CREATED="$(hp_reg_get website "$HOSTN" webconf_created)"
+
+# 1. Vhosts: ours are deleted, a CWP-made one keeps everything but our php block.
+for f in $FILES; do
+  if hp_is_managed "$f"; then
+    hp_remove_file "$f" || true
+    VHOST_CHANGED=1
+    hp_say "vhost $(basename "$f") removed"
+  else
+    hp_strip_handler "$f" > "$WORK/vhost.final"
+    if hp_replace "$WORK/vhost.final" "$f"; then
+      VHOST_CHANGED=1
+      hp_say "php handler removed from $(basename "$f")"
+    fi
+  fi
+done
+
+# 2. The pool of this php version, unless another registered website of the account still uses it.
+if [[ "$NN" =~ ^[0-9]{2,3}$ ]]; then
+  FPM="$ROOT$FPM_PREFIX$NN"
+  POOL="$FPM/usr/etc/php-fpm.d/users/$ACCOUNT.conf"
+  IN_USE=0
+  for other in "$STATE/$ACCOUNT"/website.*; do
+    [ -f "$other" ] || continue
+    [ "$other" != "$(hp_reg_path website "$HOSTN")" ] || continue
+    if [ "$(sed -n 's/^php=//p' "$other" | head -n 1)" = "$NN" ]; then
+      IN_USE=1
+    fi
+  done
+  if [ "$IN_USE" = 0 ] && [ -f "$POOL" ] && hp_is_managed "$POOL"; then
+    hp_remove_file "$POOL" || true
+    POOL_CHANGED=1
+    hp_say "pool removed"
+  fi
+fi
+
+# 3. CWP's per-domain record, only when ensure-website wrote it.
+if [ "$WEBCONF_CREATED" = 1 ] && hp_remove_file "$HOME_DIR/.conf/webservers/$HOSTN.conf"; then
+  hp_say "cwp webserver record removed"
+fi
+
+# 4. Tests before the reload; a failure restores every edited file.
+if [ "$VHOST_CHANGED" = 1 ] && ! hp_apache_test; then
+  hp_die 1 "apachectl -t failed, restored"
+fi
+if [ "$POOL_CHANGED" = 1 ] && [ -x "$ROOT$FPM_PREFIX$NN/usr/sbin/php-fpm" ] && ! hp_fpm_test "$NN"; then
+  hp_die 1 "php-fpm test failed, restored"
+fi
+DIRTY=0
+# 5. The document root directory (after the tests: a removed directory is not restored), only when ensure-website made it and it is empty.
+if [ "$DOCROOT_CREATED" = 1 ] && [[ "$DOCROOT" =~ $DOCROOT_RE ]]; then
+  HOME_REAL="$(realpath -- "$HOME_DIR")"
+  TARGET="$(realpath -m -- "$HOME_DIR/$DOCROOT")"
+  if [[ "$TARGET" == "$HOME_REAL"/* ]] && [ -d "$TARGET" ] && [ ! -L "$TARGET" ] && rmdir -- "$TARGET" 2>/dev/null; then
+    hp_say "empty document root removed"
+  fi
+fi
+
+hp_reg_remove website "$HOSTN"
+if [ "$POOL_CHANGED" = 1 ]; then
+  "$BIN/systemctl" reload "php-fpm$NN"
+  hp_say "php-fpm$NN reloaded"
+fi
+if [ "$VHOST_CHANGED" = 1 ]; then
+  "$APACHECTL" graceful
+  hp_say "apache graceful"
+fi
+hp_result '{"changed":true}'

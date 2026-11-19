@@ -210,6 +210,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the SSH keys customers added to their hosting services.</summary>
     public DbSet<SshKey> SshKeys { get; }
 
+    /// <summary>Gets the websites plugins set up on customers' hosting services.</summary>
+    public DbSet<ServiceWebsite> ServiceWebsites { get; }
+
+    /// <summary>Gets the databases plugins set up on customers' hosting services.</summary>
+    public DbSet<ServiceDatabase> ServiceDatabases { get; }
+
     /// <summary>Gets the per-server SSH key management settings.</summary>
     public DbSet<ServerSshSettings> ServerSshSettings { get; }
 

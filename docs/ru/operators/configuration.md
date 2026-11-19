@@ -242,6 +242,8 @@ visitor → [extra proxy] → edge (Caddy/nginx) → client portal → API
 | `RateLimit__Strict__WindowSeconds` | `60` | Длина строгого окна в секундах |
 | `RateLimit__SshKeys__PermitLimit` | `20` | Предел для конечных точек SSH-ключей за окно |
 | `RateLimit__SshKeys__WindowSeconds` | `60` | Длина окна SSH-ключей в секундах |
+| `RateLimit__HostingResources__PermitLimit` | `10` | Предел за окно для того, что плагин меняет на хостинге клиента (сайты и базы данных). Считается для каждого плагина и каждой учётной записи клиента |
+| `RateLimit__HostingResources__WindowSeconds` | `60` | Длина окна изменений хостинга в секундах |
 | `RateLimit__ConcurrentPermitLimit` | `5` | Наибольшее число одновременных запросов с одного адреса |
 | `RateLimit__PluginDefault__PermitLimit` | `120` | Предел для маршрута плагина за окно, если маршрут не называет уровень. Считается для каждого плагина и каждого вызывающего (учётная запись клиента или администратор при вызове администратора) |
 | `RateLimit__PluginDefault__WindowSeconds` | `60` | Длина окна плагина по умолчанию в секундах |

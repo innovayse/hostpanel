@@ -6,6 +6,7 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { unpaidInvoiceDetail } from './fixtures/invoices'
 import type { InvoiceDetail, InvoiceItemUpdate } from '../src/types/invoice'
+import { toastWith } from './support/locators'
 import { stubApi } from './support/stubApi'
 
 test.use({ viewport: { width: 390, height: 800 } })
@@ -62,7 +63,7 @@ test('the invoice lines are editable cards on a phone', async ({ page }) => {
   await page.getByTestId('billing-invoice-item-description-0').fill('Managed hosting')
   await page.getByTestId('billing-invoice-items-save').click()
 
-  await expect(page.getByTestId('billing-invoice-items-feedback')).toHaveText('Changes saved successfully.')
+  await expect(toastWith(page, 'Changes saved successfully.')).toBeVisible()
   expect(api.callsTo(HttpMethod.Put, `/api/billing/${stored.id}/items`)).toHaveLength(1)
   await expect(page.getByTestId('billing-invoice-item-description-0')).toHaveValue('Managed hosting')
 })

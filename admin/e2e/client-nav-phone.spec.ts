@@ -28,12 +28,13 @@ const SCROLL_ROUNDING_PX = 1
  * Below `sm` a table is drawn as cards that wrap inside their box, so neither the list nor any ancestor has anything to scroll.
  *
  * @param list - The list (table or card list) under test.
- * @returns True when nothing from the list up to the root is wider than its own box.
+ * @returns True when the list and each sideways scroller around it hold their content within their own box.
  */
 const fitsItsBoxes = (list: Locator): Promise<boolean> =>
   list.evaluate((el) => {
     for (let node: Element | null = el; node !== null; node = node.parentElement) {
-      if (node.scrollWidth > node.clientWidth) {
+      const scrolls = node === el || ['auto', 'scroll'].includes(getComputedStyle(node).overflowX)
+      if (scrolls && node.scrollWidth > node.clientWidth) {
         return false
       }
     }

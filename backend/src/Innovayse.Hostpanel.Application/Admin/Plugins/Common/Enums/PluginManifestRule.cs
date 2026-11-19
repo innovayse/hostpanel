@@ -173,4 +173,7 @@ public enum PluginManifestRule
     /// calls no route, or beside a <c>navigate</c>.
     /// </summary>
     ViewOpenUrlInvalid = 42,
+
+    /// <summary>The <c>agentProfile</c> is not one of the SSH key agent profiles the SDK defines.</summary>
+    AgentProfileInvalid = 43,
 }

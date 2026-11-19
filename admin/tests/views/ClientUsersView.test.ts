@@ -5,6 +5,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientUsersView from '@/views/ClientUsersView.vue'
+import schema from '@/views/ClientUsersView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { mountClientView } from '../helpers/clientViews'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
@@ -107,5 +109,14 @@ describe('ClientUsersView', () => {
     expect(wrapper.find('[data-testid="client-users-load-error"]').exists()).toBe(false)
     await wrapper.get('[data-testid="client-users-actions-u2"]').trigger('click')
     expect(wrapper.find('[data-testid="client-users-remove-u2"]').exists()).toBe(true)
+  })
+
+  it('draws the table skeleton under the schema head while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientUsersView, '/clients/:id/users', '/clients/7/users')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

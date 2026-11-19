@@ -20,6 +20,12 @@ public interface IPayerCurrencyResolver
     /// <returns>The currency.</returns>
     public Task<Currency> ForClientAsync(int clientId, CancellationToken ct);
 
+    /// <summary>The currency each of the given clients is billed in, read in one pass: their own, else the base.</summary>
+    /// <param name="clientIds">The clients. A client that does not exist is billed in the base, as in <see cref="ForClientAsync"/>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The currency of every given client, by client id.</returns>
+    public Task<IReadOnlyDictionary<int, Currency>> ForClientsAsync(IReadOnlyCollection<int> clientIds, CancellationToken ct);
+
     /// <summary>The currency the current caller is billed in: their client's, else the base (a guest).</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The currency.</returns>

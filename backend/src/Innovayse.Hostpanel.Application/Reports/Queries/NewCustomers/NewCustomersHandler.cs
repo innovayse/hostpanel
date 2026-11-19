@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,7 +31,7 @@ public sealed class NewCustomersHandler
     /// <summary>Handles the query.</summary>
     /// <param name="query">The year to report on; omitted means the current UTC year.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Twelve rows, January first, with signups, orders and the conversion rate. Never refuses.</returns>
+    /// <returns>Twelve rows, January first, with signups, orders placed, orders completed (accepted and fully fulfilled, status Active) and the conversion rate. Never refuses.</returns>
     public async Task<Result<IReadOnlyList<NewCustomerDto>>> HandleAsync(NewCustomersQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -46,19 +47,25 @@ public sealed class NewCustomersHandler
         var orders = await _context.Orders.AsNoTracking()
             .Where(o => o.CreatedAt.Year == year)
             .GroupBy(o => o.CreatedAt.Month)
-            .Select(g => new { Month = g.Key, Count = g.Count() })
+            .Select(g => new
+            {
+                Month = g.Key,
+                Count = g.Count(),
+                Completed = g.Count(o => o.Status == OrderStatus.Active),
+            })
             .ToListAsync(ct);
 
         IReadOnlyList<NewCustomerDto> rows = Enumerable.Range(1, 12).Select(m =>
         {
             var signups = newClients.FirstOrDefault(x => x.Month == m)?.Count ?? 0;
-            var placed = orders.FirstOrDefault(x => x.Month == m)?.Count ?? 0;
+            var month = orders.FirstOrDefault(x => x.Month == m);
+            var placed = month?.Count ?? 0;
             var rate = signups > 0 ? (double)placed / signups * 100 : 0;
             return new NewCustomerDto(
                 Month: MonthNames[m - 1],
                 NewSignups: signups,
                 OrdersPlaced: placed,
-                OrdersCompleted: placed,
+                OrdersCompleted: month?.Completed ?? 0,
                 ConversionRate: Math.Round(rate, 1));
         }).ToList();
 

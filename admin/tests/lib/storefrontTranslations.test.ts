@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { blankTranslations, collectTranslations, displayTranslation, formsFromTranslations } from '@/lib/storefrontTranslations'
+import { blankTranslations, collectTranslations, displayTranslation, filledLocales, formsFromTranslations, translationErrors } from '@/lib/storefrontTranslations'
 
 /** A one-field translation as the tests use it. */
 interface Text {
@@ -53,5 +53,24 @@ describe('storefrontTranslations', () => {
     expect(displayTranslation({ en: { text: 'a' }, ru: { text: 'b' } })).toEqual({ text: 'a' })
     expect(displayTranslation({ hy: { text: 'c' } })).toEqual({ text: 'c' })
     expect(displayTranslation({})).toBeUndefined()
+  })
+
+  it('filledLocales tells which locales carry text', () => {
+    const forms = blankTranslations(blank)
+    forms.hy.text = 'Բարև'
+
+    expect(filledLocales(forms, (form) => form.text !== '')).toEqual({ en: false, ru: false, hy: true, de: false, es: false })
+  })
+
+  it('translationErrors repeats the translations sentence under every given key', () => {
+    const errors = { slug: 'Slug is taken.', translations: 'Add a title.' }
+
+    expect(translationErrors(errors, ['title', 'summary'])).toEqual({ slug: 'Slug is taken.', translations: 'Add a title.', title: 'Add a title.', summary: 'Add a title.' })
+  })
+
+  it('translationErrors leaves the sentences alone when there is no translations refusal', () => {
+    const errors = { slug: 'Slug is taken.' }
+
+    expect(translationErrors(errors, ['title'])).toEqual({ slug: 'Slug is taken.' })
   })
 })

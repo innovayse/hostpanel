@@ -16,7 +16,6 @@ import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
@@ -24,10 +23,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/QuotesListView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useListQuery } from '@/composables/useListQuery'
@@ -40,8 +38,16 @@ import { formatPlainAmount } from '@/lib/money'
 import { useQuotesStore } from '@/stores/quotes'
 import type { QuoteFilters } from '@/types/quote'
 import { AppRoute, quotePath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('billing.quotesList.createQuote'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-quotes-create', to: AppRoute.BillingQuotesAdd },
+])
 
 /** The filter fields kept in the address: the quote filters every quote list has, and the client this list adds. */
 const FilterKey = {
@@ -96,13 +102,7 @@ onMounted(loadClients)
 
 <template>
   <UiStack data-testid="billing-quotes-view">
-    <UiPageHeader :title="t('shared.quotes')" :subtitle="t('billing.quotesList.customerQuotesAndProposals')">
-      <template #actions>
-        <UiLink :to="AppRoute.BillingQuotesAdd" variant="primary" data-testid="billing-quotes-create">
-          <UiIcon :markup="Icon.Add" size="sm" />
-          {{ t('billing.quotesList.createQuote') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiListToolbar
@@ -152,17 +152,7 @@ onMounted(loadClients)
         :empty="!store.loading && store.quotes.length === 0"
         data-testid="billing-quotes-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.subject') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.expiryDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.quotesList.created') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="quote in store.quotes" :key="quote.id" hoverable>
             <UiTableCell muted>

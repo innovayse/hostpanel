@@ -273,3 +273,15 @@ export interface SettingSaveResult {
  * @returns The outcome, which the control shows next to itself.
  */
 export type SettingSave = (id: number, value: string) => Promise<SettingSaveResult>
+
+/** Closed set of tabs on the system settings screen; the value is what the address holds in `?tab=`. */
+export enum SettingsTab {
+  /** The storefront's identity, content and hosting details. */
+  General = 'general',
+  /** The portal's look: appearance, home sections, colours, typography and branding. */
+  Appearance = 'appearance',
+  /** Third-party tracking and chat. */
+  Integrations = 'integrations',
+  /** The raw key-value list of every global setting. */
+  Advanced = 'advanced',
+}

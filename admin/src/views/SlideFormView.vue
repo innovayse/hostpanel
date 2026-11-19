@@ -11,45 +11,42 @@ import { Icon as MdiIcon } from '@iconify/vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import SettingsBreadcrumb from '@/components/settings/SettingsBreadcrumb.vue'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
-import SettingsSection from '@/components/settings/SettingsSection.vue'
+import StorefrontImageField from '@/components/storefront/StorefrontImageField.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiColorField from '@/components/ui/UiColorField.vue'
 import UiDateTimePicker from '@/components/ui/UiDateTimePicker.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiImage from '@/components/ui/UiImage.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiRadio from '@/components/ui/UiRadio.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiTone } from '@/utils/ui/tone'
-import UiTabs from '@/components/ui/UiTabs.vue'
-import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
-import UiUploadZone from '@/components/ui/UiUploadZone.vue'
+import { useFormDirty } from '@/composables/useFormDirty'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { Icon } from '@/lib/icons'
 import { nextRowKey } from '@/lib/rowKey'
-import { storefrontAssetUrl } from '@/lib/runtimeConfig'
 import { enumValueOf } from '@/lib/enumValue'
+import { filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { useSettingsStore } from '@/stores/settings'
 import { useSlidesStore } from '@/stores/slides'
 import type { CreateSlidePayload, SlideTranslation, UpdateSlidePayload } from '@/types/slide'
 import { SlideAudience } from '@/types/slideaudience'
 import { ContentLanguage } from '@/locales/contentLanguage'
-import type { UiTabItem } from '@/utils/ui/tabs'
 import { AppRoute } from '@/lib/routes'
-import { ILLUSTRATION_ACCEPT } from '@/lib/mimeTypes'
+import { withoutFields } from '@/lib/formSchema'
+import schema, { SLIDE_LEARN_MORE_FIELD } from '@/views/SlideFormView.schema'
 
 const { t } = useI18n()
 
@@ -123,25 +120,6 @@ const AUDIENCE_OPTIONS = [
 /** Whether we are in edit mode (slide ID present in the route). */
 const isEditMode = computed<boolean>(() => !!route.params.id)
 
-/** Page title based on create/edit mode. */
-const pageTitle = computed<string>(() => (isEditMode.value ? t('settings.slideForm.pageTitleEdit') : t('settings.slideForm.pageTitleCreate')))
-
-/** The trail above the form. */
-const breadcrumb = computed(() => [
-  { label: t('shared.settings'), to: AppRoute.Settings },
-  { label: t('settings.slideForm.slides'), to: AppRoute.SettingsSlides },
-  { label: pageTitle.value },
-])
-
-/** The translation tabs, one per locale. */
-const localeTabs = computed<UiTabItem[]>(() => [
-  { value: ContentLanguage.En, label: t('settings.slideForm.locales.en'), testid: 'slide-form-tab-en' },
-  { value: ContentLanguage.Ru, label: t('settings.slideForm.locales.ru'), testid: 'slide-form-tab-ru' },
-  { value: ContentLanguage.Hy, label: t('settings.slideForm.locales.hy'), testid: 'slide-form-tab-hy' },
-  { value: ContentLanguage.De, label: t('settings.slideForm.locales.de'), testid: 'slide-form-tab-de' },
-  { value: ContentLanguage.Es, label: t('settings.slideForm.locales.es'), testid: 'slide-form-tab-es' },
-])
-
 /** True while loading existing slide data in edit mode. */
 const loadingSlide = ref(false)
 
@@ -153,9 +131,6 @@ const saveError = ref<string | null>(null)
 
 /** Sentence for a failed load of the slide being edited (or its absence), null when none. */
 const loadError = ref<string | null>(null)
-
-/** Tracks whether the form has been modified since loading. */
-const isDirty = ref(false)
 
 /** MDI icon name input value. */
 const iconName = ref('')
@@ -189,12 +164,6 @@ const visibleFrom = ref<Date | null>(null)
 
 /** Optional visibility end moment. */
 const visibleUntil = ref<Date | null>(null)
-
-/** True while an image is being uploaded. */
-const uploading = ref(false)
-
-/** Upload error message. */
-const uploadError = ref<string | null>(null)
 
 /** Currently active translation tab locale. */
 const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
@@ -235,40 +204,23 @@ const productOptions = computed(() => [
   ...settingsStore.products.map((p) => ({ value: p.id, label: p.name })),
 ])
 
+/** The columns of the form: the schema's, without the learn more link while a linked product supplies it. */
+const columns = computed(() => (hasLinkedProduct.value ? withoutFields(schema.columns, [SLIDE_LEARN_MORE_FIELD]) : schema.columns))
+
+/** The help lines under the fields. */
+const hints = computed(() => ({
+  demoUrl: t('settings.slideForm.optionalTryDemoButtonLink'),
+  [SLIDE_LEARN_MORE_FIELD]: t('settings.slideForm.optionalSecondaryLinkShownAs'),
+  isActive: t('settings.slideForm.showThisSlideToVisitors'),
+}))
+
+/** Tracks whether the form has been modified since loading, and settles it once populated or saved. */
+const { isDirty, settle } = useFormDirty([
+  iconName, brandColor, imageUrl, demoUrl, learnMoreUrl, productId, sortOrder, isActive, targetAudience, visibleFrom, visibleUntil, translations,
+])
+
 /** Parks a route change while the reader is asked about unsaved edits. */
 const leaveGuard = useUnsavedChangesGuard(() => isDirty.value && !saving.value)
-
-/**
- * Switches the translation tab.
- *
- * @param value - The tab value the strip reported.
- */
-const selectLocale = (value: string): void => {
-  const locale = enumValueOf(ContentLanguage, value)
-  if (locale !== null) {
-    activeLocale.value = locale
-  }
-}
-
-/**
- * Uploads an image file to the backend and sets the imageUrl.
- *
- * Goes through the slides store, whose API layer sends multipart data; a refusal arrives as the
- * API's own sentence.
- *
- * @param file - The image file to upload.
- */
-const uploadImage = async (file: File): Promise<void> => {
-  uploadError.value = null
-  uploading.value = true
-  const url = await slidesStore.uploadImage(file)
-  if (url !== null) {
-    imageUrl.value = url
-  } else {
-    uploadError.value = slidesStore.uploadError
-  }
-  uploading.value = false
-}
 
 /** Auto-fills the Learn More URL from the linked product, and clears it when the link is removed. */
 watch(productId, (newId) => {
@@ -283,20 +235,6 @@ watch(productId, (newId) => {
     learnMoreUrl.value = `/products/${product.name.toLowerCase().replace(/\s+/g, '-')}`
   }
 })
-
-/** Marks the form as dirty when any plain field changes. */
-watch(
-  [iconName, brandColor, imageUrl, demoUrl, learnMoreUrl, productId, sortOrder, isActive, targetAudience, visibleFrom, visibleUntil],
-  () => {
-    isDirty.value = true
-  },
-  { deep: true },
-)
-
-/** Marks the form as dirty when any translation changes. */
-watch(translations, () => {
-  isDirty.value = true
-}, { deep: true })
 
 /**
  * Loads the slide being edited into the form; a refusal or a missing slide is kept in `loadError`.
@@ -345,7 +283,7 @@ const loadSlide = async (): Promise<void> => {
   }
 
   // Populating the form is not an edit.
-  isDirty.value = false
+  await settle()
 }
 
 onMounted(async () => {
@@ -375,6 +313,17 @@ const removeFeature = (locale: ContentLanguage, index: number): void => {
 }
 
 /**
+ * Tells whether a language's slide text is written: it has a title.
+ *
+ * @param form - One language's text.
+ * @returns True when the language is worth sending and its tab needs no marker.
+ */
+const isFilled = (form: TranslationForm): boolean => form.title.trim() !== ''
+
+/** Whether each language has its title written, for the markers on the tabs. */
+const filled = computed(() => filledLocales(translations, isFilled))
+
+/**
  * Collects the translations that have a title, trimmed, with empty optional parts as null.
  *
  * @returns One entry per locale whose title is not blank.
@@ -383,7 +332,7 @@ const collectTranslations = (): SlideTranslation[] => {
   const collected: SlideTranslation[] = []
   for (const locale of Object.values(ContentLanguage)) {
     const form = translations[locale]
-    if (form.title.trim()) {
+    if (isFilled(form)) {
       const features = form.features.map((f) => f.text).filter((text) => text.trim())
       collected.push({
         locale,
@@ -430,7 +379,7 @@ const handleSave = async (): Promise<void> => {
   saving.value = false
 
   if (saved) {
-    isDirty.value = false
+    await settle()
     void router.push(AppRoute.SettingsSlides)
   } else {
     saveError.value = slidesStore.actionError
@@ -445,16 +394,14 @@ const handleCancel = (): void => {
 
 <template>
   <UiStack gap="none" class="pb-24" data-testid="slide-form-view">
-    <SettingsBreadcrumb :items="breadcrumb" />
+    <UiPageHeader :title="isEditMode ? t('settings.slides.editSlide') : t('settings.slideForm.createSlide')" />
+
 
     <UiErrorState v-if="loadError" :message="loadError" testid="slide-form-load-error" @retry="loadSlide" />
 
     <template v-else>
-
-      <!-- Section 1: General settings -->
-      <SettingsSection :title="t('settings.slideForm.generalSettings')" :loading="loadingSlide">
-        <!-- Icon -->
-        <UiField :label="t('settings.slideForm.icon')" :error="slidesStore.fieldErrors.iconName">
+      <UiSchemaForm :columns="columns" :loading="loadingSlide" :errors="slidesStore.fieldErrors" :hints="hints" class="mb-5">
+        <template #field-iconName>
           <UiStack gap="sm">
             <UiStack direction="row" wrap gap="xs">
               <UiButton
@@ -483,128 +430,72 @@ const handleCancel = (): void => {
               />
             </UiStack>
           </UiStack>
-        </UiField>
+        </template>
 
-        <!-- Brand colour -->
-        <UiField :label="t('settings.slideForm.brandColor')">
+        <template #field-brandColor>
           <UiColorField
             v-model="brandColor"
             :placeholder="t('shared.examples.colorHex')"
             :aria-label="t('settings.slideForm.brandColor')"
             data-testid="slide-form-brand-color-hex"
           />
-        </UiField>
+        </template>
 
-        <!-- Image -->
-        <UiField :label="t('settings.slideForm.image')" :error="uploadError ?? slidesStore.fieldErrors.imageUrl">
-          <UiStack direction="row" align="start">
-            <UiStack
-              v-if="imageUrl"
-              align="center"
-              justify="center"
-              gap="none"
-              class="group relative h-20 w-32 shrink-0 overflow-hidden rounded-control border border-border"
-            >
-              <UiImage
-                :src="storefrontAssetUrl(imageUrl)"
-                :alt="t('settings.slideForm.slidePreview')"
-                fit="cover"
-                class="h-full w-full"
-                data-testid="slide-form-image-preview"
-              />
-              <UiIconButton
-                :label="t('settings.slideForm.removeImage')"
-                size="sm"
-                class="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100"
-                data-testid="slide-form-image-remove"
-                @click="imageUrl = ''"
-              >
-                <UiIcon :markup="Icon.Close" size="sm" />
-              </UiIconButton>
-            </UiStack>
+        <template #field-imageUrl>
+          <StorefrontImageField
+            v-model="imageUrl"
+            :alt="t('settings.slideForm.slidePreview')"
+            testid="slide-form-image"
+            :upload="slidesStore.uploadImage"
+            :upload-error="slidesStore.uploadError"
+          />
+        </template>
 
-            <UiStack gap="sm" class="min-w-56 flex-1">
-              <UiUploadZone
-                :accept="ILLUSTRATION_ACCEPT"
-                :uploading="uploading"
-                :hint="t('settings.slideForm.jpegPngWebpSvgMax')"
-                input-testid="slide-form-image-file"
-                @select="uploadImage"
-              />
-              <UiInput
-                v-model="imageUrl"
-                type="text"
-                size="sm"
-                :placeholder="t('settings.slideForm.orPasteImageUrl')"
-                data-testid="slide-form-image-url"
-              />
-            </UiStack>
-          </UiStack>
-        </UiField>
+        <template #field-demoUrl="{ id, describedby }">
+          <UiInput
+            :id="id"
+            v-model="demoUrl"
+            type="text"
+            :placeholder="t('settings.slideForm.demoUrlPlaceholder')"
+            :aria-describedby="describedby"
+            data-testid="slide-form-demo-url"
+          />
+        </template>
 
-        <!-- Demo URL -->
-        <UiField :label="t('settings.slideForm.demoUrl')" :hint="t('settings.slideForm.optionalTryDemoButtonLink')">
-          <template #default="{ id, describedby }">
-            <UiInput
-              :id="id"
-              v-model="demoUrl"
-              type="text"
-              :placeholder="t('settings.slideForm.demoUrlPlaceholder')"
-              :aria-describedby="describedby"
-              data-testid="slide-form-demo-url"
-            />
-          </template>
-        </UiField>
+        <template #field-learnMoreUrl="{ id, describedby }">
+          <UiInput
+            :id="id"
+            v-model="learnMoreUrl"
+            type="text"
+            :placeholder="t('settings.slideForm.productsExampleOrHttpsExample')"
+            :aria-describedby="describedby"
+            data-testid="slide-form-learn-more-url"
+          />
+        </template>
 
-        <!-- Learn more URL: derived from the product when one is linked -->
-        <UiField
-          v-if="!hasLinkedProduct"
-          :label="t('settings.slideForm.learnMoreUrl')"
-          :hint="t('settings.slideForm.optionalSecondaryLinkShownAs')"
-        >
-          <template #default="{ id, describedby }">
-            <UiInput
-              :id="id"
-              v-model="learnMoreUrl"
-              type="text"
-              :placeholder="t('settings.slideForm.productsExampleOrHttpsExample')"
-              :aria-describedby="describedby"
-              data-testid="slide-form-learn-more-url"
-            />
-          </template>
-        </UiField>
+        <template #field-productId>
+          <UiSelect
+            v-model="productId"
+            :options="productOptions"
+            :placeholder="t('shared.none')"
+            data-testid="slide-form-product"
+          />
+        </template>
 
-        <!-- Product and sort order -->
-        <UiGrid :columns="2">
-          <UiField :label="t('settings.slideForm.linkedProduct')">
-            <UiSelect
-              v-model="productId"
-              :options="productOptions"
-              :placeholder="t('shared.none')"
-              data-testid="slide-form-product"
-            />
-          </UiField>
-          <UiField :label="t('settings.slideForm.sortOrder')">
-            <UiNumberInput
-              v-model="sortOrder"
-              :min="0"
-              placeholder="0"
-              data-testid="slide-form-sort-order"
-            />
-          </UiField>
-        </UiGrid>
+        <template #field-sortOrder>
+          <UiNumberInput
+            v-model="sortOrder"
+            :min="0"
+            placeholder="0"
+            data-testid="slide-form-sort-order"
+          />
+        </template>
 
-        <!-- Active toggle -->
-        <UiStack direction="row" align="center" justify="between">
-          <UiStack gap="xs">
-            <UiText tone="primary" size="md">{{ t('shared.active') }}</UiText>
-            <UiText tone="muted" size="sm">{{ t('settings.slideForm.showThisSlideToVisitors') }}</UiText>
-          </UiStack>
+        <template #field-isActive>
           <UiToggle v-model="isActive" data-testid="slide-form-active" />
-        </UiStack>
+        </template>
 
-        <!-- Target audience -->
-        <UiField :label="t('settings.slideForm.targetAudience')">
+        <template #field-targetAudience>
           <UiStack direction="row" align="center" wrap>
             <UiLabel v-for="option in AUDIENCE_OPTIONS" :key="option.value" variant="inline">
               <UiRadio
@@ -616,66 +507,56 @@ const handleCancel = (): void => {
               {{ t(option.labelKey) }}
             </UiLabel>
           </UiStack>
-        </UiField>
+        </template>
 
-        <!-- Visibility window -->
-        <UiGrid :columns="2">
-          <UiField :label="t('settings.slideForm.visibleFrom')">
-            <UiDateTimePicker v-model="visibleFrom" :placeholder="t('settings.slideForm.noStartDate')" />
-          </UiField>
-          <UiField :label="t('settings.slideForm.visibleUntil')">
-            <UiDateTimePicker
-              v-model="visibleUntil"
-              :min-date="visibleFrom ?? undefined"
-              :placeholder="t('settings.slideForm.noEndDate')"
-            />
-          </UiField>
-        </UiGrid>
-      </SettingsSection>
+        <template #field-visibleFrom>
+          <UiDateTimePicker v-model="visibleFrom" :placeholder="t('settings.slideForm.noStartDate')" />
+        </template>
 
-      <!-- Section 2: Translations -->
-      <SettingsSection :title="t('settings.slideForm.translations')" :loading="loadingSlide">
-        <UiTabs :items="localeTabs" :model-value="activeLocale" @update:model-value="selectLocale" />
+        <template #field-visibleUntil>
+          <UiDateTimePicker
+            v-model="visibleUntil"
+            :min-date="visibleFrom ?? undefined"
+            :placeholder="t('settings.slideForm.noEndDate')"
+          />
+        </template>
 
-        <UiField :label="t('shared.title')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="translations[activeLocale].title"
-              type="text"
-              :placeholder="t('settings.slideForm.slideTitle')"
-              data-testid="slide-form-title"
-            />
-          </template>
-        </UiField>
+        <template #field-locales>
+          <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="slide-form-tab" />
+        </template>
 
-        <UiField :label="t('settings.slideForm.tagline')">
-          <template #default="{ id }">
-            <UiInput
-              :id="id"
-              v-model="translations[activeLocale].tagline"
-              type="text"
-              :placeholder="t('settings.slideForm.shortSubtitle')"
-              data-testid="slide-form-tagline"
-            />
-          </template>
-        </UiField>
+        <template #field-title="{ id }">
+          <UiInput
+            :id="id"
+            v-model="translations[activeLocale].title"
+            type="text"
+            :placeholder="t('settings.slideForm.slideTitle')"
+            data-testid="slide-form-title"
+          />
+        </template>
 
-        <UiField :label="t('shared.description')">
-          <template #default="{ id }">
-            <UiTextarea
-              :id="id"
-              v-model="translations[activeLocale].description"
-              rows="3"
-              :placeholder="t('settings.slideForm.slideBodyText')"
-              data-testid="slide-form-description"
-              class="resize-none"
-            />
-          </template>
-        </UiField>
+        <template #field-tagline="{ id }">
+          <UiInput
+            :id="id"
+            v-model="translations[activeLocale].tagline"
+            type="text"
+            :placeholder="t('settings.slideForm.shortSubtitle')"
+            data-testid="slide-form-tagline"
+          />
+        </template>
 
-        <!-- Features -->
-        <UiField :label="t('settings.slideForm.features')">
+        <template #field-description="{ id }">
+          <UiTextarea
+            :id="id"
+            v-model="translations[activeLocale].description"
+            rows="3"
+            :placeholder="t('settings.slideForm.slideBodyText')"
+            data-testid="slide-form-description"
+            class="resize-none"
+          />
+        </template>
+
+        <template #field-features>
           <UiStack gap="sm">
             <UiStack
               v-for="(feature, featureIndex) in translations[activeLocale].features"
@@ -712,34 +593,28 @@ const handleCancel = (): void => {
               {{ t('settings.slideForm.addFeature') }}
             </UiButton>
           </UiStack>
-        </UiField>
+        </template>
 
-        <!-- Call to action -->
-        <UiGrid :columns="2">
-          <UiField :label="t('settings.slideForm.ctaText')">
-            <template #default="{ id }">
-              <UiInput
-                :id="id"
-                v-model="translations[activeLocale].ctaText"
-                type="text"
-                :placeholder="t('settings.slideForm.getStarted')"
-                data-testid="slide-form-cta-text"
-              />
-            </template>
-          </UiField>
-          <UiField :label="t('settings.slideForm.ctaUrl')">
-            <template #default="{ id }">
-              <UiInput
-                :id="id"
-                v-model="translations[activeLocale].ctaUrl"
-                type="text"
-                :placeholder="t('shared.examples.internalPath')"
-                data-testid="slide-form-cta-url"
-              />
-            </template>
-          </UiField>
-        </UiGrid>
-      </SettingsSection>
+        <template #field-ctaText="{ id }">
+          <UiInput
+            :id="id"
+            v-model="translations[activeLocale].ctaText"
+            type="text"
+            :placeholder="t('settings.slideForm.getStarted')"
+            data-testid="slide-form-cta-text"
+          />
+        </template>
+
+        <template #field-ctaUrl="{ id }">
+          <UiInput
+            :id="id"
+            v-model="translations[activeLocale].ctaUrl"
+            type="text"
+            :placeholder="t('shared.examples.internalPath')"
+            data-testid="slide-form-cta-url"
+          />
+        </template>
+      </UiSchemaForm>
 
       <UiStatusMessage :message="saveError" :tone="UiTone.Danger" class="mb-5" data-testid="slide-form-error" />
 

@@ -4,10 +4,11 @@
  * credit, refund, credit notes, fulfilment, notes). The route decides the mode (`/view` is read-only, `/edit` lets the
  * operator change the invoice) and a button on the page toggles it. Every tab shows the outcome
  * of its own actions next to them, and the PDF download shows its refusal beside its button; the
- * page itself only reports a failed load, with Retry.
+ * page itself only reports a failed load, with Retry. While the invoice is read the page draws the cards of
+ * `InvoiceDetailView.schema` as placeholders, the same blocks the summary tab fills once it has arrived.
  */
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import InvoiceCreditTab from '@/components/billing/InvoiceCreditTab.vue'
 import InvoiceCreditNotesTab from '@/components/billing/InvoiceCreditNotesTab.vue'
@@ -18,28 +19,38 @@ import InvoicePaymentTab from '@/components/billing/InvoicePaymentTab.vue'
 import InvoiceRefundTab from '@/components/billing/InvoiceRefundTab.vue'
 import InvoiceSummaryTab from '@/components/billing/InvoiceSummaryTab.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiButton from '@/components/ui/UiButton.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
-import { Icon } from '@/lib/icons'
+import { AppRoute } from '@/lib/routes'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceOpenAction, InvoiceTab, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
 import { saveBlob } from '@/utils/saveBlob'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema from '@/views/InvoiceDetailView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: manageMode.value ? t('billing.invoiceDetail.viewInvoice') : t('billing.invoiceDetail.manageInvoice'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Primary, testid: 'billing-invoice-toggle-mode', onSelect: toggleMode },
+  { label: t('shared.print'), icon: actionIcons[UiActionKind.Print], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-print', onSelect: print },
+  { label: t('billing.invoiceDetail.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-download', onSelect: downloadPdf },
+])
 
 /** Route action that opens the invoice for editing. */
 const EDIT_ACTION = InvoiceOpenAction.Edit
 
 const route = useRoute()
-const router = useRouter()
 const store = useBillingStore()
 
 /** The tab on show. */
@@ -95,11 +106,6 @@ const toggleMode = (): void => {
   }
 }
 
-/** Goes back to the previous screen. */
-const goBack = (): void => {
-  router.back()
-}
-
 /** Opens the browser print dialog for the page. */
 const print = (): void => {
   window.print()
@@ -122,25 +128,18 @@ watch(invoiceId, load)
 
 <template>
   <UiStack data-testid="billing-invoice-detail-view">
-    <UiPageHeader
-      :title="t('billing.invoiceDetail.invoiceId', { id: invoiceId })"
-      :subtitle="t('billing.invoiceDetail.manageAndViewInvoiceDetails')"
+    <UiPageHeader :actions="headerActions"
+      v-bind="schemaHeader(schema, t, { title: t('billing.invoiceDetail.invoiceId', { id: invoiceId }) })"
+      :back-to="AppRoute.BillingInvoices"
+      :back-label="t('shared.invoices')"
+      back-mobile-only
+      back-testid="billing-invoice-back"
       data-testid="invoice-detail-title"
     >
       <template #actions>
-        <UiButton variant="ghost" data-testid="billing-invoice-back" @click="goBack">
-          <UiIcon :markup="Icon.Back" size="sm" />
-          {{ t('shared.back') }}
-        </UiButton>
-        <UiButton variant="primary" data-testid="billing-invoice-toggle-mode" @click="toggleMode">
-          {{ manageMode ? t('billing.invoiceDetail.viewInvoice') : t('billing.invoiceDetail.manageInvoice') }}
-        </UiButton>
-        <UiButton variant="secondary" data-testid="billing-invoice-print" @click="print">
-          {{ t('shared.print') }}
-        </UiButton>
-        <UiButton variant="secondary" data-testid="billing-invoice-download" @click="downloadPdf">
-          {{ t('billing.invoiceDetail.downloadPdf') }}
-        </UiButton>
+        
+        
+        
         <UiStatusMessage :message="pdfError" :tone="UiTone.Danger" data-testid="billing-invoice-download-feedback" />
       </template>
     </UiPageHeader>
@@ -154,23 +153,25 @@ watch(invoiceId, load)
     />
 
     <template v-if="loadError === null">
-      <UiAlert v-if="showDraftNotice" variant="info" data-testid="billing-invoice-draft-banner">
-        {{ t('billing.invoiceDetail.thisIsADraftInvoice') }} {{ t('billing.invoiceDetail.theClientIsNotAble') }}
-      </UiAlert>
+      <!-- While the invoice is read the page draws the cards of its schema as placeholders; the tabs arrive with the data -->
+      <UiDetailCards v-if="invoice === null" :columns="schema.columns" loading />
 
-      <!-- The same tabs while the invoice is read: the summary draws its layout with placeholders, the others wait for the data -->
-      <UiTabs v-model="activeTab" :items="tabs" :aria-busy="invoice === null ? 'true' : undefined">
-        <InvoiceSummaryTab v-if="activeTab === InvoiceTab.Summary" :invoice="invoice" :readonly="!manageMode" />
-        <template v-else-if="invoice !== null">
-          <InvoicePaymentTab v-if="activeTab === InvoiceTab.Payment" :invoice="invoice" :readonly="!manageMode" />
+      <template v-else>
+        <UiAlert v-if="showDraftNotice" variant="info" data-testid="billing-invoice-draft-banner">
+          {{ t('billing.invoiceDetail.thisIsADraftInvoice') }} {{ t('billing.invoiceDetail.theClientIsNotAble') }}
+        </UiAlert>
+
+        <UiTabs v-model="activeTab" :items="tabs">
+          <InvoiceSummaryTab v-if="activeTab === InvoiceTab.Summary" :invoice="invoice" :readonly="!manageMode" />
+          <InvoicePaymentTab v-else-if="activeTab === InvoiceTab.Payment" :invoice="invoice" :readonly="!manageMode" />
           <InvoiceOptionsTab v-else-if="activeTab === InvoiceTab.Options" :invoice="invoice" />
           <InvoiceCreditTab v-else-if="activeTab === InvoiceTab.Credit" :invoice="invoice" :readonly="!manageMode" />
           <InvoiceRefundTab v-else-if="activeTab === InvoiceTab.Refund" :invoice="invoice" :readonly="!manageMode" />
           <InvoiceCreditNotesTab v-else-if="activeTab === InvoiceTab.CreditNotes" :invoice="invoice" :readonly="!manageMode" />
           <InvoiceFulfilmentTab v-else-if="activeTab === InvoiceTab.Fulfilment" :invoice="invoice" :readonly="!manageMode" />
           <InvoiceNotesTab v-else-if="activeTab === InvoiceTab.Notes" :invoice="invoice" :readonly="!manageMode" />
-        </template>
-      </UiTabs>
+        </UiTabs>
+      </template>
     </template>
   </UiStack>
 </template>

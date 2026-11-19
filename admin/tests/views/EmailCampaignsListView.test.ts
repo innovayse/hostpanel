@@ -12,6 +12,9 @@ import { json, problem } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
+import schema from '@/views/EmailCampaignsListView.schema'
+import { useToastStore } from '@/stores/toast'
 
 /** The address the screen is registered under. */
 const PATH = '/support/email-campaigns'
@@ -188,7 +191,7 @@ describe('EmailCampaignsListView', () => {
 
     expect(mock.mock.calls.some(([url, init]) => url === '/api/admin/email-campaigns/3' && (init as RequestInit).method === 'DELETE')).toBe(true)
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="email-campaigns-feedback"]').text()).toBe('Campaign deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Campaign deleted.'])
     expect(wrapper.find('[data-testid="email-campaigns-row-3"]').exists()).toBe(false)
     expect(listUrls(mock).at(-1)).toBe('/api/admin/email-campaigns?page=1&pageSize=20&search=spring')
   })
@@ -288,5 +291,13 @@ describe('EmailCampaignsListView', () => {
     const { wrapper } = await mountListAt()
 
     expect(wrapper.get('[data-testid="email-campaigns-add"]').attributes('href')).toBe('/support/email-campaigns/new')
+  })
+
+  it('draws the table head from the schema columns while the first load is in flight', async () => {
+    stubPendingFetch()
+
+    const { wrapper } = await mountListAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

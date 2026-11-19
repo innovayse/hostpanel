@@ -23,6 +23,7 @@ import { SettingKey } from '@/types/setting'
 import type { Setting, SettingSave, SettingSaveResult } from '@/types/setting'
 import { BrandingImageKind } from '@/types/upload'
 import { FAVICON_ACCEPT, LOGO_ACCEPT } from '@/lib/mimeTypes'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -250,7 +251,7 @@ const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
               class="flex-1"
               @update:model-value="edit(field, $event)"
             />
-            <UiButton
+            <UiButton :action="UiActionKind.Save"
               v-if="isDirty(field)"
               type="button"
               variant="primary"

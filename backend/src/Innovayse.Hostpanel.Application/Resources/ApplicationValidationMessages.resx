@@ -385,6 +385,12 @@
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
     <value>Registrar must be one of: NameAm, Namecheap.</value>
   </data>
+  <data name="VatRateListKindInvalid" xml:space="preserve">
+    <value>Kind must be one of: Standard, Reduced.</value>
+  </data>
+  <data name="VatRateListStatusInvalid" xml:space="preserve">
+    <value>Status must be one of: Active, Superseded, Upcoming.</value>
+  </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>Page must be 1 or greater.</value>
   </data>

@@ -12,9 +12,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
 import { formatCurrencyWhole } from '@/lib/money'
+import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
 import { statusLabel } from '@/lib/tones'
 import type { DashboardInvoiceStatusCount } from '@/types/dashboardcharts'
-import { UiChartHeight, UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
@@ -27,6 +27,9 @@ const props = defineProps<{
   /** Whether the figures are still loading. */
   loading: boolean
 }>()
+
+/** Kind and height of the chart, the same entry the dashboard skeleton draws the panel from. */
+const chart = PANEL_CHARTS[PanelChart.InvoiceStatus]
 
 const { t } = useI18n()
 
@@ -46,11 +49,11 @@ const series = computed<UiChartSeries[]>(() => [{ label: t('dashboard.invoiceSta
 <template>
   <DashboardChartCard :title="t('dashboard.invoiceStatus.title')" :note="t('dashboard.invoiceStatus.note')" data-testid="dashboard-invoice-status">
     <UiChart
-      :type="UiChartType.Bar"
+      :kind="chart.kind"
       :labels="labels"
       :series="series"
       :loading="loading || waiting"
-      :height="UiChartHeight.Sm"
+      :height="chart.height"
     />
     <UiStack gap="sm">
       <UiStack

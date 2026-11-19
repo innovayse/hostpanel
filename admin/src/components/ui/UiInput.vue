@@ -7,11 +7,14 @@
  * otherwise the native `<input>` is the root. Attributes (`class`, `data-testid`, `maxlength`,
  * `min`, `readonly`, `autocomplete` and the rest) always land on the `<input>`; an email, password,
  * tel or url field gets a matching `autocomplete` unless the screen passes its own. A password field
- * carries a show/hide button (`aria-pressed`) that flips the input between hidden and plain text.
+ * carries a show/hide button (`aria-pressed`) that flips the input between hidden and plain text. A search field hides the
+ * browser's own cancel mark (Chrome draws a white one that ignores the theme) and shows the kit's clear button instead,
+ * only while there is text to clear; pressing it empties the field and puts the caret back in it.
  * Emits the raw string, so `v-model.number` and `.trim` convert through Vue's own modifier handling.
  */
 import { computed, ref, useAttrs, useSlots } from 'vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 import { Icon } from '@/lib/icons'
 import { translate } from '@/lib/translate'
 import {
@@ -22,8 +25,7 @@ import {
   inputAutocomplete,
   UiInputType,
 } from '@/utils/ui/input'
-import { fieldSizeClasses } from '@/utils/ui/size'
-import type { UiSize } from '@/utils/ui/size'
+import { fieldSizeClasses, UiSize } from '@/utils/ui/size'
 import { labelVariantClasses } from '@/utils/ui/text'
 
 defineOptions({ inheritAttrs: false })
@@ -86,8 +88,26 @@ const revealLabel = computed<string>(() => (revealed.value ? translate('ui.input
 /** Autofill hint for the field's type; the screen's own `autocomplete` attribute overrides it. */
 const autocomplete = computed<string | undefined>(() => inputAutocomplete[props.type])
 
+/** Whether this is a search field, which gets the clear button in place of the browser's own cancel mark. */
+const isSearch = computed<boolean>(() => props.type === UiInputType.Search)
+
+/** Whether the screen disabled the field, which disables the clear button with it. */
+const isDisabled = computed<boolean>(() => attrs.disabled !== undefined && attrs.disabled !== false)
+
+/** Whether the clear button is shown: a search field that holds text. */
+const clearable = computed<boolean>(() => isSearch.value && String(props.modelValue ?? '') !== '')
+
 /** Whether the label/icon/button wrapper is rendered around the input. */
-const wrapped = computed<boolean>(() => props.label !== undefined || hasIcon.value || isPassword.value)
+const wrapped = computed<boolean>(() => props.label !== undefined || hasIcon.value || isPassword.value || isSearch.value)
+
+/** The native input of the wrapped layout, kept so a clear can return the caret to it. */
+const inputRef = ref<HTMLInputElement | null>(null)
+
+/** Accessible name of the clear button. */
+const clearLabel = computed<string>(() => translate('ui.input.clearSearch'))
+
+/** Takes the browser's own cancel mark off a search field: the kit draws its own clear button. */
+const searchResetClasses = '[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none'
 
 /** Classes of the show/hide button. */
 const revealClasses = `absolute right-1.5 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors cursor-pointer ${focusRingClasses}`
@@ -105,7 +125,14 @@ const fieldClasses = computed<string[]>(() => [
   props.invalid ? fieldInvalidClasses : '',
   hasIcon.value ? 'pl-9' : '',
   isPassword.value ? 'pr-10' : '',
+  isSearch.value ? `pr-9 ${searchResetClasses}` : '',
 ])
+
+/** Empties the search field and returns the caret to it. */
+const clear = (): void => {
+  emit('update:modelValue', '')
+  inputRef.value?.focus()
+}
 
 /**
  * Forwards the native input event as a model update.
@@ -133,6 +160,7 @@ const onInput = (event: Event): void => {
         <slot name="icon" />
       </span>
       <input
+        ref="inputRef"
         :autocomplete="autocomplete"
         v-bind="attrs"
         :type="nativeType"
@@ -155,6 +183,17 @@ const onInput = (event: Event): void => {
       >
         <UiIcon :markup="revealed ? Icon.EyeOff : Icon.Eye" />
       </button>
+      <UiIconButton
+        v-if="clearable"
+        :label="clearLabel"
+        :size="UiSize.Xs"
+        :disabled="isDisabled"
+        class="absolute right-2.5 top-1/2 -translate-y-1/2"
+        data-testid="input-clear"
+        @click="clear"
+      >
+        <UiIcon :markup="Icon.Close" :size="UiSize.Xs" />
+      </UiIconButton>
     </div>
   </div>
   <input

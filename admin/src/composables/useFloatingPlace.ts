@@ -1,7 +1,8 @@
 /**
  * Keeps a teleported, `fixed` panel next to its trigger: the place is worked out when the panel opens and again
- * when the page scrolls or the window resizes, so a panel never stays behind its trigger. Every floating list of
- * the kit (select, menu, field selector, pickers) sits on it, so the placement is written once.
+ * when the page scrolls or the window resizes, so a panel never stays behind its trigger. The kit's one
+ * floating surface (`UiFloatingSurface`, under every select, menu, field selector and picker) calls it, so the placement is
+ * written once.
  */
 import { nextTick, onUnmounted, watch } from 'vue'
 import type { Ref } from 'vue'
@@ -31,7 +32,8 @@ export const useFloatingPlace = (
     // `right` and `bottom` are measured from (`innerWidth` and `innerHeight` include them).
     const doc = document.documentElement
     const viewport = { width: doc.clientWidth, height: doc.clientHeight }
-    applyFloatingPlace(panel.value, computeFloatingPlace(trigger.value.getBoundingClientRect(), viewport, options))
+    // The panel's own width lets the place flip and shift it into the viewport (a trigger at the screen's left edge).
+    applyFloatingPlace(panel.value, computeFloatingPlace(trigger.value.getBoundingClientRect(), viewport, options, panel.value.offsetWidth))
   }
 
   /**

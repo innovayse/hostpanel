@@ -217,7 +217,7 @@ describe('copies of a token', () => {
 
 describe('tokens the later steps rely on', () => {
   it.each([
-    'ground-glow', 'glass-blur', 'gradient-primary', 'glow-primary', 'nav-active-bg', 'nav-active-border',
+    'ground-glow', 'glass-blur', 'gradient-primary', 'glow-primary', 'nav-active-bg', 'nav-active-border', 'nav-guide-start', 'nav-guide-end', 'nav-guide-idle',
     'surface-active', 'gradient-bar', 'gradient-bar-warn', 'chart-bar-top', 'chart-bar-bottom', 'chart-bar-dim', 'chart-target', 'chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5', 'chart-6',
   ])('declares %s in both themes', (token) => {
     expect(DARK[token]).toBeDefined()
@@ -304,9 +304,19 @@ describe('tokens the later steps rely on', () => {
   })
 
   it('declares the glass, glass-strong and ground utilities', () => {
-    for (const name of ['glass', 'glass-strong', 'ground']) {
+    for (const name of ['glass', 'glass-strong', 'ground', 'container-size']) {
       expect(CSS).toContain(`@utility ${name} {`)
     }
+  })
+
+  it('draws the sub-menu guide per link from tokens, with no row height in it', () => {
+    for (const name of ['nav-guide-row', 'nav-guide-lit', 'nav-guide-active']) {
+      expect(CSS).toContain(`@utility ${name} {`)
+    }
+    for (const token of ['nav-guide-width', 'nav-guide-reach', 'nav-guide-gap', 'nav-guide-idle']) {
+      expect(CSS).toContain(`var(--${token})`)
+    }
+    expect(CSS).not.toMatch(/2\.25\s*\*/)
   })
 
   it('falls back to solid surfaces without backdrop blur and under reduced transparency', () => {

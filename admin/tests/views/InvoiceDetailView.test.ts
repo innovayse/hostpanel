@@ -7,11 +7,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import InvoiceDetailView from '@/views/InvoiceDetailView.vue'
+import schema from '@/views/InvoiceDetailView.schema'
 import { fulfilmentFixture, invoiceFixture } from '../helpers/billingFixtures'
 import { captureDownloads } from '../helpers/captureDownloads'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** Route pattern of the screen, with the optional mode segment. */
 const PATTERN = '/billing/:id/:action?'
@@ -22,17 +24,16 @@ afterEach(() => {
 })
 
 describe('InvoiceDetailView', () => {
-  it('draws the tab strip, the fact tiles and the document card as placeholders while the invoice loads', async () => {
+  it('draws the cards of its schema as placeholders, without tabs, while the invoice loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
 
-    expect(wrapper.find('[data-testid="billing-invoice-summary"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="billing-invoice-client-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="billing-invoice-payments-table"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="billing-invoice-history-table"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="billing-invoice-items-table"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="billing-invoice-tab-payment"]').exists()).toBe(true)
-    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(4)
+    const cards = schema.columns.flat()
+    expect(wrapper.findAll('[data-testid^="ui-detail-card-"]')).toHaveLength(cards.length)
+    expect(wrapper.findAll('[data-testid="ui-detail-row"]')).toHaveLength(cards.reduce((sum, card) => sum + (card.rows?.length ?? 0), 0))
+    expect(wrapper.text()).toContain('Invoice Items')
+    expect(wrapper.find('[data-testid="billing-invoice-summary"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-tab-summary"]').exists()).toBe(false)
   })
 
   it('loads the invoice and shows its number and the summary tab', async () => {
@@ -87,7 +88,7 @@ describe('InvoiceDetailView', () => {
 
     const put = mock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')
     expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toEqual({ notes: 'Saved note' })
-    expect(wrapper.get('[data-testid="billing-invoice-notes-feedback"]').text()).toBe('Changes saved successfully.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
     expect((wrapper.get('[data-testid="billing-invoice-notes-input"]').element as HTMLTextAreaElement).value)
       .toBe('Saved note')
   })
@@ -249,5 +250,17 @@ describe('InvoiceDetailView', () => {
 
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="billing-invoice-summary"]').exists()).toBe(true)
+  })
+
+  it('returns to the invoices list with the back pill in the header', async () => {
+    stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
+    await flushPromises()
+
+    const back = wrapper.get('[data-testid="billing-invoice-back"]')
+
+    expect(back.attributes('href')).toBe('/billing/invoices')
+    expect(back.text()).toBe('Invoices')
+    expect(back.classes()).toContain('rounded-pill')
   })
 })

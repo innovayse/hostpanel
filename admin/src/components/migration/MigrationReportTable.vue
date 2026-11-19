@@ -29,6 +29,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function and the active locale (for time formatting). */
@@ -181,9 +182,9 @@ watch(page, () => {
           <UiTableRow>
             <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
             <UiTableHeader>{{ t('migration.migrationReportTable.identifier') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.reason') }}</UiTableHeader>
-            <UiTableHeader>{{ t('migration.migrationReportTable.time') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.reason') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact">{{ t('migration.migrationReportTable.time') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>

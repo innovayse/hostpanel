@@ -25,8 +25,8 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/PendingBankTransfersView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -37,6 +37,8 @@ import { clientPath, invoicePath } from '@/lib/routes'
 import { useBankTransfersStore } from '@/stores/bankTransfers'
 import type { PendingBankTransfer } from '@/types/pendingbanktransfer'
 import { UiTone } from '@/utils/ui/tone'
+import { Icon } from '@/lib/icons'
+import { schemaHeader } from '@/lib/schemaHeader'
 
 /** Longest note the API accepts, mirrored here so the field stops typing at the limit. */
 const NOTE_MAX_LENGTH = 1000
@@ -189,6 +191,7 @@ const handleReject = async (): Promise<void> => {
 const transferActions = (transfer: PendingBankTransfer): UiMenuAction[] => [
   {
     label: t('billing.bankTransfers.confirm'),
+    icon: Icon.CheckCircle,
     testid: `billing-bank-transfer-confirm-${transfer.invoiceId}`,
     /**
      * Opens the confirmation dialog for this transfer.
@@ -201,6 +204,7 @@ const transferActions = (transfer: PendingBankTransfer): UiMenuAction[] => [
   },
   {
     label: t('billing.bankTransfers.reject'),
+    icon: Icon.Close,
     testid: `billing-bank-transfer-reject-${transfer.invoiceId}`,
     danger: true,
     /**
@@ -219,10 +223,7 @@ onMounted(() => load(1))
 
 <template>
   <UiStack data-testid="billing-bank-transfers-view">
-    <UiPageHeader
-      :title="t('billing.bankTransfers.heading')"
-      :subtitle="t('billing.bankTransfers.subtitle')"
-    />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-bank-transfers-feedback" />
 
@@ -240,20 +241,12 @@ onMounted(() => load(1))
 
     <UiCard>
       <UiTable
+        :empty-text="t('billing.bankTransfers.empty')"
         :loading="store.loading && !hasRows"
         :empty="!store.loading && loadError === null && !hasRows"
         data-testid="billing-bank-transfers-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.bankTransfers.reference') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.bankTransfers.requested') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="transfer in store.transfers" :key="transfer.invoiceId" hoverable>
             <UiTableCell>
@@ -282,9 +275,6 @@ onMounted(() => load(1))
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('billing.bankTransfers.empty') }}
-        </template>
       </UiTable>
     </UiCard>
 

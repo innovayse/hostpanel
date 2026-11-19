@@ -46,6 +46,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -362,7 +363,7 @@ watch(settings, (loaded) => {
           <template v-if="setup?.profile">
             <UiText size="sm" tone="muted">{{ t('servers.ssh.installIntro', { profile: setup.profile, version: setup.bundleVersion }) }}</UiText>
             <UiStack direction="row" gap="sm" wrap>
-              <UiButton type="button" variant="secondary" :loading="generating" data-testid="server-ssh-generate" @click="handleGenerate">
+              <UiButton :action="UiActionKind.Generate" type="button" variant="secondary" :loading="generating" data-testid="server-ssh-generate" @click="handleGenerate">
                 {{ setup.publicKey ? t('servers.ssh.rotateIdentity') : t('servers.ssh.generateIdentity') }}
               </UiButton>
             </UiStack>
@@ -380,7 +381,7 @@ watch(settings, (loaded) => {
           <UiHeading :level="4">{{ t('servers.ssh.stepHostKey') }}</UiHeading>
           <UiText size="sm" tone="muted">{{ t('servers.ssh.hostKeyIntro') }}</UiText>
           <UiStack direction="row" gap="sm" wrap>
-            <UiButton type="button" variant="secondary" :loading="scanning" :disabled="!hasEndpoint" data-testid="server-ssh-scan" @click="handleScan">
+            <UiButton :action="UiActionKind.Test" type="button" variant="secondary" :loading="scanning" :disabled="!hasEndpoint" data-testid="server-ssh-scan" @click="handleScan">
               {{ t('servers.ssh.scanHostKey') }}
             </UiButton>
           </UiStack>
@@ -391,7 +392,7 @@ watch(settings, (loaded) => {
               <UiBadge :tone="scanMatches ? UiTone.Success : UiTone.Warning" dot data-testid="server-ssh-scan-match">
                 {{ scanMatches ? t('servers.ssh.matchesPinned') : t('servers.ssh.notPinned') }}
               </UiBadge>
-              <UiButton v-if="!scanMatches" type="button" variant="ghost" size="sm" data-testid="server-ssh-use-scanned" @click="useScannedFingerprint">
+              <UiButton :action="UiActionKind.Confirm" v-if="!scanMatches" type="button" variant="ghost" size="sm" data-testid="server-ssh-use-scanned" @click="useScannedFingerprint">
                 {{ t('servers.ssh.useScanned') }}
               </UiButton>
             </UiStack>
@@ -407,7 +408,7 @@ watch(settings, (loaded) => {
         <UiStack gap="sm" data-testid="server-ssh-step-test">
           <UiHeading :level="4">{{ t('servers.ssh.stepTest') }}</UiHeading>
           <UiStack direction="row" gap="sm" wrap>
-            <UiButton
+            <UiButton :action="UiActionKind.Test"
               type="button"
               variant="secondary"
               :loading="testing"
@@ -467,10 +468,10 @@ watch(settings, (loaded) => {
     <template #footer>
       <UiText v-if="showSaved" size="sm" tone="success" data-testid="server-ssh-saved">{{ t('servers.ssh.saved') }}</UiText>
       <UiText v-else-if="saveFailure" size="sm" tone="danger" data-testid="server-ssh-save-status">{{ saveFailure }}</UiText>
-      <UiButton type="button" variant="secondary" data-testid="server-ssh-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Close" type="button" variant="secondary" data-testid="server-ssh-cancel" @click="emit('close')">
         {{ t('shared.close') }}
       </UiButton>
-      <UiButton type="button" variant="primary" :loading="saving" :disabled="busy || !settings" data-testid="server-ssh-save" @click="handleSave">
+      <UiButton :action="UiActionKind.Save" type="button" variant="primary" :loading="saving" :disabled="busy || !settings" data-testid="server-ssh-save" @click="handleSave">
         {{ t('shared.saveChanges') }}
       </UiButton>
     </template>

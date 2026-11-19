@@ -25,13 +25,6 @@ const line = (overrides: Partial<QuoteLineDraft> = {}): QuoteLineDraft => ({
 })
 
 describe('QuoteItemsEditor', () => {
-  it('draws placeholder rows and no totals while loading', () => {
-    const wrapper = mountWithApp(QuoteItemsEditor, { props: { modelValue: [], loading: true } })
-
-    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="billing-quote-total"]').exists()).toBe(false)
-  })
-
   it('totals each line after its discount', () => {
     const wrapper = mountWithApp(QuoteItemsEditor, { props: { modelValue: [line(), line({ discountPercent: 0 })] } })
 

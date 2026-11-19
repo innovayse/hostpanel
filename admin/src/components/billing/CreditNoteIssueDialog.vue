@@ -29,6 +29,7 @@ import type { InvoiceDetail } from '@/types/invoice'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiTextTone } from '@/utils/ui/text'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -217,7 +218,7 @@ const submit = (): void => {
       <UiStack gap="sm">
         <UiStack direction="row" justify="between">
           <UiText :tone="UiTextTone.Primary">{{ t('billing.creditNotes.lines') }}</UiText>
-          <UiButton size="sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-use-invoice-lines" @click="useInvoiceLines">
+          <UiButton :action="UiActionKind.Confirm" size="sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-use-invoice-lines" @click="useInvoiceLines">
             {{ t('billing.creditNotes.useInvoiceLines') }}
           </UiButton>
         </UiStack>
@@ -243,7 +244,7 @@ const submit = (): void => {
             :placeholder="t('billing.creditNotes.quantityPlaceholder')"
             :data-testid="`billing-credit-note-line-${index}-quantity`"
           />
-          <UiButton
+          <UiButton :action="UiActionKind.Remove"
             size="sm"
             :variant="UiButtonVariant.Secondary"
             :disabled="lines.length === 1"
@@ -253,7 +254,7 @@ const submit = (): void => {
             {{ t('billing.creditNotes.removeLine') }}
           </UiButton>
         </UiGrid>
-        <UiButton size="sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-add-line" @click="addLine">
+        <UiButton :action="UiActionKind.Add" size="sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-add-line" @click="addLine">
           {{ t('billing.creditNotes.addLine') }}
         </UiButton>
       </UiStack>
@@ -307,10 +308,10 @@ const submit = (): void => {
     </UiStack>
 
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton :loading="loading" :disabled="loading" data-testid="billing-credit-note-submit" @click="submit">
+      <UiButton :action="UiActionKind.Confirm" :loading="loading" :disabled="loading" data-testid="billing-credit-note-submit" @click="submit">
         {{ t('billing.creditNotes.issue') }}
       </UiButton>
     </template>

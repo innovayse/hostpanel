@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 
@@ -75,10 +76,11 @@ public sealed class ListIntegrationsHandler
 
             var isConfigured = plugin.RequiredSettingKeys.All(key => settings.HasValue(plugin.Slug, key));
 
+            var manifest = _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == plugin.Slug);
+
             // Only a switched-on plugin is asked: a switched-off one would only answer "inactive", which its
             // card already shows, and asking it would run plugin code on every list load for nothing.
-            var manifest = isEnabled ? _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == plugin.Slug) : null;
-            var connection = manifest is null ? null : await _connections.ReadAsync(manifest, ct);
+            var connection = isEnabled && manifest is not null ? await _connections.ReadAsync(manifest, ct) : null;
 
             result.Add(new IntegrationListItemDto(
                 Slug: plugin.Slug,
@@ -89,7 +91,8 @@ public sealed class ListIntegrationsHandler
                 IsPlugin: true,
                 PluginType: plugin.Type,
                 Connection: connection,
-                IconUrl: plugin.IconUrl));
+                IconUrl: plugin.IconUrl,
+                Description: manifest is null ? null : PluginText.Resolve(manifest, manifest.Description)));
         }
 
         return Result<IReadOnlyList<IntegrationListItemDto>>.Success(result);

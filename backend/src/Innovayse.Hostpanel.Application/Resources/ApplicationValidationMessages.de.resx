@@ -1777,4 +1777,10 @@
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Die maximale Anzahl aktiver Services muss 0 oder leer für unbegrenzt oder eine positive Zahl sein.</value>
   </data>
+  <data name="VatRateListKindInvalid" xml:space="preserve">
+    <value>Die Art muss eine der folgenden sein: Standard, Reduced.</value>
+  </data>
+  <data name="VatRateListStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Active, Superseded, Upcoming.</value>
+  </data>
 </root>

@@ -9,6 +9,8 @@ import ManageUsersView from '@/views/ManageUsersView.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
+import schema from '@/views/ManageUsersView.schema'
 
 /** One user as the list endpoint returns it. */
 const user = {
@@ -246,5 +248,12 @@ describe('ManageUsersView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="users-action-error"]').text()).toContain('The user owns an account.')
+  })
+
+  it('draws the table head from the schema columns while the first load is in flight', async () => {
+    stubPendingFetch()
+    const wrapper = await mountUsers()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

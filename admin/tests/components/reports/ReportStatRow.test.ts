@@ -35,4 +35,14 @@ describe('ReportStatRow', () => {
 
     expect(wrapper.findAll('[data-testid^="report-stat-"]')).toHaveLength(0)
   })
+
+  it('explains a metric in a tooltip on an info icon, only for a stat that has one', () => {
+    const wrapper = mount(ReportStatRow, {
+      props: { stats: [{ key: 'net', label: 'Net', value: '$1', tooltip: 'Income minus refunds' }, { key: 'gross', label: 'Gross', value: '$2' }] },
+    })
+
+    expect(wrapper.get('[data-testid="report-stat-net-tooltip"]').attributes('aria-label')).toBe('Income minus refunds')
+    expect(wrapper.get('[role="tooltip"]').text()).toBe('Income minus refunds')
+    expect(wrapper.find('[data-testid="report-stat-gross-tooltip"]').exists()).toBe(false)
+  })
 })

@@ -12,6 +12,8 @@ import { stubRoutes } from '../helpers/routes'
 import { applyListFilter } from '../helpers/listFilter'
 import { json } from '../helpers/fetch'
 import { BillingCycle, ServiceStatus } from '@/types/service'
+import schema from '@/views/ClientServicesListView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 
 /** One service of the client as the list endpoint returns it. */
 const service = {
@@ -164,5 +166,21 @@ describe('ClientServicesListView', () => {
     await flushPromises()
 
     expect(fetchMock.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubTab()
+    const { wrapper } = await mountTabAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientServicesListView, '/clients/:id/services', '/clients/5/services')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

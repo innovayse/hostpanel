@@ -3,15 +3,14 @@
  * The outside links of a plugin: documentation, support, source repository and where to buy a
  * licence, plus the licence name. A link the registry does not give is left out, and an address
  * that is not http or https is dropped (the registry is a third party, and a `javascript:` address
- * must never become a link). Renders nothing when there is nothing to show. Without details (still being read) it draws
- * the card with its heading and bars in place of the links.
+ * must never become a link). Renders nothing when there is nothing to show. While the details are read the page draws the
+ * links card of `PluginDetailsView.schema` (its heading and a row of bars) instead.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { LinkKind } from '@/types/plugin'
@@ -23,8 +22,8 @@ const { t } = useI18n()
 
 /** Props for PluginDetailsLinks. */
 const props = defineProps<{
-  /** The plugin's registry details; null while they are being read. */
-  details: RegistryPluginDetailsDto | null
+  /** The plugin's registry details. */
+  details: RegistryPluginDetailsDto
 }>()
 
 /** One link ready to render. */
@@ -55,9 +54,6 @@ const isWebAddress = (value: string | null): value is string => {
 
 /** The links to show, in a fixed order, without the missing or unsafe ones. */
 const links = computed<LinkItem[]>(() => {
-  if (props.details === null) {
-    return []
-  }
   const candidates: { kind: LinkKind; href: string | null }[] = [
     { kind: LinkKind.Documentation, href: props.details.documentationUrl },
     { kind: LinkKind.Support, href: props.details.supportUrl },
@@ -69,15 +65,10 @@ const links = computed<LinkItem[]>(() => {
 </script>
 
 <template>
-  <UiCard v-if="details === null || links.length > 0 || details.licence !== null" padding="md" :aria-busy="details === null ? 'true' : undefined" data-testid="plugin-details-links">
+  <UiCard v-if="links.length > 0 || details.licence !== null" padding="md" data-testid="plugin-details-links">
     <UiStack gap="sm">
       <UiHeading :level="2" variant="section">{{ t('pluginDetails.links.heading') }}</UiHeading>
-      <UiStack v-if="details === null" direction="row" align="center" gap="md" aria-hidden="true">
-        <UiSkeletonBar class="h-4 w-28 rounded-md" />
-        <UiSkeletonBar class="h-4 w-20 rounded-md" />
-        <UiSkeletonBar class="h-4 w-24 rounded-md" />
-      </UiStack>
-      <UiStack v-else direction="row" align="center" gap="md" wrap>
+      <UiStack direction="row" align="center" gap="md" wrap>
         <UiLink
           v-for="link in links"
           :key="link.kind"
@@ -89,7 +80,7 @@ const links = computed<LinkItem[]>(() => {
           {{ t(`pluginDetails.links.${link.kind}`) }}
         </UiLink>
       </UiStack>
-      <UiText v-if="details !== null && details.licence !== null" tone="muted" size="sm" data-testid="plugin-details-licence-name">
+      <UiText v-if="details.licence !== null" tone="muted" size="sm" data-testid="plugin-details-licence-name">
         {{ t('pluginDetails.links.licence', { licence: details.licence }) }}
       </UiText>
     </UiStack>

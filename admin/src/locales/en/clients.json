@@ -145,10 +145,11 @@
   "clientBillableItems": {
     "billableItems": "Billable Items",
     "addTimeBillingEntries": "Add Time Billing Entries",
-    "addBillableItem": "+ Add Billable Item",
+    "addBillableItem": "Add Billable Item",
     "uninvoicedItemsLength": "Uninvoiced Items ({length})",
     "uninvoicedItemsAmountLength": "Uninvoiced items: {amount} ({length})",
     "invoiceSelectedItems": "Invoice Selected Items",
+    "invoiceSelected": "Invoice",
     "noUninvoicedBillableItems": "No uninvoiced billable items.",
     "invoicedItems": "Invoiced Items",
     "invoicedtotalcountItemValue": "Items: {invoicedTotalCount}",
@@ -168,7 +169,7 @@
   },
   "clientContacts": {
     "contactsLength": "Contacts ({length})",
-    "addContact": "+ Add Contact",
+    "addContact": "Add Contact",
     "noContactsAddedYet": "No contacts added yet",
     "deleteContact": "Delete Contact",
     "areYouSureYouWant": "Are you sure you want to delete this contact? This cannot be undone.",
@@ -242,11 +243,11 @@
     "searchEmails": "Search emails"
   },
   "clientInvoices": {
-    "createInvoice": "+ Create Invoice",
+    "createInvoice": "Create Invoice",
     "newInvoice": "New Invoice",
     "selectDueDate": "Select due date",
     "createAsDraft": "Create as Draft",
-    "addItem": "+ Add Item",
+    "addItem": "Add Item",
     "createInvoice2": "Create Invoice",
     "allStatuses": "All Statuses",
     "clientinvoicestotalInvoiceValue": "Invoices: {clientInvoicesTotal}",
@@ -301,7 +302,7 @@
     "noContactsAddedYet": "No contacts added yet"
   },
   "clientQuotes": {
-    "createNewQuote": "+ Create New Quote",
+    "createNewQuote": "Create New Quote",
     "createDate": "Create Date",
     "noQuotesFound": "No quotes found.",
     "clientquotestotalQuoteValue": "Quotes: {clientQuotesTotal}",
@@ -313,7 +314,7 @@
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Service #{id}: {productName}",
-    "loginToControlPanel": "Login to Control Panel",
+    "loginToControlPanel": "Open Panel",
     "serviceInfo": "Service Info",
     "order": "Order #",
     "server": "Server",
@@ -470,7 +471,7 @@
     "totalcountTicketValue": "Tickets: {totalCount}"
   },
   "clientTransactions": {
-    "addNewTransaction": "+ Add New Transaction",
+    "addNewTransaction": "Add New Transaction",
     "totalIn": "Total In",
     "totalFees": "Total Fees",
     "totalOut": "Total Out",
@@ -484,7 +485,7 @@
   },
   "clientUsers": {
     "usersLength": "Users ({length})",
-    "addUser": "+ Add User",
+    "addUser": "Add User",
     "addUserToAccount": "Add User to Account",
     "searchExisting": "Search Existing",
     "inviteByEmail": "Invite by Email",

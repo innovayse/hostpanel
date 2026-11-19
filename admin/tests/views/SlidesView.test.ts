@@ -86,9 +86,10 @@ describe('SlidesView', () => {
 
     expect(rows.map((row) => row.attributes('data-testid'))).toEqual(['slide-row-1', 'slide-row-2'])
     expect(rows[0]?.text()).toContain('Welcome')
-    expect(rows[0]?.text()).toContain('Active')
+    expect(rows[0]?.get('[role="img"]').attributes('aria-label')).toBe('Active')
     expect(rows[0]?.text()).toContain('Always')
-    expect(rows[1]?.text()).toContain('Inactive')
+    expect(rows[1]?.get('[role="img"]').attributes('aria-label')).toBe('Inactive')
+    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
     expect(rows[1]?.text()).toContain('Authenticated')
   })
 

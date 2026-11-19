@@ -145,10 +145,11 @@
   "clientBillableItems": {
     "billableItems": "Վճարվող դիրքեր",
     "addTimeBillingEntries": "Ավելացնել ժամանակի հաշվառման գրառումներ",
-    "addBillableItem": "+ Ավելացնել վճարվող դիրք",
+    "addBillableItem": "Ավելացնել վճարվող դիրք",
     "uninvoicedItemsLength": "Չհաշվարկված դիրքեր ({length})",
     "uninvoicedItemsAmountLength": "Չհաշվարկված կետեր՝ {amount} ({length})",
     "invoiceSelectedItems": "Հաշիվ դուրս գրել ընտրված դիրքերի համար",
+    "invoiceSelected": "Հաշիվ",
     "noUninvoicedBillableItems": "Չհաշվարկված վճարվող դիրքեր չկան։",
     "invoicedItems": "Հաշվարկված դիրքեր",
     "invoicedtotalcountItemValue": "Դիրքեր՝ {invoicedTotalCount}",
@@ -168,7 +169,7 @@
   },
   "clientContacts": {
     "contactsLength": "Կոնտակտներ ({length})",
-    "addContact": "+ Ավելացնել կոնտակտ",
+    "addContact": "Ավելացնել կոնտակտ",
     "noContactsAddedYet": "Կոնտակտներ դեռ չեն ավելացվել",
     "deleteContact": "Ջնջել կոնտակտը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս կոնտակտը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
@@ -242,11 +243,11 @@
     "searchEmails": "Որոնել նամակներում"
   },
   "clientInvoices": {
-    "createInvoice": "+ Ստեղծել հաշիվ",
+    "createInvoice": "Ստեղծել հաշիվ",
     "newInvoice": "Նոր հաշիվ",
     "selectDueDate": "Ընտրեք վճարման ժամկետը",
     "createAsDraft": "Ստեղծել որպես սևագիր",
-    "addItem": "+ Ավելացնել դիրք",
+    "addItem": "Ավելացնել դիրք",
     "createInvoice2": "Ստեղծել հաշիվ",
     "allStatuses": "Բոլոր կարգավիճակները",
     "clientinvoicestotalInvoiceValue": "Հաշիվներ՝ {clientInvoicesTotal}",
@@ -301,7 +302,7 @@
     "noContactsAddedYet": "Կոնտակտներ դեռ չեն ավելացվել"
   },
   "clientQuotes": {
-    "createNewQuote": "+ Ստեղծել նոր առաջարկ",
+    "createNewQuote": "Ստեղծել նոր առաջարկ",
     "createDate": "Ստեղծման ամսաթիվ",
     "noQuotesFound": "Առաջարկներ չեն գտնվել։",
     "clientquotestotalQuoteValue": "Առաջարկներ՝ {clientQuotesTotal}",
@@ -313,7 +314,7 @@
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Ծառայություն №{id}՝ {productName}",
-    "loginToControlPanel": "Մուտք կառավարման վահանակ",
+    "loginToControlPanel": "Բացել վահանակը",
     "serviceInfo": "Տեղեկություններ ծառայության մասին",
     "order": "Պատվեր №",
     "server": "Սերվեր",
@@ -470,7 +471,7 @@
     "totalcountTicketValue": "Տոմսեր՝ {totalCount}"
   },
   "clientTransactions": {
-    "addNewTransaction": "+ Ավելացնել նոր գործարք",
+    "addNewTransaction": "Ավելացնել նոր գործարք",
     "totalIn": "Ընդհանուր մուտք",
     "totalFees": "Ընդհանուր միջնորդավճարներ",
     "totalOut": "Ընդհանուր ելք",
@@ -484,7 +485,7 @@
   },
   "clientUsers": {
     "usersLength": "Օգտատերեր ({length})",
-    "addUser": "+ Ավելացնել օգտատեր",
+    "addUser": "Ավելացնել օգտատեր",
     "addUserToAccount": "Ավելացնել օգտատեր հաշվին",
     "searchExisting": "Գտնել առկա օգտատիրոջը",
     "inviteByEmail": "Հրավիրել էլ. փոստով",

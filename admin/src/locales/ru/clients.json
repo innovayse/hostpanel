@@ -145,10 +145,11 @@
   "clientBillableItems": {
     "billableItems": "Оплачиваемые позиции",
     "addTimeBillingEntries": "Добавить записи учёта времени",
-    "addBillableItem": "+ Добавить оплачиваемую позицию",
+    "addBillableItem": "Добавить оплачиваемую позицию",
     "uninvoicedItemsLength": "Невыставленные позиции ({length})",
     "uninvoicedItemsAmountLength": "Невыставленные позиции: {amount} ({length})",
     "invoiceSelectedItems": "Выставить счёт по выбранным позициям",
+    "invoiceSelected": "Счёт",
     "noUninvoicedBillableItems": "Нет невыставленных оплачиваемых позиций.",
     "invoicedItems": "Выставленные позиции",
     "invoicedtotalcountItemValue": "Позиций: {invoicedTotalCount}",
@@ -168,7 +169,7 @@
   },
   "clientContacts": {
     "contactsLength": "Контакты ({length})",
-    "addContact": "+ Добавить контакт",
+    "addContact": "Добавить контакт",
     "noContactsAddedYet": "Контакты пока не добавлены",
     "deleteContact": "Удалить контакт",
     "areYouSureYouWant": "Вы уверены, что хотите удалить этот контакт? Это действие нельзя отменить.",
@@ -242,11 +243,11 @@
     "searchEmails": "Поиск по письмам"
   },
   "clientInvoices": {
-    "createInvoice": "+ Создать счёт",
+    "createInvoice": "Создать счёт",
     "newInvoice": "Новый счёт",
     "selectDueDate": "Выберите срок оплаты",
     "createAsDraft": "Создать как черновик",
-    "addItem": "+ Добавить позицию",
+    "addItem": "Добавить позицию",
     "createInvoice2": "Создать счёт",
     "allStatuses": "Все статусы",
     "clientinvoicestotalInvoiceValue": "Счетов: {clientInvoicesTotal}",
@@ -301,7 +302,7 @@
     "noContactsAddedYet": "Контакты пока не добавлены"
   },
   "clientQuotes": {
-    "createNewQuote": "+ Создать новое предложение",
+    "createNewQuote": "Создать новое предложение",
     "createDate": "Дата создания",
     "noQuotesFound": "Предложения не найдены.",
     "clientquotestotalQuoteValue": "Предложений: {clientQuotesTotal}",
@@ -313,7 +314,7 @@
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Услуга №{id}: {productName}",
-    "loginToControlPanel": "Войти в панель управления",
+    "loginToControlPanel": "Открыть панель",
     "serviceInfo": "Сведения об услуге",
     "order": "Заказ №",
     "server": "Сервер",
@@ -470,7 +471,7 @@
     "totalcountTicketValue": "Тикетов: {totalCount}"
   },
   "clientTransactions": {
-    "addNewTransaction": "+ Добавить новую транзакцию",
+    "addNewTransaction": "Добавить новую транзакцию",
     "totalIn": "Всего поступлений",
     "totalFees": "Всего комиссий",
     "totalOut": "Всего расходов",
@@ -484,7 +485,7 @@
   },
   "clientUsers": {
     "usersLength": "Пользователи ({length})",
-    "addUser": "+ Добавить пользователя",
+    "addUser": "Добавить пользователя",
     "addUserToAccount": "Добавить пользователя в аккаунт",
     "searchExisting": "Найти существующего",
     "inviteByEmail": "Пригласить по почте",

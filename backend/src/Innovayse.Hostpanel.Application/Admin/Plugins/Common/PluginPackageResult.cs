@@ -11,6 +11,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Version">The version of the package that was installed or staged; <see langword="null"/> otherwise.</param>
 /// <param name="PreviousVersion">The installed version a staged package replaces; <see langword="null"/> otherwise.</param>
 /// <param name="SignatureRule">The signature check the package failed when <paramref name="Outcome"/> is <see cref="PluginPackageOutcome.SignatureRefused"/>; <see langword="null"/> otherwise.</param>
+/// <param name="SizeBytes">The size in bytes of the accepted archive when <paramref name="Outcome"/> is an install or a staged upload; zero otherwise.</param>
+/// <param name="SignerKeyId">The id of the trusted key whose signature on the accepted package was verified; <see langword="null"/> for an unsigned package and for every other outcome.</param>
 public sealed record PluginPackageResult(
     PluginPackageOutcome Outcome,
     string? PluginId,
@@ -18,4 +20,6 @@ public sealed record PluginPackageResult(
     PluginManifestRule? Rule = null,
     PluginSignatureRule? SignatureRule = null,
     string? Version = null,
-    string? PreviousVersion = null);
+    string? PreviousVersion = null,
+    long SizeBytes = 0,
+    string? SignerKeyId = null);

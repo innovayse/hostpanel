@@ -76,26 +76,17 @@
       "label": "Часы работы",
       "hint": "Пн-Пт 09:00-18:00"
     },
-    "contactHoursRu": {
-      "label": "Часы работы (русский)",
-      "hint": "Для русскоязычных посетителей. Если пусто, используются основные часы"
-    },
-    "contactHoursHy": {
-      "label": "Часы работы (армянский)",
-      "hint": "Для армяноязычных посетителей. Если пусто, используются основные часы"
+    "groups": {
+      "figures": "Цифры",
+      "contacts": "Контакты",
+      "messengers": "Мессенджеры",
+      "address": "Адрес и часы работы"
     },
     "contactTimezone": {
       "label": "Часовой пояс",
-      "hint": "UTC+4"
+      "hint": "Пояс, в котором указаны часы работы, показывается рядом с ними. Выберите город в нужном поясе."
     },
-    "contactAddressRu": {
-      "label": "Адрес (русский)",
-      "hint": "Для русскоязычных посетителей. Если пусто, используется основной адрес"
-    },
-    "contactAddressHy": {
-      "label": "Адрес (армянский)",
-      "hint": "Для армяноязычных посетителей. Если пусто, используется основной адрес"
-    }
+    "localeFallbackHint": "Язык, оставленный пустым, показывает английский текст."
   },
   "portalAppearance": {
     "title": "Оформление портала",
@@ -215,6 +206,12 @@
   "hostingDetails": {
     "title": "Данные о хостинге",
     "description": "Цифры и факты для разделов производительности, безопасности, установщика, гарантий и поддержки. Оставьте цифру пустой, чтобы скрыть её.",
+    "groups": {
+      "performance": "Показатели производительности",
+      "guarantees": "Гарантии",
+      "support": "Время ответа поддержки",
+      "features": "Возможности"
+    },
     "statsResponseTime": {
       "label": "Время отклика",
       "hint": "Например, 180 мс"
@@ -325,6 +322,7 @@
     "title": "Аналитика и чат",
     "description": "Сторонние сервисы, к которым обращается витрина. Ничего не загружается, пока не настроено здесь.",
     "gtm": {
+      "title": "Менеджер тегов",
       "label": "Контейнер Google Tag Manager",
       "hint": "Загружается только после того, как посетитель принял все cookie. Если пусто, тег не загружается."
     },
@@ -334,8 +332,6 @@
       "baseUrlHint": "https://chat.example.com",
       "token": "Токен сайта",
       "tokenHint": "Из настроек inbox в чате",
-      "tokenRu": "Токен для русскоязычных",
-      "tokenHy": "Токен для армяноязычных",
       "tokenLocaleHint": "Необязательно. Если пусто, используется основной",
       "hint": "Виджет появляется, только когда заданы провайдер, сервер и токен."
     },
@@ -436,6 +432,51 @@
     "emailTemplates": "Шаблоны писем",
     "noTemplatesFound": "Шаблоны не найдены.",
     "languages": "Языки",
+    "searchPlaceholder": "Поиск по названию или теме",
+    "groupFilter": "Группа",
+    "noMatches": "Нет шаблонов по вашему запросу",
+    "groups": {
+      "bank": "Банковский перевод",
+      "card": "Карты",
+      "credit": "Кредит",
+      "domain": "Домены",
+      "email": "Рассылки",
+      "gateway": "Платёжные шлюзы",
+      "invoice": "Счета",
+      "order": "Заказы",
+      "service": "Услуги",
+      "user": "Аккаунты"
+    },
+    "names": {
+      "bank-transfer-confirmed": "Банковский перевод подтверждён",
+      "bank-transfer-details": "Реквизиты банковского перевода",
+      "bank-transfer-rejected": "Банковский перевод отклонён",
+      "bank-transfer-requested-admin": "Запрос банковского перевода (персонал)",
+      "card-charge-action-required": "Списание с карты требует действия",
+      "card-charge-declined": "Списание с карты отклонено",
+      "credit-balance-changed": "Изменился кредитный баланс",
+      "credit-note-issued": "Выставлена кредитная нота",
+      "domain-expired": "Домен истёк",
+      "domain-expiring": "Домен скоро истекает",
+      "domain-registered": "Домен зарегистрирован",
+      "domain-registration-failed": "Не удалось зарегистрировать домен",
+      "domain-registration-failed-admin": "Не удалось зарегистрировать домен (персонал)",
+      "domain-renewal-failed-admin": "Не удалось продлить домен (персонал)",
+      "domain-renewed": "Домен продлён",
+      "domain-transferred": "Домен перенесён",
+      "email-campaign": "Рассылка",
+      "gateway-payment-credited-admin": "Платёж зачислен (персонал)",
+      "gateway-payment-stalled-admin": "Платёж завис (персонал)",
+      "gateway-payment-without-reference-admin": "Платёж без референса (персонал)",
+      "invoice-renewal-reminder": "Напоминание о продлении счёта",
+      "order-rejected": "Заказ отклонён",
+      "service-termination-failed-admin": "Не удалось завершить услугу (персонал)",
+      "user-email-change": "Подтверждение смены email",
+      "user-email-changed-notice": "Уведомление о смене email",
+      "user-email-verification": "Подтверждение email",
+      "user-invite": "Приглашение пользователя",
+      "user-password-reset": "Сброс пароля"
+    },
     "body": "Текст (HTML)",
     "missingVersion": "У этого шаблона ещё нет версии на этом языке, поэтому письма на нём уходят на английском. Сохранение добавит её.",
     "subjectPlaceholder": "Тема письма, можно использовать переменные",
@@ -443,7 +484,6 @@
     "descriptionPlaceholder": "Когда отправляется это письмо"
   },
   "products": {
-    "products": "Продукты",
     "manageHostingPlansAndServices": "Управление тарифами хостинга и услугами, доступными для покупки",
     "createProduct": "Создать продукт",
     "group": "Группа",
@@ -466,7 +506,6 @@
     "typeSsl": "SSL"
   },
   "productBundles": {
-    "title": "Комплекты продуктов",
     "subtitle": "Продавайте продукты вместе как одно предложение, при желании с регистрацией домена и скидкой.",
     "add": "Создать комплект",
     "empty": "Комплектов продуктов пока нет.",
@@ -506,16 +545,12 @@
     "activeHint": "Неактивный комплект скрыт на витрине."
   },
   "slideForm": {
-    "slides": "Слайды",
     "generalSettings": "Общие настройки",
     "icon": "Значок",
     "orTypeMdiIconName": "Или введите имя значка MDI (например, cloud-check)",
     "brandColor": "Фирменный цвет",
     "image": "Изображение",
     "slidePreview": "Предпросмотр слайда",
-    "removeImage": "Удалить изображение",
-    "jpegPngWebpSvgMax": "JPEG, PNG, WebP, SVG, не более 5 МБ",
-    "orPasteImageUrl": "Или вставьте URL изображения",
     "demoUrl": "URL демо",
     "demoUrlPlaceholder": "https://demo.example.com",
     "optionalTryDemoButtonLink": "Необязательная ссылка для кнопки «Попробовать демо» на слайде",
@@ -563,21 +598,11 @@
     "finance": "Финансы",
     "media": "Медиа",
     "health": "Здоровье",
-    "pageTitleEdit": "Редактирование слайда",
-    "pageTitleCreate": "Создание слайда",
     "featureNumber": "Особенность {number}",
-    "locales": {
-      "en": "Английский",
-      "ru": "Русский",
-      "hy": "Армянский",
-      "de": "Немецкий",
-      "es": "Испанский"
-    },
     "notFound": "Слайд №{id} не найден.",
     "ai": "ИИ"
   },
   "slides": {
-    "slides": "Слайды",
     "manageHomepageHeroSlidesDrag": "Управление слайдами главной страницы. Перетащите, чтобы изменить порядок.",
     "addSlide": "Добавить слайд",
     "image": "Изображение",
@@ -596,7 +621,6 @@
     "deleteMessage": "Удалить «{title}»? Это действие нельзя отменить."
   },
   "tldConfigForm": {
-    "tldPricing": "Цены на TLD",
     "generalSettings": "Общие настройки",
     "tld": "TLD",
     "domainExtensionWithoutTheDot": "Доменное расширение без точки (например, «com», «net», «am»)",
@@ -614,16 +638,16 @@
     "costCostsymbol": "Себестоимость ({costSymbol})",
     "sellSellsymbol": "Продажа ({sellSymbol})",
     "margin": "Маржа",
+    "marginDifferentCurrencies": "Себестоимость и цена продажи в разных валютах, поэтому здесь маржа не считается. Список цен показывает её по текущему курсу",
     "years": "Лет",
     "transferPricing": "Цены на перенос",
     "renewalPricing": "Цены на продление",
     "createTld": "Создать TLD",
+    "editTld": "Редактировать TLD",
     "unsavedChanges": "Несохранённые изменения",
     "youHaveUnsavedChangesAre": "У вас есть несохранённые изменения. Вы уверены, что хотите уйти?",
     "leave": "Уйти",
     "tldIsRequired": "Требуется TLD.",
-    "addTld": "Добавить TLD",
-    "editTld": "Изменить TLD",
     "notFound": "Конфигурация TLD №{id} не найдена."
   },
   "tldConfigs": {
@@ -632,7 +656,7 @@
     "import": "Импорт",
     "nameAm": "Name.am",
     "namecheap": "Namecheap",
-    "syncPrices": "Синхронизировать цены",
+    "syncPrices": "Синхр. цены",
     "addTld": "Добавить TLD",
     "searchTlds": "Поиск TLD",
     "tld": "TLD",
@@ -640,6 +664,7 @@
     "cost1yr": "Себестоимость (1 год)",
     "sell1yr": "Продажа (1 год)",
     "margin": "Маржа",
+    "marginUnavailable": "Маржи нет: не задана цена или нет курса между валютой себестоимости и валютой продажи",
     "lastSynced": "Последняя синхронизация",
     "editTld": "Редактировать TLD",
     "deleteTld": "Удалить TLD",
@@ -654,7 +679,6 @@
     "never": "Никогда"
   },
   "index": {
-    "title": "Настройки",
     "subtitle": "Всё, что определяет панель и витрину, сгруппировано по назначению.",
     "groups": {
       "storefront": "Витрина и каталог",
@@ -720,12 +744,27 @@
     "title": "Дополнительные настройки",
     "description": "Настройки, для которых нет отдельной карточки. Ключи и значения редактируются здесь."
   },
+  "timezone": {
+    "none": "Без часового пояса",
+    "placeholder": "Выберите часовой пояс",
+    "regions": {
+      "Africa": "Африка",
+      "America": "Америка",
+      "Antarctica": "Антарктида",
+      "Arctic": "Арктика",
+      "Asia": "Азия",
+      "Atlantic": "Атлантический океан",
+      "Australia": "Австралия",
+      "Europe": "Европа",
+      "Indian": "Индийский океан",
+      "Pacific": "Тихий океан",
+      "UTC": "UTC"
+    }
+  },
   "saveBar": {
     "unsaved": "{count} несохранённое изменение | {count} несохранённых изменения | {count} несохранённых изменений",
     "clean": "Нет несохранённых изменений",
-    "saveAll": "Сохранить изменения",
-    "discard": "Отменить изменения",
-    "saveShort": "Сохранить",
-    "discardShort": "Отменить"
+    "save": "Сохранить",
+    "discard": "Отменить"
   }
 }

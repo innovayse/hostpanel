@@ -8,6 +8,7 @@ import MigrationView from '@/views/MigrationView.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
+import { useToastStore } from '@/stores/toast'
 import { migrationJob } from '../helpers/migrationFixtures'
 
 /**
@@ -38,12 +39,35 @@ describe('MigrationView', () => {
     expect(wrapper.find('[data-testid="migration-none-selected"]').exists()).toBe(false)
   })
 
-  it('lists the jobs in the history and asks to pick one', async () => {
+  it('lists the jobs in the history and asks to pick one, without the first-migration call to action', async () => {
     stubRoutes({ 'GET /api/admin/migrations': () => json([migrationJob()]) })
     const wrapper = await mountMigration()
 
     expect(wrapper.get('[data-testid="migration-job-5"]').text()).toContain('Production')
-    expect(wrapper.find('[data-testid="migration-none-selected"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="migration-none-selected"]').text()).toContain('Select a migration from the history')
+    expect(wrapper.find('[data-testid="migration-start-first"]').exists()).toBe(false)
+  })
+
+  it('offers the first migration when there is no history', async () => {
+    stubRoutes({ 'GET /api/admin/migrations': () => json([]) })
+    const wrapper = await mountMigration()
+
+    expect(wrapper.get('[data-testid="migration-none-selected"]').text()).not.toContain('Select a migration from the history')
+    expect(wrapper.find('[data-testid="migration-start-first"]').exists()).toBe(true)
+  })
+
+  it('highlights the selected job in the history', async () => {
+    stubRoutes({
+      'GET /api/admin/migrations/5': () => json(migrationJob()),
+      'GET /api/admin/migrations': () => json([migrationJob()]),
+    })
+    const wrapper = await mountMigration()
+    expect(wrapper.get('[data-testid="migration-job-5"]').attributes('data-selected')).toBeUndefined()
+
+    await wrapper.get('[data-testid="migration-select-5"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="migration-job-5"]').attributes('data-selected')).toBe('true')
   })
 
   it('shows the setup instructions and the secret key of a selected pending job', async () => {
@@ -124,7 +148,7 @@ describe('MigrationView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(true)
-    expect(wrapper.get('[data-testid="migration-feedback"]').text()).toBe('Migration deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Migration deleted.'])
   })
 
   it('shows the API sentence when the delete is refused, without the load error', async () => {
@@ -169,5 +193,16 @@ describe('MigrationView', () => {
 
     expect(wrapper.get('[data-testid="migration-create-error"]').text()).toBe('The source address is unreachable.')
     expect(wrapper.find('[data-testid="migration-error"]').exists()).toBe(false)
+  })
+
+  it('draws the delete button of a job as an icon with a hint, not a text cross', async () => {
+    const job = migrationJob()
+    stubRoutes({ 'GET /api/admin/migrations': () => json([job]) })
+    const wrapper = await mountMigration()
+    const remove = wrapper.get(`[data-testid="migration-delete-${job.id}"]`)
+
+    expect(remove.find('svg').exists()).toBe(true)
+    expect(remove.text()).toBe('')
+    expect(wrapper.get(`[data-testid="migration-job-${job.id}"]`).get('[role="tooltip"]').text()).toBe('Delete migration')
   })
 })

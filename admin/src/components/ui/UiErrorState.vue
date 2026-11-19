@@ -13,6 +13,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -41,6 +42,7 @@ const emit = defineEmits<{
       {{ message }}
     </UiAlert>
     <UiButton
+      :action="UiActionKind.Refresh"
       type="button"
       :variant="UiButtonVariant.Secondary"
       :loading="loading"

@@ -26,6 +26,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { UiTextTone } from '@/utils/ui/text'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -172,8 +173,8 @@ onMounted(() => {
         </UiField>
       </UiGrid>
       <UiFormActions>
-        <UiButton type="button" :variant="UiButtonVariant.Secondary" data-testid="add-existing-service-cancel" @click="emit('close')">{{ t('shared.cancel') }}</UiButton>
-        <UiButton
+        <UiButton :action="UiActionKind.Cancel" type="button" :variant="UiButtonVariant.Secondary" data-testid="add-existing-service-cancel" @click="emit('close')">{{ t('shared.cancel') }}</UiButton>
+        <UiButton :action="UiActionKind.Add"
           type="submit"
           :variant="UiButtonVariant.Primary"
           :loading="saving"

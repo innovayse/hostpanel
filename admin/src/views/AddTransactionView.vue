@@ -14,6 +14,8 @@ import { blankTransactionForm, firstInvoiceId } from '@/lib/transactionForm'
 import { useTransactionsStore } from '@/stores/billingTransactions'
 import type { TransactionFormValues } from '@/types/transaction'
 import { AppRoute } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema from '@/views/AddTransactionView.schema'
 
 const { t } = useI18n()
 
@@ -48,12 +50,10 @@ onMounted(loadClients)
 
 <template>
   <UiStack data-testid="billing-add-transaction-view">
-    <UiPageHeader
-      :title="t('billing.addTransaction.addTransaction')"
-      :subtitle="t('billing.addTransaction.recordANewPaymentTransaction')"
-    />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
     <TransactionForm
       v-model="values"
+      :columns="schema.columns"
       :clients="clients"
       :submit-label="t('billing.addTransaction.addTransaction')"
       :loading="store.loading"

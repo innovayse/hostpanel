@@ -4,6 +4,7 @@
  */
 import { vi } from 'vitest'
 import ClientsByCountryView from '@/views/ClientsByCountryView.vue'
+import schema from '@/views/ClientsByCountryView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
 
@@ -12,9 +13,9 @@ vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJs
 runReportCase({
   name: 'ClientsByCountryView',
   view: ClientsByCountryView,
+  schema,
   routes: {
     'GET /reports/clients-by-country': () => json([{ country: 'AM', clientCount: 3, totalRevenue: 1 }]),
-    'GET /reports/clients-by-city': () => json([{ city: 'Yerevan', country: 'AM', clientCount: 3 }]),
   },
   expected: ['Clients by Country', 'Armenia', 'Total Clients: 3'],
   retryable: true,

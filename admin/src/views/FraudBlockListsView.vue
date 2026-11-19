@@ -4,6 +4,9 @@
  * adds an entry with an optional note, and a searched, paged table whose rows can be deleted after a
  * confirmation.
  *
+ * The tab strip, the add card's captions and the head of the table are the ones of `FraudBlockListsView.schema`, which
+ * `UiSkeletonOf` also draws while the view downloads.
+ *
  * The tab, the search text and the page live in the address (`useListQuery`), so a reload or a shared link
  * restores the same list. Switching tab returns to the first page and empties the search, because a search
  * belongs to the list it was typed in.
@@ -19,25 +22,27 @@ import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { BLOCK_LIST_TYPE_OPTIONS } from '@/lib/constants'
 import { formatDateTime } from '@/lib/format'
 import { useFraudBlockListStore } from '@/stores/fraudBlockList'
 import { BlockListType } from '@/types/fraud'
 import type { BlockListEntry } from '@/types/fraud'
+import { tabItemsOfSchema } from '@/utils/ui/tabs'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
+import { Icon } from '@/lib/icons'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema, { BLOCK_LIST_TABLE, BLOCK_LIST_TABS_PART } from '@/views/FraudBlockListsView.schema'
 
 const { t } = useI18n()
 
@@ -79,9 +84,9 @@ const deleteTarget = ref<BlockListEntry | null>(null)
 /** True while a delete is in flight. */
 const deleting = ref(false)
 
-/** The tabs, one per list. */
+/** The tabs, one per list, as the schema's strip names them. */
 const tabs = computed<UiTabItem[]>(() =>
-  BLOCK_LIST_TYPE_OPTIONS.map((option) => ({ value: option.value, label: option.label, testid: `fraud-block-list-tab-${option.value}` })),
+  tabItemsOfSchema(BLOCK_LIST_TABS_PART.tabs, t, 'fraud-block-list-tab-'),
 )
 
 /**
@@ -129,7 +134,7 @@ const reload = async (): Promise<void> => {
  */
 const selectType = async (next: string): Promise<void> => {
   // The tab values come from this very list, so finding the one that was chosen also gives the typed member.
-  const chosen = BLOCK_LIST_TYPE_OPTIONS.find((option) => option.value === next)?.value
+  const chosen = Object.values(BlockListType).find((member) => member === next)
   if (chosen === undefined) {
     return
   }
@@ -189,6 +194,7 @@ const confirmDelete = async (): Promise<void> => {
 const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     danger: true,
     testid: `fraud-block-list-delete-${entry.id}`,
     /**
@@ -206,7 +212,7 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
 
 <template>
   <UiStack data-testid="fraud-block-lists-view">
-    <UiPageHeader :title="t('fraud.blockList.title')" :subtitle="t('fraud.blockList.subtitle')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiAlert
       v-if="banner.message.value"
@@ -218,16 +224,14 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
 
     <UiTabs :items="tabs" :model-value="type" :aria-label="t('fraud.blockList.tabsLabel')" @update:model-value="selectType" />
 
-    <UiCard padding="md">
-      <BlockListAddForm
-        v-model:value="value"
-        v-model:note="note"
-        :type="type"
-        :adding="adding"
-        :errors="store.fieldErrors"
-        @add="addEntry"
-      />
-    </UiCard>
+    <BlockListAddForm
+      v-model:value="value"
+      v-model:note="note"
+      :type="type"
+      :adding="adding"
+      :errors="store.fieldErrors"
+      @add="addEntry"
+    />
 
     <UiListToolbar
       v-model:search="search"
@@ -248,20 +252,14 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
     </UiResultCount>
 
-    <UiCard class="overflow-hidden">
+    <UiCard clip>
       <UiTable
+        :empty-text="searching ? t('fraud.blockList.noMatches') : t('fraud.blockList.empty')"
         :loading="initialLoading"
         :empty="!store.loading && store.entries.length === 0"
         data-testid="fraud-block-list-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.value') }}</UiTableHeader>
-            <UiTableHeader>{{ t('fraud.blockList.note') }}</UiTableHeader>
-            <UiTableHeader>{{ t('fraud.blockList.addedAt') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="BLOCK_LIST_TABLE.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable :data-testid="`fraud-block-list-row-${entry.id}`">
             <UiTableCell class="font-mono">{{ entry.value }}</UiTableCell>
@@ -272,9 +270,6 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ searching ? t('fraud.blockList.noMatches') : t('fraud.blockList.empty') }}
-        </template>
       </UiTable>
     </UiCard>
 

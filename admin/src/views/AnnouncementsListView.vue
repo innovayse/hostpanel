@@ -9,13 +9,11 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
@@ -24,12 +22,12 @@ import type { UiMenuAction } from '@/utils/ui/menu'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -41,12 +39,22 @@ import { useAnnouncementsStore } from '@/stores/announcements'
 import type { Announcement, AnnouncementListFilters } from '@/types/announcement'
 import { PublishedFilter } from '@/types/publishedfilter'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { Icon } from '@/lib/icons'
 import { UiTableDensity } from '@/utils/ui/injection'
+import schema from '@/views/AnnouncementsListView.schema'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, editPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTextSize } from '@/utils/ui/text'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('support.announcementsList.addNewAnnouncement'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'announcements-add', to: AppRoute.SupportAnnouncementsNew },
+])
 
 /** The filter field the dialog edits; it is one query key and one `AnnouncementListFilters` member. */
 const FilterKey = {
@@ -154,27 +162,15 @@ const rowActions = (announcement: Announcement): UiMenuAction[] => {
     deleteTarget.value = announcement.id
   }
   return [
-    { label: t('shared.edit'), testid: `announcements-${announcement.id}-edit`, to: editPath(AppRoute.SupportAnnouncements, announcement.id) },
-    { label: t('shared.delete'), testid: `announcements-${announcement.id}-delete`, danger: true, onSelect: onDelete },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `announcements-${announcement.id}-edit`, to: editPath(AppRoute.SupportAnnouncements, announcement.id) },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `announcements-${announcement.id}-delete`, danger: true, onSelect: onDelete },
   ]
 }
 </script>
 
 <template>
   <UiStack>
-    <UiPageHeader
-      :title="t('shared.announcements')"
-      :subtitle="t('support.announcementsList.manageClientFacingAnnouncements')"
-    >
-      <template #actions>
-        <UiLink
-          :to="AppRoute.SupportAnnouncementsNew"
-          :variant="UiButtonVariant.Primary"
-          data-testid="announcements-add"
-        >
-          {{ t('support.announcementsList.addNewAnnouncement') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)" >
     </UiPageHeader>
 
     <UiListToolbar
@@ -224,14 +220,7 @@ const rowActions = (announcement: Announcement): UiMenuAction[] => {
         :empty="!store.loading && store.announcements.length === 0"
         data-testid="announcements-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.published') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="announcement in store.announcements"
@@ -242,9 +231,13 @@ const rowActions = (announcement: Announcement): UiMenuAction[] => {
             <UiTableCell muted>{{ formatDateTimeCompact(announcement.createdAt) }}</UiTableCell>
             <UiTableCell>{{ announcement.title }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="announcement.isPublished ? UiTone.Success : UiTone.Neutral">
-                {{ announcement.isPublished ? t('shared.yes') : t('shared.no') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="announcement.isPublished"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.yes')"
+                :off-label="t('shared.no')"
+              />
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="rowActions(announcement)" :testid="`announcements-${announcement.id}-actions`" />

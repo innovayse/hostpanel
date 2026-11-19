@@ -5,15 +5,15 @@
  *
  * Voiding asks first, in the app's own dialog, for a reason. A note paid out as a gateway refund cannot be voided, because the
  * refund cannot be taken back, so its button is replaced by that sentence. A voided note keeps its number and stays on record. The
- * outcome of an action shows above the note. Reads and writes `stores/creditNotes`.
+ * outcome of an action shows above the note. Reads and writes `stores/creditNotes`. The header, the cards and the lines table come
+ * from `CreditNoteDetailView.schema`; while the note is read they draw as the skeleton of that schema.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import CreditNoteStatusBadge from '@/components/billing/CreditNoteStatusBadge.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -24,8 +24,7 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -38,8 +37,17 @@ import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { saveBlob } from '@/utils/saveBlob'
 import { UiTone } from '@/utils/ui/tone'
+import schema from '@/views/CreditNoteDetailView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('billing.creditNotes.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-credit-note-download', disabled: note.value === null, onSelect: downloadPdf },
+  ...(canVoid.value ? [{ label: t('billing.creditNotes.voidButton'), icon: actionIcons[UiActionKind.Remove], variant: UiButtonVariant.Danger, testid: 'billing-credit-note-void', onSelect: askVoid }] : []),
+])
 
 /** Current route, source of the credit note id. */
 const route = useRoute()
@@ -58,6 +66,9 @@ const note = computed(() => store.detail?.note ?? null)
 
 /** The lines on screen. */
 const items = computed(() => store.detail?.items ?? [])
+
+/** The columns of the lines table, taken from the schema's lines card: the one source of their captions, widths and alignment. */
+const itemColumns = schema.columns.flat().find((card) => card.key === 'items')?.table?.columns ?? []
 
 /** The sentence of the last refused load, shown with Retry; null when the note loaded. */
 const loadError = ref<string | null>(null)
@@ -138,16 +149,13 @@ onMounted(load)
   <UiStack data-testid="billing-credit-note-view">
     <UiErrorState v-if="loadError !== null" :message="loadError" :loading="store.loading" testid="billing-credit-note-error" @retry="load" />
 
-    <template v-if="note !== null">
-      <UiPageHeader :title="t('billing.creditNotes.detailTitle', { number: note.number ?? `#${note.id}` })" :subtitle="note.reason">
-        <template #actions>
-          <UiButton :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-download" @click="downloadPdf">
-            {{ t('billing.creditNotes.downloadPdf') }}
-          </UiButton>
-          <UiButton v-if="canVoid" :variant="UiButtonVariant.Danger" data-testid="billing-credit-note-void" @click="askVoid">
-            {{ t('billing.creditNotes.voidButton') }}
-          </UiButton>
-        </template>
+    <template v-else>
+      <UiPageHeader :actions="headerActions"
+        :title="note === null ? undefined : t('billing.creditNotes.detailTitle', { number: note.number ?? `#${note.id}` })"
+        :subtitle="note?.reason"
+        :loading="note === null"
+        :subtitle-loading="note === null"
+      >
       </UiPageHeader>
 
       <UiStatusMessage :message="pdfError" :tone="UiTone.Danger" data-testid="billing-credit-note-download-feedback" />
@@ -156,58 +164,52 @@ onMounted(load)
         {{ t('billing.creditNotes.voidRefundBlocked') }}
       </UiAlert>
 
-      <UiCard>
-        <UiStack gap="sm">
-          <UiText data-testid="billing-credit-note-status"><CreditNoteStatusBadge :status="note.status" /></UiText>
-          <UiText>
-            {{ t('billing.creditNotes.invoice') }}:
-            <UiLink :to="invoicePath(note.invoiceId)" variant="link" data-testid="billing-credit-note-invoice">#{{ note.invoiceId }}</UiLink>
-          </UiText>
-          <UiText>
-            {{ t('billing.creditNotes.client') }}:
-            <UiLink :to="clientPath(note.clientId)" variant="link">{{ note.clientName }}</UiLink>
-          </UiText>
-          <UiText>{{ t('billing.creditNotes.methodLabel') }}: {{ t(`billing.creditNotes.method.${note.method}`) }}</UiText>
-          <UiText v-if="note.refundReference">{{ t('billing.creditNotes.refundReference') }}: {{ note.refundReference }}</UiText>
-          <UiText data-testid="billing-credit-note-reason">{{ t('billing.creditNotes.reason') }}: {{ note.reason }}</UiText>
-          <UiText>{{ t('billing.creditNotes.issuedAt') }}: {{ formatDateTime(note.issuedAt) }}</UiText>
-          <UiText v-if="note.voidedAt" data-testid="billing-credit-note-voided">
-            {{ t('billing.creditNotes.voidedAt') }}: {{ formatDateTime(note.voidedAt) }}
-            <template v-if="note.voidReason">, {{ t('billing.creditNotes.voidReason') }}: {{ note.voidReason }}</template>
-          </UiText>
-        </UiStack>
-      </UiCard>
+      <UiDetailCards :columns="schema.columns" :loading="note === null">
+        <template #card-details>
+          <UiStack v-if="note !== null" gap="sm">
+            <UiText data-testid="billing-credit-note-status"><CreditNoteStatusBadge :status="note.status" /></UiText>
+            <UiText>
+              {{ t('billing.creditNotes.invoice') }}:
+              <UiLink :to="invoicePath(note.invoiceId)" variant="link" data-testid="billing-credit-note-invoice">#{{ note.invoiceId }}</UiLink>
+            </UiText>
+            <UiText>
+              {{ t('billing.creditNotes.client') }}:
+              <UiLink :to="clientPath(note.clientId)" variant="link">{{ note.clientName }}</UiLink>
+            </UiText>
+            <UiText>{{ t('billing.creditNotes.methodLabel') }}: {{ t(`billing.creditNotes.method.${note.method}`) }}</UiText>
+            <UiText v-if="note.refundReference">{{ t('billing.creditNotes.refundReference') }}: {{ note.refundReference }}</UiText>
+            <UiText data-testid="billing-credit-note-reason">{{ t('billing.creditNotes.reason') }}: {{ note.reason }}</UiText>
+            <UiText>{{ t('billing.creditNotes.issuedAt') }}: {{ formatDateTime(note.issuedAt) }}</UiText>
+            <UiText v-if="note.voidedAt" data-testid="billing-credit-note-voided">
+              {{ t('billing.creditNotes.voidedAt') }}: {{ formatDateTime(note.voidedAt) }}
+              <template v-if="note.voidReason">, {{ t('billing.creditNotes.voidReason') }}: {{ note.voidReason }}</template>
+            </UiText>
+          </UiStack>
+        </template>
 
-      <UiCard>
-        <UiTable :empty="items.length === 0" data-testid="billing-credit-note-items">
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('billing.creditNotes.description') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('billing.creditNotes.quantity') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('billing.creditNotes.unitPrice') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('billing.creditNotes.amount') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
-          <UiTableBody divided>
-            <UiTableRow v-for="item in items" :key="item.id">
-              <UiTableCell>{{ item.description }}</UiTableCell>
-              <UiTableCell numeric>{{ item.quantity }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(item.unitPrice, note.currency) }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(item.amount, note.currency) }}</UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-          <template #empty>
-            {{ t('billing.creditNotes.empty') }}
+        <template #card-items>
+          <template v-if="note !== null">
+            <UiTable :empty-text="t('billing.creditNotes.empty')" :empty="items.length === 0" data-testid="billing-credit-note-items">
+              <UiSchemaTableHead :columns="itemColumns" />
+              <UiTableBody divided>
+                <UiTableRow v-for="item in items" :key="item.id">
+                  <UiTableCell>{{ item.description }}</UiTableCell>
+                  <UiTableCell numeric>{{ item.quantity }}</UiTableCell>
+                  <UiTableCell numeric>{{ formatPlainAmount(item.unitPrice, note.currency) }}</UiTableCell>
+                  <UiTableCell numeric>{{ formatPlainAmount(item.amount, note.currency) }}</UiTableCell>
+                </UiTableRow>
+              </UiTableBody>
+            </UiTable>
+            <UiStack gap="xs" data-testid="billing-credit-note-totals">
+              <UiText>{{ t('billing.creditNotes.subTotal') }}: {{ formatPlainAmount(note.subTotal, note.currency) }}</UiText>
+              <UiText>{{ t('billing.creditNotes.taxAt', { rate: note.taxRate }) }}: {{ formatPlainAmount(note.tax, note.currency) }}</UiText>
+              <UiText tone="primary" data-testid="billing-credit-note-total">
+                {{ t('billing.creditNotes.total') }}: {{ formatPlainAmount(note.total, note.currency) }}
+              </UiText>
+            </UiStack>
           </template>
-        </UiTable>
-        <UiStack gap="xs" data-testid="billing-credit-note-totals">
-          <UiText>{{ t('billing.creditNotes.subTotal') }}: {{ formatPlainAmount(note.subTotal, note.currency) }}</UiText>
-          <UiText>{{ t('billing.creditNotes.taxAt', { rate: note.taxRate }) }}: {{ formatPlainAmount(note.tax, note.currency) }}</UiText>
-          <UiText tone="primary" data-testid="billing-credit-note-total">
-            {{ t('billing.creditNotes.total') }}: {{ formatPlainAmount(note.total, note.currency) }}
-          </UiText>
-        </UiStack>
-      </UiCard>
+        </template>
+      </UiDetailCards>
     </template>
 
     <UiDialog

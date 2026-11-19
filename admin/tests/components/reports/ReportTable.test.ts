@@ -1,14 +1,17 @@
 /**
  * Tests for ReportTable: headers from the columns, cell formats, the dash for a missing value,
- * cell and body slots, the totals row and the empty text.
+ * cell and body slots, the totals row, the compact empty state with the sentence of its report, the width of a column and the
+ * placeholder of a group heading row.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import ReportTable from '@/components/reports/ReportTable.vue'
+import { REPORT_EMPTY } from '@/lib/reportEmpty'
 import { REPORT_LOADING } from '@/lib/reportLoading'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
+import { UiColumnSize } from '@/utils/ui/table'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** A row of the test table. */
@@ -56,8 +59,27 @@ const rows: Row[] = [
  * @param slots - Slots to fill.
  * @returns The wrapper.
  */
-const mountTable = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
-  mount(ReportTable, { props: { columns, rows, rowKey: ID_KEY, ...props }, slots, global: { plugins: [createTestI18n()] } })
+const mountTable = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}, provide: Record<symbol, unknown> = {}) =>
+  mount(ReportTable, { props: { columns, rows, rowKey: ID_KEY, ...props }, slots, global: { plugins: [createTestI18n()], provide } })
+
+/**
+ * A page scope that says the whole report is empty, as `ReportPage` does once every part is.
+ *
+ * @returns The `provide` map for the mount.
+ */
+const collapsedScope = (): Record<symbol, unknown> => ({
+  [REPORT_EMPTY as symbol]: { set: () => undefined, remove: () => undefined, collapsed: computed(() => true), text: ref(undefined) },
+})
+
+/**
+ * A page scope that is not collapsed and carries the sentence of its report's empty state.
+ *
+ * @param text - The sentence.
+ * @returns The `provide` map for the mount.
+ */
+const sentenceScope = (text: string): Record<symbol, unknown> => ({
+  [REPORT_EMPTY as symbol]: { set: () => undefined, remove: () => undefined, collapsed: computed(() => false), text: ref(text) },
+})
 
 describe('ReportTable', () => {
   it('draws one header per column and one row per item', () => {
@@ -138,15 +160,57 @@ describe('ReportTable', () => {
     expect(cells[2]).toBe('')
   })
 
-  it('shows the empty text, and no totals, when there are no rows', () => {
+  it('shows the compact empty state, and no header, totals or table, when there are no rows', () => {
     const wrapper = mountTable({ rows: [], emptyText: 'Nothing here', totals: { amount: 1 } })
 
-    expect(wrapper.text()).toContain('Nothing here')
+    expect(wrapper.get('[data-testid="report-table-empty"]').text()).toContain('Nothing here')
+    expect(wrapper.text()).toContain('Try another period or change the filters.')
+    expect(wrapper.find('[data-testid="report-table"]').exists()).toBe(false)
+    expect(wrapper.find('th').exists()).toBe(false)
     expect(wrapper.find('[data-testid="report-totals"]').exists()).toBe(false)
   })
 
-  it('shows the default empty text when none is given', () => {
-    expect(mountTable({ rows: [] }).text()).toContain('No data.')
+  it('shows the sentence of its report when the table has none of its own, and its own when it has one', () => {
+    expect(mountTable({ rows: [] }, {}, sentenceScope('No invoices this month.')).get('[data-testid="report-table-empty"]').text()).toContain('No invoices this month.')
+
+    const own = mountTable({ rows: [], emptyText: 'No accounts here.' }, {}, sentenceScope('No invoices this month.'))
+    expect(own.get('[data-testid="report-table-empty"]').text()).toContain('No accounts here.')
+  })
+
+  it('gives a column the width its size names', () => {
+    const wrapper = mountTable({ columns: [{ key: 'id', label: 'ID', size: UiColumnSize.Compact }, { key: 'note', label: 'Note', size: UiColumnSize.Grow }] })
+    const [compact, grow] = wrapper.findAll('th')
+
+    expect(compact?.classes()).toContain('w-px')
+    expect(grow?.classes()).toContain('w-full')
+  })
+
+  it('opens the loading placeholder with a group heading row only for a grouped table', () => {
+    /**
+     * Mounts the table while its report loads.
+     *
+     * @param grouped - Whether the table has group heading rows.
+     * @returns The mounted wrapper.
+     */
+    const mountLoading = (grouped: boolean) =>
+      mount(ReportTable, {
+        props: { columns, rows, rowKey: ID_KEY, grouped },
+        global: { plugins: [createTestI18n()], provide: { [REPORT_LOADING as symbol]: ref(true) } },
+      })
+
+    expect(mountLoading(true).find('[data-testid="ui-table-skeleton-group"]').exists()).toBe(true)
+    expect(mountLoading(false).find('[data-testid="ui-table-skeleton-group"]').exists()).toBe(false)
+  })
+
+  it('shows the default empty sentence when none is given', () => {
+    expect(mountTable({ rows: [] }).text()).toContain('No data for this report.')
+  })
+
+  it('draws nothing when the page shows its one empty state for the whole report', () => {
+    const wrapper = mountTable({ rows: [] }, {}, collapsedScope())
+
+    expect(wrapper.find('[data-testid="report-table-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="report-table"]').exists()).toBe(false)
   })
 
   it('reads a column named by a dot path from a nested record', () => {
@@ -164,5 +228,20 @@ describe('ReportTable', () => {
 
     expect(keyed.findAll('[data-testid="report-table-row"]')).toHaveLength(2)
     expect(() => mountTable({ rowKey: undefined })).toThrow('rowKey is required')
+  })
+
+  it('draws only the ask to choose fields, with no header and no row bars, when there is no column', () => {
+    const wrapper = mountTable({ columns: [] })
+
+    expect(wrapper.find('th').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="report-table-row"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Choose the fields to include to see the results.')
+    expect(wrapper.text()).not.toContain('Try another period')
+  })
+
+  it('shows the hint of a column as the tooltip of its caption', () => {
+    const wrapper = mountTable({ columns: [{ key: 'id', label: 'ID', hint: 'What it counts.' }] })
+
+    expect(wrapper.get('th span[title]').attributes('title')).toBe('What it counts.')
   })
 })

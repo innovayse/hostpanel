@@ -1,11 +1,14 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPlugins;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
@@ -37,6 +40,69 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
             row.GetProperty("isLoaded").GetBoolean().Should()
                 .BeFalse("installing does not load it -- only a restart does");
             row.GetProperty("isBuiltIn").GetBoolean().Should().BeFalse("it was uploaded");
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
+    /// <summary>
+    /// An uploaded plugin lists its install record: the upload as the source, when it was installed, no update yet, no
+    /// signer (the test host does not enforce signatures and the package is unsigned), and the size and digest of the archive.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnUploadedPlugin_ListsItsInstallRecordAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildValidPluginZip(pluginId);
+        var before = DateTimeOffset.UtcNow;
+
+        try
+        {
+            (await PluginsTestSeeds.InstallAsync(client, zip)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins");
+            var row = list!.Single(p => p.GetProperty("id").GetString() == pluginId);
+            row.GetProperty("source").GetString().Should().Be("Uploaded");
+            row.GetProperty("installedAt").GetDateTimeOffset().Should().BeOnOrAfter(before.AddSeconds(-5));
+            row.GetProperty("updatedAt").ValueKind.Should().Be(JsonValueKind.Null);
+            row.GetProperty("signer").GetString().Should().Be("Unsigned");
+            row.GetProperty("signerKeyId").ValueKind.Should().Be(JsonValueKind.Null);
+            row.GetProperty("packageSizeBytes").GetInt64().Should().Be(zip.Length);
+            row.GetProperty("packageSha256").GetString().Should().Be(Convert.ToHexStringLower(SHA256.HashData(zip)));
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
+    /// <summary>A plugin installed before installs were recorded has no record, so every install fact in its row is null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APluginWithoutAnInstallRecord_ListsNoInstallFactsAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+
+        try
+        {
+            (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(pluginId))).StatusCode.Should().Be(HttpStatusCode.OK);
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                await db.InstalledPlugins.Where(p => p.PluginId == pluginId).ExecuteDeleteAsync();
+            }
+
+            var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins");
+            var row = list!.Single(p => p.GetProperty("id").GetString() == pluginId);
+            foreach (var member in new[] { "source", "installedAt", "updatedAt", "installedBy", "signer", "signerKeyId", "packageSizeBytes", "packageSha256" })
+            {
+                row.GetProperty(member).ValueKind.Should().Be(JsonValueKind.Null, member);
+            }
         }
         finally
         {

@@ -10,7 +10,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { AdminCreateClientPayload } from '@/types/admincreateclientpayload'
-import type { ClientSettings, ClientSettingSwitch } from '@/types/client'
+import type { ClientSettings } from '@/types/client'
 import type { UserSearchHit } from '@/types/clientuser'
 import type { ContactNotifications } from '@/types/contactnotifications'
 import { useClientsStore } from '@/stores/clients'
@@ -23,19 +23,12 @@ import { CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH, CLIENT_TAX_ID_MAX_LENGTH } from
 import ClientStatusConfirmDialog from '@/components/clients/ClientStatusConfirmDialog.vue'
 import ClientUserPicker from '@/components/clients/ClientUserPicker.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
-import UiField from '@/components/ui/UiField.vue'
-import UiForm from '@/components/ui/UiForm.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRadio from '@/components/ui/UiRadio.vue'
 import UiPhoneInput from '@/components/ui/UiPhoneInput.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -43,11 +36,18 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiLabelVariant } from '@/utils/ui/text'
 import { AppRoute } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema, { EXISTING_OWNER_SECTION, OWNER_SECTION_KEY } from '@/views/AddClientView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
-/** Icon markup (shape tags) of the back button. */
-const BACK_ICON = '<polyline points="15 18 9 12 15 6"/>'
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('shared.cancel'), icon: actionIcons[UiActionKind.Cancel], variant: UiButtonVariant.Secondary, testid: 'add-client-cancel', onSelect: goBack },
+  { label: t('clients.addClient.createClient'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'add-client-submit', loading: saving.value, onSelect: handleSubmit },
+])
 
 /** Router, used to leave for the clients list. */
 const router = useRouter()
@@ -152,26 +152,12 @@ const settings = reactive<ClientSettings>({
   allowSso: true,
 })
 
-/** Email notification switches in display order. */
-const notifyToggles = computed<{ key: keyof typeof notify; label: string }[]>(() => [
-  { key: 'general', label: t('shared.generalEmails') },
-  { key: 'invoice', label: t('shared.invoiceEmails') },
-  { key: 'support', label: t('shared.supportEmails') },
-  { key: 'product', label: t('shared.productEmails') },
-  { key: 'domain', label: t('shared.domainEmails') },
-  { key: 'affiliate', label: t('shared.affiliateEmails') },
-])
-
-/** Account setting switches in display order. */
-const settingToggles = computed<{ key: ClientSettingSwitch; label: string }[]>(() => [
-  { key: 'overdueNotices', label: t('shared.overdueNotices') },
-  { key: 'taxExempt', label: t('shared.taxExempt') },
-  { key: 'separateInvoices', label: t('shared.separateInvoices') },
-  { key: 'disableCcProcessing', label: t('shared.disableCcProcessing') },
-  { key: 'marketingOptIn', label: t('shared.marketingEmailsOptIn') },
-  { key: 'statusUpdate', label: t('shared.statusUpdate') },
-  { key: 'allowSso', label: t('shared.allowSingleSignOn') },
-])
+/** The columns of the form: the schema's, with the owner card of the chosen way of making the account owner. */
+const columns = computed(() =>
+  schema.columns.map(column =>
+    column.map(section => (section.key === OWNER_SECTION_KEY && !createNewUser.value ? EXISTING_OWNER_SECTION : section)),
+  ),
+)
 
 /** Internal admin notes. */
 const adminNotes = ref('')
@@ -304,325 +290,264 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiPageHeader :title="t('clients.addClient.addNewClient')" :subtitle="t('clients.addClient.createANewClientAccount')">
-      <template #actions>
-        <UiIconButton :label="t('shared.back')" data-testid="add-client-back" @click="goBack">
-          <UiIcon :markup="BACK_ICON" />
-        </UiIconButton>
-        <UiButton
-          type="button"
-          :variant="UiButtonVariant.Secondary"
-          data-testid="add-client-cancel"
-          @click="goBack"
-        >
-          {{ t('shared.cancel') }}
-        </UiButton>
-        <UiButton
-          type="button"
-          :variant="UiButtonVariant.Primary"
-          :loading="saving"
-          data-testid="add-client-submit"
-          @click="handleSubmit"
-        >
-          {{ t('clients.addClient.createClient') }}
-        </UiButton>
-      </template>
+    <UiPageHeader :actions="headerActions"
+      v-bind="schemaHeader(schema, t)"
+      :back-to="AppRoute.Clients"
+      :back-label="t('shared.clients')"
+      back-mobile-only
+      back-testid="add-client-back"
+    >
     </UiPageHeader>
 
     <UiAlert v-if="saveError" variant="error" data-testid="add-client-error">
       {{ saveError }}
     </UiAlert>
 
-    <UiForm stacked @submit="handleSubmit">
-      <UiGrid :columns="2">
-        <UiStack>
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.addClient.accountOwner') }}</UiHeading>
-              <UiStack gap="sm">
-                <UiLabel :variant="UiLabelVariant.Inline">
-                  <UiRadio
-                    :model-value="createNewUser"
-                    :value="true"
-                    data-testid="add-client-owner-new"
-                    @update:model-value="chooseNewUser"
-                  />
-                  {{ t('clients.addClient.createANewUser') }}
-                </UiLabel>
-                <UiLabel :variant="UiLabelVariant.Inline">
-                  <UiRadio
-                    :model-value="createNewUser"
-                    :value="false"
-                    data-testid="add-client-owner-existing"
-                    @update:model-value="chooseExistingUser"
-                  />
-                  {{ t('clients.addClient.associateWithAnExistingUser') }}
-                </UiLabel>
-              </UiStack>
+    <UiSchemaForm :columns="columns" :errors="store.fieldErrors" @submit="handleSubmit">
+      <template #field-ownerNew>
+        <UiLabel :variant="UiLabelVariant.Inline">
+          <UiRadio
+            :model-value="createNewUser"
+            :value="true"
+            data-testid="add-client-owner-new"
+            @update:model-value="chooseNewUser"
+          />
+          {{ t('clients.addClient.createANewUser') }}
+        </UiLabel>
+      </template>
+      <template #field-ownerExisting>
+        <UiLabel :variant="UiLabelVariant.Inline">
+          <UiRadio
+            :model-value="createNewUser"
+            :value="false"
+            data-testid="add-client-owner-existing"
+            @update:model-value="chooseExistingUser"
+          />
+          {{ t('clients.addClient.associateWithAnExistingUser') }}
+        </UiLabel>
+      </template>
+      <template #field-email="{ id, invalid }">
+        <UiInput
+          :id="id"
+          v-model="email"
+          type="email"
+          :invalid="invalid"
+          :placeholder="t('shared.examples.email')"
+          data-testid="add-client-email"
+        />
+      </template>
+      <template #field-password="{ id, invalid }">
+        <UiInput
+          :id="id"
+          v-model="password"
+          type="password"
+          :invalid="invalid"
+          :placeholder="t('clients.addClient.min8Characters')"
+          data-testid="add-client-password"
+        />
+      </template>
+      <template #field-existingUserId="{ id, invalid }">
+        <ClientUserPicker
+          v-model="selectedUser"
+          :search="store.searchUsers"
+          :invalid="invalid"
+          :input-id="id"
+          testid="add-client-user"
+        />
+      </template>
 
-              <UiGrid v-if="createNewUser" :columns="2" gap="sm">
-                <UiField :label="t('shared.email')" error-testid="add-client-email-error" :error="store.fieldErrors.email" required>
-                  <template #default="{ id, invalid }">
-                    <UiInput
-                      :id="id"
-                      v-model="email"
-                      type="email"
-                      :invalid="invalid"
-                      :placeholder="t('shared.examples.email')"
-                      data-testid="add-client-email"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.password')" :error="store.fieldErrors.password" required>
-                  <template #default="{ id, invalid }">
-                    <UiInput
-                      :id="id"
-                      v-model="password"
-                      type="password"
-                      :invalid="invalid"
-                      :placeholder="t('clients.addClient.min8Characters')"
-                      data-testid="add-client-password"
-                    />
-                  </template>
-                </UiField>
-              </UiGrid>
+      <template #field-firstName="{ id, invalid }">
+        <UiInput
+          :id="id"
+          v-model="firstName"
+          type="text"
+          :invalid="invalid"
+          :placeholder="t('shared.john')"
+          data-testid="add-client-first-name"
+        />
+      </template>
+      <template #field-lastName="{ id, invalid }">
+        <UiInput
+          :id="id"
+          v-model="lastName"
+          type="text"
+          :invalid="invalid"
+          :placeholder="t('shared.doe')"
+          data-testid="add-client-last-name"
+        />
+      </template>
+      <template #field-companyName="{ id }">
+        <UiInput
+          :id="id"
+          v-model="companyName"
+          type="text"
+          :placeholder="t('shared.acmeInc')"
+          data-testid="add-client-company"
+        />
+      </template>
+      <template #field-phone>
+        <UiPhoneInput
+          v-model:phone-number="phone"
+          v-model:country-code="phoneCountry"
+          data-testid="add-client-phone"
+        />
+      </template>
+      <template #field-language>
+        <UiSelect data-testid="add-client-language" v-model="language" :options="languageOptions" :placeholder="t('shared.default')" />
+      </template>
+      <template #field-status>
+        <UiSelect data-testid="add-client-status" v-model="status" :options="statusOptions" :placeholder="t('shared.status')" />
+      </template>
+      <template #field-clientGroupId="{ id }">
+        <ClientGroupSelect
+          :id="id"
+          v-model="clientGroupId"
+          :empty-label="t('clients.clientGroups.defaultGroup')"
+          data-testid="add-client-group"
+        />
+      </template>
 
-              <UiField
-                v-else
-                :label="t('clients.addClient.findExistingUser')"
-                :error="store.fieldErrors.existingUserId"
-                required
-              >
-                <template #default="{ id, invalid }">
-                  <ClientUserPicker
-                    v-model="selectedUser"
-                    :search="store.searchUsers"
-                    :invalid="invalid"
-                    :input-id="id"
-                    testid="add-client-user"
-                  />
-                </template>
-              </UiField>
-            </UiStack>
-          </UiCard>
+      <template #field-street="{ id }">
+        <UiInput
+          :id="id"
+          v-model="street"
+          type="text"
+          :placeholder="t('clients.addClient.123MainStreet')"
+          data-testid="add-client-street"
+        />
+      </template>
+      <template #field-address2="{ id }">
+        <UiInput
+          :id="id"
+          v-model="address2"
+          type="text"
+          :placeholder="t('shared.suite100')"
+          data-testid="add-client-address2"
+        />
+      </template>
+      <template #field-city="{ id }">
+        <UiInput
+          :id="id"
+          v-model="city"
+          type="text"
+          :placeholder="t('shared.newYork')"
+          data-testid="add-client-city"
+        />
+      </template>
+      <template #field-state="{ id }">
+        <UiInput
+          :id="id"
+          v-model="state"
+          type="text"
+          :placeholder="t('shared.examples.state')"
+          data-testid="add-client-state"
+        />
+      </template>
+      <template #field-postCode="{ id }">
+        <UiInput
+          :id="id"
+          v-model="postCode"
+          type="text"
+          :placeholder="t('shared.examples.postalCode')"
+          data-testid="add-client-postcode"
+        />
+      </template>
+      <template #field-country>
+        <UiSelect data-testid="add-client-country" v-model="country" :options="countryOptions" :placeholder="t('shared.selectCountry')" />
+      </template>
+      <template #field-currency>
+        <UiSelect data-testid="add-client-currency" v-model="currency" :options="currencyOptions" :placeholder="t('shared.selectCurrency')" />
+      </template>
+      <template #field-paymentMethod="{ id }">
+        <UiInput
+          :id="id"
+          v-model="paymentMethod"
+          type="text"
+          :placeholder="t('shared.creditCardBankTransfer')"
+          data-testid="add-client-payment-method"
+        />
+      </template>
+      <template #field-billingContact="{ id }">
+        <UiInput
+          :id="id"
+          v-model="billingContact"
+          type="text"
+          :placeholder="t('clients.addClient.johnDoe')"
+          data-testid="add-client-billing-contact"
+        />
+      </template>
 
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.addClient.profileDetails') }}</UiHeading>
-              <UiGrid :columns="2" gap="sm">
-                <UiField :label="t('shared.firstName')" :error="store.fieldErrors.firstName" required>
-                  <template #default="{ id, invalid }">
-                    <UiInput
-                      :id="id"
-                      v-model="firstName"
-                      type="text"
-                      :invalid="invalid"
-                      :placeholder="t('shared.john')"
-                      data-testid="add-client-first-name"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.lastName')" :error="store.fieldErrors.lastName" required>
-                  <template #default="{ id, invalid }">
-                    <UiInput
-                      :id="id"
-                      v-model="lastName"
-                      type="text"
-                      :invalid="invalid"
-                      :placeholder="t('shared.doe')"
-                      data-testid="add-client-last-name"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.companyName')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="companyName"
-                      type="text"
-                      :placeholder="t('shared.acmeInc')"
-                      data-testid="add-client-company"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.phone')">
-                  <UiPhoneInput
-                    v-model:phone-number="phone"
-                    v-model:country-code="phoneCountry"
-                    data-testid="add-client-phone"
-                  />
-                </UiField>
-                <UiField :label="t('shared.language')">
-                  <UiSelect data-testid="add-client-language" v-model="language" :options="languageOptions" :placeholder="t('shared.default')" />
-                </UiField>
-                <UiField :label="t('shared.status')">
-                  <UiSelect data-testid="add-client-status" v-model="status" :options="statusOptions" :placeholder="t('shared.status')" />
-                </UiField>
-                <UiField :label="t('clients.clientGroups.group')">
-                  <template #default="{ id }">
-                    <ClientGroupSelect
-                      :id="id"
-                      v-model="clientGroupId"
-                      :empty-label="t('clients.clientGroups.defaultGroup')"
-                      data-testid="add-client-group"
-                    />
-                  </template>
-                </UiField>
-              </UiGrid>
-            </UiStack>
-          </UiCard>
+      <template #field-notifyGeneral>
+        <UiToggle v-model="notify.general" data-testid="add-client-notify-general" />
+      </template>
+      <template #field-notifyInvoice>
+        <UiToggle v-model="notify.invoice" data-testid="add-client-notify-invoice" />
+      </template>
+      <template #field-notifySupport>
+        <UiToggle v-model="notify.support" data-testid="add-client-notify-support" />
+      </template>
+      <template #field-notifyProduct>
+        <UiToggle v-model="notify.product" data-testid="add-client-notify-product" />
+      </template>
+      <template #field-notifyDomain>
+        <UiToggle v-model="notify.domain" data-testid="add-client-notify-domain" />
+      </template>
+      <template #field-notifyAffiliate>
+        <UiToggle v-model="notify.affiliate" data-testid="add-client-notify-affiliate" />
+      </template>
 
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('clients.addClient.addressBilling') }}</UiHeading>
-              <UiGrid :columns="2" gap="sm">
-                <UiField :label="t('shared.address1')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="street"
-                      type="text"
-                      :placeholder="t('clients.addClient.123MainStreet')"
-                      data-testid="add-client-street"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.address2')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="address2"
-                      type="text"
-                      :placeholder="t('shared.suite100')"
-                      data-testid="add-client-address2"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.city')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="city"
-                      type="text"
-                      :placeholder="t('shared.newYork')"
-                      data-testid="add-client-city"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.stateRegion')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="state"
-                      type="text"
-                      :placeholder="t('shared.examples.state')"
-                      data-testid="add-client-state"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.postcode')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="postCode"
-                      type="text"
-                      :placeholder="t('shared.examples.postalCode')"
-                      data-testid="add-client-postcode"
-                    />
-                  </template>
-                </UiField>
-                <UiField :label="t('shared.country')">
-                  <UiSelect data-testid="add-client-country" v-model="country" :options="countryOptions" :placeholder="t('shared.selectCountry')" />
-                </UiField>
-                <UiField :label="t('shared.currency')">
-                  <UiSelect data-testid="add-client-currency" v-model="currency" :options="currencyOptions" :placeholder="t('shared.selectCurrency')" />
-                </UiField>
-                <UiField :label="t('shared.paymentMethod')">
-                  <template #default="{ id }">
-                    <UiInput
-                      :id="id"
-                      v-model="paymentMethod"
-                      type="text"
-                      :placeholder="t('shared.creditCardBankTransfer')"
-                      data-testid="add-client-payment-method"
-                    />
-                  </template>
-                </UiField>
-              </UiGrid>
-              <UiField :label="t('shared.billingContact')">
-                <template #default="{ id }">
-                  <UiInput
-                    :id="id"
-                    v-model="billingContact"
-                    type="text"
-                    :placeholder="t('clients.addClient.johnDoe')"
-                    data-testid="add-client-billing-contact"
-                  />
-                </template>
-              </UiField>
-            </UiStack>
-          </UiCard>
-        </UiStack>
+      <template #field-overdueNotices>
+        <UiToggle v-model="settings.overdueNotices" data-testid="add-client-overdueNotices" />
+      </template>
+      <template #field-taxExempt>
+        <UiToggle v-model="settings.taxExempt" data-testid="add-client-taxExempt" />
+      </template>
+      <template #field-separateInvoices>
+        <UiToggle v-model="settings.separateInvoices" data-testid="add-client-separateInvoices" />
+      </template>
+      <template #field-disableCcProcessing>
+        <UiToggle v-model="settings.disableCcProcessing" data-testid="add-client-disableCcProcessing" />
+      </template>
+      <template #field-marketingOptIn>
+        <UiToggle v-model="settings.marketingOptIn" data-testid="add-client-marketingOptIn" />
+      </template>
+      <template #field-statusUpdate>
+        <UiToggle v-model="settings.statusUpdate" data-testid="add-client-statusUpdate" />
+      </template>
+      <template #field-allowSso>
+        <UiToggle v-model="settings.allowSso" data-testid="add-client-allowSso" />
+      </template>
+      <template #field-taxId="{ id }">
+        <UiInput
+          :id="id"
+          v-model="settings.taxId"
+          type="text"
+          :maxlength="CLIENT_TAX_ID_MAX_LENGTH"
+          :placeholder="t('shared.taxIdPlaceholder')"
+          data-testid="add-client-tax-id"
+        />
+      </template>
+      <template #field-taxExemptionReason="{ id }">
+        <UiInput
+          :id="id"
+          v-model="settings.taxExemptionReason"
+          type="text"
+          :maxlength="CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH"
+          :placeholder="t('shared.taxExemptionReasonPlaceholder')"
+          data-testid="add-client-tax-exemption-reason"
+        />
+      </template>
 
-        <UiStack>
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('shared.emailNotifications') }}</UiHeading>
-              <UiLabel v-for="toggle in notifyToggles" :key="toggle.key" :variant="UiLabelVariant.Inline">
-                <UiToggle v-model="notify[toggle.key]" :data-testid="`add-client-notify-${toggle.key}`" />
-                {{ toggle.label }}
-              </UiLabel>
-            </UiStack>
-          </UiCard>
-
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('shared.settings') }}</UiHeading>
-              <UiLabel v-for="toggle in settingToggles" :key="toggle.key" :variant="UiLabelVariant.Inline">
-                <UiToggle v-model="settings[toggle.key]" :data-testid="`add-client-${toggle.key}`" />
-                {{ toggle.label }}
-              </UiLabel>
-              <UiField :label="t('shared.taxId')">
-                <template #default="{ id: fieldId }">
-                  <UiInput
-                    :id="fieldId"
-                    v-model="settings.taxId"
-                    type="text"
-                    :maxlength="CLIENT_TAX_ID_MAX_LENGTH"
-                    :placeholder="t('shared.taxIdPlaceholder')"
-                    data-testid="add-client-tax-id"
-                  />
-                </template>
-              </UiField>
-              <UiField :label="t('shared.taxExemptionReason')">
-                <template #default="{ id: fieldId }">
-                  <UiInput
-                    :id="fieldId"
-                    v-model="settings.taxExemptionReason"
-                    type="text"
-                    :maxlength="CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH"
-                    :placeholder="t('shared.taxExemptionReasonPlaceholder')"
-                    data-testid="add-client-tax-exemption-reason"
-                  />
-                </template>
-              </UiField>
-            </UiStack>
-          </UiCard>
-
-          <UiCard padding="md">
-            <UiStack>
-              <UiHeading :level="2" variant="card">{{ t('shared.adminNotes') }}</UiHeading>
-              <UiTextarea
-                v-model="adminNotes"
-                rows="4"
-                :placeholder="t('shared.internalNotesVisibleOnlyTo')"
-                data-testid="add-client-admin-notes"
-              />
-            </UiStack>
-          </UiCard>
-        </UiStack>
-      </UiGrid>
-    </UiForm>
+      <template #field-adminNotes="{ id }">
+        <UiTextarea
+          :id="id"
+          v-model="adminNotes"
+          rows="4"
+          :placeholder="t('shared.internalNotesVisibleOnlyTo')"
+          data-testid="add-client-admin-notes"
+        />
+      </template>
+    </UiSchemaForm>
 
     <ClientStatusConfirmDialog
       v-if="pendingStatus"

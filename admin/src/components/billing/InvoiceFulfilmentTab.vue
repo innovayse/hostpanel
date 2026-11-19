@@ -25,6 +25,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
@@ -36,6 +37,7 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { Icon } from '@/lib/icons'
 
 const { t } = useI18n()
 
@@ -180,6 +182,7 @@ const recordActions = (record: FulfilmentRecord): UiMenuAction[] => {
   return [
     {
       label: t('billing.invoiceFulfilmentTab.retry'),
+      icon: Icon.Refresh,
       testid: `billing-invoice-fulfilment-retry-${record.id}`,
       /**
        * Asks for confirmation before the record is retried.
@@ -237,12 +240,12 @@ watch(
         >
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.plugin') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Grow">{{ t('billing.invoiceFulfilmentTab.plugin') }}</UiTableHeader>
               <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.kind') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('billing.invoiceFulfilmentTab.attempts') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('billing.invoiceFulfilmentTab.attempts') }}</UiTableHeader>
               <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.lastError') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.when') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Compact">{{ t('billing.invoiceFulfilmentTab.when') }}</UiTableHeader>
               <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>

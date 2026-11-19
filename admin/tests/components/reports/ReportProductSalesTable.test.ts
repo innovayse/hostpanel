@@ -1,5 +1,6 @@
 /**
- * Tests for ReportProductSalesTable: group headings, product rows, sub totals and the grand total.
+ * Tests for ReportProductSalesTable: the columns of the shared schema table, group headings, product rows, sub
+ * totals and the grand total.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -43,6 +44,12 @@ describe('ReportProductSalesTable', () => {
     expect(text).toContain('Total')
   })
 
+  it('captions the columns with the labels of the schema table', () => {
+    const headers = mountTable().findAll('th').map(header => header.text())
+
+    expect(headers).toEqual(['Product Name', 'Units Sold', 'Value'])
+  })
+
   it('formats values with the function it is given', () => {
     expect(mountTable({ formatMoney: (amount: number) => `${amount} AMD` }).text()).toContain('20 AMD')
   })
@@ -50,7 +57,7 @@ describe('ReportProductSalesTable', () => {
   it('shows the empty text when there are no groups', () => {
     const wrapper = mountTable({ groups: [] })
 
-    expect(wrapper.text()).toContain('No data.')
+    expect(wrapper.text()).toContain('No data for this report.')
     expect(wrapper.find('[data-testid="report-totals"]').exists()).toBe(false)
   })
 })

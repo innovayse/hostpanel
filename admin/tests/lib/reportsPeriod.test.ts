@@ -2,7 +2,7 @@
  * Tests for the month and year choices of the report filters.
  */
 import { describe, expect, it } from 'vitest'
-import { currentMonthNumber, currentYear, currentYearRange, monthName, monthOptions, yearOptions } from '@/lib/reportsPeriod'
+import { currentMonthNumber, currentYear, monthName, monthOptions, yearOptions } from '@/lib/reportsPeriod'
 
 describe('monthOptions', () => {
   it('lists the twelve months, January first, with their names', () => {
@@ -40,11 +40,5 @@ describe('current period defaults', () => {
 
     expect(currentYear()).toBe(now.getFullYear())
     expect(currentMonthNumber()).toBe(now.getMonth() + 1)
-  })
-
-  it('spans the whole current year as an inclusive day range', () => {
-    const year = new Date().getFullYear()
-
-    expect(currentYearRange()).toEqual([`${year}-01-01`, `${year}-12-31`])
   })
 })

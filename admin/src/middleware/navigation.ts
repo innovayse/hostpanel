@@ -1,7 +1,7 @@
 /**
  * Router hooks that keep the navigation store in step with vue-router.
  *
- * Route records hold plain lazy loaders, so the router keeps the old screen up until the chunk of
+ * Route records hold plain lazy loaders (the shell layout is eager), so the router keeps the old screen up until the chunk of
  * the next one has arrived. These hooks tell the shell about that wait, so `RoutedView` can answer a
  * click at once with a skeleton, and with the load error when the download fails for good.
  */

@@ -30,6 +30,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding } from '@/utils/ui/card'
 import { UiAlignItems, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import { UiColumnSize } from '@/utils/ui/table'
 import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** How many placeholder rows the table shows while its source is read. */
@@ -149,7 +150,7 @@ watch(pageCount, (count) => {
     <UiTable v-else scrollable :loading="loading" :skeleton-rows="SKELETON_ROWS" data-testid="plugin-table-grid">
       <UiTableHead>
         <UiTableRow>
-          <UiTableHeader v-for="column in block.columns" :key="column.field">{{ column.label }}</UiTableHeader>
+          <UiTableHeader v-for="(column, index) in block.columns" :key="column.field" :size="index === 0 ? UiColumnSize.Grow : undefined">{{ column.label }}</UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody>

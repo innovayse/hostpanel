@@ -1,11 +1,6 @@
 {
   "pluginCard": {
     "builtIn": "Built-in",
-    "capabilities": {
-      "endpoints": "Serves pages",
-      "paymentReturn": "Completes payments after a step in the browser",
-      "storedCredentials": "Saved payment methods"
-    },
     "pendingRestart": "Pending restart",
     "remove": "Remove",
     "refused": "Refused",
@@ -30,7 +25,9 @@
     "incompatible": "This plugin does not run on this server's version {host}. {range}",
     "install": "Install",
     "hostAccess": {
-      "ssh": "Run commands on a client's hosting account over SSH"
+      "ssh": "Run commands on a client's hosting account over SSH",
+      "websites": "Manage the websites of a client's hosting service",
+      "databases": "Manage the databases of a client's hosting service"
     },
     "capabilities": {
       "endpoints": "Add its own pages, menus and widgets to the panels",

@@ -385,6 +385,12 @@
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
     <value>Регистратор должен быть одним из: NameAm, Namecheap.</value>
   </data>
+  <data name="VatRateListKindInvalid" xml:space="preserve">
+    <value>Вид ставки должен быть одним из: Standard, Reduced.</value>
+  </data>
+  <data name="VatRateListStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть одним из: Active, Superseded, Upcoming.</value>
+  </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>Номер страницы должен быть не меньше 1.</value>
   </data>

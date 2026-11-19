@@ -6,10 +6,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import SupportTicketDetailView from '@/views/SupportTicketDetailView.vue'
+import { CONVERSATION_CARD, DETAILS_CARD } from '@/views/SupportTicketDetailView.schema'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
+import { createTestI18n } from '../helpers/i18n'
 import { mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** A ticket with one staff reply. */
 const ticket = {
@@ -44,7 +47,9 @@ describe('SupportTicketDetailView', () => {
 
     const wrapper = await mountView(SupportTicketDetailView, location)
 
-    expect(wrapper.find('[data-testid="ticket-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-page-header-skeleton"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain(createTestI18n().global.t(CONVERSATION_CARD.title))
+    expect(wrapper.text()).toContain(createTestI18n().global.t(DETAILS_CARD.title))
     expect(wrapper.findAll('[data-testid="ticket-message-loading"]')).toHaveLength(3)
     expect(wrapper.find('[data-testid="ticket-composer"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
@@ -103,7 +108,7 @@ describe('SupportTicketDetailView', () => {
 
     const update = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.method === 'PUT')
     expect(update).toMatchObject({ url: '/api/tickets/5', body: { priority: 'Medium', departmentId: 1 } })
-    expect(wrapper.get('[data-testid="ticket-save-feedback"]').text()).toBe('Changes saved successfully.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
   })
 
   it('keeps the reply button disabled until the message is filled, then sends the reply without an author', async () => {
@@ -119,7 +124,7 @@ describe('SupportTicketDetailView', () => {
 
     const reply = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.method === 'POST')
     expect(reply).toMatchObject({ url: '/api/tickets/5/reply', body: { message: 'Fixed now.' } })
-    expect(wrapper.get('[data-testid="ticket-reply-feedback"]').text()).toBe('Reply sent.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Reply sent.'])
   })
 
   it('shows the API sentence next to the reply form when the reply is refused', async () => {
@@ -166,7 +171,7 @@ describe('SupportTicketDetailView', () => {
 
     const update = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.method === 'PUT')
     expect(update).toMatchObject({ url: '/api/tickets/5', body: { status: 'Closed' } })
-    expect(wrapper.get('[data-testid="ticket-action-feedback"]').text()).toBe('Ticket closed.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Ticket closed.'])
   })
 
   it('shows the API sentence when the ticket is refused', async () => {
@@ -211,5 +216,15 @@ describe('SupportTicketDetailView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="ticket-title"]').text()).toContain('DNS is down')
+  })
+
+  it('returns to the tickets list with the back pill beside the title', async () => {
+    stubPathRoutes(loadRoutes)
+
+    const wrapper = await mountView(SupportTicketDetailView, location)
+    const back = wrapper.get('[data-testid="ticket-back"]')
+
+    expect(back.attributes('href')).toBe('/support/tickets')
+    expect(back.text()).toBe('Tickets')
   })
 })

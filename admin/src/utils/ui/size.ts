@@ -7,6 +7,7 @@
 
 /** Closed set of control sizes. */
 export const UiSize = {
+  Xs: 'xs',
   Sm: 'sm',
   Md: 'md',
   Lg: 'lg',
@@ -16,12 +17,13 @@ export const UiSize = {
 export type UiSize = (typeof UiSize)[keyof typeof UiSize]
 
 /**
- * Height scale of the kit, taken from the approved concept: 32px (sm, the segmented-toggle row), 42px (md, the search field and
+ * Height scale of the kit, taken from the approved concept: 20px (xs, the remove button inside a chip and the clear button of a search field; a text field at xs is 24px), 32px (sm, the segmented-toggle row), 42px (md, the search field and
  * the primary button) and 48px (lg). Fields, buttons and icon buttons share it, so a toolbar of mixed controls lines up.
  */
 
 /** Height, side padding and type size of a single-line text field per size. */
 export const fieldSizeClasses: Record<UiSize, string> = {
+  xs: 'h-6 px-2 text-xs',
   sm: 'h-8 px-3 text-[0.8125rem]',
   md: 'h-10.5 px-3.5 text-sm',
   lg: 'h-12 px-4 text-[0.9375rem]',
@@ -29,13 +31,15 @@ export const fieldSizeClasses: Record<UiSize, string> = {
 
 /** Padding and type size of a multi-line field per size: the height follows the rows, so it takes vertical padding, not a height. */
 export const textareaSizeClasses: Record<UiSize, string> = {
+  xs: 'px-2 py-1 text-xs',
   sm: 'px-3 py-1.5 text-[0.8125rem]',
   md: 'px-3.5 py-2.5 text-sm',
   lg: 'px-4 py-3 text-[0.9375rem]',
 }
 
-/** Corner radius of a button-like control per size (12px, the concept's control radius; 9px for the small segment); the one place a size sets a radius (a look may replace it, see `buttonRadiusClasses`). */
+/** Corner radius of a button-like control per size (12px, the concept's control radius; 9px for the small segment); the one place a size sets a radius (a look may replace it, see `buttonRadiusClasses`); the smallest size is fully round, as a chip's remove button is. */
 export const controlRadiusClasses: Record<UiSize, string> = {
+  xs: 'rounded-full',
   sm: 'rounded-[9px]',
   md: 'rounded-control',
   lg: 'rounded-control',
@@ -43,6 +47,7 @@ export const controlRadiusClasses: Record<UiSize, string> = {
 
 /** Height, side padding and type size of a button per size. */
 export const buttonSizeClasses: Record<UiSize, string> = {
+  xs: 'h-5 px-2 text-xs',
   sm: 'h-8 px-3.5 text-[0.8125rem]',
   md: 'h-10.5 px-[18px] text-sm',
   lg: 'h-12 px-6 text-[0.9375rem]',
@@ -53,6 +58,7 @@ export const buttonSizeClasses: Record<UiSize, string> = {
  * button's type scale but carries no padding (padding would push it away from its neighbours).
  */
 export const buttonLinkSizeClasses: Record<UiSize, string> = {
+  xs: 'text-xs',
   sm: 'text-[0.8125rem]',
   md: 'text-sm',
   lg: 'text-[0.9375rem]',
@@ -60,6 +66,7 @@ export const buttonLinkSizeClasses: Record<UiSize, string> = {
 
 /** Square footprint of an icon-only button per size. */
 export const iconButtonSizeClasses: Record<UiSize, string> = {
+  xs: 'w-5 h-5',
   sm: 'w-8 h-8',
   md: 'w-10.5 h-10.5',
   lg: 'w-12 h-12',
@@ -67,7 +74,20 @@ export const iconButtonSizeClasses: Record<UiSize, string> = {
 
 /** Icon edge length per size. */
 export const iconSizeClasses: Record<UiSize, string> = {
+  xs: 'w-3 h-3',
   sm: 'w-3.5 h-3.5',
   md: 'w-4 h-4',
   lg: 'w-5 h-5',
+}
+
+/**
+ * Size of the icon drawn inside an icon button of each size: the one pairing every icon-only control reads (the top bar's
+ * menu, theme, language and notification buttons, the sidebar's fold button), so a glyph never looks tiny in a large
+ * hover square or crowds a small one.
+ */
+export const iconButtonIconSize: Record<UiSize, UiSize> = {
+  xs: 'xs',
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
 }

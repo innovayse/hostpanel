@@ -6,10 +6,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import AnnouncementsListView from '@/views/AnnouncementsListView.vue'
+import schema from '@/views/AnnouncementsListView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted, mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** One announcement as the list endpoint returns it. */
 const announcement = { id: 3, title: 'Maintenance window', content: 'Tonight', isPublished: true, createdAt: '2026-10-01T10:30:00Z' }
@@ -43,6 +46,14 @@ afterEach(() => {
 })
 
 describe('AnnouncementsListView', () => {
+  it('draws the table head of its schema columns, in order', async () => {
+    stubPathRoutes([{ path: '/announcements', body: { items: [announcement], totalCount: 1 } }])
+
+    const wrapper = await mountView(AnnouncementsListView)
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('lists the announcements with their published state', async () => {
     stubPathRoutes([{ path: '/announcements', body: { items: [announcement], totalCount: 1 } }])
 
@@ -50,7 +61,8 @@ describe('AnnouncementsListView', () => {
     const row = wrapper.get('[data-testid="announcements-row-3"]')
 
     expect(row.text()).toContain('Maintenance window')
-    expect(row.text()).toContain('Yes')
+    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
+    expect(wrapper.findAll('th').some((header) => header.classes().includes('max-w-0'))).toBe(true)
     expect(wrapper.get('[data-testid="announcements-count"]').text()).toContain('1')
   })
 
@@ -97,7 +109,7 @@ describe('AnnouncementsListView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="announcements-feedback"]').text()).toBe('Announcement deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Announcement deleted.'])
   })
 
   it('shows the API sentence when the delete is refused and keeps the list', async () => {

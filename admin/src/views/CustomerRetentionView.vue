@@ -1,22 +1,24 @@
 <script setup lang="ts">
 /**
  * Customer retention report: how long services of each product stay active, grouped by product
- * group, optionally counting active services as ending on their next due date.
+ * group, optionally counting active services as ending on their next due date. The group heading rows are
+ * a part of the schema (`grouped`), so the skeleton opens its rows with one too.
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ReportGroupRow from '@/components/reports/ReportGroupRow.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useReport } from '@/composables/useReport'
 import { reportPath } from '@/lib/reportsQuery'
-import type { ReportColumn } from '@/types/reportcolumn'
+import { reportFilterLabel } from '@/lib/reportsSchema'
 import { ReportRetentionGroupKind } from '@/types/reportretention'
 import type { ReportRetention, ReportRetentionGroup, ReportRetentionRow } from '@/types/reportretention'
+import type { ReportTableData } from '@/types/reporttabledata'
+import schema from '@/views/CustomerRetentionView.schema'
 
 const { t } = useI18n()
 
@@ -27,17 +29,20 @@ const { data, load } = useReport<ReportRetention>(() =>
   reportPath('/reports/customer-retention', { includeActive: includeActive.value }),
 )
 
+/** The groups to draw; none until the first answer, while the table shows its loading skeleton. */
+const groups = computed<ReportRetentionGroup[]>(() => data.value?.groups ?? [])
+
 // Ticking the box reloads at once.
 watch(includeActive, load)
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'productName', label: t('shared.productName') },
-  { key: 'billingCycle', label: t('shared.billingCycle') },
-  { key: 'productCount', label: t('reports.customerRetention.productCount'), numeric: true },
-  { key: 'avgDaysActive', label: t('reports.customerRetention.averageDaysActive'), numeric: true },
-  { key: 'avgYearsMonthsActive', label: t('reports.customerRetention.averageYearsMonthsActive') },
-])
+/** Caption of the include active checkbox, from the schema. */
+const includeActiveLabel = computed<string>(() => reportFilterLabel(schema, 'includeActive', t))
+
+/** The table: the counts are drawn as numbers, and the screen draws its rows grouped, so it gives none. */
+const table = computed<ReportTableData<ReportRetentionRow>>(() => ({
+  empty: groups.value.length === 0,
+  extras: { productCount: { numeric: true }, avgDaysActive: { numeric: true } },
+}))
 
 /**
  * The heading of a retention group.
@@ -78,29 +83,24 @@ const activeLabel = (row: ReportRetentionRow): string => {
 </script>
 
 <template>
-  <ReportPage :retry="load"
-    :title="t('reports.customerRetention.averageCustomerRetentionTime')"
-    :description="t('reports.customerRetention.thisReportCalculatesAndProvides')"
-  >
-    <template v-if="data">
+  <ReportPage :retry="load" :schema="schema" :table="table">
+    <template #filters>
       <UiLabel variant="inline">
         <UiCheckbox v-model="includeActive" data-testid="report-include-active" />
-        {{ t('reports.customerRetention.includeActiveProductsServicesAssuming') }}
+        {{ includeActiveLabel }}
       </UiLabel>
-      <ReportTable :columns="columns" :empty="data.groups.length === 0" :empty-text="t('reports.customerRetention.noDataFound')">
-        <template #body>
-          <template v-for="group in data.groups" :key="group.kind + group.groupName">
-            <ReportGroupRow :label="groupLabel(group)" :colspan="columns.length" />
-            <UiTableRow v-for="row in group.rows" :key="row.productName + cycleLabel(row)" hoverable>
-              <UiTableCell>{{ row.productName }}</UiTableCell>
-              <UiTableCell>{{ cycleLabel(row) }}</UiTableCell>
-              <UiTableCell numeric>{{ row.productCount }}</UiTableCell>
-              <UiTableCell numeric>{{ row.avgDaysActive }}</UiTableCell>
-              <UiTableCell>{{ activeLabel(row) }}</UiTableCell>
-            </UiTableRow>
-          </template>
-        </template>
-      </ReportTable>
+    </template>
+    <template #body="{ columns }">
+      <template v-for="group in groups" :key="group.kind + group.groupName">
+        <ReportGroupRow :label="groupLabel(group)" :colspan="columns.length" />
+        <UiTableRow v-for="row in group.rows" :key="row.productName + cycleLabel(row)" hoverable>
+          <UiTableCell>{{ row.productName }}</UiTableCell>
+          <UiTableCell>{{ cycleLabel(row) }}</UiTableCell>
+          <UiTableCell numeric>{{ row.productCount }}</UiTableCell>
+          <UiTableCell numeric>{{ row.avgDaysActive }}</UiTableCell>
+          <UiTableCell>{{ activeLabel(row) }}</UiTableCell>
+        </UiTableRow>
+      </template>
     </template>
   </ReportPage>
 </template>

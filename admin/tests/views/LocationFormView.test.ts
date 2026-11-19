@@ -9,6 +9,7 @@ import type { ServerLocation, ServerLocationPayload } from '@/types/serverlocati
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import schema from '@/views/LocationFormView.schema'
 
 /** A stored location. */
 const stored: ServerLocation = {
@@ -39,11 +40,30 @@ afterEach(() => {
 })
 
 describe('LocationFormView', () => {
+  it('draws every section and field of its schema', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(LocationFormView, {}, '/storefront/locations/create', '/storefront/locations/create')
+
+    const sections = schema.columns.flat()
+    expect(wrapper.findAll('[data-testid^="ui-form-section-"]')).toHaveLength(sections.length)
+    expect(wrapper.findAll('[data-testid^="ui-form-field-"]')).toHaveLength(sections.flatMap((section) => section.fields).length)
+  })
+
+  it('keeps the fields as placeholders while the entry being edited loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountScreen(LocationFormView, {}, '/storefront/locations/3/edit', '/storefront/locations/:id/edit')
+
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="location-form-active"]').exists()).toBe(false)
+  })
+
   it('opens an empty create form with the language tabs', async () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(LocationFormView, {}, '/storefront/locations/create', '/storefront/locations/create')
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Create location')
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Create location')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create location')
     expect(wrapper.find('[role="tablist"]').exists()).toBe(true)
   })
@@ -103,5 +123,19 @@ describe('LocationFormView', () => {
       expect(wrapper.get('[data-testid="location-form-error"]').text()).toBe('A location needs a country code.')
     })
     expect(router.currentRoute.value.path).toBe('/storefront/locations/create')
+  })
+
+  it('marks the language tabs with no text and drops the mark of a language once it is written', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(LocationFormView, {}, '/storefront/locations/create', '/storefront/locations/create')
+
+    for (const locale of ['en', 'ru', 'hy']) {
+      expect(wrapper.find(`[data-testid="location-form-tab-${locale}-empty"]`).exists()).toBe(true)
+    }
+
+    await wrapper.get('[data-testid="location-form-name"]').setValue('Written')
+
+    expect(wrapper.find('[data-testid="location-form-tab-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="location-form-tab-ru-empty"]').exists()).toBe(true)
   })
 })

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StorefrontContentCard from '@/components/settings/StorefrontContentCard.vue'
 import type { Setting, SettingSave } from '@/types/setting'
 import { mountSettingsCard } from '../../helpers/settingsPage'
+import { selectOf, selectText } from '../../helpers/select'
 
 /** The save callback the card is given; it answers that the value was stored. */
 const save = vi.fn<SettingSave>(async () => ({ saved: true, error: null }))
@@ -59,11 +60,70 @@ describe('StorefrontContentCard', () => {
     expect(valueOf(wrapper, 'storefront-contact-address')).toBe('1 Main St')
     expect(valueOf(wrapper, 'storefront-contact-map-url')).toBe('https://maps.example.com/x')
     expect(valueOf(wrapper, 'storefront-contact-hours')).toBe('Mon-Fri 09:00-18:00')
+    expect(selectText(wrapper, 'storefront-contact-timezone')).toBe('UTC+04:00')
+  })
+
+  it('groups the fields under Figures, Contacts, Messengers and Address and hours', async () => {
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
+    /**
+     * Finds one headed group of the card.
+     *
+     * @param name - The group's test id suffix.
+     * @returns The group's wrapper.
+     */
+    const group = (name: string) => wrapper.get(`[data-testid="storefront-group-${name}"]`)
+
+    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual(['Figures', 'Contacts', 'Messengers', 'Address and hours'])
+    expect(group('figures').find('[data-testid="storefront-stats-clients"]').exists()).toBe(true)
+    expect(group('figures').find('[data-testid="storefront-hero-badge"]').exists()).toBe(true)
+    expect(group('contacts').find('[data-testid="storefront-contact-email"]').exists()).toBe(true)
+    expect(group('contacts').find('[data-testid="storefront-contact-phone"]').exists()).toBe(true)
+    expect(group('messengers').find('[data-testid="storefront-contact-whatsapp"]').exists()).toBe(true)
+    expect(group('messengers').find('[data-testid="storefront-contact-telegram"]').exists()).toBe(true)
+    expect(group('address').find('[data-testid="storefront-contact-address"]').exists()).toBe(true)
+    expect(group('address').find('[data-testid="storefront-contact-hours"]').exists()).toBe(true)
+    expect(group('address').find('[data-testid="storefront-contact-map-url"]').exists()).toBe(true)
+    expect(group('address').find('[data-testid="storefront-contact-timezone"]').exists()).toBe(true)
+  })
+
+  it('lets every field fill its grid column instead of a fixed width', async () => {
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
+
+    for (const input of wrapper.findAll('input[data-testid^="storefront-"]')) {
+      expect(input.classes().join(' ')).not.toMatch(/min-w-|\bflex-1\b/)
+    }
+  })
+
+  it('saves a picked time zone as its IANA id', async () => {
+    const { wrapper, registry } = await mountSettingsCard(StorefrontContentCard, rows)
+
+    selectOf(wrapper, 'storefront-contact-timezone').vm.$emit('update:modelValue', 'Asia/Yerevan')
+    await registry.saveAll(save)
+
+    expect(save.mock.calls).toEqual([[14, 'Asia/Yerevan']])
+  })
+
+  it('shows the address and the hours once, with a tab per language holding that language row', async () => {
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
+    expect(wrapper.find('[data-testid="storefront-contact-address-ru"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="storefront-contact-hours-tab-ru"]').trigger('click')
     expect(valueOf(wrapper, 'storefront-contact-hours-ru')).toBe('Пн-Пт 09:00-18:00')
+    await wrapper.get('[data-testid="storefront-contact-hours-tab-hy"]').trigger('click')
     expect(valueOf(wrapper, 'storefront-contact-hours-hy')).toBe('Երկ-Ուրբ 09:00-18:00')
-    expect(valueOf(wrapper, 'storefront-contact-timezone')).toBe('UTC+4')
+    await wrapper.get('[data-testid="storefront-contact-address-tab-ru"]').trigger('click')
     expect(valueOf(wrapper, 'storefront-contact-address-ru')).toBe('ул. Примерная, 1')
+    await wrapper.get('[data-testid="storefront-contact-address-tab-hy"]').trigger('click')
     expect(valueOf(wrapper, 'storefront-contact-address-hy')).toBe('Օրինակ փողոց 1')
+  })
+
+  it('marks the language tabs whose row is empty', async () => {
+    const emptied = rows.map((row) => (row.key === 'portal.contact.address.hy' ? { ...row, value: '' } : row))
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, emptied)
+
+    expect(wrapper.find('[data-testid="storefront-contact-address-tab-hy-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="storefront-contact-address-tab-ru-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="storefront-contact-hours-tab-hy-empty"]').exists()).toBe(false)
   })
 
   it('draws no Save button of its own: the page bar saves the edited row only', async () => {
@@ -80,7 +140,7 @@ describe('StorefrontContentCard', () => {
     const { wrapper } = await mountSettingsCard(StorefrontContentCard, [rows[0] as Setting])
 
     expect(wrapper.find('[data-testid="storefront-hero-badge"]').exists()).toBe(false)
-    expect(wrapper.findAll('[data-testid="setting-not-seeded"]')).toHaveLength(15)
+    expect(wrapper.findAll('[data-testid="setting-not-seeded"]')).toHaveLength(11)
     expect(wrapper.text()).toContain('portal.hero.badge')
   })
 
@@ -88,6 +148,7 @@ describe('StorefrontContentCard', () => {
     const { wrapper, registry } = await mountSettingsCard(StorefrontContentCard, rows)
 
     await wrapper.get('[data-testid="storefront-contact-hours"]').setValue('Daily 08:00-20:00')
+    await wrapper.get('[data-testid="storefront-contact-address-tab-ru"]').trigger('click')
     await wrapper.get('[data-testid="storefront-contact-address-ru"]').setValue('ул. Новая, 2')
     await registry.saveAll(save)
 

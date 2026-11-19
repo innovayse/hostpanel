@@ -19,8 +19,10 @@ describe('AnnouncementFormView', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountRouted(AnnouncementFormView, '/support/announcements/:id/edit', '/support/announcements/4/edit')
 
-    expect(wrapper.get('[data-testid="announcement-form-loading"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(3)
+    expect(wrapper.get('[data-testid="ui-form-section-announcement"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="ui-form-field-bar"]')).toHaveLength(2)
+    expect(wrapper.find('[data-testid="ui-form-field-createdOn"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="announcement-form-title"]').exists()).toBe(false)
   })
 

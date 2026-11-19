@@ -19,6 +19,7 @@ import { mountView } from '../helpers/mount'
 describe('AppLayout', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    window.localStorage.clear()
   })
 
   it('renders the desktop sidebar, the topbar and the content area', async () => {
@@ -30,15 +31,14 @@ describe('AppLayout', () => {
     expect(wrapper.find('[data-testid="app-topbar"]').exists()).toBe(true)
   })
 
-  it('shows the persistent sidebar and its folded rail only from lg up, never on a smaller screen', async () => {
+  it('shows the persistent sidebar and its folded rail from md up, never on a phone', async () => {
     window.localStorage.setItem('hostpanel.sidebar.collapsed', '1')
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })
 
     const desktop = wrapper.get('[data-testid="app-sidebar-desktop"]').classes()
-    expect(desktop).toEqual(expect.arrayContaining(['hidden', 'lg:flex']))
+    expect(desktop).toEqual(expect.arrayContaining(['hidden', 'md:flex']))
     expect(desktop).not.toContain('flex')
-    window.localStorage.clear()
   })
 
   it('stands on the glowing ground, scrolls only the content area and mounts the command palette once', async () => {
@@ -46,7 +46,7 @@ describe('AppLayout', () => {
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })
 
     expect(wrapper.get('[data-testid="app-layout"]').classes()).toEqual(expect.arrayContaining(['ground', 'h-dvh', 'overflow-hidden']))
-    expect(wrapper.get('main').classes()).toEqual(expect.arrayContaining(['min-h-0', 'min-w-0', 'overflow-x-hidden', 'overflow-y-auto']))
+    expect(wrapper.get('main').classes()).toEqual(expect.arrayContaining(['container-size', 'min-h-0', 'min-w-0', 'overflow-x-hidden', 'overflow-y-auto']))
 
     useCommandPaletteStore().open()
     await flushPromises()
@@ -88,7 +88,8 @@ describe('AppLayout', () => {
     await flushPromises()
 
     const sheet = wrapper.get('aside[role="dialog"]')
-    expect(sheet.classes()).toContain('rounded-t-panel')
+    expect(sheet.classes()).toEqual(expect.arrayContaining(['bottom-0', 'rounded-t-panel']))
+    expect(sheet.classes()).not.toContain('max-w-xs')
     expect(sheet.find('[data-testid="drawer-grip"]').exists()).toBe(true)
     expect(sheet.find('[data-testid="sidebar-theme"]').exists()).toBe(true)
     expect(sheet.find('[data-testid="sidebar-locale"]').exists()).toBe(true)
@@ -104,13 +105,24 @@ describe('AppLayout', () => {
     expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(1)
   })
 
+  it('opens the navigation as a bottom sheet on a tablet too, where the sidebar is only the icon rail', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: !query.includes('639'), addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
+    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+
+    await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('aside[role="dialog"]').classes()).toContain('rounded-t-panel')
+  })
+
   it('shows the skeleton in the content area while the next screen downloads, and keeps the shell', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
     const wrapper = await mountView(AppLayout, { path: '/dashboard' })
     expect(wrapper.find('[data-testid="view-loading"]').exists()).toBe(false)
 
     // A navigation the guards admitted, heading for a screen drawn by another record than the current one.
-    useNavigationStore().pending = { path: '/clients', matched: [{ components: { default: {} } }] } as unknown as RouteLocationNormalized
+    useNavigationStore().pending = { path: '/clients', matched: [{ components: { default: {} }, meta: {} }], meta: {} } as unknown as RouteLocationNormalized
     await flushPromises()
 
     expect(wrapper.find('main [data-testid="view-loading"]').exists()).toBe(true)

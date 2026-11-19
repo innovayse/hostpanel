@@ -12,6 +12,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { UI_BELOW_LG_QUERY } from '@/utils/ui/breakpoints'
 import { gapClasses, splitRatioClasses } from '@/utils/ui/layout'
@@ -37,7 +38,10 @@ const open = defineModel<boolean>('open', { default: false })
 /** Whether the screen is below `lg`. */
 const compact = useMediaQuery(UI_BELOW_LG_QUERY)
 
-/** Whether the aside currently lives in the sheet instead of the second column. */
+/** The shape the drawer holding the aside takes: a bottom sheet on a phone, a side panel between a phone and `lg`. */
+const presentation = useDrawerPresentation()
+
+/** Whether the aside currently lives in the drawer instead of the second column. */
 const sheeted = computed<boolean>(() => props.asideTitle !== undefined && compact.value)
 
 /** Layout classes. */
@@ -56,7 +60,7 @@ const classes = computed<string[]>(() => [splitRatioClasses[props.ratio], gapCla
       </UiCard>
       <slot v-else name="aside" />
     </template>
-    <UiDrawer v-else sheet :open="open" :title="asideTitle ?? ''" @close="open = false">
+    <UiDrawer v-else :presentation="presentation" :open="open" :title="asideTitle ?? ''" @close="open = false">
       <slot name="aside" />
     </UiDrawer>
   </div>

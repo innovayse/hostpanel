@@ -11,6 +11,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { UiAlignItems } from '@/utils/ui/layout'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -26,7 +27,7 @@ const reload = (): void => {
     <UiAlert variant="error">
       {{ t('layout.viewLoadFailed') }}
     </UiAlert>
-    <UiButton :variant="UiButtonVariant.Secondary" data-testid="view-load-error-reload" @click="reload">
+    <UiButton :action="UiActionKind.Refresh" :variant="UiButtonVariant.Secondary" data-testid="view-load-error-reload" @click="reload">
       {{ t('layout.reload') }}
     </UiButton>
   </UiStack>

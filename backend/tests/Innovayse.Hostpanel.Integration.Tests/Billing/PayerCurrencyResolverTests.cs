@@ -97,6 +97,31 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
         currency.Code.Should().Be("USD");
     }
 
+    /// <summary>
+    /// The batch answer matches the single one for every client: the recorded currency, the base for none, for a code that
+    /// is not configured and for an id that names no row.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ForClientsAsync_ResolvesEveryClientLikeForClientAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var configured = await SeedClientAsync(context, $"user-{Guid.NewGuid()}", "AMD");
+        var unset = await SeedClientAsync(context, $"user-{Guid.NewGuid()}", currency: null);
+        var unknown = await SeedClientAsync(context, $"user-{Guid.NewGuid()}", "XYZ");
+        const int missing = int.MaxValue;
+
+        var resolver = scope.ServiceProvider.GetRequiredService<IPayerCurrencyResolver>();
+        var currencies = await resolver.ForClientsAsync([configured, unset, unknown, missing], CancellationToken.None);
+
+        currencies.Should().HaveCount(4);
+        currencies[configured].Code.Should().Be("AMD");
+        currencies[unset].Code.Should().Be("USD");
+        currencies[unknown].Code.Should().Be("USD");
+        currencies[missing].Code.Should().Be("USD");
+    }
+
     /// <summary>A client id that names no row is billed in the base, the same as an unset currency.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

@@ -9,7 +9,6 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -20,6 +19,7 @@ import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -37,10 +37,11 @@ import { ContentLanguage } from '@/locales/contentLanguage'
 import { useKnowledgebaseStore } from '@/stores/knowledgebase'
 import type { KbArticle, KbArticleListFilters, KbCategory } from '@/types/kbarticle'
 import { PublishedFilter } from '@/types/publishedfilter'
+import { Icon } from '@/lib/icons'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTextSize } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
 
 const { t, locale } = useI18n()
 
@@ -145,7 +146,7 @@ const articleActions = (article: KbArticle): UiMenuAction[] => {
   const onEdit = (): void => {
     emit('edit', article)
   }
-  return [{ label: t('shared.edit'), testid: `knowledgebase-article-${article.id}-edit`, onSelect: onEdit }]
+  return [{ label: t('shared.edit'), icon: Icon.Edit, testid: `knowledgebase-article-${article.id}-edit`, onSelect: onEdit }]
 }
 
 defineExpose({
@@ -207,9 +208,9 @@ defineExpose({
       <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.title') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.category') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
@@ -228,9 +229,13 @@ defineExpose({
             </UiTableCell>
             <UiTableCell muted>{{ article.categoryName }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="article.isPublished ? UiTone.Success : UiTone.Warning" small>
-                {{ article.isPublished ? t('shared.published') : t('support.knowledgebase.draft') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="article.isPublished"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.published')"
+                :off-label="t('support.knowledgebase.draft')"
+              />
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="articleActions(article)" :testid="`knowledgebase-article-${article.id}-actions`" />

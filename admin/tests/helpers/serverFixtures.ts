@@ -39,6 +39,7 @@ export const serverDto = (overrides: Partial<ServerDto> = {}): ServerDto => ({
   lastTestedAt: null,
   accountsCount: 12,
   credentials: { hasPassword: true, hasApiToken: false, hasAccessHash: true },
+  usage: { activeServices: 3, monthlyRevenue: 45, currency: 'USD' },
   ...overrides,
 })
 

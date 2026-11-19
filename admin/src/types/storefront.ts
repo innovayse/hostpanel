@@ -40,8 +40,6 @@ export interface StorefrontListTestIds {
   error: string
   /** The outcome line of a delete or reorder: the success sentence or the API's refusal. */
   actionError: string
-  /** The saving-order notice. */
-  savingOrder: string
   /** Prefix of a table row. */
   row: string
   /** Prefix of a row's actions menu trigger. */
@@ -70,7 +68,6 @@ export const storefrontTestIds = (prefix: string): StorefrontListTestIds => {
     add: `${prefix}-add`,
     error: `${prefix}-error`,
     actionError: `${prefix}-action-error`,
-    savingOrder: `${prefix}-saving-order`,
     row: `${row}-row`,
     actions: `${row}-actions`,
     edit: `${row}-edit`,

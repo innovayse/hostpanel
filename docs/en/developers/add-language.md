@@ -165,8 +165,8 @@ The backend list above covers the core error and validation messages. The follow
 - `admin/src/locales/contentLanguage.ts`: add the language to the `ContentLanguage` enum.
 - `admin/src/lib/constants.ts`: add an entry to the `LANGUAGE_OPTIONS` list so the language appears in the language selectors of the client and user forms.
 - `admin/src/lib/storefrontTranslations.ts`: add the locale to `STOREFRONT_LOCALES` and a `[ContentLanguage.Fr]: blank()` entry to `blankTranslations`, so storefront content forms carry a tab for it.
-- `admin/src/composables/useStorefrontLocaleTabs.ts` and `admin/src/views/SlideFormView.vue`: add a tab for the new locale.
-- The labels, in every language file of the admin panel: `storefront.locales.fr`, `settings.slideForm.locales.fr` and `clients.clientForm.french` (use the name of your language), in `storefront.json`, `settings.json` and `clients.json` under `admin/src/locales/<lang>/`.
+- `admin/src/components/ui/UiLocalizedField.vue`: add the caption of the new locale to the `captions` computed object, which every language tab strip in the admin reads. The same new `Record<ContentLanguage, ...>` entries are asked of `filledLocales` in `storefrontTranslations.ts` and of the forms that list the languages, and the compiler lists each one.
+- The labels, in every language file of the admin panel: `storefront.locales.fr`, `clients.clientForm.french` (use the name of your language), in `storefront.json`, `settings.json` and `clients.json` under `admin/src/locales/<lang>/`.
 
 **Backend extras:**
 

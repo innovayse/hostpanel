@@ -1,24 +1,21 @@
 <script setup lang="ts">
 /**
- * Clients by country report: a world map of client cities, the top countries as a bar chart, and
- * the full country table. Clicking a city marks its country in the chart.
+ * Clients by country report: a world map shaded by country, the top countries as a bar chart, and
+ * the full country table. Clicking a country marks it in the chart. The map is a part of the schema, so
+ * the skeleton holds its place while the report loads.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportChartCard from '@/components/reports/ReportChartCard.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import WorldMap from '@/components/reports/WorldMap.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UNKNOWN_COUNTRY, reportCountryName } from '@/lib/reportsCountry'
 import { useReportsStore } from '@/stores/reports'
-import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportCityRow, ReportCountryRow } from '@/types/reportcountry'
-import { UiChartType } from '@/utils/ui/chart'
-import type { UiChartSeries } from '@/utils/ui/chart'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportChartData } from '@/types/reportchartdata'
+import type { ReportCountryRow } from '@/types/reportcountry'
+import type { ReportTableData } from '@/types/reporttabledata'
+import schema from '@/views/ClientsByCountryView.schema'
 
 const { t, locale } = useI18n()
 
@@ -36,9 +33,6 @@ const countryName = (code: string | null): string => {
 
 /** Active clients per country. */
 const countries = ref<ReportCountryRow[]>([])
-
-/** Active clients per city, for the map. */
-const cities = ref<ReportCityRow[]>([])
 
 /** Country chosen on the map, if any. */
 const selectedCountry = ref<string | null>(null)
@@ -59,24 +53,34 @@ const top = computed<ReportCountryRow[]>(() => {
   return [chosen, ...sorted.filter(row => row.country !== chosen.country)]
 })
 
-/** Country rows with their display name. */
-const rows = computed(() =>
-  countries.value.map(row => ({ country: countryName(row.country), code: row.country, clientCount: row.clientCount })),
-)
+/** One table row per country, with its display name. */
+interface CountryTableRow {
+  /** Localised country name. */
+  country: string
+  /** ISO-2 code, or null when unresolved. */
+  code: string | null
+  /** Active clients in the country. */
+  clientCount: number
+}
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'country', label: t('shared.country') },
-  { key: 'clientCount', label: t('reports.clientsByCountry.activeClients'), align: UiAlign.Right },
-])
+/** The table: every country with its display name. */
+const table = computed<ReportTableData<CountryTableRow>>(() => ({
+  rows: countries.value.map(row => ({ country: countryName(row.country), code: row.country, clientCount: row.clientCount })),
+  /**
+   * Keys a table row by its country code.
+   *
+   * @param row - The table row.
+   * @returns The code as text, which is "null" for an unresolved country.
+   */
+  rowKey: row => String(row.code),
+}))
 
-/** Bar chart labels. */
-const labels = computed<string[]>(() => top.value.map(row => countryName(row.country)))
-
-/** Bar chart series. */
-const series = computed<UiChartSeries[]>(() => [
-  { label: t('reports.clientsByCountry.activeClients'), data: top.value.map(row => row.clientCount) },
-])
+/** The bar chart of the busiest countries. */
+const chart = computed<ReportChartData>(() => ({
+  title: t('reports.clientsByCountry.top10Countries'),
+  labels: top.value.map(row => countryName(row.country)),
+  series: [{ label: t('reports.clientsByCountry.activeClients'), data: top.value.map(row => row.clientCount) }],
+}))
 
 /**
  * Marks a country, or clears the mark when it is already chosen.
@@ -93,18 +97,14 @@ const clearSelection = (): void => {
 }
 
 /**
- * Loads the country and the city breakdowns together.
+ * Loads the country breakdown.
  *
- * @returns Resolves when both requests have settled.
+ * @returns Resolves when the request has settled.
  */
 const load = async (): Promise<void> => {
-  const result = await store.fetchReports<[ReportCountryRow[], ReportCityRow[]]>([
-    '/reports/clients-by-country',
-    '/reports/clients-by-city',
-  ])
+  const result = await store.fetchReports<[ReportCountryRow[]]>(['/reports/clients-by-country'])
   if (result !== null) {
     countries.value = result[0]
-    cities.value = result[1]
   }
 }
 
@@ -112,23 +112,15 @@ onMounted(load)
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.clientsByCountry.clientsByCountry')" :description="t('reports.clientsByCountry.thisReportShowsTheTotal')">
-    <WorldMap v-if="cities.length > 0" :city-data="cities" @select-country="toggleCountry" />
-
-    <UiStack gap="sm">
-      <UiStack direction="row" justify="between" align="center">
-        <UiText tone="secondary" size="sm">
-          {{ t('reports.clientsByCountry.top10Countries') }}
-        </UiText>
-        <UiButton v-if="selectedCountry" variant="link" data-testid="report-clear-country" @click="clearSelection">
-          {{ t('reports.clientsByCountry.clearSelection') }}
-        </UiButton>
-      </UiStack>
-      <ReportChartCard :type="UiChartType.Bar" :labels="labels" :series="series" horizontal height="lg" />
-    </UiStack>
-
-    <ReportTable :columns="columns" :rows="rows" row-key="code" />
-
+  <ReportPage :retry="load" :schema="schema" :chart="chart" :table="table">
+    <template #map>
+      <WorldMap v-if="countries.length > 0" :country-data="countries" @select-country="toggleCountry" />
+    </template>
+    <template #chart-actions>
+      <UiButton v-if="selectedCountry" variant="link" data-testid="report-clear-country" @click="clearSelection">
+        {{ t('reports.clientsByCountry.clearSelection') }}
+      </UiButton>
+    </template>
     <UiText tone="secondary" size="md" data-testid="report-total-clients">
       {{ t('reports.clientsByCountry.totalClients') }} {{ totalClients }}
     </UiText>

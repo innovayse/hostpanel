@@ -2,14 +2,20 @@
  * Tests for ReportQueryPage: the shared layout of the query reports, driven by a report state it is
  * handed (the state itself is covered by the useQueryReport tests).
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ReportQueryPage from '@/components/reports/ReportQueryPage.vue'
+import UiAdvancedFilters from '@/components/ui/UiAdvancedFilters.vue'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportQueryView } from '@/types/reportquery'
+import { UiFilterCondition } from '@/utils/ui/filter'
+import { ReportAction } from '@/utils/ui/reportParts'
+import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import { useReportsStore } from '@/stores/reports'
 import { createTestI18n } from '../../helpers/i18n'
+import { stubPhone } from '../../helpers/phone'
 
 /** Every column of the test report. */
 const columns: ReportColumn[] = [
@@ -52,23 +58,26 @@ const makeReport = (overrides: Partial<ReportQueryView> = {}): ReportQueryView =
  * Mounts the page.
  *
  * @param report - The report state.
- * @param exportable - Whether the export button shows.
+ * @param exportable - Whether the schema lists the export button beside print.
  * @returns The wrapper.
  */
 const mountPage = (report: ReportQueryView, exportable = false) =>
   mount(ReportQueryPage, {
     props: {
-      title: 'Invoices',
-      description: 'A custom export',
+      schema: {
+        kind: SkeletonKind.Report,
+        actions: exportable ? [ReportAction.Export, ReportAction.Print] : [ReportAction.Print],
+        header: { title: 'shared.invoices', subtitle: 'reports.invoicesReport.thisReportCanBeUsed' },
+        emptyText: 'shared.noInvoicesFound',
+      },
       report,
       columns,
       ranges: [{ key: 'created', label: 'Creation Date', param: 'created' }],
       filterFields: [{ value: 'clientName', label: 'Client' }],
+      defaultFilterField: 'clientName',
       foundText: '1 invoice(s) found',
-      emptyText: 'No invoices found.',
-      exportable,
     },
-    global: { plugins: [createTestI18n(), createPinia()] },
+    global: { plugins: [createTestI18n(), createPinia()], stubs: { teleport: true } },
   })
 
 describe('ReportQueryPage', () => {
@@ -87,10 +96,25 @@ describe('ReportQueryPage', () => {
     expect(wrapper.text()).toContain('Acme')
   })
 
-  it('shows the empty text when the report has no rows', () => {
+  it('shows the empty sentence of its schema when the report has no rows', async () => {
     const wrapper = mountPage(makeReport({ rows: [], totalCount: 0 }))
+    await nextTick()
 
-    expect(wrapper.text()).toContain('No invoices found.')
+    expect(wrapper.text()).toContain(createTestI18n().global.t('shared.noInvoicesFound'))
+  })
+
+  it('shows an ask to choose fields, not an empty bar, when no column is chosen', () => {
+    const wrapper = mountPage(makeReport({ visibleKeys: new Set(), activeColumns: [] }))
+
+    expect(wrapper.find('th').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="report-table-row"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Choose the fields to include to see the results.')
+  })
+
+  it('starts the first filter row on the default field', () => {
+    const wrapper = mountPage(makeReport())
+
+    expect(wrapper.findAllComponents(UiAdvancedFilters)[0]?.props('defaultField')).toBe('clientName')
   })
 
   it('asks for the report and for printing through the state', async () => {
@@ -104,7 +128,7 @@ describe('ReportQueryPage', () => {
     expect(report.print).toHaveBeenCalledTimes(1)
   })
 
-  it('offers the export only when the report has one', async () => {
+  it('offers the export only when its schema lists it', async () => {
     const report = makeReport()
 
     expect(mountPage(report).find('[data-testid="report-export"]').exists()).toBe(false)
@@ -128,5 +152,36 @@ describe('ReportQueryPage', () => {
   it('shows the pager only when the rows do not fit one page', () => {
     expect(mountPage(makeReport()).find('[data-testid="report-pagination-next"]').exists()).toBe(false)
     expect(mountPage(makeReport({ totalCount: 120 })).find('[data-testid="report-pagination-next"]').exists()).toBe(true)
+  })
+})
+
+describe('ReportQueryPage on a phone', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('counts the date ranges that are set and the advanced rows on the Filters button, and keeps them in the sheet', async () => {
+    stubPhone(true)
+    const filters = [{ field: 'clientName', condition: UiFilterCondition.Exact, value: 'Acme' }]
+    const wrapper = mountPage(makeReport({ ranges: { created: ['2026-01-01', '2026-01-31'] }, filters }))
+
+    expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
+    await wrapper.get('[data-testid="report-filter-trigger"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer-body"] [data-testid="report-range-created"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="drawer-body"] [data-testid="field-selector-trigger"]').exists()).toBe(true)
+    expect((wrapper.get('[data-testid="advanced-filters-value-0"]').element as HTMLInputElement).value).toBe('Acme')
+  })
+
+  it('shows no count while nothing is in force, and Apply runs the report', async () => {
+    stubPhone(true)
+    const report = makeReport()
+    const wrapper = mountPage(report)
+
+    expect(wrapper.find('[data-testid="filter-trigger-count"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="report-filter-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="filter-apply"]').trigger('click')
+
+    expect(report.generate).toHaveBeenCalledTimes(1)
   })
 })

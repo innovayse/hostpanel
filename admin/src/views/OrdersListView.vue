@@ -32,10 +32,9 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
+import schema from '@/views/OrdersListView.schema'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
@@ -46,14 +45,22 @@ import type { OrderListFilters, OrderListItem } from '@/types/order'
 import { orderStatusTone, statusLabel } from '@/lib/tones'
 import { useOrdersStore } from '@/stores/orders'
 import { clientPath, orderPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('orders.ordersList.reviewQueue'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Secondary, testid: 'orders-review-queue', onSelect: showReviewQueue },
+])
 
 const store = useOrdersStore()
 
@@ -200,30 +207,19 @@ const orderActions = (order: OrderListItem): UiMenuAction[] => {
     cancelling.value = order.id
   }
   return [
-    ...(pending ? [{ label: t('orders.ordersList.accept'), testid: `orders-accept-${order.id}`, onSelect: onAccept }] : []),
-    { label: t('shared.view'), testid: `orders-view-${order.id}`, to: orderPath(order.id) },
-    ...(pending ? [{ label: t('shared.cancel'), testid: `orders-cancel-${order.id}`, danger: true, onSelect: onCancel }] : []),
+    ...(pending ? [{ label: t('orders.ordersList.accept'), icon: Icon.CheckCircle, testid: `orders-accept-${order.id}`, onSelect: onAccept }] : []),
+    { label: t('shared.view'), icon: Icon.Eye, testid: `orders-view-${order.id}`, to: orderPath(order.id) },
+    ...(pending ? [{ label: t('shared.cancel'), icon: Icon.Close, testid: `orders-cancel-${order.id}`, danger: true, onSelect: onCancel }] : []),
   ]
 }
 </script>
 
 <template>
   <UiStack>
-    <UiPageHeader
-      :title="t('orders.ordersList.orders')"
-      :subtitle="t('orders.ordersList.manageCustomerOrders')"
+    <UiPageHeader :actions="headerActions"
+      v-bind="schemaHeader(schema, t)"
       data-testid="orders-header"
     >
-      <template #actions>
-        <UiButton
-          :variant="UiButtonVariant.Secondary"
-          size="sm"
-          data-testid="orders-review-queue"
-          @click="showReviewQueue"
-        >
-          {{ t('orders.ordersList.reviewQueue') }}
-        </UiButton>
-      </template>
     </UiPageHeader>
 
     <UiListToolbar
@@ -268,19 +264,7 @@ const orderActions = (order: OrderListItem): UiMenuAction[] => {
         :loading="initialLoading"
         data-testid="orders-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('orders.ordersList.order') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('orders.ordersList.items') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody>
           <UiTableRow
             v-for="order in store.orders"

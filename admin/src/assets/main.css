@@ -89,6 +89,11 @@
   /* The lit path of a sub-menu guide runs from the first colour (at the parent) to the second (at the active link). */
   --nav-guide-start: #4c81ff;
   --nav-guide-end: #8b5cf6;
+  /* The muted trunk and curve of a sub-menu guide (the lit path draws over it), and its size in both themes: stroke, how far the curve reaches from the trunk to the link, and the gap between links. */
+  --nav-guide-idle: rgb(255 255 255 / 0.16);
+  --nav-guide-width: 1.5px;
+  --nav-guide-reach: 1rem;
+  --nav-guide-gap: 0.25rem;
 
   /* Capacity bar fills: the brand gradient, and the amber to red one once a bar is nearly full. */
   --gradient-bar:      linear-gradient(90deg, #4c81ff, #8b5cf6);
@@ -189,6 +194,7 @@
   --nav-active-border: #c9d7ff;
   --nav-guide-start: #2f5fe0;
   --nav-guide-end: #6d3fd6;
+  --nav-guide-idle: #d9dfeb;
   --nav-dot:           rgb(15 23 42 / 0.2);
 
   --gradient-bar:      linear-gradient(90deg, #2f5fe0, #6d3fd6);
@@ -299,6 +305,13 @@
   --radius-panel:   22px;
   --radius-pill:    999px;
 
+  /* Switch (UiToggle): the three sizes it is built from. The track height and the knob's travel are derived from them in the
+     component (`calc` over these variables), so the gap between the knob and the track is the same on the left, the right,
+     above and below whatever the values are. */
+  --spacing-toggle-track: 2.25rem;
+  --spacing-toggle-knob:  1rem;
+  --spacing-toggle-inset: 0.125rem;
+
   /* Motion: how long the kit's open and close animations take. Dropdowns are quick, panels and dialogs a little slower. */
   --duration-fast: 100ms;
   --duration-base: 200ms;
@@ -360,19 +373,76 @@
   }
 }
 
-/* The page ground: the base colour with the two soft glows, fixed so they stay put while the content scrolls. */
-/* The lit part of a sub-menu guide. Rows are 2rem tall with a 0.25rem gap and the list has 0.25rem of padding on top, so
-   the centre of row `--i` stands (1.25 + 2.25 * i)rem down the list, and the lit overlay runs from the top of the list to
-   the centre of the active row `--n`. `--nav-guide-from` is the overlay's gradient colour at the centre of row `--i`
-   (a position along the path), so the elbow of that row carries the colour the overlay has beside it. */
-@utility nav-guide-lit {
-  --nav-guide-from: color-mix(in oklab, var(--nav-guide-start), var(--nav-guide-end) calc((1.25 + 2.25 * var(--i)) / (1.25 + 2.25 * var(--n)) * 100%));
+/* The tree guide of a sub-menu link. Every link draws its own segment (`::before`, the trunk, from the previous link's
+   bottom edge through its full row, however many lines its label wraps to; the last link's trunk ends where its curve
+   starts) and its curve (`::after`, a quarter circle from the trunk to the label at the row's vertical middle). Sizes and
+   colours are the `--nav-guide-*` tokens of `:root`; no row height is ever assumed. */
+@utility nav-guide-row {
+  --seg-from: var(--nav-guide-idle);
+  --seg-to: var(--nav-guide-idle);
+  --seg-split: 100%;
+  --seg-curve: var(--nav-guide-idle);
+  position: relative;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--nav-guide-reach));
+    pointer-events: none;
+  }
+
+  &::before {
+    top: calc(-1 * var(--nav-guide-gap));
+    bottom: 0;
+    width: var(--nav-guide-width);
+    background: linear-gradient(to bottom, var(--seg-from), var(--seg-to) var(--seg-split), var(--nav-guide-idle) var(--seg-split));
+  }
+
+  &::after {
+    top: calc(50% - var(--nav-guide-reach));
+    width: var(--nav-guide-reach);
+    height: var(--nav-guide-reach);
+    border-bottom: var(--nav-guide-width) solid var(--seg-curve);
+    border-left: var(--nav-guide-width) solid var(--seg-curve);
+    border-bottom-left-radius: var(--nav-guide-reach);
+  }
+
+  &:last-child::before {
+    bottom: calc(50% + var(--nav-guide-reach));
+  }
 }
 
+/* A link on the lit path (the active link and every one above it): its segment and curve take the gradient between the
+   path's two colours by the link's place `--i` among the `--n + 0.5` rows the path covers (the active link is lit down
+   to its middle only, the half row). Colours are positions along the path, never lengths. */
+@utility nav-guide-lit {
+  --seg-from: color-mix(in oklab, var(--nav-guide-start), var(--nav-guide-end) calc(var(--i) / (var(--n) + 0.5) * 100%));
+  --seg-to: color-mix(in oklab, var(--nav-guide-start), var(--nav-guide-end) calc(min(1, (var(--i) + 1) / (var(--n) + 0.5)) * 100%));
+  --seg-curve: color-mix(in oklab, var(--nav-guide-start), var(--nav-guide-end) calc((var(--i) + 0.5) / (var(--n) + 0.5) * 100%));
+}
+
+/* The active link ends the lit path at its curve: its trunk is lit down to the row's middle and muted below it. The last
+   link is the exception, and it has to win over the 50% above (`&:last-child` is the more specific selector): its trunk
+   box already stops where the curve starts, so lit down to its middle would leave the end of the trunk muted. */
+@utility nav-guide-active {
+  --seg-split: 50%;
+
+  &:last-child {
+    --seg-split: 100%;
+  }
+}
+
+/* The page ground: the base colour with the two soft glows, fixed so they stay put while the content scrolls. */
 @utility ground {
   background-color: var(--surface-base);
   background-image: var(--ground-glow);
   background-attachment: fixed;
+}
+
+/* A box whose own size no content decides, so children can measure it in `cqh` and `cqw`: the scroller of the shell. */
+@utility container-size {
+  container-type: size;
 }
 
 /* A frosted card surface: translucent fill, hairline border, backdrop blur, and the card shadow (none in the dark theme). Radius is the caller's. */
@@ -394,6 +464,19 @@
 
 @utility gradient-brand {
   background: var(--gradient-primary);
+}
+
+/* The stage an uploaded picture is judged on (`UiImagePreview`): a neutral transparency checkerboard, light or dark. It is the same in every theme on purpose, so a dark logo and a white one are each readable on one of the two. */
+@utility checkerboard-light {
+  background-color: #fafafa;
+  background-image: conic-gradient(#e4e4e7 25%, transparent 0 50%, #e4e4e7 0 75%, transparent 0);
+  background-size: 12px 12px;
+}
+
+@utility checkerboard-dark {
+  background-color: #18181b;
+  background-image: conic-gradient(#3f3f46 25%, transparent 0 50%, #3f3f46 0 75%, transparent 0);
+  background-size: 12px 12px;
 }
 
 /* The selected state of a radio (`UiRadio`): the brand gradient disc with a white dot, built from tokens. A selected

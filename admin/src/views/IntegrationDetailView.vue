@@ -10,7 +10,6 @@ import { defineAsyncComponent, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useIntegrationsStore } from '@/stores/integrations'
 import { IntegrationSlug } from '@/types/integration'
-import IntegrationBreadcrumb from '@/components/integrations/IntegrationBreadcrumb.vue'
 import IntegrationConfigPanel from '@/components/integrations/IntegrationConfigPanel.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { AppRoute } from '@/lib/routes'
@@ -21,7 +20,7 @@ const route = useRoute()
 /** Router, to leave the CWP page when the plugin is not installed. */
 const router = useRouter()
 
-/** Integrations store: the loaded integration the breadcrumb names. */
+/** Integrations store: the list the CWP check reads. */
 const store = useIntegrationsStore()
 
 /** Slug from the current route. */
@@ -56,11 +55,6 @@ onMounted(() => {
   <Cwp7IntegrationView v-else-if="isCwp7" />
 
   <UiStack v-else gap="md" class="w-full">
-    <IntegrationBreadcrumb
-      :name="store.current?.name ?? slug"
-      :is-plugin="store.current?.isPlugin ?? false"
-      :icon-url="store.current?.iconUrl ?? null"
-    />
     <IntegrationConfigPanel :slug="slug" />
   </UiStack>
 </template>

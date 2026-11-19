@@ -61,7 +61,6 @@ const baseProps = {
     add: 'widgets-add',
     error: 'widgets-error',
     actionError: 'widgets-action-error',
-    savingOrder: 'widgets-saving-order',
     row: 'widget-row',
     actions: 'widget-actions',
     edit: 'widget-edit',
@@ -127,12 +126,19 @@ describe('StorefrontListTable', () => {
     expect(failed.wrapper.get('[data-testid="widgets-error"]').text()).toBe('Could not load.')
   })
 
-  it('shows the action error and the saving-order loader', async () => {
-    const { wrapper } = await mountScreen(hostWith({ actionError: 'Refused.', savingOrder: true }))
+  it('shows the action error', async () => {
+    const { wrapper } = await mountScreen(hostWith({ actionError: 'Refused.' }))
 
     expect(wrapper.get('[data-testid="widgets-action-error"]').text()).toBe('Refused.')
     expect(wrapper.get('[data-testid="widgets-action-error"]').attributes('data-tone')).toBe('danger')
-    expect(wrapper.get('[data-testid="widgets-saving-order"]').attributes('aria-busy')).toBe('true')
+  })
+
+  it('draws row placeholders in place of the rows while a new order is saved', async () => {
+    const saving = await mountScreen(hostWith({ savingOrder: true }))
+    const idle = await mountScreen(hostWith({ savingOrder: false }))
+
+    expect(saving.wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(idle.wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(false)
   })
 
   it('confirms a finished delete or reorder in the outcome line', async () => {

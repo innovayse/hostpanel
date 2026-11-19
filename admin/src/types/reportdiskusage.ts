@@ -18,6 +18,24 @@ export interface ReportDiskUsageRow {
   bwPercent: number
 }
 
+/** Closed set of reasons a server gave no figures to a refresh; the values are the API's names. */
+export const DiskUsageFailureReason = {
+  UnsupportedModule: 'UnsupportedModule',
+  MissingCredentials: 'MissingCredentials',
+  Unreachable: 'Unreachable',
+} as const
+
+/** One of the failure reasons. */
+export type DiskUsageFailureReason = (typeof DiskUsageFailureReason)[keyof typeof DiskUsageFailureReason]
+
+/** A server the last refresh could not read. */
+export interface ReportDiskUsageFailure {
+  /** Server name. */
+  serverName: string
+  /** Why the server gave no figures. */
+  reason: DiskUsageFailureReason
+}
+
 /** The accounts of one server. */
 export interface ReportDiskUsageServer {
   /** Server name. */
@@ -32,4 +50,6 @@ export interface ReportDiskUsage {
   servers: ReportDiskUsageServer[]
   /** When the figures were last fetched from the servers, if ever. */
   lastUpdated: string | null
+  /** Servers the last refresh could not read; empty after a plain read. */
+  failures: ReportDiskUsageFailure[]
 }

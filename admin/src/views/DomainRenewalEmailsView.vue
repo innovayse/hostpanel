@@ -5,10 +5,7 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportField from '@/components/reports/ReportField.vue'
-import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
@@ -18,11 +15,12 @@ import { useReportClients } from '@/composables/useReportClients'
 import { reportPath } from '@/lib/reportsQuery'
 import { renewalEmailKey } from '@/lib/reportsRows'
 import { ReportCellFormat } from '@/types/reportcolumn'
-import type { ReportColumn } from '@/types/reportcolumn'
 import { DOMAIN_REMINDER_TYPE_LABEL_KEYS } from '@/types/domain'
-import type { ReportDomainRenewal } from '@/types/reportdomainrenewal'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportDomainRenewal, ReportDomainRenewalRow } from '@/types/reportdomainrenewal'
+import type { ReportTableData } from '@/types/reporttabledata'
+import { ReportFieldWidth } from '@/utils/ui/reportField'
 import { UiTone } from '@/utils/ui/tone'
+import schema from '@/views/DomainRenewalEmailsView.schema'
 
 const { t } = useI18n()
 
@@ -50,57 +48,39 @@ const { data, load } = useReport<ReportDomainRenewal>(() =>
   }),
 )
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'clientName', label: t('shared.client') },
-  { key: 'domain', label: t('shared.domain') },
-  { key: 'sentAt', label: t('reports.domainRenewalEmails.dateSent'), format: ReportCellFormat.Date },
-  { key: 'reminder', label: t('reports.domainRenewalEmails.reminder') },
-  { key: 'recipients', label: t('reports.domainRenewalEmails.recipients') },
-  { key: 'sent', label: t('reports.domainRenewalEmails.sent'), align: UiAlign.Center },
-])
+/** The client and the date range take the free width of the filter row. */
+const WIDTHS = { client: ReportFieldWidth.Grow, dateRange: ReportFieldWidth.Grow } as const
+
+/** The reminders that were sent, the send date written as a date; none until the report is read. */
+const table = computed<ReportTableData<ReportDomainRenewalRow>>(() => ({
+  rows: data.value?.rows ?? [],
+  rowKey: renewalEmailKey,
+  extras: { sentAt: { format: ReportCellFormat.Date } },
+}))
 </script>
 
 <template>
-  <ReportPage
-    :title="t('reports.domainRenewalEmails.domainRenewalReminderEmails')"
-    :description="t('reports.domainRenewalEmails.thisReportCanBeUsed')"
-    :retry="load"
-  >
-    <template #filters>
-      <ReportFilterBar :generate-label="t('shared.apply')" @generate="load">
-        <template #fields>
-          <ReportField :label="t('shared.client')" width="grow">
-            <UiClientSelect v-model="selectedClient" :clients="clients" :placeholder="t('shared.startTypingToSearchClients')" />
-          </ReportField>
-          <ReportField :label="t('shared.registrar')">
-            <UiInput v-model="registrar" :placeholder="t('shared.any')" data-testid="report-registrar" />
-          </ReportField>
-          <ReportField :label="t('shared.domain')">
-            <UiInput v-model="domain" :placeholder="t('reports.domainRenewalEmails.optional')" data-testid="report-domain" />
-          </ReportField>
-          <ReportField :label="t('shared.dateRange')" width="grow">
-            <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
-          </ReportField>
-        </template>
-      </ReportFilterBar>
+  <ReportPage :schema="schema" :retry="load" :widths="WIDTHS" :generate-label="t('shared.apply')" :table="table" @generate="load">
+    <template #field-client>
+      <UiClientSelect v-model="selectedClient" :clients="clients" :placeholder="t('shared.allClients')" />
+    </template>
+    <template #field-registrar>
+      <UiInput v-model="registrar" :placeholder="t('shared.any')" data-testid="report-registrar" />
+    </template>
+    <template #field-domain>
+      <UiInput v-model="domain" :placeholder="t('shared.any')" data-testid="report-domain" />
+    </template>
+    <template #field-dateRange>
+      <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
     </template>
 
-    <ReportTable
-      v-if="data"
-      :columns="columns"
-      :rows="data.rows"
-      :row-key="renewalEmailKey"
-      :empty-text="t('shared.noDataFoundForThis2')"
-    >
-      <template #cell-reminder="{ row }">
-        {{ t(DOMAIN_REMINDER_TYPE_LABEL_KEYS[row.reminder]) }}
-      </template>
-      <template #cell-sent>
-        <UiBadge :tone="UiTone.Success" small>
-          {{ t('shared.yes') }}
-        </UiBadge>
-      </template>
-    </ReportTable>
+    <template #cell-reminder="{ row }">
+      {{ t(DOMAIN_REMINDER_TYPE_LABEL_KEYS[row.reminder]) }}
+    </template>
+    <template #cell-sent>
+      <UiBadge :tone="UiTone.Success" small>
+        {{ t('shared.yes') }}
+      </UiBadge>
+    </template>
   </ReportPage>
 </template>

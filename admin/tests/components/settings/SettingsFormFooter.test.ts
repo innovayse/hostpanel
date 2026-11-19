@@ -12,7 +12,7 @@ import { createTestI18n } from '../../helpers/i18n'
  * @param props - Props for the footer.
  * @returns The wrapper.
  */
-const mountFooter = (props: { saveLabel: string; saving: boolean; status?: string; cancelLabel?: string; saveLabelCompact?: string; cancelLabelCompact?: string; dirty?: boolean }) =>
+const mountFooter = (props: { saveLabel: string; saving: boolean; status?: string; cancelLabel?: string; dirty?: boolean; saveDisabled?: boolean }) =>
   mount(SettingsFormFooter, { props, global: { plugins: [createTestI18n()] } })
 
 describe('SettingsFormFooter', () => {
@@ -60,6 +60,13 @@ describe('SettingsFormFooter', () => {
     expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeDefined()
   })
 
+  it('disables Save alone when the edits break a rule, so Cancel still discards them', () => {
+    const wrapper = mountFooter({ saveLabel: 'Save', saving: false, dirty: true, saveDisabled: true })
+
+    expect(wrapper.get('[data-testid="settings-form-save"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="settings-form-cancel"]').attributes('disabled')).toBeUndefined()
+  })
+
   it('keeps the Save label, marks it busy and disables it while saving', () => {
     const wrapper = mountFooter({ saveLabel: 'Save', saving: true })
     const save = wrapper.get('[data-testid="settings-form-save"]')
@@ -78,32 +85,11 @@ describe('SettingsFormFooter', () => {
     expect(wrapper.get('[data-testid="settings-form-status"]').classes()).toContain('truncate')
   })
 
-  it('draws the short labels for a phone beside the full ones when the screen gives them', () => {
-    const wrapper = mountFooter({
-      saveLabel: 'Save changes',
-      saving: false,
-      cancelLabel: 'Discard changes',
-      saveLabelCompact: 'Save',
-      cancelLabelCompact: 'Discard',
-    })
-    const save = wrapper.get('[data-testid="settings-form-save"]')
-    const cancel = wrapper.get('[data-testid="settings-form-cancel"]')
+  it('puts an icon before each label and floats 4px above the bottom edge', () => {
+    const wrapper = mountFooter({ saveLabel: 'Save', saving: false, cancelLabel: 'Discard' })
 
-    /**
-     * Reads the label spans of a button.
-     *
-     * @param button - The button.
-     * @returns Each span's first class and text.
-     */
-    const spans = (button: typeof save): (string | undefined)[][] => button.findAll('span').map(span => [span.classes()[0], span.text()])
-
-    expect(spans(save)).toEqual([['sm:hidden', 'Save'], ['max-sm:hidden', 'Save changes']])
-    expect(spans(cancel)).toEqual([['sm:hidden', 'Discard'], ['max-sm:hidden', 'Discard changes']])
-  })
-
-  it('keeps the short and the full label while saving', () => {
-    const wrapper = mountFooter({ saveLabel: 'Save changes', saving: true, saveLabelCompact: 'Save' })
-
-    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('SaveSave changes')
+    expect(wrapper.get('[data-testid="settings-form-save"]').find('svg').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="settings-form-cancel"]').find('svg').exists()).toBe(true)
+    expect(wrapper.classes()).toContain('bottom-1')
   })
 })

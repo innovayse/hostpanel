@@ -1,17 +1,20 @@
 /**
- * Tests for WorldMap: one marker per known city, the hover caption, and the country a click emits.
+ * Tests for WorldMap: countries with data are filled on the scale, others stay neutral, the
+ * tooltip names the hovered or focused country, the legend shows, and a choice emits its code.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import WorldMap from '@/components/reports/WorldMap.vue'
-import type { ReportCityRow } from '@/types/reportcountry'
+import { MAP_ACTIVE_FILL, MAP_FILL_STEPS } from '@/lib/reports'
+import type { ReportCountryRow } from '@/types/reportcountry'
 import { createTestI18n } from '../../helpers/i18n'
 
-/** Two cities the map knows and one it does not. */
-const cityData: ReportCityRow[] = [
-  { city: 'Yerevan', country: 'AM', clientCount: 4 },
-  { city: 'Paris', country: 'FR', clientCount: 1 },
-  { city: 'Nowhere', country: 'XX', clientCount: 9 },
+/** Two countries with data, one the map does not draw, and one unresolved. */
+const countryData: ReportCountryRow[] = [
+  { country: 'AM', clientCount: 10, totalRevenue: 0 },
+  { country: 'FR', clientCount: 1, totalRevenue: 0 },
+  { country: 'XX', clientCount: 9, totalRevenue: 0 },
+  { country: null, clientCount: 5, totalRevenue: 0 },
 ]
 
 /**
@@ -19,43 +22,70 @@ const cityData: ReportCityRow[] = [
  *
  * @returns The wrapper.
  */
-const mountMap = () => mount(WorldMap, { props: { cityData }, global: { plugins: [createTestI18n()] } })
+const mountMap = () => mount(WorldMap, { props: { countryData }, global: { plugins: [createTestI18n()] } })
 
 describe('WorldMap', () => {
-  it('draws a marker for each city it can place and none for the others', () => {
+  it('fills countries with data on the scale, the busiest darkest', () => {
     const wrapper = mountMap()
 
-    expect(wrapper.find('[data-testid="report-map-city-Yerevan"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="report-map-city-Paris"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="report-map-city-Nowhere"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="report-map-country-AM"]').classes()).toContain(MAP_FILL_STEPS.at(-1)?.fill)
+    expect(wrapper.get('[data-testid="report-map-country-FR"]').classes()).toContain(MAP_FILL_STEPS[0]?.fill)
   })
 
-  it('hints to hover a dot until one is hovered, then names the city, country and clients', async () => {
+  it('leaves countries without data neutral and out of the tab order', () => {
     const wrapper = mountMap()
 
-    expect(wrapper.get('[data-testid="report-map-caption"]').text()).toBe('Hover a dot to see the city.')
+    expect(wrapper.find('[data-testid="report-map-country-DE"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="report-map-country-XX"]').exists()).toBe(false)
+    expect(wrapper.findAll('path[aria-hidden="true"]').length).toBeGreaterThan(100)
+  })
 
-    await wrapper.get('[data-testid="report-map-city-Yerevan"]').trigger('mouseenter')
-    expect(wrapper.get('[data-testid="report-map-caption"]').text()).toBe('Yerevan, Armenia: 4 clients')
+  it('labels a country for assistive technology with its name and clients', () => {
+    const wrapper = mountMap()
 
-    await wrapper.get('[data-testid="report-map-city-Yerevan"]').trigger('mouseleave')
-    expect(wrapper.get('[data-testid="report-map-caption"]').text()).toBe('Hover a dot to see the city.')
+    expect(wrapper.get('[data-testid="report-map-country-AM"]').attributes('aria-label')).toBe('Armenia: 10 clients')
+    expect(wrapper.get('[data-testid="report-map-country-AM"]').attributes('tabindex')).toBe('0')
+  })
+
+  it('highlights a hovered country and shows its tooltip, then clears both', async () => {
+    const wrapper = mountMap()
+    const country = wrapper.get('[data-testid="report-map-country-AM"]')
+
+    expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+
+    await country.trigger('mouseenter')
+    expect(wrapper.get('[role="tooltip"]').text()).toBe('Armenia: 10 clients')
+    expect(country.classes()).toContain(MAP_ACTIVE_FILL)
+
+    await country.trigger('mouseleave')
+    expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+    expect(country.classes()).not.toContain(MAP_ACTIVE_FILL)
   })
 
   it('uses the singular for one client', async () => {
     const wrapper = mountMap()
 
-    await wrapper.get('[data-testid="report-map-city-Paris"]').trigger('mouseenter')
+    await wrapper.get('[data-testid="report-map-country-FR"]').trigger('focus')
 
-    expect(wrapper.get('[data-testid="report-map-caption"]').text()).toContain('1 client')
-    expect(wrapper.get('[data-testid="report-map-caption"]').text()).not.toContain('clients')
+    expect(wrapper.get('[role="tooltip"]').text()).toBe('France: 1 client')
   })
 
-  it('emits the country of a clicked city', async () => {
+  it('shows the legend', () => {
     const wrapper = mountMap()
 
-    await wrapper.get('[data-testid="report-map-city-Paris"]').trigger('click')
+    expect(wrapper.get('[data-testid="report-map-legend"]').text()).toContain('No data')
+    expect(wrapper.get('[data-testid="report-map-legend"]').text()).toContain('Fewer')
+    expect(wrapper.get('[data-testid="report-map-legend"]').text()).toContain('More')
+  })
 
-    expect(wrapper.emitted('select-country')).toEqual([['FR']])
+  it('emits the code of a clicked country and of one chosen with Enter or Space', async () => {
+    const wrapper = mountMap()
+    const country = wrapper.get('[data-testid="report-map-country-FR"]')
+
+    await country.trigger('click')
+    await country.trigger('keydown', { key: 'Enter' })
+    await country.trigger('keydown', { key: ' ' })
+
+    expect(wrapper.emitted('select-country')).toEqual([['FR'], ['FR'], ['FR']])
   })
 })

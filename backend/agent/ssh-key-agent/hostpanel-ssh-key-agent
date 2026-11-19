@@ -22,6 +22,12 @@ Contract version 1 (see README.md beside this file for the full specification):
     {"v": 1, "op": "revoke", "account": "<user>", "key_id": "<uuid>"}
     {"v": 1, "op": "prepare-site", "account": "<user>", "domain": "<the account's domain>"}   (1.3.0+, opt-in)
     {"v": 1, "op": "remove-jail", "account": "<user>"}   (1.4.0+: only once the account itself is deleted)
+    {"v": 1, "op": "ensure-website", "account": "<user>", "hostname": "<host>", "docroot": "<relative dir>",
+     "php": "8.3", "link_root": true}                    (1.5.0+, php and link_root optional; needs a helper; php is one of
+                                                          ping's php_versions)
+    {"v": 1, "op": "remove-website", "account": "<user>", "hostname": "<host>"}                    (1.5.0+)
+    {"v": 1, "op": "ensure-database", "account": "<user>", "label": "<label>"}                     (1.5.0+)
+    {"v": 1, "op": "remove-database", "account": "<user>", "label": "<label>"}                     (1.5.0+)
 
 Every response is {"v": 1, "ok": true, ...} or {"v": 1, "ok": false, "error": "<code>"}.
 
@@ -62,7 +68,7 @@ import sys
 import time
 
 CONTRACT_VERSION = 1
-AGENT_VERSION = "1.4.0"
+AGENT_VERSION = "1.5.0"
 CONFIG_PATH = "/etc/hostpanel-ssh-key-agent/agent.conf"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_AUTHORIZED_KEYS_BYTES = 256 * 1024
@@ -74,6 +80,12 @@ TAG_PREFIX = "hostpanel:"
 ACCOUNT_RE = re.compile(r"^[a-z_][a-z0-9_-]{0,31}$")
 KEY_ID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 ED25519_LINE_RE = re.compile(r"^ssh-ed25519 ([A-Za-z0-9+/]{68}(?:==|=)?)(?: [^\r\n]*)?$")
+# 1.5.0 ops: validated fields. A segment never starts with a dot, so ".." , ".ssh" and ".conf" cannot be written.
+DOCROOT_RE = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}(?:/[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}){0,5}$")
+LABEL_RE = re.compile(r"^[a-z][a-z0-9]{0,14}$")
+PHP_VERSION_RE = re.compile(r"^[0-9]\.[0-9]{1,2}$")
+DB_PASSWORD_RE = re.compile(r"^[0-9a-f]{40}$")
+RESULT_PREFIX = "RESULT "
 DISABLED_SHELLS = {"/sbin/nologin", "/usr/sbin/nologin", "/bin/false", "/usr/bin/false", ""}
 
 DEFAULTS = {
@@ -109,6 +121,9 @@ DEFAULTS = {
     # uname, which a login profile script calls, and /etc/profile.d/colorls.sh, where `ll` is defined.
     "jail_extras": "/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS",
     "systemd_unit_dir": "/etc/systemd/system",
+    # Directory of the provider helpers behind ensure-website, remove-website, ensure-database and
+    # remove-database (1.5.0+). A helper that is not there makes its op answer not_supported.
+    "helper_dir": "/usr/local/libexec/hostpanel-ssh-key-agent",
 }
 
 # Replaced by the tests; every jail command goes through it.
@@ -163,6 +178,7 @@ def load_config(path=CONFIG_PATH):
         "jail_extras": [x.strip() for x in section["jail_extras"].split(",") if x.strip()],
         "systemd_unit_dir": section["systemd_unit_dir"].strip(),
         "site_prepare_command": section["site_prepare_command"].strip(),
+        "helper_dir": section["helper_dir"].strip(),
     }
 
 
@@ -661,11 +677,37 @@ REQUIRED_FIELDS = {
     "revoke": {"account", "key_id"},
     "prepare-site": {"account", "domain"},
     "remove-jail": {"account"},
+    "ensure-website": {"account", "hostname", "docroot"},
+    "remove-website": {"account", "hostname"},
+    "ensure-database": {"account", "label"},
+    "remove-database": {"account", "label"},
+}
+
+# Fields an op accepts but does not need.
+OPTIONAL_FIELDS = {
+    "ensure-website": {"php", "link_root"},
 }
 
 DOMAIN_RE = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
 SITE_PREPARE_TIMEOUT_SECONDS = 600
 SITE_PREPARE_STEP_RE = re.compile(r"^\[provision [a-z0-9]+\] (.{1,200})$")
+
+
+def _is_text_matching(pattern):
+    """A field check: a string that matches the whole pattern (a trailing newline does not slip past `$`)."""
+    return lambda value: isinstance(value, str) and pattern.fullmatch(value) is not None
+
+
+FIELD_VALIDATORS = {
+    "key_id": _is_text_matching(KEY_ID_RE),
+    "domain": _is_text_matching(DOMAIN_RE),
+    "hostname": _is_text_matching(DOMAIN_RE),
+    "label": _is_text_matching(LABEL_RE),
+    "php": _is_text_matching(PHP_VERSION_RE),
+    "docroot": lambda value: isinstance(value, str) and len(value) <= 200 and ".." not in value
+                             and DOCROOT_RE.fullmatch(value) is not None,
+    "link_root": lambda value: isinstance(value, bool),
+}
 
 
 def validate_request(raw):
@@ -681,12 +723,14 @@ def validate_request(raw):
     op = request.get("op")
     if op not in REQUIRED_FIELDS:
         raise AgentError("unknown_operation")
-    allowed = {"v", "op"} | REQUIRED_FIELDS[op]
-    if set(request) != allowed:
+    fields = set(request) - {"v", "op"}
+    if not REQUIRED_FIELDS[op] <= fields <= REQUIRED_FIELDS[op] | OPTIONAL_FIELDS.get(op, set()):
         raise AgentError("invalid_request")
-    if "key_id" in request and (not isinstance(request["key_id"], str) or not KEY_ID_RE.match(request["key_id"])):
-        raise AgentError("invalid_request")
-    if "domain" in request and (not isinstance(request["domain"], str) or not DOMAIN_RE.match(request["domain"])):
+    for field, is_valid in FIELD_VALIDATORS.items():
+        if field in request and not is_valid(request[field]):
+            raise AgentError("invalid_request")
+    # The pool lines link_root asks for belong to a php-fpm pool, so there is nothing to set without a version.
+    if request.get("link_root") and "php" not in request:
         raise AgentError("invalid_request")
     return request
 
@@ -718,6 +762,114 @@ def prepare_site(account, domain, config, run=subprocess.run):
             steps.append(match.group(1))
     audit_event(config, account["name"], "site_prepare")
     return {"prepared": True, "steps": steps[:50]}
+
+
+# Ops that run a provider helper from helper_dir (1.5.0); the helper has the op's name. `exits` maps a helper's exit
+# code to a stable error, any other failure (or a missing or malformed RESULT line) answers `failure`.
+HELPER_OPS = {
+    "ensure-website": {"failure": "website_failed",
+                       "exits": {3: "site_not_owned", 4: "website_conflict", 5: "php_version_unsupported"}},
+    "remove-website": {"failure": "website_failed", "exits": {3: "site_not_owned"}},
+    "ensure-database": {"failure": "database_failed", "exits": {3: "site_not_owned", 6: "database_limit"}},
+    "remove-database": {"failure": "database_failed", "exits": {3: "site_not_owned"}},
+}
+OPS_HELPER_TIMEOUT_SECONDS = 50
+# The provider helper that lists the php versions this server offers: one "N.N" per line on stdout, no arguments.
+PHP_VERSIONS_HELPER = "php-versions"
+
+
+def helper_path(op, config):
+    """The executable helper behind an op, or None when this server does not ship it."""
+    directory = config.get("helper_dir") or DEFAULTS["helper_dir"]
+    if not os.path.isabs(directory):
+        raise AgentError("internal_error")
+    path = os.path.join(directory, op)
+    return path if os.path.isfile(path) and os.access(path, os.X_OK) else None
+
+
+def capabilities(config):
+    """The 1.5.0 ops this server can run, reported by ping so HostPanel only asks for what exists."""
+    return [op for op in HELPER_OPS if helper_path(op, config)]
+
+
+def php_versions(config):
+    """
+    The php versions this server offers, sorted, as reported by ping and accepted by ensure-website.
+
+    Taken from the provider's `php-versions` helper so the agent knows nothing about the panel underneath. A server
+    without the helper, or one whose helper fails, offers none; only well-formed versions are kept.
+    """
+    helper = helper_path(PHP_VERSIONS_HELPER, config)
+    if helper is None:
+        return []
+    try:
+        done = subprocess.run([helper], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                              env=dict(JAIL_ENV), timeout=OPS_HELPER_TIMEOUT_SECONDS, check=False, text=True)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if done.returncode != 0:
+        return []
+    versions = {line for line in (done.stdout or "").splitlines() if PHP_VERSION_RE.fullmatch(line)}
+    return sorted(versions, key=lambda version: tuple(int(part) for part in version.split(".")))
+
+
+def _helper_args(request):
+    """The fixed argument list of an op's helper, taken only from validated request fields."""
+    op = request["op"]
+    if op == "ensure-website":
+        return [request["account"], request["hostname"], request["docroot"], request.get("php", ""),
+                "1" if request.get("link_root") else "0"]
+    if op == "remove-website":
+        return [request["account"], request["hostname"]]
+    return [request["account"], request["label"]]
+
+
+def _is_valid_result(request, body):
+    """The schema of a helper's RESULT: exactly the documented keys, with the documented types and values."""
+    if not isinstance(body, dict):
+        return False
+    if request["op"] != "ensure-database":
+        return set(body) == {"changed"} and isinstance(body["changed"], bool)
+    created = body.get("created")
+    if not isinstance(created, bool) or set(body) != {"created", "database", "username"} | ({"password"} if created else set()):
+        return False
+    name = "%s_%s" % (request["account"], request["label"])
+    if body["database"] != name or body["username"] != name:
+        return False
+    return not created or (isinstance(body["password"], str) and DB_PASSWORD_RE.fullmatch(body["password"]) is not None)
+
+
+def run_ops_helper(request, config):
+    """
+    Root side: runs the provider helper of a 1.5.0 op and returns its RESULT as the response body.
+
+    The helper owns the server-specific work and the registry of what the agent created. Its output is
+    never relayed: only the one `RESULT {json}` line is read, parsed and checked against the op's schema. The
+    ensure-database password is in that line and nowhere else; it is not logged or audited.
+    """
+    op = request["op"]
+    spec = HELPER_OPS[op]
+    helper = helper_path(op, config)
+    if helper is None:
+        raise AgentError("not_supported")
+    try:
+        done = subprocess.run([helper] + _helper_args(request), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL, env=dict(JAIL_ENV), timeout=OPS_HELPER_TIMEOUT_SECONDS,
+                              check=False, text=True)
+    except (OSError, subprocess.SubprocessError):
+        raise AgentError(spec["failure"])
+    if done.returncode != 0:
+        raise AgentError(spec["exits"].get(done.returncode, spec["failure"]))
+    results = [line[len(RESULT_PREFIX):] for line in (done.stdout or "").splitlines() if line.startswith(RESULT_PREFIX)]
+    if len(results) != 1:
+        raise AgentError(spec["failure"])
+    try:
+        body = json.loads(results[0])
+    except ValueError:
+        raise AgentError(spec["failure"])
+    if not _is_valid_result(request, body):
+        raise AgentError(spec["failure"])
+    return body
 
 
 def run_as_account(request, account, config):
@@ -772,17 +924,23 @@ def audit_event(config, account, event):
 
 
 def audit(config, request, outcome):
-    """Appends one line per mutating request. Never contains key material beyond the fingerprint."""
-    if request is None or request.get("op") not in ("add", "revoke"):
+    """
+    Appends one line per mutating request. Never contains key material beyond the fingerprint, and for the
+    1.5.0 ops only the outcome and the hostname or label: a helper's answer (the database password) is never audited.
+    """
+    if request is None or request.get("op") not in ("add", "revoke") + tuple(HELPER_OPS):
         return
     entry = {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "op": request.get("op"),
         "account": request.get("account"),
-        "key_id": request.get("key_id"),
         "outcome": outcome,
         "client": os.environ.get("SUDO_USER", ""),
     }
+    if request.get("op") in HELPER_OPS:
+        entry["target"] = request.get("hostname") or request.get("label")
+    else:
+        entry["key_id"] = request.get("key_id")
     if request.get("op") == "add":
         try:
             entry["fingerprint"] = parse_ed25519(request.get("public_key"))[1]
@@ -808,7 +966,8 @@ def handle(raw, config):
             return response
         if request["op"] == "ping":
             return {"v": CONTRACT_VERSION, "ok": True, "agent_version": AGENT_VERSION,
-                    "provider": config.get("provider", "generic-linux"), "binding": config.get("binding", "")}
+                    "provider": config.get("provider", "generic-linux"), "binding": config.get("binding", ""),
+                    "capabilities": capabilities(config), "php_versions": php_versions(config)}
         account = resolve_account(request["account"], config)
         os.makedirs(config["lock_dir"], mode=0o700, exist_ok=True)
         lock_fd = os.open(os.path.join(config["lock_dir"], account["name"] + ".lock"),
@@ -826,6 +985,11 @@ def handle(raw, config):
                 audit(config, request, "ok")
                 response = {"v": CONTRACT_VERSION, "ok": True}
                 response.update(result)
+                return response
+            if request["op"] in HELPER_OPS:
+                response = {"v": CONTRACT_VERSION, "ok": True}
+                response.update(run_ops_helper(request, config))
+                audit(config, request, "ok")
                 return response
             if jail and request["op"] == "add" and account["shell_enabled"]:
                 # Before the key is written: a key that lands but cannot log in is worse than none.

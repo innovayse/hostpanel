@@ -38,8 +38,8 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/ClientUsersView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -50,6 +50,8 @@ import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { MS_PER_SECOND, NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -433,8 +435,8 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
    */
   const onRemove = (): void => handleRemoveUser(u)
   return [
-    { label: t('clients.clientUsers.manage'), testid: `client-users-manage-${u.userId}`, onSelect: onManage },
-    ...(!u.isOwner ? [{ label: t('clients.clientUsers.remove'), testid: `client-users-remove-${u.userId}`, onSelect: onRemove, danger: true }] : []),
+    { label: t('clients.clientUsers.manage'), icon: Icon.Settings, testid: `client-users-manage-${u.userId}`, onSelect: onManage },
+    ...(!u.isOwner ? [{ label: t('clients.clientUsers.remove'), icon: Icon.Trash, testid: `client-users-remove-${u.userId}`, onSelect: onRemove, danger: true }] : []),
   ]
 }
 </script>
@@ -462,7 +464,7 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
         <UiHeading v-else :level="2" variant="section">
           {{ t('clients.clientUsers.usersLength', { length: users.length }) }}
         </UiHeading>
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           :variant="UiButtonVariant.Primary"
           data-testid="client-users-toggle-add"
           @click="showAddUser = !showAddUser"
@@ -540,7 +542,7 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
                 </UiLabel>
               </UiGrid>
               <UiStack direction="row" :justify="UiJustify.End">
-                <UiButton
+                <UiButton :action="UiActionKind.Add"
                   v-if="addMode === AddUserMode.Search"
                   :variant="UiButtonVariant.Primary"
                   :loading="addingUser"
@@ -549,7 +551,7 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
                 >
                   {{ t('clients.clientUsers.addUser2') }}
                 </UiButton>
-                <UiButton
+                <UiButton :action="UiActionKind.Add"
                   v-else
                   :variant="UiButtonVariant.Primary"
                   :loading="inviteSending"
@@ -567,15 +569,7 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
 
       <UiCard v-if="initialLoading || users.length > 0" class="overflow-x-auto">
         <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-users-table">
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
-              <UiTableHeader>{{ t('clients.clientUsers.role') }}</UiTableHeader>
-              <UiTableHeader>{{ t('clients.clientUsers.lastLogin') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+          <UiSchemaTableHead :columns="schema.table.columns" />
           <UiTableBody divided>
             <UiTableRow v-for="u in users" :key="u.userId" hoverable>
               <UiTableCell>

@@ -1,6 +1,6 @@
 /**
- * Tests for TrackingChatCard: the tag-manager id, the chat provider dropdown and the four chat
- * fields, each a draft of the page save bar.
+ * Tests for TrackingChatCard: the tag-manager id, the chat provider dropdown and the chat address
+ * and the token written per language, each a draft of the page save bar.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import TrackingChatCard from '@/components/settings/TrackingChatCard.vue'
@@ -49,16 +49,42 @@ describe('TrackingChatCard', () => {
     const { wrapper, registry } = await mountSettingsCard(TrackingChatCard, rows)
     expect((wrapper.get('[data-testid="tracking-chat-base-url"]').element as HTMLInputElement).value).toBe('https://chat.example.com')
 
+    await wrapper.get('[data-testid="tracking-chat-token-tab-hy"]').trigger('click')
     await wrapper.get('[data-testid="tracking-chat-token-hy"]').setValue('tok-hy')
     await registry.saveAll(save)
 
     expect(save.mock.calls).toEqual([[6, 'tok-hy']])
   })
 
+  it('shows one token field with a tab per language and marks the tabs that are empty', async () => {
+    const { wrapper } = await mountSettingsCard(TrackingChatCard, [...rows.slice(0, 5), { id: 6, key: 'portal.chat.website_token.hy', value: 'tok-hy' }])
+
+    expect(wrapper.findAll('[data-testid^="tracking-chat-token"][role="tab"]').map((tab) => tab.attributes('data-testid'))).toEqual([
+      'tracking-chat-token-tab-en',
+      'tracking-chat-token-tab-ru',
+      'tracking-chat-token-tab-hy',
+    ])
+    expect(wrapper.find('[data-testid="tracking-chat-token-tab-en-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="tracking-chat-token-tab-hy-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="tracking-chat-token-ru"]').exists()).toBe(false)
+  })
+
+  it('puts the refusal of a language on its tab and shows it under the field', async () => {
+    const { wrapper, registry } = await mountSettingsCard(TrackingChatCard, rows)
+    const refuse = vi.fn<SettingSave>(async () => ({ saved: false, error: 'Token is not valid.' }))
+
+    await wrapper.get('[data-testid="tracking-chat-token-tab-ru"]').trigger('click')
+    await wrapper.get('[data-testid="tracking-chat-token-ru"]').setValue('bad')
+    await registry.saveAll(refuse)
+
+    expect(wrapper.find('[data-testid="tracking-chat-token-tab-ru-invalid"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Token is not valid.')
+  })
+
   it('warns about every unseeded row instead of drawing its field', async () => {
     const { wrapper } = await mountSettingsCard(TrackingChatCard, [rows[0] as Setting])
 
     expect(wrapper.find('[data-testid="tracking-chat-provider"]').exists()).toBe(false)
-    expect(wrapper.findAll('[data-testid="setting-not-seeded"]')).toHaveLength(4)
+    expect(wrapper.findAll('[data-testid="setting-not-seeded"]')).toHaveLength(2)
   })
 })

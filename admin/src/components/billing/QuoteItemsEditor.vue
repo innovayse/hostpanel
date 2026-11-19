@@ -2,45 +2,43 @@
 /**
  * The line-item editor of a quote: quantity, description, unit price, discount and tax per line,
  * a running total per line, and the sub-total and total due. Used by the create and the detail
- * screens, which hold the lines as this component's `v-model`. `loading` keeps the real header and draws placeholder
- * rows and totals while the quote is still being read.
+ * screens, which hold the lines as this component's `v-model`.
+ *
+ * It is the body of the line items card of `quoteSchemaParts`, which `UiDetailCards` draws on both screens (the card, its
+ * title and its skeleton), so the editor draws no card or title of its own and heads its table from the schema's columns.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { formatPlainAmount } from '@/lib/money'
 import { blankQuoteLine } from '@/lib/quoteLines'
+import { QUOTE_ITEMS_TABLE } from '@/lib/quoteSchemaParts'
 import type { QuoteLineDraft } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiCardRole } from '@/utils/ui/table'
+import { UiAlign } from '@/utils/ui/table'
+import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   /** ISO 4217 code the quote is priced in; amounts read in dollars while it is not known yet. */
   currency?: string | null
-  /** Draws placeholder rows and totals while the quote is read. */
-  loading?: boolean
 }>(), {
   currency: undefined,
-  loading: false,
 })
 
 /** The quote lines; the editor replaces the array on every change. */
@@ -98,6 +96,7 @@ const lineActions = (index: number): UiMenuAction[] => {
   return [
     {
       label: t('billing.addQuote.deleteRow'),
+      icon: Icon.Trash,
       testid: `billing-quote-item-remove-${index}`,
       danger: true,
       /**
@@ -114,98 +113,80 @@ const lineActions = (index: number): UiMenuAction[] => {
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="billing-quote-items">
-    <UiStack gap="sm">
-      <UiHeading :level="3" variant="card">
-        {{ t('shared.lineItems') }}
-      </UiHeading>
+  <UiStack gap="sm" data-testid="billing-quote-items">
+    <UiTable :density="UiTableDensity.Compact" :empty="lines.length === 0" :colspan="7">
+      <UiSchemaTableHead :columns="QUOTE_ITEMS_TABLE.columns" />
+      <UiTableBody divided>
+        <UiTableRow v-for="(line, index) in lines" :key="line.key">
+          <UiTableCell>
+            <UiNumberInput
+              :model-value="line.quantity"
+              :min="1"
+              placeholder="1"
+              :data-testid="`billing-quote-item-quantity-${index}`"
+              @update:model-value="patch(index, { quantity: $event ?? 0 })"
+            />
+          </UiTableCell>
+          <UiTableCell>
+            <UiTextarea
+              :model-value="line.description"
+              rows="1"
+              :placeholder="t('shared.description')"
+              :data-testid="`billing-quote-item-description-${index}`"
+              @update:model-value="patch(index, { description: $event })"
+            />
+          </UiTableCell>
+          <UiTableCell>
+            <UiNumberInput
+              :model-value="line.unitPrice"
+              :step="0.01"
+              :min="0"
+              placeholder="0.00"
+              :data-testid="`billing-quote-item-price-${index}`"
+              @update:model-value="patch(index, { unitPrice: $event ?? 0 })"
+            />
+          </UiTableCell>
+          <UiTableCell>
+            <UiNumberInput
+              :model-value="line.discountPercent"
+              :step="1"
+              :min="0"
+              :max="MAX_PERCENT"
+              placeholder="0"
+              @update:model-value="patch(index, { discountPercent: $event ?? 0 })"
+            />
+          </UiTableCell>
+          <UiTableCell :align="UiAlign.Center">
+            <UiCheckbox
+              :model-value="line.taxed"
+              :aria-label="t('shared.taxed')"
+              @update:model-value="patch(index, { taxed: $event })"
+            />
+          </UiTableCell>
+          <UiTableCell numeric>
+            <UiText tone="primary" size="md">{{ formatPlainAmount(lineTotal(line), props.currency) }}</UiText>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="lineActions(index)" :testid="`billing-quote-item-actions-${index}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiTable>
 
-      <UiTable :density="UiTableDensity.Compact" :empty="lines.length === 0" :loading="loading" :colspan="7" :skeleton-rows="3">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.qty') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.description') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('billing.quoteDetail.discount') }}</UiTableHeader>
-            <UiTableHeader align="center">{{ t('shared.taxed') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
-        <UiTableBody divided>
-          <UiTableRow v-for="(line, index) in lines" :key="line.key">
-            <UiTableCell>
-              <UiNumberInput
-                :model-value="line.quantity"
-                :min="1"
-                placeholder="1"
-                :data-testid="`billing-quote-item-quantity-${index}`"
-                @update:model-value="patch(index, { quantity: $event ?? 0 })"
-              />
-            </UiTableCell>
-            <UiTableCell>
-              <UiTextarea
-                :model-value="line.description"
-                rows="1"
-                :placeholder="t('shared.description')"
-                :data-testid="`billing-quote-item-description-${index}`"
-                @update:model-value="patch(index, { description: $event })"
-              />
-            </UiTableCell>
-            <UiTableCell>
-              <UiNumberInput
-                :model-value="line.unitPrice"
-                :step="0.01"
-                :min="0"
-                placeholder="0.00"
-                :data-testid="`billing-quote-item-price-${index}`"
-                @update:model-value="patch(index, { unitPrice: $event ?? 0 })"
-              />
-            </UiTableCell>
-            <UiTableCell>
-              <UiNumberInput
-                :model-value="line.discountPercent"
-                :step="1"
-                :min="0"
-                :max="MAX_PERCENT"
-                placeholder="0"
-                @update:model-value="patch(index, { discountPercent: $event ?? 0 })"
-              />
-            </UiTableCell>
-            <UiTableCell align="center">
-              <UiCheckbox
-                :model-value="line.taxed"
-                :aria-label="t('shared.taxed')"
-                @update:model-value="patch(index, { taxed: $event })"
-              />
-            </UiTableCell>
-            <UiTableCell numeric>
-              <UiText tone="primary" size="md">{{ formatPlainAmount(lineTotal(line), props.currency) }}</UiText>
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="lineActions(index)" :testid="`billing-quote-item-actions-${index}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <UiStack direction="row" justify="between" align="center" wrap>
-        <UiButton variant="secondary" size="sm" :disabled="loading" data-testid="billing-quote-item-add" @click="addLine">
-          {{ t('billing.quoteDetail.addItem') }}
-        </UiButton>
-        <UiStack align="end" gap="xs">
-          <UiStack direction="row" gap="lg" align="center">
-            <UiText tone="muted" size="md">{{ t('shared.subTotal2') }}</UiText>
-            <UiSkeletonBar v-if="loading" class="h-4 w-20 rounded-md" aria-hidden="true" />
-            <UiText v-else tone="secondary" size="md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
-          </UiStack>
-          <UiStack direction="row" gap="lg" align="center">
-            <UiText tone="primary" size="md">{{ t('shared.totalDue2') }}</UiText>
-            <UiSkeletonBar v-if="loading" class="h-4 w-20 rounded-md" aria-hidden="true" />
-            <UiText v-else tone="primary" size="md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
-          </UiStack>
+    <UiStack direction="row" justify="between" align="center" wrap>
+      <UiButton :action="UiActionKind.Add" variant="secondary" size="sm" data-testid="billing-quote-item-add" @click="addLine">
+        {{ t('billing.quoteDetail.addItem') }}
+      </UiButton>
+      <UiStack align="end" gap="xs">
+        <UiStack direction="row" gap="lg" align="center">
+          <UiText tone="muted" size="md">{{ t('shared.subTotal2') }}</UiText>
+          <UiText tone="secondary" size="md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
+        </UiStack>
+        <UiStack direction="row" gap="lg" align="center">
+          <UiText tone="primary" size="md">{{ t('shared.totalDue2') }}</UiText>
+          <UiText tone="primary" size="md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
         </UiStack>
       </UiStack>
     </UiStack>
-  </UiCard>
+  </UiStack>
 </template>

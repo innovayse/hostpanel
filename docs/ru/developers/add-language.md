@@ -165,8 +165,8 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 - `admin/src/locales/contentLanguage.ts`: добавьте язык в перечисление `ContentLanguage`.
 - `admin/src/lib/constants.ts`: добавьте запись в список `LANGUAGE_OPTIONS`, чтобы язык появился в селекторах языка в формах клиента и пользователя.
 - `admin/src/lib/storefrontTranslations.ts`: добавьте локаль в `STOREFRONT_LOCALES` и запись `[ContentLanguage.Fr]: blank()` в `blankTranslations`, чтобы в формах содержимого витрины появилась вкладка для неё.
-- `admin/src/composables/useStorefrontLocaleTabs.ts` и `admin/src/views/SlideFormView.vue`: добавьте вкладку для новой локали.
-- Подписи во всех языковых файлах панели администратора: `storefront.locales.fr`, `settings.slideForm.locales.fr` и `clients.clientForm.french` (используйте название вашего языка), в файлах `storefront.json`, `settings.json` и `clients.json` в `admin/src/locales/<lang>/`.
+- `admin/src/components/ui/UiLocalizedField.vue`: добавьте подпись новой локали в вычисляемый объект `captions`, который читает каждая полоса языковых вкладок админки. Такие же новые записи `Record<ContentLanguage, ...>` нужны в `filledLocales` из `storefrontTranslations.ts` и в формах, перечисляющих языки, компилятор перечислит каждую.
+- Подписи во всех языковых файлах панели администратора: `storefront.locales.fr`, `clients.clientForm.french` (используйте название вашего языка), в файлах `storefront.json`, `settings.json` и `clients.json` в `admin/src/locales/<lang>/`.
 
 **Дополнения бэкенда:**
 

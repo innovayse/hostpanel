@@ -8,7 +8,8 @@
  * line, so a screen reader announces it the moment it appears.
  *
  * While `loading` (or while a parent form provides `UI_FIELD_LOADING`) the control is replaced by a
- * skeleton of the control's height; the caption and the hint stay, so the form keeps its shape.
+ * skeleton of the control's height; the caption and the hint stay, so the form keeps its shape. `inline` lays the caption
+ * and the control on one row (caption left, switch right), in the skeleton as in the real field.
  */
 import { computed, inject, ref, useId } from 'vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
@@ -30,7 +31,10 @@ const props = withDefaults(defineProps<{
   errorTestid?: string
   /** Draws a skeleton instead of the control while the value is still loading. */
   loading?: boolean
+  /** Puts the caption left and the control right on one row (a switch), the message staying under both. */
+  inline?: boolean
 }>(), {
+  inline: false,
   label: undefined,
   hint: undefined,
   error: undefined,
@@ -65,12 +69,14 @@ const describedby = computed<string | undefined>(() => {
 
 <template>
   <div class="flex flex-col gap-1.5">
-    <UiLabel v-if="label !== undefined" :for="id" variant="field">
-      {{ label }}
-      <span v-if="required" class="text-status-red" aria-hidden="true">*</span>
-    </UiLabel>
-    <UiSkeletonBar v-if="isLoading" class="h-10.5 w-full rounded-control" aria-hidden="true" data-testid="ui-field-skeleton" />
-    <slot v-else :id="id" :invalid="invalid" :describedby="describedby" />
+    <div :class="inline ? 'flex items-center justify-between gap-3' : 'contents'">
+      <UiLabel v-if="label !== undefined" :for="id" variant="field">
+        {{ label }}
+        <span v-if="required" class="text-status-red" aria-hidden="true">*</span>
+      </UiLabel>
+      <UiSkeletonBar v-if="isLoading" :class="inline ? 'h-6 w-11 shrink-0 rounded-full' : 'h-10.5 w-full rounded-control'" aria-hidden="true" data-testid="ui-field-skeleton" />
+      <slot v-else :id="id" :invalid="invalid" :describedby="describedby" />
+    </div>
     <UiText
       v-if="invalid"
       :id="messageId"

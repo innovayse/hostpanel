@@ -7,6 +7,7 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiImage from '@/components/ui/UiImage.vue'
@@ -14,11 +15,13 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
+import { storefrontColumnCaptions } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useProjectsStore } from '@/stores/projects'
 import type { Project } from '@/types/project'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import schema from '@/views/ProjectsView.schema'
 
 const { t } = useI18n()
 
@@ -32,12 +35,7 @@ const store = useProjectsStore()
 const list = useStorefrontList<Project>(store)
 
 /** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => [
-  t('storefront.projects.cover'),
-  t('storefront.projects.projectTitle'),
-  t('storefront.projects.slug'),
-  t('shared.status'),
-])
+const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
 
 /**
  * The name shown for a project: its title, or its slug when no translation has one.
@@ -73,7 +71,7 @@ const editRoute = (item: Project): string => editPath(AppRoute.StorefrontProject
 <template>
   <StorefrontListTable
     :testids="testids"
-    :title="t('storefront.projects.title')"
+    :title="t(navTitleKey(AppRoute.StorefrontProjects))"
     :subtitle="t('storefront.projects.subtitle')"
     :add-label="t('storefront.projects.add')"
     :empty-label="t('storefront.projects.empty')"

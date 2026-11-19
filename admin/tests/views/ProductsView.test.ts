@@ -6,12 +6,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ProductsView from '@/views/ProductsView.vue'
+import schema from '@/views/ProductsView.schema'
 import type { CurrencyDto } from '@/types/currency'
 import type { Product, ProductGroup } from '@/types/product'
 import { invalid, json, problem } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted, mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
+import { useToastStore } from '@/stores/toast'
 
 /** The base currency. */
 const usd: CurrencyDto = {
@@ -84,6 +87,13 @@ afterEach(() => {
 })
 
 describe('ProductsView', () => {
+  it('draws the table head from the schema columns', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(ProductsView)
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('keeps the table header in place and draws placeholder rows while the products load', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
 
@@ -106,8 +116,8 @@ describe('ProductsView', () => {
     expect(row).toContain('Shared Hosting')
     expect(row).toContain('$4.50')
     expect(row).toContain('+EUR')
-    expect(row).toContain('Active')
-    expect(wrapper.get('[data-testid="product-row-2"]').text()).toContain('Inactive')
+    expect(wrapper.get('[data-testid="product-row-1"] [role="img"]').attributes('aria-label')).toBe('Active')
+    expect(wrapper.get('[data-testid="product-row-2"] [role="img"]').attributes('aria-label')).toBe('Inactive')
   })
 
   it('shows a column per billing cycle and the price of a product on a newer cycle', async () => {
@@ -144,6 +154,7 @@ describe('ProductsView', () => {
     const { wrapper } = await mountScreen(ProductsView)
 
     await wrapper.get('[data-testid="products-create"]').trigger('click')
+    await flushPromises()
     await wrapper.get('[data-testid="product-form-name"]').setValue('New plan')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
     await vi.waitFor(() => {
@@ -180,13 +191,14 @@ describe('ProductsView', () => {
 
     await wrapper.get('[data-testid="product-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="product-edit-1"]').trigger('click')
+    await flushPromises()
     expect((wrapper.get('[data-testid="product-form-name"]').element as HTMLInputElement).value).toBe('Starter')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
     await vi.waitFor(() => {
       expect(requestsOf(mock)).toContain('PUT /products/1')
     })
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="products-feedback"]').text()).toBe('Changes saved successfully.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
     })
   })
 
@@ -203,6 +215,7 @@ describe('ProductsView', () => {
 
     await wrapper.get('[data-testid="product-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="product-edit-1"]').trigger('click')
+    await flushPromises()
     await wrapper.get('[data-testid="product-form-sku"]').setValue(' bad sku ')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
@@ -223,6 +236,7 @@ describe('ProductsView', () => {
     const { wrapper } = await mountScreen(ProductsView)
 
     await wrapper.get('[data-testid="products-create"]').trigger('click')
+    await flushPromises()
     await wrapper.get('[data-testid="product-form-name"]').setValue('Dup')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
@@ -378,6 +392,7 @@ describe('ProductsView list', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="products-create"]').trigger('click')
+    await flushPromises()
     await wrapper.get('[data-testid="product-form-name"]').setValue('New plan')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
     await vi.waitFor(() => {

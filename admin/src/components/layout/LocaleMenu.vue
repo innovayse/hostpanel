@@ -13,7 +13,7 @@ import { SUPPORTED_LOCALES, setLocale } from '@/i18n'
 import type { SupportedLocale } from '@/i18n'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
-import { iconTriggerClasses } from '@/utils/ui/button'
+import { iconTriggerClasses, iconTriggerIconSize } from '@/utils/ui/button'
 import type { UiMenuAction } from '@/utils/ui/menu'
 
 /** Props of the language menu. */
@@ -42,6 +42,7 @@ const localeLabels = computed<Record<SupportedLocale, string>>(() => ({
 const actions = computed<UiMenuAction[]>(() =>
   SUPPORTED_LOCALES.map(code => ({
     label: localeLabels.value[code],
+    icon: Icon.Globe,
     checked: locale.value === code,
     testid: `locale-option-${code}`,
     /**
@@ -57,7 +58,7 @@ const actions = computed<UiMenuAction[]>(() =>
 <template>
   <UiMenu :actions="actions" :aria-label="t('shared.language')" :testid="testid">
     <span :class="[iconTriggerClasses, 'gap-1 px-2']">
-      <UiIcon :markup="Icon.Globe" size="sm" />
+      <UiIcon :markup="Icon.Globe" :size="iconTriggerIconSize" />
       <span class="text-xs font-medium uppercase">{{ locale }}</span>
     </span>
   </UiMenu>

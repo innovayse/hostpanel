@@ -6,6 +6,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import GatewayLogView from '@/views/GatewayLogView.vue'
+import schema from '@/views/GatewayLogView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted } from '../helpers/mount'
 import { callOf, json, stubFetch, problem } from '../helpers/fetch'
@@ -63,6 +65,13 @@ describe('GatewayLogView', () => {
     expect(wrapper.get('[data-testid="billing-gateway-log-table"]').text()).toContain('Invoice #5 ref abc')
     expect(wrapper.get('[data-testid="billing-gateway-log-table"]').text()).toContain('Payment')
     expect(wrapper.get('[data-testid="billing-gateway-log-count"]').text()).toContain('1 Records Found')
+  })
+
+  it('draws the headers of the schema columns, in order', async () => {
+    stubFetch(json(page))
+    const { wrapper } = await mountLogAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {

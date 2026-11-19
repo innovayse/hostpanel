@@ -21,6 +21,7 @@ import type { Ticket, TicketPriority } from '@/types/ticket'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -87,7 +88,7 @@ const priority = defineModel<TicketPriority>('priority', { required: true })
         data-testid="ticket-priority"
       />
     </UiField>
-    <UiButton
+    <UiButton :action="UiActionKind.Save"
       :variant="UiButtonVariant.Primary"
       :loading="saving"
       data-testid="ticket-save"

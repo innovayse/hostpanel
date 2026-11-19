@@ -103,10 +103,40 @@ export type PluginCapability = (typeof PluginCapability)[keyof typeof PluginCapa
 export const PluginHostAccess = {
   /** Runs commands on the client's hosting account over SSH. */
   Ssh: 'ssh',
+  /** Manages the websites of the client's hosting service. */
+  Websites: 'websites',
+  /** Manages the databases of the client's hosting service. */
+  Databases: 'databases',
 } as const
 
 /** One of the {@link PluginHostAccess} values. */
 export type PluginHostAccess = (typeof PluginHostAccess)[keyof typeof PluginHostAccess]
+
+/** Closed set of places an installed plugin package came from; the strings are the API's `PluginSource` names. */
+export const PluginSource = {
+  /** The plugin ships with the server build. */
+  BuiltIn: 'BuiltIn',
+  /** An administrator uploaded the package file. */
+  Uploaded: 'Uploaded',
+  /** The package was fetched from the plugin registry. */
+  Registry: 'Registry',
+} as const
+
+/** One of the {@link PluginSource} values. */
+export type PluginSource = (typeof PluginSource)[keyof typeof PluginSource]
+
+/** Closed set of who vouched for a package with a signature; the strings are the API's `PluginSigner` names. */
+export const PluginSigner = {
+  /** No valid signature by a trusted key; the server's policy admitted the package. */
+  Unsigned: 'Unsigned',
+  /** Signed by one of the maintainers' keys shipped with the server. */
+  VerifiedPublisher: 'VerifiedPublisher',
+  /** Signed by a key the operator added to the server's configuration. */
+  OwnKey: 'OwnKey',
+} as const
+
+/** One of the {@link PluginSigner} values. */
+export type PluginSigner = (typeof PluginSigner)[keyof typeof PluginSigner]
 
 /** What an uploaded plugin ZIP asks for before it is installed (POST /api/admin/plugins/inspect). */
 export interface PluginPackagePreviewDto {
@@ -178,6 +208,22 @@ export interface PluginListItemDto {
   minHostVersion?: string | null
   /** Highest server version the plugin runs on, null for no upper bound. */
   maxHostVersion?: string | null
+  /** Where the package came from; null for a plugin installed before installs were recorded and for a refused or removed row. */
+  source?: PluginSource | null
+  /** ISO 8601 moment the plugin was first installed, null when no install was recorded. */
+  installedAt?: string | null
+  /** ISO 8601 moment a package last replaced the first one (an upgrade runs after a restart), null while none has. */
+  updatedAt?: string | null
+  /** Display name of the administrator who installed the plugin, null when unknown. */
+  installedBy?: string | null
+  /** Who vouched for the latest accepted package, null when no install was recorded. */
+  signer?: PluginSigner | null
+  /** Id of the key that signed the latest accepted package, null when it is unsigned or not recorded. */
+  signerKeyId?: string | null
+  /** Size of the latest accepted archive in bytes, null when no install was recorded. */
+  packageSizeBytes?: number | null
+  /** Lower-case hex SHA-256 of the latest accepted archive, null when no install was recorded. */
+  packageSha256?: string | null
 }
 
 /** Result returned by install and remove plugin operations. */
@@ -209,6 +255,19 @@ export interface SavePluginSlotWidgetProductsBody {
   /** Product ids to bind the widget to; empty clears the operator binding. */
   productIds: number[]
 }
+
+/** Closed set of the page's tabs; the strings are the tab values kept in the address. */
+export const PluginsTab = {
+  /** The installed plugins. */
+  Installed: 'installed',
+  /** The registry browser. */
+  Browse: 'browse',
+  /** What applies to every plugin: the signature policy and the data removed plugins kept. */
+  Settings: 'settings',
+} as const
+
+/** One of the {@link PluginsTab} values. */
+export type PluginsTab = (typeof PluginsTab)[keyof typeof PluginsTab]
 
 /** Closed set of registry categories; the strings are the API's enum names. */
 export const PluginCategory = {

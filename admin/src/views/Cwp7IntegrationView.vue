@@ -4,7 +4,8 @@
  *
  * Shows module info and quick-action buttons to create servers or products
  * linked to the CWP7 provisioning module.
- * Lists existing CWP7 servers with their status.
+ * Lists existing CWP7 servers with their status. The page is the cards of `Cwp7IntegrationView.schema` in `UiDetailCards`;
+ * while the servers load the servers card draws its placeholder boxes and the other cards, which are static, show themselves.
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,8 +16,7 @@ import { IntegrationSlug } from '@/types/integration'
 import { ServerModule } from '@/types/server'
 import type { ServerOptionDto } from '@/types/server'
 import Cwp7ServerCard from '@/components/integrations/Cwp7ServerCard.vue'
-import IntegrationBreadcrumb from '@/components/integrations/IntegrationBreadcrumb.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
@@ -27,6 +27,8 @@ import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTextSize } from '@/utils/ui/text'
+import schema from '@/views/Cwp7IntegrationView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -37,8 +39,8 @@ const serversStore = useServersStore()
 /** Static metadata of the CWP7 integration (logo and tile colour). */
 const meta = INTEGRATION_META[IntegrationSlug.Cwp7]
 
-/** Placeholder cards drawn in the servers grid while the list loads. */
-const LOADING_CARD_COUNT = 3
+/** Key of the servers card in the schema, the one card whose data loads on its own. */
+const SERVERS_CARD_KEY = 'servers'
 
 /** CWP7 servers only: the lookup is asked for that module, so nothing is filtered in the browser. */
 const cwp7Servers = computed<ServerOptionDto[]>(() => serversStore.serverOptions)
@@ -56,12 +58,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiStack gap="lg" class="w-full">
-    <IntegrationBreadcrumb :name="t('integrations.cwp7Integration.cwp7')" />
-
+  <UiDetailCards :columns="schema.columns" :ratio="schema.ratio" :loading-keys="serversStore.optionsLoading ? [SERVERS_CARD_KEY] : []" class="w-full" data-testid="cwp7-cards">
     <!-- Module header card -->
-    <UiCard padding="md" data-testid="cwp7-header">
-      <UiStack direction="row" align="start" gap="md">
+    <template #card-module>
+      <UiStack direction="row" align="start" gap="md" data-testid="cwp7-header">
         <UiStack align="center" justify="center" class="h-14 w-14 shrink-0 rounded-xl p-2" :class="meta.color">
           <UiImage :src="meta.logo" alt="" class="h-full w-full object-contain brightness-0 invert" />
         </UiStack>
@@ -85,56 +85,43 @@ onMounted(() => {
           </UiGrid>
         </UiStack>
       </UiStack>
-    </UiCard>
+    </template>
 
-    <!-- Action buttons -->
-    <UiGrid :columns="2" gap="md">
-      <UiCard padding="md">
-        <UiStack gap="sm" align="start">
-          <UiHeading :level="3" variant="card">{{ t('integrations.cwp7Integration.createNewServer') }}</UiHeading>
-          <UiText tone="muted" size="sm">{{ t('integrations.cwp7Integration.addACwp7ServerWith') }}</UiText>
-          <UiLink :to="createServerRoute" :variant="UiButtonVariant.Secondary" data-testid="cwp7-create-server">
-            {{ t('integrations.cwp7Integration.createNewServer') }}
-          </UiLink>
-        </UiStack>
-      </UiCard>
-      <UiCard padding="md">
-        <UiStack gap="sm" align="start">
-          <UiHeading :level="3" variant="card">{{ t('integrations.cwp7Integration.createNewProduct') }}</UiHeading>
-          <UiText tone="muted" size="sm">{{ t('integrations.cwp7Integration.createAHostingPlanLinked') }}</UiText>
-          <UiLink :to="createProductRoute" :variant="UiButtonVariant.Secondary" data-testid="cwp7-create-product">
-            {{ t('integrations.cwp7Integration.createNewProduct') }}
-          </UiLink>
-        </UiStack>
-      </UiCard>
-    </UiGrid>
-
-    <!-- CWP7 Servers list -->
-    <UiStack gap="sm">
-      <UiStack direction="row" align="center" justify="between">
-        <UiHeading :level="2" variant="section">{{ t('integrations.cwp7Integration.cwp7Servers') }}</UiHeading>
-        <UiResultCount :loading="serversStore.optionsLoading" :size="UiTextSize.Sm">{{ t('integrations.cwp7Integration.lengthServerValue', { length: cwp7Servers.length }) }}</UiResultCount>
+    <!-- Action cards -->
+    <template #card-createServer>
+      <UiStack gap="sm" align="start">
+        <UiText tone="muted" size="sm">{{ t('integrations.cwp7Integration.addACwp7ServerWith') }}</UiText>
+        <UiLink :action="UiActionKind.Add" :to="createServerRoute" :variant="UiButtonVariant.Secondary" data-testid="cwp7-create-server">
+          {{ t('integrations.cwp7Integration.createNewServer') }}
+        </UiLink>
       </UiStack>
+    </template>
+    <template #card-createProduct>
+      <UiStack gap="sm" align="start">
+        <UiText tone="muted" size="sm">{{ t('integrations.cwp7Integration.createAHostingPlanLinked') }}</UiText>
+        <UiLink :action="UiActionKind.Add" :to="createProductRoute" :variant="UiButtonVariant.Secondary" data-testid="cwp7-create-product">
+          {{ t('integrations.cwp7Integration.createNewProduct') }}
+        </UiLink>
+      </UiStack>
+    </template>
 
-      <!-- Empty state -->
-      <UiCard v-if="!serversStore.optionsLoading && cwp7Servers.length === 0" padding="md" data-testid="cwp7-servers-empty">
-        <UiStack gap="sm" align="center">
+    <!-- CWP7 servers list -->
+    <template #card-servers>
+      <UiStack gap="sm">
+        <UiResultCount :size="UiTextSize.Sm">{{ t('integrations.cwp7Integration.lengthServerValue', { length: cwp7Servers.length }) }}</UiResultCount>
+
+        <!-- Empty state -->
+        <UiStack v-if="cwp7Servers.length === 0" gap="sm" align="center" data-testid="cwp7-servers-empty">
           <UiText tone="muted" size="md">{{ t('integrations.cwp7Integration.noCwp7ServersConfiguredYet') }}</UiText>
           <UiLink :to="createServerRoute" :variant="UiButtonVariant.Link" data-testid="cwp7-add-first-server">
             {{ t('integrations.cwp7Integration.addYourFirstServer') }}
           </UiLink>
         </UiStack>
-      </UiCard>
 
-      <!-- Server cards; while the servers load the same grid holds placeholder cards -->
-      <UiGrid v-else :columns="3" gap="md" data-testid="cwp7-servers">
-        <template v-if="serversStore.optionsLoading">
-          <Cwp7ServerCard v-for="index in LOADING_CARD_COUNT" :key="index" />
-        </template>
-        <template v-else>
+        <UiGrid v-else :columns="3" gap="md" data-testid="cwp7-servers">
           <Cwp7ServerCard v-for="server in cwp7Servers" :key="server.id" :server="server" />
-        </template>
-      </UiGrid>
-    </UiStack>
-  </UiStack>
+        </UiGrid>
+      </UiStack>
+    </template>
+  </UiDetailCards>
 </template>

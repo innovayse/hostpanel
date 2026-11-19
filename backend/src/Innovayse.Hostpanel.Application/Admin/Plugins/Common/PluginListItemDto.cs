@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Domain.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 
@@ -38,6 +39,17 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Changelog">The release notes of the installed version; <see langword="null"/> when none.</param>
 /// <param name="MinHostVersion">The lowest Hostpanel version the plugin runs on; <see langword="null"/> for no lower bound.</param>
 /// <param name="MaxHostVersion">The highest Hostpanel version the plugin runs on; <see langword="null"/> for no upper bound.</param>
+/// <param name="Source">
+/// Where the package came from: built in for a plugin that ships with the build, otherwise an upload or the registry;
+/// <see langword="null"/> for a plugin installed before installs were recorded and for a refused or removed row.
+/// </param>
+/// <param name="InstalledAt">When the plugin was first installed; <see langword="null"/> when no install was recorded.</param>
+/// <param name="UpdatedAt">When a package last replaced the first one (an upgrade waits for the restart to run); <see langword="null"/> while none has.</param>
+/// <param name="InstalledBy">The display name of the administrator who installed it, as it was then; <see langword="null"/> when unknown.</param>
+/// <param name="Signer">Who vouched for the latest accepted package; <see langword="null"/> when no install was recorded.</param>
+/// <param name="SignerKeyId">The id of the key that signed the latest accepted package; <see langword="null"/> when it is unsigned or not recorded.</param>
+/// <param name="PackageSizeBytes">The size in bytes of the latest accepted archive; <see langword="null"/> when no install was recorded.</param>
+/// <param name="PackageSha256">The lower-case hex SHA-256 of the latest accepted archive; <see langword="null"/> when no install was recorded.</param>
 public sealed record PluginListItemDto(
     string Id,
     string Name,
@@ -58,4 +70,12 @@ public sealed record PluginListItemDto(
     IReadOnlyList<string>? HostAccess = null,
     string? Changelog = null,
     string? MinHostVersion = null,
-    string? MaxHostVersion = null);
+    string? MaxHostVersion = null,
+    PluginSource? Source = null,
+    DateTimeOffset? InstalledAt = null,
+    DateTimeOffset? UpdatedAt = null,
+    string? InstalledBy = null,
+    PluginSignerKind? Signer = null,
+    string? SignerKeyId = null,
+    long? PackageSizeBytes = null,
+    string? PackageSha256 = null);

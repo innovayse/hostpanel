@@ -17,15 +17,16 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/PaymentClaimsView.schema'
 import UiText from '@/components/ui/UiText.vue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { formatDateTime } from '@/lib/format'
 import { formatCurrencyCode } from '@/lib/money'
 import { clientPath, invoicePath } from '@/lib/routes'
 import { paymentClaimStatusTone } from '@/lib/tones'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useInvoicePaymentClaimsStore } from '@/stores/invoicePaymentClaims'
 import { InvoicePaymentClaimStatus } from '@/types/invoicepaymentclaim'
 
@@ -54,10 +55,7 @@ onMounted(() => load(1))
 
 <template>
   <UiStack data-testid="billing-payment-claims-view">
-    <UiPageHeader
-      :title="t('billing.paymentClaims.heading')"
-      :subtitle="t('billing.paymentClaims.subtitle')"
-    />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiErrorState
       v-if="store.error"
@@ -73,20 +71,12 @@ onMounted(() => load(1))
 
     <UiCard>
       <UiTable
+        :empty-text="t('billing.paymentClaims.empty')"
         :loading="store.loading && store.claims.length === 0"
         :empty="!store.loading && !store.error && store.claims.length === 0"
         data-testid="billing-payment-claims-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.paymentClaims.gatewayModule') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.paymentClaims.created') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="claim in store.claims" :key="claim.id" hoverable>
             <UiTableCell>
@@ -115,9 +105,6 @@ onMounted(() => load(1))
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('billing.paymentClaims.empty') }}
-        </template>
       </UiTable>
     </UiCard>
 

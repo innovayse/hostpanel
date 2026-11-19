@@ -165,8 +165,8 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 - `admin/src/locales/contentLanguage.ts`՝ ավելացրեք լեզուն `ContentLanguage` թվարկման մեջ։
 - `admin/src/lib/constants.ts`՝ ավելացրեք գրառում `LANGUAGE_OPTIONS` ցանկում, որպեսզի լեզուն երևա հաճախորդի և օգտատիրոջ ձևերի լեզվի ընտրիչներում։
 - `admin/src/lib/storefrontTranslations.ts`՝ ավելացրեք լեզուն `STOREFRONT_LOCALES`-ում և `[ContentLanguage.Fr]: blank()` գրառումը `blankTranslations`-ում, որպեսզի հանրային կայքի բովանդակության ձևերն ունենան ներդիր դրա համար։
-- `admin/src/composables/useStorefrontLocaleTabs.ts` և `admin/src/views/SlideFormView.vue`՝ ավելացրեք ներդիր նոր լեզվի համար։
-- Պիտակները ադմինի վահանակի յուրաքանչյուր լեզվի ֆայլում՝ `storefront.locales.fr`, `settings.slideForm.locales.fr` և `clients.clientForm.french` (օգտագործեք ձեր լեզվի անունը), `admin/src/locales/<lang>/` պանակի `storefront.json`, `settings.json` և `clients.json` ֆայլերում։
+- `admin/src/components/ui/UiLocalizedField.vue`՝ ավելացրեք նոր լեզվի անվանումը `captions` computed օբյեկտում, որը կարդում է ադմինի լեզվի ներդիրների յուրաքանչյուր շարք։ Նույն նոր `Record<ContentLanguage, ...>` գրառումները պահանջվում են `storefrontTranslations.ts`-ի `filledLocales`-ում և լեզուները թվարկող ձևերում, և կոմպիլյատորը ցուցակագրում է դրանցից յուրաքանչյուրը։
+- Պիտակները ադմինի վահանակի յուրաքանչյուր լեզվի ֆայլում՝ `storefront.locales.fr`, `clients.clientForm.french` (օգտագործեք ձեր լեզվի անունը), `admin/src/locales/<lang>/` պանակի `storefront.json`, `settings.json` և `clients.json` ֆայլերում։
 
 **Backend-ի լրացումներ․**
 

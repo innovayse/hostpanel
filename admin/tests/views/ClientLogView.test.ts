@@ -6,6 +6,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientLogView from '@/views/ClientLogView.vue'
+import schema from '@/views/ClientLogView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { mountClientView } from '../helpers/clientViews'
 import { json } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
@@ -142,5 +144,21 @@ describe('ClientLogView', () => {
 
     expect(router.currentRoute.value.query).toEqual({ page: '2' })
     expect(listUrls(mock).at(-1)).toBe('/api/clients/7/activity-logs?page=2&pageSize=25')
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/clients/7/activity-logs': log })
+    const { wrapper } = await mountLogAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientLogView, '/clients/:id/log', '/clients/7/log')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

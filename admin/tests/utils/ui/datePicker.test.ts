@@ -4,6 +4,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   DateRangePreset,
+  dateCellInRangeClasses,
+  dateCellRangeEndClasses,
+  dateCellRangeStartClasses,
   dateCellSelectedClasses,
   datePresetActiveClasses,
   QuickDate,
@@ -16,13 +19,14 @@ import {
   matchQuickDate,
   parsePartialDate,
   parseTypedDate,
+  matchDateRangePreset,
   partialToDate,
+  presetIsoRange,
   presetRange,
   quickDateFor,
   dateLibraryThemeClasses,
   datePopupClasses,
 } from '@/utils/ui/datePicker'
-import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 
 /** Fixed reference day (a Wednesday) so every expectation is deterministic. */
 const TODAY = new Date(2026, 4, 20)
@@ -123,9 +127,34 @@ describe('datePicker selected states', () => {
   })
 })
 
-describe('datePicker popup surface', () => {
-  it('wears the opaque floating panel classes and no glass', () => {
-    expect(datePopupClasses).toContain(FLOATING_PANEL_CLASSES)
+describe('datePicker popup shape', () => {
+  it('only shapes the popup, and never makes it glass', () => {
+    expect(datePopupClasses).toBe('rounded-card')
     expect(datePopupClasses).not.toContain('glass')
+  })
+})
+
+describe('matchDateRangePreset', () => {
+  it('names the preset whose days equal the range', () => {
+    expect(matchDateRangePreset(['2026-01-01', '2026-05-20'], TODAY)).toBe(DateRangePreset.ThisYear)
+    expect(matchDateRangePreset(['2026-04-01', '2026-04-30'], TODAY)).toBe(DateRangePreset.LastMonth)
+    expect(matchDateRangePreset(['2026-05-20', '2026-05-20'], TODAY)).toBe(DateRangePreset.Today)
+  })
+
+  it('returns null for a custom range and for no range', () => {
+    expect(matchDateRangePreset(['2026-01-01', '2026-12-31'], TODAY)).toBeNull()
+    expect(matchDateRangePreset(null, TODAY)).toBeNull()
+  })
+})
+
+describe('datePicker range cell caps', () => {
+  it('squares the joining side of each edge and the whole in-range band', () => {
+    expect(dateCellRangeStartClasses).toContain('rounded-r-none')
+    expect(dateCellRangeEndClasses).toContain('rounded-l-none')
+    expect(dateCellInRangeClasses).toContain('rounded-none')
+  })
+
+  it('resolves a preset to ISO days the way the range is stored', () => {
+    expect(presetIsoRange(DateRangePreset.Last30Days, TODAY)).toEqual(presetRange(DateRangePreset.Last30Days, TODAY).map(formatIsoDate))
   })
 })

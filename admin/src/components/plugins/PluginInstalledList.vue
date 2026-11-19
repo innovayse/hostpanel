@@ -34,6 +34,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import type { PluginCardModel, PluginListItemDto } from '@/types/plugin'
 import type { UiFilterChip } from '@/utils/ui/filter'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** How many card placeholders the grid draws while the list loads (two rows of the three-column grid). */
 const PLUGIN_CARD_PLACEHOLDERS = 6
@@ -218,7 +219,7 @@ const openPlugin = (id: string): void => {
           </UiStack>
         </template>
         <template #action>
-          <UiButton
+          <UiButton :action="UiActionKind.Refresh"
             v-if="card.updateVersion"
             type="button"
             :variant="UiButtonVariant.Primary"

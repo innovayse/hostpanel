@@ -259,7 +259,7 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
   { name: 'manifestVersion', type: 'number', default: '1', description: 'Set to 2 to use the members below.' },
   { name: 'settings', type: 'array', default: '[]', description: 'Typed settings an administrator fills in. Supersedes fields; when settings is empty the host converts fields into settings.' },
   { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later) and endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it). It must agree with the interfaces the class really implements.' },
-  { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. The only kind today is ssh. The admin Plugins page shows each one a plugin declares.' },
+  { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. Known kinds: ssh, websites and databases (the last two need SDK 3.9.0 or later, see Websites and databases on a client hosting). The admin Plugins page shows each one a plugin declares.' },
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
@@ -419,6 +419,56 @@ Each entry in `fields`:
   { name: 'type', type: 'string', default: 'text', description: 'Field type: text, secret, select or textarea.' },
   { name: 'required', type: 'boolean', default: 'false', description: 'When true, the integration page shows Not configured until this field is filled.' }
 ]" />
+
+## Websites and databases on a client's hosting {#hosting-access}
+
+A plugin that deploys something to a client's hosting (a site builder, a store, a deploy tool) can ask the host to set up the
+website and the database it needs, instead of asking the client to do it by hand. This needs SDK 3.9.0 or later. Declare what
+you need in the manifest, and read it at run time through `IPluginHostHostingApi`, which extends `IPluginHostApi` without
+changing it:
+
+```json
+"hostAccess": ["websites", "databases"]
+```
+
+```csharp
+if (host is IPluginHostHostingApi hosting)
+{
+    var capabilities = await hosting.GetHostingCapabilitiesAsync(serviceId, ct);
+    if (capabilities.Websites && capabilities.PhpVersions.Contains("8.3"))
+    {
+        var site = await hosting.EnsureWebsiteAsync(
+            serviceId, new PluginWebsiteSpec("app.example.com", "sites/app", "8.3", DocumentRootMayBeLink: true), ct);
+        var database = await hosting.EnsureDatabaseAsync(serviceId, "shop", ct);
+    }
+}
+```
+
+| Member | Needs | What it does |
+|--------|-------|--------------|
+| `GetHostingCapabilitiesAsync` | any of `ssh`, `websites`, `databases` | Tells which of the three the service supports, and the PHP versions of its server. A kind the manifest does not declare reads as false. |
+| `EnsureWebsiteAsync` | `websites` | Makes sure the website exists as the specification says. Asking again with the same specification answers the stored website without calling the server; with another one, the server and the record are updated. |
+| `RemoveWebsiteAsync` | `websites` | Removes a website this plugin set up. Removing twice is fine. |
+| `EnsureDatabaseAsync` | `databases` | Makes sure a database exists for the label. The password is in the answer to the call that created it and nowhere else: a repeat answers the same database with a null password. |
+| `RemoveDatabaseAsync` | `databases` | Drops a database this plugin created. Removing twice is fine. |
+
+The rules the host applies, in this order, and a refusal at any step is a `PluginHostAccessException` whose `Failure` says why:
+
+1. The call is a client-area call, the caller holds the right to manage the account's access (the same right the client portal asks for SSH keys), and the manifest declares the kind. Otherwise `NotAllowed`.
+2. The service is the call's client's. A missing service and another client's answer the same `NotFound`.
+3. An administrator bound the service's product to one of your slot widgets. Otherwise `NotAllowed`. Removing never needs the binding.
+4. The request is valid: the host name is the service's own domain or a subdomain of it, in lower case; the document root is a relative path of one to six plain segments inside the account's home (no leading dot, at most 200 characters); the PHP version is written like `8.3`; `DocumentRootMayBeLink` needs a PHP version; a database label is a lower case letter followed by up to fourteen lower case letters or digits. Otherwise `InvalidRequest`.
+5. The service has a hosting account on a server that can set sites up. Otherwise `Unavailable`.
+6. The host name or label is not another plugin's (`Conflict`), and the service holds fewer than 25 websites and 25 databases (`LimitReached`).
+7. The plugin's hosting budget for the client is not spent (`RateLimit:HostingResources`, 10 a minute by default). A spent budget answers `ServerUnavailable`; the host never goes ahead when it cannot count.
+8. The plugin is still switched on. A plugin switched off during the call gets `NotAllowed` and what it just set up is taken back.
+
+A website or database is always set up on the service's own server and account; nothing a plugin sends can name another one.
+What the plugin sets up belongs to that plugin: another plugin cannot remove it through this API.
+When the service is terminated the host marks its websites and databases as removed without calling the server, because the
+hosting account is gone. The database user can connect from the server itself only (`127.0.0.1`, port `3306`), so a plugin
+that deploys over SSH uses it from the deploy. Store the password where you keep your own secrets and never log it: the host
+prints it as `***`, keeps no copy, and a lost password means removing the database and creating it again.
 
 ## Layout of blocks
 

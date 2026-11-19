@@ -18,7 +18,7 @@ import { EmailLogOutcome } from '@/types/emaillog'
 import { EnabledFilter } from '@/types/enabledfilter'
 import { PaymentGateway } from '@/types/gateway'
 import { GatewayLogResult } from '@/types/gatewaylog'
-import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
+import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { InvoiceStatus } from '@/types/invoice'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
@@ -273,14 +273,6 @@ export const FRAUD_DECISION_OPTIONS: SelectOption<FraudDecision>[] = [
 export const FRAUD_CHECK_KIND_OPTIONS: SelectOption<FraudCheckKind>[] = [
   { value: FraudCheckKind.Registration, get label() { return translate('constants.fraudCheckKindOptions.registration') } },
   { value: FraudCheckKind.Order, get label() { return translate('constants.fraudCheckKindOptions.order') } },
-]
-
-/** Block list type options, for the block list tabs and the labels of the add form. */
-export const BLOCK_LIST_TYPE_OPTIONS: SelectOption<BlockListType>[] = [
-  { value: BlockListType.Ip, get label() { return translate('constants.blockListTypeOptions.ip') } },
-  { value: BlockListType.Cidr, get label() { return translate('constants.blockListTypeOptions.cidr') } },
-  { value: BlockListType.EmailDomain, get label() { return translate('constants.blockListTypeOptions.emailDomain') } },
-  { value: BlockListType.Country, get label() { return translate('constants.blockListTypeOptions.country') } },
 ]
 
 /** Fulfilment state options of one order line, for the labels of its badge. */

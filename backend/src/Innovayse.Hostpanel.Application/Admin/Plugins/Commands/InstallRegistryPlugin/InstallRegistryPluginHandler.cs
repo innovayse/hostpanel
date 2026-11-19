@@ -46,6 +46,9 @@ public sealed class InstallRegistryPluginHandler
     /// <summary>Reads what this host is shown of the plugin: its page, its licence key and its versions.</summary>
     private readonly RegistryPluginReader _reader;
 
+    /// <summary>Stages the install record of the accepted package.</summary>
+    private readonly InstalledPluginRecorder _recorder;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="inspector">Reads what an archive claims about itself and which keys the operator added.</param>
@@ -54,6 +57,7 @@ public sealed class InstallRegistryPluginHandler
     /// <param name="db">Reads the trust setting and saves the audit line.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build.</param>
     /// <param name="reader">Reads what this host is shown of the plugin: its page, its licence key and its versions.</param>
+    /// <param name="recorder">Stages the install record of the accepted package.</param>
     public InstallRegistryPluginHandler(
         IPluginRegistryClient registry,
         IPluginPackageInspector inspector,
@@ -61,7 +65,8 @@ public sealed class InstallRegistryPluginHandler
         IActivityLogger activityLogger,
         IHostpanelDbContext db,
         IInstalledVersionProvider hostVersion,
-        RegistryPluginReader reader)
+        RegistryPluginReader reader,
+        InstalledPluginRecorder recorder)
     {
         _registry = registry;
         _inspector = inspector;
@@ -70,6 +75,7 @@ public sealed class InstallRegistryPluginHandler
         _db = db;
         _hostVersion = hostVersion;
         _reader = reader;
+        _recorder = recorder;
     }
 
     /// <summary>Installs or stages the requested registry version and records it.</summary>
@@ -209,6 +215,7 @@ public sealed class InstallRegistryPluginHandler
                 null,
                 $"{Describe(outcome, staged)} - Plugin ID: {Clean(outcome.PluginId)} - Version: {Clean(outcome.Version)} - SHA-256: {outcome.Sha256}"),
             ct);
+        await _recorder.RecordAsync(outcome, PluginSource.Registry, ct);
         await _db.SaveChangesAsync(ct);
 
         return Result<PluginActionResultDto>.Success(

@@ -43,7 +43,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
             Name = "Status plugin",
             Version = "1.0.0",
             Author = "Tests",
-            Description = "Plugin used by the plugin integration status tests.",
+            Description = "plugin.description",
             Type = PluginType.Hosted,
             Category = "Hosted",
             EntryPoint = implementation.FullName!,
@@ -72,6 +72,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
             {
                 ["en"] = new Dictionary<string, string>
                 {
+                    ["plugin.description"] = "Plugin used by the plugin integration status tests.",
                     ["settings.host"] = "Service address",
                     ["settings.hostHelp"] = "Base address of the API",
                     ["settings.hostPlaceholder"] = "https://api.example.org",
@@ -81,6 +82,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
                 },
                 ["ru"] = new Dictionary<string, string>
                 {
+                    ["plugin.description"] = "Плагин для тестов статуса интеграции.",
                     ["settings.host"] = "Адрес сервиса",
                     ["regions.eu"] = "Европа",
                     [ScriptedStatusPlugin.HealthyDetailKey] = "Оба сервиса отвечают.",
@@ -248,6 +250,20 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
         detail.GetProperty("connection").ValueKind.Should().Be(JsonValueKind.Null);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await IntegrationsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_NOT_TESTABLE);
+    }
+
+    /// <summary>The list words a plugin's description in the admin's language, whether or not the plugin is switched on.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListIntegrations_ResolvesThePluginDescriptionInTheRequestLanguageAsync()
+    {
+        var id = PluginActivationTestSeeds.NewId("status-description");
+        var client = await ClientAsync(Host(Plugin(id, typeof(ScriptedStatusPlugin))), "ru");
+
+        var rows = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/integrations");
+
+        rows!.Single(i => i.GetProperty("slug").GetString() == id)
+            .GetProperty("description").GetString().Should().Be("Плагин для тестов статуса интеграции.");
     }
 
     /// <summary>

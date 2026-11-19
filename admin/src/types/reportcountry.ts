@@ -7,13 +7,3 @@ export interface ReportCountryRow {
   /** Revenue from the country clients. */
   totalRevenue: number
 }
-
-/** Active clients of one city, for the map markers. */
-export interface ReportCityRow {
-  /** City name. */
-  city: string
-  /** ISO-2 country code. */
-  country: string
-  /** Number of active clients. */
-  clientCount: number
-}

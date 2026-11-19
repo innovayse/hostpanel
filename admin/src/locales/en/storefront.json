@@ -25,7 +25,6 @@
     "sortOrder": "Sort order"
   },
   "testimonials": {
-    "title": "Testimonials",
     "subtitle": "Customer quotes shown on the storefront. Drag to reorder.",
     "add": "Add testimonial",
     "empty": "No testimonials yet. Add your first one to get started.",
@@ -36,8 +35,6 @@
     "author": "Author",
     "quote": "Quote",
     "rating": "Rating",
-    "createTitle": "Create testimonial",
-    "editTitle": "Edit testimonial",
     "create": "Create testimonial",
     "name": "Name",
     "namePlaceholder": "Customer name",
@@ -52,7 +49,6 @@
     "quotePlaceholder": "What the customer said"
   },
   "partners": {
-    "title": "Partners",
     "subtitle": "Partner logos shown on the storefront. Drag to reorder.",
     "add": "Add partner",
     "empty": "No partners yet. Add your first one to get started.",
@@ -63,15 +59,12 @@
     "logo": "Logo",
     "name": "Name",
     "website": "Website",
-    "createTitle": "Create partner",
-    "editTitle": "Edit partner",
     "create": "Create partner",
     "namePlaceholder": "Partner name",
     "websitePlaceholder": "https://partner.example.com",
     "activeHint": "Show this partner to visitors"
   },
   "locations": {
-    "title": "Server locations",
     "subtitle": "Data-centre locations shown on the storefront. Drag to reorder.",
     "add": "Add location",
     "empty": "No locations yet. Add your first one to get started.",
@@ -83,8 +76,6 @@
     "name": "Name",
     "city": "City",
     "latencyNote": "Latency note",
-    "createTitle": "Create location",
-    "editTitle": "Edit location",
     "create": "Create location",
     "countryPlaceholder": "US",
     "namePlaceholder": "Location name",
@@ -93,7 +84,6 @@
     "activeHint": "Show this location to visitors"
   },
   "projects": {
-    "title": "Projects",
     "subtitle": "Portfolio projects shown on the storefront. Drag to reorder.",
     "add": "Add project",
     "empty": "No projects yet. Add your first one to get started.",
@@ -114,8 +104,6 @@
     "imageNumber": "Image {number}",
     "removeImage": "Remove this image",
     "addImage": "Add image",
-    "createTitle": "Create project",
-    "editTitle": "Edit project",
     "create": "Create project",
     "titlePlaceholder": "Project title",
     "summary": "Summary",
@@ -123,7 +111,6 @@
     "descriptionPlaceholder": "Full project description"
   },
   "faqs": {
-    "title": "FAQ",
     "subtitle": "Questions and answers shown on the storefront. Drag to reorder.",
     "add": "Add question",
     "empty": "No questions yet. Add your first one to get started.",
@@ -138,8 +125,6 @@
       "products": "Products"
     },
     "entryNumber": "Question #{id}",
-    "createTitle": "Create question",
-    "editTitle": "Edit question",
     "create": "Create question",
     "activeHint": "Show this question to visitors",
     "questionPlaceholder": "The question visitors ask",

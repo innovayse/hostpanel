@@ -9,7 +9,7 @@
  * Preview, Schedule and Send now work on the saved campaign, so they save the form first; a new
  * campaign is created by the first of them and the page moves to its address.
  */
-import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import EmailCampaignPreviewDialog from '@/components/campaigns/EmailCampaignPreviewDialog.vue'
@@ -23,10 +23,10 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -55,8 +55,9 @@ import { AuthMode } from '@/types/auth'
 import { CampaignFilterType, CampaignStatus } from '@/types/emailcampaign'
 import type { EmailCampaignSegment, EmailCampaignSegmentDraft } from '@/types/emailcampaign'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
+import schema from '@/views/EmailCampaignFormView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -106,8 +107,11 @@ const segments = ref<EmailCampaignSegmentDraft[]>([])
 /** Whether the campaign is being loaded; true from the first paint of an existing campaign, so the form never flashes empty. */
 const loading = ref(campaignId.value !== null)
 
-// Every field of the form stays a placeholder while the campaign is read.
-provide(UI_FIELD_LOADING, loading)
+/** The help lines under the body and the audience (the audience of a read-only campaign needs none), by field key. */
+const hints = computed(() => ({
+  body: t('emailCampaigns.form.bodyHint'),
+  ...(readOnly.value ? {} : { segments: t('emailCampaigns.form.audienceHint') }),
+}))
 
 /** The sentence of a refused load, null when it loaded. */
 const loadError = ref<string | null>(null)
@@ -401,14 +405,6 @@ onBeforeUnmount(cancelCount)
 
 <template>
   <UiStack>
-    <UiStack direction="row" gap="sm" align="center">
-      <UiLink :to="AppRoute.SupportEmailCampaigns" :variant="UiButtonVariant.Link" data-testid="email-campaign-breadcrumb">
-        {{ t('emailCampaigns.list.title') }}
-      </UiLink>
-      <UiText tone="muted" size="md">/</UiText>
-      <UiText tone="secondary" size="md">{{ pageTitle }}</UiText>
-    </UiStack>
-
     <UiPageHeader :title="pageTitle" :subtitle="readOnly ? t('emailCampaigns.form.subtitleView') : t('emailCampaigns.form.subtitleEdit')" />
 
     <UiErrorState
@@ -443,84 +439,86 @@ onBeforeUnmount(cancelCount)
         </UiStack>
       </UiCard>
 
-      <UiCard padding="md" :aria-busy="loading ? 'true' : undefined" data-testid="email-campaign-form">
-        <UiStack>
-          <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">
-            <template #default="{ id, invalid, describedby }">
-              <UiInput
-                :id="id"
-                v-model="form.subject"
-                :invalid="invalid"
-                :aria-describedby="describedby"
-                :readonly="readOnly"
-                :maxlength="CAMPAIGN_SUBJECT_MAX_LENGTH"
-                :placeholder="t('emailCampaigns.form.subjectPlaceholder')"
-                data-testid="email-campaign-subject"
-              />
-            </template>
-          </UiField>
+      <UiSchemaForm
+        :columns="schema.columns"
+        :loading="loading"
+        :errors="store.fieldErrors"
+        :hints="hints"
+        data-testid="email-campaign-form"
+      >
+        <template #field-subject="{ id, invalid, describedby }">
+          <UiInput
+            :id="id"
+            v-model="form.subject"
+            :invalid="invalid"
+            :aria-describedby="describedby"
+            :readonly="readOnly"
+            :maxlength="CAMPAIGN_SUBJECT_MAX_LENGTH"
+            :placeholder="t('emailCampaigns.form.subjectPlaceholder')"
+            data-testid="email-campaign-subject"
+          />
+        </template>
 
-          <UiField :label="t('emailCampaigns.form.body')" :hint="t('emailCampaigns.form.bodyHint')" :error="store.fieldErrors.body">
-            <template #default="{ id, invalid, describedby }">
-              <UiTextarea
-                :id="id"
-                v-model="form.body"
-                rows="16"
-                :invalid="invalid"
-                :aria-describedby="describedby"
-                :readonly="readOnly"
-                :maxlength="CAMPAIGN_BODY_MAX_LENGTH"
-                :placeholder="t('emailCampaigns.form.bodyPlaceholder')"
-                class="font-mono"
-                data-testid="email-campaign-body"
-              />
-            </template>
-          </UiField>
+        <template #field-body="{ id, invalid, describedby }">
+          <UiTextarea
+            :id="id"
+            v-model="form.body"
+            rows="16"
+            :invalid="invalid"
+            :aria-describedby="describedby"
+            :readonly="readOnly"
+            :maxlength="CAMPAIGN_BODY_MAX_LENGTH"
+            :placeholder="t('emailCampaigns.form.bodyPlaceholder')"
+            class="font-mono"
+            data-testid="email-campaign-body"
+          />
+        </template>
 
-          <UiField :label="t('emailCampaigns.form.audience')" :hint="readOnly ? undefined : t('emailCampaigns.form.audienceHint')" :error="store.fieldErrors.segments">
-            <UiStack v-if="readOnly && store.current">
-              <UiText
-                v-for="(segment, index) in store.current.segments"
-                :key="segmentKey(segment)"
-                tone="secondary"
-                size="md"
-                :data-testid="`email-campaign-segment-summary-${index}`"
-              >
-                {{ describeSegment(segment) }}
-              </UiText>
+        <template #field-segments>
+          <UiStack v-if="readOnly && store.current">
+            <UiText
+              v-for="(segment, index) in store.current.segments"
+              :key="segmentKey(segment)"
+              tone="secondary"
+              size="md"
+              :data-testid="`email-campaign-segment-summary-${index}`"
+            >
+              {{ describeSegment(segment) }}
+            </UiText>
+          </UiStack>
+          <UiStack v-else>
+            <EmailCampaignSegmentRow
+              v-for="(segment, index) in segments"
+              :key="segment.key"
+              :model-value="segment"
+              :products="productOptions"
+              :groups="groupOptions"
+              :filter-types="filterTypes"
+              @update:model-value="replaceSegment(index, $event)"
+              @remove="removeSegment(index)"
+            />
+            <UiStack direction="row">
+              <UiButton :action="UiActionKind.Add" type="button" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-add-segment" @click="addSegment">
+                {{ t('emailCampaigns.form.addSegment') }}
+              </UiButton>
             </UiStack>
-            <UiStack v-else>
-              <EmailCampaignSegmentRow
-                v-for="(segment, index) in segments"
-                :key="segment.key"
-                :model-value="segment"
-                :products="productOptions"
-                :groups="groupOptions"
-                :filter-types="filterTypes"
-                @update:model-value="replaceSegment(index, $event)"
-                @remove="removeSegment(index)"
-              />
-              <div>
-                <UiButton type="button" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-add-segment" @click="addSegment">
-                  {{ t('emailCampaigns.form.addSegment') }}
-                </UiButton>
-              </div>
-              <UiText v-if="!rulesComplete" tone="muted" size="sm" data-testid="email-campaign-audience">
-                {{ t('emailCampaigns.form.audienceIncomplete') }}
-              </UiText>
-              <UiText v-else-if="store.audienceError" tone="danger" size="sm" data-testid="email-campaign-audience">
-                {{ store.audienceError }}
-              </UiText>
-              <UiSkeletonBar v-else-if="store.audienceCount === null" class="h-4 w-40 rounded-md" aria-busy="true" data-testid="email-campaign-audience" />
-              <UiText v-else tone="secondary" size="sm" data-testid="email-campaign-audience">
-                {{ t('emailCampaigns.form.audienceCount', { count: store.audienceCount }) }}
-              </UiText>
-            </UiStack>
-          </UiField>
+            <UiText v-if="!rulesComplete" tone="muted" size="sm" data-testid="email-campaign-audience">
+              {{ t('emailCampaigns.form.audienceIncomplete') }}
+            </UiText>
+            <UiText v-else-if="store.audienceError" tone="danger" size="sm" data-testid="email-campaign-audience">
+              {{ store.audienceError }}
+            </UiText>
+            <UiSkeletonBar v-else-if="store.audienceCount === null" class="h-4 w-40 rounded-md" aria-busy="true" data-testid="email-campaign-audience" />
+            <UiText v-else tone="secondary" size="sm" data-testid="email-campaign-audience">
+              {{ t('emailCampaigns.form.audienceCount', { count: store.audienceCount }) }}
+            </UiText>
+          </UiStack>
+        </template>
 
+        <template #section-campaign>
           <UiStack direction="row" gap="sm" wrap>
             <template v-if="!readOnly">
-              <UiButton
+              <UiButton :action="UiActionKind.Save"
                 :variant="UiButtonVariant.Primary"
                 :loading="acting"
                 :disabled="!canSave"
@@ -529,7 +527,7 @@ onBeforeUnmount(cancelCount)
               >
                 {{ t('emailCampaigns.form.saveDraft') }}
               </UiButton>
-              <UiButton
+              <UiButton :action="UiActionKind.View"
                 :variant="UiButtonVariant.Secondary"
                 :disabled="!canSave || acting"
                 data-testid="email-campaign-preview"
@@ -537,7 +535,7 @@ onBeforeUnmount(cancelCount)
               >
                 {{ t('emailCampaigns.form.preview') }}
               </UiButton>
-              <UiButton
+              <UiButton :action="UiActionKind.Send"
                 :variant="UiButtonVariant.Secondary"
                 :disabled="!canSave || acting"
                 data-testid="email-campaign-schedule"
@@ -545,7 +543,7 @@ onBeforeUnmount(cancelCount)
               >
                 {{ t('emailCampaigns.form.schedule') }}
               </UiButton>
-              <UiButton
+              <UiButton :action="UiActionKind.Send"
                 :variant="UiButtonVariant.Secondary"
                 :disabled="!canSave || acting"
                 data-testid="email-campaign-send-now"
@@ -555,7 +553,7 @@ onBeforeUnmount(cancelCount)
               </UiButton>
             </template>
             <template v-else>
-              <UiButton
+              <UiButton :action="UiActionKind.View"
                 :variant="UiButtonVariant.Secondary"
                 :disabled="acting"
                 data-testid="email-campaign-preview"
@@ -563,7 +561,7 @@ onBeforeUnmount(cancelCount)
               >
                 {{ t('emailCampaigns.form.preview') }}
               </UiButton>
-              <UiButton
+              <UiButton :action="UiActionKind.Cancel"
                 v-if="store.current?.status === CampaignStatus.Scheduled"
                 :variant="UiButtonVariant.Danger"
                 :disabled="acting"
@@ -573,12 +571,12 @@ onBeforeUnmount(cancelCount)
                 {{ t('emailCampaigns.form.cancelSchedule') }}
               </UiButton>
             </template>
-            <UiLink :to="AppRoute.SupportEmailCampaigns" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-back">
+            <UiLink :action="UiActionKind.Cancel" :to="AppRoute.SupportEmailCampaigns" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-back">
               {{ readOnly ? t('shared.back') : t('shared.cancel') }}
             </UiLink>
           </UiStack>
-        </UiStack>
-      </UiCard>
+        </template>
+      </UiSchemaForm>
     </template>
 
     <UiDialog

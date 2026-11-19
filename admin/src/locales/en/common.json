@@ -7,5 +7,10 @@
   "viewAllNotifications": "View all notifications",
   "newCount": "{count} new | {count} new",
   "noNotifications": "No notifications",
-  "help": "Help"
+  "help": "Help",
+  "roles": {
+    "Admin": "Admin",
+    "Reseller": "Reseller",
+    "Client": "Client"
+  }
 }

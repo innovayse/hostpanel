@@ -283,6 +283,27 @@ public static class ServicesTestSeeds
         }
     }
 
+    /// <summary>Adds a service on a server, active with the given cycle and recurring amount, optionally suspended afterwards; the caller saves.</summary>
+    /// <param name="context">The data context to seed through.</param>
+    /// <param name="clientId">The owning client.</param>
+    /// <param name="productId">The ordered product.</param>
+    /// <param name="serverId">The server the service runs on.</param>
+    /// <param name="cycle">The billing cycle.</param>
+    /// <param name="recurring">The recurring amount.</param>
+    /// <param name="suspend">Whether to suspend the service after activating it.</param>
+    /// <returns>A task that completes once the service is added.</returns>
+    public static async Task AddActiveServiceOnServerAsync(
+        IHostpanelDbContext context, int clientId, int productId, int serverId, BillingCycle cycle, decimal recurring, bool suspend)
+    {
+        var service = Domain.Services.ClientService.Create(clientId, productId, cycle, TestMoments.Seeded);
+        await AddActivatedAsync(context, service, "provisioning-ref", TestMoments.Seeded, serverId);
+        service.ChangeBillingTerms(new Domain.Services.ServiceBillingTerms(cycle, 1, 0m, recurring, null, null, null, null));
+        if (suspend)
+        {
+            service.Suspend(TestMoments.Seeded, "non-payment", hostingAlreadyUpdated: true);
+        }
+    }
+
     /// <summary>
     /// Seeds four services of one client that differ in status, product, billing cycle and domain: a pending one, an
     /// active one, a suspended one that runs on a linked registered domain and a terminated one, created a minute apart.

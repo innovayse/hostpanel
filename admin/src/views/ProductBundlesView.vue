@@ -10,8 +10,6 @@ import { useI18n } from 'vue-i18n'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import ProductBundleFormDialog from '@/components/settings/ProductBundleFormDialog.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -23,9 +21,11 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ProductBundlesView.schema'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import { Icon } from '@/lib/icons'
 import UiText from '@/components/ui/UiText.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import { useCurrenciesStore } from '@/stores/currencies'
@@ -37,8 +37,16 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import { EMPTY_VALUE } from '@/lib/format'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('settings.productBundles.add'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'product-bundles-add', onSelect: openCreate },
+])
 
 /** Product bundles store, the only caller of the bundle endpoints. */
 const store = useProductBundlesStore()
@@ -195,6 +203,7 @@ const stageDelete = (bundle: ProductBundle): void => {
 const rowActions = (bundle: ProductBundle): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     /**
      * Opens the edit dialog for this row's bundle.
      *
@@ -205,6 +214,7 @@ const rowActions = (bundle: ProductBundle): UiMenuAction[] => [
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     danger: true,
     /**
      * Stages this row's bundle for the delete confirmation.
@@ -225,12 +235,10 @@ onMounted(async () => {
 
 <template>
   <UiStack>
-    <UiPageHeader :title="t('settings.productBundles.title')" :subtitle="t('settings.productBundles.subtitle')">
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
       <template #actions>
         <PageHelpLink :url="guideUrl" />
-        <UiButton :variant="UiButtonVariant.Primary" data-testid="product-bundles-add" @click="openCreate">
-          {{ t('settings.productBundles.add') }}
-        </UiButton>
+        
       </template>
     </UiPageHeader>
 
@@ -248,16 +256,7 @@ onMounted(async () => {
 
     <UiCard v-else-if="store.loading || store.bundles.length > 0">
       <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" data-testid="product-bundles-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader>{{ t('settings.productBundles.components') }}</UiTableHeader>
-            <UiTableHeader>{{ t('settings.productBundles.domain') }}</UiTableHeader>
-            <UiTableHeader>{{ t('settings.productBundles.discount') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="bundle in store.bundles" :key="bundle.id" data-testid="product-bundle-row">
             <UiTableCell>
@@ -268,9 +267,13 @@ onMounted(async () => {
             <UiTableCell muted>{{ domainLabel(bundle) }}</UiTableCell>
             <UiTableCell>{{ discountLabel(bundle) }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="bundle.isActive ? UiTone.Success : UiTone.Neutral" small>
-                {{ bundle.isActive ? t('shared.active') : t('shared.inactive') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="bundle.isActive"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.active')"
+                :off-label="t('shared.inactive')"
+              />
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="rowActions(bundle)" :testid="`product-bundle-actions-${bundle.id}`" />

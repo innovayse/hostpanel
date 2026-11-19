@@ -9,16 +9,20 @@
  */
 import { computed, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useLocalizedSettingDrafts, SETTING_LOCALES } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
+import SettingsSubsection from '@/components/settings/SettingsSubsection.vue'
+import SettingsTextField from '@/components/settings/SettingsTextField.vue'
+import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { MessageLanguage } from '@/locales/messages'
 import { ChatProvider } from '@/types/chatprovider'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
@@ -48,79 +52,108 @@ const providerOptions = computed(() => [
   { value: ChatProvider.Innochat as string, label: t('settings.trackingChat.provider.innochat') },
 ])
 
-/** The text fields, each a draft of the page's save bar. */
-const TEXT_FIELDS = [
-  { key: SettingKey.ChatBaseUrl, testid: 'base-url', labelKey: 'settings.trackingChat.chat.baseUrl', hintKey: 'settings.trackingChat.chat.baseUrlHint', draft: useSettingDraft(settings, SettingKey.ChatBaseUrl) },
-  { key: SettingKey.ChatWebsiteToken, testid: 'token', labelKey: 'settings.trackingChat.chat.token', hintKey: 'settings.trackingChat.chat.tokenHint', draft: useSettingDraft(settings, SettingKey.ChatWebsiteToken) },
-  { key: SettingKey.ChatWebsiteTokenRu, testid: 'token-ru', labelKey: 'settings.trackingChat.chat.tokenRu', hintKey: 'settings.trackingChat.chat.tokenLocaleHint', draft: useSettingDraft(settings, SettingKey.ChatWebsiteTokenRu) },
-  { key: SettingKey.ChatWebsiteTokenHy, testid: 'token-hy', labelKey: 'settings.trackingChat.chat.tokenHy', hintKey: 'settings.trackingChat.chat.tokenLocaleHint', draft: useSettingDraft(settings, SettingKey.ChatWebsiteTokenHy) },
-]
+/** The chat server address, a draft of the page's save bar. */
+const baseUrl = useSettingDraft(settings, SettingKey.ChatBaseUrl)
+
+/** The settings row of the website token of each language: the default token is the English tab's. */
+const TOKEN_KEYS: Record<MessageLanguage, SettingKey> = {
+  [MessageLanguage.En]: SettingKey.ChatWebsiteToken,
+  [MessageLanguage.Ru]: SettingKey.ChatWebsiteTokenRu,
+  [MessageLanguage.Hy]: SettingKey.ChatWebsiteTokenHy,
+}
+
+/** The website token, one draft per language. */
+const token = useLocalizedSettingDrafts(settings, TOKEN_KEYS)
+
+/** Placeholder of the token input of each language: the default token is explained, the others are optional. */
+const tokenPlaceholders = computed<Record<MessageLanguage, string>>(() => ({
+  [MessageLanguage.En]: t('settings.trackingChat.chat.tokenHint'),
+  [MessageLanguage.Ru]: t('settings.trackingChat.chat.tokenLocaleHint'),
+  [MessageLanguage.Hy]: t('settings.trackingChat.chat.tokenLocaleHint'),
+}))
+
+/** Test id suffix of the token input of each language; the default token keeps the bare `token`. */
+const tokenTestids: Record<MessageLanguage, string> = {
+  [MessageLanguage.En]: 'tracking-chat-token',
+  [MessageLanguage.Ru]: 'tracking-chat-token-ru',
+  [MessageLanguage.Hy]: 'tracking-chat-token-hy',
+}
 </script>
 
 <template>
   <SettingsSection
-    :columns="2"
+    :columns="1"
     :title="t('settings.trackingChat.title')"
     :description="t('settings.trackingChat.description')"
   >
     <!-- Tag manager -->
-    <UiStack gap="xs">
-      <SettingNotSeeded v-if="!gtm.setting.value" :setting-key="SettingKey.AnalyticsGtmId" :env-name="SettingEnv[SettingKey.AnalyticsGtmId]" />
-      <UiStack v-else direction="row" align="end" wrap>
-        <UiInput
-          v-model="gtm.value.value"
-          :label="t('settings.trackingChat.gtm.label')"
-          :placeholder="t('shared.examples.tagManagerId')"
-          :maxlength="ANALYTICS_ID_MAX_LENGTH"
-          data-testid="tracking-gtm"
-          class="min-w-64 flex-1"
-        />
-        <SettingOutcome :outcome="gtm.outcome.value" />
-      </UiStack>
-      <UiText tone="muted" size="sm">
-        {{ t('settings.trackingChat.gtm.hint') }}
-      </UiText>
-    </UiStack>
+    <SettingsSubsection :title="t('settings.trackingChat.gtm.title')">
+      <SettingsTextField
+        :draft="gtm"
+        :setting-key="SettingKey.AnalyticsGtmId"
+        :env-name="SettingEnv[SettingKey.AnalyticsGtmId]"
+        :label="t('settings.trackingChat.gtm.label')"
+        :placeholder="t('shared.examples.tagManagerId')"
+        :maxlength="ANALYTICS_ID_MAX_LENGTH"
+        :hint="t('settings.trackingChat.gtm.hint')"
+        testid="tracking-gtm"
+      />
+    </SettingsSubsection>
 
     <!-- Live chat -->
-    <UiStack gap="sm" class="border-t border-border pt-4 md:col-span-2">
-      <UiHeading :level="3" variant="card">
-        {{ t('settings.trackingChat.chat.title') }}
-      </UiHeading>
-
-      <UiStack v-if="provider.setting.value" direction="row" align="end" wrap>
-        <UiText tone="secondary" size="md">
-          {{ t('settings.trackingChat.provider.label') }}
-        </UiText>
-        <UiSelect
-          v-model="provider.value.value"
-          :options="providerOptions"
-          :placeholder="t('settings.trackingChat.provider.label')"
-          data-testid="tracking-chat-provider"
-          class="min-w-56"
-        />
+    <SettingsSubsection :title="t('settings.trackingChat.chat.title')">
+      <UiStack v-if="provider.setting.value" gap="xs">
+        <UiField :label="t('settings.trackingChat.provider.label')">
+          <template #default="{ id }">
+            <UiSelect
+              :id="id"
+              v-model="provider.value.value"
+              :options="providerOptions"
+              :placeholder="t('settings.trackingChat.provider.label')"
+              data-testid="tracking-chat-provider"
+            />
+          </template>
+        </UiField>
         <SettingOutcome :outcome="provider.outcome.value" />
       </UiStack>
 
-      <UiGrid :columns="2">
-        <template v-for="field in TEXT_FIELDS" :key="field.key">
-          <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="SettingEnv[field.key]" />
-          <UiStack v-else direction="row" align="end">
+      <SettingsTextField
+        :draft="baseUrl"
+        :setting-key="SettingKey.ChatBaseUrl"
+        :env-name="SettingEnv[SettingKey.ChatBaseUrl]"
+        :label="t('settings.trackingChat.chat.baseUrl')"
+        :placeholder="t('settings.trackingChat.chat.baseUrlHint')"
+        :maxlength="CHAT_SETTING_MAX_LENGTH"
+        testid="tracking-chat-base-url"
+      />
+
+      <UiLocalizedField
+        :label="t('settings.trackingChat.chat.token')"
+        :locales="SETTING_LOCALES"
+        :filled="token.filled.value"
+        :errors="token.errors.value"
+        testid="tracking-chat-token-tab"
+      >
+        <template #default="{ locale }">
+          <SettingNotSeeded
+            v-if="!token.drafts[locale].setting.value"
+            :setting-key="TOKEN_KEYS[locale]"
+            :env-name="SettingEnv[TOKEN_KEYS[locale]]"
+          />
+          <UiStack v-else gap="xs">
             <UiInput
-              v-model="field.draft.value.value"
-              :label="t(field.labelKey)"
-              :placeholder="t(field.hintKey)"
+              v-model="token.drafts[locale].value.value"
+              :placeholder="tokenPlaceholders[locale]"
               :maxlength="CHAT_SETTING_MAX_LENGTH"
-              :data-testid="`tracking-chat-${field.testid}`"
-              class="min-w-0 flex-1"
+              :data-testid="tokenTestids[locale]"
             />
-            <SettingOutcome :outcome="field.draft.outcome.value" />
+            <SettingOutcome :outcome="token.drafts[locale].outcome.value?.saved ? token.drafts[locale].outcome.value : null" />
           </UiStack>
         </template>
-      </UiGrid>
-      <UiText tone="muted" size="sm">
+      </UiLocalizedField>
+      <UiText tone="muted" size="sm" class="col-span-full">
         {{ t('settings.trackingChat.chat.hint') }}
       </UiText>
-    </UiStack>
+    </SettingsSubsection>
   </SettingsSection>
 </template>

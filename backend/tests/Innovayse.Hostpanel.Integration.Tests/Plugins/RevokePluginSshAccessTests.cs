@@ -16,7 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// revoke a plugin's key through its own route. Supersedes drafts-758's copy: the test drafts' cases folded in.
 /// </summary>
 /// <param name="fixture">The host with the SSH and the plain plugin.</param>
-public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
+public sealed class RevokePluginSshAccessTests(PluginHostAccessFixture fixture) : IClassFixture<PluginHostAccessFixture>
 {
     /// <summary>The plugin revokes its own key: it leaves the account, the record is revoked and the revoke is audited.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -25,7 +25,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     {
         var (owner, keyId) = await IssuedAsync("plugin-ssh-revoke");
 
-        await fixture.AsPluginAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
+        await fixture.AsPluginAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
         {
             await api.RevokeSshAccessAsync(owner.ServiceId, keyId, CancellationToken.None);
             return true;
@@ -38,7 +38,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
         (await fixture.ActivityOfAsync(owner.ClientId)).Should()
             .ContainSingle(line => line.StartsWith($"Plugin {fixture.SshPluginId} revoked SSH key \"deploy\"", StringComparison.Ordinal))
             .Which.Should().EndWith($"from service #{owner.ServiceId}");
-        (await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId, keyId))
+        (await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId, keyId))
             .Should().Be(PluginHostAccessFailure.NotFound, "a revoked key is no longer the plugin's to revoke");
     }
 
@@ -52,7 +52,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
         using var http = AppPluginFixture.WithBearerOf(fixture.Host, owner.Http);
         var clientKey = await SshTestSeeds.AddKeyAsync(http, owner.ServiceId, 7);
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId, clientKey);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId, clientKey);
 
         failure.Should().Be(PluginHostAccessFailure.NotFound);
         fixture.Agents().AgentFor(owner.ServerId).KeysOf("web").Should().ContainSingle();
@@ -66,7 +66,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
         var (owner, keyId) = await IssuedAsync("plugin-ssh-unbound-revoke");
         await fixture.BindProductsOfAsync(fixture.SshPluginId);
 
-        await fixture.AsPluginAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
+        await fixture.AsPluginAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
         {
             await api.RevokeSshAccessAsync(owner.ServiceId, keyId, CancellationToken.None);
             return true;
@@ -96,7 +96,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     {
         var (owner, keyId) = await IssuedAsync("plugin-ssh-other-plugin");
         await fixture.BindProductsOfAsync(fixture.OtherSshPluginId, owner.ServiceId);
-        var other = PluginSshFixture.ClientCall(fixture.OtherSshPluginId, owner.ClientId);
+        var other = PluginHostAccessFixture.ClientCall(fixture.OtherSshPluginId, owner.ClientId);
 
         (await RefusalAsync(other, owner.ServiceId, keyId)).Should().Be(PluginHostAccessFailure.NotFound);
         (await RefusalAsync(other, owner.ServiceId, Guid.NewGuid())).Should().Be(PluginHostAccessFailure.NotFound);
@@ -111,7 +111,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
         var (owner, keyId) = await IssuedAsync("plugin-ssh-revoke-owner");
         var stranger = await fixture.OwnerWithServiceAsync("plugin-ssh-revoke-stranger");
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, stranger.ClientId), owner.ServiceId, keyId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, stranger.ClientId), owner.ServiceId, keyId);
 
         failure.Should().Be(PluginHostAccessFailure.NotFound);
         (await fixture.KeyAsync(keyId))!.SyncState.Should().Be(SshKeySyncState.Installed);
@@ -124,7 +124,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     {
         var (owner, keyId) = await IssuedAsync("plugin-ssh-revoke-notallowed");
 
-        (await RefusalAsync(PluginSshFixture.ClientCall(fixture.PlainPluginId, owner.ClientId), owner.ServiceId, keyId))
+        (await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.PlainPluginId, owner.ClientId), owner.ServiceId, keyId))
             .Should().Be(PluginHostAccessFailure.NotAllowed);
         (await RefusalAsync(PluginCallBinding.WithoutClient(fixture.SshPluginId), owner.ServiceId, keyId))
             .Should().Be(PluginHostAccessFailure.NotAllowed);
@@ -139,7 +139,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
         var (owner, keyId) = await IssuedAsync("plugin-ssh-revoke-down");
         fixture.Agents().AgentFor(owner.ServerId).FailWith = SshProviderFailure.Unreachable;
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId, keyId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId, keyId);
 
         failure.Should().Be(PluginHostAccessFailure.ServerUnavailable);
         (await fixture.KeyAsync(keyId))!.SyncState.Should().NotBe(SshKeySyncState.Revoked);
@@ -151,7 +151,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     public async Task ContactWithoutThePasswordsRight_IsNotAllowedAsync()
     {
         var (owner, keyId) = await IssuedAsync("plugin-ssh-revoke-contact");
-        var contact = PluginSshFixture.ClientCall(
+        var contact = PluginHostAccessFixture.ClientCall(
             fixture.SshPluginId, owner.ClientId, ClientPermission.All & ~ClientPermission.ViewModifyPasswords);
 
         (await RefusalAsync(contact, owner.ServiceId, keyId)).Should().Be(PluginHostAccessFailure.NotAllowed);
@@ -168,7 +168,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
         await SshTestSeeds.ChangeServiceQuietlyAsync(
             fixture.Factory, owner.ServiceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
 
-        await fixture.AsPluginAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
+        await fixture.AsPluginAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
         {
             await api.RevokeSshAccessAsync(owner.ServiceId, keyId, CancellationToken.None);
             return true;
@@ -186,7 +186,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
         var owner = await fixture.OwnerWithServiceAsync(label);
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
         var access = await fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, "deploy", CancellationToken.None));
         return new IssuedPluginSshKey(owner, access.KeyId);
     }

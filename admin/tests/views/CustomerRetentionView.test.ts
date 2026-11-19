@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { ReportRetentionGroupKind } from '@/types/reportretention'
 import CustomerRetentionView from '@/views/CustomerRetentionView.vue'
+import schema from '@/views/CustomerRetentionView.schema'
 import { json } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { runReportCase } from '../helpers/reportViews'
@@ -16,6 +17,7 @@ vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJs
 runReportCase({
   name: 'CustomerRetentionView',
   view: CustomerRetentionView,
+  schema,
   routes: {
     'GET /reports/customer-retention': () => json({
       groups: [
@@ -34,6 +36,22 @@ runReportCase({
   },
   expected: ['Average Customer Retention Time', 'Hosting', 'Basic', '1 year 1 month', 'Domains', '1 year', '12 days'],
   retryable: true,
+})
+
+describe('CustomerRetentionView loading', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('draws its real columns with a skeleton while the report is in flight', async () => {
+    stubRouteTable({ 'GET /reports/customer-retention': () => new Promise<Response>(() => undefined) })
+    const wrapper = await mountView(CustomerRetentionView)
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Billing Cycle')
+    expect(wrapper.find('[data-testid="report-include-active"]').exists()).toBe(true)
+  })
 })
 
 describe('CustomerRetentionView actions', () => {

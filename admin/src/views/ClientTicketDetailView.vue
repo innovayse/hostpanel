@@ -26,10 +26,8 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiLink from '@/components/ui/UiLink.vue'
+import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -37,20 +35,32 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
+import { CONVERSATION_CARD, REPLY_CARD, SETTINGS_CARD } from '@/views/ClientTicketDetailView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Opens the delete confirmation. */
+const openDeleteModal = (): void => {
+  showDeleteModal.value = true
+}
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  ...(store.currentTicket?.status !== TicketStatus.Closed
+    ? [{ label: t('shared.close'), icon: actionIcons[UiActionKind.Close], variant: UiButtonVariant.Secondary, testid: 'client-ticket-close', disabled: !store.currentTicket, onSelect: handleClose }]
+    : [{ label: t('clients.clientTicketDetail.reopen'), icon: actionIcons[UiActionKind.Refresh], variant: UiButtonVariant.Secondary, testid: 'client-ticket-reopen', onSelect: handleReopen }]),
+  { label: t('shared.delete'), icon: actionIcons[UiActionKind.Delete], variant: UiButtonVariant.Danger, testid: 'client-ticket-delete', disabled: !store.currentTicket, onSelect: openDeleteModal },
+])
 
 
 /** Fallback text for fields the API leaves unresolved. */
 
 const { orUnknown } = useFallbackLabels()
-
-/** Icon markup (shape tags) of the back link. */
-const BACK_ICON = '<polyline points="15 18 9 12 15 6"/>'
 
 /** Current route, source of the client and ticket ids. */
 const route = useRoute()
@@ -254,66 +264,23 @@ onMounted(() => {
     />
 
     <template v-else>
-      <UiStack direction="row" wrap :justify="UiJustify.Between" :align="UiAlignItems.Center" :aria-busy="store.currentTicket ? undefined : 'true'">
-        <UiStack direction="row" :align="UiAlignItems.Center">
-          <UiLink
-            :to="clientSectionPath(clientId, ClientSection.Tickets)"
-            :variant="UiButtonVariant.Secondary"
-            data-testid="client-ticket-back"
-          >
-            <UiIcon :markup="BACK_ICON" :size="UiSize.Sm" />
-            {{ t('shared.back') }}
-          </UiLink>
-          <template v-if="store.currentTicket">
-            <UiHeading :level="1" variant="card">
-              {{ t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) }}
-            </UiHeading>
-            <UiBadge :tone="ticketStatusTone[store.currentTicket.status]" small>
-              {{ ticketStatusLabel(store.currentTicket.status) }}
-            </UiBadge>
-          </template>
-          <UiStack v-else direction="row" :align="UiAlignItems.Center" aria-hidden="true" data-testid="client-ticket-loading">
-            <UiSkeletonBar class="h-6 w-64 rounded-md" />
-            <UiSkeletonBar class="h-5 w-20 rounded-full" />
-          </UiStack>
-        </UiStack>
-        <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
-          <UiButton
-            v-if="store.currentTicket?.status !== TicketStatus.Closed"
-            type="button"
-            :variant="UiButtonVariant.Secondary"
-            :disabled="!store.currentTicket"
-            data-testid="client-ticket-close"
-            @click="handleClose"
-          >
-            {{ t('shared.close') }}
-          </UiButton>
-          <UiButton
-            v-else
-            type="button"
-            :variant="UiButtonVariant.Secondary"
-            data-testid="client-ticket-reopen"
-            @click="handleReopen"
-          >
-            {{ t('clients.clientTicketDetail.reopen') }}
-          </UiButton>
-          <UiButton
-            type="button"
-            :variant="UiButtonVariant.Danger"
-            :disabled="!store.currentTicket"
-            data-testid="client-ticket-delete"
-            @click="showDeleteModal = true"
-          >
-            {{ t('shared.delete') }}
-          </UiButton>
-        </UiStack>
-      </UiStack>
+      <UiPageHeader :actions="headerActions"
+        :title="store.currentTicket ? t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) : undefined"
+        :loading="!store.currentTicket"
+        :back-to="clientSectionPath(clientId, ClientSection.Tickets)"
+        :back-label="t('shared.tickets')"
+        back-testid="client-ticket-back"
+      >
+        <UiBadge v-if="store.currentTicket" :tone="ticketStatusTone[store.currentTicket.status]" small>
+          {{ ticketStatusLabel(store.currentTicket.status) }}
+        </UiBadge>
+      </UiPageHeader>
 
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-ticket-feedback" />
 
       <UiCard padding="md">
         <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('clients.clientTicketDetail.ticketSettings') }}</UiHeading>
+          <UiHeading :level="2" variant="card">{{ t(SETTINGS_CARD.title) }}</UiHeading>
           <UiGrid :columns="4">
             <UiField :label="t('shared.department')">
               <UiErrorState
@@ -339,7 +306,7 @@ onMounted(() => {
             </UiField>
           </UiGrid>
           <UiStack direction="row">
-            <UiButton
+            <UiButton :action="UiActionKind.Save"
               type="button"
               :variant="UiButtonVariant.Primary"
               :loading="store.loading"
@@ -355,7 +322,7 @@ onMounted(() => {
 
       <UiCard padding="md">
         <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('shared.addReply') }}</UiHeading>
+          <UiHeading :level="2" variant="card">{{ t(REPLY_CARD.title) }}</UiHeading>
           <UiField :label="t('shared.message')">
             <template #default="{ id }">
               <UiTextarea
@@ -368,7 +335,7 @@ onMounted(() => {
             </template>
           </UiField>
           <UiStack direction="row">
-            <UiButton
+            <UiButton :action="UiActionKind.Send"
               type="button"
               :variant="UiButtonVariant.Primary"
               :loading="store.loading"
@@ -384,7 +351,7 @@ onMounted(() => {
 
       <UiCard padding="md">
         <UiStack data-testid="client-ticket-thread">
-          <UiHeading :level="2" variant="card">{{ t('clients.clientTicketDetail.conversation') }}</UiHeading>
+          <UiHeading :level="2" variant="card">{{ t(CONVERSATION_CARD.title) }}</UiHeading>
 
           <template v-if="!store.currentTicket">
             <UiChatBubble :side="UiChatBubbleSide.Other" loading data-testid="client-ticket-message-loading" />

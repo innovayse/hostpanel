@@ -16,6 +16,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 import { createTestI18n } from '../../helpers/i18n'
+import { Icon } from '@/lib/icons'
 
 /** The global options: the English catalogue and the teleport inlined. */
 const global = { plugins: [createTestI18n()], stubs: { teleport: true } }
@@ -37,7 +38,7 @@ const cases: Case[] = [
   { name: 'UiClientSelect', mountIt: () => mount(UiClientSelect, { props: { modelValue: null, clients: [{ id: 1, name: 'Acme' }] }, global }), opener: 'button' },
   { name: 'UiPhoneInput', mountIt: () => mount(UiPhoneInput, { global }), opener: '[data-testid="ui-select-trigger"]' },
   { name: 'UiFieldSelector', mountIt: () => mount(UiFieldSelector, { props: { fields: [{ key: 'a', label: 'A' }], selected: new Set<string>() }, global }), opener: '[data-testid="field-selector-trigger"]' },
-  { name: 'UiRowActions', mountIt: () => mount(UiRowActions, { props: { actions: [{ label: 'Edit', onSelect: () => undefined }, { label: 'View', onSelect: () => undefined }] }, global }), opener: '[data-testid="row-actions-trigger"]' },
+  { name: 'UiRowActions', mountIt: () => mount(UiRowActions, { props: { actions: [{ label: 'Edit', icon: Icon.Edit, onSelect: () => undefined }, { label: 'View', icon: Icon.Eye, onSelect: () => undefined }] }, global }), opener: '[data-testid="row-actions-trigger"]' },
 ]
 
 /**

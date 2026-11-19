@@ -9,7 +9,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
@@ -28,6 +27,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { formatPlainAmount } from '@/lib/money'
 import { nextRowKey } from '@/lib/rowKey'
+import { useRowSelection } from '@/composables/useRowSelection'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail, InvoiceItemUpdate } from '@/types/invoice'
 import { MAX_PERCENT } from '@/lib/limits'
@@ -64,8 +64,6 @@ interface EditableLine {
   quantity: number
   /** Price of one unit. */
   unitPrice: number
-  /** Whether the line is ticked for the bulk delete. */
-  selected: boolean
 }
 
 /** A row of the totals block. */
@@ -122,11 +120,8 @@ const snapshot = (): string =>
 /** True when the editor holds changes that are not saved yet. */
 const dirty = computed<boolean>(() => snapshot() !== baseline.value)
 
-/** True when every editable line is ticked (and there is at least one). */
-const allSelected = computed<boolean>(() => lines.value.length > 0 && lines.value.every((line) => line.selected))
-
-/** How many editable lines are ticked. */
-const selectedCount = computed<number>(() => lines.value.filter((line) => line.selected).length)
+/** The lines ticked for the bulk delete, by their client keys; the table draws the checkboxes and, on a phone, the select-all above its cards. */
+const selection = useRowSelection(() => lines.value.map((line) => line.key))
 
 /** Sub-total of the editable lines. */
 const previewSubTotal = computed<number>(() => lines.value.reduce((sum, line) => sum + lineTotal(line), 0))
@@ -169,7 +164,6 @@ const populate = (): void => {
     description: item.description,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
-    selected: false,
   }))
   removedIds.value = []
   baseline.value = snapshot()
@@ -177,7 +171,7 @@ const populate = (): void => {
 
 /** Appends a blank line. */
 const addLine = (): void => {
-  lines.value.push({ key: nextRowKey(), description: '', quantity: 1, unitPrice: 0, selected: false })
+  lines.value.push({ key: nextRowKey(), description: '', quantity: 1, unitPrice: 0 })
 }
 
 /**
@@ -192,19 +186,11 @@ const removeLine = (index: number): void => {
   }
 }
 
-/** Ticks every line, or clears the ticks when all were ticked. */
-const toggleAll = (): void => {
-  const next = !allSelected.value
-  lines.value.forEach((line) => {
-    line.selected = next
-  })
-}
-
 /** Drops every ticked line from the editor (saved with the rest). */
 const deleteSelected = (): void => {
-  const gone = lines.value.filter((line) => line.selected)
+  const gone = lines.value.filter((line) => selection.isSelected(line.key))
   removedIds.value.push(...gone.flatMap((line) => (line.id === undefined ? [] : [line.id])))
-  lines.value = lines.value.filter((line) => !line.selected)
+  lines.value = lines.value.filter((line) => !selection.isSelected(line.key))
 }
 
 /**
@@ -308,18 +294,12 @@ watch(
           v-else
           :density="UiTableDensity.Compact"
           :empty="lines.length === 0"
+          :selection="selection"
+          select-all-testid="billing-invoice-items-select-all"
           data-testid="billing-invoice-items-editor"
         >
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader select>
-                <UiCheckbox
-                  :model-value="allSelected"
-                  :aria-label="t('shared.selectAll')"
-                  data-testid="billing-invoice-items-select-all"
-                  @update:model-value="toggleAll"
-                />
-              </UiTableHeader>
               <UiTableHeader :size="UiColumnSize.Grow" :card-role="UiCardRole.Control">{{ t('shared.description') }}</UiTableHeader>
               <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.qty') }}</UiTableHeader>
               <UiTableHeader :card-role="UiCardRole.Control">{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
@@ -328,14 +308,12 @@ watch(
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
-            <UiTableRow v-for="(line, index) in lines" :key="line.key">
-              <UiTableCell select>
-                <UiCheckbox
-                  v-model="line.selected"
-                  :aria-label="t('shared.selectRow')"
-                  :data-testid="`billing-invoice-item-select-${index}`"
-                />
-              </UiTableCell>
+            <UiTableRow
+              v-for="(line, index) in lines"
+              :key="line.key"
+              :row-id="line.key"
+              :select-testid="`billing-invoice-item-select-${index}`"
+            >
               <UiTableCell>
                 <UiTextarea
                   v-model="line.description"
@@ -378,7 +356,7 @@ watch(
             <UiButton :action="UiActionKind.Delete"
               variant="danger"
               size="sm"
-              :disabled="selectedCount === 0"
+              :disabled="selection.count.value === 0"
               data-testid="billing-invoice-items-delete-selected"
               @click="deleteSelected"
             >

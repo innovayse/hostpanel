@@ -7,7 +7,7 @@ import { HttpMethod } from '../src/types/http'
 import { AdminTheme } from '../src/types/admintheme'
 import { THEME_STORAGE_KEY } from '../src/lib/themeBoot'
 import { expect, test } from '@playwright/test'
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
 import { servicesPage } from './fixtures/orders'
 import { emptyClientSummary } from './fixtures/clientSummary'
@@ -21,6 +21,24 @@ test.use({ viewport: { width: 390, height: 800 } })
 
 /** Most a box can sit past its scroller's edge because the browser rounds a scroll offset to whole pixels. */
 const SCROLL_ROUNDING_PX = 1
+
+/**
+ * Tells whether a list, and every box around it up to the page, holds its content without a sideways scroll.
+ *
+ * Below `sm` a table is drawn as cards that wrap inside their box, so neither the list nor any ancestor has anything to scroll.
+ *
+ * @param list - The list (table or card list) under test.
+ * @returns True when nothing from the list up to the root is wider than its own box.
+ */
+const fitsItsBoxes = (list: Locator): Promise<boolean> =>
+  list.evaluate((el) => {
+    for (let node: Element | null = el; node !== null; node = node.parentElement) {
+      if (node.scrollWidth > node.clientWidth) {
+        return false
+      }
+    }
+    return true
+  })
 
 test('the client sections are a tab strip above the content on a phone', async ({ page }) => {
   await stubApi(page, {
@@ -254,15 +272,8 @@ test('the contacts table on the profile page is cards that fit their card and do
   const table = page.getByTestId('client-profile-contacts')
   await expect(table).toBeVisible()
 
-  const scrolling = await table.evaluate((el) => {
-    let node: HTMLElement | null = el.parentElement
-    while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
-      node = node.parentElement
-    }
-    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth }
-  })
   // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
-  expect(scrolling?.scrollWidth).toBeLessThanOrEqual(scrolling?.clientWidth ?? 0)
+  expect(await fitsItsBoxes(table)).toBe(true)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
@@ -346,14 +357,6 @@ test('the billing card lines its counts and amounts up in columns, and the summa
   })).toBe(true)
   // The services table is drawn as cards on a phone, so its box has nothing to scroll.
   await expect(page.getByTestId('client-summary-services')).toBeVisible()
-  const scrolling = await page.getByTestId('client-summary-services').evaluate((table) => {
-    let node: HTMLElement | null = table.parentElement
-    while (node !== null && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX)) {
-      node = node.parentElement
-    }
-    return node === null ? null : { scrollWidth: node.scrollWidth, clientWidth: node.clientWidth }
-  })
-  expect(scrolling).not.toBeNull()
   // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
-  expect(scrolling?.scrollWidth).toBeLessThanOrEqual(scrolling?.clientWidth ?? 0)
+  expect(await fitsItsBoxes(page.getByTestId('client-summary-services'))).toBe(true)
 })

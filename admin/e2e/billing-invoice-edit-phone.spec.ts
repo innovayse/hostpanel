@@ -50,7 +50,7 @@ test('the invoice lines are editable cards on a phone', async ({ page }) => {
   await expect(page.getByTestId('billing-invoice-item-select-1')).toHaveAttribute('aria-checked', 'true')
 
   // The description input takes the width of its card (the card's padding is all that is left).
-  const card = page.getByTestId('billing-invoice-item-description-0').locator('xpath=ancestor::tr[1]')
+  const card = page.getByTestId('billing-invoice-item-description-0').locator('xpath=ancestor::*[@role="listitem"][1]')
   const cardWidth = (await card.boundingBox())?.width ?? Number.POSITIVE_INFINITY
   const inputWidth = (await page.getByTestId('billing-invoice-item-description-0').boundingBox())?.width ?? 0
   expect(inputWidth).toBeGreaterThanOrEqual(cardWidth - 40)

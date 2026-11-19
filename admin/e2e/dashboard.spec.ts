@@ -17,7 +17,7 @@ test('the dashboard shows each headline number on its tile', async ({ page }) =>
   await expect(page.getByTestId('dashboard-stat-activeServices')).toContainText(String(dashboardStats.activeServices))
   await expect(page.getByTestId('dashboard-stat-overdueInvoices')).toContainText(String(dashboardStats.overdueInvoices))
   await expect(page.getByTestId('dashboard-stat-openTickets')).toContainText(String(dashboardStats.openTickets))
-  await expect(page.getByTestId('nav-clients-count')).toHaveText(String(dashboardStats.totalClients))
+  await expect(page.getByTestId('nav-support-tickets-count')).toHaveText(String(dashboardStats.openTickets))
 })
 
 test('the 30 and 90 day switch reloads the charts and the revenue tile', async ({ page }) => {

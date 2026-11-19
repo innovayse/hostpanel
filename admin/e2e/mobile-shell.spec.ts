@@ -72,6 +72,8 @@ test('the menu sheet opens from the top bar with a grip, leads to a list and clo
   await page.getByTestId('topbar-toggle-sidebar').click()
   await expect(page.getByTestId('drawer')).toBeVisible()
   await expect(page.getByTestId('drawer-grip')).toBeVisible()
+  // Clients is a section: its button opens the sub-menu, whose first link (View) shares the entry's test id and leads to the list.
+  await page.getByTestId('drawer').getByTestId('nav-clients').first().click()
   await page.getByTestId('drawer').getByTestId('nav-clients').last().click()
 
   await expect(page).toHaveURL(/\/clients$/)
@@ -91,7 +93,7 @@ test('the menu sheet closes on Escape without leading anywhere', async ({ page }
   await page.keyboard.press('Escape')
 
   await expect(page.getByTestId('drawer')).toHaveCount(0)
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/dashboard$/)
   expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0)
 })
 
@@ -111,7 +113,7 @@ test('the menu sheet closes when its grip is dragged down', async ({ page }) => 
   await page.mouse.up()
 
   await expect(page.getByTestId('drawer')).toHaveCount(0)
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/dashboard$/)
 })
 
 test('a form dialog is a bottom sheet with its save row pinned to the bottom edge', async ({ page }) => {
@@ -123,7 +125,8 @@ test('a form dialog is a bottom sheet with its save row pinned to the bottom edg
 
   const panel = page.getByTestId('dialog-panel')
   await expect(panel).toBeVisible()
-  await expect(page.getByTestId('drawer-grip')).toBeVisible()
+  // The row menu sheet that led here is still leaving while the dialog rises, so the grip is awaited until it is the dialog's alone.
+  await expect(page.getByTestId('drawer-grip')).toHaveCount(1)
   // The sheet rises into place, so the box is read until the enter has settled: full width, resting on the bottom edge, under the height limit.
   await expect.poll(async () => (await panel.boundingBox())?.width).toBe(390)
   await expect.poll(async () => {
@@ -135,9 +138,10 @@ test('a form dialog is a bottom sheet with its save row pinned to the bottom edg
   // The save button is reachable without scrolling the dialog and sits inside the viewport.
   const save = page.getByTestId('currency-form-save')
   await expect(save).toBeInViewport()
-  // The row sticks to the bottom edge: the button sits in the last strip of the screen, not wherever the form ends.
+  // The action row sticks to the bottom edge: it sits in the last strip of the screen, not wherever the form ends (the buttons stack, the save on top of the cancel).
+  const actions = page.getByTestId('ui-form-actions')
   await expect.poll(async () => {
-    const box = await save.boundingBox()
+    const box = await actions.boundingBox()
     return box === null ? 0 : 800 - (box.y + box.height)
   }).toBeLessThanOrEqual(32)
   expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0)
@@ -170,7 +174,8 @@ test.describe('the popups of a list page are bottom sheets', () => {
     await expect(page.getByTestId('filter-cancel')).toBeHidden()
 
     await page.getByTestId('billing-transactions-filter-direction').getByTestId('ui-select-trigger').click()
-    await page.getByTestId('ui-select-option').first().click()
+    // The first option is "All activity", which filters nothing; the second narrows the list and is what the trigger counts.
+    await page.getByTestId('ui-select-option').nth(1).click()
     await page.getByTestId('filter-apply').click()
 
     await expect(page.getByTestId('dialog-panel')).toHaveCount(0)
@@ -227,8 +232,10 @@ test('a report is chosen from the tab strip and fits the phone', async ({ page }
   await page.goto('/reports/top-clients')
 
   await expect(page.getByTestId('reports-tabs')).toBeVisible()
-  await expect(page.getByTestId('reports-nav-search')).toHaveCount(1)
-  await expect(page.getByTestId('reports-nav-search')).toBeHidden()
+  // The side navigation stays in the page, hidden, behind the strip; its search box exists only while that sidebar is open.
+  await expect(page.getByTestId('reports-nav-top-clients')).toHaveCount(1)
+  await expect(page.getByTestId('reports-nav-top-clients')).toBeHidden()
+  await expect(page.getByTestId('reports-nav-search')).toHaveCount(0)
   await expect(page.getByTestId('report-table-row')).toHaveCount(topClients.length)
   expect(await sidewaysOverflow(page)).toBeLessThanOrEqual(0)
 })
@@ -277,7 +284,7 @@ test.describe('at tablet width', () => {
     { name: 'the client list', path: '/clients', routes: [json(HttpMethod.Get, '/api/clients', clientsPage)], ready: 'client-row' },
     { name: 'a chart report', path: '/reports/annual-income', routes: [json(HttpMethod.Get, '/api/reports/annual-income', annualIncome)], ready: 'report-chart' },
     { name: 'the currencies list', path: '/settings/currencies', routes: [json(HttpMethod.Get, '/api/admin/currencies', [usd, eur])], ready: `currency-actions-${eur.code}` },
-    { name: 'the system settings', path: '/settings/general?tab=advanced', routes: [json(HttpMethod.Get, '/api/admin/settings', [timezone])], ready: 'settings-form-save' },
+    { name: 'the system settings', path: '/settings/general?tab=advanced', routes: [json(HttpMethod.Get, '/api/admin/settings', [timezone])], ready: `setting-value-${timezone.id}` },
   ]
 
   test('the navigation opens as a bottom sheet on the icon rail', async ({ page }) => {

@@ -141,6 +141,14 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     public long SshKeyRevision { get; private set; }
 
     /// <summary>
+    /// Gets how many websites and databases were ever recorded for the service. Not a count to read: it moves on every
+    /// change so the change saves over this row, whose xmin concurrency token then serialises two changes of one service,
+    /// which keeps <see cref="HostingResourceLimits"/> exact (the count and the insert are otherwise two statements another
+    /// change could fall between).
+    /// </summary>
+    public long HostingResourceRevision { get; private set; }
+
+    /// <summary>
     /// Gets whether the service holds a hosting account on its panel: it has a provisioning reference
     /// and is not terminated. A terminated service keeps the reference for the record, but its account
     /// is gone and the same reference may later belong to another service, so the reference alone does
@@ -605,6 +613,16 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     public void RecordSshKeyAdded()
     {
         SshKeyRevision++;
+    }
+
+    /// <summary>
+    /// Records that a website or database is being added or removed, in the same save as the resource. Two changes of one
+    /// service then both write this row, and the second save fails with a concurrency conflict instead of passing the
+    /// per-service limit unseen.
+    /// </summary>
+    public void RecordHostingResourceChanged()
+    {
+        HostingResourceRevision++;
     }
 
     /// <summary>

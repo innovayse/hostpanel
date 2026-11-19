@@ -43,6 +43,11 @@ public sealed class SshProviderFailureConverter : ValueConverter<SshProviderFail
             [SshProviderFailure.SiteNotOwned] = "site_not_owned",
             [SshProviderFailure.SitePrepareFailed] = "site_prepare_failed",
             [SshProviderFailure.AccountExists] = "account_exists",
+            [SshProviderFailure.WebsiteConflict] = "website_conflict",
+            [SshProviderFailure.PhpVersionUnsupported] = "php_version_unsupported",
+            [SshProviderFailure.WebsiteFailed] = "website_failed",
+            [SshProviderFailure.DatabaseFailed] = "database_failed",
+            [SshProviderFailure.DatabaseLimit] = "database_limit",
         };
 
     /// <summary>The failure each stored form reads back as.</summary>

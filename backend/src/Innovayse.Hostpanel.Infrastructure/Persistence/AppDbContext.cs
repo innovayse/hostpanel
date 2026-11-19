@@ -265,6 +265,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the SSH keys customers added to their hosting services.</summary>
     public DbSet<SshKey> SshKeys => Set<SshKey>();
 
+    /// <summary>Gets the websites plugins set up on customers' hosting services.</summary>
+    public DbSet<ServiceWebsite> ServiceWebsites => Set<ServiceWebsite>();
+
+    /// <summary>Gets the databases plugins set up on customers' hosting services.</summary>
+    public DbSet<ServiceDatabase> ServiceDatabases => Set<ServiceDatabase>();
+
     /// <summary>Gets the per-server SSH key management settings.</summary>
     public DbSet<ServerSshSettings> ServerSshSettings => Set<ServerSshSettings>();
 

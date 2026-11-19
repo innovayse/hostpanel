@@ -4,9 +4,9 @@ using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 
 /*
@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
  * SshKeyRevocation, so a plugin's key reaches and leaves an account exactly like a key the client adds.
  *
  * The checks run in a fixed order, cheapest and least revealing first, and nothing is generated or sent before all of
- * them pass: (1) a client-area call whose plugin's manifest declares hostAccess "ssh" and whose caller holds
+ * them pass (1, 2, 3 and the availability re-checks are the shared PluginHostingGate): (1) a client-area call whose plugin's manifest declares hostAccess "ssh" and whose caller holds
  * ViewModifyPasswords, the permission the portal's own SSH key routes require, so a plugin never gives a sub-user more
  * than the portal would; (2) the service is the bound client's; (3) its product is bound to the plugin; (4) SSH is
  * available on it; (5) it has room for another key; (6) the caller's SSH issue budget (the portal's ssh-keys tier, per
@@ -38,11 +38,8 @@ public sealed class PluginSshAccessService
     /// <summary>Comment given to the generated public key; the canonical line drops it, so it never reaches a server.</summary>
     private const string IdentityComment = "hostpanel-plugin";
 
-    /// <summary>Finds the calling plugin's manifest, for its declared host access.</summary>
-    private readonly IPluginEndpointResolver _plugins;
-
-    /// <summary>Reads the products the operator bound the plugin's slot widgets to (#823).</summary>
-    private readonly IPluginSlotContextReader _slots;
+    /// <summary>The gate every host access passes: declared access, ownership, operator binding and availability.</summary>
+    private readonly PluginHostingGate _gate;
 
     /// <summary>Resolves the service's server, provider and account.</summary>
     private readonly ISshServiceContextResolver _resolver;
@@ -63,11 +60,10 @@ public sealed class PluginSshAccessService
     private readonly IHostpanelDbContext _context;
 
     /// <summary>The budget of SSH issues per plugin and client, taken before a key pair is generated.</summary>
-    private readonly IPluginSshIssueLimiter _limiter;
+    private readonly IPluginHostAccessLimiter _limiter;
 
     /// <summary>Initializes the service.</summary>
-    /// <param name="plugins">Finds the calling plugin's manifest, for its declared host access.</param>
-    /// <param name="slots">Reads the products the operator bound the plugin's slot widgets to (#823).</param>
+    /// <param name="gate">The gate every host access passes: declared access, ownership, operator binding and availability.</param>
     /// <param name="resolver">Resolves the service's server, provider and account.</param>
     /// <param name="identities">Generates the Ed25519 pair whose private half goes to the plugin.</param>
     /// <param name="installer">Records the key and installs it on the account.</param>
@@ -76,19 +72,17 @@ public sealed class PluginSshAccessService
     /// <param name="context">Data context the key and activity line are saved through.</param>
     /// <param name="limiter">The budget of SSH issues per plugin and client, taken before a key pair is generated.</param>
     public PluginSshAccessService(
-        IPluginEndpointResolver plugins,
-        IPluginSlotContextReader slots,
+        PluginHostingGate gate,
         ISshServiceContextResolver resolver,
         ISshIdentityGenerator identities,
         SshKeyInstaller installer,
         SshKeyRevocation revocation,
         IActivityLogger activity,
         IHostpanelDbContext context,
-        IPluginSshIssueLimiter limiter)
+        IPluginHostAccessLimiter limiter)
     {
         _limiter = limiter;
-        _plugins = plugins;
-        _slots = slots;
+        _gate = gate;
         _resolver = resolver;
         _identities = identities;
         _installer = installer;
@@ -104,29 +98,29 @@ public sealed class PluginSshAccessService
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The access, or <c>NotAllowed</c>, <c>NotFound</c>, <c>Unavailable</c>, <c>LimitReached</c>, <c>ServerUnavailable</c>.</returns>
     /// <exception cref="InvalidOperationException">The identity generator wrote a public key that does not parse (a host fault).</exception>
-    public async Task<PluginSshIssueOutcome> IssueAsync(
+    public async Task<PluginHostOutcome<PluginSshAccess>> IssueAsync(
         PluginCallBinding binding, int serviceId, string label, CancellationToken ct)
     {
         var trimmed = label.Trim();
-        if (!DeclaresSsh(binding) || trimmed.Length is 0 or > SshLimits.MaxLabelLength)
+        if (!_gate.Declares(binding, PluginHostAccess.Ssh) || trimmed.Length is 0 or > SshLimits.MaxLabelLength)
         {
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.NotAllowed);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.NotAllowed);
         }
 
         var context = await ResolveOwnedAsync(binding, serviceId, ct);
         if (context is null)
         {
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.NotFound);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.NotFound);
         }
 
-        if (!await IsBoundAsync(binding, context.Service.ProductId, ct))
+        if (!await _gate.IsBoundAsync(binding, context.Service.ProductId, ct))
         {
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.NotAllowed);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.NotAllowed);
         }
 
         if (context.State is not SshAccessState.Available || context.Agent is not { } agent || context.Account is not { } account)
         {
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.Unavailable);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.Unavailable);
         }
 
         // Asked before a key pair is generated, so a full service never makes a private key that is thrown away. The
@@ -135,21 +129,22 @@ public sealed class PluginSshAccessService
             .CountAsync(k => k.ClientServiceId == context.Service.Id && k.SyncState != SshKeySyncState.Revoked, ct);
         if (held >= SshLimits.MaxKeysPerService)
         {
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.LimitReached);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.LimitReached);
         }
 
         // Fail closed and before the expensive steps: a spent budget generates no key pair and calls no agent. Reported
         // as ServerUnavailable, the SDK's "try again later".
-        if (!await _limiter.TryAcquireAsync(binding.PluginId, context.Service.ClientId, ct))
+        if (!await _limiter.TryAcquireAsync(
+                new PluginHostAccessKey(binding.PluginId, context.Service.ClientId, RateLimitPolicies.SshKeys), ct))
         {
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.ServerUnavailable);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.ServerUnavailable);
         }
 
         // The gate above passed at the start of the call; the operator may have switched the plugin off or removed it
         // since. Asked again right before a private key exists, so a plugin that is gone never gets one.
-        if (!await IsStillAvailableAsync(binding, ct))
+        if (!await _gate.IsStillAvailableAsync(binding, ct))
         {
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.NotAllowed);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.NotAllowed);
         }
 
         var identity = _identities.Generate(IdentityComment);
@@ -162,17 +157,17 @@ public sealed class PluginSshAccessService
         var installed = await _installer.InstallAsync(context, trimmed, publicKey, binding.PluginId, ct);
         if (installed.IsFailure || installed.Value is not { } key)
         {
-            return PluginSshIssueOutcome.Refused(FailureFor(installed.ErrorCode));
+            return PluginHostOutcome<PluginSshAccess>.Refused(FailureFor(installed.ErrorCode));
         }
 
         // A removal that committed while the key was being installed may already have run its revoke pass, which then
         // could not see this key. Asked once more after the install: a plugin that is gone has the key taken back here,
         // so no key outlives its plugin, and the private key is never handed out.
-        if (!await IsStillAvailableAsync(binding, ct))
+        if (!await _gate.IsStillAvailableAsync(binding, ct))
         {
             await _revocation.RevokeAsync(context, key, ct);
             await _context.SaveChangesAsync(ct);
-            return PluginSshIssueOutcome.Refused(PluginHostAccessFailure.NotAllowed);
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.NotAllowed);
         }
 
         await _activity.RecordAsync(
@@ -185,7 +180,7 @@ public sealed class PluginSshAccessService
         // The pinned fingerprint is the agent's; it describes the customer-facing address only when both are one endpoint.
         var samePoint = string.Equals(agent.SshHostname, agent.AgentHost, StringComparison.OrdinalIgnoreCase)
             && agent.SshPort == agent.AgentPort;
-        return PluginSshIssueOutcome.Issued(new PluginSshAccess(
+        return PluginHostOutcome<PluginSshAccess>.Granted(new PluginSshAccess(
             key.KeyId,
             agent.SshHostname,
             agent.SshPort,
@@ -211,7 +206,7 @@ public sealed class PluginSshAccessService
     public async Task<PluginHostAccessFailure?> RevokeAsync(
         PluginCallBinding binding, int serviceId, Guid keyId, CancellationToken ct)
     {
-        if (!DeclaresSsh(binding))
+        if (!_gate.Declares(binding, PluginHostAccess.Ssh))
         {
             return PluginHostAccessFailure.NotAllowed;
         }
@@ -245,68 +240,14 @@ public sealed class PluginSshAccessService
         return null;
     }
 
-    /// <summary>
-    /// Whether the call may ask for SSH at all: a client-area call with a client whose caller holds
-    /// <see cref="ClientPermission.ViewModifyPasswords"/> (what the portal's own SSH key routes require), from a loaded plugin
-    /// whose manifest declares <see cref="PluginHostAccess.Ssh"/>. Answered from the binding and the manifest, never from
-    /// the plugin.
-    /// </summary>
-    /// <param name="binding">The call.</param>
-    /// <returns><see langword="true"/> when the call may go on to the service checks.</returns>
-    private bool DeclaresSsh(PluginCallBinding binding)
-    {
-        if (binding.Area is not PluginArea.Client
-            || binding.ClientId is null
-            || !binding.Permissions.HasFlag(ClientPermission.ViewModifyPasswords))
-        {
-            return false;
-        }
-
-        var manifest = _plugins.Find(binding.PluginId);
-        return manifest is not null && manifest.HostAccess.Contains(PluginHostAccess.Ssh, StringComparer.Ordinal);
-    }
-
-    /// <summary>
-    /// Resolves the service's SSH context when it belongs to the binding's client. The binding is the ownership rule here:
-    /// it is the client the call was verified for, the same one the plugin's caller reference and store describe.
-    /// </summary>
-    /// <param name="binding">The call; its client is set (checked by <see cref="DeclaresSsh"/>).</param>
+    /// <summary>Resolves the service's SSH context when it belongs to the binding's client, through the gate's ownership rule.</summary>
+    /// <param name="binding">The call; its client is set (checked by the gate's <c>Declares</c>).</param>
     /// <param name="serviceId">The service asked about.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The context, or <see langword="null"/> for a missing service and another client's alike.</returns>
-    private async Task<SshServiceContext?> ResolveOwnedAsync(PluginCallBinding binding, int serviceId, CancellationToken ct)
+    private Task<SshServiceContext?> ResolveOwnedAsync(PluginCallBinding binding, int serviceId, CancellationToken ct)
     {
-        var context = await _resolver.ResolveAsync(serviceId, ct);
-        return context is not null && context.Service.ClientId == binding.ClientId ? context : null;
-    }
-
-    /// <summary>
-    /// Whether the operator bound one of the plugin's slot widgets to <paramref name="productId"/> (#823), the one place
-    /// the host records an operator's decision about which products a plugin serves. Only operator rows count, and only
-    /// for a product that still exists: a manifest's own <c>productIds</c> are the plugin author's claim, and a plugin that
-    /// listed every product id would otherwise reach every hosting account before anyone bound it. Nothing bound means no
-    /// hosting at all.
-    /// </summary>
-    /// <param name="binding">The call.</param>
-    /// <param name="productId">The product of the service.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> only when an operator binding row of the plugin names the product.</returns>
-    private async Task<bool> IsBoundAsync(PluginCallBinding binding, int productId, CancellationToken ct)
-    {
-        var rows = await _slots.ListBindingsAsync(binding.PluginId, null, ct);
-        return rows.Any(row => row.ProductExists && row.ProductId == productId);
-    }
-
-    /// <summary>
-    /// Whether the plugin is still switched on, configured and served, read again from the settings rather than from the
-    /// call's start. Builds nothing.
-    /// </summary>
-    /// <param name="binding">The call.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> while the plugin's routes would still answer.</returns>
-    private async Task<bool> IsStillAvailableAsync(PluginCallBinding binding, CancellationToken ct)
-    {
-        return await _plugins.PrepareAsync(binding.PluginId, ct) is not null;
+        return _gate.ResolveOwnedAsync(binding, serviceId, _resolver.ResolveAsync, context => context.Service.ClientId, ct);
     }
 
     /// <summary>The SDK's reason for an installer refusal.</summary>

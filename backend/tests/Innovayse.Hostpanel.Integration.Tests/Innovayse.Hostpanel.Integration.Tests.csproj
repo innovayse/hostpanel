@@ -33,6 +33,8 @@
     <ProjectReference Include="..\..\src\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The agent's golden vectors: the agent's own tests run them against the real agent, Adapters/Integrations/SshAgent/AgentHostingResourceProviderTests against the host's adapter. -->
+    <None Include="..\..\agent\ssh-key-agent\tests\contract\*.json" Link="Contract\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures\model-diff-baseline.txt" CopyToOutputDirectory="PreserveNewest" />
     <!-- The message store schema Wolverine 5.41 created (WolverineStartupTests starts the current version on it). -->
     <None Include="Fixtures\wolverine-5.41-schema.sql" CopyToOutputDirectory="PreserveNewest" />

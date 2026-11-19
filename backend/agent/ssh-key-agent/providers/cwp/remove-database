@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# What: drops the database and users ensure-database made for ONE label of ONE CWP hosting account (agent op remove-database).
+#       Only a database with a registry entry is dropped. One that exists without an entry (made by the panel or by
+#       hand) is refused. Nothing to drop and no entry is a success with changed=false.
+# Usage (root, called by hostpanel-ssh-key-agent): remove-database <account> <label>
+# Exit: 0 done, 2 bad arguments, 3 exists but was not created by the agent, other = failed.
+# Prints one `RESULT {"changed":true|false}` line.
+set -euo pipefail
+HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=hp-common.sh
+. "$HELPER_DIR/hp-common.sh"
+
+[ $# -eq 2 ] || hp_die "$EXIT_BAD_ARGS" "usage: remove-database <account> <label>"
+LABEL="$2"
+hp_require_account "$1"
+[[ "$LABEL" =~ $LABEL_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad label"
+NAME="${ACCOUNT}_${LABEL}"
+
+if ! hp_reg_has database "$LABEL"; then
+  if hp_db_exists "$NAME" || hp_db_user_exists "$NAME"; then
+    hp_die "$EXIT_NOT_OWNED" "$NAME was not created by the agent"
+  fi
+  hp_result '{"changed":false}'
+  exit 0
+fi
+hp_db_drop "$NAME"
+hp_reg_remove database "$LABEL"
+hp_say "database $NAME dropped"
+hp_result '{"changed":true}'

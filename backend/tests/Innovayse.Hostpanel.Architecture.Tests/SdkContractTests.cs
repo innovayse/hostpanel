@@ -121,9 +121,11 @@ public sealed class SdkContractTests
         typeof(PluginSshAccess).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
             "KeyId", "Host", "Port", "Username", "Domain", "PrivateKey", "HostKeyFingerprint");
         PluginHostAccess.Ssh.Should().Be("ssh");
-        PluginHostAccess.All.Should().Equal("ssh");
+        PluginHostAccess.Websites.Should().Be("websites");
+        PluginHostAccess.Databases.Should().Be("databases");
+        PluginHostAccess.All.Should().Equal("ssh", "websites", "databases");
         Enum.GetNames<PluginHostAccessFailure>().Should().Equal(
-            "NotAllowed", "NotFound", "Unavailable", "LimitReached", "ServerUnavailable");
+            "NotAllowed", "NotFound", "Unavailable", "LimitReached", "ServerUnavailable", "InvalidRequest", "Conflict");
         typeof(IPluginHostApi).GetMethod("GetProfileAsync")!.ReturnType.Should().Be(typeof(Task<PluginClientProfile?>));
         typeof(IPluginHostApi).GetMethod("ListServicesAsync")!.ReturnType.Should().Be(typeof(Task<IReadOnlyList<PluginClientService>>));
         typeof(IPluginHostApi).GetMethod("ListInvoicesAsync")!.ReturnType.Should().Be(typeof(Task<IReadOnlyList<PluginClientInvoice>>));
@@ -445,6 +447,39 @@ public sealed class SdkContractTests
         parsed.HostAccess.Should().Equal(PluginHostAccess.Ssh);
     }
 
+    /// <summary>
+    /// The optional hosting API (SDK 3.9.0) extends the host API without changing it: its five members name only a service
+    /// of the caller's client, a website or a database id, and never a client or a plugin; a database password exists only
+    /// in the answer to the call that created it and is masked when printed.
+    /// </summary>
+    [Fact]
+    public void IPluginHostHostingApi_ExtendsTheHostApiAndNamesOnlyAServiceAndItsResources()
+    {
+        typeof(IPluginHostHostingApi).GetInterfaces().Should().Equal(typeof(IPluginHostApi));
+        var methods = typeof(IPluginHostHostingApi).GetMethods();
+
+        methods.Select(m => m.Name).Should().BeEquivalentTo(
+            "GetHostingCapabilitiesAsync", "EnsureWebsiteAsync", "RemoveWebsiteAsync", "EnsureDatabaseAsync", "RemoveDatabaseAsync");
+        methods.Should().OnlyContain(m => m.GetParameters()[0].ParameterType == typeof(int) && m.GetParameters()[0].Name == "serviceId");
+        methods.SelectMany(m => m.GetParameters()).Select(p => p.Name!.ToLowerInvariant())
+            .Should().NotContain(n => n.Contains("clientid") || n.Contains("pluginid"));
+        typeof(IPluginHostHostingApi).GetMethod("RemoveWebsiteAsync")!.GetParameters().Select(p => p.ParameterType)
+            .Should().Equal(typeof(int), typeof(Guid), typeof(CancellationToken));
+        typeof(IPluginHostHostingApi).GetMethod("RemoveDatabaseAsync")!.GetParameters().Select(p => p.ParameterType)
+            .Should().Equal(typeof(int), typeof(Guid), typeof(CancellationToken));
+        typeof(IPluginHostHostingApi).GetMethod("EnsureWebsiteAsync")!.ReturnType.Should().Be(typeof(Task<PluginWebsite>));
+        typeof(IPluginHostHostingApi).GetMethod("EnsureDatabaseAsync")!.ReturnType.Should().Be(typeof(Task<PluginDatabase>));
+        typeof(PluginWebsite).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Id", "Hostname", "DocumentRoot", "DocumentRootPath", "PhpVersion");
+        typeof(PluginWebsiteSpec).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Hostname", "DocumentRoot", "PhpVersion", "DocumentRootMayBeLink");
+        typeof(PluginDatabase).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Id", "Name", "Username", "Host", "Port", "Password");
+        typeof(PluginHostingCapabilities).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "Ssh", "Websites", "Databases", "PhpVersions");
+        new PluginDatabase(Guid.NewGuid(), "web_shop", "web_shop", "127.0.0.1", 3306, "s3cret-value").ToString()
+            .Should().NotContain("s3cret-value");
+    }
+
     /// <summary>The manifest v2 enums keep their names and explicit values; 0 is never a kind or a method.</summary>
     [Fact]
     public void ManifestV2Enums_KeepTheirValuesAndStartAtOne()
@@ -567,6 +602,11 @@ public sealed class SdkContractTests
     [InlineData(typeof(IStoredCredentialPlugin), "Hostpanel.Sdk.Plugins.StoredCredentials")]
     [InlineData(typeof(IPluginEndpoints), "Hostpanel.Sdk.Plugins.Endpoints")]
     [InlineData(typeof(IPluginHostApi), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(IPluginHostHostingApi), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(PluginWebsite), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(PluginWebsiteSpec), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(PluginDatabase), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(PluginHostingCapabilities), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(IPluginStore), "Hostpanel.Sdk.Plugins.Store")]
     [InlineData(typeof(IPluginStatus), "Hostpanel.Sdk.Plugins.Lifecycle")]
     [InlineData(typeof(IPluginMigrations), "Hostpanel.Sdk.Plugins.Lifecycle")]

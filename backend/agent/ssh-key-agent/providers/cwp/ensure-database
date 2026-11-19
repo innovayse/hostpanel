@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# What: makes ONE MySQL database and user "<account>_<label>" for ONE CWP hosting account (agent op ensure-database).
+#       Created with utf8mb4, reachable over localhost and 127.0.0.1 with a random password generated here
+#       (openssl rand -hex 20) and printed only in the RESULT line of the call that creates it, never logged. A database
+#       that already exists and is registered answers created=false with no password; one that exists without a
+#       registry entry (made by the panel or by hand) is refused. At most MAX_DATABASES per account.
+#       A failed creation drops what it made, so nothing half-made stays.
+# Usage (root, called by hostpanel-ssh-key-agent): ensure-database <account> <label>
+# Exit: 0 done, 2 bad arguments, 3 exists but was not created by the agent, 6 the account is at its limit, other = failed.
+# Prints one `RESULT {"created":bool,"database":"<name>","username":"<name>","password":"<40 hex>"}` line (password only when created).
+set -euo pipefail
+HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=hp-common.sh
+. "$HELPER_DIR/hp-common.sh"
+
+[ $# -eq 2 ] || hp_die "$EXIT_BAD_ARGS" "usage: ensure-database <account> <label>"
+LABEL="$2"
+hp_require_account "$1"
+[[ "$LABEL" =~ $LABEL_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad label"
+NAME="${ACCOUNT}_${LABEL}"
+
+if hp_db_exists "$NAME"; then
+  if hp_reg_has database "$LABEL"; then
+    hp_result "$(printf '{"created":false,"database":"%s","username":"%s"}' "$NAME" "$NAME")"
+    exit 0
+  fi
+  hp_die "$EXIT_NOT_OWNED" "database $NAME exists and was not created by the agent"
+fi
+hp_db_user_exists "$NAME" && hp_die "$EXIT_NOT_OWNED" "user $NAME exists and was not created by the agent"
+if ! hp_reg_has database "$LABEL" && [ "$(hp_reg_count database)" -ge "$MAX_DATABASES" ]; then
+  hp_die "$EXIT_LIMIT" "$ACCOUNT already has $MAX_DATABASES databases"
+fi
+
+PASSWORD="$("$BIN/openssl" rand -hex 20)"
+[[ "$PASSWORD" =~ ^[0-9a-f]{40}$ ]] || hp_die 1 "no password generated"
+# The statements travel on stdin so the password never shows in the process list.
+if ! hp_mysql <<SQL
+CREATE DATABASE \`$NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER '$NAME'@'localhost' IDENTIFIED BY '$PASSWORD';
+CREATE USER '$NAME'@'127.0.0.1' IDENTIFIED BY '$PASSWORD';
+GRANT ALL ON \`$NAME\`.* TO '$NAME'@'localhost';
+GRANT ALL ON \`$NAME\`.* TO '$NAME'@'127.0.0.1';
+SQL
+then
+  # Nothing of this name existed a moment ago, so dropping it only removes what this call made.
+  hp_db_drop "$NAME" || true
+  hp_die 1 "database $NAME could not be created"
+fi
+if ! hp_reg_write database "$LABEL" "name=$NAME"; then
+  hp_db_drop "$NAME" || true
+  hp_die 1 "registry write failed"
+fi
+hp_say "database $NAME created"
+hp_result "$(printf '{"created":true,"database":"%s","username":"%s","password":"%s"}' "$NAME" "$NAME" "$PASSWORD")"

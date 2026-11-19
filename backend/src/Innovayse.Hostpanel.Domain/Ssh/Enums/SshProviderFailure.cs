@@ -92,4 +92,19 @@ public enum SshProviderFailure
 
     /// <summary>A jail removal was asked for an account that still exists on the server; nothing was changed.</summary>
     AccountExists,
+
+    /// <summary>The host name is already served from another document root by a configuration the agent did not create; nothing was changed.</summary>
+    WebsiteConflict,
+
+    /// <summary>The PHP version asked for is not installed on the server; nothing was changed.</summary>
+    PhpVersionUnsupported,
+
+    /// <summary>Setting up or removing a website failed on the server; its configuration was restored.</summary>
+    WebsiteFailed,
+
+    /// <summary>Creating or dropping a database failed on the server; a failed creation was rolled back.</summary>
+    DatabaseFailed,
+
+    /// <summary>The account already holds as many databases as the server allows; nothing was created.</summary>
+    DatabaseLimit,
 }

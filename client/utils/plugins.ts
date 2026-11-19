@@ -379,7 +379,6 @@ export const pluginLinkTarget = (href: unknown, origins: readonly string[]): Plu
   return origins.some(pattern => originMatches(pattern, url)) ? { href, external: true } : null
 }
 
-
 /**
  * The address an action's reply names for a new tab: the field read from the reply must pass
  * {@link pluginLinkTarget} and be an absolute address on one of the plugin's allowed origins, never a path of the panel.

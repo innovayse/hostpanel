@@ -734,7 +734,7 @@ describe('pluginOpenUrlTarget', () => {
     expect(pluginOpenUrlTarget({ url: 'https://a.sites.example.test/x' }, 'url', origins)).toEqual({ href: 'https://a.sites.example.test/x', external: true })
   })
 
-  it.each([
+  it.each<[unknown, string]>([
     [{ url: 'https://evil.test/' }, 'another origin'],
     [{ url: 'http://a.sites.example.test/' }, 'plain http'],
     [{ url: '/client/dashboard' }, 'a path of the panel'],

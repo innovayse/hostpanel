@@ -729,7 +729,7 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
     [InlineData("""{"kind":"text","text":"Hi","openUrlFrom":"u"}""")]
     public void Read_ActionOpenUrlFromMalformed_BreaksViewOpenUrlInvalid(string block)
     {
-        Write("views/a.json", $"""{"schema":1,"blocks":[{{block}}]}""");
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
 
         AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewOpenUrlInvalid);
     }

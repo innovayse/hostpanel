@@ -18,8 +18,8 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors } from '@/lib/storefrontTranslations'
-import { MessageLanguage } from '@/locales/messages'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useTestimonialsStore } from '@/stores/testimonials'
 import type { Testimonial, TestimonialPayload, TestimonialTranslation } from '@/types/testimonial'
 import { AppRoute } from '@/lib/routes'
@@ -56,7 +56,7 @@ const form = reactive({
 })
 
 /** The language whose fields are on screen. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /** Whether each language has its text written, for the markers on the tabs. */
 const filled = computed(() => filledLocales(form.translations, isFilled))
@@ -170,7 +170,7 @@ const hints = computed(() => ({
       </template>
 
       <template #field-locales>
-        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="testimonial-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="testimonial-form-tab" />
       </template>
 
       <template #field-role="{ id }">

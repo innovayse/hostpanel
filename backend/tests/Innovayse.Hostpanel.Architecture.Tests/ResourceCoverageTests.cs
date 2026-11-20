@@ -56,6 +56,8 @@ public sealed partial class ResourceCoverageTests
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void EveryCode_InSupportedLocale_HasASentence(string locale)
     {
         var manager = new ResourceManager(typeof(ErrorMessages));
@@ -79,6 +81,8 @@ public sealed partial class ResourceCoverageTests
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void EverySentence_InSupportedLocale_BelongsToACode(string locale)
     {
         var keys = OwnEntries(typeof(ErrorMessages), locale).Keys;
@@ -94,6 +98,8 @@ public sealed partial class ResourceCoverageTests
     [Theory]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void ErrorMessages_InTranslatedLocale_MatchNeutralKeysWithOwnValues(string locale)
     {
         var neutral = OwnEntries(typeof(ErrorMessages), SupportedLanguages.Default);
@@ -122,6 +128,8 @@ public sealed partial class ResourceCoverageTests
     [Theory]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void SlideValidationMessages_InTranslatedLocale_HaveOwnValues(string locale)
     {
         var neutral = OwnEntries(typeof(ApplicationValidationMessages), SupportedLanguages.Default)
@@ -178,6 +186,8 @@ public sealed partial class ResourceCoverageTests
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void EveryValidatorKey_InSupportedLocale_HasASentence(string locale)
     {
         var entries = OwnEntries(typeof(ApplicationValidationMessages), locale);

@@ -14,7 +14,7 @@ public sealed class AppUser : IdentityUser
     /// <summary>Gets or sets the user's last name.</summary>
     public required string LastName { get; set; }
 
-    /// <summary>Gets or sets the preferred UI language code (en, ru, hy). Null means system default.</summary>
+    /// <summary>Gets or sets the preferred UI language code (en, ru, hy, de, es). Null means system default.</summary>
     public string? Language { get; set; }
 
     /// <summary>Gets or sets the UTC timestamp of the last successful login. Null if never logged in.</summary>

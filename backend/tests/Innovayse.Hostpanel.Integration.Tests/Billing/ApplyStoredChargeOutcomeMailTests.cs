@@ -195,7 +195,7 @@ public sealed class ApplyStoredChargeOutcomeMailTests(IntegrationTestFactory fac
                 .Where(t => t.Slug == slug)
                 .Select(t => t.Language)
                 .ToListAsync();
-            languages.Should().BeEquivalentTo(["en", "ru", "hy"]);
+            languages.Should().BeEquivalentTo(["en", "ru", "hy", "de", "es"]);
         }
     }
 }

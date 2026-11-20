@@ -58,6 +58,22 @@ public static class RenewalTemplatesSeeder
                 "Դիտել հաշիվը",
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Rechnung #{{ invoice.id }} ist am {{ invoice.due_date }} fällig | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Verlängerung steht an",
+                ["Die Rechnung #{{ invoice.id }} über {{ invoice.total }} {{ invoice.currency }} ist am {{ invoice.due_date }} fällig. Bezahlen Sie sie, damit Ihre Dienste ohne Unterbrechung weiterlaufen."],
+                "{{ invoice.url }}",
+                "Rechnung ansehen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("La factura n.º {{ invoice.id }} vence el {{ invoice.due_date }} | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Se acerca su renovación",
+                ["La factura n.º {{ invoice.id }} por {{ invoice.total }} {{ invoice.currency }} vence el {{ invoice.due_date }}. Pague la factura para que sus servicios sigan funcionando sin interrupciones."],
+                "{{ invoice.url }}",
+                "Ver factura",
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>
@@ -89,6 +105,22 @@ public static class RenewalTemplatesSeeder
                 "hy",
                 "Դոմենի երկարաձգումը ուշադրություն է պահանջում",
                 ["{{ domain.name }} (հաճախորդ №{{ client.id }}{% if invoice.id != 0 %}, հաշիվ №{{ invoice.id }}{% endif %}): {{ reason }}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Domain-Verlängerung erfordert Aufmerksamkeit: {{ domain.name }}", new SeededEmailCopy(
+                "de",
+                "Domain-Verlängerung erfordert Aufmerksamkeit",
+                ["{{ domain.name }} (Kunde #{{ client.id }}{% if invoice.id != 0 %}, Rechnung #{{ invoice.id }}{% endif %}): {{ reason }}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("La renovación del dominio requiere atención: {{ domain.name }}", new SeededEmailCopy(
+                "es",
+                "La renovación del dominio requiere atención",
+                ["{{ domain.name }} (cliente n.º {{ client.id }}{% if invoice.id != 0 %}, factura n.º {{ invoice.id }}{% endif %}): {{ reason }}"],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,

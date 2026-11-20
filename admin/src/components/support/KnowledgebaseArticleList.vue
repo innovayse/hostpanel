@@ -33,7 +33,7 @@ import { enumValueOf } from '@/lib/enumValue'
 import { isPublishedOfFilter } from '@/lib/publishedFilter'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { statusLabel } from '@/lib/tones'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useKnowledgebaseStore } from '@/stores/knowledgebase'
 import type { KbArticle, KbArticleListFilters, KbCategory } from '@/types/kbarticle'
 import { PublishedFilter } from '@/types/publishedfilter'
@@ -127,7 +127,7 @@ loadOnChange(load)
  * @returns The title, or the slug when the article somehow has no text.
  */
 const titleOf = (article: KbArticle): string => {
-  const own = enumValueOf(MessageLanguage, locale.value)
+  const own = enumValueOf(ContentLanguage, locale.value)
   return (own !== null ? article.translations[own]?.title : undefined) ?? displayTranslation(article.translations)?.title ?? article.slug
 }
 

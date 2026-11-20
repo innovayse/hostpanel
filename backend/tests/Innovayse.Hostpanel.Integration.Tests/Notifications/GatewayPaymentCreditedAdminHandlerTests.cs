@@ -89,6 +89,8 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task SeededTemplate_InEveryLanguage_PrintsTheModelAndTellsCreditedFromHeldAsync(string language)
     {
         using var scope = factory.Services.CreateScope();
@@ -108,7 +110,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         credited.Should().NotBe(held);
 
-        // The ru and hy versions are really translated, not a copy of the English text.
+        // The ru, hy, de and es versions are really translated, not a copy of the English text.
         if (language == "ru")
         {
             credited.Should().MatchRegex("[\u0400-\u04FF]");
@@ -119,6 +121,16 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
         {
             credited.Should().MatchRegex("[\u0530-\u058F]");
             held.Should().MatchRegex("[\u0530-\u058F]");
+        }
+
+        if (language == "de")
+        {
+            credited.Should().Contain("Gateway-Zahlung");
+        }
+
+        if (language == "es")
+        {
+            credited.Should().Contain("pasarela");
         }
     }
 

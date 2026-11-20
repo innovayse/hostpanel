@@ -3,7 +3,7 @@
  * Full-page form for creating or editing a storefront project.
  *
  * Detects edit mode from the route params, loads the project when editing, carries the title,
- * summary and description in en / ru / hy tabs, and manages the gallery images (the first is the
+ * summary and description in one tab per content language, and manages the gallery images (the first is the
  * cover). Asks before leaving with unsaved edits.
  */
 import { computed, reactive, ref } from 'vue'
@@ -22,8 +22,8 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
 import { Icon } from '@/lib/icons'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors } from '@/lib/storefrontTranslations'
-import { MessageLanguage } from '@/locales/messages'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useProjectsStore } from '@/stores/projects'
 import type { Project, ProjectPayload, ProjectTranslation } from '@/types/project'
 import { AppRoute } from '@/lib/routes'
@@ -71,7 +71,7 @@ const form = reactive({
 })
 
 /** The language whose fields are on screen. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /** Whether each language has its text written, for the markers on the tabs. */
 const filled = computed(() => filledLocales(form.translations, isFilled))
@@ -227,7 +227,7 @@ const setImage = (index: number, url: string): void => {
       </template>
 
       <template #field-locales>
-        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="project-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="project-form-tab" />
       </template>
 
       <template #field-title="{ id }">

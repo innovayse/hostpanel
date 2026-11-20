@@ -87,6 +87,8 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task SeededTemplate_InEveryLanguage_PrintsTheModelAsync(string language)
     {
         using var scope = factory.Services.CreateScope();
@@ -104,7 +106,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
         withAmount.Should().NotContain("{{").And.NotContain("{%");
         withoutAmount.Should().NotContain("{{").And.NotContain("{%");
 
-        // The ru and hy versions are really translated, not a copy of the English text.
+        // The ru, hy, de and es versions are really translated, not a copy of the English text.
         if (language == "ru")
         {
             withAmount.Should().MatchRegex("[Ѐ-ӿ]");
@@ -113,6 +115,16 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
         if (language == "hy")
         {
             withAmount.Should().MatchRegex("[԰-֏]");
+        }
+
+        if (language == "de")
+        {
+            withAmount.Should().Contain("Zahlungsreferenz");
+        }
+
+        if (language == "es")
+        {
+            withAmount.Should().Contain("referencia de pago");
         }
     }
 

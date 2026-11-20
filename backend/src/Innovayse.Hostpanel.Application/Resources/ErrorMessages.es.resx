@@ -1,0 +1,1554 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Neutral (English) error messages, the key list for this product.
+    A key missing from every file resolves to the key name itself, which is how an
+    untranslated message shows up as SCREAMING text rather than silently as English.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="HOSTPANEL_UNEXPECTED" xml:space="preserve">
+    <value>Se ha producido un error inesperado.</value>
+  </data>
+  <data name="HOSTPANEL_RATE_LIMITED" xml:space="preserve">
+    <value>Demasiadas solicitudes. Espere un momento e inténtelo de nuevo.</value>
+  </data>
+  <data name="DEMO_ACTION_DISABLED" xml:space="preserve">
+    <value>Esta acción está deshabilitada en la demostración pública.</value>
+  </data>
+  <data name="CURRENCY_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa moneda configurada.</value>
+  </data>
+  <data name="CURRENCY_BASE_NOT_RECOMPUTED" xml:space="preserve">
+    <value>Los precios de la moneda base son la referencia y no se recalculan.</value>
+  </data>
+  <data name="BASE_CURRENCY_NOT_CONFIGURED" xml:space="preserve">
+    <value>No hay ninguna moneda base configurada, por lo que no se pueden convertir los importes.</value>
+  </data>
+  <data name="INVOICE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa factura.</value>
+  </data>
+  <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
+    <value>Esta factura tiene demasiadas líneas para descargarla como PDF.</value>
+  </data>
+  <data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>Se están preparando demasiados PDF de facturas en este momento. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="QUOTE_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese presupuesto.</value>
+  </data>
+  <data name="BILLABLE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese concepto facturable.</value>
+  </data>
+  <data name="BILLABLE_ITEM_CLIENT_MISMATCH" xml:space="preserve">
+    <value>Ese concepto facturable no pertenece a este cliente.</value>
+  </data>
+  <data name="BILLABLE_ITEM_INVOICED" xml:space="preserve">
+    <value>Ese concepto facturable ya se ha incluido en una factura.</value>
+  </data>
+  <data name="TRANSACTION_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa transacción.</value>
+  </data>
+  <data name="CLIENT_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese cliente.</value>
+  </data>
+  <data name="BULK_INVOICE_ACTION_UNKNOWN" xml:space="preserve">
+    <value>Esa acción masiva no se reconoce.</value>
+  </data>
+  <data name="PAYMENT_PLUGIN_NOT_CONFIGURED" xml:space="preserve">
+    <value>No hay ningún complemento de pago configurado para la pasarela de esa factura.</value>
+  </data>
+  <data name="INVOICE_NOT_PAYABLE" xml:space="preserve">
+    <value>Esta factura no se puede pagar en su estado actual.</value>
+  </data>
+  <data name="GATEWAY_SESSION_ALREADY_STARTED" xml:space="preserve">
+    <value>Ya hay un intento de pago en curso para esta factura. Espere o complete el pago existente.</value>
+  </data>
+  <data name="GATEWAY_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Este método de pago no cobra en la moneda en la que se emite esta factura.</value>
+  </data>
+  <data name="GATEWAY_SESSION_NOT_FOUND" xml:space="preserve">
+    <value>Esta factura no tiene ninguna sesión de pago de la pasarela que verificar.</value>
+  </data>
+  <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
+    <value>Esta cuenta no tiene métodos de pago guardados.</value>
+  </data>
+  <data name="RETURN_URL_NOT_ALLOWED" xml:space="preserve">
+    <value>Esa dirección de retorno no está permitida en esta instalación.</value>
+  </data>
+  <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>La pasarela de pago no está disponible temporalmente. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>El servicio que vincula su cuenta con un perfil de cliente no está disponible temporalmente. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="CLIENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Esta cuenta no tiene perfil de cliente, por lo que no hay nada que mostrar en el área de clientes.</value>
+  </data>
+  <data name="INVITATION_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa invitación.</value>
+  </data>
+  <data name="INVITATION_EXPIRED" xml:space="preserve">
+    <value>Esta invitación ha caducado.</value>
+  </data>
+  <data name="INVITATION_ALREADY_ACCEPTED" xml:space="preserve">
+    <value>Esta invitación ya se ha aceptado.</value>
+  </data>
+  <data name="INVITATION_ALREADY_PENDING" xml:space="preserve">
+    <value>Ya existe una invitación pendiente para esta dirección de correo electrónico.</value>
+  </data>
+  <data name="IDENTITY_USER_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa cuenta de usuario.</value>
+  </data>
+  <data name="ACCOUNT_OWNER_NOT_FOUND" xml:space="preserve">
+    <value>No se ha encontrado al titular de esta cuenta.</value>
+  </data>
+  <data name="CANNOT_INVITE_ACCOUNT_OWNER" xml:space="preserve">
+    <value>El titular de la cuenta no puede ser invitado como usuario adicional.</value>
+  </data>
+  <data name="USER_ALREADY_LINKED" xml:space="preserve">
+    <value>Ya hay un usuario con esta dirección de correo electrónico vinculado a esta cuenta.</value>
+  </data>
+  <data name="EXISTING_USER_ALREADY_HAS_CLIENT" xml:space="preserve">
+    <value>Ese usuario ya tiene una cuenta de cliente vinculada.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
+    <value>A este cliente ya se le ha facturado, por lo que no se puede cambiar su moneda.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>Este cliente tiene saldo de crédito, por lo que no se puede cambiar la moneda. Utilice o reembolse el saldo primero y después cambie la moneda.</value>
+  </data>
+  <data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese correo electrónico.</value>
+  </data>
+  <data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa plantilla de correo electrónico.</value>
+  </data>
+  <data name="EMAIL_ALREADY_DELIVERED" xml:space="preserve">
+    <value>Este correo electrónico ya se ha entregado.</value>
+  </data>
+  <data name="EMAIL_TEMPLATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Esta plantilla ya tiene una versión en ese idioma.</value>
+  </data>
+  <data name="TICKET_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese ticket.</value>
+  </data>
+  <data name="DOMAIN_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese dominio.</value>
+  </data>
+  <data name="DOMAIN_ALREADY_REGISTERED" xml:space="preserve">
+    <value>Este dominio ya está registrado en el sistema.</value>
+  </data>
+  <data name="DOMAIN_REGISTRATION_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo completar el registro. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DOMAIN_RENEWAL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo completar la renovación. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DOMAIN_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo iniciar la transferencia. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DOMAIN_TRANSFER_CANCEL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo cancelar la transferencia pendiente. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DOMAIN_NO_REGISTRAR_REF" xml:space="preserve">
+    <value>Este dominio no tiene referencia del registrador, por lo que no se puede modificar en el registrador.</value>
+  </data>
+  <data name="DOMAIN_OUTGOING_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo iniciar la transferencia saliente. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DOMAIN_EPP_CODE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no devolvió un código de autorización para este dominio.</value>
+  </data>
+  <data name="DOMAIN_AUTO_RENEW_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo actualizar la renovación automática. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DOMAIN_WHOIS_NOT_FOUND" xml:space="preserve">
+    <value>No se encontró ningún registro WHOIS para este dominio.</value>
+  </data>
+  <data name="DOMAIN_PRODUCT_NOT_CONFIGURED" xml:space="preserve">
+    <value>Por el momento no se pueden pedir dominios en este sitio.</value>
+  </data>
+  <data name="RENEWAL_INVOICE_OPEN" xml:space="preserve">
+    <value>En este momento no se puede liberar la factura de renovación de este dominio: está vencida junto con otros conceptos o hay un pago en curso. Liquide primero esa factura y después renueve.</value>
+  </data>
+  <data name="DNS_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese registro DNS en este dominio.</value>
+  </data>
+  <data name="DNS_RECORD_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo aplicar el cambio del registro DNS. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="NAMESERVERS_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo actualizar los servidores de nombres. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DNS_MANAGEMENT_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo actualizar la gestión de DNS. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="REGISTRAR_LOCK_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo actualizar el bloqueo de transferencia. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="WHOIS_PRIVACY_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo actualizar la privacidad WHOIS. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="DOMAIN_CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>No se encontró ningún contacto del titular para este dominio.</value>
+  </data>
+  <data name="DOMAIN_CONTACT_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo actualizar los datos de contacto del titular. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="EMAIL_FORWARDING_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo actualizar el reenvío de correo electrónico. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="EMAIL_FORWARDING_RULE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa regla de reenvío de correo electrónico en este dominio.</value>
+  </data>
+  <data name="EMAIL_FORWARDING_RULE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador no pudo aplicar el cambio de la regla de reenvío de correo electrónico. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="TLD_CONFIG_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa configuración de TLD.</value>
+  </data>
+  <data name="TLD_CONFIG_ALREADY_EXISTS" xml:space="preserve">
+    <value>Ya existe una configuración de TLD para esta extensión.</value>
+  </data>
+  <data name="TLD_REGISTRAR_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Módulo de registrador no reconocido.</value>
+  </data>
+  <data name="KBARTICLE_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese artículo de la base de conocimientos.</value>
+  </data>
+  <data name="KBCATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa categoría de la base de conocimientos.</value>
+  </data>
+  <data name="KBCATEGORY_IN_USE" xml:space="preserve">
+    <value>Esta categoría de la base de conocimientos aún tiene subcategorías o artículos. Muévalos o elimínelos primero.</value>
+  </data>
+  <data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese anuncio.</value>
+  </data>
+  <data name="NETWORKISSUE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa incidencia de red.</value>
+  </data>
+  <data name="ORDER_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese pedido.</value>
+  </data>
+  <data name="ORDER_NOT_DELETABLE" xml:space="preserve">
+    <value>Solo se puede eliminar un pedido pendiente o cancelado.</value>
+  </data>
+  <data name="ORDER_NOT_INVOICED" xml:space="preserve">
+    <value>Este pedido aún no tiene ninguna factura sobre la que actuar.</value>
+  </data>
+  <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
+    <value>Ese método de pago no está disponible en este momento.</value>
+  </data>
+  <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>Esa moneda no está disponible.</value>
+  </data>
+  <data name="ACCOUNT_EMAIL_EXISTS" xml:space="preserve">
+    <value>Ya existe una cuenta con esta dirección de correo electrónico. Inicie sesión para continuar.</value>
+  </data>
+  <data name="ORDER_NUMBER_RANGE_EXHAUSTED" xml:space="preserve">
+    <value>En este momento no se pueden numerar los pedidos. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="ORDER_GUEST_DETAILS_REQUIRED" xml:space="preserve">
+    <value>Para realizar este pedido se requieren su nombre, correo electrónico y contraseña.</value>
+  </data>
+  <data name="ORDER_PRODUCT_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>Ese producto no tiene precio en su moneda para el ciclo de facturación elegido.</value>
+  </data>
+  <data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
+    <value>No se puede calcular el precio de ese dominio para este pedido. Compruebe el nombre e inténtelo de nuevo.</value>
+  </data>
+  <data name="ORDER_BUNDLE_ITEMS_MISMATCH" xml:space="preserve">
+    <value>Los productos del pedido no coinciden con el paquete. Pida cada producto del paquete una sola vez y nada más.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_MISMATCH" xml:space="preserve">
+    <value>El paquete requiere exactamente una línea de dominio cuando incluye un dominio, y ninguna cuando no lo incluye.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED" xml:space="preserve">
+    <value>Un paquete puede incluir el registro o la transferencia de un dominio, pero no una renovación.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>La moneda del descuento de este paquete no está disponible, por lo que no se puede pedir el paquete.</value>
+  </data>
+  <data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese departamento de soporte.</value>
+  </data>
+  <data name="DOWNLOAD_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa descarga.</value>
+  </data>
+  <data name="DOWNLOAD_CATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa categoría de descargas.</value>
+  </data>
+  <data name="DOWNLOAD_CATEGORY_IN_USE" xml:space="preserve">
+    <value>Esta categoría de descargas aún tiene subcategorías o descargas. Muévalas o elimínelas primero.</value>
+  </data>
+  <data name="PREDEFINED_REPLY_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa respuesta predefinida.</value>
+  </data>
+  <data name="PREDEFINED_REPLY_CATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa categoría de respuestas predefinidas.</value>
+  </data>
+  <data name="PREDEFINED_REPLY_CATEGORY_IN_USE" xml:space="preserve">
+    <value>Esta categoría de respuestas predefinidas aún tiene subcategorías o respuestas. Muévalas o elimínelas primero.</value>
+  </data>
+  <data name="CONTACT_NOT_CONFIGURED" xml:space="preserve">
+    <value>El formulario de contacto no está disponible en esta instalación. Utilice la dirección de correo electrónico o el número de teléfono que aparecen en esta página.</value>
+  </data>
+  <data name="CONTACT_SEND_FAILED" xml:space="preserve">
+    <value>No se pudo entregar su mensaje. Inténtelo de nuevo dentro de unos minutos.</value>
+  </data>
+  <data name="SERVICE_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese servicio del cliente.</value>
+  </data>
+  <data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
+    <value>Ya hay un servicio que utiliza esta cuenta en este servidor.</value>
+  </data>
+  <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
+    <value>Ya hay una solicitud de cancelación pendiente para este servicio.</value>
+  </data>
+  <data name="SERVICE_ALREADY_TERMINATED" xml:space="preserve">
+    <value>Este servicio ya está dado de baja, por lo que no se puede cancelar.</value>
+  </data>
+  <data name="CANCELLATION_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa solicitud de cancelación.</value>
+  </data>
+  <data name="PRODUCT_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese producto.</value>
+  </data>
+  <data name="PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>Ese producto no está disponible para pedido.</value>
+  </data>
+  <data name="SERVICE_NOT_PENDING" xml:space="preserve">
+    <value>Solo se puede configurar un servicio pendiente.</value>
+  </data>
+  <data name="NO_ELIGIBLE_SERVER" xml:space="preserve">
+    <value>No hay ningún servidor disponible para aprovisionar este servicio en este momento. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo aprovisionar el servicio. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
+    <value>No pudimos confirmar si se creó la cuenta de hosting. Inténtelo de nuevo dentro de unos minutos.</value>
+  </data>
+  <data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
+    <value>Este servicio se podrá configurar cuando su primera factura esté pagada por completo.</value>
+  </data>
+  <data name="PROVISIONING_ACCOUNT_CONFLICT" xml:space="preserve">
+    <value>El nombre de la cuenta de hosting ya está en uso en el servidor. Nuestro equipo ha sido notificado y finalizará la configuración.</value>
+  </data>
+  <data name="SERVICE_NOT_PROVISIONED" xml:space="preserve">
+    <value>Este servicio aún no se ha aprovisionado.</value>
+  </data>
+  <data name="SERVICE_NO_SERVER_ASSIGNED" xml:space="preserve">
+    <value>Este servicio no tiene ningún servidor de hosting asignado.</value>
+  </data>
+  <data name="SERVICE_PASSWORD_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo cambiar la contraseña en el servidor de hosting. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo cambiar el paquete de hosting. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo suspender el servicio en el servidor de hosting. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="SERVICE_TERMINATE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo dar de baja el servicio en el servidor de hosting. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo reactivar el servicio en el servidor de hosting. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo iniciar una sesión del panel de control. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudieron obtener las credenciales de la cuenta. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
+  <data name="PRODUCT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese grupo de productos.</value>
+  </data>
+  <data name="PRODUCT_FEATURE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa línea de especificación.</value>
+  </data>
+  <data name="PRODUCT_FEATURE_LABEL_DUPLICATE" xml:space="preserve">
+    <value>Este producto ya tiene una línea de especificación con esa etiqueta. Edite esa en su lugar.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese paquete de productos.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_NOT_AVAILABLE" xml:space="preserve">
+    <value>Ese paquete no está disponible para pedido.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
+    <value>Uno de los productos del paquete no existe.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
+    <value>Un producto de dominio no puede formar parte de un paquete. Active en su lugar el dominio incluido.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
+    <value>Un paquete con dominio necesita un período de registro de 1 a 10 años, y un paquete sin dominio no debe indicar ningún período.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DISCOUNT_INVALID" xml:space="preserve">
+    <value>El descuento no se ajusta a su tipo: un porcentaje va de 0 a 100, un importe fijo no es negativo y requiere una moneda, y sin descuento no se necesita ninguno de los dos.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>Un paquete necesita al menos un producto.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEM_DUPLICATE" xml:space="preserve">
+    <value>Un producto solo puede aparecer una vez en un paquete.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
+    <value>Un paquete necesita exactamente un producto principal.</value>
+  </data>
+  <data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
+    <value>Una opción de cantidad necesita un mínimo de cero o más y un máximo de al menos uno que no sea inferior al mínimo. Los demás tipos de opción no admiten rango.</value>
+  </data>
+  <data name="PRODUCT_OPTION_COUNT_NOT_ALLOWED" xml:space="preserve">
+    <value>Este grupo de opciones contiene una sola opción y ya la tiene.</value>
+  </data>
+  <data name="PRODUCT_OPTION_PRICE_NOT_ALLOWED" xml:space="preserve">
+    <value>Una opción de texto es un valor libre y no puede tener precio.</value>
+  </data>
+  <data name="PRODUCT_OPTION_PRICE_OUT_OF_RANGE" xml:space="preserve">
+    <value>El precio de una opción no puede ser negativo y un porcentaje no puede superar 100.</value>
+  </data>
+  <data name="PRODUCT_OPTION_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa opción de producto.</value>
+  </data>
+  <data name="PRODUCT_OPTION_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese grupo de opciones de producto.</value>
+  </data>
+  <data name="PRODUCT_OPTION_GROUP_ORDER_MISMATCH" xml:space="preserve">
+    <value>La lista debe incluir cada grupo de opciones del producto exactamente una vez.</value>
+  </data>
+  <data name="SLIDE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa diapositiva.</value>
+  </data>
+  <data name="SETUP_ALREADY_COMPLETED" xml:space="preserve">
+    <value>Esta instalación ya está configurada y alguien ya tiene el rol de administrador. Pídale que le conceda acceso.</value>
+  </data>
+  <data name="SETUP_TOKEN_INVALID" xml:space="preserve">
+    <value>Ese token de configuración no es el que emitió esta instalación. El token actual se imprime en el registro del servidor cada vez que se inicia la API mientras la configuración sigue pendiente. Reinicie la API y lea el más reciente.</value>
+  </data>
+  <data name="TWO_FACTOR_CODE_INVALID" xml:space="preserve">
+    <value>Ese código no coincide. Compruebe su aplicación de autenticación e inténtelo de nuevo.</value>
+  </data>
+  <data name="SIGN_IN_UNAUTHORIZED" xml:space="preserve">
+    <value>Correo electrónico o contraseña no válidos.</value>
+  </data>
+  <data name="SIGN_IN_ACCOUNT_LOCKED" xml:space="preserve">
+    <value>Demasiadas contraseñas incorrectas. Esta cuenta está bloqueada temporalmente, inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="PENDING_TOKEN_UNAUTHORIZED" xml:space="preserve">
+    <value>Ese paso de inicio de sesión ha caducado o no es válido. Inicie sesión de nuevo.</value>
+  </data>
+  <data name="TWO_FACTOR_CODE_UNAUTHORIZED" xml:space="preserve">
+    <value>Ese código no coincide. Compruebe su aplicación de autenticación e inténtelo de nuevo.</value>
+  </data>
+  <data name="TOKEN_INVALID_OR_EXPIRED" xml:space="preserve">
+    <value>El enlace no es válido o ha caducado. Solicite uno nuevo.</value>
+  </data>
+  <data name="REGISTRATION_FAILED" xml:space="preserve">
+    <value>No pudimos crear la cuenta. Compruebe los datos e inténtelo de nuevo.</value>
+  </data>
+  <data name="TWO_FACTOR_ALREADY_ENABLED" xml:space="preserve">
+    <value>La autenticación de dos factores ya está activada. Desactívela antes de volver a configurarla.</value>
+  </data>
+  <data name="CURRENT_PASSWORD_INVALID" xml:space="preserve">
+    <value>La contraseña actual no es correcta.</value>
+  </data>
+  <data name="EMAIL_ALREADY_IN_USE" xml:space="preserve">
+    <value>Esta dirección de correo electrónico ya la utiliza otra cuenta.</value>
+  </data>
+  <data name="MIGRATION_JOB_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese trabajo de migración.</value>
+  </data>
+  <data name="MIGRATION_JOB_NOT_PENDING" xml:space="preserve">
+    <value>Este trabajo de migración ya se ha iniciado o finalizado y no se puede iniciar de nuevo.</value>
+  </data>
+  <data name="MIGRATION_JOB_NOT_FAILED" xml:space="preserve">
+    <value>Este trabajo de migración no ha fallado, por lo que no se puede reintentar.</value>
+  </data>
+  <data name="MIGRATION_JOB_INVALID_TRANSITION" xml:space="preserve">
+    <value>Este trabajo de migración no puede hacer eso en su estado actual.</value>
+  </data>
+  <data name="MIGRATION_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>El complemento de migración no está disponible en esta instalación.</value>
+  </data>
+  <data name="MIGRATION_CONNECTION_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo acceder al sistema de origen. Compruebe la dirección e inténtelo de nuevo.</value>
+  </data>
+  <data name="SERVER_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese servidor de aprovisionamiento.</value>
+  </data>
+  <data name="SERVER_CONNECTION_UNREACHABLE" xml:space="preserve">
+    <value>No se pudo acceder al servidor. Consulte el registro del servidor para más detalles.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NO_ACCESS_HASH" xml:space="preserve">
+    <value>No hay ningún hash de acceso configurado para este servidor.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
+    <value>No hay ninguna clave de API ni hash de acceso configurados para este servidor.</value>
+  </data>
+  <data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
+    <value>La prueba de conexión no es compatible con este módulo de servidor.</value>
+  </data>
+  <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese grupo de servidores.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_INVALID" xml:space="preserve">
+    <value>Ese archivo no es un complemento válido. Compruebe que plugin.json esté presente en su raíz y tenga el formato correcto.</value>
+  </data>
+  <data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve">
+    <value>Este complemento se creó para otra versión del SDK y no se puede instalar aquí.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_VERSION_UNKNOWN" xml:space="preserve">
+    <value>El manifiesto de este complemento declara una versión de manifiesto que este servidor no conoce.</value>
+  </data>
+  <data name="PLUGIN_SDK_ASSEMBLY_OUTDATED" xml:space="preserve">
+    <value>Este complemento se creó con un SDK anterior y debe recompilarse con el actual.</value>
+  </data>
+  <data name="PLUGIN_PERMISSION_UNKNOWN" xml:space="preserve">
+    <value>Este complemento solicita un permiso que no existe. Utilice el nombre de un permiso de cliente o Any.</value>
+  </data>
+  <data name="PLUGIN_ADMIN_PERMISSION_DECLARED" xml:space="preserve">
+    <value>Este complemento declara un permiso en una ruta, página o ranura de administración, y el área de administración no admite ninguno.</value>
+  </data>
+  <data name="PLUGIN_ROUTE_PATH_INVALID" xml:space="preserve">
+    <value>Este complemento declara una ruta que no es válida. Utilice segmentos en minúsculas y parámetros entre llaves, sin segmentos vacíos ni segmentos de punto.</value>
+  </data>
+  <data name="PLUGIN_ROUTE_DUPLICATE" xml:space="preserve">
+    <value>Este complemento declara la misma ruta dos veces para un mismo método en un mismo panel.</value>
+  </data>
+  <data name="PLUGIN_LABEL_KEY_MISSING" xml:space="preserve">
+    <value>Este complemento utiliza una clave de texto que sus textos en inglés no definen.</value>
+  </data>
+  <data name="PLUGIN_SLOT_UNKNOWN" xml:space="preserve">
+    <value>Este complemento coloca contenido en una ranura que el servidor no ofrece.</value>
+  </data>
+  <data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
+    <value>Este complemento solicita a una ranura un contexto que la ranura no ofrece.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
+    <value>No se pudo leer un archivo de este complemento, por lo que no se puede comprobar. Vuelva a cargarlo.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_ID_INVALID" xml:space="preserve">
+    <value>El identificador de un widget de este complemento no es válido: utilice letras minúsculas, dígitos, guiones y guiones bajos, empezando por una letra o un dígito.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_DUPLICATE" xml:space="preserve">
+    <value>Este complemento declara el mismo identificador de widget dos veces para una misma ranura.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
+    <value>El identificador del complemento en el manifiesto no es válido: utilice letras minúsculas y dígitos, con guiones simples entre palabras.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
+    <value>La versión del complemento en el manifiesto no es válida: escríbala como major.minor.patch, por ejemplo 1.2.3, sin ceros a la izquierda.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
+    <value>Las etiquetas del manifiesto no son válidas: indique como máximo 10 etiquetas, cada una de 2 a 30 letras minúsculas, dígitos o guiones, sin # inicial y sin repetir ninguna.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_HOST_VERSION_INVALID" xml:space="preserve">
+    <value>La versión mínima o máxima del host en el manifiesto no es válida: escríbala como major.minor.patch, por ejemplo 2.1.0.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
+    <value>La versión mínima del host en el manifiesto es superior a su versión máxima.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
+    <value>El registro de cambios del manifiesto es demasiado largo: limítelo a 4000 caracteres.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
+    <value>La etiqueta del identificador de cuenta del servidor en el manifiesto debe tener de 1 a 60 caracteres, sin caracteres de control.</value>
+  </data>
+  <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
+    <value>Este complemento menciona un documento de vista que su paquete no contiene.</value>
+  </data>
+  <data name="PLUGIN_VIEW_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento no es un documento de vista válido.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SCHEMA_UNSUPPORTED" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento utiliza una versión de esquema que este servidor no admite.</value>
+  </data>
+  <data name="PLUGIN_VIEW_BLOCK_KIND_UNKNOWN" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento utiliza un tipo de bloque que este servidor no conoce.</value>
+  </data>
+  <data name="PLUGIN_VIEW_ROUTE_UNDECLARED" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento llama a una ruta que el complemento no declara.</value>
+  </data>
+  <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
+    <value>Este complemento asigna a un menú un icono que no es un nombre de icono simple: utilice de 1 a 64 letras minúsculas, dígitos y guiones.</value>
+  </data>
+  <data name="PLUGIN_ICON_MISSING" xml:space="preserve">
+    <value>Este complemento menciona un archivo de icono que no está en su paquete. Compruebe la ruta del icono en el manifiesto.</value>
+  </data>
+  <data name="PLUGIN_ICON_INVALID" xml:space="preserve">
+    <value>Este complemento incluye un icono no permitido. Utilice un archivo SVG o PNG con ruta relativa al paquete y de menos de 128 KB; un SVG no debe contener scripts, controladores de eventos ni enlaces a otros archivos.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_IMPLEMENTED" xml:space="preserve">
+    <value>Este complemento declara la capacidad de endpoints pero no la implementa. Elimine la capacidad del manifiesto o implemente el contrato de endpoints.</value>
+  </data>
+  <data name="PLUGIN_ICON_NOT_FOUND" xml:space="preserve">
+    <value>Este complemento no tiene icono.</value>
+  </data>
+  <data name="PLUGIN_CALLBACK_INVALID" xml:space="preserve">
+    <value>Este complemento declara una ruta de devolución de llamada que exige un permiso o transmite su respuesta en flujo. Una devolución de llamada no tiene usuario autenticado y responde una sola vez.</value>
+  </data>
+  <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
+    <value>Este complemento declara una página cuyo identificador no es válido o se repite en un mismo panel: utilice de 1 a 64 letras minúsculas, dígitos, guiones y guiones bajos, empezando por una letra o un dígito.</value>
+  </data>
+  <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
+    <value>Esta página del complemento no existe.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>Este complemento declara rutas, páginas o ranuras, pero no es un complemento de aplicación ni declara la capacidad "endpoints".</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>Este complemento declara una capacidad que el host no conoce o que su tipo de complemento no puede tener.</value>
+  </data>
+  <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
+    <value>Ese archivo contiene una entrada que escribiría fuera de la carpeta propia del complemento y fue rechazado.</value>
+  </data>
+  <data name="PLUGIN_ARCHIVE_UNWRITABLE" xml:space="preserve">
+    <value>Ese archivo contiene entradas que no se pueden descomprimir juntas, por ejemplo un archivo y una carpeta con el mismo nombre, y fue rechazado.</value>
+  </data>
+  <data name="PLUGIN_ID_INVALID" xml:space="preserve">
+    <value>Ese identificador de complemento no es válido.</value>
+  </data>
+  <data name="PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>No hay instalado ningún complemento con ese identificador.</value>
+  </data>
+  <data name="PLUGIN_ARCHIVE_TOO_LARGE" xml:space="preserve">
+    <value>Ese archivo es demasiado grande para instalarse: tiene demasiados archivos o al descomprimirse supera lo que acepta este servidor.</value>
+  </data>
+  <data name="PLUGIN_HOST_ASSEMBLY_REFUSED" xml:space="preserve">
+    <value>Ese archivo contiene un ensamblado con el nombre de uno que el servidor ya proporciona y fue rechazado. Elimínelo del paquete y vuelva a cargarlo.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_CONFLICT" xml:space="preserve">
+    <value>Otro complemento instalado ya incluye un ensamblado con el mismo nombre de archivo que uno de este paquete, por lo que el paquete fue rechazado. El identificador del complemento en conflicto figura en el registro del servidor. Cambie el nombre del ensamblado o elimínelo, o elimine el otro complemento, y vuelva a cargar.</value>
+  </data>
+  <data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
+    <value>Ese archivo no figura en la lista de paquetes de complementos de confianza de este servidor.</value>
+  </data>
+  <data name="PLUGIN_UNSIGNED" xml:space="preserve">
+    <value>Este paquete de complemento no está firmado y este servidor solo acepta complementos firmados.</value>
+  </data>
+  <data name="PLUGIN_SIGNATURE_MALFORMED" xml:space="preserve">
+    <value>No se puede leer el archivo de firma de este paquete de complemento.</value>
+  </data>
+  <data name="PLUGIN_SIGNATURE_KEY_UNKNOWN" xml:space="preserve">
+    <value>Este paquete de complemento está firmado con una clave en la que este servidor no confía.</value>
+  </data>
+  <data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
+    <value>La firma de este paquete de complemento no coincide con sus archivos: se modificó después de firmarse.</value>
+  </data>
+  <data name="PLUGIN_BUILT_IN" xml:space="preserve">
+    <value>Este complemento se incluye con el servidor y no se puede eliminar ni reemplazar.</value>
+  </data>
+  <data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve">
+    <value>Esta es una versión anterior a la del complemento instalado. Vuelva a cargarla confirmando la degradación para instalarla de todos modos.</value>
+  </data>
+  <data name="PLUGIN_STILL_INSTALLED" xml:space="preserve">
+    <value>Este complemento sigue instalado. Elimínelo antes de purgar los datos que conservó.</value>
+  </data>
+  <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
+    <value>No hay nada disponible en esta dirección.</value>
+  </data>
+  <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
+    <value>Esa área de la página no está disponible.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
+    <value>Ese complemento no declara el widget.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>Esa parte de la página no está disponible.</value>
+  </data>
+  <data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>Esta área de la página requiere un contexto.</value>
+  </data>
+  <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
+    <value>Ninguno de los productos existe, por lo que no se vinculó el widget. Envíe una lista vacía para borrar la vinculación.</value>
+  </data>
+  <data name="PLUGIN_FAILED" xml:space="preserve">
+    <value>El complemento no pudo completar la solicitud. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="PLUGIN_TIMEOUT" xml:space="preserve">
+    <value>El complemento tardó demasiado en responder. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="PLUGIN_STORE_QUOTA_EXCEEDED" xml:space="preserve">
+    <value>El almacenamiento de este complemento para esta cuenta está lleno. Contacte con soporte.</value>
+  </data>
+  <data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
+    <value>El complemento utilizó su almacenamiento de forma incorrecta. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="PLUGIN_STORE_VALUE_INVALID" xml:space="preserve">
+    <value>El complemento utilizó su almacenamiento de forma incorrecta. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
+    <value>La solicitud es demasiado grande para este complemento.</value>
+  </data>
+  <data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
+    <value>El complemento notificó un problema con la solicitud.</value>
+  </data>
+  <data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa integración.</value>
+  </data>
+  <data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>La integración no declara ese campo.</value>
+  </data>
+  <data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>Ese valor no se acepta para este campo de la integración.</value>
+  </data>
+  <data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>Esta integración no tiene prueba de conexión.</value>
+  </data>
+  <data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>El complemento informa de que funciona.</value>
+  </data>
+  <data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>El complemento funciona con prestaciones reducidas.</value>
+  </data>
+  <data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>El complemento informa de que en este momento no puede realizar su trabajo.</value>
+  </data>
+  <data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>El complemento está desactivado o falta un ajuste obligatorio.</value>
+  </data>
+  <data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>El complemento no respondió a tiempo a la comprobación de estado.</value>
+  </data>
+  <data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>Falló la comprobación de estado del complemento. Consulte el registro del servidor para más detalles.</value>
+  </data>
+  <data name="SETTING_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese ajuste.</value>
+  </data>
+  <data name="INVALID_SETTING_VALUE" xml:space="preserve">
+    <value>Ese valor no se acepta para este ajuste.</value>
+  </data>
+  <data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>Este ajuste no se puede modificar aquí.</value>
+  </data>
+  <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
+    <value>No se pudo leer ese archivo como imagen. Cargue un PNG, JPEG, WebP, GIF o BMP.</value>
+  </data>
+  <data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve">
+    <value>Esa imagen es demasiado grande. Cargue un archivo de menos de 5 MB y de no más de 8000 píxeles por lado.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede crear una cuenta aquí. Añada primero a la persona en el servicio de inicio de sesión único.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_NAME" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede cambiar aquí el nombre de una persona. Cámbielo en el servicio de inicio de sesión único.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede cambiar aquí la dirección de inicio de sesión. Cámbiela en el servicio de inicio de sesión único.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_DELETE_ACCOUNT" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede eliminar aquí una cuenta. Elimínela en el servicio de inicio de sesión único.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_SET_PASSWORD" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede establecer aquí una contraseña. Las contraseñas se gestionan en el servicio de inicio de sesión único.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_ISSUE_PASSWORD_RESET" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede emitir aquí un restablecimiento de contraseña. Solicítelo al servicio de inicio de sesión único.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_CONFIRM_EMAIL" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede confirmar aquí una dirección de correo electrónico. La verificación del correo la gestiona el servicio de inicio de sesión único.</value>
+  </data>
+  <data name="USER_PROVISIONING_NOT_ALLOWED_ISSUE_EMAIL_CONFIRMATION" xml:space="preserve">
+    <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede enviar desde aquí un correo de verificación. La verificación del correo la gestiona el servicio de inicio de sesión único.</value>
+  </data>
+  <data name="CURRENCY_BASE_DISABLE_NOT_ALLOWED" xml:space="preserve">
+    <value>La moneda base no se puede deshabilitar.</value>
+  </data>
+  <data name="INVOICE_NOT_DRAFT" xml:space="preserve">
+    <value>Solo se puede publicar una factura en borrador.</value>
+  </data>
+  <data name="INVOICE_NOT_EDITABLE" xml:space="preserve">
+    <value>Esta factura ya no se puede editar.</value>
+  </data>
+  <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa línea en esta factura.</value>
+  </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>No hay ninguna transferencia bancaria pendiente en esta factura, por lo que no hay nada que confirmar ni rechazar.</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>La transferencia bancaria no está disponible en este momento. Elija otro método de pago.</value>
+  </data>
+  <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
+    <value>Solo se puede marcar como vencida una factura impagada.</value>
+  </data>
+  <data name="INVOICE_NOT_OVERDUE" xml:space="preserve">
+    <value>Solo se puede marcar como caducada una factura vencida.</value>
+  </data>
+  <data name="INVOICE_CANCEL_NOT_ALLOWED" xml:space="preserve">
+    <value>No se puede cancelar una factura pagada, reembolsada o ya cancelada.</value>
+  </data>
+  <data name="INVOICE_NOT_PAID" xml:space="preserve">
+    <value>Esta acción requiere que la factura esté pagada.</value>
+  </data>
+  <data name="QUOTE_NOT_EDITABLE" xml:space="preserve">
+    <value>Este presupuesto ya no se puede editar.</value>
+  </data>
+  <data name="QUOTE_NOT_ACCEPTABLE" xml:space="preserve">
+    <value>La fase de este presupuesto no permite su aceptación.</value>
+  </data>
+  <data name="QUOTE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa línea en este presupuesto.</value>
+  </data>
+  <data name="CLIENT_CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese contacto en este cliente.</value>
+  </data>
+  <data name="CLIENT_USER_IS_OWNER" xml:space="preserve">
+    <value>El titular de la cuenta no puede añadirse además como usuario adicional.</value>
+  </data>
+  <data name="CLIENT_USER_LINK_DUPLICATE" xml:space="preserve">
+    <value>Este usuario ya está vinculado a este cliente.</value>
+  </data>
+  <data name="CLIENT_USER_NOT_LINKED" xml:space="preserve">
+    <value>Este usuario no está vinculado a este cliente.</value>
+  </data>
+  <data name="CLIENT_PERMISSION_DENIED" xml:space="preserve">
+    <value>Su cuenta no tiene permiso para hacer esto. Pida al titular de la cuenta que le conceda acceso.</value>
+  </data>
+  <data name="CLIENT_TRANSFER_SAME_OWNER" xml:space="preserve">
+    <value>Este usuario ya es el titular de la cuenta.</value>
+  </data>
+  <data name="CLIENT_CREDIT_INSUFFICIENT" xml:space="preserve">
+    <value>El saldo de crédito del cliente es insuficiente para esta deducción.</value>
+  </data>
+  <data name="CLIENT_SUSPEND_NOT_ALLOWED" xml:space="preserve">
+    <value>Esta cuenta no se puede suspender en su estado actual.</value>
+  </data>
+  <data name="CLIENT_CLOSE_NOT_ALLOWED" xml:space="preserve">
+    <value>Esta cuenta ya está cerrada.</value>
+  </data>
+  <data name="CLIENT_ACTIVATE_NOT_ALLOWED" xml:space="preserve">
+    <value>Una cuenta cerrada no se puede reactivar de esta forma.</value>
+  </data>
+  <data name="CLIENT_DEACTIVATE_NOT_ALLOWED" xml:space="preserve">
+    <value>Solo se puede desactivar una cuenta activa. Active primero una cuenta suspendida; una cuenta cerrada no se puede modificar.</value>
+  </data>
+  <data name="CLIENT_SUSPENDED" xml:space="preserve">
+    <value>Esta cuenta está suspendida, por lo que no puede realizar pedidos ni pagar en línea. Contacte con soporte para que la reactiven.</value>
+  </data>
+  <data name="CLIENT_CLOSED" xml:space="preserve">
+    <value>Esta cuenta está cerrada y ya no puede realizar pedidos ni ser facturada.</value>
+  </data>
+  <data name="CLIENT_OWNER_CANNOT_BE_REMOVED" xml:space="preserve">
+    <value>No se puede eliminar al titular de la cuenta. Transfiera primero la titularidad a otro usuario.</value>
+  </data>
+  <data name="CONTACT_EMAIL_IN_USE" xml:space="preserve">
+    <value>Otro contacto de este cliente ya utiliza esta dirección de correo electrónico.</value>
+  </data>
+  <data name="CLIENT_RECORD_CLOSED" xml:space="preserve">
+    <value>Esta cuenta está cerrada, por lo que sus contactos y usuarios ya no se pueden modificar.</value>
+  </data>
+  <data name="DOMAIN_CANCEL_NOT_ALLOWED" xml:space="preserve">
+    <value>El estado de este dominio no permite su cancelación.</value>
+  </data>
+  <data name="DOMAIN_RENEW_NOT_ALLOWED" xml:space="preserve">
+    <value>El estado de este dominio no permite su renovación.</value>
+  </data>
+  <data name="DOMAIN_LINK_NOT_ALLOWED" xml:space="preserve">
+    <value>El estado de este dominio no permite vincular un servicio de hosting.</value>
+  </data>
+  <data name="DOMAIN_DNS_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese registro DNS en este dominio.</value>
+  </data>
+  <data name="DOMAIN_FORWARDING_RULE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa regla de reenvío de correo electrónico en este dominio.</value>
+  </data>
+  <data name="ORDER_NOT_PENDING" xml:space="preserve">
+    <value>Esta acción requiere que el pedido esté pendiente.</value>
+  </data>
+  <data name="ORDER_NOT_ACCEPTED" xml:space="preserve">
+    <value>Solo un pedido aceptado tiene líneas que cumplimentar.</value>
+  </data>
+  <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
+    <value>Esta línea del pedido no se puede reintentar ahora. Solo se puede reintentar una línea fallida de un pedido aceptado, y no mientras otro reintento esté en curso.</value>
+  </data>
+  <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>Este pedido no tiene esa línea.</value>
+  </data>
+  <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
+    <value>Esta línea del pedido ya está cumplimentada.</value>
+  </data>
+  <data name="ORDER_LINE_CHANGED" xml:space="preserve">
+    <value>Esta línea del pedido cambió mientras se procesaba, por lo que no se pudo registrar el resultado. Abra de nuevo el pedido para ver en qué estado está la línea.</value>
+  </data>
+  <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
+    <value>Esta línea del pedido no se puede reembolsar ahora. Solo una línea fallida puede iniciar el reembolso, solo una línea en reembolso puede liquidarse y solo una línea fallida, en reembolso o parcialmente reembolsada puede cerrarse como reembolsada.</value>
+  </data>
+  <data name="ORDER_LINE_REFUND_IN_PROGRESS" xml:space="preserve">
+    <value>El reembolso de esta línea del pedido se inició hace menos del plazo de reintento y puede que todavía esté devolviendo el dinero. Espere a que se liquide; solo un reembolso bloqueado durante más tiempo puede cerrarse manualmente.</value>
+  </data>
+  <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
+    <value>El intento de cumplimentar esta línea se interrumpió antes de terminar. Reintente la línea.</value>
+  </data>
+  <data name="ORDER_LINE_SERVICE_CONFLICT" xml:space="preserve">
+    <value>El servicio ya almacenado para esta línea del pedido pertenece a otro cliente o producto, por lo que la línea no puede reutilizarlo. Revise la línea y su servicio.</value>
+  </data>
+  <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
+    <value>Este servicio no está activo.</value>
+  </data>
+  <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve">
+    <value>Este servicio ya está dado de baja.</value>
+  </data>
+  <data name="SERVICE_NOT_SUSPENDED" xml:space="preserve">
+    <value>Este servicio no está suspendido.</value>
+  </data>
+  <data name="TICKET_REPLY_NOT_ALLOWED" xml:space="preserve">
+    <value>Un ticket cerrado no puede recibir nuevas respuestas.</value>
+  </data>
+  <data name="TICKET_CLOSE_NOT_ALLOWED" xml:space="preserve">
+    <value>Este ticket ya está cerrado.</value>
+  </data>
+  <data name="BACKCHANNEL_LOGOUT_UNAUTHORIZED" xml:space="preserve">
+    <value>La clave de cierre de sesión falta o es incorrecta.</value>
+  </data>
+  <data name="TESTIMONIAL_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese testimonio.</value>
+  </data>
+  <data name="PARTNER_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese socio.</value>
+  </data>
+  <data name="LOCATION_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa ubicación.</value>
+  </data>
+  <data name="PROJECT_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese proyecto.</value>
+  </data>
+  <data name="FAQ_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa pregunta.</value>
+  </data>
+  <data name="PROJECT_SLUG_EXISTS" xml:space="preserve">
+    <value>Otro proyecto ya utiliza ese slug. Elija uno diferente.</value>
+  </data>
+  <data name="FAQ_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>El orden de una pregunta no puede ser negativo.</value>
+  </data>
+  <data name="PARTNER_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>El orden de un socio no puede ser negativo.</value>
+  </data>
+  <data name="LOCATION_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>El orden de una ubicación no puede ser negativo.</value>
+  </data>
+  <data name="LOCATION_COUNTRY_CODE_INVALID" xml:space="preserve">
+    <value>El código de país de una ubicación debe tener dos letras.</value>
+  </data>
+  <data name="PROJECT_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>El orden de un proyecto no puede ser negativo.</value>
+  </data>
+  <data name="PROJECT_SLUG_REQUIRED" xml:space="preserve">
+    <value>Un proyecto necesita un identificador (slug).</value>
+  </data>
+  <data name="TESTIMONIAL_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>El orden de un testimonio no puede ser negativo.</value>
+  </data>
+  <data name="TESTIMONIAL_NAME_REQUIRED" xml:space="preserve">
+    <value>Un testimonio necesita un nombre.</value>
+  </data>
+  <data name="TESTIMONIAL_RATING_OUT_OF_RANGE" xml:space="preserve">
+    <value>La valoración debe estar entre 1 y 5.</value>
+  </data>
+  <data name="SSH_KEY_INVALID" xml:space="preserve">
+    <value>La clave no es una clave pública ED25519 válida.</value>
+  </data>
+  <data name="SSH_PRIVATE_KEY_REJECTED" xml:space="preserve">
+    <value>Eso es una clave privada. Pegue en su lugar la clave pública (el archivo .pub).</value>
+  </data>
+  <data name="SSH_KEY_ALREADY_INSTALLED" xml:space="preserve">
+    <value>Esta clave ya está instalada en el servicio.</value>
+  </data>
+  <data name="SSH_KEY_LIMIT_REACHED" xml:space="preserve">
+    <value>El servicio ya tiene el número máximo de claves SSH.</value>
+  </data>
+  <data name="SSH_KEY_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa clave SSH.</value>
+  </data>
+  <data name="SSH_KEY_STALE" xml:space="preserve">
+    <value>Esta clave se emitió en el servidor anterior del servicio. Contacte con soporte para eliminarla.</value>
+  </data>
+  <data name="SSH_ACCESS_UNAVAILABLE" xml:space="preserve">
+    <value>La gestión de claves SSH no está disponible para este servicio.</value>
+  </data>
+  <data name="SSH_SERVER_UNAVAILABLE" xml:space="preserve">
+    <value>No se pudo acceder al servidor de hosting. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="SSH_HOST_KEY_UNREADABLE" xml:space="preserve">
+    <value>No se recibió ninguna clave de host SSH del host y puerto del agente. Compruebe que el puerto ejecuta sshd.</value>
+  </data>
+  <data name="SSH_AGENT_HOST_UNREACHABLE" xml:space="preserve">
+    <value>Sin respuesta del host y puerto del agente: HostPanel no tiene ruta de red hasta ellos. Compruebe la dirección, asegúrese de que la red en la que se ejecuta HostPanel pueda alcanzarlo (VPN o enrutamiento) y de que el cortafuegos del servidor permita la dirección de HostPanel.</value>
+  </data>
+  <data name="SSH_AGENT_PORT_REFUSED" xml:space="preserve">
+    <value>El host del agente rechazó la conexión en ese puerto: no hay nada escuchando allí o un cortafuegos rechaza la dirección de HostPanel. Compruebe el puerto y el cortafuegos.</value>
+  </data>
+  <data name="SSH_AGENT_CONNECTION_CLOSED" xml:space="preserve">
+    <value>El host del agente aceptó la conexión y la cerró antes del saludo SSH: sshd está rechazando la dirección de HostPanel. En OpenSSH 9.8 o posterior suele deberse a PerSourcePenalties tras conexiones fallidas o sin autenticar; añada la dirección de HostPanel a PerSourcePenaltyExemptList. Revise también MaxStartups y TCP wrappers (hosts.deny).</value>
+  </data>
+  <data name="SSH_MODULE_NOT_SUPPORTED" xml:space="preserve">
+    <value>La gestión de claves SSH no es compatible con este tipo de servidor.</value>
+  </data>
+  <data name="SSH_SETTINGS_INCOMPLETE" xml:space="preserve">
+    <value>La configuración SSH de este servidor está incompleta.</value>
+  </data>
+  <data name="SSH_AGENT_NOT_VERIFIED" xml:space="preserve">
+    <value>Realice una prueba correcta del agente con esta configuración antes de activar la gestión de claves SSH.</value>
+  </data>
+  <data name="SSH_AGENT_ENDPOINT_IN_USE" xml:space="preserve">
+    <value>Otro servidor ya utiliza este host y puerto del agente.</value>
+  </data>
+  <data name="REGISTRAR_NOT_CONFIGURED" xml:space="preserve">
+    <value>El registrador de este dominio no está configurado.</value>
+  </data>
+  <data name="REGISTRAR_ORDER_UPSTREAM_FAILED" xml:space="preserve">
+    <value>El registrador rechazó la solicitud. Inténtelo de nuevo en breve.</value>
+  </data>
+  <data name="REGISTRAR_OPERATION_UNSUPPORTED" xml:space="preserve">
+    <value>El registrador no ofrece esta acción. Contacte con el soporte del registrador.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_NOT_FOUND" xml:space="preserve">
+    <value>El registrador no tiene este dominio.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_NOT_ACTIVE" xml:space="preserve">
+    <value>El registrador aún no ha activado este dominio.</value>
+  </data>
+  <data name="REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE" xml:space="preserve">
+    <value>Este dominio no tiene suscripción de privacidad WHOIS en el registrador.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_UNAVAILABLE" xml:space="preserve">
+    <value>El registrador indica que este nombre de dominio no está disponible.</value>
+  </data>
+  <data name="REGISTRAR_INSUFFICIENT_FUNDS" xml:space="preserve">
+    <value>La cuenta del registrador no tiene saldo suficiente para esta compra.</value>
+  </data>
+  <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
+    <value>Los datos de contacto del titular están incompletos, por lo que no se puede enviar el pedido al registrador.</value>
+  </data>
+  <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
+    <value>Una transacción debe tener un importe de entrada o de salida.</value>
+  </data>
+  <data name="INVOICE_REFUND_EXCEEDS_PAID" xml:space="preserve">
+    <value>El reembolso supera lo que se pagó y aún no se ha reembolsado.</value>
+  </data>
+  <data name="INVOICE_CREDIT_EXCEEDS_DUE" xml:space="preserve">
+    <value>El crédito supera lo que aún se adeuda de la factura.</value>
+  </data>
+  <data name="INVOICE_NOT_GATEWAY_PAID" xml:space="preserve">
+    <value>Ninguna pasarela de pago cobró esta factura, por lo que no se puede reembolsar a través de una.</value>
+  </data>
+  <data name="INVOICE_REFUND_CONFLICT" xml:space="preserve">
+    <value>Otro reembolso de esta factura sigue esperando respuesta de su pasarela de pago. Inténtelo de nuevo cuando responda.</value>
+  </data>
+  <data name="GATEWAY_REFUND_REFUSED" xml:space="preserve">
+    <value>La pasarela de pago rechazó el reembolso o este falló. No se devolvió nada a través de ella.</value>
+  </data>
+  <data name="REFUND_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>Un complemento de cumplimiento no pudo indicar qué parte de esta factura se puede reembolsar, por lo que no se reembolsó nada. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="REFUND_BLOCKED_BY_PLUGIN" xml:space="preserve">
+    <value>Un complemento de cumplimiento no permite ningún reembolso de esta factura en este momento. No se reembolsó nada.</value>
+  </data>
+  <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
+    <value>La pasarela de pago informó de un importe o una moneda que no coinciden con la factura.</value>
+  </data>
+  <data name="INVOICE_NOT_DELETABLE" xml:space="preserve">
+    <value>Solo se puede eliminar una factura en borrador o cancelada.</value>
+  </data>
+  <data name="SERVICE_STATUS_CHANGE_NOT_ALLOWED" xml:space="preserve">
+    <value>Este servicio no se puede pasar a ese estado.</value>
+  </data>
+  <data name="SERVICE_AUTOMATION_INCONSISTENT" xml:space="preserve">
+    <value>Indique una fecha de retención solo con la suspensión con retención, y un motivo de baja solo con la baja al final del ciclo.</value>
+  </data>
+  <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
+    <value>Solo un servicio dado de baja tiene una fecha de baja que corregir.</value>
+  </data>
+  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo iniciar una sesión del panel de control. El panel devolvió una dirección que no pertenece a su servidor.</value>
+  </data>
+  <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>El nombre de usuario de la cuenta de hosting no es válido para cPanel. Utilice letras minúsculas y dígitos, empiece por una letra y no supere los 16 caracteres.</value>
+  </data>
+  <data name="CPANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>El dominio no es un nombre de dominio válido. Compruébelo e inténtelo de nuevo.</value>
+  </data>
+  <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
+    <value>Este servicio aún no tiene dominio ni nombre de usuario. Configure primero la cuenta de hosting.</value>
+  </data>
+  <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
+    <value>Este producto no tiene ningún paquete de hosting definido. Elija uno primero en el producto.</value>
+  </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>Este producto no tiene grupo de servidores y sus servidores ejecutan más de un panel de control. Asigne un grupo de servidores al producto para que su paquete llegue al panel correcto.</value>
+  </data>
+  <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
+    <value>El pago supera lo que aún se adeuda de la factura.</value>
+  </data>
+  <data name="INVOICE_AMOUNT_STILL_DUE" xml:space="preserve">
+    <value>La factura aún tiene un importe pendiente, por lo que debe liquidarse en lugar de marcarse como pagada.</value>
+  </data>
+  <data name="INVOICE_HAS_PAYMENTS" xml:space="preserve">
+    <value>La factura ya tiene un pago. Reembolse o elimine primero ese pago.</value>
+  </data>
+  <data name="INVOICE_TOTAL_BELOW_PAID" xml:space="preserve">
+    <value>La factura quedaría por un importe inferior a los pagos que ya recibió.</value>
+  </data>
+  <data name="SERVER_IN_USE" xml:space="preserve">
+    <value>Este servidor aún aloja servicios de clientes o claves SSH. Muévalos o elimínelos primero.</value>
+  </data>
+  <data name="SERVER_GROUP_IN_USE" xml:space="preserve">
+    <value>Aún hay productos que utilizan este grupo de servidores. Asígnelos primero a otro grupo.</value>
+  </data>
+  <data name="USER_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese usuario.</value>
+  </data>
+  <data name="USER_CANNOT_DELETE_SELF" xml:space="preserve">
+    <value>No puede eliminar su propia cuenta.</value>
+  </data>
+  <data name="USER_LAST_ADMIN" xml:space="preserve">
+    <value>Este es el último administrador activo. Convierta primero a otro usuario en administrador.</value>
+  </data>
+  <data name="EXCHANGE_RATE_SOURCE_UNAVAILABLE" xml:space="preserve">
+    <value>La fuente de tipos de cambio no responde en este momento. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="EXCHANGE_RATE_BASE_NOT_QUOTED" xml:space="preserve">
+    <value>La fuente de tipos de cambio no cotiza la moneda base.</value>
+  </data>
+  <data name="CLIENT_CARD_PAYMENT_DISABLED" xml:space="preserve">
+    <value>Los pagos con tarjeta están deshabilitados para esta cuenta. Pague con otro método o contacte con soporte.</value>
+  </data>
+  <data name="CLIENT_SSO_DISABLED" xml:space="preserve">
+    <value>El inicio de sesión único en el panel de hosting no está habilitado para esta cuenta.</value>
+  </data>
+  <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
+    <value>Este cliente está exento de impuestos, por lo que no se puede aplicar un tipo impositivo a sus facturas.</value>
+  </data>
+  <data name="CLIENT_REVERSE_CHARGE_APPLIES" xml:space="preserve">
+    <value>A este cliente se le factura con inversión del sujeto pasivo, por lo que no se puede aplicar un tipo impositivo a sus facturas.</value>
+  </data>
+  <data name="CLIENT_VAT_NUMBER_MISSING" xml:space="preserve">
+    <value>Este cliente no tiene número de IVA que comprobar.</value>
+  </data>
+  <data name="CLIENT_VAT_COUNTRY_NOT_SUPPORTED" xml:space="preserve">
+    <value>Los números de IVA solo se pueden comprobar para países de la UE y el Reino Unido. Establezca primero el país de facturación del cliente.</value>
+  </data>
+  <data name="VAT_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>El servicio de números de IVA no responde en este momento. Se conserva el resultado anterior. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="VAT_CHECK_NOT_CONFIGURED" xml:space="preserve">
+    <value>Los números de IVA de este país aún no se pueden comprobar: el registro no está configurado en este servidor. Pida al administrador que lo configure (los números del Reino Unido requieren las credenciales de HMRC).</value>
+  </data>
+  <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
+    <value>Otro producto ya utiliza este SKU. Elija uno diferente.</value>
+  </data>
+  <data name="PRODUCT_SKU_INVALID" xml:space="preserve">
+    <value>El SKU solo puede contener letras y dígitos unidos por guiones, guiones bajos o puntos simples, y no puede tener más de 64 caracteres.</value>
+  </data>
+  <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
+    <value>Los metadatos del producto deben ser un objeto JSON de 16 KB como máximo.</value>
+  </data>
+  <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
+    <value>El período de gracia debe ser de 0 a 365 días.</value>
+  </data>
+  <data name="PRODUCT_TRIAL_INVALID" xml:space="preserve">
+    <value>La prueba debe durar de 1 a 365 días, con un máximo de 5 días de recordatorio distintos anteriores a su fin, y un período de gracia de 0 a 30 días.</value>
+  </data>
+  <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
+    <value>Esta cuenta externa ya está vinculada a otro cliente.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>No se encontró el registro de cumplimiento.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
+    <value>Solo se puede reintentar un registro de cumplimiento fallido.</value>
+  </data>
+  <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>No se pudo comprobar el reembolso en este momento, por lo que no se reembolsó nada. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="STORED_CREDENTIALS_NOT_SUPPORTED" xml:space="preserve">
+    <value>Esta pasarela de pago no puede conservar métodos de pago para cargos posteriores.</value>
+  </data>
+  <data name="CARD_CONSENT_REQUIRED" xml:space="preserve">
+    <value>No consta ningún consentimiento para cobrar a un método de pago guardado.</value>
+  </data>
+  <data name="CARD_CONSENT_NOT_FOUND" xml:space="preserve">
+    <value>No se encontró ese consentimiento.</value>
+  </data>
+  <data name="STORED_METHOD_NOT_SAVED" xml:space="preserve">
+    <value>El método de pago no se guardó. Comience de nuevo.</value>
+  </data>
+  <data name="STORED_CHARGE_ALREADY_IN_PROGRESS" xml:space="preserve">
+    <value>Ya hay un cobro en curso para esta factura.</value>
+  </data>
+  <data name="INVOICE_PAYMENT_CLAIM_NOT_FOUND" xml:space="preserve">
+    <value>No se encontró ese cobro.</value>
+  </data>
+  <data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
+    <value>La factura tiene un cobro con tarjeta sin finalizar, por lo que todavía no se puede cancelar ni pagar manualmente.</value>
+  </data>
+  <data name="INVOICE_STORED_CHARGE_HELD" xml:space="preserve">
+    <value>La factura tiene un cobro con tarjeta retenido para un operador, por lo que no se puede pagar en línea hasta que se liquide ese dinero.</value>
+  </data>
+  <data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
+    <value>El consentimiento ya cubre un método de pago diferente.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DISABLED" xml:space="preserve">
+    <value>El registro de complementos no está activado en este servidor.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_UNAVAILABLE" xml:space="preserve">
+    <value>No se pudo acceder al registro de complementos. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_TIMED_OUT" xml:space="preserve">
+    <value>El registro de complementos no respondió a tiempo. Inténtelo de nuevo más tarde.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_RESPONSE_INVALID" xml:space="preserve">
+    <value>El registro de complementos envió una respuesta que este servidor no puede utilizar.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>El registro de complementos no incluye ese complemento o versión.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PACKAGE_REFUSED" xml:space="preserve">
+    <value>Se rechazó el paquete ofrecido por el registro de complementos.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_CHECKSUM_MISMATCH" xml:space="preserve">
+    <value>El paquete descargado no coincide con la suma de comprobación que publicó el registro de complementos, por lo que no se instaló.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
+    <value>El ajuste de confianza del registro de complementos no permite instalar este complemento.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_REQUIRED" xml:space="preserve">
+    <value>Se requiere una clave de licencia para utilizar este complemento desde el registro de complementos.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_INVALID" xml:space="preserve">
+    <value>El registro de complementos no aceptó la clave de licencia.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
+    <value>Esta versión del complemento no funciona con esta versión de Hostpanel.</value>
+  </data>
+  <data name="PLUGIN_HOST_VERSION_OUT_OF_RANGE" xml:space="preserve">
+    <value>Este complemento no funciona con la versión de Hostpanel que ejecuta este servidor: está fuera de las versiones mínima y máxima del host que admite el complemento.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
+    <value>El registro de complementos retiró esta versión, por lo que no se puede instalar. Elija otra versión.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
+    <value>El registro de complementos rechazó esta versión por considerarla insegura, por lo que no se puede instalar. Elija otra versión.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>El registro de complementos no puede utilizar la dirección pública de este Hostpanel. Establezca ClientBaseUrl con la dirección https pública de esta instalación y vuelva a intentar el registro.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>El registro de complementos aún no ha verificado este Hostpanel, por lo que no puede entregar este complemento restringido. El registro se ejecuta automáticamente: compruebe su estado en la página Complementos y reintente si muestra un error.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>El registro de complementos revocó esta instalación de Hostpanel, por lo que ya no le entrega complementos restringidos. Contacte con el operador del registro. Reintente el registro para solicitar una nueva identidad.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>El registro de complementos no aceptó la firma de este Hostpanel. Reintente el registro desde la página Complementos. Si vuelve a ocurrir, la identidad almacenada en este servidor puede estar dañada.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>El registro de complementos rechazó la solicitud porque el reloj de este servidor está demasiado desfasado respecto a la hora correcta. Corrija el reloj del servidor (active la sincronización horaria) e inténtelo de nuevo.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>El registro de complementos tomó la solicitud por una repetición de una anterior y la rechazó. Inténtelo de nuevo.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>El registro de complementos no aceptó el ticket de descarga de un solo uso. Repita la instalación para obtener un ticket nuevo.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>El registro de complementos limita con qué frecuencia este Hostpanel puede registrarse o solicitar complementos restringidos, y se ha alcanzado el límite. Espere un momento e inténtelo de nuevo.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>El registro de complementos no pudo leer el texto de confirmación de este Hostpanel en /.well-known/hostpanel-registry/. Asegúrese de que su dirección pública envía esa ruta a la API de Hostpanel y reintente.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>El registro con el registro de complementos agotó el tiempo o se olvidó, por lo que se reinicia con una clave nueva.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>Ningún registro con este identificador está pendiente de confirmación.</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>El complemento solicita un tipo de acceso al hosting del cliente que este host no conoce, lo nombra dos veces o lo declara en un manifiesto de versión 1.</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento muestra un bloque según una condición que no es una ruta GET, un campo y un valor o una lista corta de valores.</value>
+  </data>
+  <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento construye el cuerpo de una acción a partir de datos de la página con una forma o en un lugar que este servidor no acepta.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento declara la selección de elementos con una forma o en un lugar que este servidor no acepta.</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento actualiza tras una acción un bloque que no contiene, o describe el seguimiento o el restablecimiento del formulario con una forma que este host no acepta.</value>
+  </data>
+  <data name="PLUGIN_PAGE_LAYOUT_UNKNOWN" xml:space="preserve">
+    <value>Una de las páginas de este complemento solicita un diseño que este host no conoce, o una página de administración solicita un diseño.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SPLIT_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento contiene una división que no tiene exactamente dos paneles de bloques, o una división dentro de otra división.</value>
+  </data>
+  <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento contiene una vista previa con orígenes o tamaño no válidos, o muestra una vista previa en un lugar que no es una página de cliente.</value>
+  </data>
+  <data name="PLUGIN_VIEW_BLOCK_ID_REPEATED" xml:space="preserve">
+    <value>Uno de los documentos de vista de este complemento asigna el mismo identificador a más de un bloque.</value>
+  </data>
+  <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
+    <value>Esta línea no tiene ninguna reserva de renovación que liberar.</value>
+  </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>Este apunte forma parte del historial de crédito y no se puede modificar ni eliminar. Añada un ajuste de crédito para corregirlo.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>Una factura de recarga de crédito es una única línea fija y no se puede editar.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>No se puede aplicar crédito a una factura de recarga de crédito.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>Una recarga de crédito pagada solo se puede reembolsar manualmente: registre el reembolso como manual.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>El importe está fuera del intervalo permitido para añadir fondos.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>Ya tiene recargas impagadas. Pague o cancele una antes de añadir más fondos.</value>
+  </data>
+  <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
+    <value>No se encontró la nota de crédito.</value>
+  </data>
+  <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
+    <value>Una factura de recarga de crédito ya es crédito, por lo que no se le puede emitir una nota de crédito. Una recarga pagada se reembolsa manualmente.</value>
+  </data>
+  <data name="CREDIT_NOTE_EXCEEDS_CREDITABLE" xml:space="preserve">
+    <value>La nota de crédito supera lo que aún se puede abonar a esta factura, una vez contabilizadas las notas de crédito y los reembolsos anteriores.</value>
+  </data>
+  <data name="CREDIT_NOTE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>Una nota de crédito necesita al menos una línea con descripción, precio y cantidad, y un motivo.</value>
+  </data>
+  <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
+    <value>La nota de crédito no está en un estado que permita esta acción.</value>
+  </data>
+  <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
+    <value>Esta nota de crédito ya está anulada.</value>
+  </data>
+  <data name="CREDIT_NOTE_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Esta factura está en una moneda distinta a aquella en la que se mantiene el saldo de crédito del cliente, por lo que no se puede abonar al saldo. Emita en su lugar la nota de crédito como reembolso por la pasarela.</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
+    <value>Esta nota de crédito se pagó como reembolso por la pasarela. El reembolso no se puede revertir, por lo que la nota no se puede anular.</value>
+  </data>
+  <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese grupo de la página de estado.</value>
+  </data>
+  <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese componente de la página de estado.</value>
+  </data>
+  <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa incidencia de la página de estado.</value>
+  </data>
+  <data name="STATUS_CHECK_URL_REQUIRED" xml:space="preserve">
+    <value>Un componente monitorizado necesita una dirección que comprobar.</value>
+  </data>
+  <data name="STATUS_FAILURE_THRESHOLD_INVALID" xml:space="preserve">
+    <value>El umbral de fallos está fuera de rango.</value>
+  </data>
+  <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
+    <value>Se requiere un nombre.</value>
+  </data>
+  <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
+    <value>El orden de visualización no puede ser negativo.</value>
+  </data>
+  <data name="STATUS_INCIDENT_TITLE_REQUIRED" xml:space="preserve">
+    <value>Una incidencia necesita un título.</value>
+  </data>
+  <data name="STATUS_INCIDENT_MESSAGE_REQUIRED" xml:space="preserve">
+    <value>Una actualización necesita un mensaje.</value>
+  </data>
+  <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
+    <value>La incidencia está resuelta y no admite más actualizaciones.</value>
+  </data>
+  <data name="CLIENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese grupo de clientes.</value>
+  </data>
+  <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
+    <value>Este grupo de clientes aún tiene clientes. Muévalos primero a otro grupo.</value>
+  </data>
+  <data name="CLIENT_GROUP_NAME_ALREADY_EXISTS" xml:space="preserve">
+    <value>Otro grupo de clientes ya tiene este nombre.</value>
+  </data>
+  <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
+    <value>Un descuento debe estar entre el 0 y el 100 por ciento.</value>
+  </data>
+  <data name="CLIENT_GROUP_COLOR_INVALID" xml:space="preserve">
+    <value>Un color debe escribirse como #RRGGBB.</value>
+  </data>
+  <data name="SERVICE_CHANGE_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa solicitud de cambio de plan.</value>
+  </data>
+  <data name="SERVICE_CHANGE_ALREADY_PENDING" xml:space="preserve">
+    <value>Ya hay un cambio de plan pendiente para este servicio.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRODUCT" xml:space="preserve">
+    <value>El servicio ya está en este plan.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRICE" xml:space="preserve">
+    <value>Este plan cuesta lo mismo que el actual, por lo que no hay nada que cambiar.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>Este plan no está disponible para el servicio.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>Este plan no tiene precio para el ciclo de facturación del servicio en su moneda.</value>
+  </data>
+  <data name="SERVICE_CHANGE_NO_RENEWAL_DATE" xml:space="preserve">
+    <value>El servicio no tiene fecha de renovación, por lo que no se puede cambiar el plan a mitad de un ciclo de facturación.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVALID_STATE" xml:space="preserve">
+    <value>La solicitud de cambio de plan no está en un estado que permita esta acción.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
+    <value>La factura del cambio de plan debe pagarse antes de que el plan cambie.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Esta campaña de correo electrónico no existe.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Solo se puede editar, programar o eliminar una campaña en borrador.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>Esta campaña no está programada.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>Esta campaña no se está enviando.</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Añada al menos un segmento de destinatarios antes de programar la campaña.</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Elija una hora de envío en el futuro.</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>El valor de un segmento de destinatarios no se ajusta a su filtro.</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>Este destinatario ya no está pendiente de entrega.</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Este enlace de baja no es válido.</value>
+  </data>
+  <data name="CAMPAIGN_MAIL_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Este enlace no es válido.</value>
+  </data>
+  <data name="TAX_RULE_NOT_FOUND" xml:space="preserve">
+    <value>No existe esa regla de impuestos.</value>
+  </data>
+  <data name="TAX_RULE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Ya existe una regla de impuestos para este país y región.</value>
+  </data>
+  <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
+    <value>Un tipo impositivo debe estar entre el 0 y el 100 por ciento.</value>
+  </data>
+  <data name="VAT_RATE_NOT_FOUND" xml:space="preserve">
+    <value>No existe ese tipo de IVA.</value>
+  </data>
+  <data name="VAT_RATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Ya existe un tipo de IVA para este país, clase y fecha de inicio.</value>
+  </data>
+  <data name="VAT_RATE_INVALID" xml:space="preserve">
+    <value>Un tipo de IVA debe estar entre el 0 y el 100 por ciento.</value>
+  </data>
+  <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
+    <value>Este pedido no está pendiente de revisión antifraude.</value>
+  </data>
+  <data name="ORDER_FRAUD_REJECTED" xml:space="preserve">
+    <value>No pudimos aceptar este pedido. Contacte con soporte si cree que se trata de un error.</value>
+  </data>
+  <data name="REGISTRATION_FRAUD_REJECTED" xml:space="preserve">
+    <value>No pudimos crear esta cuenta. Contacte con soporte si cree que se trata de un error.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_VALUE_INVALID" xml:space="preserve">
+    <value>El valor no se ajusta al tipo de lista de bloqueo elegido.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_EXISTS" xml:space="preserve">
+    <value>Este valor ya está en la lista de bloqueo.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
+    <value>No se encontró la entrada de la lista de bloqueo.</value>
+  </data>
+  <data name="ORDER_PRODUCT_SOLD_OUT" xml:space="preserve">
+    <value>Lo sentimos, este producto está agotado.</value>
+  </data>
+  <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
+    <value>Ya dispone de este producto; solo se puede pedir una vez por cliente.</value>
+  </data>
+  <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
+    <value>El número máximo de servicios activos debe ser 0 o estar vacío para ilimitado, o un número positivo.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>El agentProfile del manifiesto debe ser uno de los perfiles del agente de claves SSH que define este SDK, escrito exactamente igual.</value>
+  </data>
+  <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este plugin abre una dirección de una respuesta con una forma o en un lugar que este servidor no acepta.</value>
+  </data>
+</root>

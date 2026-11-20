@@ -9,7 +9,7 @@
  */
 import { computed, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
+import { useLocalizedSettingDrafts, SETTING_LOCALES } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
@@ -129,6 +129,7 @@ const tokenTestids: Record<MessageLanguage, string> = {
 
       <UiLocalizedField
         :label="t('settings.trackingChat.chat.token')"
+        :locales="SETTING_LOCALES"
         :filled="token.filled.value"
         :errors="token.errors.value"
         testid="tracking-chat-token-tab"

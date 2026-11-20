@@ -15,7 +15,7 @@ namespace Innovayse.Hostpanel.Application.Testimonials.Commands.UpdateTestimonia
 /// <param name="SortOrder">Display order (ascending).</param>
 /// <param name="IsActive">Whether the testimonial is shown on the storefront.</param>
 /// <param name="PublishedAt">The date the testimonial was given, or <c>null</c> to fall back to the creation time.</param>
-/// <param name="Translations">Per-locale translations keyed by locale code (<c>en</c>, <c>ru</c>, <c>hy</c>).</param>
+/// <param name="Translations">Per-locale translations keyed by locale code (<c>en</c>, <c>ru</c>, <c>hy</c>, <c>de</c>, <c>es</c>).</param>
 public sealed record UpdateTestimonialCommand(
     int Id,
     string Name,

@@ -55,7 +55,7 @@ public sealed class DemoGuardTests(IntegrationTestFactory factory)
         body.RootElement.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace();
     }
 
-    /// <summary>The refusal sentence follows <c>X-Language</c>: Russian and Armenian differ from English and each other.</summary>
+    /// <summary>The refusal sentence follows <c>X-Language</c>: every supported language differs from the others.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_TheSentenceFollowsTheRequestLanguageAsync()
@@ -63,7 +63,7 @@ public sealed class DemoGuardTests(IntegrationTestFactory factory)
         var host = DemoTestHost.Enabled(factory);
         var details = new Dictionary<string, string?>();
 
-        foreach (var language in new[] { "en", "ru", "hy" })
+        foreach (var language in new[] { "en", "ru", "hy", "de", "es" })
         {
             var (client, id) = await AdminAndSettingAsync(host, language);
             var response = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = "nova" });

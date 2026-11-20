@@ -15,7 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class EmailCampaignTemplateSeederTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The languages the frame is written in.</summary>
-    private static readonly string[] Languages = ["en", "ru", "hy"];
+    private static readonly string[] Languages = ["en", "ru", "hy", "de", "es"];
 
     /// <summary>Seeding twice leaves one version of the frame per language.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -58,5 +58,22 @@ public sealed class EmailCampaignTemplateSeederTests(IntegrationTestFactory fact
             html.Should().Contain("<p>Fresh <b>fish</b></p>", template.Language)
                 .And.Contain("href=\"https://portal.example/unsubscribe?token=abc\"", template.Language);
         }
+    }
+
+    /// <summary>The German and Spanish versions carry their own footer wording, not the English one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GermanAndSpanish_AreTranslated_NotACopyOfTheEnglishFrame()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        await EmailCampaignTemplateSeeder.EnsureSeededAsync(context, CancellationToken.None);
+        var templates = await context.EmailTemplates.AsNoTracking()
+            .Where(t => t.Slug == EmailCampaignTemplateSeeder.Slug)
+            .ToDictionaryAsync(t => t.Language, t => t.Body, CancellationToken.None);
+
+        templates.Should().ContainKeys("de", "es");
+        templates["de"].Should().Contain("Abmelden").And.NotBe(templates["en"]);
+        templates["es"].Should().Contain("Cancelar suscripción").And.NotBe(templates["en"]);
     }
 }

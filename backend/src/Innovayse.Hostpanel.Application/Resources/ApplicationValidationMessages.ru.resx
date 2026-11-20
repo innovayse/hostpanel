@@ -1250,7 +1250,7 @@
     <value>Укажите хотя бы один перевод.</value>
   </data>
   <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
-    <value>Перевод можно указать только для поддерживаемого языка: en, ru или hy.</value>
+    <value>Перевод можно указать только для поддерживаемого языка: en, ru, hy, de или es.</value>
   </data>
   <data name="ContentDefaultTranslationRequired" xml:space="preserve">
     <value>Требуется перевод на язык по умолчанию (en).</value>

@@ -42,6 +42,8 @@ public sealed class CreditBalanceTemplatesSeederTests(IntegrationTestFactory fac
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task PrintsTheChangeTheBalanceTheCurrencyAndTheLink(string language)
     {
         var text = await RenderAsync(language);
@@ -57,6 +59,8 @@ public sealed class CreditBalanceTemplatesSeederTests(IntegrationTestFactory fac
     {
         (await RenderAsync("ru")).Should().MatchRegex("[Ѐ-ӿ]");
         (await RenderAsync("hy")).Should().MatchRegex("[԰-֏]");
+        (await RenderAsync("de")).Should().NotBe(await RenderAsync("en"));
+        (await RenderAsync("es")).Should().NotBe(await RenderAsync("en"));
     }
 
     /// <summary>Seeding again leaves an edit the operator made alone and adds nothing twice.</summary>
@@ -71,7 +75,7 @@ public sealed class CreditBalanceTemplatesSeederTests(IntegrationTestFactory fac
 
         await CreditBalanceTemplatesSeeder.EnsureSeededAsync(context, CancellationToken.None);
 
-        before.Should().Be(3);
+        before.Should().Be(5);
         (await context.EmailTemplates.AsNoTracking().CountAsync(t => t.Slug == CreditBalanceTemplatesSeeder.ChangedSlug)).Should().Be(before);
     }
 }

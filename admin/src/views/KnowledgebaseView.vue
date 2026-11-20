@@ -41,8 +41,8 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { enumValueOf } from '@/lib/enumValue'
-import { MessageLanguage } from '@/locales/messages'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations } from '@/lib/storefrontTranslations'
+import { ContentLanguage } from '@/locales/contentLanguage'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { useKnowledgebaseStore } from '@/stores/knowledgebase'
 import type { KbArticle, KbArticleTranslation, KbCategory } from '@/types/kbarticle'
 import { KnowledgebaseTab } from '@/types/supporttab'
@@ -102,7 +102,7 @@ const blankText = (): KbArticleTranslation => ({ title: '', content: '' })
 const articleForm = reactive({ categoryId: 0, isPublished: false, translations: blankTranslations(blankText) })
 
 /** The language whose fields are on screen. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /**
  * Tells whether a language's text is written: it has a title or a body.
@@ -161,7 +161,7 @@ const categoryOptions = computed(() => store.categories.map((category) => ({ val
 
 /** Whether the article form is complete: a category and the English title and body (English is required). */
 const canSaveArticle = computed<boolean>(() => {
-  const english = articleForm.translations[MessageLanguage.En]
+  const english = articleForm.translations[ContentLanguage.En]
   return articleForm.categoryId !== 0 && english.title.trim() !== '' && english.content.trim() !== ''
 })
 
@@ -299,7 +299,7 @@ const resetArticleForm = (): void => {
   articleForm.isPublished = false
   articleForm.translations = blankTranslations(blankText)
   editingArticleId.value = null
-  activeLocale.value = MessageLanguage.En
+  activeLocale.value = ContentLanguage.En
 }
 
 /**
@@ -337,7 +337,7 @@ const startEditArticle = (article: KbArticle): void => {
   articleForm.categoryId = article.categoryId
   articleForm.isPublished = article.isPublished
   articleForm.translations = formsFromTranslations(article.translations, blankText)
-  activeLocale.value = MessageLanguage.En
+  activeLocale.value = ContentLanguage.En
 }
 
 /** Loads the categories; the article list loads itself when its tab appears. */
@@ -502,7 +502,7 @@ onMounted(() => {
               data-testid="knowledgebase-article-category"
             />
           </UiField>
-          <UiLocalizedField v-model="activeLocale" :filled="filled" testid="knowledgebase-article-locale" />
+          <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="knowledgebase-article-locale" />
           <UiText tone="muted" size="sm">{{ t('support.knowledgebase.englishRequired') }}</UiText>
           <UiField :label="t('shared.title')" :error="store.fieldErrors.translations">
             <UiInput

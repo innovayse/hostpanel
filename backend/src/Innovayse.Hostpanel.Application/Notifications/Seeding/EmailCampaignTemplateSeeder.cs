@@ -26,7 +26,7 @@ public static class EmailCampaignTemplateSeeder
     }
 
     /// <summary>Builds the template rows, one per supported language.</summary>
-    /// <returns>The English, Russian and Armenian versions.</returns>
+    /// <returns>The English, Russian, Armenian, German and Spanish versions.</returns>
     private static IReadOnlyList<EmailTemplate> Versions()
     {
         return
@@ -34,6 +34,8 @@ public static class EmailCampaignTemplateSeeder
             Version("en", "You receive this email because you agreed to news and offers from {{ site.name }}.", "Unsubscribe"),
             Version("ru", "Вы получили это письмо, потому что согласились получать новости и предложения {{ site.name }}.", "Отписаться"),
             Version("hy", "Դուք ստանում եք այս նամակը, քանի որ համաձայնել եք ստանալ {{ site.name }}-ի նորություններն ու առաջարկները։", "Ապաբաժանորդագրվել"),
+            Version("de", "Sie erhalten diese E-Mail, weil Sie zugestimmt haben, Neuigkeiten und Angebote von {{ site.name }} zu erhalten.", "Abmelden"),
+            Version("es", "Recibe este correo porque aceptó recibir novedades y ofertas de {{ site.name }}.", "Cancelar suscripción"),
         ];
     }
 

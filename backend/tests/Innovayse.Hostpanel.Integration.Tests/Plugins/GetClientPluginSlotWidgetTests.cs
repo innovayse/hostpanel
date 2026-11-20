@@ -221,6 +221,8 @@ public sealed class GetClientPluginSlotWidgetTests : IClassFixture<AppPluginFixt
     [Theory]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task TheRefusal_IsLocalised(string language)
     {
         var owner = await ClientsTestSeeds.RegisterClientAsync(_fixture.Factory, $"widget-refusal-{language}");

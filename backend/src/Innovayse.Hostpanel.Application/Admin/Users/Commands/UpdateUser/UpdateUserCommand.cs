@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Users.Commands.UpdateUser;
 /// <param name="FirstName">New first name.</param>
 /// <param name="LastName">New last name.</param>
 /// <param name="Email">New email address.</param>
-/// <param name="Language">Preferred language code (en, ru, hy) or null for default.</param>
+/// <param name="Language">Preferred language code (en, ru, hy, de, es) or null for default.</param>
 public sealed record UpdateUserCommand(
     string? Id,
     string FirstName,

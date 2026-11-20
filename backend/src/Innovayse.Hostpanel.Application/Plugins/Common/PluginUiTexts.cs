@@ -32,7 +32,7 @@ public sealed class PluginUiTexts
 
     /// <summary>
     /// Gets the lower-cased two-letter ISO 639-1 code the texts are resolved in, always one of
-    /// <see cref="SupportedLanguages.All"/> (<c>en</c>, <c>ru</c>, <c>hy</c>). It is both the language every label is looked
+    /// <see cref="SupportedLanguages.All"/> (<c>en</c>, <c>ru</c>, <c>hy</c>, <c>de</c>, <c>es</c>). It is both the language every label is looked
     /// up in and the key a cache of localised views is kept under, so the two can never disagree.
     /// </summary>
     public string Language { get; }

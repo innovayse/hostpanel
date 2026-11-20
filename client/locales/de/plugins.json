@@ -28,6 +28,8 @@
     "chatCopy": "Antwort kopieren",
     "chatCopyCode": "Code kopieren",
     "chatCopied": "Kopiert",
+    "openUrlBlocked": "Der Browser hat den neuen Tab blockiert. Erlauben Sie Pop-ups für diese Seite und versuchen Sie es erneut.",
+    "openUrlRefused": "Das Plugin hat eine Adresse zurückgegeben, die nicht geöffnet werden kann.",
     "chatRetry": "Erneut versuchen",
     "chatWriting": "Antwort wird geschrieben"
   }

@@ -5,6 +5,7 @@
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { transfersPage, transfersRefusal, transfersRefusalSentence, waitingTransfers } from './fixtures/bankTransfers'
+import { toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 test('the screen lists the waiting transfers', async ({ page }) => {
@@ -47,7 +48,7 @@ test('confirming asks first, posts, and the transfer leaves the list', async ({ 
   expect(api.callsTo(HttpMethod.Post, '/api/billing/5/bank-transfer/confirm')).toHaveLength(0)
   await page.getByTestId('billing-bank-transfers-confirm-dialog').getByTestId('dialog-confirm').click()
 
-  await expect(page.getByTestId('billing-bank-transfers-feedback')).toContainText('Invoice #5 is paid.')
+  await expect(toastWith(page, 'Invoice #5 is paid.')).toBeVisible()
   await expect(page.getByTestId('billing-bank-transfer-confirm-5')).toHaveCount(0)
   await expect(page.getByTestId('billing-bank-transfer-invoice-6')).toBeVisible()
 })
@@ -80,7 +81,7 @@ test('rejecting needs a note and posts it', async ({ page }) => {
   await page.getByTestId('billing-bank-transfers-note').fill('Nothing arrived')
   await page.getByTestId('billing-bank-transfers-reject-dialog').getByTestId('dialog-confirm').click()
 
-  await expect(page.getByTestId('billing-bank-transfers-feedback')).toContainText('Invoice #6 is open again')
+  await expect(toastWith(page, 'Invoice #6 is open again')).toBeVisible()
   expect(api.callsTo(HttpMethod.Post, '/api/billing/6/bank-transfer/reject')[0]?.body).toEqual({ note: 'Nothing arrived' })
   await expect(page.getByTestId('billing-bank-transfer-reject-6')).toHaveCount(0)
 })

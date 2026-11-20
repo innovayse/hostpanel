@@ -3,7 +3,7 @@
  * fall back on empty or implausible input, `toDateInputValue` cuts the day.
  */
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, toDateInputValue } from '@/lib/format'
+import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatDecimal, formatElapsed, formatMonthDay, formatRelativeFromNow, formatShare, formatSizeBytes, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -128,6 +128,17 @@ describe('formatTime', () => {
   })
 })
 
+describe('formatMonthDay', () => {
+  it('gives the short month and day in the language asked, whatever the time zone', () => {
+    expect(formatMonthDay('2026-03-07', 'en')).toBe('Mar 7')
+    expect(formatMonthDay('2026-03-07', 'ru')).not.toBe('Mar 7')
+  })
+
+  it('returns the input when it is not a day', () => {
+    expect(formatMonthDay('soon', 'en')).toBe('soon')
+  })
+})
+
 describe('formatShare', () => {
   it('writes a share as a percentage', () => {
     expect(formatShare(0.5, 'en')).toBe('50%')
@@ -182,5 +193,31 @@ describe('formatSizeMb', () => {
 
   it('stays in terabytes for a very large size', () => {
     expect(formatSizeMb(2048 * 1024 * 1024, 'en')).toBe('2,048 TB')
+  })
+})
+
+describe('formatSizeBytes', () => {
+  it('keeps bytes below a kilobyte', () => {
+    expect(formatSizeBytes(0, 'en')).toBe('0 B')
+    expect(formatSizeBytes(512, 'en')).toBe('512 B')
+    expect(formatSizeBytes(1023, 'en')).toBe('1,023 B')
+  })
+
+  it('moves up through kilobytes and megabytes with at most one decimal', () => {
+    expect(formatSizeBytes(1024, 'en')).toBe('1 KB')
+    expect(formatSizeBytes(1536, 'en')).toBe('1.5 KB')
+    expect(formatSizeBytes(5 * 1024 * 1024, 'en')).toBe('5 MB')
+  })
+
+  it('stays in gigabytes for a very large file', () => {
+    expect(formatSizeBytes(2048 * 1024 * 1024 * 1024, 'en')).toBe('2,048 GB')
+  })
+})
+
+describe('formatDecimal', () => {
+  it('keeps the fixed count of fraction digits, one by default', () => {
+    expect(formatDecimal(2, 'en')).toBe('2.0')
+    expect(formatDecimal(2.456, 'en')).toBe('2.5')
+    expect(formatDecimal(9.5, 'en', 2)).toBe('9.50')
   })
 })

@@ -1,31 +1,29 @@
 <script setup lang="ts">
 /**
  * Credits reviewer: the credits issued to clients between two dates, optionally for one client and
- * within an amount range. The totals come one per currency; the credits are paged, newest first,
- * each in its own currency.
+ * within an amount range. The totals come one per currency (the summary lines of the schema); the credits are
+ * paged, newest first, each in its own currency.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportField from '@/components/reports/ReportField.vue'
-import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiStepper from '@/components/ui/UiStepper.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
 import { useReportClients } from '@/composables/useReportClients'
 import { REPORT_PAGE_SIZE } from '@/lib/limits'
+import { reportApiPath } from '@/lib/apiPaths'
 import { formatCurrencyCode } from '@/lib/money'
 import { reportPath } from '@/lib/reportsQuery'
-import { currentYearRange } from '@/lib/reportsPeriod'
 import { ReportCellFormat } from '@/types/reportcolumn'
-import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportCredits } from '@/types/reportcredit'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportCreditRow, ReportCredits, ReportCreditTotal } from '@/types/reportcredit'
+import type { ReportTableData } from '@/types/reporttabledata'
+import { DateRangePreset, presetIsoRange } from '@/utils/ui/datePicker'
+import { ReportFieldWidth } from '@/utils/ui/reportField'
+import schema from '@/views/CreditsReviewerView.schema'
 
 const { t } = useI18n()
 
@@ -35,7 +33,7 @@ const { clients } = useReportClients()
 const selectedClient = ref<string | number | null>('')
 
 /** The period to review; the current year at first. */
-const dateRange = ref<[string, string] | null>(currentYearRange())
+const dateRange = ref<[string, string] | null>(presetIsoRange(DateRangePreset.ThisYear))
 
 /** Smallest credit to list; 0 means no lower limit. */
 const minAmount = ref(0)
@@ -47,7 +45,7 @@ const maxAmount = ref(0)
 const page = ref(1)
 
 const { data, load } = useReport<ReportCredits>(() =>
-  reportPath('/reports/credits-reviewer', {
+  reportPath(reportApiPath('credits-reviewer'), {
     clientId: selectedClient.value,
     from: dateRange.value?.[0],
     to: dateRange.value?.[1],
@@ -74,42 +72,42 @@ const goToPage = async (next: number): Promise<void> => {
   await load()
 }
 
-/** Table columns; every amount is written in its own currency. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'id', label: t('reports.creditsReviewer.creditId') },
-  { key: 'clientId', label: t('reports.creditsReviewer.clientId') },
-  { key: 'clientName', label: t('shared.clientName') },
-  { key: 'date', label: t('shared.date'), align: UiAlign.Center, format: ReportCellFormat.Date },
-  { key: 'description', label: t('shared.description') },
-  { key: 'currency', label: t('shared.currency') },
-  { key: 'amount', label: t('shared.amount'), align: UiAlign.Right, format: ReportCellFormat.Money, currencyKey: 'currency' },
-])
+/** The client and the date range take the free width of the filter row. */
+const WIDTHS = { client: ReportFieldWidth.Grow, dateRange: ReportFieldWidth.Grow } as const
+
+/** Totals per currency; none until the report is read. */
+const totals = computed<ReportCreditTotal[]>(() => data.value?.totals ?? [])
+
+/** The credits of the page shown, each amount written in its own currency, with the pager over every page. */
+const table = computed<ReportTableData<ReportCreditRow>>(() => ({
+  rows: data.value?.rows.items ?? [],
+  rowKey: 'id',
+  extras: {
+    date: { format: ReportCellFormat.Date },
+    amount: { format: ReportCellFormat.Money, currencyKey: 'currency' },
+  },
+  pagination: { page: page.value, total: data.value?.rows.totalCount ?? 0, pageSize: REPORT_PAGE_SIZE, testid: 'report-credits-pagination' },
+}))
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.creditsReviewer.creditsReviewer')" :description="t('reports.creditsReviewer.thisReportAllowsYouTo')">
-    <template #filters>
-      <ReportFilterBar @generate="generate">
-        <template #fields>
-          <ReportField :label="t('shared.client')" width="grow">
-            <UiClientSelect v-model="selectedClient" :clients="clients" :placeholder="t('reports.creditsReviewer.allClients')" />
-          </ReportField>
-          <ReportField :label="t('shared.dateRange')" width="grow">
-            <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
-          </ReportField>
-          <ReportField :label="t('reports.creditsReviewer.minAmount')">
-            <UiStepper v-model="minAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
-          </ReportField>
-          <ReportField :label="t('reports.creditsReviewer.maxAmount')">
-            <UiStepper v-model="maxAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
-          </ReportField>
-        </template>
-      </ReportFilterBar>
+  <ReportPage :retry="load" :schema="schema" :widths="WIDTHS" :table="table" @generate="generate" @page="goToPage">
+    <template #field-client>
+      <UiClientSelect v-model="selectedClient" :clients="clients" :placeholder="t('reports.creditsReviewer.allClients')" />
+    </template>
+    <template #field-dateRange>
+      <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
+    </template>
+    <template #field-minAmount>
+      <UiStepper v-model="minAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
+    </template>
+    <template #field-maxAmount>
+      <UiStepper v-model="maxAmount" :step="1" :min="0" :placeholder="t('shared.any')" />
     </template>
 
-    <template v-if="data">
+    <template #summary>
       <UiStack gap="xs" data-testid="report-credits-summary">
-        <UiText v-for="total in data.totals" :key="total.currency" tone="secondary" size="md">
+        <UiText v-for="total in totals" :key="total.currency" tone="secondary" size="md">
           {{
             t('reports.creditsReviewer.currencySummary', {
               currency: total.currency,
@@ -119,19 +117,6 @@ const columns = computed<ReportColumn[]>(() => [
           }}
         </UiText>
       </UiStack>
-      <ReportTable
-        :columns="columns"
-        :rows="data.rows.items"
-        row-key="id"
-        :empty-text="t('reports.creditsReviewer.noCreditsFoundForThis')"
-      />
-      <UiPagination
-        :page="page"
-        :total="data.rows.totalCount"
-        :page-size="REPORT_PAGE_SIZE"
-        testid="report-credits-pagination"
-        @update:page="goToPage"
-      />
     </template>
   </ReportPage>
 </template>

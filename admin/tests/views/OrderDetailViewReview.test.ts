@@ -10,6 +10,7 @@ import { OrderStatus } from '@/types/order'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { callsOf, json, problem } from '../helpers/fetch'
+import { useToastStore } from '@/stores/toast'
 
 /** An order held for review, with its fraud score and reasons. */
 const held = {
@@ -86,7 +87,7 @@ describe('OrderDetailView fraud review', () => {
     await flushPromises()
 
     expect(requestsOf(mock)).toContain('POST /api/orders/8/approve-review')
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('Order approved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toContain('Order approved.')
     expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Pending')
     expect(wrapper.find('[data-testid="order-fraud-approve"]').exists()).toBe(false)
   })
@@ -114,7 +115,7 @@ describe('OrderDetailView fraud review', () => {
     expect(requestsOf(mock)).toContain('POST /api/orders/8/reject-review')
     const post = callsOf(mock).find((call) => call.url.endsWith('/reject-review'))
     expect(post?.body).toEqual({ reason: 'Stolen card' })
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('Order rejected.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toContain('Order rejected.')
     expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Fraud')
     expect(wrapper.find('[data-testid="order-reject-dialog"]').exists()).toBe(false)
   })

@@ -6,42 +6,64 @@
  * load offers a retry; each action's outcome shows under the header; deleting is confirmed in a
  * danger prompt.
  */
-import { computed, onMounted, provide, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import QuoteItemsEditor from '@/components/billing/QuoteItemsEditor.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { Icon } from '@/lib/icons'
 import { quoteStageTone, statusLabel } from '@/lib/tones'
 import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
+import { QUOTE_ITEMS_PART } from '@/lib/quoteSchemaParts'
 import { formatDate } from '@/lib/format'
 import { useClientCurrency } from '@/composables/useClientCurrency'
 import { useQuotesStore } from '@/stores/quotes'
 import { QuoteStage } from '@/types/quote'
 import { blankQuoteLine, quoteLineFrom, quoteLinesPayload } from '@/lib/quoteLines'
 import type { QuoteLineDraft } from '@/types/quote'
-import { invoicePath, quotePath } from '@/lib/routes'
-import { UI_FIELD_LOADING } from '@/utils/ui/injection'
+import { AppRoute, invoicePath, quotePath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTone } from '@/utils/ui/tone'
+import schema, { QUOTE_GENERAL_PART, QUOTE_NOTES_PART } from '@/views/QuoteDetailView.schema'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Opens the convert to invoice confirmation. */
+const openConvert = (): void => {
+  convertOpen.value = true
+}
+
+/** Opens the delete confirmation. */
+const openDelete = (): void => {
+  deleteOpen.value = true
+}
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('shared.save'), icon: actionIcons[UiActionKind.Save], variant: UiButtonVariant.Primary, testid: 'billing-quote-save', loading: store.loading, onSelect: save },
+  ...(isNew.value
+    ? []
+    : [
+      { label: t('billing.quoteDetail.duplicate'), icon: actionIcons[UiActionKind.Copy], variant: UiButtonVariant.Secondary, testid: 'billing-quote-duplicate', disabled: store.loading, onSelect: duplicate },
+      { label: t('billing.quoteDetail.convertToInvoice'), icon: actionIcons[UiActionKind.Next], variant: UiButtonVariant.Secondary, testid: 'billing-quote-convert', disabled: store.loading, onSelect: openConvert },
+      { label: t('shared.delete'), icon: actionIcons[UiActionKind.Delete], variant: UiButtonVariant.Danger, testid: 'billing-quote-delete', disabled: store.loading, onSelect: openDelete },
+    ]),
+])
 
 const route = useRoute()
 const router = useRouter()
@@ -53,11 +75,8 @@ const isNew = computed<boolean>(() => route.params.id === undefined)
 /** Id of the quote from the route; 0 when creating. */
 const quoteId = computed<number>(() => (isNew.value ? 0 : Number(route.params.id)))
 
-/** True while a stored quote is read for the first time: the page keeps its real sections and draws them as placeholders. */
+/** True while a stored quote is read for the first time: the page draws the cards of its schema as placeholders. */
 const initialLoading = computed<boolean>(() => store.loading && store.currentQuote === null && !isNew.value)
-
-// Every field of the form below stays a placeholder until the quote has arrived.
-provide(UI_FIELD_LOADING, initialLoading)
 
 /** Client the new quote is for, from the query; 0 when absent. */
 const queryClientId = computed<number>(() => Number(route.query.clientId ?? 0))
@@ -202,11 +221,6 @@ const dismissDelete = (): void => {
   }
 }
 
-/** Goes back to the previous screen. */
-const goBack = (): void => {
-  router.back()
-}
-
 watch(() => store.currentQuote, populate)
 watch(quoteId, (id) => {
   if (id > 0) {
@@ -232,34 +246,12 @@ onMounted(() => {
     />
 
     <template v-else>
-      <UiPageHeader :title="isNew ? t('billing.quoteDetail.newQuote') : t('billing.quoteDetail.quoteNumber', { id: quoteId })">
-        <UiSkeletonBar v-if="initialLoading" class="h-5 w-20 rounded-full" aria-hidden="true" data-testid="billing-quote-loading" />
-        <UiBadge v-else-if="!isNew" :tone="quoteStageTone(stage)" data-testid="billing-quote-stage">{{ statusLabel(QUOTE_STAGE_OPTIONS, stage) }}</UiBadge>
-        <template #actions>
-          <UiButton variant="ghost" data-testid="billing-quote-back" @click="goBack">
-            <UiIcon :markup="Icon.Back" size="sm" />
-            {{ t('shared.back') }}
-          </UiButton>
-          <UiButton
-            variant="primary"
-            :loading="store.loading"
-            data-testid="billing-quote-save"
-            @click="save"
-          >
-            {{ t('shared.saveChanges') }}
-          </UiButton>
-          <template v-if="!isNew">
-            <UiButton variant="secondary" :disabled="store.loading" data-testid="billing-quote-duplicate" @click="duplicate">
-              {{ t('billing.quoteDetail.duplicate') }}
-            </UiButton>
-            <UiButton variant="secondary" :disabled="store.loading" data-testid="billing-quote-convert" @click="convertOpen = true">
-              {{ t('billing.quoteDetail.convertToInvoice') }}
-            </UiButton>
-            <UiButton variant="danger" :disabled="store.loading" data-testid="billing-quote-delete" @click="deleteOpen = true">
-              {{ t('shared.delete') }}
-            </UiButton>
-          </template>
-        </template>
+      <UiPageHeader :actions="headerActions"
+        v-bind="schemaHeader(schema, t, { title: isNew ? t('billing.quoteDetail.newQuote') : t('billing.quoteDetail.quoteNumber', { id: quoteId }) })"
+        :back-to="AppRoute.BillingQuotes"
+        back-testid="billing-quote-back"
+      >
+        <UiBadge v-if="!isNew && !initialLoading" :tone="quoteStageTone(stage)" data-testid="billing-quote-stage">{{ statusLabel(QUOTE_STAGE_OPTIONS, stage) }}</UiBadge>
       </UiPageHeader>
 
       <UiAlert v-if="store.successMessage" variant="success" data-testid="billing-quote-success">
@@ -269,11 +261,9 @@ onMounted(() => {
         {{ errorText }}
       </UiAlert>
 
-      <UiCard padding="md">
-        <UiStack>
-          <UiHeading :level="3" variant="card">
-            {{ t('billing.quoteDetail.generalInformation') }}
-          </UiHeading>
+      <!-- The three blocks of the schema: placeholders while a stored quote is read, their bodies after -->
+      <UiDetailCards :columns="QUOTE_GENERAL_PART.columns" :loading="initialLoading">
+        <template #card-general>
           <UiGrid :columns="2">
             <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">
               <template #default="{ id, invalid }">
@@ -299,16 +289,17 @@ onMounted(() => {
               <UiDatePicker v-model="validUntil" :placeholder="t('shared.selectDate')" />
             </UiField>
           </UiGrid>
-        </UiStack>
-      </UiCard>
+        </template>
+      </UiDetailCards>
 
-      <QuoteItemsEditor v-model="items" :currency="quoteCurrency" :loading="initialLoading" />
+      <UiDetailCards :columns="QUOTE_ITEMS_PART.columns" :loading="initialLoading">
+        <template #card-items>
+          <QuoteItemsEditor v-model="items" :currency="quoteCurrency" />
+        </template>
+      </UiDetailCards>
 
-      <UiCard padding="md">
-        <UiStack>
-          <UiHeading :level="3" variant="card">
-            {{ t('shared.notes') }}
-          </UiHeading>
+      <UiDetailCards :columns="QUOTE_NOTES_PART.columns" :loading="initialLoading">
+        <template #card-notes>
           <UiField :label="t('billing.quoteDetail.proposalText')">
             <UiTextarea
               v-model="proposalText"
@@ -333,8 +324,8 @@ onMounted(() => {
               data-testid="billing-quote-admin-notes"
             />
           </UiField>
-        </UiStack>
-      </UiCard>
+        </template>
+      </UiDetailCards>
     </template>
 
     <UiDialog

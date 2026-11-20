@@ -6,6 +6,7 @@
  */
 import { computed, onUnmounted, ref, useAttrs } from 'vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import { Icon } from '@/lib/icons'
 
 defineOptions({ inheritAttrs: false })
 
@@ -79,6 +80,7 @@ onUnmounted(cancelReset)
       type="button"
       variant="secondary"
       size="sm"
+      :icon="copied ? Icon.Check : Icon.Copy"
       :data-testid="copyTestId"
       @click="copy"
     >

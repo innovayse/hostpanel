@@ -22,13 +22,15 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
+import schema from '@/views/ClientContactsView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
+import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -212,8 +214,8 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
    */
   const onDelete = (): void => handleDeleteContact(contact.id)
   return [
-    { label: t('shared.edit'), testid: `client-contacts-edit-${contact.id}`, onSelect: onEdit },
-    { label: t('shared.delete'), testid: `client-contacts-delete-${contact.id}`, onSelect: onDelete, danger: true },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `client-contacts-edit-${contact.id}`, onSelect: onEdit },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `client-contacts-delete-${contact.id}`, onSelect: onDelete, danger: true },
   ]
 }
 </script>
@@ -231,7 +233,7 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
       {{ t('clients.clientContacts.contactsLength', { length: contacts.length }) }}
 
       <template #actions>
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           :variant="UiButtonVariant.Primary"
           data-testid="client-contacts-add"
           @click="openCreateModal"
@@ -243,15 +245,7 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
 
     <UiCard v-if="contacts.length > 0" class="overflow-x-auto">
       <UiTable :density="UiTableDensity.Comfortable" data-testid="client-contacts-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.phone') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="contact in contacts" :key="contact.id" hoverable>
             <UiTableCell>{{ contact.firstName }} {{ contact.lastName }}</UiTableCell>
@@ -271,7 +265,7 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
     <UiCard v-else>
       <UiEmptyState :title="t('clients.clientContacts.noContactsAddedYet')">
         <template #actions>
-          <UiButton
+          <UiButton :action="UiActionKind.Add"
             :variant="UiButtonVariant.Primary"
             data-testid="client-contacts-add-empty"
             @click="openCreateModal"

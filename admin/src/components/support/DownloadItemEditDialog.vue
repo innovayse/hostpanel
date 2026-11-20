@@ -19,6 +19,7 @@ import type { DownloadCategory } from '@/types/downloadcategory'
 import { DownloadType } from '@/types/downloaditem'
 import type { DownloadItem, DownloadItemPayload } from '@/types/downloaditem'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for DownloadItemEditDialog. */
 const props = defineProps<{
@@ -170,10 +171,10 @@ watch(
       </UiStack>
     </UiStack>
     <template #footer>
-      <UiButton :variant="UiButtonVariant.Secondary" data-testid="downloads-edit-download-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="downloads-edit-download-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         :variant="UiButtonVariant.Primary"
         :loading="saving"
         :disabled="!title.trim()"

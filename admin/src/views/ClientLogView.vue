@@ -27,9 +27,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ClientLogView.schema'
 import UiText from '@/components/ui/UiText.vue'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
@@ -124,19 +124,13 @@ loadOnChange(load)
 
     <UiCard v-else class="overflow-x-auto">
       <UiTable
+        :empty-text="t('shared.noRecordsFound')"
         :density="UiTableDensity.Comfortable"
         :loading="initialLoading"
         :empty="!initialLoading && store.logs.length === 0"
         data-testid="client-log-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.clientLog.logEntry') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.clientLog.user') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="log in store.logs" :key="log.id" hoverable>
             <UiTableCell muted>{{ formatDateTimeCompact(log.createdAt) }}</UiTableCell>
@@ -150,9 +144,6 @@ loadOnChange(load)
             <UiTableCell muted>{{ log.ipAddress ?? EMPTY_VALUE }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('shared.noRecordsFound') }}
-        </template>
       </UiTable>
       <UiStack
         v-if="initialLoading || store.totalCount > 0"

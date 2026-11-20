@@ -5,13 +5,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import VatRatesView from '@/views/VatRatesView.vue'
+import schema from '@/views/VatRatesView.schema'
 import UiCountrySelect from '@/components/ui/UiCountrySelect.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
+import { useToastStore } from '@/stores/toast'
 import { VatRateKind } from '@/types/vatrate'
 import type { VatRateDto } from '@/types/vatrate'
 import { json, problem } from '../helpers/fetch'
+import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 
 /** The address the screen is registered under. */
 const PATH = '/settings/vat-rates'
@@ -72,6 +76,13 @@ afterEach(() => {
 })
 
 describe('VatRatesView', () => {
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/admin/vat-rates?': () => json(page([germany])) })
+    const { wrapper } = await mountListAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('lists the rates with country, kind, rate and the day they apply from', async () => {
     stubRoutes({ 'GET /api/admin/vat-rates?': () => json(page([germany, reducedGermany])) })
     const { wrapper } = await mountListAt()
@@ -86,6 +97,7 @@ describe('VatRatesView', () => {
     expect(second).toContain('Reduced')
     expect(second).toContain('7%')
     expect(wrapper.text()).toContain('VAT rates: 2')
+    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {
@@ -106,6 +118,25 @@ describe('VatRatesView', () => {
 
     expect(listUrls(mock)[0]).toBe('/api/admin/vat-rates?page=2&pageSize=20&search=de')
     expect((wrapper.get('[data-testid="vat-rates-search"]').element as HTMLInputElement).value).toBe('de')
+  })
+
+  it('puts the chosen filters in the address and sends them with the list request', async () => {
+    const mock = stubRoutes({ 'GET /api/admin/vat-rates?': () => json(page([germany])) })
+    const { wrapper, router } = await mountListAt()
+
+    await applyListFilter(wrapper, { 'vat-rates-filter-kind': 'Reduced', 'vat-rates-filter-status': 'Superseded' })
+
+    expect(router.currentRoute.value.query).toEqual({ kind: 'Reduced', status: 'Superseded' })
+    expect(listUrls(mock).at(-1)).toBe('/api/admin/vat-rates?page=1&pageSize=20&kind=Reduced&status=Superseded')
+    expect(wrapper.text()).toContain('Superseded')
+  })
+
+  it('restores the filters from the address', async () => {
+    const mock = stubRoutes({ 'GET /api/admin/vat-rates?': () => json(page([germany])) })
+
+    await mountListAt(`${PATH}?kind=Standard&status=Active`)
+
+    expect(listUrls(mock)[0]).toBe('/api/admin/vat-rates?page=1&pageSize=20&kind=Standard&status=Active')
   })
 
   it('keeps the chosen page in the address', async () => {
@@ -219,8 +250,9 @@ describe('VatRatesView', () => {
 
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="vat-rates-result"]').text()).toBe('The VAT rate was deleted.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['The VAT rate was deleted.'])
     })
+    expect(wrapper.find('[data-testid="vat-rates-result"]').exists()).toBe(false)
     expect(requestsOf(mock)).toContain('DELETE /api/admin/vat-rates/1')
     expect(listUrls(mock).length).toBe(before + 1)
   })

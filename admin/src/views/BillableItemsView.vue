@@ -13,7 +13,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BillableItemTypeField from '@/components/billing/BillableItemTypeField.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiBulkBar from '@/components/ui/UiBulkBar.vue'
@@ -22,20 +21,20 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/BillableItemsView.schema'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -46,11 +45,21 @@ import { statusLabel } from '@/lib/tones'
 import { BillableItemInvoiced, BillableItemType } from '@/types/billableitem'
 import type { BillableItemListFilters } from '@/types/billableitem'
 import { AppRoute } from '@/lib/routes'
+import { Icon } from '@/lib/icons'
+import type { UiBulkAction } from '@/utils/ui/bulkBar'
 import { formatPlainAmount } from '@/lib/money'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('shared.addItem'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'billing-billable-items-add', to: AppRoute.BillingBillableItemsAdd },
+])
 
 const store = useBillableItemsStore()
 const { clients, load: loadClients } = useClientOptions()
@@ -113,6 +122,11 @@ const chips = chipsOf(() => [
 
 /** True while the bulk-delete confirmation is open. */
 const deleteOpen = ref(false)
+
+/** The one bulk action of the list: delete the selected items (after confirmation). */
+const bulkActions = computed<UiBulkAction[]>(() => [
+  { key: 'delete', label: t('shared.delete'), title: t('shared.delete'), icon: Icon.Trash, variant: UiButtonVariant.Danger, testid: 'billing-billable-items-delete' },
+])
 
 /** True while the bulk delete runs. */
 const deleting = ref(false)
@@ -196,12 +210,7 @@ onMounted(() => {
 
 <template>
   <UiStack data-testid="billing-billable-items-view">
-    <UiPageHeader :title="t('billing.billableItems.billableItems')" :subtitle="t('billing.billableItems.manageUninvoicedAndRecurringCharges')">
-      <template #actions>
-        <UiLink :to="AppRoute.BillingBillableItemsAdd" variant="primary" data-testid="billing-billable-items-add">
-          {{ t('shared.addItem') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiListToolbar
@@ -261,16 +270,7 @@ onMounted(() => {
         select-all-testid="billing-billable-items-select-all"
         data-testid="billing-billable-items-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.billableItems.invoiced') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="item in store.items"
@@ -285,9 +285,13 @@ onMounted(() => {
             <UiTableCell numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
             <UiTableCell muted>{{ typeLabel(item.type) }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="item.isInvoiced ? 'success' : 'danger'">
-                {{ item.isInvoiced ? t('shared.yes') : t('shared.no') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="item.isInvoiced"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.yes')"
+                :off-label="t('shared.no')"
+              />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
@@ -315,11 +319,13 @@ onMounted(() => {
       @update:page="setPage"
     />
 
-    <UiBulkBar :count="selection.count.value" data-testid="billing-billable-items-bulk" @clear="selection.clear">
-      <UiButton variant="danger" size="sm" data-testid="billing-billable-items-delete" @click="deleteOpen = true">
-        {{ t('shared.delete') }}
-      </UiButton>
-    </UiBulkBar>
+    <UiBulkBar
+      :count="selection.count.value"
+      :actions="bulkActions"
+      data-testid="billing-billable-items-bulk"
+      @clear="selection.clear"
+      @action="deleteOpen = true"
+    />
 
     <UiDialog
       variant="confirm"

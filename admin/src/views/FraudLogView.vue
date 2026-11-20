@@ -24,14 +24,15 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/FraudLogView.schema'
 import UiText from '@/components/ui/UiText.vue'
 import { FRAUD_CHECK_KIND_OPTIONS, FRAUD_DECISION_OPTIONS, FRAUD_REASON_OPTIONS } from '@/lib/constants'
 import { formatDateTime } from '@/lib/format'
 import { clientPath, orderPath } from '@/lib/routes'
 import { fraudDecisionTone, statusLabel } from '@/lib/tones'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useListQuery } from '@/composables/useListQuery'
 import { useFraudLogStore } from '@/stores/fraudLog'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
@@ -115,7 +116,7 @@ const initialLoading = computed<boolean>(() => store.loading && store.entries.le
 
 <template>
   <UiStack data-testid="fraud-log-view">
-    <UiPageHeader :title="t('fraud.log.title')" :subtitle="t('fraud.log.subtitle')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiListToolbar
       v-model:search="search"
@@ -177,25 +178,14 @@ const initialLoading = computed<boolean>(() => store.loading && store.entries.le
       {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
     </UiResultCount>
 
-    <UiCard class="overflow-hidden">
+    <UiCard clip>
       <UiTable
+        :empty-text="narrowed ? t('fraud.log.noMatches') : t('shared.noRecordsFound')"
         :loading="initialLoading"
         :empty="!store.loading && store.entries.length === 0"
         data-testid="fraud-log-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('fraud.log.kind') }}</UiTableHeader>
-            <UiTableHeader>{{ t('fraud.log.decision') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('fraud.log.score') }}</UiTableHeader>
-            <UiTableHeader>{{ t('fraud.log.reasons') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('fraud.log.order') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable :data-testid="`fraud-log-row-${entry.id}`">
             <UiTableCell muted>{{ formatDateTime(entry.createdAt) }}</UiTableCell>
@@ -226,9 +216,6 @@ const initialLoading = computed<boolean>(() => store.loading && store.entries.le
             <UiTableCell>{{ entry.email ?? t('shared.notAvailable') }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ narrowed ? t('fraud.log.noMatches') : t('shared.noRecordsFound') }}
-        </template>
       </UiTable>
     </UiCard>
 

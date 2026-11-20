@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiButton from '@/components/ui/UiButton.vue'
+import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 
@@ -95,5 +97,38 @@ describe('UiButton', () => {
     await wrapper.trigger('click')
 
     expect(wrapper.emitted('click')).toBeUndefined()
+  })
+
+  it('draws the icon of its action kind before the label', () => {
+    const wrapper = mount(UiButton, { props: { action: UiActionKind.Save }, slots: { default: 'Save' } })
+
+    expect(wrapper.find('svg').exists()).toBe(true)
+    expect(wrapper.element.firstElementChild?.tagName.toLowerCase()).toBe('svg')
+  })
+
+  it('draws its own icon, and that wins over the kind', () => {
+    const own = mount(UiButton, { props: { icon: Icon.Mail } })
+    const kind = mount(UiButton, { props: { action: UiActionKind.Save } })
+    const both = mount(UiButton, { props: { icon: Icon.Mail, action: UiActionKind.Save } })
+
+    expect(both.html()).toBe(own.html())
+    expect(both.html()).not.toBe(kind.html())
+  })
+
+  it('draws no icon when it names neither, and the spinner replaces the icon while loading', () => {
+    expect(mount(UiButton).find('svg').exists()).toBe(false)
+
+    const loading = mount(UiButton, { props: { action: UiActionKind.Save, loading: true } })
+
+    expect(loading.find('[data-testid="ui-button-spinner"]').exists()).toBe(true)
+    expect(loading.find('svg').exists()).toBe(false)
+  })
+
+  it('draws a button-like look as a pill when asked', () => {
+    const pill = mount(UiButton, { props: { variant: 'ghost', size: 'sm', pill: true } })
+    const plain = mount(UiButton, { props: { variant: 'ghost', size: 'sm' } })
+
+    expect(pill.classes()).toContain('rounded-pill')
+    expect(plain.classes()).not.toContain('rounded-pill')
   })
 })

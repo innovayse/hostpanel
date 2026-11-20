@@ -7,10 +7,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import OrderDetailView from '@/views/OrderDetailView.vue'
+import schema from '@/views/OrderDetailView.schema'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { BillingCycle } from '@/types/service'
+import { useToastStore } from '@/stores/toast'
 
 /** A pending order with one line and a linked invoice. */
 const pendingOrder = {
@@ -100,22 +102,16 @@ describe('OrderDetailView', () => {
     vi.unstubAllGlobals()
   })
 
-  it('draws the real page structure while the order loads', async () => {
+  it('draws the cards of its schema as placeholders, without tabs, while the order loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountDetail()
 
-    expect(wrapper.find('[data-testid="order-header-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="order-tab-items"]').exists()).toBe(true)
+    const cards = schema.columns.flat()
+    expect(wrapper.findAll('[data-testid^="ui-detail-card-"]')).toHaveLength(cards.length)
+    expect(wrapper.findAll('[data-testid="ui-detail-row"]')).toHaveLength(cards.reduce((sum, card) => sum + (card.rows?.length ?? 0), 0))
+    expect(wrapper.find('[data-testid="ui-page-header-skeleton"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Order Info')
-    expect(wrapper.findAll('[data-testid="order-fact-loading"]').length).toBeGreaterThan(0)
-  })
-
-  it('keeps the notes field read only until the order has arrived', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
-    const { wrapper } = await mountDetail()
-    await openTab(wrapper, 'notes')
-
-    expect(wrapper.get('[data-testid="order-notes-input"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-testid="order-tab-items"]').exists()).toBe(false)
   })
 
   it('renders the order number, status, invoice link, items and notes', async () => {
@@ -170,7 +166,7 @@ describe('OrderDetailView', () => {
     await wrapper.get('[data-testid="order-accept"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('Order accepted.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Order accepted.')
   })
 
   it('names the lines an accepted order could not fulfil', async () => {
@@ -242,7 +238,7 @@ describe('OrderDetailView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([url]) => (url as string).endsWith('/api/orders/8/cancel'))).toBe(true)
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('Order cancelled.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Order cancelled.')
   })
 
   it('shows the API sentence when the cancel is refused', async () => {
@@ -343,7 +339,7 @@ describe('OrderDetailView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([url]) => (url as string).endsWith('/api/orders/8/items/2/retry'))).toBe(true)
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('Line retried and fulfilled.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Line retried and fulfilled.')
     expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Active')
     expect(wrapper.find('[data-testid="order-item-retry-2"]').exists()).toBe(false)
   })
@@ -396,5 +392,14 @@ describe('OrderDetailView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="order-header"]').text()).toContain('ORD-0008')
+  })
+
+  it('returns to the orders list with the back pill', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountDetail()
+    const back = wrapper.get('[data-testid="order-back"]')
+
+    expect(back.attributes('href')).toBe('/orders')
+    expect(back.text()).toBe('Orders')
   })
 })

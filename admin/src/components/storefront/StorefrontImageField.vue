@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n'
 import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiImage from '@/components/ui/UiImage.vue'
+import UiImagePreview from '@/components/ui/UiImagePreview.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiUploadZone from '@/components/ui/UiUploadZone.vue'
@@ -26,14 +26,14 @@ const { t } = useI18n()
 const props = defineProps<{
   /** Address of the current image; empty when none (two-way bound with `v-model`). */
   modelValue: string
-  /** Label of the field (already translated). */
-  label: string
+  /** Caption above the field (already translated); omit when a surrounding schema field already captions it. */
+  label?: string
+  /** Alternative text of the preview (already translated). */
+  alt: string
   /** Prefix of the test ids: `<prefix>-preview`, `-remove`, `-file`, `-url`. */
   testid: string
   /** Stores the file and answers its URL, or null when refused. */
   upload: (file: File) => Promise<string | null>
-  /** Sentence for a refused field value (a validation message), undefined when none. */
-  error?: string | null
   /** The store's upload sentence; shown only if this field's own last upload failed. */
   uploadError?: string | null
 }>()
@@ -49,8 +49,8 @@ const uploading = ref(false)
 /** True when this field's last upload was refused. */
 const failed = ref(false)
 
-/** The sentence under the field: the value's own message, else this field's upload failure. */
-const shownError = computed<string | undefined>(() => props.error ?? (failed.value ? props.uploadError ?? undefined : undefined))
+/** The sentence under the field: this field's upload failure, when its last upload was the one refused. */
+const shownError = computed<string | undefined>(() => (failed.value ? props.uploadError ?? undefined : undefined))
 
 /**
  * Uploads the picked file and takes over the stored address.
@@ -71,7 +71,7 @@ const onSelect = async (file: File): Promise<void> => {
 
 <template>
   <UiField :label="label" :error="shownError">
-    <UiStack direction="row" align="start" wrap>
+    <UiStack direction="row" align="start" wrap class="max-sm:flex-col max-sm:items-stretch">
       <UiStack
         v-if="modelValue"
         align="center"
@@ -79,12 +79,11 @@ const onSelect = async (file: File): Promise<void> => {
         gap="none"
         class="group relative h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-border"
       >
-        <UiImage
+        <UiImagePreview
           :src="storefrontAssetUrl(modelValue)"
-          :alt="label"
-          fit="cover"
+          :alt="alt"
           class="h-full w-full"
-          :data-testid="`${testid}-preview`"
+          :image-testid="`${testid}-preview`"
         />
         <UiIconButton
           :label="t('storefront.form.removeImage')"
@@ -97,7 +96,7 @@ const onSelect = async (file: File): Promise<void> => {
         </UiIconButton>
       </UiStack>
 
-      <UiStack gap="sm" class="min-w-56 flex-1">
+      <UiStack gap="sm" class="flex-1 sm:min-w-56">
         <UiUploadZone
           :accept="ILLUSTRATION_ACCEPT"
           :uploading="uploading"

@@ -72,6 +72,23 @@ export const splitIsoDate = (iso: string): { year: number; month: number; day: n
 }
 
 /**
+ * Formats a `YYYY-MM-DD` day as a short month and day in the given language, for a chart axis.
+ *
+ * The day is read as a calendar day (UTC), so the viewer's time zone never moves it.
+ *
+ * @param iso - Day in `YYYY-MM-DD` form.
+ * @param locale - Language of the month name, such as `en`.
+ * @returns The month and day, such as `Mar 7`; the input when it is not a day.
+ */
+export const formatMonthDay = (iso: string, locale: string): string => {
+  const { year, month, day } = splitIsoDate(iso)
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    return iso
+  }
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' })
+}
+
+/**
  * Renders a `Date` as its UTC `YYYY-MM-DD` day, the form every date `<input>` and every
  * date-keyed lookup in the admin uses.
  *
@@ -244,11 +261,43 @@ export const formatRelativeFromNow = (iso: string, locale: string, now: number =
 export const formatShare = (share: number, locale: string): string =>
   new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(share)
 
-/** Megabytes in a gigabyte and gigabytes in a terabyte, for {@link formatSizeMb}. */
+/**
+ * Writes a decimal number with a fixed count of fraction digits in the locale's own separators.
+ *
+ * @param value - The number.
+ * @param locale - Locale code the number is written in.
+ * @param fractionDigits - Digits kept after the separator; one when omitted.
+ * @returns The number text, such as "2.5" or "2,5".
+ */
+export const formatDecimal = (value: number, locale: string, fractionDigits = 1): string =>
+  new Intl.NumberFormat(locale, { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }).format(value)
+
+/** Units in the next unit up (a gigabyte is 1024 megabytes), for {@link formatSize}. */
 const SIZE_STEP = 1024
 
-/** Unit names from megabytes upward, for {@link formatSizeMb}. */
-const SIZE_UNITS = ['MB', 'GB', 'TB'] as const
+/** Unit names of a size given in megabytes, smallest first, for {@link formatSizeMb}. */
+const SIZE_UNITS_FROM_MB = ['MB', 'GB', 'TB'] as const
+
+/** Unit names of a size given in bytes, smallest first, for {@link formatSizeBytes}. */
+const SIZE_UNITS_FROM_BYTES = ['B', 'KB', 'MB', 'GB'] as const
+
+/**
+ * Writes a size in the largest of the given units that keeps it at or above 1, with at most one decimal.
+ *
+ * @param amount - The size in the first of the units.
+ * @param units - Unit names, smallest first; each is {@link SIZE_STEP} times the one before it.
+ * @param locale - Locale code the number is written in.
+ * @returns The size with its unit.
+ */
+const formatSize = (amount: number, units: readonly string[], locale: string): string => {
+  let value = amount
+  let unit = 0
+  while (value >= SIZE_STEP && unit < units.length - 1) {
+    value /= SIZE_STEP
+    unit++
+  }
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)} ${units[unit]}`
+}
 
 /**
  * Writes a size given in megabytes in the largest unit that keeps it at or above 1, with at most
@@ -258,12 +307,14 @@ const SIZE_UNITS = ['MB', 'GB', 'TB'] as const
  * @param locale - Locale code the number is written in.
  * @returns The size with its unit.
  */
-export const formatSizeMb = (megabytes: number, locale: string): string => {
-  let value = megabytes
-  let unit = 0
-  while (value >= SIZE_STEP && unit < SIZE_UNITS.length - 1) {
-    value /= SIZE_STEP
-    unit++
-  }
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)} ${SIZE_UNITS[unit]}`
-}
+export const formatSizeMb = (megabytes: number, locale: string): string => formatSize(megabytes, SIZE_UNITS_FROM_MB, locale)
+
+/**
+ * Writes a size given in bytes in the largest unit that keeps it at or above 1, with at most one
+ * decimal ("512" becomes "512 B", "1536" becomes "1.5 KB", "5242880" becomes "5 MB").
+ *
+ * @param bytes - The size in bytes; a file's length is in this unit.
+ * @param locale - Locale code the number is written in.
+ * @returns The size with its unit.
+ */
+export const formatSizeBytes = (bytes: number, locale: string): string => formatSize(bytes, SIZE_UNITS_FROM_BYTES, locale)

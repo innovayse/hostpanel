@@ -10,6 +10,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import type { Ref } from 'vue'
 import type { FilterRow } from '@/components/ui/UiAdvancedFilters.vue'
 import { buildQueryParams, filterPage } from '@/lib/reportsQuery'
+import { presetIsoRange } from '@/utils/ui/datePicker'
 import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { PaginatedList } from '@/types/paginatedlist'
@@ -42,13 +43,16 @@ export const useQueryReport = <T extends { id: number }>(
   /** Complete advanced-filter rows. */
   const filters = ref<FilterRow[]>([])
 
-  /** Chosen date range per range key; nothing chosen at first. */
+  /** Chosen date range per range key; the report's default preset at first, nothing for a range without one. */
   const ranges = ref<Record<string, ReportRangeValue>>(
-    Object.fromEntries(view.ranges.value.map(range => [range.key, null])),
+    Object.fromEntries(view.ranges.value.map((range) => {
+      const preset = config.defaultRanges[range.key]
+      return [range.key, preset === undefined ? null : presetIsoRange(preset)]
+    })),
   )
 
-  /** Keys of the columns the operator wants to see; none until chosen. */
-  const visibleKeys = ref<Set<string>>(new Set())
+  /** Keys of the columns the operator wants to see; the report's default ones until chosen. */
+  const visibleKeys = ref<Set<string>>(new Set(config.defaultColumns))
 
   /** Columns to draw, in the report's own order. */
   const activeColumns = computed<ReportColumn[]>(() => view.columns.value.filter(column => visibleKeys.value.has(column.key)))

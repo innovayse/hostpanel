@@ -6,7 +6,7 @@
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { appliedNote, noteDetail, notesPage, overCreditRefusal, overCreditSentence, paidInvoiceDetail, voidedNote } from './fixtures/creditNotes'
-import { fieldOf } from './support/locators'
+import { fieldOf, toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 test('issuing a note from a paid invoice totals the lines at the invoice rate, posts them and lists the note', async ({ page }) => {
@@ -39,7 +39,7 @@ test('issuing a note from a paid invoice totals the lines at the invoice rate, p
   await fieldOf(page, 'billing-credit-note-reason').fill('Service was down for two days')
   await page.getByTestId('billing-credit-note-submit').click()
 
-  await expect(page.getByTestId('billing-invoice-credit-notes-feedback')).toContainText('issued')
+  await expect(toastWith(page, 'issued')).toBeVisible()
   await expect(page.getByTestId('billing-invoice-credit-note-3')).toContainText('CN-0003')
   expect(api.callsTo(HttpMethod.Post, '/api/billing/1/credit-notes')[0]?.body).toEqual({
     items: [{ description: 'Outage', unitPrice: 50, quantity: 1 }],
@@ -152,7 +152,7 @@ test('voiding a note asks for a reason, posts it and shows the note voided', asy
   await fieldOf(page, 'billing-credit-note-void-reason').fill('Issued to the wrong invoice')
   await page.getByTestId('dialog-confirm').click()
 
-  await expect(page.getByTestId('billing-credit-note-feedback')).toContainText('voided')
+  await expect(toastWith(page, 'voided')).toBeVisible()
   await expect(page.getByTestId('billing-credit-note-voided')).toContainText('Issued to the wrong invoice')
   await expect(page.getByTestId('billing-credit-note-void')).toHaveCount(0)
   expect(api.callsTo(HttpMethod.Post, '/api/billing/credit-notes/3/void')[0]?.body).toEqual({ reason: 'Issued to the wrong invoice' })

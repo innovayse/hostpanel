@@ -46,12 +46,15 @@ describe('Cwp7IntegrationView', () => {
     expect(wrapper.get('[data-testid="cwp7-create-product"]').attributes('href')).toBe('/settings/products?create=true&module=Cwp7')
   })
 
-  it('keeps the servers grid and draws placeholder cards while the servers load', async () => {
+  it('draws the placeholder boxes of the schema in the servers card while the servers load, the other cards staying', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountView(Cwp7IntegrationView)
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="cwp7-servers"]').findAll('[data-testid="cwp7-server-loading"]')).toHaveLength(3)
+    expect(wrapper.get('[data-testid="ui-detail-card-servers"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('[data-testid="ui-detail-card-servers"]').findAll('[data-testid="ui-detail-tiles"] > *')).toHaveLength(3)
     expect(wrapper.find('[data-testid="cwp7-servers-empty"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="ui-detail-card-createServer"]').attributes('aria-busy')).toBeUndefined()
+    expect(wrapper.find('[data-testid="cwp7-create-server"]').exists()).toBe(true)
   })
 })

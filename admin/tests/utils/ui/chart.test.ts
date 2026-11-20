@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ScriptableContext } from 'chart.js'
-import { barEnds, barFill, barGlowPlugin, chartSkeletonBars, MAX_BAR_THICKNESS, paletteColor, readChartTheme } from '@/utils/ui/chart'
+import { areaFill, barEnds, barFill, barGlowPlugin, canvasShapeOf, CanvasChartType, ChartKind, chartHeightClasses, chartHeightClassOf, chartPhoneHeightClasses, chartSkeletonBars, distributionTone, MAX_BAR_THICKNESS, paletteColor, readChartTheme } from '@/utils/ui/chart'
 import type { UiChartTheme } from '@/utils/ui/chart'
 
 afterEach(() => {
@@ -170,5 +170,63 @@ describe('barGlowPlugin', () => {
 describe('MAX_BAR_THICKNESS', () => {
   it('caps a bar at 28 pixels so few categories never stretch it', () => {
     expect(MAX_BAR_THICKNESS).toBe(28)
+  })
+})
+
+describe('chartHeightClasses', () => {
+  it('gives every plot height a literal height class, which the chart and its placeholder share', () => {
+    expect(chartHeightClasses).toEqual({ short: 'h-52', sm: 'h-40', md: 'h-64', lg: 'h-80' })
+  })
+})
+
+describe('chartHeightClassOf', () => {
+  it('gives every height step a wide class and a phone class below sm', () => {
+    expect(chartPhoneHeightClasses).toEqual({ short: 'max-sm:h-44', sm: 'max-sm:h-36', md: 'max-sm:h-56', lg: 'max-sm:h-64' })
+    expect(chartHeightClassOf(ChartKind.GroupedBar, 'md')).toBe('h-64 max-sm:h-56')
+    expect(chartHeightClassOf(ChartKind.Line, 'short')).toBe('h-52 max-sm:h-44')
+  })
+
+  it('keeps room for the legend under the ring of a donut on a phone', () => {
+    expect(chartHeightClassOf(ChartKind.Donut, 'md')).toBe('h-64 max-sm:h-72')
+    expect(chartHeightClassOf(ChartKind.Donut, 'lg')).toBe('h-80 max-sm:h-80')
+  })
+
+  it('lets the heat strip and the distribution set their own height on a phone', () => {
+    expect(chartHeightClassOf(ChartKind.HeatStrip, 'lg')).toBe('h-80 max-sm:h-auto')
+    expect(chartHeightClassOf(ChartKind.Distribution, 'sm')).toBe('h-40 max-sm:h-auto')
+  })
+
+  it('gives a gauge its own phone heights', () => {
+    expect(chartHeightClassOf(ChartKind.Gauge, 'md')).toBe('h-64 max-sm:h-44')
+  })
+})
+
+describe('canvasShapeOf', () => {
+  it('maps every canvas kind to its chart.js setup', () => {
+    expect(canvasShapeOf(ChartKind.Line)).toEqual({ type: CanvasChartType.Line, stacked: false, horizontal: false, filled: false })
+    expect(canvasShapeOf(ChartKind.Area)?.filled).toBe(true)
+    expect(canvasShapeOf(ChartKind.StackedBar)).toMatchObject({ type: CanvasChartType.Bar, stacked: true })
+    expect(canvasShapeOf(ChartKind.GroupedBar)).toMatchObject({ type: CanvasChartType.Bar, stacked: false, horizontal: false })
+    expect(canvasShapeOf(ChartKind.HorizontalBar)).toMatchObject({ type: CanvasChartType.Bar, horizontal: true })
+    expect(canvasShapeOf(ChartKind.Donut)?.type).toBe(CanvasChartType.Doughnut)
+  })
+
+  it('has no canvas shape for the kinds drawn as markup', () => {
+    expect(canvasShapeOf(ChartKind.HeatStrip)).toBeUndefined()
+    expect(canvasShapeOf(ChartKind.Distribution)).toBeUndefined()
+    expect(canvasShapeOf(ChartKind.Gauge)).toBeUndefined()
+  })
+})
+
+describe('areaFill', () => {
+  it('mixes the line colour into transparent', () => {
+    expect(areaFill('#123456')).toBe('color-mix(in srgb, #123456 18%, transparent)')
+  })
+})
+
+describe('distributionTone', () => {
+  it('takes the tones in order and cycles them', () => {
+    expect(distributionTone(0)).toBe('primary')
+    expect(distributionTone(6)).toBe(distributionTone(0))
   })
 })

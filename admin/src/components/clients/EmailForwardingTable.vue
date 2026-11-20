@@ -33,8 +33,9 @@ import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { EmailForwardingRuleItem } from '@/types/domain'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import { EMPTY_VALUE } from '@/lib/format'
+import { Icon } from '@/lib/icons'
 
 const { t } = useI18n()
 
@@ -255,6 +256,7 @@ const dismissDelete = (): void => {
 const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `clients-forwarding-edit-${rule.id}`,
     /**
      * Starts editing this row.
@@ -267,6 +269,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `clients-forwarding-delete-${rule.id}`,
     /**
      * Asks for confirmation, then deletes this row.
@@ -301,12 +304,12 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
 
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-forwarding-feedback" />
 
-      <UiTable :density="UiTableDensity.Compact" :empty="isEmpty" data-testid="clients-forwarding-table">
+      <UiTable :empty-text="t('clients.emailForwardingTable.noEmailForwardingRulesFound')" :density="UiTableDensity.Compact" :empty="isEmpty" data-testid="clients-forwarding-table">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow" :card-role="UiCardRole.Control">{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>
             <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.emailForwardingTable.destination') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.active') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.active') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
@@ -370,9 +373,6 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
             </template>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('clients.emailForwardingTable.noEmailForwardingRulesFound') }}
-        </template>
       </UiTable>
     </UiStack>
 

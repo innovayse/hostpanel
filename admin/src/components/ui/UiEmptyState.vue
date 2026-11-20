@@ -4,25 +4,32 @@
  *
  * The optional `icon` slot sits in a round frosted tile above the title; the optional `actions`
  * slot below the description holds the call to action. Both are left out of the layout when not
- * given, so a bare title and description do not carry empty gaps.
+ * given, so a bare title and description do not carry empty gaps. `compact` trims the vertical padding and the
+ * icon tile, for a block that stands inside a screen beside other content instead of filling it.
  */
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiText from '@/components/ui/UiText.vue'
 
 /** Props for UiEmptyState. */
-defineProps<{
+withDefaults(defineProps<{
   /** Headline (already translated). */
   title: string
   /** Explanation under the headline. */
   description?: string
-}>()
+  /** Smaller padding and icon tile. */
+  compact?: boolean
+}>(), {
+  description: undefined,
+  compact: false,
+})
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center gap-3 py-12 text-center">
+  <div class="flex flex-col items-center justify-center gap-3 text-center" :class="compact ? 'py-6' : 'py-12'">
     <div
       v-if="$slots.icon"
-      class="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface-hover text-text-accent"
+      class="flex items-center justify-center rounded-full border border-border bg-surface-hover text-text-accent"
+      :class="compact ? 'h-10 w-10' : 'h-14 w-14'"
       data-testid="ui-empty-state-icon"
     >
       <slot name="icon" />

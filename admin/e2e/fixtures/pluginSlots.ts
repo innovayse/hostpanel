@@ -69,6 +69,7 @@ const productOf = (id: number, name: string): Product => ({
   isDigitalService: false,
   maxActiveServices: null,
   onePerClient: false,
+  trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 })
 
 /** The two products the operator can choose from. */

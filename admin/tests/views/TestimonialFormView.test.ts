@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import TestimonialFormView from '@/views/TestimonialFormView.vue'
+import schema from '@/views/TestimonialFormView.schema'
 import type { Testimonial, TestimonialPayload } from '@/types/testimonial'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -47,7 +48,9 @@ describe('TestimonialFormView', () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(TestimonialFormView, {}, '/storefront/testimonials/create', '/storefront/testimonials/create')
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Create testimonial')
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Create testimonial')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create testimonial')
     expect((wrapper.get('[data-testid="testimonial-form-name"]').element as HTMLInputElement).value).toBe('')
   })
@@ -169,5 +172,39 @@ describe('TestimonialFormView', () => {
       expect((wrapper.get('[data-testid="testimonial-form-avatar-url"]').element as HTMLInputElement).value).toBe('/img/up.png')
     })
     expect(wrapper.find('[data-testid="testimonial-form-avatar-preview"]').exists()).toBe(true)
+  })
+
+  it('draws every section and field of its schema', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(TestimonialFormView, {}, '/storefront/testimonials/create', '/storefront/testimonials/create')
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+      for (const field of section.fields) {
+        expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+      }
+    }
+  })
+
+  it('keeps the fields of its schema as placeholders while the entry loads', async () => {
+    stubRouteTable({ 'GET /admin/testimonials': () => new Promise<Response>(() => undefined) })
+    const { wrapper } = await mountScreen(TestimonialFormView, {}, '/storefront/testimonials/3/edit', '/storefront/testimonials/:id/edit')
+
+    expect(wrapper.findAll('[data-testid="ui-form-section-general"][aria-busy="true"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="testimonial-form-name"]').exists()).toBe(false)
+  })
+
+  it('marks the language tabs with no text and drops the mark of a language once it is written', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(TestimonialFormView, {}, '/storefront/testimonials/create', '/storefront/testimonials/create')
+
+    for (const locale of ['en', 'ru', 'hy']) {
+      expect(wrapper.find(`[data-testid="testimonial-form-tab-${locale}-empty"]`).exists()).toBe(true)
+    }
+
+    await wrapper.get('[data-testid="testimonial-form-quote"]').setValue('Written')
+
+    expect(wrapper.find('[data-testid="testimonial-form-tab-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="testimonial-form-tab-ru-empty"]').exists()).toBe(true)
   })
 })

@@ -54,6 +54,10 @@ namespace Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 /// How many services of the product may be live at once, counting orders not yet fulfilled; null or 0 is unlimited.
 /// </param>
 /// <param name="OnePerClient">Whether a client may hold only one live service of the product.</param>
+/// <param name="Trial">
+/// Optional free-trial settings of the product. Null creates the product with the trial off and the
+/// default settings (<see cref="ProductTrial.Default"/>).
+/// </param>
 public sealed record CreateProductCommand(
     int GroupId,
     string Name,
@@ -74,4 +78,5 @@ public sealed record CreateProductCommand(
     bool IsHidden = false,
     bool IsDigitalService = false,
     int? MaxActiveServices = null,
-    bool OnePerClient = false);
+    bool OnePerClient = false,
+    ProductTrialDto? Trial = null);

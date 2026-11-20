@@ -14,6 +14,9 @@
   "uiCountrySelect": {
     "selectCountry": "Select country"
   },
+  "uiDateTimePicker": {
+    "title": "Select date and time"
+  },
   "uiDatePicker": {
     "ddMmYyyy": "DD/MM/YYYY",
     "month": "Month",
@@ -42,13 +45,14 @@
   },
   "uiFieldSelector": {
     "fields": "Fields",
+    "selectedCount": "{count} of {total} fields",
     "clearAll": "Clear All"
   },
   "uiFilterTrigger": {
     "filters": "Filters",
     "title": "Filters",
     "apply": "Apply",
-    "reset": "Reset",
+    "reset": "Clear",
     "cancel": "Cancel"
   },
   "uiFilterChips": {
@@ -57,6 +61,7 @@
     "clearAll": "Clear all"
   },
   "uiSelect": {
+    "choose": "Choose an option",
     "noResults": "No results"
   },
   "uiLimitField": {
@@ -89,9 +94,13 @@
     "clear": "Clear selection",
     "selected": "{count} selected"
   },
+  "actionBar": {
+    "more": "More actions"
+  },
   "chart": {
     "empty": "No data to chart",
-    "target": "Target"
+    "target": "Target",
+    "aria": "Chart"
   },
   "uploadZone": {
     "dropOr": "Drop a file or",
@@ -99,9 +108,18 @@
   },
   "input": {
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "clearSearch": "Clear"
   },
   "errorState": {
     "retry": "Retry"
+  },
+  "uiLocalizedField": {
+    "emptyTab": "Not filled in",
+    "invalidTab": "Needs attention"
+  },
+  "imagePreview": {
+    "showOnLight": "Show on a light background",
+    "showOnDark": "Show on a dark background"
   }
 }

@@ -14,7 +14,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiLoader from '@/components/ui/UiLoader.vue'
+import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -54,6 +54,9 @@ const emit = defineEmits<{
 
 /** Most hits shown. */
 const MAX_RESULTS = 5
+
+/** Placeholder rows drawn where the hits will appear while a search is in flight. */
+const LOADING_ROWS = 3
 
 /** Icon markup (shape tags) of the clear button. */
 const CLOSE_ICON = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
@@ -148,19 +151,30 @@ onBeforeUnmount(() => {
   </UiStack>
 
   <UiStack v-else gap="sm">
-    <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-      <UiInput
-        :id="inputId"
-        v-model="term"
-        type="text"
-        :invalid="invalid"
-        :placeholder="t('shared.searchByNameOrEmail')"
-        :data-testid="`${testid}-search`"
-        @input="emit('typing')"
-      />
-      <UiLoader v-if="loading" />
+    <UiInput
+      :id="inputId"
+      v-model="term"
+      type="text"
+      :invalid="invalid"
+      :placeholder="t('shared.searchByNameOrEmail')"
+      :data-testid="`${testid}-search`"
+      @input="emit('typing')"
+    />
+    <!-- Rows of the shape of a hit (initials badge, then the name line), so the list does not jump when the hits arrive -->
+    <UiStack
+      v-if="loading"
+      gap="xs"
+      role="status"
+      aria-busy="true"
+      :aria-label="t('ui.loading')"
+      :data-testid="`${testid}-loading`"
+    >
+      <UiStack v-for="row in LOADING_ROWS" :key="row" direction="row" :align="UiAlignItems.Center" gap="sm" aria-hidden="true">
+        <UiSkeletonBar class="size-8 shrink-0 rounded-full" />
+        <UiSkeletonBar class="h-4 flex-1 rounded-md" />
+      </UiStack>
     </UiStack>
-    <UiStack v-if="results.length > 0" gap="xs">
+    <UiStack v-else-if="results.length > 0" gap="xs">
       <UiButton
         v-for="user in results"
         :key="user.id"

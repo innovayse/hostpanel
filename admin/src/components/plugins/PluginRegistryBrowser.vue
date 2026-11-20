@@ -32,6 +32,7 @@ import type { PluginRegistryItemDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize } from '@/utils/ui/text'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -148,7 +149,7 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
           :to="pluginPath(item.id)"
         >
           <template #action>
-            <UiButton
+            <UiButton :action="UiActionKind.View"
               v-if="needsDetails(item)"
               type="button"
               :variant="UiButtonVariant.Primary"
@@ -158,7 +159,7 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
             >
               {{ t('plugins.pluginRegistry.details') }}
             </UiButton>
-            <UiButton
+            <UiButton :action="UiActionKind.Refresh"
               v-else-if="actionable(item)"
               type="button"
               :variant="item.installed ? UiButtonVariant.Secondary : UiButtonVariant.Primary"

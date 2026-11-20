@@ -34,4 +34,13 @@ describe('UiTooltip', () => {
     expect(top.classes()).toEqual(expect.arrayContaining(['hidden', 'group-hover:block', 'group-focus-within:block', 'bottom-full']))
     expect(bottom.classes()).toContain('top-full')
   })
+
+  it('is drawn and left out by `open` instead of hover when the trigger drives it', () => {
+    const shown = mount(UiTooltip, { props: { text: 'a', open: true } })
+    const hidden = mount(UiTooltip, { props: { text: 'a', open: false } })
+
+    expect(shown.get('[role="tooltip"]').classes()).toContain('block')
+    expect(shown.get('[role="tooltip"]').classes()).not.toContain('group-hover:block')
+    expect(hidden.find('[role="tooltip"]').exists()).toBe(false)
+  })
 })

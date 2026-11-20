@@ -9,24 +9,22 @@ import { useI18n } from 'vue-i18n'
 import QuoteItemsEditor from '@/components/billing/QuoteItemsEditor.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
-import UiField from '@/components/ui/UiField.vue'
-import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useClientCurrency } from '@/composables/useClientCurrency'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
+import { QUOTE_ITEMS_PART } from '@/lib/quoteSchemaParts'
 import { toIsoDay } from '@/lib/format'
 import { useQuotesStore } from '@/stores/quotes'
 import { QuoteStage } from '@/types/quote'
@@ -34,6 +32,9 @@ import { blankQuoteLine, quoteLinesPayload } from '@/lib/quoteLines'
 import type { QuoteLineDraft } from '@/types/quote'
 import { MS_PER_DAY } from '@/lib/limits'
 import { AppRoute, quotePath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema, { QUOTE_GENERAL_FORM_PART, QUOTE_NOTES_FORM_PART } from '@/views/AddQuoteView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -72,6 +73,13 @@ const customerNotes = ref('')
 /** Notes only admins see. */
 const adminNotes = ref('')
 
+/** Help lines under the notes fields, by field key. */
+const hints = computed<Record<string, string>>(() => ({
+  proposalText: t('billing.addQuote.displayedAtTheTopOf'),
+  customerNotes: t('billing.addQuote.displayedAsAFooterTo'),
+  adminNotes: t('billing.addQuote.privateNotes'),
+}))
+
 /** Creates the quote and opens it. */
 const submit = async (): Promise<void> => {
   const id = await store.createQuote({
@@ -100,85 +108,76 @@ onMounted(() => {
 
 <template>
   <UiStack data-testid="billing-add-quote-view">
-    <UiPageHeader :title="t('billing.addQuote.createQuote')" :subtitle="t('billing.addQuote.createANewQuoteFor')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiForm stacked @submit="submit">
-      <UiAlert v-if="store.error" variant="error" data-testid="billing-add-quote-error">
-        {{ store.error }}
-      </UiAlert>
+    <UiAlert v-if="store.error" variant="error" data-testid="billing-add-quote-error">
+      {{ store.error }}
+    </UiAlert>
 
-      <UiCard padding="lg">
-        <UiStack>
-          <UiHeading :level="3" variant="card">
-            {{ t('billing.addQuote.generalInformation') }}
-          </UiHeading>
-          <UiGrid :columns="2">
-            <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">
-              <template #default="{ id, invalid }">
-                <UiInput
-                  :id="id"
-                  v-model="subject"
-                  type="text"
-                  :invalid="invalid"
-                  :placeholder="t('billing.quoteDetail.quoteSubject')"
-                  data-testid="billing-add-quote-subject"
-                />
-              </template>
-            </UiField>
-            <UiField :label="t('shared.stage')" :error="store.fieldErrors.stage">
-              <UiSelect v-model="stage" :options="QUOTE_STAGE_OPTIONS" :placeholder="t('billing.quoteDetail.selectStage')" />
-            </UiField>
-            <UiField :label="t('shared.client')" :error="store.fieldErrors.clientId">
-              <UiClientSelect
-                v-model="clientId"
-                :clients="clients"
-                :placeholder="t('shared.selectAClient')"
-              />
-            </UiField>
-            <UiField :label="t('shared.validUntil')" :error="store.fieldErrors.validUntil">
-              <UiDatePicker v-model="validUntil" :direction="UiDatePickerDirection.Future" :placeholder="t('shared.selectDate')" />
-            </UiField>
-          </UiGrid>
-        </UiStack>
-      </UiCard>
+    <UiSchemaForm :columns="QUOTE_GENERAL_FORM_PART.columns" :errors="store.fieldErrors" @submit="submit">
+      <template #field-subject="{ id, invalid }">
+        <UiInput
+          :id="id"
+          v-model="subject"
+          type="text"
+          :invalid="invalid"
+          :placeholder="t('billing.quoteDetail.quoteSubject')"
+          data-testid="billing-add-quote-subject"
+        />
+      </template>
+      <template #field-stage>
+        <UiSelect v-model="stage" :options="QUOTE_STAGE_OPTIONS" :placeholder="t('billing.quoteDetail.selectStage')" />
+      </template>
+      <template #field-clientId>
+        <UiClientSelect
+          v-model="clientId"
+          :clients="clients"
+          :placeholder="t('shared.selectAClient')"
+        />
+      </template>
+      <template #field-validUntil>
+        <UiDatePicker v-model="validUntil" :direction="UiDatePickerDirection.Future" :placeholder="t('shared.selectDate')" />
+      </template>
+    </UiSchemaForm>
 
-      <QuoteItemsEditor v-model="items" :currency="currency" />
+    <UiDetailCards :columns="QUOTE_ITEMS_PART.columns">
+      <template #card-items>
+        <QuoteItemsEditor v-model="items" :currency="currency" />
+      </template>
+    </UiDetailCards>
 
-      <UiCard padding="lg">
-        <UiStack>
-          <UiField :label="t('billing.addQuote.proposalText')" :hint="t('billing.addQuote.displayedAtTheTopOf')">
-            <UiTextarea
-              v-model="proposalText"
-              rows="4"
-              :placeholder="t('billing.addQuote.enterProposalText')"
-              data-testid="billing-add-quote-proposal"
-            />
-          </UiField>
-          <UiField :label="t('billing.addQuote.customerNotes')" :hint="t('billing.addQuote.displayedAsAFooterTo')">
-            <UiTextarea
-              v-model="customerNotes"
-              rows="3"
-              :placeholder="t('billing.addQuote.enterCustomerNotes')"
-            />
-          </UiField>
-          <UiField :label="t('billing.addQuote.adminOnlyNotes')" :hint="t('billing.addQuote.privateNotes')">
-            <UiTextarea
-              v-model="adminNotes"
-              rows="3"
-              :placeholder="t('billing.addQuote.enterAdminNotes')"
-            />
-          </UiField>
-        </UiStack>
-      </UiCard>
+    <UiSchemaForm :columns="QUOTE_NOTES_FORM_PART.columns" :errors="store.fieldErrors" :hints="hints" @submit="submit">
+      <template #field-proposalText>
+        <UiTextarea
+          v-model="proposalText"
+          rows="4"
+          :placeholder="t('billing.addQuote.enterProposalText')"
+          data-testid="billing-add-quote-proposal"
+        />
+      </template>
+      <template #field-customerNotes>
+        <UiTextarea
+          v-model="customerNotes"
+          rows="3"
+          :placeholder="t('billing.addQuote.enterCustomerNotes')"
+        />
+      </template>
+      <template #field-adminNotes>
+        <UiTextarea
+          v-model="adminNotes"
+          rows="3"
+          :placeholder="t('billing.addQuote.enterAdminNotes')"
+        />
+      </template>
 
       <UiFormActions>
-        <UiLink :to="AppRoute.BillingQuotes" variant="ghost" data-testid="billing-add-quote-cancel">
+        <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingQuotes" variant="ghost" data-testid="billing-add-quote-cancel">
           {{ t('shared.cancel') }}
         </UiLink>
-        <UiButton type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-quote-submit">
+        <UiButton :action="UiActionKind.Add" type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-quote-submit">
           {{ t('billing.addQuote.createQuote') }}
         </UiButton>
       </UiFormActions>
-    </UiForm>
+    </UiSchemaForm>
   </UiStack>
 </template>

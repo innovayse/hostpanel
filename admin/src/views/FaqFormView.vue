@@ -5,31 +5,32 @@
  * Detects edit mode from the route params, loads the entry when editing, and carries the question
  * and answer in en / ru / hy tabs. Asks before leaving with unsaved edits.
  */
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SettingsSection from '@/components/settings/SettingsSection.vue'
 import StorefrontFormShell from '@/components/storefront/StorefrontFormShell.vue'
-import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiStack from '@/components/ui/UiStack.vue'
-import UiTabs from '@/components/ui/UiTabs.vue'
-import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
-import { useStorefrontLocaleTabs } from '@/composables/useStorefrontLocaleTabs'
-import { blankTranslations, collectTranslations, formsFromTranslations } from '@/lib/storefrontTranslations'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations } from '@/lib/storefrontTranslations'
+import { MessageLanguage } from '@/locales/messages'
 import { useFaqsStore } from '@/stores/faqs'
 import type { Faq, FaqPayload, FaqTranslation } from '@/types/faq'
 import { FaqCategory } from '@/types/storefrontenums'
 import { AppRoute } from '@/lib/routes'
+import schema from '@/views/FaqFormView.schema'
 
 const { t } = useI18n()
 
 /** FAQ store: loads, creates and updates the entry. */
 const store = useFaqsStore()
+
+/** The help line under the active switch, by field key. */
+const hints = computed(() => ({ isActive: t('storefront.faqs.activeHint') }))
 
 /** The category choices. */
 const categoryOptions = computed(() => [
@@ -52,8 +53,11 @@ const form = reactive({
   translations: blankTranslations(blankText),
 })
 
-/** The locale tab state. */
-const { activeLocale, tabs, select } = useStorefrontLocaleTabs('faq-form-tab')
+/** The language whose fields are on screen. */
+const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+
+/** Whether each language has its text written, for the markers on the tabs. */
+const filled = computed(() => filledLocales(form.translations, isFilled))
 
 /**
  * Copies a stored entry into the form.
@@ -68,6 +72,14 @@ const populate = (item: Faq): void => {
 }
 
 /**
+ * Tells whether a language's text is written: its main field is not blank.
+ *
+ * @param text - One language's text.
+ * @returns True when the language is worth sending and its tab needs no marker.
+ */
+const isFilled = (text: FaqTranslation): boolean => text.question.trim() !== ''
+
+/**
  * Builds the payload from the form: trimmed text, and only the locales with a question.
  *
  * @returns The create / update payload.
@@ -78,7 +90,7 @@ const build = (): FaqPayload => ({
   isActive: form.isActive,
   translations: collectTranslations(
     form.translations,
-    (text) => text.question.trim() !== '',
+    isFilled,
     (text) => ({ question: text.question.trim(), answer: text.answer.trim() }),
   ),
 })
@@ -86,17 +98,12 @@ const build = (): FaqPayload => ({
 /** The create / edit flow: loading, saving, the dirty flag. */
 const flow = useStorefrontForm<Faq, FaqPayload>({ store, form, listPath: AppRoute.StorefrontFaqs, populate, build })
 
-/** The trail above the form. */
-const breadcrumb = computed(() => [
-  { label: t('storefront.faqs.title'), to: AppRoute.StorefrontFaqs },
-  { label: flow.isEditMode.value ? t('storefront.faqs.editTitle') : t('storefront.faqs.createTitle') },
-])
 </script>
 
 <template>
   <StorefrontFormShell
     testid="faq"
-    :breadcrumb="breadcrumb"
+    :title="flow.isEditMode.value ? t('storefront.faqs.edit') : t('storefront.faqs.create')"
     :save-label="flow.isEditMode.value ? t('shared.saveChanges') : t('storefront.faqs.create')"
     :loading="flow.loadingEntry.value"
     :saving="flow.saving.value"
@@ -107,51 +114,43 @@ const breadcrumb = computed(() => [
     @save="flow.save"
     @cancel="flow.cancel"
   >
-    <SettingsSection :title="t('storefront.form.general')">
-      <UiField :label="t('storefront.faqs.category')" :error="store.fieldErrors.category">
+    <UiSchemaForm :columns="schema.columns" :loading="flow.loadingEntry.value" :errors="store.fieldErrors" :hints="hints">
+      <template #field-category>
         <UiSelect v-model="form.category" :options="categoryOptions" :placeholder="t('storefront.faqs.category')" data-testid="faq-form-category" />
-      </UiField>
+      </template>
 
-      <UiField :label="t('storefront.form.sortOrder')" :error="store.fieldErrors.sortOrder">
+      <template #field-sortOrder>
         <UiNumberInput v-model="form.sortOrder" :min="0" placeholder="0" data-testid="faq-form-sort-order" />
-      </UiField>
+      </template>
 
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('shared.active') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('storefront.faqs.activeHint') }}</UiText>
-        </UiStack>
-        <UiToggle v-model="form.isActive" data-testid="faq-form-active" />
-      </UiStack>
-    </SettingsSection>
+      <template #field-isActive="{ id }">
+        <UiToggle :id="id" v-model="form.isActive" data-testid="faq-form-active" />
+      </template>
 
-    <SettingsSection :title="t('storefront.form.translations')">
-      <UiTabs :items="tabs" :model-value="activeLocale" @update:model-value="select" />
+      <template #field-locale>
+        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="faq-form-tab" />
+      </template>
 
-      <UiField :label="t('storefront.faqs.question')" :error="store.fieldErrors.translations">
-        <template #default="{ id }">
-          <UiInput
-            :id="id"
-            v-model="form.translations[activeLocale].question"
-            type="text"
-            :placeholder="t('storefront.faqs.questionPlaceholder')"
-            data-testid="faq-form-question"
-          />
-        </template>
-      </UiField>
+      <template #field-translations="{ id }">
+        <UiInput
+          :id="id"
+          v-model="form.translations[activeLocale].question"
+          type="text"
+          :placeholder="t('storefront.faqs.questionPlaceholder')"
+          data-testid="faq-form-question"
+        />
+      </template>
 
-      <UiField :label="t('storefront.faqs.answer')">
-        <template #default="{ id }">
-          <UiTextarea
-            :id="id"
-            v-model="form.translations[activeLocale].answer"
-            rows="6"
-            :placeholder="t('storefront.faqs.answerPlaceholder')"
-            data-testid="faq-form-answer"
-            class="resize-none"
-          />
-        </template>
-      </UiField>
-    </SettingsSection>
+      <template #field-answer="{ id }">
+        <UiTextarea
+          :id="id"
+          v-model="form.translations[activeLocale].answer"
+          rows="6"
+          :placeholder="t('storefront.faqs.answerPlaceholder')"
+          data-testid="faq-form-answer"
+          class="resize-none"
+        />
+      </template>
+    </UiSchemaForm>
   </StorefrontFormShell>
 </template>

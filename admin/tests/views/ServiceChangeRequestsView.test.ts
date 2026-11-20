@@ -6,9 +6,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ServiceChangeRequestsView from '@/views/ServiceChangeRequestsView.vue'
+import schema from '@/views/ServiceChangeRequestsView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { mountRouted, mountRoutedSettled } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -62,6 +65,13 @@ describe('ServiceChangeRequestsView', () => {
     expect(wrapper.get('[data-testid="plan-changes-invoice-5"]').attributes('href')).toBe('/billing/77')
   })
 
+  it('draws the headers of the schema columns, in order', async () => {
+    stubRoutes({ 'GET /api/admin/service-change-requests': () => json({ items: [pending], totalCount: 1 }) })
+    const wrapper = await mountRoutedSettled(ServiceChangeRequestsView, '/clients/plan-changes')
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('offers no decision on a resolved request', async () => {
     stubRoutes({ 'GET /api/admin/service-change-requests': () => json({ items: [completed], totalCount: 1 }) })
     const wrapper = await mountRoutedSettled(ServiceChangeRequestsView, '/clients/plan-changes')
@@ -100,7 +110,7 @@ describe('ServiceChangeRequestsView', () => {
     const [postedUrl, postedInit] = post ?? []
     expect(postedUrl).toBe('/api/admin/service-change-requests/5/approve')
     expect(JSON.parse((postedInit as RequestInit).body as string)).toEqual({ note: 'Paid by phone' })
-    expect(wrapper.get('[data-testid="plan-changes-feedback"]').text()).toBe('Plan change approved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Plan change approved.'])
   })
 
   it('reports the sentence of a refused rejection', async () => {

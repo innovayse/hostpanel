@@ -79,6 +79,20 @@ describe('UiField', () => {
     expect(wrapper.get('input').attributes('aria-describedby')).toBeUndefined()
   })
 
+  it('puts the caption and a switch shaped skeleton on one row when inline', () => {
+    const wrapper = mount(UiField, { props: { label: 'Active', inline: true, loading: true } })
+
+    expect(wrapper.get('label').element.parentElement?.classList.contains('justify-between')).toBe(true)
+    expect(wrapper.get('[data-testid="ui-field-skeleton"]').classes()).toContain('rounded-full')
+  })
+
+  it('stacks the caption over the control when not inline', () => {
+    const wrapper = mount(UiField, { props: { label: 'Name', loading: true } })
+
+    expect(wrapper.get('label').element.parentElement?.classList.contains('contents')).toBe(true)
+    expect(wrapper.get('[data-testid="ui-field-skeleton"]').classes()).toContain('rounded-control')
+  })
+
   it('hides the required asterisk from assistive technology', () => {
     const wrapper = mount(UiField, { props: { label: 'Name', required: true } })
 

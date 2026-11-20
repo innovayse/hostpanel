@@ -12,6 +12,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { InvoiceRefundType, InvoiceStatus } from '@/types/invoice'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -106,7 +107,7 @@ describe('InvoiceRefundTab', () => {
       amount: 30,
       refundType: InvoiceRefundType.Gateway,
     })
-    expect(wrapper.get('[data-testid="billing-invoice-refund-feedback"]').text()).toContain('Refund sent.')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('Refund sent.')
   })
 
   it('asks for confirmation naming the amount and the method before sending anything', async () => {

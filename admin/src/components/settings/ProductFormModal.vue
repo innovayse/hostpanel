@@ -8,9 +8,10 @@
  * Emits `save` with the payload on submit, and `close` on cancel, Escape or a backdrop click. A
  * refused save (the `error` prop) shows next to the save button; the API's per-field messages
  * (the `fieldErrors` prop) show under their inputs and go away, through `clearFieldError`, as
- * soon as the operator changes that field. The API is the only validator.
+ * soon as the operator changes that field. The API is the only validator. While the lists the form
+ * is built from load, every field is drawn as a placeholder under its real caption (`UI_FIELD_LOADING`).
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFieldErrorClear } from '@/composables/useFieldErrorClear'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -21,7 +22,6 @@ import UiField from '@/components/ui/UiField.vue'
 import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -33,18 +33,20 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiTableDensity } from '@/utils/ui/injection'
-import { UiCardRole } from '@/utils/ui/table'
+import { UI_FIELD_LOADING, UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { Icon } from '@/lib/icons'
 import { useCurrenciesStore } from '@/stores/currencies'
+import { useProductTrialStore } from '@/stores/productTrial'
 import { useServersStore } from '@/stores/servers'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
-import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle } from '@/types/product'
+import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle, ProductTrial, ProductTrialDefaults } from '@/types/product'
 import { ProductField, ProductStatus, ProductType } from '@/types/productenums'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -174,6 +176,38 @@ const maxActiveServices = ref<number | null>(null)
 
 /** Whether a client may hold only one live service of the product. */
 const onePerClient = ref(false)
+/** Whether the product is offered as a free trial. */
+const trialEnabled = ref(false)
+
+/** Trial length in days. */
+const trialDays = ref<number | null>(null)
+
+/** Whether the trial turns into a paid service at its end. */
+const trialAutoConvert = ref(true)
+
+/** Reminder days as the operator types them: whole numbers separated by commas. */
+const trialReminders = ref('')
+
+/** Days the invoice of a converted trial may stay unpaid. */
+const trialGracePeriodDays = ref<number | null>(null)
+
+/** Defaults and limits of the trial settings, read from the API; null until loaded or when the read failed. */
+const trialDefaults = ref<ProductTrialDefaults | null>(null)
+
+/** The form's own message about the trial settings, null when they are acceptable. */
+const trialMessage = ref<string | null>(null)
+
+/** Product trial store: owns the read of the trial defaults; a failed read leaves the trial fields empty. */
+const productTrialStore = useProductTrialStore()
+
+/** Fills the trial fields of a new product from the API's defaults; leaves them empty when none were loaded. */
+const applyTrialDefaults = (): void => {
+  const d = trialDefaults.value
+  trialDays.value = d?.days ?? null
+  trialAutoConvert.value = d?.autoConvert ?? true
+  trialReminders.value = d?.reminderDays.join(', ') ?? ''
+  trialGracePeriodDays.value = d?.gracePeriodDays ?? null
+}
 
 /** Available server groups (owned by the servers store). */
 const serverGroups = computed(() => serversStore.groups)
@@ -197,13 +231,23 @@ const resetPriceRows = (existingPrices?: ProductPrice[]): void => {
   priceRows.value = rows
 }
 
+/** True while the server groups, the currencies and the trial defaults are being read; every field draws as a placeholder meanwhile. */
+const loading = ref(true)
+
+provide(UI_FIELD_LOADING, loading)
+
 /** Fetches the available server groups and the configured currencies on mount. */
 onMounted(async () => {
   await serversStore.fetchGroups()
   if (currenciesStore.currencies.length === 0) {
     await currenciesStore.fetchAll()
   }
+  trialDefaults.value = await productTrialStore.fetchDefaults()
+  if (trialDefaults.value !== null && props.product === null) {
+    applyTrialDefaults()
+  }
   resetPriceRows(props.product?.prices)
+  loading.value = false
 })
 
 /**
@@ -229,6 +273,11 @@ watch(() => props.product, (p) => {
     gracePeriodDays.value = p.gracePeriodDays
     maxActiveServices.value = p.maxActiveServices
     onePerClient.value = p.onePerClient
+    trialEnabled.value = p.trial.enabled
+    trialDays.value = p.trial.days
+    trialAutoConvert.value = p.trial.autoConvert
+    trialReminders.value = p.trial.reminderDays.join(', ')
+    trialGracePeriodDays.value = p.trial.gracePeriodDays
     resetPriceRows(p.prices)
   } else {
     type.value = ProductType.SharedHosting
@@ -248,6 +297,8 @@ watch(() => props.product, (p) => {
     gracePeriodDays.value = DEFAULT_GRACE_PERIOD_DAYS
     maxActiveServices.value = null
     onePerClient.value = false
+    trialEnabled.value = false
+    applyTrialDefaults()
     resetPriceRows()
   }
 }, { immediate: true })
@@ -344,6 +395,86 @@ const buildPricesPayload = (): ProductPrice[] =>
       ...(Object.fromEntries(PRODUCT_PRICE_CYCLES.map((cycle) => [cycle, row[cycle] || null])) as ProductPriceAmounts),
     }))
 
+/**
+ * Reads the reminder days the operator typed.
+ *
+ * @returns The days, or null when any entry is not a whole number.
+ */
+const parseReminders = (): number[] | null => {
+  const parts = trialReminders.value.split(/[\s,;]+/).filter((part) => part !== '')
+  return parts.every((part) => /^\d+$/.test(part)) ? parts.map(Number) : null
+}
+
+/**
+ * Checks the trial fields against the same rules the API applies: the length and grace period inside their ranges,
+ * and each reminder day a distinct whole number before the end of the trial, at most the allowed count.
+ *
+ * @returns The message to show, or null when the fields are acceptable.
+ */
+const validateTrial = (): string | null => {
+  const reminders = parseReminders()
+  if (reminders === null) {
+    return t('settings.productForm.trialReminderDaysInvalid')
+  }
+  const d = trialDefaults.value
+  const days = trialDays.value
+  const grace = trialGracePeriodDays.value
+  /**
+   * Tells whether a value is a whole number inside a range.
+   *
+   * @param value - The value to test.
+   * @param min - Lowest accepted value.
+   * @param max - Highest accepted value.
+   * @returns True when accepted.
+   */
+  const range = (value: number | null, min: number, max: number): boolean =>
+    value !== null && Number.isInteger(value) && value >= min && value <= max
+  const daysOk = range(days, d?.minDays ?? 1, d?.maxDays ?? Number.MAX_SAFE_INTEGER)
+  const graceOk = range(grace, d?.minGracePeriodDays ?? 0, d?.maxGracePeriodDays ?? Number.MAX_SAFE_INTEGER)
+  const remindersOk = daysOk
+    && new Set(reminders).size === reminders.length
+    && reminders.length <= (d?.maxReminders ?? Number.MAX_SAFE_INTEGER)
+    && reminders.every((day) => day >= 1 && day < (days ?? 0))
+  if (daysOk && graceOk && remindersOk) {
+    return null
+  }
+  return t('settings.productForm.trialInvalid', {
+    minDays: d?.minDays ?? 1,
+    maxDays: d?.maxDays ?? '',
+    minGrace: d?.minGracePeriodDays ?? 0,
+    maxGrace: d?.maxGracePeriodDays ?? '',
+    maxReminders: d?.maxReminders ?? '',
+  })
+}
+
+/**
+ * Builds the `trial` payload from the trial fields. While the trial is off, fields that are not acceptable are not
+ * sent: the stored settings (or the defaults, for a new product) are kept and only the switch is sent.
+ *
+ * @returns The settings as the API takes them, or undefined when there is nothing valid to send.
+ */
+const buildTrialPayload = (): ProductTrial | undefined => {
+  if (validateTrial() === null) {
+    return {
+      enabled: trialEnabled.value,
+      days: trialDays.value ?? 0,
+      autoConvert: trialAutoConvert.value,
+      reminderDays: parseReminders() ?? [],
+      gracePeriodDays: trialGracePeriodDays.value ?? 0,
+    }
+  }
+  const fallback = props.product?.trial ?? (trialDefaults.value
+    ? {
+        enabled: false,
+        days: trialDefaults.value.days,
+        autoConvert: trialDefaults.value.autoConvert,
+        reminderDays: trialDefaults.value.reminderDays,
+        gracePeriodDays: trialDefaults.value.gracePeriodDays,
+      }
+    : undefined)
+  return fallback ? { ...fallback, enabled: false } : undefined
+}
+
 /** Drops the API's message of each field as soon as the operator edits that field. */
 useFieldErrorClear(
   () => props.fieldErrors,
@@ -353,8 +484,17 @@ useFieldErrorClear(
     [ProductField.Metadata, metadata],
     [ProductField.GracePeriodDays, gracePeriodDays],
     [ProductField.MaxActiveServices, maxActiveServices],
+    [ProductField.Trial, trialEnabled],
+    [ProductField.Trial, trialDays],
+    [ProductField.Trial, trialAutoConvert],
+    [ProductField.Trial, trialReminders],
+    [ProductField.Trial, trialGracePeriodDays],
   ],
 )
+
+watch([trialEnabled, trialDays, trialAutoConvert, trialReminders, trialGracePeriodDays], () => {
+  trialMessage.value = null
+})
 
 /**
  * Submits the form by emitting the save event with the current field values. The SKU and
@@ -362,6 +502,13 @@ useFieldErrorClear(
  * stored value while an omitted one keeps it.
  */
 const handleSubmit = (): void => {
+  if (trialEnabled.value) {
+    const message = validateTrial()
+    if (message !== null) {
+      trialMessage.value = message
+      return
+    }
+  }
   emit('save', {
     groupId: groupId.value,
     name: name.value,
@@ -382,6 +529,7 @@ const handleSubmit = (): void => {
     // 0 is unlimited: always sent, so clearing the field on update clears the stored cap.
     maxActiveServices: Math.max(0, Math.trunc(Number(maxActiveServices.value)) || 0),
     onePerClient: onePerClient.value,
+    trial: buildTrialPayload(),
   })
 }
 </script>
@@ -400,12 +548,12 @@ const handleSubmit = (): void => {
             v-for="pt in productTypes"
             :key="pt.value"
             type="button"
+            :icon="pt.icon"
             :variant="type === pt.value ? 'primary' : 'secondary'"
             :aria-pressed="type === pt.value"
             :data-testid="`product-form-type-${pt.value}`"
             @click="type = pt.value"
           >
-            <UiIcon :markup="pt.icon" />
             {{ pt.label }}
           </UiButton>
         </UiGrid>
@@ -541,14 +689,72 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
+      <!-- Free trial -->
+      <UiStack direction="row" align="center" justify="between">
+        <UiStack gap="xs">
+          <UiText tone="primary" size="md">{{ t('settings.productForm.trial') }}</UiText>
+          <UiText tone="muted" size="sm">{{ t('settings.productForm.trialHint') }}</UiText>
+        </UiStack>
+        <UiToggle v-model="trialEnabled" data-testid="product-form-trial-enabled" />
+      </UiStack>
+
+      <template v-if="trialEnabled">
+        <UiField :label="t('settings.productForm.trialDays')">
+          <UiNumberInput
+            v-model="trialDays"
+            nullable
+            :min="1"
+            :step="1"
+            :placeholder="t('settings.productForm.trialDaysPlaceholder')"
+            data-testid="product-form-trial-days"
+          />
+        </UiField>
+
+        <UiField :label="t('settings.productForm.trialReminderDays')" :hint="t('settings.productForm.trialReminderDaysHint')">
+          <template #default="{ id, describedby }">
+            <UiInput
+              :id="id"
+              v-model="trialReminders"
+              type="text"
+              :aria-describedby="describedby"
+              :placeholder="t('settings.productForm.trialReminderDaysPlaceholder')"
+              data-testid="product-form-trial-reminders"
+            />
+          </template>
+        </UiField>
+
+        <UiField :label="t('settings.productForm.trialGracePeriod')" :hint="t('settings.productForm.trialGracePeriodHint')">
+          <UiNumberInput
+            v-model="trialGracePeriodDays"
+            nullable
+            :min="0"
+            :step="1"
+            :placeholder="t('settings.productForm.trialGracePeriodPlaceholder')"
+            data-testid="product-form-trial-grace-period"
+          />
+        </UiField>
+
+        <UiStack direction="row" align="center" justify="between">
+          <UiStack gap="xs">
+            <UiText tone="primary" size="md">{{ t('settings.productForm.trialAutoConvert') }}</UiText>
+            <UiText tone="muted" size="sm">{{ t('settings.productForm.trialAutoConvertHint') }}</UiText>
+          </UiStack>
+          <UiToggle v-model="trialAutoConvert" data-testid="product-form-trial-auto-convert" />
+        </UiStack>
+
+      </template>
+
+      <UiText tone="muted" size="sm" data-testid="product-form-trial-notice">{{ t('settings.productForm.trialNotice') }}</UiText>
+      <UiStatusMessage :message="trialMessage ?? props.fieldErrors[ProductField.Trial] ?? null" :tone="UiTone.Danger" data-testid="product-form-trial-error" />
+
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
-        <UiCard class="overflow-hidden">
+        <UiCard clip>
           <UiTable :density="UiTableDensity.Compact" data-testid="product-form-prices">
             <UiTableHead>
               <UiTableRow>
-                <UiTableHeader>{{ t('shared.enabled') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.currency') }}</UiTableHeader>
+                <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.enabled') }}</UiTableHeader>
+                <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.currency') }}</UiTableHeader>
                 <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric :card-role="UiCardRole.Control">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
@@ -619,10 +825,10 @@ const handleSubmit = (): void => {
       <UiStatusMessage :message="error ?? null" :tone="UiTone.Danger" data-testid="product-form-error" />
 
       <UiFormActions>
-        <UiButton type="button" variant="secondary" data-testid="product-form-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="product-form-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :loading="saving" data-testid="product-form-save">
+        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="product-form-save">
           {{ isEditMode ? t('shared.saveChanges') : t('settings.productForm.createProduct') }}
         </UiButton>
       </UiFormActions>

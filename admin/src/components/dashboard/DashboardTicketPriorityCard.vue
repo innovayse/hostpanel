@@ -7,8 +7,8 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardChartCard from '@/components/dashboard/DashboardChartCard.vue'
 import UiChart from '@/components/ui/UiChart.vue'
+import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
 import type { DashboardTicketPriorityCount } from '@/types/dashboardcharts'
-import { UiChartHeight, UiChartType } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 
 /** Props for DashboardTicketPriorityCard. */
@@ -18,6 +18,9 @@ const props = defineProps<{
   /** Whether the figures are still loading. */
   loading: boolean
 }>()
+
+/** Kind and height of the chart, the same entry the dashboard skeleton draws the panel from. */
+const chart = PANEL_CHARTS[PanelChart.TicketPriority]
 
 const { t } = useI18n()
 
@@ -34,11 +37,11 @@ const series = computed<UiChartSeries[]>(() => [{ label: t('dashboard.tickets.op
 <template>
   <DashboardChartCard :title="t('dashboard.tickets.title')" :note="t('dashboard.tickets.note')" data-testid="dashboard-tickets">
     <UiChart
-      :type="UiChartType.Bar"
+      :kind="chart.kind"
       :labels="labels"
       :series="series"
       :loading="loading || waiting"
-      :height="UiChartHeight.Sm"
+      :height="chart.height"
     />
   </DashboardChartCard>
 </template>

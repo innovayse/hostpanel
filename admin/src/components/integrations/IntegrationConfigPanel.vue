@@ -3,8 +3,9 @@
  * The config panel of one integration, shared by the integration page and the Settings tab of a plugin.
  *
  * Loads the integration by its slug through the integrations store and draws the config form beside the status
- * sidebar. While the integration loads the same two cards are drawn with bars where their values go; a refused load shows the API's sentence
- * with a Retry; a save reports its outcome (success, or the API's sentence) above the form.
+ * sidebar, the two cards of `IntegrationDetailView.schema` in `UiDetailCards`, which draws the same two cards with bars
+ * where their values go while the integration loads; a refused load shows the API's sentence with a Retry; a save reports
+ * its outcome (success, or the API's sentence) above the form.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,10 +16,11 @@ import { INTEGRATION_META } from '@/types/integrationmeta'
 import type { IntegrationConfigPayload, IntegrationSlug } from '@/types/integration'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatusSidebar.vue'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import schema from '@/views/IntegrationDetailView.schema'
 
 /** Props for IntegrationConfigPanel. */
 const props = defineProps<{
@@ -116,23 +118,27 @@ onMounted(load)
     <!-- Outcome of the last save -->
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="integration-feedback" />
 
-    <!-- Content: the same split while the integration is read, with placeholders where its values go -->
-    <UiSplit v-if="loadError === null" :aria-busy="store.current === null ? 'true' : undefined">
-      <IntegrationConfigForm
-        :integration="store.current"
-        :loading="store.loading"
-        :testing="store.testing"
-        @save="handleSave"
-        @test="handleTest"
-      />
-      <IntegrationStatusSidebar
-        :loading="store.current === null"
-        :test-result="store.testResult"
-        :testing="store.testing"
-        :connection="store.current?.connection"
-        :endpoint-host="endpointHost"
-        :hint="hint"
-      />
-    </UiSplit>
+    <!-- Content: the schema's two cards, placeholders while the integration is read -->
+    <UiDetailCards v-if="loadError === null" :columns="schema.columns" :ratio="schema.ratio" :loading="store.current === null">
+      <template #card-config>
+        <IntegrationConfigForm
+          v-if="store.current"
+          :integration="store.current"
+          :loading="store.loading"
+          :testing="store.testing"
+          @save="handleSave"
+          @test="handleTest"
+        />
+      </template>
+      <template #card-status>
+        <IntegrationStatusSidebar
+          :test-result="store.testResult"
+          :testing="store.testing"
+          :connection="store.current?.connection"
+          :endpoint-host="endpointHost"
+          :hint="hint"
+        />
+      </template>
+    </UiDetailCards>
   </UiStack>
 </template>

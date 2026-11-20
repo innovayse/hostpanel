@@ -14,6 +14,9 @@
   "uiCountrySelect": {
     "selectCountry": "Ընտրեք երկիրը"
   },
+  "uiDateTimePicker": {
+    "title": "Ընտրեք ամսաթիվ և ժամ"
+  },
   "uiDatePicker": {
     "ddMmYyyy": "ՕՕ/ԱԱ/ՏՏՏՏ",
     "month": "Ամիս",
@@ -42,13 +45,14 @@
   },
   "uiFieldSelector": {
     "fields": "Դաշտեր",
+    "selectedCount": "{count} / {total} դաշտ",
     "clearAll": "Մաքրել բոլորը"
   },
   "uiFilterTrigger": {
     "filters": "Ֆիլտրներ",
     "title": "Ֆիլտրներ",
     "apply": "Կիրառել",
-    "reset": "Վերակայել",
+    "reset": "Մաքրել",
     "cancel": "Չեղարկել"
   },
   "uiFilterChips": {
@@ -57,6 +61,7 @@
     "clearAll": "Մաքրել բոլորը"
   },
   "uiSelect": {
+    "choose": "Ընտրեք արժեք",
     "noResults": "Արդյունքներ չկան"
   },
   "uiLimitField": {
@@ -89,9 +94,13 @@
     "clear": "Հեռացնել ընտրությունը",
     "selected": "Ընտրված է {count} տող | Ընտրված է {count} տող"
   },
+  "actionBar": {
+    "more": "Այլ գործողություններ"
+  },
   "chart": {
     "empty": "Գրաֆիկի համար տվյալներ չկան",
-    "target": "Նպատակ"
+    "target": "Նպատակ",
+    "aria": "Գրաֆիկ"
   },
   "uploadZone": {
     "dropOr": "Քաշեք ֆայլը կամ",
@@ -99,9 +108,18 @@
   },
   "input": {
     "showPassword": "Ցուցադրել գաղտնաբառը",
-    "hidePassword": "Թաքցնել գաղտնաբառը"
+    "hidePassword": "Թաքցնել գաղտնաբառը",
+    "clearSearch": "Մաքրել"
   },
   "errorState": {
     "retry": "Կրկնել"
+  },
+  "uiLocalizedField": {
+    "emptyTab": "Լրացված չէ",
+    "invalidTab": "Պահանջում է ուշադրություն"
+  },
+  "imagePreview": {
+    "showOnLight": "Ցուցադրել բաց ֆոնի վրա",
+    "showOnDark": "Ցուցադրել մուգ ֆոնի վրա"
   }
 }

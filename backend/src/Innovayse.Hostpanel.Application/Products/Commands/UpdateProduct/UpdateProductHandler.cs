@@ -111,6 +111,12 @@ public sealed class UpdateProductHandler
             product.Activate();
         }
 
+        // Null trial settings keep the stored ones, so a caller that does not know the field never changes them.
+        if (cmd.Trial is { } trial)
+        {
+            product.ConfigureTrial(trial.ToDomain());
+        }
+
         if (cmd.IsFeatured == true)
         {
             await product.UnfeatureSiblingsAsync(_context, ct);

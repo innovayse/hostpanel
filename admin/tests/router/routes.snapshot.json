@@ -27,7 +27,8 @@
   {
     "path": "/",
     "meta": {
-      "requiresAuth": true
+      "requiresAuth": true,
+      "shell": true
     },
     "component": "AppLayout.vue",
     "children": [
@@ -41,6 +42,9 @@
       },
       {
         "path": "notifications",
+        "meta": {
+          "crumb": "common.notifications"
+        },
         "component": "NotificationsView.vue"
       },
       {
@@ -267,52 +271,12 @@
             "redirect": "/reports/oss"
           },
           {
-            "path": "aging-invoices",
-            "component": "AgingInvoicesView.vue"
-          },
-          {
-            "path": "annual-income",
-            "component": "AnnualIncomeView.vue"
-          },
-          {
-            "path": "client-statement",
-            "component": "ClientStatementView.vue"
-          },
-          {
-            "path": "clients",
-            "component": "ClientsReportView.vue"
-          },
-          {
-            "path": "clients-by-country",
-            "component": "ClientsByCountryView.vue"
-          },
-          {
-            "path": "credits-reviewer",
-            "component": "CreditsReviewerView.vue"
-          },
-          {
-            "path": "customer-retention",
-            "component": "CustomerRetentionView.vue"
-          },
-          {
             "path": "daily-performance",
             "component": "DailyPerformanceView.vue"
           },
           {
-            "path": "direct-debit",
-            "component": "DirectDebitView.vue"
-          },
-          {
-            "path": "disk-usage",
-            "component": "DiskUsageView.vue"
-          },
-          {
-            "path": "domain-renewal-emails",
-            "component": "DomainRenewalEmailsView.vue"
-          },
-          {
-            "path": "domains",
-            "component": "DomainsReportView.vue"
+            "path": "annual-income",
+            "component": "AnnualIncomeView.vue"
           },
           {
             "path": "income-forecast",
@@ -327,24 +291,64 @@
             "component": "InvoicesReportView.vue"
           },
           {
-            "path": "monthly-orders",
-            "component": "MonthlyOrdersView.vue"
+            "path": "aging-invoices",
+            "component": "AgingInvoicesView.vue"
           },
           {
             "path": "monthly-transactions",
             "component": "MonthlyTransactionsView.vue"
           },
           {
-            "path": "new-customers",
-            "component": "NewCustomersView.vue"
+            "path": "transactions",
+            "component": "TransactionsReportView.vue"
+          },
+          {
+            "path": "sales-tax",
+            "component": "SalesTaxView.vue"
           },
           {
             "path": "oss",
             "component": "OssReportView.vue"
           },
           {
-            "path": "pdf-batch",
-            "component": "PdfBatchView.vue"
+            "path": "direct-debit",
+            "component": "DirectDebitView.vue"
+          },
+          {
+            "path": "credits-reviewer",
+            "component": "CreditsReviewerView.vue"
+          },
+          {
+            "path": "clients",
+            "component": "ClientsReportView.vue"
+          },
+          {
+            "path": "new-customers",
+            "component": "NewCustomersView.vue"
+          },
+          {
+            "path": "top-clients",
+            "component": "TopClientsView.vue"
+          },
+          {
+            "path": "clients-by-country",
+            "component": "ClientsByCountryView.vue"
+          },
+          {
+            "path": "customer-retention",
+            "component": "CustomerRetentionView.vue"
+          },
+          {
+            "path": "client-statement",
+            "component": "ClientStatementView.vue"
+          },
+          {
+            "path": "monthly-orders",
+            "component": "MonthlyOrdersView.vue"
+          },
+          {
+            "path": "services",
+            "component": "ServicesReportView.vue"
           },
           {
             "path": "product-suspensions",
@@ -355,20 +359,12 @@
             "component": "PromotionsView.vue"
           },
           {
-            "path": "sales-tax",
-            "component": "SalesTaxView.vue"
+            "path": "domains",
+            "component": "DomainsReportView.vue"
           },
           {
-            "path": "server-revenue-forecasts",
-            "component": "ServerRevenueForecastsView.vue"
-          },
-          {
-            "path": "services",
-            "component": "ServicesReportView.vue"
-          },
-          {
-            "path": "smarty-compatibility",
-            "component": "SmartyCompatibilityView.vue"
+            "path": "domain-renewal-emails",
+            "component": "DomainRenewalEmailsView.vue"
           },
           {
             "path": "ssl-monitoring",
@@ -379,28 +375,28 @@
             "component": "SupportTicketsReportView.vue"
           },
           {
-            "path": "ticket-feedback-comments",
-            "component": "TicketFeedbackCommentsView.vue"
+            "path": "ticket-tags",
+            "component": "TicketTagsView.vue"
           },
           {
             "path": "ticket-feedback-scores",
             "component": "TicketFeedbackScoresView.vue"
           },
           {
+            "path": "ticket-feedback-comments",
+            "component": "TicketFeedbackCommentsView.vue"
+          },
+          {
             "path": "ticket-ratings-reviewer",
             "component": "TicketRatingsReviewerView.vue"
           },
           {
-            "path": "ticket-tags",
-            "component": "TicketTagsView.vue"
+            "path": "disk-usage",
+            "component": "DiskUsageView.vue"
           },
           {
-            "path": "top-clients",
-            "component": "TopClientsView.vue"
-          },
-          {
-            "path": "transactions",
-            "component": "TransactionsReportView.vue"
+            "path": "server-revenue-forecasts",
+            "component": "ServerRevenueForecastsView.vue"
           }
         ]
       },

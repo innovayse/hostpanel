@@ -76,6 +76,8 @@ export interface IntegrationDto {
    * integration and every other plugin.
    */
   connection: IntegrationConnection | null
+  /** The plugin's short description in the request language; null for a built-in integration, whose card text the admin owns. */
+  description: string | null
 }
 
 /** Closed set of connection states the API reports for a plugin integration; the strings are the API's enum names. */

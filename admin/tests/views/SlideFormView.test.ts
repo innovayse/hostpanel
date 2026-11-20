@@ -5,6 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import SlideFormView from '@/views/SlideFormView.vue'
+import schema from '@/views/SlideFormView.schema'
 import type { Slide } from '@/types/slide'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -57,7 +58,9 @@ describe('SlideFormView', () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(SlideFormView, {}, '/settings/slides/create', '/settings/slides/create')
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Create Slide')
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Create Slide')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create Slide')
     expect((wrapper.get('[data-testid="slide-form-title"]').element as HTMLInputElement).value).toBe('')
   })
@@ -185,5 +188,65 @@ describe('SlideFormView', () => {
     await wrapper.get('[data-testid="slide-form-feature-remove-0"]').trigger('click')
 
     expect(wrapper.find('[data-testid="slide-form-feature-0"]').exists()).toBe(false)
+  })
+
+  it('draws every section and field of its schema', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(SlideFormView, {}, '/settings/slides/create', '/settings/slides/create')
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+      for (const field of section.fields) {
+        expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+      }
+    }
+  })
+
+  it('keeps the fields of its schema as placeholders while the slide loads', async () => {
+    stubRouteTable({ ...routes, 'GET /admin/slides': () => new Promise<Response>(() => undefined) })
+    const { wrapper } = await mountScreen(SlideFormView, {}, '/settings/slides/3/edit', '/settings/slides/:id/edit')
+
+    await vi.waitFor(() => {
+      expect(wrapper.findAll('[data-testid="ui-form-section-general"][aria-busy="true"]')).toHaveLength(1)
+    })
+    expect(wrapper.find('[data-testid="slide-form-title"]').exists()).toBe(false)
+  })
+
+  it('marks the language tabs with no text and drops the mark of a language once it is written', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(SlideFormView, {}, '/settings/slides/create', '/settings/slides/create')
+
+    for (const locale of ['en', 'ru', 'hy']) {
+      expect(wrapper.find(`[data-testid="slide-form-tab-${locale}-empty"]`).exists()).toBe(true)
+    }
+
+    await wrapper.get('[data-testid="slide-form-title"]').setValue('Written')
+
+    expect(wrapper.find('[data-testid="slide-form-tab-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="slide-form-tab-ru-empty"]').exists()).toBe(true)
+  })
+
+  it('lets the reader leave a loaded slide without a question when nothing was edited', async () => {
+    // A slide linked to a product makes the form fill its learn more link while it loads, which must not count as an edit.
+    stubRouteTable({ ...routes, 'GET /admin/slides': () => json([{ ...stored, productId: 4, productName: 'Plan' }]) })
+    const { wrapper, router } = await mountScreen(SlideFormView, {}, '/settings/slides/3/edit', '/settings/slides/:id/edit')
+
+    await router.push('/settings/slides')
+
+    expect(router.currentRoute.value.path).toBe('/settings/slides')
+    expect(wrapper.find('[data-testid="dialog-panel"]').exists()).toBe(false)
+  })
+
+  it('asks before leaving a loaded slide that was edited', async () => {
+    stubRouteTable(routes)
+    const { wrapper, router } = await mountScreen(SlideFormView, {}, '/settings/slides/3/edit', '/settings/slides/:id/edit')
+    await wrapper.get('[data-testid="slide-form-title"]').setValue('Changed')
+
+    void router.push('/settings/slides')
+
+    await vi.waitFor(() => {
+      expect(wrapper.find('[data-testid="dialog-panel"]').exists()).toBe(true)
+    })
+    expect(router.currentRoute.value.path).toBe('/settings/slides/3/edit')
   })
 })

@@ -1,0 +1,35 @@
+{
+  "op": "remove-database",
+  "cases": [
+    {
+      "name": "drops what the agent created",
+      "request": {"v": 1, "op": "remove-database", "account": "alice", "label": "shop"},
+      "helper": {"exit": 0, "result": {"changed": true}},
+      "response": {"v": 1, "ok": true, "changed": true}
+    },
+    {
+      "name": "nothing left to drop",
+      "request": {"v": 1, "op": "remove-database", "account": "alice", "label": "shop"},
+      "helper": {"exit": 0, "result": {"changed": false}},
+      "response": {"v": 1, "ok": true, "changed": false}
+    },
+    {
+      "name": "the database exists but the agent did not create it",
+      "request": {"v": 1, "op": "remove-database", "account": "alice", "label": "site"},
+      "helper": {"exit": 3, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "site_not_owned"}
+    },
+    {
+      "name": "dropping failed",
+      "request": {"v": 1, "op": "remove-database", "account": "alice", "label": "shop"},
+      "helper": {"exit": 1, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "database_failed"}
+    },
+    {
+      "name": "no helper on this server",
+      "request": {"v": 1, "op": "remove-database", "account": "alice", "label": "shop"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "not_supported"}
+    }
+  ]
+}

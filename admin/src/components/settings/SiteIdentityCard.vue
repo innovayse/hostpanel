@@ -9,11 +9,8 @@ import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import type { SettingDraft } from '@/composables/useSettingDraft'
-import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
-import SettingOutcome from '@/components/settings/SettingOutcome.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
-import UiInput from '@/components/ui/UiInput.vue'
-import UiStack from '@/components/ui/UiStack.vue'
+import SettingsTextField from '@/components/settings/SettingsTextField.vue'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
 import { SHORT_TEXT_MAX_LENGTH } from '@/lib/limits'
@@ -72,19 +69,16 @@ const FIELDS: IdentityField[] = [
     :title="t('settings.siteIdentity.title')"
     :description="t('settings.siteIdentity.description')"
   >
-    <template v-for="field in FIELDS" :key="field.key">
-      <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="field.env" />
-      <UiStack v-else direction="row" align="end" wrap>
-        <UiInput
-          v-model="field.draft.value.value"
-          :label="t(field.labelKey)"
-          :placeholder="t(field.hintKey)"
-          :maxlength="SHORT_TEXT_MAX_LENGTH"
-          :data-testid="`site-identity-${field.testid}`"
-          class="min-w-72 flex-1"
-        />
-        <SettingOutcome :outcome="field.draft.outcome.value" />
-      </UiStack>
-    </template>
+    <SettingsTextField
+      v-for="field in FIELDS"
+      :key="field.key"
+      :draft="field.draft"
+      :setting-key="field.key"
+      :env-name="field.env"
+      :label="t(field.labelKey)"
+      :placeholder="t(field.hintKey)"
+      :maxlength="SHORT_TEXT_MAX_LENGTH"
+      :testid="`site-identity-${field.testid}`"
+    />
   </SettingsSection>
 </template>

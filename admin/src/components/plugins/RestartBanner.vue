@@ -8,6 +8,7 @@ import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -33,7 +34,7 @@ const emit = defineEmits<{
         <UiText tone="warning" size="lg" class="font-medium">{{ t('plugins.restartBanner.restartRequired') }}</UiText>
         <UiText tone="muted" size="sm">{{ t('plugins.restartBanner.pluginChangesWillTakeEffect') }}</UiText>
       </UiStack>
-      <UiButton
+      <UiButton :action="UiActionKind.Refresh"
         type="button"
         variant="secondary"
         size="sm"

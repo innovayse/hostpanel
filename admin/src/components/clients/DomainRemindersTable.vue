@@ -14,6 +14,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiColumnSize } from '@/utils/ui/table'
 import { formatDate } from '@/lib/format'
 import { DOMAIN_REMINDER_TYPE_LABEL_KEYS } from '@/types/domain'
 import type { DomainReminderItem } from '@/types/domain'
@@ -35,15 +36,16 @@ defineProps<{
         {{ t('clients.domainRemindersTable.domainReminderHistory') }}
       </UiHeading>
       <UiTable
+        :empty-text="t('shared.noRecordsFound')"
         :density="UiTableDensity.Compact"
         :empty="reminders.length === 0"
         data-testid="clients-domain-reminders-table"
       >
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('clients.domainRemindersTable.reminder') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow">{{ t('clients.domainRemindersTable.reminder') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.to') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.domainRemindersTable.sent') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact">{{ t('clients.domainRemindersTable.sent') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -53,9 +55,6 @@ defineProps<{
             <UiTableCell muted>{{ formatDate(reminder.sentAt) }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('shared.noRecordsFound') }}
-        </template>
       </UiTable>
     </UiStack>
   </UiCard>

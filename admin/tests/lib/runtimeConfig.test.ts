@@ -42,6 +42,11 @@ describe('runtimeConfig', () => {
     expect(storefrontAssetUrl('/demo/partners/a.svg')).toBe('https://host.example.com/demo/partners/a.svg')
   })
 
+  it('keeps an operator upload on the admin origin, which proxies it to the API', () => {
+    window.__APP_CONFIG__ = { clientBaseUrl: 'https://host.example.com' }
+    expect(storefrontAssetUrl('/uploads/slides/a.png')).toBe('/uploads/slides/a.png')
+  })
+
   it('leaves absolute, protocol-relative, data and empty URLs alone', () => {
     window.__APP_CONFIG__ = { clientBaseUrl: 'https://host.example.com' }
     expect(storefrontAssetUrl('https://cdn.example.com/a.png')).toBe('https://cdn.example.com/a.png')

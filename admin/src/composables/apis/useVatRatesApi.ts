@@ -22,12 +22,12 @@ export const useVatRatesApi = () => {
   /**
    * Lists VAT rates, one page.
    *
-   * @param filter - Page, page size and search.
+   * @param filter - Page, page size, search and the kind and status filters.
    * @returns The page and the total count.
    */
   const listVatRates = (filter: VatRateFilter): Promise<PaginatedList<VatRateDto>> =>
     request<PaginatedList<VatRateDto>>(
-      `${ApiPath.AdminVatRates}${buildQuery({ page: filter.page, pageSize: filter.pageSize, search: filter.search })}`,
+      `${ApiPath.AdminVatRates}${buildQuery({ page: filter.page, pageSize: filter.pageSize, search: filter.search, kind: filter.kind, status: filter.status })}`,
     )
 
   /**

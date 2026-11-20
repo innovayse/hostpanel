@@ -162,7 +162,7 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 
 - `admin/src/lib/constants.ts`՝ ավելացրեք գրառում `LANGUAGE_OPTIONS` ցանկում նոր լեզվի համար, որպեսզի այն երևա հաճախորդի և օգտատիրոջ ձևերի լեզվի ընտրիչներում։ Նրա պիտակը կարդում է նոր բանալի՝ `clients.clientForm.french` (օգտագործեք ձեր լեզվի անունը), որը ավելացնում եք `admin/src/locales/<lang>/clients.json` ֆայլի յուրաքանչյուր լեզվի տարբերակում՝ `english`, `russian` և `armenian` բանալիների կողքին։
 - `admin/src/lib/storefrontTranslations.ts`՝ ավելացրեք նոր լեզուն `STOREFRONT_LOCALES`-ում և `[MessageLanguage.Fr]: blank()` գրառումը `blankTranslations`-ում, որպեսզի հանրային կայքի բովանդակության ձևերն ունենան ներդիր նոր լեզվի համար։
-- `admin/src/composables/useStorefrontLocaleTabs.ts`՝ ավելացրեք նոր լեզվի ներդիրը `tabs` computed զանգվածում։
+- `admin/src/components/ui/UiLocalizedField.vue`՝ ավելացրեք նոր լեզվի անվանումը `captions` computed օբյեկտում, որը կարդում է ադմինի լեզվի ներդիրների յուրաքանչյուր շարք։ Նույն նոր `Record<MessageLanguage, ...>` գրառումները պահանջվում են `storefrontTranslations.ts`-ի `filledLocales`-ում և `useLocalizedSettingDrafts`-ում, և կոմպիլյատորը ցուցակագրում է դրանցից յուրաքանչյուրը։
 
 **Լեզվի վերջածանցով կարգավորումներ (ըստ ցանկության)․**
 

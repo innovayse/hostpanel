@@ -1,5 +1,5 @@
 {
-  "back": "Back to plugins",
+  "title": "Plugin",
   "tabs": {
     "label": "Plugin sections",
     "overview": "Overview",
@@ -76,6 +76,56 @@
     "noChangelog": "No release notes.",
     "permissions": "Permissions",
     "noPermissions": "Asks for no permissions."
+  },
+  "overview": {
+    "details": "Details",
+    "installation": "Installation",
+    "compatibility": "Compatibility",
+    "permissions": "Permissions",
+    "noDescription": "The plugin gives no description.",
+    "notGiven": "Not given",
+    "notRecorded": "Not recorded",
+    "notUpdated": "Not updated since it was installed",
+    "author": "Author",
+    "type": "Type",
+    "category": "Category",
+    "id": "Plugin id",
+    "types": {
+      "provisioning": "Hosting provisioning",
+      "payment": "Payment gateway",
+      "registrar": "Domain registrar",
+      "identity": "Sign-in and client identity",
+      "fulfilment": "Fulfilment of digital products",
+      "hosted": "Background service",
+      "app": "App with its own pages"
+    },
+    "state": {
+      "label": "State",
+      "running": "Loaded and running",
+      "afterRestart": "Loads after the next restart",
+      "refused": "Refused at startup"
+    },
+    "sourceLabel": "Source",
+    "source": {
+      "BuiltIn": "Ships with the server",
+      "Uploaded": "Uploaded package file",
+      "Registry": "Plugin registry"
+    },
+    "installedAt": "Installed",
+    "updatedAt": "Last updated",
+    "installedBy": "Installed by",
+    "signerLabel": "Signed by",
+    "signer": {
+      "Unsigned": "Not signed",
+      "VerifiedPublisher": "A verified publisher",
+      "OwnKey": "Your own key"
+    },
+    "signerKey": "Signing key",
+    "size": "Package size",
+    "sha256": "SHA-256 of the package",
+    "installedVersion": "Installed version",
+    "stagedVersion": "Staged version",
+    "hostVersions": "Server versions"
   },
   "confirm": {
     "installTitle": "Install this version?",

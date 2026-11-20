@@ -9,11 +9,14 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import ClientTransactionsView from '@/views/ClientTransactionsView.vue'
+import schema from '@/views/ClientTransactionsView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { transactionFixture } from '../helpers/billingFixtures'
 import { mountClientView } from '../helpers/clientViews'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The one-transaction ledger of client 7. */
 const ledger = () =>
@@ -108,7 +111,7 @@ describe('ClientTransactionsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-transactions-feedback"]').text()).toBe('Transaction deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Transaction deleted.'])
   })
 
   it('shows the API sentence when the delete is refused, without the load error', async () => {
@@ -191,6 +194,8 @@ describe('ClientTransactionsView', () => {
 
     expect(wrapper.text()).toContain('40.00 USD')
     expect(wrapper.text()).toContain('39.00 USD')
+    expect(wrapper.get('[data-testid="client-transactions-stat-totalIn"]').text()).toContain('Total In')
+    expect(wrapper.get('[data-testid="client-transactions-stat-balance"]').text()).toContain('39.00 USD')
   })
 
   it('removes a filter from the address and reloads when its chip is removed', async () => {
@@ -245,5 +250,21 @@ describe('ClientTransactionsView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="client-transactions-error"]').exists()).toBe(false)
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/transactions/client/7': ledger })
+    const wrapper = await mountLedger()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientTransactionsView, '/clients/:id/transactions', '/clients/7/transactions')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

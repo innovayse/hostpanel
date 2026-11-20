@@ -17,6 +17,8 @@ import { blankTransactionForm, firstInvoiceId, formFromTransaction } from '@/lib
 import { useTransactionsStore } from '@/stores/billingTransactions'
 import type { TransactionFormValues } from '@/types/transaction'
 import { AppRoute } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
+import schema from '@/views/EditTransactionView.schema'
 
 const { t } = useI18n()
 
@@ -80,10 +82,7 @@ onMounted(() => {
 
 <template>
   <UiStack data-testid="billing-edit-transaction-view">
-    <UiPageHeader
-      :title="t('billing.editTransaction.editTransaction')"
-      :subtitle="t('billing.editTransaction.updatePaymentTransactionDetails')"
-    />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
     <UiErrorState
       v-if="loadError !== null"
       :message="loadError"
@@ -94,6 +93,7 @@ onMounted(() => {
     <TransactionForm
       v-else
       v-model="values"
+      :columns="schema.columns"
       lock-client
       :clients="clients"
       :submit-label="t('billing.editTransaction.updateTransaction')"

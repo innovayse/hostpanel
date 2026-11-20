@@ -7,16 +7,16 @@
  * choices: `past` (yesterday, 7 days ago and so on) or `future` (tomorrow, in 7 days and so on), which
  * replaces the former separate future picker. Colours are theme tokens, so the popup follows the
  * light/dark switch. The popup is drawn in the page body (a teleport) and placed under the field with fixed
- * positioning, so no card around the field can paint over it. `data-testid` and classes land on the root element.
+ * positioning, so no card around the field can paint over it; on a phone (below `sm`) it is a bottom sheet
+ * ({@link UiFloatingSurface}) and the field opens it by a tap and raises no keyboard. `data-testid` and classes land on the root element.
  */
 import { computed, onMounted, ref, watch } from 'vue'
-import UiTransition from '@/components/ui/UiTransition.vue'
-import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
+import UiFloatingSurface from '@/components/ui/UiFloatingSurface.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
 import { useDropdown } from '@/composables/useDropdown'
-import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { splitIsoDate } from '@/lib/format'
 import { translate } from '@/lib/translate'
 import {
@@ -77,10 +77,17 @@ const POPUP_GAP_PX = 8
 /** Open flag and outside-pointer handling shared with the other floating lists; `panel` is the teleported popup. */
 const { open: isOpen, root: popupRef, trigger: inputRef, panel, show, hide } = useDropdown()
 
-useFloatingPlace(inputRef, panel, isOpen, { align: FloatingAlign.Start, minRoom: POPUP_HEIGHT, gap: POPUP_GAP_PX })
+/** The shape the screen asks for: on a phone the popup is a bottom sheet. */
+const presentation = useDrawerPresentation()
 
-/** Classes of the popup: fixed at its place, over the cards of the page, in the kit's popup look. */
-const popupClasses = `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden ${datePopupClasses}`
+/**
+ * Whether the popup is a bottom sheet. The field then opens it by a tap only and raises no keyboard (`inputmode="none"`), so
+ * closing the sheet, which gives the focus back to the field, never opens it again.
+ */
+const isSheet = computed<boolean>(() => presentation.value === UiDrawerPresentation.Sheet)
+
+/** Classes of the popover: clipped to the kit's popup look (the place and the surface are the floating surface's). */
+const popupClasses = `overflow-hidden ${datePopupClasses}`
 
 /** First day of the month the grid shows. */
 const currentMonth = ref(new Date())
@@ -112,8 +119,8 @@ const yearOptions = buildYearOptions()
 /** The field hint: the caller's, else the date format. */
 const fieldPlaceholder = computed<string>(() => props.placeholder || t('ui.uiDatePicker.ddMmYyyy'))
 
-/** Width class of the quick-choice column; future captions are longer. */
-const quickPanelWidthClass = computed<string>(() => (props.direction === UiDatePickerDirection.Future ? 'w-48' : 'w-36'))
+/** Width class of the quick-choice column (a row of chips on a phone); future captions are longer. */
+const quickPanelWidthClass = computed<string>(() => (props.direction === UiDatePickerDirection.Future ? 'sm:w-48' : 'sm:w-36'))
 
 /** Quick choice matching the model right now. */
 const selectedQuick = computed<QuickDate | null>(() => matchQuickDate(props.modelValue, props.direction))
@@ -176,6 +183,13 @@ const clearPreview = (): void => {
 const openPopup = (): void => {
   if (!props.disabled) {
     show()
+  }
+}
+
+/** Opens the popup when the field takes focus (tabbing in), except for a sheet, which a tap opens. */
+const openOnFocus = (): void => {
+  if (!isSheet.value) {
+    openPopup()
   }
 }
 
@@ -258,7 +272,7 @@ const dayClasses = (day: number | null): string[] => {
  * @returns Active or idle classes.
  */
 const quickClasses = (choice: QuickDate): string[] => [
-  'px-3 py-2 text-left text-[0.82rem] rounded transition-colors',
+  'px-3 py-2 text-left text-[0.82rem] rounded transition-colors max-sm:shrink-0 max-sm:whitespace-nowrap',
   selectedQuick.value === choice ? datePresetActiveClasses : datePresetIdleClasses,
 ]
 
@@ -332,73 +346,75 @@ onMounted(initFromModel)
       data-testid="date-picker-input"
       :placeholder="fieldPlaceholder"
       :disabled="disabled"
+      :inputmode="isSheet ? 'none' : undefined"
       :class="dateFieldClasses"
       @click="openPopup"
-      @focus="openPopup"
+      @focus="openOnFocus"
       @input="handleInput"
     >
 
-    <!-- Popup: in the page body, so no card around the field can paint over it -->
-    <Teleport to="body">
-      <UiTransition :kind="UiTransitionKind.Dropdown">
-        <div
-          v-if="isOpen"
-          ref="panel"
-          :class="popupClasses"
-        >
-          <div class="flex">
-            <div :class="quickPanelWidthClass" class="bg-surface-hover border-r border-border p-3 flex flex-col gap-1">
-              <button
-                v-for="choice in quickDateOrder"
-                :key="choice"
-                type="button"
-                :data-testid="`date-picker-quick-${choice}`"
-                :class="quickClasses(choice)"
-                @click="selectQuick(choice)"
-              >
-                {{ t(quickDateLabelKeys[direction][choice]) }}
-              </button>
-            </div>
+    <!-- The popup: in the page body (no card around the field can paint over it) or a bottom sheet on a phone -->
+    <UiFloatingSurface
+      :open="isOpen"
+      :anchor="inputRef"
+      :title="fieldPlaceholder"
+      :min-room="POPUP_HEIGHT"
+      :gap="POPUP_GAP_PX"
+      :popover-class="popupClasses"
+      @close="hide(true)"
+      @panel="panel = $event"
+    >
+      <div class="flex flex-col sm:flex-row">
+        <div :class="quickPanelWidthClass" class="bg-surface-hover border-b sm:border-b-0 sm:border-r border-border p-3 flex flex-row sm:flex-col gap-1 max-sm:overflow-x-auto">
+          <button
+            v-for="choice in quickDateOrder"
+            :key="choice"
+            type="button"
+            :data-testid="`date-picker-quick-${choice}`"
+            :class="quickClasses(choice)"
+            @click="selectQuick(choice)"
+          >
+            {{ t(quickDateLabelKeys[direction][choice]) }}
+          </button>
+        </div>
 
-            <div class="p-4 w-80">
-              <div class="flex items-center justify-between mb-4">
-                <button type="button" data-testid="date-picker-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
-                <div class="flex items-center gap-2">
-                  <div class="w-[140px]">
-                    <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
-                  </div>
-                  <div class="w-[100px]">
-                    <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
-                  </div>
-                </div>
-                <button type="button" data-testid="date-picker-next" :class="dateArrowClasses" @click="nextMonth">›</button>
+        <div class="p-4 w-full sm:w-80">
+          <div class="flex items-center justify-between mb-4">
+            <button type="button" data-testid="date-picker-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
+            <div class="flex items-center gap-2">
+              <div class="w-[140px]">
+                <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
               </div>
-
-              <div class="grid grid-cols-7 gap-1 mb-2">
-                <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
-              </div>
-              <div class="grid grid-cols-7 gap-1">
-                <button
-                  v-for="(day, i) in monthDays"
-                  :key="monthDayKeys[i]"
-                  type="button"
-                  :data-testid="`date-picker-day-${i}`"
-                  :disabled="day === null"
-                  :class="dayClasses(day)"
-                  @click="selectDay(day)"
-                >
-                  {{ day }}
-                </button>
-              </div>
-
-              <div class="flex items-center justify-between border-t border-border mt-4 pt-4">
-                <button type="button" data-testid="date-picker-clear" :class="dateActionClasses" @click="clearDate">{{ t('shared.clear') }}</button>
-                <button type="button" data-testid="date-picker-close" :class="dateActionClasses" @click="hide()">{{ t('shared.close') }}</button>
+              <div class="w-[100px]">
+                <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
               </div>
             </div>
+            <button type="button" data-testid="date-picker-next" :class="dateArrowClasses" @click="nextMonth">›</button>
+          </div>
+
+          <div class="grid grid-cols-7 gap-1 mb-2">
+            <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>
+          </div>
+          <div class="grid grid-cols-7 gap-1">
+            <button
+              v-for="(day, i) in monthDays"
+              :key="monthDayKeys[i]"
+              type="button"
+              :data-testid="`date-picker-day-${i}`"
+              :disabled="day === null"
+              :class="dayClasses(day)"
+              @click="selectDay(day)"
+            >
+              {{ day }}
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between border-t border-border mt-4 pt-4">
+            <button type="button" data-testid="date-picker-clear" :class="dateActionClasses" @click="clearDate">{{ t('shared.clear') }}</button>
+            <button type="button" data-testid="date-picker-close" :class="dateActionClasses" @click="hide()">{{ t('shared.close') }}</button>
           </div>
         </div>
-      </UiTransition>
-    </Teleport>
+      </div>
+    </UiFloatingSurface>
   </div>
 </template>

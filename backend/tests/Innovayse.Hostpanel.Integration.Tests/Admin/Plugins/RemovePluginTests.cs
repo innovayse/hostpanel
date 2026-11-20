@@ -58,6 +58,8 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         var removal = await db.ActivityLogs.AsNoTracking()
             .SingleAsync(l => l.Description.StartsWith("Removed Plugin") && l.Description.Contains(pluginId));
         removal.ClientId.Should().BeNull("a plugin removal concerns no client");
+        (await db.InstalledPlugins.AsNoTracking().AnyAsync(p => p.PluginId == pluginId))
+            .Should().BeFalse("the install record describes a package that is gone");
     }
 
     /// <summary>

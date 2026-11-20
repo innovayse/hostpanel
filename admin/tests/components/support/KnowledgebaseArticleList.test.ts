@@ -72,7 +72,8 @@ describe('KnowledgebaseArticleList', () => {
     expect(row.text()).toContain('How to pay')
     expect(row.text()).toContain('how-to-pay')
     expect(row.text()).toContain('Billing')
-    expect(row.text()).toContain('Published')
+    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Published')
+    expect(wrapper.findAll('th').some((header) => header.classes().includes('max-w-0'))).toBe(true)
     expect(wrapper.get('[data-testid="knowledgebase-articles-count"]').text()).toContain('1 Records Found')
   })
 

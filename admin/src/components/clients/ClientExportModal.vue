@@ -16,6 +16,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { MimeType } from '@/types/http'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -161,7 +162,7 @@ const download = async (): Promise<void> => {
       </UiText>
     </UiStack>
     <template #footer>
-      <UiButton
+      <UiButton :action="UiActionKind.Download"
         :variant="UiButtonVariant.Primary"
         :loading="downloading"
         :disabled="!anySelected"

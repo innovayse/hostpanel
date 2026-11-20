@@ -60,9 +60,6 @@
   },
   "maxmind": {
     "shortDescription": "Հայտնաբերեք խարդախ պատվերները MaxMind-ի GeoIP ռիսկերի գնահատմամբ։",
-    "fieldLicenseKey": "Լիցենզիայի բանալի",
-    "fieldRegistrars": "Դոմեյն գրանցողներ",
-    "fieldEmail": "Էլ. փոստ / SMTP",
-    "fieldFraud": "Պաշտպանություն խարդախությունից"
+    "fieldLicenseKey": "Լիցենզիայի բանալի"
   }
 }

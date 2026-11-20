@@ -3,26 +3,27 @@
  * Upcoming renewals: the services and domains renewing in the next 30, 60 or 90 days, with the staff actions
  * around them. A row can switch automatic renewal on or off and raise the client's renewal invoice by hand; a
  * third list shows domain renewal lines left claimed after the registrar gave no clear answer, which staff
- * release once they have checked the registrar. Reads and writes through `stores/renewals`.
+ * release once they have checked the registrar. The window tabs, the cards of the three tables and their column heads are
+ * the ones of `UpcomingRenewalsView.schema`, which `UiSkeletonOf` also draws while the view downloads. Reads and writes
+ * through `stores/renewals`.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiCard from '@/components/ui/UiCard.vue'
+import { Icon } from '@/lib/icons'
+import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -32,10 +33,21 @@ import { formatDate, formatDateTime } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import { clientPath, invoicePath } from '@/lib/routes'
 import { statusLabel } from '@/lib/tones'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { RenewalNotice, useRenewalsStore } from '@/stores/renewals'
-import { RenewalWindow } from '@/types/renewal'
+import type { RenewalWindow } from '@/types/renewal'
 import type { ClaimedDomainRenewal } from '@/types/renewal'
 import { UiTone } from '@/utils/ui/tone'
+import schema, {
+  RENEWALS_CLAIMS_PART,
+  RENEWALS_CLAIMS_TABLE,
+  RENEWALS_DOMAINS_PART,
+  RENEWALS_DOMAINS_TABLE,
+  RENEWALS_SERVICES_PART,
+  RENEWALS_SERVICES_TABLE,
+  RENEWALS_WINDOW_TABS_PART,
+} from '@/views/UpcomingRenewalsView.schema'
+import { tabItemsOfSchema } from '@/utils/ui/tabs'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
 /** Translation function. */
@@ -47,13 +59,9 @@ const store = useRenewalsStore()
 /** The claimed line awaiting the release confirmation, null when no dialog is open. */
 const releaseTarget = ref<ClaimedDomainRenewal | null>(null)
 
-/** One tab per window. */
+/** One tab per window, the captions and values of the schema's strip. */
 const windowTabs = computed<UiTabItem[]>(() =>
-  Object.values(RenewalWindow).map(value => ({
-    value,
-    label: t(`billing.renewals.window.${value}`),
-    testid: `renewals-window-${value}`,
-  })),
+  tabItemsOfSchema(RENEWALS_WINDOW_TABS_PART.tabs, t, 'renewals-window-'),
 )
 
 /** The sentence for the result of the last action, null when there is none. */
@@ -103,6 +111,8 @@ const confirmRelease = async (): Promise<void> => {
 const generateActions = (clientId: number, testid: string): UiMenuAction[] => [
   {
     label: t('billing.renewals.generateInvoice'),
+    hint: t('billing.renewals.generateInvoiceHint'),
+    icon: Icon.File,
     testid,
     disabled: store.acting,
     /**
@@ -125,6 +135,7 @@ const generateActions = (clientId: number, testid: string): UiMenuAction[] => [
 const releaseActions = (claim: ClaimedDomainRenewal): UiMenuAction[] => [
   {
     label: t('billing.renewals.releaseClaim'),
+    icon: Icon.Undo,
     testid: `renewals-claim-release-${claim.itemId}`,
     disabled: store.acting,
     danger: true,
@@ -144,7 +155,7 @@ onMounted(() => store.fetchAll())
 
 <template>
   <UiStack data-testid="renewals-view">
-    <UiPageHeader :title="t('billing.renewals.heading')" :subtitle="t('billing.renewals.subtitle')" />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiTabs
       :items="windowTabs"
@@ -165,25 +176,14 @@ onMounted(() => store.fetchAll())
     <UiStatusMessage :message="noticeMessage" :tone="UiTone.Success" data-testid="renewals-notice" />
 
     <template v-if="!store.error">
-      <UiStack>
-        <UiHeading :level="2">{{ t('billing.renewals.servicesHeading') }}</UiHeading>
-        <UiCard>
+      <UiDetailCards :columns="RENEWALS_SERVICES_PART.columns" :loading="store.loading && store.services.length === 0">
+        <template #card-services>
           <UiTable
-            :loading="store.loading && store.services.length === 0"
-            :empty="!store.loading && store.services.length === 0"
+            :empty-text="t('billing.renewals.emptyServices')"
+            :empty="store.services.length === 0"
             data-testid="renewals-services-table"
           >
-            <UiTableHead>
-              <UiTableRow>
-                <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-                <UiTableHeader>{{ t('billing.renewals.product') }}</UiTableHeader>
-                <UiTableHeader>{{ t('billing.renewals.renewsOn') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
-                <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-              </UiTableRow>
-            </UiTableHead>
+            <UiSchemaTableHead :columns="RENEWALS_SERVICES_TABLE.columns" />
             <UiTableBody divided>
               <UiTableRow v-for="service in store.services" :key="service.id" hoverable>
                 <UiTableCell>
@@ -208,38 +208,25 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
-            <template #empty>
-              {{ t('billing.renewals.emptyServices') }}
-            </template>
           </UiTable>
-        </UiCard>
-        <UiPagination
-          :page="store.servicesPage"
-          :total="store.servicesTotal"
-          :page-size="store.pageSize"
-          testid="renewals-services-pagination"
-          @update:page="store.fetchServices"
-        />
-      </UiStack>
+          <UiPagination
+            :page="store.servicesPage"
+            :total="store.servicesTotal"
+            :page-size="store.pageSize"
+            testid="renewals-services-pagination"
+            @update:page="store.fetchServices"
+          />
+        </template>
+      </UiDetailCards>
 
-      <UiStack>
-        <UiHeading :level="2">{{ t('billing.renewals.domainsHeading') }}</UiHeading>
-        <UiCard>
+      <UiDetailCards :columns="RENEWALS_DOMAINS_PART.columns" :loading="store.loading && store.domains.length === 0">
+        <template #card-domains>
           <UiTable
-            :loading="store.loading && store.domains.length === 0"
-            :empty="!store.loading && store.domains.length === 0"
+            :empty-text="t('billing.renewals.emptyDomains')"
+            :empty="store.domains.length === 0"
             data-testid="renewals-domains-table"
           >
-            <UiTableHead>
-              <UiTableRow>
-                <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
-                <UiTableHeader>{{ t('billing.renewals.expires') }}</UiTableHeader>
-                <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-              </UiTableRow>
-            </UiTableHead>
+            <UiSchemaTableHead :columns="RENEWALS_DOMAINS_TABLE.columns" />
             <UiTableBody divided>
               <UiTableRow v-for="domain in store.domains" :key="domain.id" hoverable>
                 <UiTableCell>
@@ -263,38 +250,26 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
-            <template #empty>
-              {{ t('billing.renewals.emptyDomains') }}
-            </template>
           </UiTable>
-        </UiCard>
-        <UiPagination
-          :page="store.domainsPage"
-          :total="store.domainsTotal"
-          :page-size="store.pageSize"
-          testid="renewals-domains-pagination"
-          @update:page="store.fetchDomains"
-        />
-      </UiStack>
+          <UiPagination
+            :page="store.domainsPage"
+            :total="store.domainsTotal"
+            :page-size="store.pageSize"
+            testid="renewals-domains-pagination"
+            @update:page="store.fetchDomains"
+          />
+        </template>
+      </UiDetailCards>
 
-      <UiStack>
-        <UiHeading :level="2">{{ t('billing.renewals.claimsHeading') }}</UiHeading>
-        <UiText tone="muted" size="sm">{{ t('billing.renewals.claimsNote') }}</UiText>
-        <UiCard>
+      <UiDetailCards :columns="RENEWALS_CLAIMS_PART.columns" :loading="store.loading && store.claims.length === 0">
+        <template #card-claims>
+          <UiText tone="muted" size="sm">{{ t('billing.renewals.claimsNote') }}</UiText>
           <UiTable
-            :loading="store.loading && store.claims.length === 0"
-            :empty="!store.loading && store.claims.length === 0"
+            :empty-text="t('billing.renewals.emptyClaims')"
+            :empty="store.claims.length === 0"
             data-testid="renewals-claims-table"
           >
-            <UiTableHead>
-              <UiTableRow>
-                <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-                <UiTableHeader>{{ t('billing.renewals.line') }}</UiTableHeader>
-                <UiTableHeader>{{ t('billing.renewals.claimedAt') }}</UiTableHeader>
-                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-              </UiTableRow>
-            </UiTableHead>
+            <UiSchemaTableHead :columns="RENEWALS_CLAIMS_TABLE.columns" />
             <UiTableBody divided>
               <UiTableRow v-for="claim in store.claims" :key="claim.itemId" hoverable>
                 <UiTableCell>
@@ -314,12 +289,9 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
-            <template #empty>
-              {{ t('billing.renewals.emptyClaims') }}
-            </template>
           </UiTable>
-        </UiCard>
-      </UiStack>
+        </template>
+      </UiDetailCards>
     </template>
 
     <UiDialog

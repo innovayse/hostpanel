@@ -2,11 +2,12 @@
  * Tests for the pure helpers of the query reports.
  */
 import { describe, expect, it } from 'vitest'
-import { buildQueryParams, filterPage, reportPath } from '@/lib/reportsQuery'
+import { buildQueryParams, filterPage, QUERY_REPORT_DEFAULT_PRESET, reportPath } from '@/lib/reportsQuery'
+import { DateRangePreset, matchDateRangePreset, presetIsoRange } from '@/utils/ui/datePicker'
 import type { ReportQueryConfig, ReportQueryRange } from '@/types/reportquery'
 
 /** A report with a server-side status filter and a paged endpoint. */
-const config: ReportQueryConfig = { path: '/reports/invoices', serverFields: ['status'], pageSize: 25 }
+const config: ReportQueryConfig = { path: '/reports/invoices', serverFields: ['status'], pageSize: 25, defaultColumns: ['id'], defaultRanges: {}, defaultFilterField: 'status' }
 
 /** Two ranges, both sent to the endpoint. */
 const ranges: ReportQueryRange[] = [
@@ -72,5 +73,12 @@ describe('reportPath', () => {
 
   it('returns the bare path when nothing is set', () => {
     expect(reportPath('/reports/x')).toBe('/reports/x')
+  })
+})
+
+describe('QUERY_REPORT_DEFAULT_PRESET', () => {
+  it('is the current month, and the range it gives is the one the picker lights up', () => {
+    expect(QUERY_REPORT_DEFAULT_PRESET).toBe(DateRangePreset.ThisMonth)
+    expect(matchDateRangePreset(presetIsoRange(QUERY_REPORT_DEFAULT_PRESET))).toBe(QUERY_REPORT_DEFAULT_PRESET)
   })
 })

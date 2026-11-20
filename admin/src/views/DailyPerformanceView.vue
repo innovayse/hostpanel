@@ -5,89 +5,97 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportChartCard from '@/components/reports/ReportChartCard.vue'
-import ReportField from '@/components/reports/ReportField.vue'
-import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportStatRow from '@/components/reports/ReportStatRow.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import { useReport } from '@/composables/useReport'
+import { reportApiPath } from '@/lib/apiPaths'
+import { formatMonthDay } from '@/lib/format'
 import { reportPath } from '@/lib/reportsQuery'
+import { reportColumns } from '@/lib/reportsSchema'
+import { valueAtPath } from '@/lib/valueAtPath'
+import type { ReportChartData } from '@/types/reportchartdata'
+import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportStat } from '@/types/reportstat'
 import type { ReportDailyPerformanceRow } from '@/types/reportdailyperformance'
-import { UiChartType } from '@/utils/ui/chart'
-import type { UiChartSeries } from '@/utils/ui/chart'
-import { UiAlign } from '@/utils/ui/table'
-import { AppRoute } from '@/lib/routes'
+import type { ReportStatValue } from '@/types/reportstat'
+import type { ReportTableData } from '@/types/reporttabledata'
+import { DateRangePreset, presetIsoRange } from '@/utils/ui/datePicker'
+import { ReportFieldWidth } from '@/utils/ui/reportField'
+import schema from '@/views/DailyPerformanceView.schema'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
-/** The days to report; none means the endpoint default. */
-const dateRange = ref<[string, string] | null>(null)
+/**
+ * The days a report opens on and returns to when cleared: the current month so far.
+ *
+ * @returns The first and last day as ISO days.
+ */
+const defaultRange = (): [string, string] => presetIsoRange(DateRangePreset.ThisMonth)
+
+/** The days to report; the current month so far at first. */
+const dateRange = ref<[string, string] | null>(defaultRange())
 
 const { data, load } = useReport<ReportDailyPerformanceRow[]>(() =>
-  reportPath(AppRoute.ReportsDailyPerformance, { from: dateRange.value?.[0], to: dateRange.value?.[1] }),
+  reportPath(reportApiPath('daily-performance'), { from: dateRange.value?.[0], to: dateRange.value?.[1] }),
 )
+
+/** Key of the day column, the one column that is not a counter. */
+const DATE_KEY = 'date'
 
 /** Days with their counters; empty until loaded. */
 const rows = computed<ReportDailyPerformanceRow[]>(() => data.value ?? [])
 
-/** Counters in table and chart order, with the caption of each. */
-const metrics = computed<{ key: keyof ReportDailyPerformanceRow; label: string }[]>(() => [
-  { key: 'completedOrders', label: t('reports.dailyPerformance.completedOrders') },
-  { key: 'newInvoices', label: t('reports.dailyPerformance.newInvoices') },
-  { key: 'paidInvoices', label: t('reports.dailyPerformance.paidInvoices') },
-  { key: 'openedTickets', label: t('reports.dailyPerformance.openedTickets') },
-  { key: 'ticketReplies', label: t('reports.dailyPerformance.ticketReplies') },
-  { key: 'cancellationRequests', label: t('reports.dailyPerformance.cancellationRequests') },
-])
+/** The date range takes the free width of the filter row. */
+const WIDTHS = { dateRange: ReportFieldWidth.Grow } as const
 
-/** Counters shown as tiles, in order. */
-const STAT_KEYS: readonly (keyof ReportDailyPerformanceRow)[] = ['completedOrders', 'paidInvoices', 'openedTickets', 'cancellationRequests']
+/** The counter columns of the table, in table and chart order: every column but the day. */
+const metrics = computed<ReportColumn[]>(() => reportColumns(schema.table, t).filter(column => column.key !== DATE_KEY))
 
-/** Headline figures: each tile counter summed over the days. */
-const stats = computed<ReportStat[]>(() =>
-  metrics.value
-    .filter(metric => STAT_KEYS.includes(metric.key))
-    .map(metric => ({ key: metric.key, label: metric.label, value: rows.value.reduce((sum, row) => sum + Number(row[metric.key]), 0) })),
+/** Headline figures: each tile counter of the schema summed over the days. */
+const stats = computed<Record<string, ReportStatValue>>(() =>
+  Object.fromEntries(
+    (schema.stats ?? []).map(stat => [
+      stat.key,
+      { value: rows.value.reduce((sum, row) => sum + Number(valueAtPath(row, stat.key)), 0), tooltip: t(`reports.dailyPerformance.tooltips.${stat.key}`) },
+    ]),
+  ),
 )
 
-/** Table columns: the day, then one per counter. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'date', label: t('shared.date') },
-  ...metrics.value.map(metric => ({ key: metric.key, label: metric.label, align: UiAlign.Right })),
-])
+/** The line chart: the short month and day of each row against one series per counter. */
+const chart = computed<ReportChartData>(() => ({
+  labels: rows.value.map(row => formatMonthDay(row.date, locale.value)),
+  series: metrics.value.map(metric => ({ label: metric.label, data: rows.value.map(row => Number(valueAtPath(row, metric.key))) })),
+}))
 
-/** Chart labels. */
-const labels = computed<string[]>(() => rows.value.map(row => row.date))
+/** The table of the days, the day written as a date. */
+const table = computed<ReportTableData<ReportDailyPerformanceRow>>(() => ({
+  rows: rows.value,
+  rowKey: 'date',
+  extras: { [DATE_KEY]: { format: ReportCellFormat.Date } },
+}))
 
-/** One series per counter. */
-const series = computed<UiChartSeries[]>(() =>
-  metrics.value.map(metric => ({ label: metric.label, data: rows.value.map(row => Number(row[metric.key])) })),
-)
-
-/** Forgets the range and reloads with the default. */
+/** Puts the range back to the default and reloads. */
 const clear = async (): Promise<void> => {
-  dateRange.value = null
+  dateRange.value = defaultRange()
   await load()
 }
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.dailyPerformance.dailyPerformance')" :description="t('reports.dailyPerformance.overviewOfDailyActivityMetrics')">
-    <template #filters>
-      <ReportFilterBar :generate-label="t('shared.apply')" clearable @generate="load" @clear="clear">
-        <template #fields>
-          <ReportField :label="t('shared.dateRange')" width="grow">
-            <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
-          </ReportField>
-        </template>
-      </ReportFilterBar>
+  <ReportPage
+    :retry="load"
+    :schema="schema"
+    :widths="WIDTHS"
+    :generate-label="t('shared.apply')"
+    clearable
+    :stats="stats"
+    :chart="chart"
+    :table="table"
+    @generate="load"
+    @clear="clear"
+  >
+    <template #field-dateRange>
+      <UiDateRangePicker v-model="dateRange" :placeholder="t('shared.selectDateRange')" />
     </template>
-    <ReportStatRow :stats="stats" />
-    <ReportChartCard :type="UiChartType.Line" :labels="labels" :series="series" height="lg" />
-    <ReportTable :columns="columns" :rows="rows" row-key="date" :empty-text="t('reports.dailyPerformance.noDataFound')" />
   </ReportPage>
 </template>

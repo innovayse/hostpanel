@@ -1,0 +1,53 @@
+{
+  "op": "ensure-database",
+  "cases": [
+    {
+      "name": "creates the database and returns the password once",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "shop"},
+      "helper": {"exit": 0, "result": {"created": true, "database": "alice_shop", "username": "alice_shop", "password": "0123456789abcdef0123456789abcdef01234567"}},
+      "response": {"v": 1, "ok": true, "created": true, "database": "alice_shop", "username": "alice_shop", "password": "0123456789abcdef0123456789abcdef01234567"}
+    },
+    {
+      "name": "already created: no password",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "shop"},
+      "helper": {"exit": 0, "result": {"created": false, "database": "alice_shop", "username": "alice_shop"}},
+      "response": {"v": 1, "ok": true, "created": false, "database": "alice_shop", "username": "alice_shop"}
+    },
+    {
+      "name": "a database of that name exists but the agent did not create it",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "site"},
+      "helper": {"exit": 3, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "site_not_owned"}
+    },
+    {
+      "name": "the account is at its database limit",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "extra"},
+      "helper": {"exit": 6, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "database_limit"}
+    },
+    {
+      "name": "creation failed and was rolled back",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "shop"},
+      "helper": {"exit": 1, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "database_failed"}
+    },
+    {
+      "name": "a password in a result that did not create anything is refused",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "shop"},
+      "helper": {"exit": 0, "result": {"created": false, "database": "alice_shop", "username": "alice_shop", "password": "0123456789abcdef0123456789abcdef01234567"}},
+      "response": {"v": 1, "ok": false, "error": "database_failed"}
+    },
+    {
+      "name": "no helper on this server",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "shop"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "not_supported"}
+    },
+    {
+      "name": "label longer than 15 characters",
+      "request": {"v": 1, "op": "ensure-database", "account": "alice", "label": "abcdefghijklmnop"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    }
+  ]
+}

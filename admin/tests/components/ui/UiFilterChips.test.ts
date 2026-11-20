@@ -54,4 +54,11 @@ describe('UiFilterChips', () => {
 
     expect(wrapper.emitted('clear')).toHaveLength(1)
   })
+
+  it('draws the remove button as a round 20px control inside the pill, not a 32px square', () => {
+    const button = mountChips(chips).get('[data-testid="filter-chip-remove-status"]')
+
+    expect(button.classes()).toEqual(expect.arrayContaining(['w-5', 'h-5', 'rounded-full']))
+    expect(button.classes()).not.toContain('w-8')
+  })
 })

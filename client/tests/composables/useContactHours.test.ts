@@ -20,6 +20,12 @@ describe('useContactHours', () => {
     expect(useContactHours().workingHours.value).toBe('08:00 - 17:00 UTC+2')
   })
 
+  it('shows an IANA time zone as its current offset', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactHours]: '08:00 - 17:00', [PortalSettingKey.ContactTimezone]: 'Asia/Yerevan' })
+
+    expect(useContactHours().workingHours.value).toBe('08:00 - 17:00 UTC+04:00')
+  })
+
   it('shows the hours alone when no time zone is set', async () => {
     await loadPortalSettings(replies, { [PortalSettingKey.ContactHours]: '08:00 - 17:00' })
 

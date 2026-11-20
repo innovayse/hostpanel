@@ -8,11 +8,14 @@ import { flushPromises } from '@vue/test-utils'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import ClientInvoicesView from '@/views/ClientInvoicesView.vue'
+import schema from '@/views/ClientInvoicesView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { invoiceRowFixture } from '../helpers/billingFixtures'
 import { mountClientView } from '../helpers/clientViews'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The one-invoice page of client 7. */
 const listPage = () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 })
@@ -70,7 +73,7 @@ describe('ClientInvoicesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-invoices-feedback"]').text()).toBe('Invoice deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Invoice deleted.'])
   })
 
   it('shows the API sentence when the delete is refused, without the load error', async () => {
@@ -198,5 +201,21 @@ describe('ClientInvoicesView', () => {
 
     expect(router.currentRoute.value.query).toEqual({ page: '2' })
     expect(listUrls(mock).at(-1)).toBe('/api/billing/client/7?page=2&pageSize=25')
+  })
+
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/billing/client/7': () => listPage() })
+    const wrapper = await mountInvoices()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
+  it('draws the table skeleton while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(ClientInvoicesView, '/clients/:id/invoices', '/clients/7/invoices')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

@@ -26,10 +26,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
+import schema from '@/views/ServicesListView.schema'
 import { Icon } from '@/lib/icons'
 import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
@@ -38,6 +37,7 @@ import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { useServicesStore } from '@/stores/services'
 import { useSettingsStore } from '@/stores/settings'
 import { clientPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useListQuery } from '@/composables/useListQuery'
 import { ServiceFilterKey, useServiceFilters } from '@/composables/useServiceFilters'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -81,8 +81,7 @@ onMounted(() => settingsStore.fetchProducts())
 <template>
   <UiStack>
     <UiPageHeader
-      :title="t('services.servicesList.services')"
-      :subtitle="t('services.servicesList.viewAndManageAllClient')"
+      v-bind="schemaHeader(schema, t)"
       data-testid="services-header"
     />
 
@@ -123,18 +122,7 @@ onMounted(() => settingsStore.fetchProducts())
         :loading="initialLoading"
         data-testid="services-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.productService') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.nextDueDate') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody>
           <UiTableRow
             v-for="service in store.services"

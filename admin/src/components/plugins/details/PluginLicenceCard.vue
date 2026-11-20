@@ -18,6 +18,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiInputType } from '@/utils/ui/input'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -87,7 +88,7 @@ const submit = (): void => {
           data-testid="plugin-licence-input"
           @keyup.enter="submit"
         />
-        <UiButton
+        <UiButton :action="UiActionKind.Save"
           type="button"
           :variant="UiButtonVariant.Primary"
           size="sm"
@@ -97,7 +98,7 @@ const submit = (): void => {
         >
           {{ t('pluginDetails.licence.save') }}
         </UiButton>
-        <UiButton
+        <UiButton :action="UiActionKind.Delete"
           v-if="hasKey"
           type="button"
           :variant="UiButtonVariant.Danger"

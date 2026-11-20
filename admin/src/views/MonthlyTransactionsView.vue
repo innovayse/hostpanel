@@ -5,23 +5,20 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportChartCard from '@/components/reports/ReportChartCard.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportPeriodFilter from '@/components/reports/ReportPeriodFilter.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
-import { formatCurrencyCode } from '@/lib/money'
+import { reportApiPath } from '@/lib/apiPaths'
+import { formatMonthDay } from '@/lib/format'
+import { baseCurrencyFormatter } from '@/lib/money'
 import { currentMonthNumber, currentYear, monthName } from '@/lib/reportsPeriod'
 import { reportPath } from '@/lib/reportsQuery'
+import type { ReportChartData } from '@/types/reportchartdata'
 import { ReportCellFormat } from '@/types/reportcolumn'
-import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportDailyTransactions } from '@/types/reportdailytransactions'
-import { UiChartType } from '@/utils/ui/chart'
-import type { UiChartSeries } from '@/utils/ui/chart'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportDailyTransactionRow, ReportDailyTransactions } from '@/types/reportdailytransactions'
+import type { ReportTableData } from '@/types/reporttabledata'
+import schema from '@/views/MonthlyTransactionsView.schema'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** Year being reported; the current one at first. */
 const year = ref(currentYear())
@@ -30,76 +27,67 @@ const year = ref(currentYear())
 const month = ref(currentMonthNumber())
 
 const { data, load } = useReport<ReportDailyTransactions>(() =>
-  reportPath('/reports/daily-transactions', { year: year.value, month: month.value }),
+  reportPath(reportApiPath('daily-transactions'), { year: year.value, month: month.value }),
 )
 
-/** Title naming the month once a report is loaded. */
-const title = computed<string>(() =>
-  data.value
-    ? t('reports.titles.monthlyTransactionsFor', { month: monthName(data.value.month), year: data.value.year })
-    : t('reports.titles.reports.monthlyTransactions'),
+/** Title naming the month once a report is loaded; the schema title until then. */
+const title = computed<string | undefined>(() =>
+  data.value ? t('reports.titles.monthlyTransactionsFor', { month: monthName(data.value.month), year: data.value.year }) : undefined,
 )
 
 /** Base currency the figures are converted to; empty until loaded. */
 const currency = computed<string>(() => data.value?.currency ?? '')
 
-/**
- * Formats an amount in the base currency the API converted the report to.
- *
- * @param amount - Amount in the report currency.
- * @returns The amount with its currency symbol.
- */
-const formatMoney = (amount: number): string => formatCurrencyCode(amount, currency.value)
+/** Formats an amount in the base currency the API converted the report to. */
+const formatMoney = baseCurrencyFormatter(() => currency.value)
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'date', label: t('shared.date') },
-  { key: 'amountIn', label: t('shared.amountIn'), align: UiAlign.Right, format: ReportCellFormat.Money },
-  { key: 'fees', label: t('shared.fees'), align: UiAlign.Right, format: ReportCellFormat.Money },
-  { key: 'amountOut', label: t('shared.amountOut'), align: UiAlign.Right, format: ReportCellFormat.Money },
-  { key: 'balance', label: t('shared.balance'), align: UiAlign.Right, format: ReportCellFormat.Money },
-])
+/** The days with their figures; none until the report is read. */
+const rows = computed<ReportDailyTransactionRow[]>(() => data.value?.rows ?? [])
 
-/** Footer figures; the balance is what came in less fees and payouts. */
-const totals = computed<Record<string, number>>(() => ({
-  amountIn: data.value?.totalAmountIn ?? 0,
-  fees: data.value?.totalFees ?? 0,
-  amountOut: data.value?.totalAmountOut ?? 0,
-  balance: (data.value?.totalAmountIn ?? 0) - (data.value?.totalFees ?? 0) - (data.value?.totalAmountOut ?? 0),
+/** The table of the days with totals: every figure but the day is money, and the balance is what came in less fees and payouts. */
+const table = computed<ReportTableData<ReportDailyTransactionRow>>(() => ({
+  rows: rows.value,
+  rowKey: 'date',
+  extras: {
+    date: { format: ReportCellFormat.Date },
+    amountIn: { format: ReportCellFormat.Money },
+    fees: { format: ReportCellFormat.Money },
+    amountOut: { format: ReportCellFormat.Money },
+    balance: { format: ReportCellFormat.Money },
+  },
+  totals: {
+    amountIn: data.value?.totalAmountIn ?? 0,
+    fees: data.value?.totalFees ?? 0,
+    amountOut: data.value?.totalAmountOut ?? 0,
+    balance: (data.value?.totalAmountIn ?? 0) - (data.value?.totalFees ?? 0) - (data.value?.totalAmountOut ?? 0),
+  },
+  formatMoney,
 }))
 
-/** Chart labels: month and day of each row. */
-const labels = computed<string[]>(() => (data.value?.rows ?? []).map(row => row.date.slice(5)))
-
-/** Chart series. */
-const series = computed<UiChartSeries[]>(() => {
-  const rows = data.value?.rows ?? []
-  return [
-    { label: t('shared.amountIn'), data: rows.map(row => row.amountIn) },
-    { label: t('shared.fees'), data: rows.map(row => row.fees) },
-    { label: t('shared.amountOut'), data: rows.map(row => row.amountOut) },
-  ]
-})
+/** The line chart: the short month and day of each row against money in, fees and money out. */
+const chart = computed<ReportChartData>(() => ({
+  labels: rows.value.map(row => formatMonthDay(row.date, locale.value)),
+  series: [
+    { label: t('shared.amountIn'), data: rows.value.map(row => row.amountIn) },
+    { label: t('shared.fees'), data: rows.value.map(row => row.fees) },
+    { label: t('shared.amountOut'), data: rows.value.map(row => row.amountOut) },
+  ],
+  valueFormatter: formatMoney,
+}))
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="title" :description="t('reports.monthlyTransactions.thisReportProvidesASummary')">
-    <template #filters>
-      <ReportPeriodFilter v-model:year="year" v-model:month="month" show-month :years-back="2" :years-ahead="2" @generate="load" />
-    </template>
-    <template v-if="data">
-      <ReportChartCard :type="UiChartType.Line" :labels="labels" :series="series" :value-formatter="formatMoney" height="lg" />
-      <ReportTable
-        :columns="columns"
-        :rows="data.rows"
-        row-key="date"
-        :totals="totals"
-        :format-money="formatMoney"
-        :empty-text="t('reports.monthlyTransactions.noTransactionsFoundForThis')"
-      />
-      <UiText tone="muted" size="sm">
-        {{ t('reports.common.convertedToBaseCurrency', { currency }) }}
-      </UiText>
-    </template>
-  </ReportPage>
+  <ReportPage
+    v-model:year="year"
+    v-model:month="month"
+    :retry="load"
+    :schema="schema"
+    :title="title"
+    :years-back="2"
+    :years-ahead="2"
+    :chart="chart"
+    :table="table"
+    :base-currency="currency"
+    @generate="load"
+  />
 </template>

@@ -1,8 +1,7 @@
 {
-  "title": "Currencies",
   "description": "Configure billing currencies, exchange rates and the base currency",
-  "updateRates": "Update Exchange Rates",
-  "updateProductPrices": "Update Product Prices",
+  "updateRates": "Update Rates",
+  "updateProductPrices": "Update Prices",
   "addCurrency": "Add Currency",
   "rateProvider": {
     "title": "Exchange rate source",

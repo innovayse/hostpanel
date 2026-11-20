@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
+import { useToastStore } from '@/stores/toast'
 import { PaymentGateway } from '@/types/gateway'
 import OfflineCCView from '@/views/OfflineCCView.vue'
 import { invalid, problem } from '../helpers/fetch'
@@ -90,7 +91,7 @@ describe('OfflineCCView', () => {
       amount: 25,
       fees: 0,
     })
-    expect(wrapper.get('[data-testid="offline-cc-feedback"]').text()).toBe('Payment recorded.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Payment recorded.'])
     expect((wrapper.get('[data-testid="offline-cc-invoice"] input').element as HTMLInputElement).value).toBe('0')
     expect((wrapper.get('[data-testid="offline-cc-amount"] input').element as HTMLInputElement).value).toBe('0')
     expect((wrapper.get('[data-testid="offline-cc-reference"]').element as HTMLInputElement).value).toBe('')

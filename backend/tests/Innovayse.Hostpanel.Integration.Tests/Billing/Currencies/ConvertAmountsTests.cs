@@ -31,7 +31,7 @@ public sealed class ConvertAmountsTests(IntegrationTestFactory factory) : IClass
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Currency.Should().Be("XTS");
-        result.Value.Amounts.Should().Equal(new ConvertedAmountDto(20m, 2), new ConvertedAmountDto(7m, 2));
+        result.Value.Amounts.Should().Equal(new ConvertedAmountDto(20m, 2, true), new ConvertedAmountDto(7m, 2, false));
     }
 
     /// <summary>

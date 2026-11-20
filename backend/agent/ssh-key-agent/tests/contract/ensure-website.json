@@ -1,0 +1,71 @@
+{
+  "op": "ensure-website",
+  "cases": [
+    {
+      "name": "creates the website with php and a symlinked root",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "php": "8.3", "link_root": true},
+      "helper": {"exit": 0, "result": {"changed": true}},
+      "response": {"v": 1, "ok": true, "changed": true}
+    },
+    {
+      "name": "repeating it changes nothing",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "php": "8.3", "link_root": true},
+      "helper": {"exit": 0, "result": {"changed": false}},
+      "response": {"v": 1, "ok": true, "changed": false}
+    },
+    {
+      "name": "php and link_root are optional",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "www.example.com", "docroot": "public_html"},
+      "helper": {"exit": 0, "result": {"changed": true}},
+      "response": {"v": 1, "ok": true, "changed": true}
+    },
+    {
+      "name": "no helper on this server",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "not_supported"}
+    },
+    {
+      "name": "hostname is not the account's domain",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "other.com", "docroot": "public_html"},
+      "helper": {"exit": 3, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "site_not_owned"}
+    },
+    {
+      "name": "the vhost serves another document root",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "example.com", "docroot": "sites/app"},
+      "helper": {"exit": 4, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "website_conflict"}
+    },
+    {
+      "name": "php version not installed",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "php": "7.4"},
+      "helper": {"exit": 5, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "php_version_unsupported"}
+    },
+    {
+      "name": "a configuration test failed and was restored",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "php": "8.3"},
+      "helper": {"exit": 1, "result": {}},
+      "response": {"v": 1, "ok": false, "error": "website_failed"}
+    },
+    {
+      "name": "unknown field",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "owner": "root"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    },
+    {
+      "name": "docroot leaves the home",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "../bob"},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    },
+    {
+      "name": "link_root without a php version",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "link_root": true},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    }
+  ]
+}

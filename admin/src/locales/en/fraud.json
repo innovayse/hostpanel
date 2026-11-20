@@ -1,6 +1,5 @@
 {
   "blockList": {
-    "title": "Block lists",
     "subtitle": "IP addresses, IP ranges, email domains and countries the fraud check always flags.",
     "tabsLabel": "Block list type",
     "valueLabel": {
@@ -28,7 +27,6 @@
     "deleteMessage": "{value} will no longer be flagged by the fraud check."
   },
   "log": {
-    "title": "Fraud log",
     "subtitle": "Every registration and order the fraud check scored, with its decision and the reasons behind it.",
     "decision": "Decision",
     "reason": "Reason",
@@ -46,6 +44,24 @@
     "enabled": "Fraud detection",
     "enabledHint": "When off, registrations and orders are not scored and nothing is held for review.",
     "saved": "Fraud settings saved.",
+    "sections": {
+      "thresholds": "Risk score thresholds",
+      "velocity": "Velocity limits per IP address"
+    },
+    "units": {
+      "points": "pts",
+      "minutes": "min",
+      "orders": "orders",
+      "accounts": "accounts"
+    },
+    "band": {
+      "allow": "Allow",
+      "review": "Review",
+      "reject": "Reject",
+      "range": "{from} to {to}",
+      "empty": "none"
+    },
+    "offNote": "Fraud detection is off. The thresholds and limits below are kept but not applied: nothing is scored, held for review or refused until you turn it on.",
     "fields": {
       "manualReviewRiskScore": {
         "label": "Review threshold",
@@ -56,7 +72,7 @@
         "hint": "From this risk score, from 0 to 100, an action is refused at once. It must be above the review threshold."
       },
       "velocityWindowMinutes": {
-        "label": "Velocity window (minutes)",
+        "label": "Velocity window",
         "hint": "How far back orders from one IP address are counted, from 1 to 1440 minutes."
       },
       "velocityMaxOrders": {

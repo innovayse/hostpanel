@@ -12,6 +12,7 @@ import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import type { UiSelectOption } from '@/utils/ui/select'
 import { createTestI18n } from '../../helpers/i18n'
+import { stubPhone } from '../../helpers/phone'
 
 /** Options used by the tests. */
 const options: UiSelectOption<string>[] = [
@@ -572,5 +573,80 @@ describe('UiSelect', () => {
       expect(outer).not.toHaveBeenCalled()
       document.body.removeEventListener('mousedown', outer)
     })
+  })
+
+  it('shows a heading above the first row of each group, and none for ungrouped rows', async () => {
+    const wrapper = track({
+      modelValue: '',
+      options: [
+        { value: 'a', label: 'A', group: '2026' },
+        { value: 'b', label: 'B', group: '2026' },
+        { value: 'c', label: 'C', group: '2025' },
+        { value: 'd', label: 'D' },
+      ],
+    })
+
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.findAll('[data-testid="ui-select-group"]').map(heading => heading.text())).toEqual(['2026', '2025'])
+    expect(wrapper.findAll('[data-testid="ui-select-option"]')).toHaveLength(4)
+  })
+})
+
+describe('UiSelect on a phone', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('opens its options as a bottom sheet titled with the placeholder, and picks one', async () => {
+    stubPhone(true)
+    const wrapper = mountSelect({ modelValue: 'a', placeholder: 'Choose a client' })
+    mounted.push(wrapper)
+
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
+    expect(wrapper.get('h2').text()).toBe('Choose a client')
+    expect(wrapper.find('[data-testid="drawer-body"] [data-testid="ui-select-panel"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-testid="ui-select-option"]')).toHaveLength(3)
+
+    await wrapper.findAll('[data-testid="ui-select-option"]')[1]?.trigger('mousedown')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['b'])
+    expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
+  })
+
+  it('names the sheet by the accessible label, else by a generic prompt', async () => {
+    stubPhone(true)
+    const named = mountSelect({ modelValue: 'a', ariaLabel: 'Country code' })
+    mounted.push(named)
+    await named.get('button').trigger('click')
+    expect(named.get('h2').text()).toBe('Country code')
+
+    const bare = mountSelect({ modelValue: 'a' })
+    mounted.push(bare)
+    await bare.get('button').trigger('click')
+    expect(bare.get('h2').text()).toBe('Choose an option')
+  })
+
+  it('keeps the search field inside the sheet', async () => {
+    stubPhone(true)
+    const wrapper = mountSelect({ modelValue: 'a', searchable: true })
+    mounted.push(wrapper)
+
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer-body"] [data-testid="ui-select-search"]').exists()).toBe(true)
+  })
+
+  it('stays a popover on a wide screen', async () => {
+    stubPhone(false)
+    const wrapper = mountSelect({ modelValue: 'a' })
+    mounted.push(wrapper)
+
+    await wrapper.get('button').trigger('click')
+
+    expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-select-panel"]').exists()).toBe(true)
   })
 })

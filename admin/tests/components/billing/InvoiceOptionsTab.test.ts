@@ -9,6 +9,7 @@ import { invoiceFixture } from '../../helpers/billingFixtures'
 import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -62,7 +63,7 @@ describe('InvoiceOptionsTab', () => {
       paymentMethod: 'Example Gateway',
       taxRate: 15,
     })
-    expect(wrapper.get('[data-testid="billing-invoice-options-feedback"]').text()).toBe('Changes saved successfully.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
   })
 
   it('shows the API sentence under the form when the save is refused', async () => {

@@ -1,24 +1,32 @@
 <script setup lang="ts">
 /**
  * Disk space and bandwidth report: the use of every hosting account, per server, as last fetched
- * from the servers. "Update now" fetches fresh figures.
+ * from the servers. "Update now" fetches fresh figures: the tables show their skeleton meanwhile, and a server the
+ * refresh could not read is named in the notice of the schema (its placeholder holds the place while the report loads),
+ * never left out silently. With no figures at all one empty state carries the Update now action. The report has one table
+ * per server, so the screen draws them itself in the default slot of the page.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ReportEmptyState from '@/components/reports/ReportEmptyState.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
 import ReportTable from '@/components/reports/ReportTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
-import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
+import { formatDateTime } from '@/lib/format'
+import { reportColumns } from '@/lib/reportsSchema'
 import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportDiskUsage } from '@/types/reportdiskusage'
+import { DiskUsageFailureReason } from '@/types/reportdiskusage'
+import type { ReportDiskUsage, ReportDiskUsageFailure, ReportDiskUsageServer } from '@/types/reportdiskusage'
 import { UiTone } from '@/utils/ui/tone'
+import schema from '@/views/DiskUsageView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -32,23 +40,33 @@ const WARN_PERCENT = 70
 /** Percent of a limit from which an account is flagged as nearly full. */
 const DANGER_PERCENT = 90
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'clientName', label: t('reports.diskUsage.clientNameDomain') },
-  { key: 'diskUsage', label: t('reports.diskUsage.diskUsage'), numeric: true },
-  { key: 'diskLimit', label: t('reports.diskUsage.diskLimit'), numeric: true },
-  { key: 'diskPercent', label: t('reports.diskUsage.used'), numeric: true },
-  { key: 'bwUsage', label: t('reports.diskUsage.bwUsage'), numeric: true },
-  { key: 'bwLimit', label: t('reports.diskUsage.bwLimit'), numeric: true },
-  { key: 'bwPercent', label: t('reports.diskUsage.used'), numeric: true },
-])
+/** The servers with their accounts; none until the first load. */
+const servers = computed<ReportDiskUsageServer[]>(() => data.value?.servers ?? [])
+
+/** Servers the last refresh could not read. */
+const failures = computed<ReportDiskUsageFailure[]>(() => data.value?.failures ?? [])
+
+/** The sentence of each reason a server gave no figures, by locale key. */
+const FAILURE_TEXT_KEYS: Readonly<Record<DiskUsageFailureReason, string>> = {
+  [DiskUsageFailureReason.UnsupportedModule]: 'reports.diskUsage.failure.unsupportedModule',
+  [DiskUsageFailureReason.MissingCredentials]: 'reports.diskUsage.failure.missingCredentials',
+  [DiskUsageFailureReason.Unreachable]: 'reports.diskUsage.failure.unreachable',
+}
+
+/** Table columns: the captions and alignment of the schema, the figures drawn as numbers. */
+const columns = computed<ReportColumn[]>(() =>
+  reportColumns(schema.table, t, {
+    diskUsage: { numeric: true },
+    diskLimit: { numeric: true },
+    diskPercent: { numeric: true },
+    bwUsage: { numeric: true },
+    bwLimit: { numeric: true },
+    bwPercent: { numeric: true },
+  }),
+)
 
 /** When the figures were last fetched, formatted; null when never. */
-const lastUpdated = computed<string | null>(() =>
-  data.value?.lastUpdated
-    ? new Date(data.value.lastUpdated).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })
-    : null,
-)
+const lastUpdated = computed<string | null>(() => (data.value?.lastUpdated ? formatDateTime(data.value.lastUpdated) : null))
 
 /**
  * Picks the tone of a used-percent badge.
@@ -73,26 +91,38 @@ const updateNow = async (): Promise<void> => {
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.diskUsage.diskSpaceBandwidthUsageSummary')" :description="t('reports.diskUsage.thisReportShowsTheDisk')">
-    <template #filters>
-      <UiStack direction="row" justify="between" align="center" class="mb-6">
-        <UiText v-if="lastUpdated" tone="muted" size="sm" data-testid="report-last-updated">
-          {{ t('reports.diskUsage.diskSpaceUsageStatsLast', { value: lastUpdated }) }}
+  <ReportPage :retry="load" :schema="schema">
+    <template #alert>
+      <UiAlert v-if="data && failures.length > 0" variant="warning" data-testid="report-failures">
+        <UiText size="sm">
+          {{ t('reports.diskUsage.failuresTitle') }}
         </UiText>
-        <UiText v-else tone="muted" size="sm">
-          {{ t('reports.diskUsage.noDataYetClickUpdate') }}
+        <UiText v-for="failure in failures" :key="failure.serverName" size="sm" data-testid="report-failure">
+          {{ failure.serverName }}: {{ t(FAILURE_TEXT_KEYS[failure.reason]) }}
         </UiText>
-        <UiButton variant="secondary" :loading="store.updating" data-testid="report-update-now" @click="updateNow">
-          {{ t('reports.diskUsage.updateNow') }}
-        </UiButton>
-      </UiStack>
+      </UiAlert>
     </template>
 
     <template v-if="data">
-      <UiCard v-if="data.servers.length === 0">
-        <UiEmptyState :title="t('reports.diskUsage.noData')" />
-      </UiCard>
-      <UiStack v-for="server in data.servers" :key="server.serverName" gap="sm">
+      <UiStack v-if="servers.length > 0" direction="row" justify="between" align="center">
+        <UiText v-if="lastUpdated" tone="muted" size="sm" data-testid="report-last-updated">
+          {{ t('reports.diskUsage.diskSpaceUsageStatsLast', { value: lastUpdated }) }}
+        </UiText>
+        <UiButton :action="UiActionKind.Refresh" variant="secondary" :loading="store.updating" data-testid="report-update-now" @click="updateNow">
+          {{ t('reports.diskUsage.updateNow') }}
+        </UiButton>
+      </UiStack>
+
+      <ReportTable v-else-if="store.updating" :columns="columns" row-key="domain" />
+      <ReportEmptyState v-else :title="t('reports.diskUsage.noData')" :hint="t('reports.diskUsage.noDataHint')">
+        <template #actions>
+          <UiButton :action="UiActionKind.Refresh" variant="secondary" data-testid="report-update-now" @click="updateNow">
+            {{ t('reports.diskUsage.updateNow') }}
+          </UiButton>
+        </template>
+      </ReportEmptyState>
+
+      <UiStack v-for="server in servers" :key="server.serverName" gap="sm">
         <UiHeading :level="2" variant="section">
           {{ server.serverName }}
         </UiHeading>
@@ -118,5 +148,7 @@ const updateNow = async (): Promise<void> => {
         </ReportTable>
       </UiStack>
     </template>
+    <!-- Until the first answer the one table of the schema stands in for the table of every server. -->
+    <ReportTable v-else :columns="columns" :empty="false" />
   </ReportPage>
 </template>

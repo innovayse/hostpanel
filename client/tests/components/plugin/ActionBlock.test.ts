@@ -269,3 +269,78 @@ describe('PluginActionBlock', () => {
     expect(wrapper.findAll('[data-testid="plugin-action-button"]').map(button => button.text())).toEqual(['Publish version 3', 'Publish'])
   })
 })
+
+describe('PluginActionBlock open URL', () => {
+  /** The tab a stubbed `window.open` hands out. */
+  const stubTab = (): { opener: unknown; location: { href: string }; close: ReturnType<typeof vi.fn> } => {
+    const tab = { opener: 'page', location: { href: '' }, close: vi.fn() }
+    vi.stubGlobal('open', vi.fn(() => tab))
+    return tab
+  }
+  /** The publish button, opening the address its reply names. */
+  const open = { ...publish, openUrlFrom: 'url' } as const
+  /** The route of the button. */
+  const route = `POST ${ROUTES_URL}/sites/7/publish`
+
+  it('opens a blank tab in the click and sends it to the address of the reply', async () => {
+    const tab = stubTab()
+    api = await startPluginApi({ [route]: { body: { url: 'https://blog.sites.example.test/enter?t=1' } } })
+    const wrapper = mountBlocks([open])
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(window.open).toHaveBeenCalledWith('', '_blank')
+    expect(tab.opener).toBeNull()
+    expect(tab.location.href).toBe('https://blog.sites.example.test/enter?t=1')
+    expect(tab.close).not.toHaveBeenCalled()
+  })
+
+  it('closes the tab and shows an error for an address outside the allowed origins', async () => {
+    const tab = stubTab()
+    api = await startPluginApi({ [route]: { body: { url: 'https://evil.test/' } } })
+    const wrapper = mountBlocks([open])
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(tab.location.href).toBe('')
+    expect(tab.close).toHaveBeenCalled()
+    expect(wrapper.get('[data-testid="plugin-action-message"]').text()).toBe('plugins.openUrlRefused')
+  })
+
+  it('closes the tab when the call fails', async () => {
+    const tab = stubTab()
+    api = await startPluginApi({ [route]: problem(409, 'Nothing to open.') })
+    const wrapper = mountBlocks([open])
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(tab.close).toHaveBeenCalled()
+    expect(tab.location.href).toBe('')
+  })
+
+  it('makes no call when the browser blocks the tab', async () => {
+    vi.stubGlobal('open', vi.fn(() => null))
+    api = await startPluginApi({ [route]: { body: { url: 'https://blog.sites.example.test/' } } })
+    const wrapper = mountBlocks([open])
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(api.requests).toHaveLength(0)
+    expect(wrapper.get('[data-testid="plugin-action-message"]').text()).toBe('plugins.openUrlBlocked')
+  })
+
+  it('opens no tab for an action without openUrlFrom', async () => {
+    vi.stubGlobal('open', vi.fn())
+    api = await startPluginApi({ [route]: { status: 204 } })
+    const wrapper = mountBlocks([publish])
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(window.open).not.toHaveBeenCalled()
+  })
+})

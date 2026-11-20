@@ -159,8 +159,29 @@ The installer writes the base configuration from the chosen profile. An administ
   { name: 'jail_sections', type: 'string', default: 'basicshell,editors,extendedshell,netutils,terminfo', description: 'jk_init sections copied into a new jail.' },
   { name: 'jail_shell', type: 'string', default: '/bin/bash', description: 'Login shell set when a customer is enrolled into the jail.' },
   { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS', description: 'Extra paths copied into each jail with jk_cp when the jail lacks one or its host copy changed (missing in the jail, another size, or newer). Paths missing on the host are skipped, and an entry already in place is not copied again. Includes dircolors and shell profile entries needed by bash login; rsync, tar, gzip and unzip let CI/CD deploy sites over SSH.' },
-  { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Directory where the home bind-mount systemd unit is written for each enrolled account.' }
+  { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Directory where the home bind-mount systemd unit is written for each enrolled account.' },
+  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' }
 ]" />
+
+## Websites and databases
+
+Agent 1.5.0 can give a hosting account a website and databases on request. It runs one root-owned helper per operation from `helper_dir`; the CWP profile ships all four, so nothing needs configuring on a CWP server. A server without a helper answers `not_supported`, and the ping answer lists the operations that are available (`capabilities`) and the PHP versions the server offers (`php_versions`, for example `["8.1", "8.2", "8.3"]`, empty when the server has no `php-versions` helper).
+
+| Operation | Request fields | Success answer |
+|-----------|----------------|----------------|
+| `ensure-website` | `account`, `hostname`, `docroot`, optional `php`, optional `link_root` | `changed` |
+| `remove-website` | `account`, `hostname` | `changed` |
+| `ensure-database` | `account`, `label` | `created`, `database`, `username`, and `password` only when `created` is true |
+| `remove-database` | `account`, `label` | `changed` |
+
+- `hostname` must be the account's own domain or a subdomain of it.
+- `docroot` is relative to the account's home, never leaves it, and never points into `.ssh` or `.conf`.
+- `php` (for example `8.3`) selects the installed php-fpm of that version, which must be one of the ping answer's `php_versions` (otherwise `php_version_unsupported`); `link_root` marks the document root as a symlink that deploys switch, which adds the php-fpm pool lines such a switch needs behind Apache and needs `php`.
+- `label` is 1 to 15 lower case letters and digits starting with a letter; the database and its user are called `<account>_<label>`. An account may have 10.
+
+The helpers are idempotent, keep a root-owned record of what they created, and `remove-*` only touches that: a website or database that someone else made is refused with `site_not_owned`. Every file they edit is backed up first, Apache and php-fpm configuration is tested before a graceful reload, and a failed test restores the files. The database password is generated on the server, sent back only in the answer that created the database, and never written to any log; if it is lost, remove the database and create it again.
+
+Errors added in 1.5.0: `not_supported`, `site_not_owned`, `website_conflict`, `php_version_unsupported`, `website_failed`, `database_failed`, `database_limit`. The full request and answer shapes are in the agent's `README.md`.
 
 ## Keys over a service's life
 
@@ -192,6 +213,13 @@ These codes come from the agent itself and appear in Hostpanel's error responses
 | `ssh_disabled` | Account's shell is a disabled shell (e.g. `/sbin/nologin`) and `jail_enrol` is off |
 | `unsafe_path` | The `.ssh` directory or `authorized_keys` file is a symlink or owned unexpectedly |
 | `file_too_large` | `authorized_keys` exceeds the size limit |
+| `not_supported` | No helper for this operation on the server |
+| `site_not_owned` | The hostname is not the account's domain, or a vhost or database of that name exists but the agent did not create it |
+| `website_conflict` | A vhost the panel made serves a different document root |
+| `php_version_unsupported` | The requested php-fpm version is not installed |
+| `website_failed` | A website operation failed; a failed configuration test restores the files |
+| `database_failed` | A database operation failed; a failed creation drops what it made |
+| `database_limit` | The account already has 10 databases created by the agent |
 | `timeout` | Request took too long (stdin: 10 s, total: 60 s) |
 | `internal_error` | Agent-side failure; details in the server's audit log |
 

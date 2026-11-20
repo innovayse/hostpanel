@@ -22,6 +22,7 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import { MAX_PERCENT, TAX_RATE_STEP, TAX_RULE_NAME_MAX_LENGTH, TAX_RULE_REGION_MAX_LENGTH } from '@/lib/limits'
 import type { SaveTaxRulePayload, TaxRuleDto } from '@/types/taxrule'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -155,10 +156,10 @@ const handleSubmit = (): void => {
       </UiStack>
 
       <UiFormActions>
-        <UiButton type="button" variant="secondary" data-testid="tax-rule-form-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="tax-rule-form-cancel" @click="emit('close')">
           {{ t('taxRules.form.cancel') }}
         </UiButton>
-        <UiButton type="submit" variant="primary" :loading="saving" data-testid="tax-rule-form-save">
+        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="tax-rule-form-save">
           {{ submitLabel }}
         </UiButton>
       </UiFormActions>

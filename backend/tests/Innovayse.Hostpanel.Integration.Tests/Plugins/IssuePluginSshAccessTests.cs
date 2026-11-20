@@ -21,7 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// installed public key, the activity line, the issue budget (spent -> ServerUnavailable, limiter error -> fails closed), and the private key in no database column and no log line.
 /// </summary>
 /// <param name="fixture">The host with the SSH and the plain plugin.</param>
-public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
+public sealed class IssuePluginSshAccessTests(PluginHostAccessFixture fixture) : IClassFixture<PluginHostAccessFixture>
 {
     /// <summary>The label a plugin gives its key in these tests.</summary>
     private const string Label = "deploy";
@@ -35,7 +35,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
 
         var access = await fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, $"  {Label} ", CancellationToken.None));
 
         access.Username.Should().Be("web");
@@ -72,7 +72,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         agent.WhileAdding = () => throw new SshProviderException(SshProviderFailure.Timeout, "slow agent");
 
         var act = () => fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, Label, CancellationToken.None));
 
         await act.Should().ThrowAsync<PluginHostAccessException>();
@@ -102,7 +102,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         };
 
         var act = () => fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, Label, cts.Token));
 
         await act.Should().ThrowAsync<OperationCanceledException>();
@@ -121,7 +121,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-list");
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
         var access = await fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, Label, CancellationToken.None));
 
         using var http = AppPluginFixture.WithBearerOf(fixture.Host, owner.Http);
@@ -140,13 +140,13 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
 
         var access = await fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, Label, CancellationToken.None));
 
-        var material = PluginSshFixture.PrivateMaterialOf(access.PrivateKey);
+        var material = PluginHostAccessFixture.PrivateMaterialOf(access.PrivateKey);
 
         (await fixture.DatabaseHoldsAsync(material)).Should().BeFalse("the private key must not be persisted anywhere");
-        (await fixture.DatabaseHoldsAsync(PluginSshFixture.PrivateKeyHeader)).Should().BeFalse();
+        (await fixture.DatabaseHoldsAsync(PluginHostAccessFixture.PrivateKeyHeader)).Should().BeFalse();
         fixture.LoggedMessages.Should().NotContain(m => m.Contains(material) || m.Contains("PRIVATE KEY"));
     }
 
@@ -158,7 +158,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-nocap");
         await fixture.BindProductsOfAsync(fixture.PlainPluginId, owner.ServiceId);
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.PlainPluginId, owner.ClientId), owner.ServiceId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.PlainPluginId, owner.ClientId), owner.ServiceId);
 
         failure.Should().Be(PluginHostAccessFailure.NotAllowed);
         fixture.Agents().AgentFor(owner.ServerId).Calls.Should().BeEmpty();
@@ -187,8 +187,8 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         var stranger = await fixture.OwnerWithServiceAsync("plugin-ssh-stranger");
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
 
-        var foreign = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, stranger.ClientId), owner.ServiceId);
-        var missing = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), int.MaxValue);
+        var foreign = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, stranger.ClientId), owner.ServiceId);
+        var missing = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), int.MaxValue);
 
         foreign.Should().Be(PluginHostAccessFailure.NotFound);
         missing.Should().Be(PluginHostAccessFailure.NotFound);
@@ -202,7 +202,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     {
         var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-unbound");
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
 
         failure.Should().Be(PluginHostAccessFailure.NotAllowed);
         fixture.Agents().AgentFor(owner.ServerId).Calls.Should().BeEmpty();
@@ -217,9 +217,9 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     public async Task ProductListedOnlyInTheManifest_IsNotAllowedAsync()
     {
         var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-greedy");
-        (await fixture.ProductOfAsync(owner.ServiceId)).Should().BeLessThanOrEqualTo(PluginSshFixture.GreedyProductIdCeiling);
+        (await fixture.ProductOfAsync(owner.ServiceId)).Should().BeLessThanOrEqualTo(PluginHostAccessFixture.GreedyProductIdCeiling);
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.GreedySshPluginId, owner.ClientId), owner.ServiceId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.GreedySshPluginId, owner.ClientId), owner.ServiceId);
 
         failure.Should().Be(PluginHostAccessFailure.NotAllowed);
         fixture.Agents().AgentFor(owner.ServerId).Calls.Should().BeEmpty();
@@ -239,7 +239,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         agent.WhileAdding = () => fixture.SwitchAsync(fixture.SshPluginId, enabled: false);
         try
         {
-            var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
+            var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
 
             failure.Should().Be(PluginHostAccessFailure.NotAllowed);
             agent.KeysOf("web").Should().BeEmpty();
@@ -263,7 +263,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         await fixture.SwitchAsync(fixture.SshPluginId, enabled: false);
         try
         {
-            var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
+            var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
 
             failure.Should().Be(PluginHostAccessFailure.NotAllowed);
             fixture.Agents().AgentFor(owner.ServerId).Calls.Should().BeEmpty();
@@ -284,7 +284,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
         fixture.Agents().AgentFor(owner.ServerId).FailWith = SshProviderFailure.Unreachable;
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
 
         failure.Should().Be(PluginHostAccessFailure.ServerUnavailable);
         using var scope = fixture.Host.Services.CreateScope();
@@ -310,7 +310,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
 
         var callsBefore = fixture.Agents().AgentFor(owner.ServerId).Calls.Count;
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
 
         failure.Should().Be(PluginHostAccessFailure.LimitReached);
         fixture.Agents().AgentFor(owner.ServerId).Calls.Count.Should().Be(callsBefore);
@@ -326,7 +326,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         var owner = await fixture.OwnerOnSshDisabledServerAsync("plugin-ssh-disabled");
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
 
         failure.Should().Be(PluginHostAccessFailure.Unavailable);
         fixture.Agents().AgentFor(owner.ServerId).Calls.Should().BeEmpty();
@@ -346,7 +346,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
         fixture.Agents().AgentFor(owner.ServerId).FailWith = agentFailure;
 
-        var failure = await RefusalAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
+        var failure = await RefusalAsync(PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId), owner.ServiceId);
 
         failure.Should().Be(PluginHostAccessFailure.Unavailable);
         (await fixture.KeysOfAsync(owner.ServiceId)).Should().BeEmpty();
@@ -359,7 +359,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     {
         var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-twice");
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
-        var call = PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId);
+        var call = PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId);
 
         var first = await fixture.AsPluginAsync(call, api => api.IssueSshAccessAsync(owner.ServiceId, "first", CancellationToken.None));
         var second = await fixture.AsPluginAsync(call, api => api.IssueSshAccessAsync(owner.ServiceId, "second", CancellationToken.None));
@@ -380,7 +380,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     {
         var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-contact");
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
-        var contact = PluginSshFixture.ClientCall(
+        var contact = PluginHostAccessFixture.ClientCall(
             fixture.SshPluginId, owner.ClientId, ClientPermission.All & ~ClientPermission.ViewModifyPasswords);
 
         var failure = await RefusalAsync(contact, owner.ServiceId);
@@ -409,9 +409,9 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
             services.RemoveAll<PluginRateLimiter>();
             services.AddSingleton(limiter);
         }));
-        var binding = PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId);
+        var binding = PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId);
 
-        await PluginSshFixture.AsPluginAsync(host, binding, async api =>
+        await PluginHostAccessFixture.AsPluginAsync(host, binding, async api =>
         {
             var act = () => api.IssueSshAccessAsync(owner.ServiceId, Label, CancellationToken.None);
             await act.Should().ThrowAsync<ObjectDisposedException>();
@@ -446,7 +446,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
                 },
                 disabled: false));
         }));
-        var binding = PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId);
+        var binding = PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId);
 
         using (var first = host.Services.CreateScope())
         {

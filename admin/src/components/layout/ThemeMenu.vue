@@ -13,7 +13,7 @@ import { useThemeStore } from '@/stores/theme'
 import { AdminTheme } from '@/types/admintheme'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
-import { iconTriggerClasses } from '@/utils/ui/button'
+import { iconTriggerClasses, iconTriggerIconSize } from '@/utils/ui/button'
 import type { UiMenuAction } from '@/utils/ui/menu'
 
 /** Props of the theme menu. */
@@ -63,7 +63,7 @@ const actions = computed<UiMenuAction[]>(() => [
 <template>
   <UiMenu :actions="actions" :aria-label="t('layout.theme.label')" :testid="testid">
     <span :class="iconTriggerClasses">
-      <UiIcon :markup="THEME_ICONS[theme.choice]" size="sm" />
+      <UiIcon :markup="THEME_ICONS[theme.choice]" :size="iconTriggerIconSize" />
     </span>
   </UiMenu>
 </template>

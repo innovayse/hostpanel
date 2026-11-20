@@ -9,6 +9,7 @@ import type { ProductFeature } from '@/types/productfeature'
 import { json, problem } from '../../helpers/fetch'
 import { mountScreen } from '../../helpers/mount'
 import { requestsOf, stubRouteTable } from '../../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The product being specified. */
 const product: Product = {
@@ -32,6 +33,7 @@ const product: Product = {
   isDigitalService: false,
   maxActiveServices: null,
   onePerClient: false,
+  trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
 }
 
 /** Two stored lines. */
@@ -106,7 +108,7 @@ describe('ProductFeaturesModal', () => {
       expect(requestsOf(mock)).toContain('DELETE /product-features/7')
     })
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="product-features-error"]').text()).toBe('Record deleted.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
     })
   })
 

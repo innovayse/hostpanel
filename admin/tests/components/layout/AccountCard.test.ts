@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import AccountCard from '@/components/layout/AccountCard.vue'
+import { translate } from '@/lib/translate'
 import { useAuthStore } from '@/stores/auth'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen } from '../../helpers/mount'
@@ -35,6 +36,22 @@ describe('AccountCard', () => {
     expect(wrapper.get('[data-testid="account-name"]').text()).toBe('Ada Lovelace')
     expect(wrapper.get('[data-testid="account-name"]').attributes('title')).toBe('ada@example.com')
     expect(wrapper.get('[data-testid="account-role"]').text()).toBe('Admin')
+  })
+
+  it('names the most privileged role, not the one the server listed first', async () => {
+    const wrapper = await mountCard()
+    useAuthStore().user = { email: 'ada@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Client', 'Admin'] }
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="account-role"]').text()).toBe('Admin')
+  })
+
+  it('writes the role as its translated label, not the enum value', async () => {
+    const wrapper = await mountCard()
+    useAuthStore().user = { email: 'ada@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Client', 'Reseller'] }
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="account-role"]').text()).toBe(translate('common.roles.Reseller'))
   })
 
   it('falls back to the address when the account holds no name', async () => {

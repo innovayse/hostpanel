@@ -3,6 +3,19 @@
  */
 import { translate } from '@/lib/translate'
 
+/** Closed set of the filter keys a report schema uses for its period dropdowns, which `ReportSchemaFilters` draws itself. */
+export const ReportPeriodField = {
+  /** The month of a year, 1 to 12. */
+  Month: 'month',
+  /** The year. */
+  Year: 'year',
+  /** The currency the figures are shown in. */
+  Currency: 'currency',
+} as const
+
+/** One of the period filter keys. */
+export type ReportPeriodField = (typeof ReportPeriodField)[keyof typeof ReportPeriodField]
+
 /** One choice of a period dropdown. */
 export interface ReportPeriodOption {
   /** Month number (1 to 12) or year. */
@@ -55,11 +68,3 @@ export const currentYear = (): number => new Date().getFullYear()
  * @returns The month, 1 to 12.
  */
 export const currentMonthNumber = (): number => new Date().getMonth() + 1
-
-/**
- * The whole current year as an inclusive `[from, to]` pair of `YYYY-MM-DD` days, the default range
- * of the date-range reports.
- *
- * @returns January 1st and December 31st of the current year.
- */
-export const currentYearRange = (): [string, string] => [`${currentYear()}-01-01`, `${currentYear()}-12-31`]

@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -41,7 +42,7 @@ const emit = defineEmits<{
       <UiText tone="muted" size="sm" :data-testid="`${props.testid}-pending-clear`">
         {{ t('settings.secret.pendingClear') }}
       </UiText>
-      <UiButton
+      <UiButton :action="UiActionKind.Cancel"
         type="button"
         variant="ghost"
         size="sm"
@@ -56,7 +57,7 @@ const emit = defineEmits<{
       <UiText tone="muted" size="sm" class="font-mono" :data-testid="`${props.testid}-stored`">
         {{ t('settings.secret.set') }}
       </UiText>
-      <UiButton
+      <UiButton :action="UiActionKind.Clear"
         type="button"
         variant="ghost"
         size="sm"

@@ -86,13 +86,4 @@ describe('ClientVatCard', () => {
 
     expect(wrapper.get('[data-testid="client-vat-check"]').attributes('disabled')).toBeDefined()
   })
-
-  it('keeps the header but shows a bar for the status and disables the button while loading', () => {
-    const wrapper = mountCard({ loading: true })
-
-    expect(wrapper.find('[data-testid="client-vat-skeleton"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="client-vat-number"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('VAT number')
-    expect(wrapper.get('[data-testid="client-vat-check"]').attributes('disabled')).toBeDefined()
-  })
 })

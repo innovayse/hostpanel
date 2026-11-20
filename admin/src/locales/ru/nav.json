@@ -2,38 +2,38 @@
   "dashboard": "Панель управления",
   "clients": "Клиенты",
   "clientsChildren": {
-    "view": "Просмотр/поиск клиентов",
-    "users": "Управление пользователями",
-    "groups": "Группы клиентов",
-    "sharedHostings": "Общий хостинг",
-    "addons": "Дополнения к услугам",
-    "cancellations": "Заявки на отмену",
+    "view": "Список",
+    "users": "Пользователи",
+    "groups": "Группы",
+    "sharedHostings": "Услуги",
+    "addons": "Дополнения",
+    "cancellations": "Отмены",
     "planChanges": "Смена тарифа",
-    "affiliates": "Управление партнёрами"
+    "affiliates": "Партнёры"
   },
   "billing": "Биллинг",
   "billingChildren": {
-    "transactions": "Список транзакций",
+    "transactions": "Транзакции",
     "invoices": "Счета",
     "billableItems": "Оплачиваемые позиции",
-    "quotes": "Коммерческие предложения",
-    "offlineCc": "Оффлайн-обработка карт",
+    "quotes": "Предложения",
+    "offlineCc": "Офлайн-карты",
     "disputes": "Споры",
-    "gatewayLog": "Лог платёжного шлюза",
+    "gatewayLog": "Журнал шлюза",
     "paymentClaims": "Платёжные заявки",
-    "bankTransfers": "Ожидающие банковские переводы",
+    "bankTransfers": "Банковские переводы",
     "creditNotes": "Кредит-ноты",
-    "renewals": "Предстоящие продления"
+    "renewals": "Продления"
   },
   "reports": "Отчёты",
   "orders": "Заказы",
   "domains": "Домены",
   "support": "Поддержка",
   "supportChildren": {
-    "overview": "Обзор поддержки",
-    "tickets": "Тикеты поддержки",
-    "newTicket": "Открыть новый тикет",
-    "predefinedReplies": "Готовые ответы",
+    "overview": "Обзор",
+    "tickets": "Тикеты",
+    "newTicket": "Новый тикет",
+    "predefinedReplies": "Ответы",
     "announcements": "Объявления",
     "emailCampaigns": "Email-рассылки",
     "downloads": "Загрузки",
@@ -41,7 +41,6 @@
     "networkIssues": "Сетевые проблемы"
   },
   "plugins": "Плагины",
-  "pluginManager": "Менеджер плагинов",
   "servers": "Серверы",
   "integrations": "Интеграции",
   "migration": "Миграция",
@@ -69,9 +68,14 @@
     "testimonials": "Отзывы",
     "partners": "Партнёры",
     "projects": "Проекты",
+    "faqs": "Вопросы",
+    "locations": "Локации"
+  },
+  "storefrontTitles": {
     "faqs": "Вопросы и ответы",
     "locations": "Расположение серверов"
   },
+  "openTickets": "{count} открытый тикет | {count} открытых тикета | {count} открытых тикетов",
   "servicesTitle": "Услуги",
   "documentation": "Документация",
   "sections": {

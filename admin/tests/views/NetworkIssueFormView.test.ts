@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import NetworkIssueFormView from '@/views/NetworkIssueFormView.vue'
+import schema, { NETWORK_ISSUE_STATUS_FIELD } from '@/views/NetworkIssueFormView.schema'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
@@ -121,5 +122,23 @@ describe('NetworkIssueFormView', () => {
     await flushPromises()
 
     expect((wrapper.get('[data-testid="network-issue-form-title"]').element as HTMLInputElement).value).toBe('Packet loss')
+  })
+
+  it('draws the fields of its schema, the status only in edit mode', async () => {
+    stubPathRoutes([{ path: '/network-issues', body: 5 }])
+    const wrapper = await mountView(NetworkIssueFormView)
+
+    for (const field of schema.columns.flat().flatMap((section) => section.fields)) {
+      const present = wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()
+      expect(present).toBe(field.key !== NETWORK_ISSUE_STATUS_FIELD)
+    }
+  })
+
+  it('keeps the fields of its schema as placeholders while the issue loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountView(NetworkIssueFormView, editRoute)
+
+    expect(wrapper.findAll('[data-testid="ui-form-section-issue"][aria-busy="true"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="network-issue-form-title"]').exists()).toBe(false)
   })
 })

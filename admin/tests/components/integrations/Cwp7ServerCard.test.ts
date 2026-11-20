@@ -44,13 +44,4 @@ describe('Cwp7ServerCard', () => {
 
     expect(wrapper.text()).toContain('Disabled')
   })
-
-  it('is no link and draws bars while there is no server', () => {
-    const wrapper = mountWithApp(Cwp7ServerCard)
-    const card = wrapper.get('[data-testid="cwp7-server-loading"]')
-
-    expect(card.attributes('href')).toBeUndefined()
-    expect(wrapper.find('[aria-busy="true"]').exists()).toBe(true)
-    expect(wrapper.findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(4)
-  })
 })

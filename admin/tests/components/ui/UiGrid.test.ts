@@ -27,6 +27,21 @@ describe('UiGrid', () => {
     expect(classes).not.toContain('lg:grid-cols-3')
   })
 
+  it('keeps two columns on a phone when paired', () => {
+    const paired = mount(UiGrid, { props: { columns: 4, paired: true } }).classes()
+
+    expect(paired).toEqual(expect.arrayContaining(['grid-cols-2', 'lg:grid-cols-4']))
+    expect(paired).not.toContain('grid-cols-1')
+    expect(mount(UiGrid, { props: { columns: 4 } }).classes()).toContain('grid-cols-1')
+  })
+
+  it('follows the container width instead of the screen when asked', () => {
+    const classes = mount(UiGrid, { props: { columns: 2, container: true } }).classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['grid-cols-1', '@3xl:grid-cols-2']))
+    expect(classes).not.toContain('md:grid-cols-2')
+  })
+
   it('applies the chosen gap', () => {
     expect(mount(UiGrid, { props: { gap: 'xl' } }).classes()).toContain('gap-8')
   })

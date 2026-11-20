@@ -15,6 +15,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import type { UiInputType } from '@/utils/ui/input'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -105,7 +106,7 @@ const handleSave = (): void => {
         </UiField>
       </UiGrid>
       <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" gap="sm">
-        <UiButton
+        <UiButton :action="UiActionKind.Cancel"
           type="button"
           :variant="UiButtonVariant.Secondary"
           data-testid="clients-domain-contact-cancel"
@@ -113,7 +114,7 @@ const handleSave = (): void => {
         >
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton
+        <UiButton :action="UiActionKind.Save"
           type="submit"
           :variant="UiButtonVariant.Primary"
           :loading="saving"

@@ -60,9 +60,6 @@
   },
   "maxmind": {
     "shortDescription": "Выявляйте мошеннические заказы с помощью оценки рисков GeoIP от MaxMind.",
-    "fieldLicenseKey": "Лицензионный ключ",
-    "fieldRegistrars": "Регистраторы доменов",
-    "fieldEmail": "Электронная почта / SMTP",
-    "fieldFraud": "Защита от мошенничества"
+    "fieldLicenseKey": "Лицензионный ключ"
   }
 }

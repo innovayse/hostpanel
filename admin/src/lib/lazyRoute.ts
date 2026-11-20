@@ -1,7 +1,7 @@
 /**
  * Lazy route loaders that survive a dropped download, and the helpers that find them in a route.
  *
- * Every routed screen and layout is its own chunk, handed to vue-router as a plain `() => import()`
+ * Every routed screen and layout but the eager shell layout (`AppLayout`) is its own chunk, handed to vue-router as a plain `() => import()`
  * loader, which is the only lazy form the router supports. The loader is wrapped by
  * {@link withRetry} so a failed or stalled download is repeated before the navigation gives up. The plain
  * import behind a wrapper stays reachable through {@link originalLoader}, and
@@ -134,3 +134,30 @@ export const isLazyLoader = (candidate: unknown): candidate is RouteLoader => {
  */
 export const lazyLoadersOf = (route: Pick<RouteLocationNormalized, 'matched'>): RouteLoader[] =>
   route.matched.flatMap((record) => Object.values(record.components ?? {}).filter(isLazyLoader))
+
+/** The file under `src/` (`views/AddClientView.vue`) each routed loader was made for. */
+const viewFiles = new WeakMap<object, string>()
+
+/**
+ * Tags a loader with the file it imports.
+ *
+ * The loader of a screen is an opaque `import()` closure, so the file it stands for would otherwise be unknown to
+ * everything that holds only the loader: the router table, which looks up the skeleton schema of the screen by file.
+ *
+ * @param loader - A route loader.
+ * @param file - Path under `src/`, such as `views/AddClientView.vue`.
+ * @returns The same loader, now answering {@link viewFileOf}.
+ */
+export const withViewFile = <T extends RouteLoader>(loader: T, file: string): T => {
+  viewFiles.set(loader, file)
+  return loader
+}
+
+/**
+ * Finds the file a loader was tagged with by {@link withViewFile}.
+ *
+ * @param loader - A route loader or any other value found in a route record.
+ * @returns The file under `src/`, or undefined when the value is not a tagged loader.
+ */
+export const viewFileOf = (loader: unknown): string | undefined =>
+  typeof loader === 'function' ? viewFiles.get(loader) : undefined

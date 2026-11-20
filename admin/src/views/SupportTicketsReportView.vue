@@ -1,23 +1,22 @@
 <script setup lang="ts">
 /**
- * Support ticket replies report: how many tickets each staff member replied to on every day of a
- * month, with row and day totals.
+ * Support ticket replies report: how many tickets each staff member replied to in a month, as a total, an
+ * average per day and a strip of the days with one shaded square each. The filter captions and the table columns are
+ * the ones of its schema, which the skeleton draws too.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportField from '@/components/reports/ReportField.vue'
-import ReportFilterBar from '@/components/reports/ReportFilterBar.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
-import UiSelect from '@/components/ui/UiSelect.vue'
+import UiChartHeatStrip from '@/components/ui/UiChartHeatStrip.vue'
 import { useReport } from '@/composables/useReport'
-import { currentMonthNumber, currentYear, monthName, monthOptions, yearOptions } from '@/lib/reportsPeriod'
+import { formatDecimal } from '@/lib/format'
+import { currentMonthNumber, currentYear, monthName } from '@/lib/reportsPeriod'
 import { reportPath } from '@/lib/reportsQuery'
-import type { ReportColumn } from '@/types/reportcolumn'
-import type { ReportTicketReplies } from '@/types/reportticketreplies'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportTicketReplies, ReportTicketReplyRow } from '@/types/reportticketreplies'
+import type { ReportTableData } from '@/types/reporttabledata'
+import schema from '@/views/SupportTicketsReportView.schema'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** Year being reported; the current one at first. */
 const year = ref(currentYear())
@@ -29,76 +28,57 @@ const { data, load } = useReport<ReportTicketReplies>(() =>
   reportPath('/reports/support-ticket-replies', { year: year.value, month: month.value }),
 )
 
-/** Month dropdown choices. */
-const months = monthOptions()
-
-/** Year dropdown choices. */
-const years = yearOptions(2, 2)
-
-/** Title naming the month once a report is loaded. */
-const title = computed<string>(() =>
-  data.value
-    ? t('reports.titles.supportTicketRepliesFor', { month: monthName(data.value.month), year: data.value.year })
-    : t('reports.titles.reports.supportTicketReplies'),
+/** Title naming the month once a report is loaded; the schema title until then. */
+const title = computed<string | undefined>(() =>
+  data.value ? t('reports.titles.supportTicketRepliesFor', { month: monthName(data.value.month), year: data.value.year }) : undefined,
 )
 
-/** Day numbers of the reported month. */
-const days = computed<number[]>(() => Array.from({ length: data.value?.daysInMonth ?? 0 }, (_, index) => index + 1))
+/** Days in the reported month. */
+const daysInMonth = computed<number>(() => data.value?.daysInMonth ?? 0)
 
-/** Table columns: the staff member, one per day, then the total. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'adminName', label: t('reports.supportTicketsReport.admin') },
-  ...days.value.map(day => ({ key: `d${day}`, label: String(day), align: UiAlign.Center })),
-  { key: 'total', label: t('shared.total'), align: UiAlign.Right },
-])
+/**
+ * Replies per day of the month, over every day of it.
+ *
+ * @param total - Replies in the month.
+ * @returns The average, zero for a month with no days yet.
+ */
+const averageOf = (total: number): number => (daysInMonth.value > 0 ? total / daysInMonth.value : 0)
 
-/** One row per staff member with a property per day. */
-const rows = computed<Record<string, string | number>[]>(() =>
-  (data.value?.rows ?? []).map(row => ({
-    adminName: row.adminName,
-    ...Object.fromEntries(days.value.map((day, index) => [`d${day}`, row.dailyCounts[index] ?? 0])),
-    total: row.total,
-  })),
-)
+/** One row per staff member with the average per day added. */
+const rows = computed(() => (data.value?.rows ?? []).map(row => ({ ...row, averagePerDay: averageOf(row.total) })))
 
-/** Footer sums per day and overall; a day nobody replied on stays blank. */
-const totals = computed<Record<string, string | number>>(() => ({
-  ...Object.fromEntries(
-    days.value.map((day, index) => {
-      const sum = (data.value?.rows ?? []).reduce((acc, row) => acc + (row.dailyCounts[index] ?? 0), 0)
-      return [`d${day}`, sum > 0 ? sum : '']
-    }),
-  ),
-  total: (data.value?.rows ?? []).reduce((acc, row) => acc + row.total, 0),
-}))
+/** The table of the staff members, with the tooltips that explain the two figures and a footer holding the replies of everyone and their average per day. */
+const table = computed<ReportTableData<ReportTicketReplyRow & { averagePerDay: number }>>(() => {
+  /** Replies of every staff member in the month. */
+  const total = (data.value?.rows ?? []).reduce((acc, row) => acc + row.total, 0)
+  return {
+    rows: rows.value,
+    rowKey: 'adminName',
+    extras: {
+      total: { hint: t('reports.supportTicketsReport.totalHint') },
+      averagePerDay: { hint: t('reports.supportTicketsReport.averagePerDayHint') },
+    },
+    totals: { total, averagePerDay: formatDecimal(averageOf(total), locale.value) },
+  }
+})
+
+/**
+ * Writes the tooltip of one square of the strip of a row.
+ *
+ * @param index - Zero based index of the day.
+ * @param count - Replies made that day.
+ * @returns The day and its replies.
+ */
+const describeDay = (index: number, count: number): string => t('reports.supportTicketsReport.dayReplies', { day: index + 1, count })
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="title" :description="t('reports.supportTicketsReport.thisReportShowsABreakdown')">
-    <template #filters>
-      <ReportFilterBar @generate="load">
-        <template #fields>
-          <ReportField :label="t('shared.month')">
-            <UiSelect v-model="month" :options="months" :placeholder="t('shared.month')" data-testid="report-month" />
-          </ReportField>
-          <ReportField :label="t('shared.year')" width="sm">
-            <UiSelect v-model="year" :options="years" :placeholder="t('shared.year')" data-testid="report-year" />
-          </ReportField>
-        </template>
-      </ReportFilterBar>
+  <ReportPage v-model:year="year" v-model:month="month" :retry="load" :schema="schema" :title="title" :years-back="2" :years-ahead="2" :table="table" @generate="load">
+    <template #cell-averagePerDay="{ value }">
+      {{ formatDecimal(Number(value), locale) }}
     </template>
-
-    <ReportTable
-      v-if="data"
-      :columns="columns"
-      :rows="rows"
-      row-key="adminName"
-      :totals="totals"
-      :empty-text="t('shared.noDataFoundForThis')"
-    >
-      <template v-for="day in days" #[`cell-d${day}`]="{ value }">
-        {{ Number(value) > 0 ? value : '' }}
-      </template>
-    </ReportTable>
+    <template #cell-dailyCounts="{ row }">
+      <UiChartHeatStrip :values="row.dailyCounts" :describe="describeDay" />
+    </template>
   </ReportPage>
 </template>

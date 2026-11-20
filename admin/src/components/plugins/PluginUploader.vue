@@ -14,6 +14,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiUploadZone from '@/components/ui/UiUploadZone.vue'
 import { BYTES_PER_KB } from '@/lib/limits'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -63,10 +64,10 @@ const clearFile = (): void => {
         <UiText tone="muted" size="sm">
           {{ t('plugins.pluginUploader.valueKbReadyToInstall', { value: (picked.size / BYTES_PER_KB).toFixed(1) }) }}
         </UiText>
-        <UiButton type="button" variant="ghost" size="sm" data-testid="plugin-cancel" @click="clearFile">
+        <UiButton :action="UiActionKind.Cancel" type="button" variant="ghost" size="sm" data-testid="plugin-cancel" @click="clearFile">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton type="button" variant="primary" size="sm" data-testid="plugin-install" @click="handleUpload">
+        <UiButton :action="UiActionKind.Upload" type="button" variant="primary" size="sm" data-testid="plugin-install" @click="handleUpload">
           {{ t('plugins.pluginUploader.installPlugin') }}
         </UiButton>
       </UiStack>

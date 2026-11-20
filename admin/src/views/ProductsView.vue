@@ -13,8 +13,6 @@ import { useI18n } from 'vue-i18n'
 import ProductFeaturesModal from '@/components/settings/ProductFeaturesModal.vue'
 import ProductFormModal from '@/components/settings/ProductFormModal.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -31,9 +29,10 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ProductsView.schema'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { formatAffixed } from '@/lib/money'
@@ -47,12 +46,19 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTextSize } from '@/utils/ui/text'
 import { EMPTY_VALUE } from '@/lib/format'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('settings.products.createProduct'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'products-create', onSelect: openCreate },
+])
 
 /** The filter fields the dialog edits; each is one query key and one `ProductListFilters` member. */
 const FilterKey = {
@@ -284,6 +290,7 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
       isDigitalService: payload.isDigitalService,
       maxActiveServices: payload.maxActiveServices,
       onePerClient: payload.onePerClient,
+      trial: payload.trial,
     })
   } else {
     saved = (await store.createProduct(payload)) !== null
@@ -314,22 +321,18 @@ const productActions = (product: Product): UiMenuAction[] => {
    */
   const onEdit = (): void => openEdit(product)
   return [
-    { label: t('settings.products.editSpecification'), testid: `product-spec-${product.id}`, onSelect: onSpec },
-    { label: t('settings.products.editProduct'), testid: `product-edit-${product.id}`, onSelect: onEdit },
+    { label: t('settings.products.editSpecification'), icon: Icon.List, testid: `product-spec-${product.id}`, onSelect: onSpec },
+    { label: t('settings.products.editProduct'), icon: Icon.Edit, testid: `product-edit-${product.id}`, onSelect: onEdit },
   ]
 }
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="products-view">
-    <UiStatusMessage :message="feedback.message.value" :tone="UiTone.Success" class="mb-4" data-testid="products-feedback" />
-
-    <UiPageHeader :title="t('settings.products.products')" :subtitle="t('settings.products.manageHostingPlansAndServices')">
+  <UiStack data-testid="products-view">
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
       <template #actions>
         <PageHelpLink :url="guideUrl" />
-        <UiButton type="button" variant="primary" data-testid="products-create" @click="openCreate">
-          {{ t('settings.products.createProduct') }}
-        </UiButton>
+        
       </template>
     </UiPageHeader>
 
@@ -391,18 +394,9 @@ const productActions = (product: Product): UiMenuAction[] => {
       @retry="loadAll"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" class="overflow-hidden">
+    <UiCard v-else-if="hasRows || store.loading" clip>
       <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="products-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader>{{ t('settings.products.group') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="product in store.productPage"
@@ -411,8 +405,8 @@ const productActions = (product: Product): UiMenuAction[] => {
             :data-testid="`product-row-${product.id}`"
           >
             <UiTableCell>
-              <UiText tone="primary" size="lg" class="font-medium">{{ product.name }}</UiText>
-              <UiText v-if="product.slug" tone="muted" size="xs">/{{ product.slug }}</UiText>
+              <UiText tone="primary" size="lg" class="min-w-0 truncate font-medium">{{ product.name }}</UiText>
+              <UiText v-if="product.slug" tone="muted" size="xs" class="min-w-0 truncate">/{{ product.slug }}</UiText>
             </UiTableCell>
             <UiTableCell muted>{{ groupName(product.groupId) }}</UiTableCell>
             <UiTableCell muted>{{ typeLabels[product.type] ?? product.type }}</UiTableCell>
@@ -423,9 +417,13 @@ const productActions = (product: Product): UiMenuAction[] => {
               </UiText>
             </UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="product.status === ProductStatus.Active ? UiTone.Success : UiTone.Neutral" small>
-                {{ product.status === ProductStatus.Active ? t('shared.active') : t('shared.inactive') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="product.status === ProductStatus.Active"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.active')"
+                :off-label="t('shared.inactive')"
+              />
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="productActions(product)" :testid="`product-actions-${product.id}`" />

@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import ClientDomainDetailView from '@/views/ClientDomainDetailView.vue'
+import schema, { MANAGEMENT_COLUMNS, NAMESERVER_LABELS, REGISTRAR_COLUMNS } from '@/views/ClientDomainDetailView.schema'
 import { mountClientView } from '../helpers/clientViews'
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
@@ -76,15 +77,33 @@ afterEach(() => {
 })
 
 describe('ClientDomainDetailView', () => {
-  it('keeps the real header, tabs and sections as placeholders while the domain loads', async () => {
+  it('keeps the real header, tabs and the cards of the schema as placeholders while the domain loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountDomain()
 
     expect(wrapper.find('[data-testid="client-domain-loading"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="client-domain-tab-registrar"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Domain Info')
-    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    for (const card of schema.columns.flat()) {
+      expect(wrapper.get(`[data-testid="ui-detail-card-${card.key}"]`).attributes('aria-busy')).toBe('true')
+    }
+    expect(wrapper.get('[data-testid="ui-detail-card-info"]').text()).toContain('Domain Info')
     expect(wrapper.get('[data-testid="client-domain-save"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('draws the cards of the registrar and management tabs from their schema columns', async () => {
+    stubRoutes({ 'GET /api/domains/3': () => domain() })
+    const wrapper = await mountDomain()
+
+    await openTab(wrapper, 'registrar')
+    for (const card of REGISTRAR_COLUMNS.flat()) {
+      expect(wrapper.find(`[data-testid="ui-detail-card-${card.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.findAll('[data-testid^="client-domain-ns-"]')).toHaveLength(NAMESERVER_LABELS.length)
+
+    await openTab(wrapper, 'management')
+    for (const card of MANAGEMENT_COLUMNS.flat()) {
+      expect(wrapper.find(`[data-testid="ui-detail-card-${card.key}"]`).exists()).toBe(true)
+    }
   })
 
   it('mounts without throwing', async () => {
@@ -203,5 +222,14 @@ describe('ClientDomainDetailView', () => {
       .find((call) => call.method === 'PUT')
     expect(put?.url).toBe('/api/domains/3')
     expect(put?.body).toEqual(expect.objectContaining({ promotionCode: 'SAVE10' }))
+  })
+
+  it('returns to the domains of its client with the back pill', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const wrapper = await mountDomain()
+    const back = wrapper.get('[data-testid="client-domain-back"]')
+
+    expect(back.attributes('href')).toBe('/clients/7/domains')
+    expect(back.text()).toBe('Domains')
   })
 })

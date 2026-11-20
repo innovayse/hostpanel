@@ -32,6 +32,7 @@ import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translator for the modal's labels. */
 const { t } = useI18n()
@@ -233,7 +234,7 @@ onMounted(async () => {
         </UiField>
 
         <UiStack :direction="UiDirection.Row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm">
-          <UiButton
+          <UiButton :action="UiActionKind.Cancel"
             type="button"
             :variant="UiButtonVariant.Secondary"
             data-testid="clients-add-billable-item-cancel"
@@ -241,7 +242,7 @@ onMounted(async () => {
           >
             {{ t('shared.cancel') }}
           </UiButton>
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             type="submit"
             :variant="UiButtonVariant.Primary"
             :loading="saving"

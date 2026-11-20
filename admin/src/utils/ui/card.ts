@@ -27,3 +27,17 @@ export const UiCardRadius = {
 
 /** One of the UiCardRadius values. */
 export type UiCardRadius = (typeof UiCardRadius)[keyof typeof UiCardRadius]
+
+/** The parts a loading record card draws placeholders for, so a card list matches the cards it will hold. */
+export interface UiRecordCardSkeleton {
+  /** The card has a checkbox. */
+  select: boolean
+  /** The card has a subtitle line. */
+  subtitle: boolean
+  /** The card has a badge. */
+  badge: boolean
+  /** The card has row actions. */
+  actions: boolean
+  /** Number of captioned field lines. */
+  fields: number
+}

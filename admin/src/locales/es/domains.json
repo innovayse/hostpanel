@@ -1,0 +1,12 @@
+{
+  "domainsList": {
+    "manageAllRegisteredDomainNames": "Gestionar todos los nombres de dominio registrados entre clientes",
+    "searchDomains": "Buscar dominios...",
+    "expiresAt": "Vence el",
+    "renewalPrice": "Precio de Renovación",
+    "regPeriod": "Período de registro",
+    "noDomainsMatchYourFilters": "Ningún dominio coincide con tus filtros",
+    "clearFilters": "Borrar filtros",
+    "noDomainsFound": "No se encontraron dominios"
+  }
+}

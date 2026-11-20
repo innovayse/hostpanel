@@ -48,6 +48,7 @@ export const useLocalizedSettingDrafts = (
     [MessageLanguage.En]: useSettingDraft(settings, keys[MessageLanguage.En]),
     [MessageLanguage.Ru]: useSettingDraft(settings, keys[MessageLanguage.Ru]),
     [MessageLanguage.Hy]: useSettingDraft(settings, keys[MessageLanguage.Hy]),
+    [MessageLanguage.Es]: useSettingDraft(settings, keys[MessageLanguage.Es]),
   }
 
   /** Whether each language's row holds text. */
@@ -55,6 +56,7 @@ export const useLocalizedSettingDrafts = (
     [MessageLanguage.En]: drafts[MessageLanguage.En].value.value.trim() !== '',
     [MessageLanguage.Ru]: drafts[MessageLanguage.Ru].value.value.trim() !== '',
     [MessageLanguage.Hy]: drafts[MessageLanguage.Hy].value.value.trim() !== '',
+    [MessageLanguage.Es]: drafts[MessageLanguage.Es].value.value.trim() !== '',
   }))
 
   /** The refusal sentence of each language whose last save failed. */

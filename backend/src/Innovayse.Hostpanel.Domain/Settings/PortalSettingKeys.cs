@@ -142,6 +142,9 @@ public static class PortalSettingKeys
     /// <summary>Armenian-locale chat token; empty falls back to <see cref="ChatWebsiteToken"/>.</summary>
     public const string ChatWebsiteTokenHy = "portal.chat.website_token.hy";
 
+    /// <summary>Spanish-locale chat token; empty falls back to <see cref="ChatWebsiteToken"/>.</summary>
+    public const string ChatWebsiteTokenEs = "portal.chat.website_token.es";
+
     /// <summary>Headline client count shown in the hero, e.g. <c>120+</c>.</summary>
     public const string StatsClients = "portal.stats.clients";
 
@@ -308,8 +311,14 @@ public static class PortalSettingKeys
     /// <summary>Support working hours for Russian visitors. Empty uses <see cref="ContactHours"/>.</summary>
     public const string ContactHoursRu = "portal.contact.hours.ru";
 
+    /// <summary>Office address for Spanish visitors. Empty uses <see cref="ContactAddress"/>.</summary>
+    public const string ContactAddressEs = "portal.contact.address.es";
+
     /// <summary>Support working hours for Armenian visitors. Empty uses <see cref="ContactHours"/>.</summary>
     public const string ContactHoursHy = "portal.contact.hours.hy";
+
+    /// <summary>Support working hours for Spanish visitors. Empty uses <see cref="ContactHours"/>.</summary>
+    public const string ContactHoursEs = "portal.contact.hours.es";
 
     /// <summary>The template a fresh install starts with. Mirrors <c>DEFAULT_TEMPLATE</c> in <c>client/templates/types.ts</c>.</summary>
     public const StorefrontTemplate DefaultTemplate = StorefrontTemplate.Classic;
@@ -517,6 +526,7 @@ public static class PortalSettingKeys
         new(ChatWebsiteToken,    "",       "Live chat website token. Empty hides the widget."),
         new(ChatWebsiteTokenRu,  "",       "Live chat website token for Russian visitors. Empty uses the default token."),
         new(ChatWebsiteTokenHy,  "",       "Live chat website token for Armenian visitors. Empty uses the default token."),
+        new(ChatWebsiteTokenEs,  "",       "Live chat website token for Spanish visitors. Empty uses the default token."),
         new(ContactWhatsapp,     "",       "WhatsApp number in international format, no leading +. Empty hides the action."),
         new(ContactTelegram,     "",       "Telegram handle without the @. Empty hides the action."),
         new(ChatProvider,        "",       "Live chat provider: chatwoot, or empty to disable the widget."),
@@ -548,8 +558,10 @@ public static class PortalSettingKeys
         new(ContactTimezone,     "",       "IANA time zone (like Asia/Yerevan) the working hours are stated in, shown beside them. Ignored while the hours are empty."),
         new(ContactAddressRu,    "",       "Office address for Russian visitors. Empty uses the default address."),
         new(ContactAddressHy,    "",       "Office address for Armenian visitors. Empty uses the default address."),
+        new(ContactAddressEs,    "",       "Office address for Spanish visitors. Empty uses the default address."),
         new(ContactHoursRu,      "",       "Support working hours for Russian visitors. Empty uses the default hours."),
         new(ContactHoursHy,      "",       "Support working hours for Armenian visitors. Empty uses the default hours."),
+        new(ContactHoursEs,      "",       "Support working hours for Spanish visitors. Empty uses the default hours."),
         new(FeaturesBackups,     "",       "Show the backups claims on the nova template: true or false. Empty hides them."),
         new(FeaturesStorage,     "",       "Show the storage claim on the nova template: true or false. Empty hides it."),
         new(FeaturesCaching,     "",       "Show the caching claim on the nova template: true or false. Empty hides it."),

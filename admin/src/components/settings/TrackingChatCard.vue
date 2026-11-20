@@ -60,6 +60,7 @@ const TOKEN_KEYS: Record<MessageLanguage, SettingKey> = {
   [MessageLanguage.En]: SettingKey.ChatWebsiteToken,
   [MessageLanguage.Ru]: SettingKey.ChatWebsiteTokenRu,
   [MessageLanguage.Hy]: SettingKey.ChatWebsiteTokenHy,
+  [MessageLanguage.Es]: SettingKey.ChatWebsiteTokenEs,
 }
 
 /** The website token, one draft per language. */
@@ -70,6 +71,7 @@ const tokenPlaceholders = computed<Record<MessageLanguage, string>>(() => ({
   [MessageLanguage.En]: t('settings.trackingChat.chat.tokenHint'),
   [MessageLanguage.Ru]: t('settings.trackingChat.chat.tokenLocaleHint'),
   [MessageLanguage.Hy]: t('settings.trackingChat.chat.tokenLocaleHint'),
+  [MessageLanguage.Es]: t('settings.trackingChat.chat.tokenLocaleHint'),
 }))
 
 /** Test id suffix of the token input of each language; the default token keeps the bare `token`. */
@@ -77,6 +79,7 @@ const tokenTestids: Record<MessageLanguage, string> = {
   [MessageLanguage.En]: 'tracking-chat-token',
   [MessageLanguage.Ru]: 'tracking-chat-token-ru',
   [MessageLanguage.Hy]: 'tracking-chat-token-hy',
+  [MessageLanguage.Es]: 'tracking-chat-token-es',
 }
 </script>
 

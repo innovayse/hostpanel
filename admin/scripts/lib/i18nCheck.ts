@@ -4,7 +4,7 @@
  */
 
 /** The languages every catalogue ships. */
-export const LANGUAGES = ['en', 'ru', 'hy'] as const
+export const LANGUAGES = ['en', 'ru', 'hy', 'es'] as const
 
 /** One of the shipped languages. */
 export type Language = (typeof LANGUAGES)[number]

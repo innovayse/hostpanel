@@ -1,0 +1,5 @@
+{
+  "duplicatedSuccess": "Cotización duplicada con éxito. Nueva cotización #{id} creada.",
+  "convertedSuccess": "Cotización convertida a factura #{id} con éxito.",
+  "savedSuccess": "Cotización #{id} guardada."
+}

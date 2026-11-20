@@ -1,0 +1,17 @@
+{
+  "clients": "Clientes",
+  "invoices": "Facturas",
+  "services": "Servicios",
+  "domains": "Dominios",
+  "tickets": "Tickets",
+  "products": "Productos",
+  "orders": "Órdenes",
+  "transactions": "Transacciones",
+  "quotes": "Cotizaciones",
+  "knowledgebase": "Base de conocimientos",
+  "contacts": "Contactos",
+  "ticketReplies": "Respuestas de tickets",
+  "announcements": "Anuncios",
+  "downloads": "Descargas",
+  "networkIssues": "Problemas de red"
+}

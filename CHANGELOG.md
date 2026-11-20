@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-20
+
+### Removed
+
+- The special hosting preparation that ran after a service was provisioned is gone, together with the product metadata key that switched it on, the matching operation of the SSH key agent, its CWP helper and its `agent.conf` setting.
+
 ## [0.7.1] - 2026-11-20
 
 ### Added
@@ -56,15 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Docs: the documentation app starts again on a site whose Content Security Policy has no `unsafe-eval`. The Edit this page link was a function in the config, which VitePress writes into the site data as source text for the browser to rebuild with `new Function`; it is now a plain pattern, and a page served from the fallback folder still links to its real source file. A docs test refuses any function in the resolved config.
 - SSH key agent 1.4.0: a new `remove-jail` operation removes the SSH jail and its home mount unit of an account the hosting panel has already deleted (it refuses while the account exists and while anything is still mounted inside the jail, and removes the tree on its own filesystem only). HostPanel asks for it after it terminated a service's hosting account. Before, every terminated jailed account left its jail and an enabled systemd mount unit on the server, because the agent keeps a jail for cheap re-enrolment.
-
-### Fixed
-
-- SSH key agent 1.3.1: the CWP `prepare-site` helper sets `HOME=/root`. The agent runs helpers with `PATH` only, so `mysql` could not read root's client credentials and every site preparation through the agent failed with `site_prepare_failed`, while the same helper worked when run by hand.
-
-### Added
-
-- SSH key agent 1.3.0: an opt-in `prepare-site` operation (`site_prepare_command` in `agent.conf`, empty by default) runs a provider helper as root that prepares one account's own domain for Innovayse Sites deploys. The CWP helper (`providers/cwp/prepare-site`) sets up a php-fpm 8.3 pool with the OPcache and realpath settings a symlink-switch deploy needs behind Apache, the vhost handler and CWP's own record of it, a database, the deploy settings file, `public_html -> current/public` and PHP in the jail. It is idempotent, backs up what it edits, refuses a domain that is not the account's (`site_not_owned`) and reloads Apache and php-fpm only gracefully and after their config tests.
-- A hosting product whose metadata holds `{"innovayseSites": {"prepare": true}}` has every newly provisioned account prepared that way through the server's agent, in the background after provisioning. Failures are logged and leave the service active.
 
 ## [0.5.0] - 2026-11-13
 
@@ -414,7 +411,8 @@ Upgrade notes, read before upgrading:
 - Backend sources were tracked as a submodule; they are now part of the repository.
 - Repository URLs in the README and clone instructions.
 
-[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/innovayse/hostpanel/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/innovayse/hostpanel/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/innovayse/hostpanel/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/innovayse/hostpanel/compare/v0.5.0...v0.6.0

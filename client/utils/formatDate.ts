@@ -46,11 +46,13 @@ import { format, isValid, parseISO } from 'date-fns'
 // named imports still cost all 98 modules there, which is enough to stall the first
 // page load on a slow machine. Production tree-shakes either way; this makes the two
 // agree, and states outright which three the portal actually ships.
+import { de } from 'date-fns/locale/de'
 import { enUS } from 'date-fns/locale/en-US'
 import { hy } from 'date-fns/locale/hy'
 import { ru } from 'date-fns/locale/ru'
 import type { Locale } from 'date-fns'
 import type { AppWithI18n } from '~/types/appwithi18n'
+import { AppLocale } from '~/types/applocale'
 
 /**
  * What a date renders as when there is nothing to render.
@@ -66,7 +68,12 @@ export const EMPTY_DATE = '—'
  * the config without a line here, resolves to `enUS` rather than throwing, because a month
  * name in the wrong language is a smaller failure than a blank service page.
  */
-const DATE_LOCALES: Record<string, Locale> = { en: enUS, ru, hy }
+const DATE_LOCALES: Record<AppLocale, Locale> = {
+  [AppLocale.En]: enUS,
+  [AppLocale.Ru]: ru,
+  [AppLocale.Hy]: hy,
+  [AppLocale.De]: de
+}
 
 /**
  * Leading `YYYY-MM-DD` of an ISO-8601 value, whether or not a time follows it.
@@ -117,7 +124,7 @@ const resolveLocale = (locale?: string): string => {
  * @returns The date-fns locale, defaulting to `enUS`.
  */
 const dateLocale = (locale?: string): Locale =>
-  DATE_LOCALES[resolveLocale(locale).split('-')[0] ?? 'en'] ?? enUS
+  DATE_LOCALES[resolveLocale(locale).split('-')[0] as AppLocale] ?? enUS
 
 /**
  * Parses a value the API sent into a `Date`, or `null` when it does not denote one.

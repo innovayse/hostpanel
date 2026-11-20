@@ -24,6 +24,7 @@ describe('LanguageSwitcher', () => {
         { code: 'en', name: 'English' },
         { code: 'ru', name: 'Russian' },
         { code: 'hy', name: 'Armenian' },
+        { code: 'de', name: 'German' },
       ]),
     }))
     stubSwitchLocalePath()
@@ -44,7 +45,7 @@ describe('LanguageSwitcher', () => {
     await wrapper.find('[data-testid="language-switcher-trigger"]').trigger('click')
 
     expect(wrapper.find('[role="menu"]').exists()).toBe(true)
-    expect(wrapper.findAll('[role="menuitem"]')).toHaveLength(3)
+    expect(wrapper.findAll('[role="menuitem"]')).toHaveLength(4)
     expect(wrapper.find('[data-testid="language-switcher-trigger"]').attributes('aria-expanded')).toBe('true')
   })
 
@@ -57,6 +58,13 @@ describe('LanguageSwitcher', () => {
 
     expect(location.href).toBe('/hy')
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+  })
+
+  it('shows the German flag beside the German option', async () => {
+    const wrapper = mountWithKit(LanguageSwitcher)
+    await wrapper.find('[data-testid="language-switcher-trigger"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="language-option-de"] img').attributes('src')).toBe('/flags/de.svg')
   })
 
   it('right-aligns the menu under the trigger by default', async () => {
@@ -110,7 +118,7 @@ describe('LanguageSwitcher', () => {
   it('adds the card row and hides the trigger below xl in the responsive layout', () => {
     const wrapper = mountWithKit(LanguageSwitcher, { props: { layout: UiLanguageLayout.Responsive } })
 
-    expect(wrapper.findAll('[data-testid^="language-card-"]')).toHaveLength(3)
+    expect(wrapper.findAll('[data-testid^="language-card-"]')).toHaveLength(4)
     expect(wrapper.find('[data-testid="language-switcher-trigger"]').classes()).toEqual(expect.arrayContaining(['hidden', 'xl:flex']))
   })
 

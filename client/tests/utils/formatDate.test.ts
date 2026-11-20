@@ -84,6 +84,11 @@ describe('formatDate', () => {
     expect(hy).toMatch(/[԰-֏]/)
   })
 
+  it('renders German month names for the German portal', () => {
+    expect(formatDate('2026-03-08', 'de')).toBe('8. März 2026')
+    expect(formatDate('2026-03-08', 'de-DE')).toBe('8. März 2026')
+  })
+
   it('accepts a regional tag as well as a bare language code', () => {
     expect(formatDate(PRODUCTION_NEXT_DUE, 'hy-AM')).toBe(formatDate(PRODUCTION_NEXT_DUE, 'hy'))
   })

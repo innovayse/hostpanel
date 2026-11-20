@@ -82,7 +82,7 @@
 import { computed, ref } from 'vue'
 import { ChevronDown, Check } from 'lucide-vue-next'
 import { onClickOutside } from '@vueuse/core'
-import type { AppLocale } from '~/types/applocale'
+import { AppLocale } from '~/types/applocale'
 import { UiLanguageLayout, UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
 import { menuAlignClasses } from '~/utils/ui/menuAlign'
 import { FOCUS_RING, PICKER_TRIGGER } from '~/utils/ui/tones'
@@ -108,11 +108,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 /** Flag image per locale code; unknown codes get the neutral flag. */
-const FLAGS: Record<string, string> = {
-  en: '/flags/us.svg',
-  ru: '/flags/ru.svg',
-  hy: '/flags/am.svg',
-  de: '/flags/de.svg',
+const FLAGS: Record<AppLocale, string> = {
+  [AppLocale.En]: '/flags/us.svg',
+  [AppLocale.Ru]: '/flags/ru.svg',
+  [AppLocale.Hy]: '/flags/am.svg',
+  [AppLocale.De]: '/flags/de.svg',
 }
 
 /** Active locale code and the locales the portal offers. */
@@ -164,7 +164,7 @@ const menuClasses = computed(() => [
  * @param code Locale code.
  * @returns Path of the flag SVG.
  */
-const flagOf = (code: string): string => FLAGS[code] ?? '/flags/un.svg'
+const flagOf = (code: string): string => FLAGS[code as AppLocale] ?? '/flags/un.svg'
 
 /**
  * Switches the portal to another language.

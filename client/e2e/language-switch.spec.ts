@@ -15,6 +15,7 @@ const LANGUAGES = [
   { language: 'en', path: '/contact' },
   { language: 'ru', path: '/ru/contact' },
   { language: 'hy', path: '/hy/contact' },
+  { language: 'de', path: '/de/contact' },
 ]
 
 for (const { language, path } of LANGUAGES) {

@@ -11,7 +11,7 @@ Open an issue before you start. A new language needs all three parts translated 
 
 ## Admin panel
 
-The admin panel keeps two lists of languages. `MessageLanguage` (`admin/src/locales/messages.ts`) holds only the languages the admin interface itself is translated into; it drives the `locales` folders, `SUPPORTED_LOCALES` and the i18n check. `ContentLanguage` (`admin/src/locales/contentLanguage.ts`) holds the languages of content: what the API answers in, email templates, a client's preferred language and storefront content. The steps below add an interface language, which goes into both lists. A language that is only a content language, as German and Spanish are for now, is added to `ContentLanguage` alone, with the admin extras in the API section.
+The admin panel keeps two lists of languages. `MessageLanguage` (`admin/src/locales/messages.ts`) holds only the languages the admin interface itself is translated into; it drives the `locales` folders, `SUPPORTED_LOCALES` and the i18n check. `ContentLanguage` (`admin/src/locales/contentLanguage.ts`) holds the languages of content: what the API answers in, email templates, a client's preferred language and storefront content. The steps below add an interface language, which goes into both lists. A language that is only a content language, as Spanish is for now, is added to `ContentLanguage` alone, with the admin extras in the API section.
 
 <Steps>
 <li>

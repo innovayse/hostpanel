@@ -1,0 +1,22 @@
+{
+  "banner": {
+    "label": "Demomodus",
+    "resetsIn": "Die Daten werden in {time} zurückgesetzt.",
+    "soon": "weniger als einer Minute",
+    "minutes": "{minutes} Min.",
+    "hoursMinutes": "{hours} Std. {minutes} Min.",
+    "dataResets": "Alle Änderungen hier sind temporär und werden regelmäßig zurückgesetzt.",
+    "guide": "Neu hier? Lesen Sie die Anleitung"
+  },
+  "login": {
+    "hint": "Dies ist eine öffentliche Demo. Nutzen Sie das folgende Konto, um sich umzusehen.",
+    "use": "Verwenden",
+    "email": "E-Mail: {email}",
+    "password": "Passwort: {password}",
+    "roles": {
+      "admin": "Administrator",
+      "client": "Kunde"
+    },
+    "openClientPortal": "Kundenportal öffnen"
+  }
+}

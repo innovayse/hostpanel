@@ -1,0 +1,36 @@
+{
+  "title": "Tarifwechsel",
+  "subtitle": "Upgrade- und Downgrade-Anfragen prüfen und den Tarifwechselverlauf eines Services einsehen",
+  "filterStatus": "Nach Status filtern",
+  "allStatuses": "Alle Status",
+  "serviceFilter": "Service #{id}",
+  "clearServiceFilter": "Alle Services anzeigen",
+  "history": "Tarifwechselverlauf",
+  "viewHistory": "Tarifwechsel",
+  "service": "Service",
+  "plans": "Tarifwechsel",
+  "proration": "Anteilige Berechnung",
+  "invoice": "Rechnung #{id}",
+  "note": "Notiz",
+  "totalCount": "Anfragen: {totalCount}",
+  "empty": "Keine Tarifwechsel-Anfragen gefunden",
+  "approve": "Genehmigen",
+  "reject": "Ablehnen",
+  "approveTitle": "Tarifwechsel genehmigen",
+  "approveMessage": "Diesen Tarifwechsel genehmigen und auf den Service anwenden?",
+  "rejectTitle": "Tarifwechsel ablehnen",
+  "rejectMessage": "Diesen Tarifwechsel ablehnen? Der Service bleibt im aktuellen Tarif.",
+  "notePlaceholder": "Optionale Notiz",
+  "approved": "Tarifwechsel genehmigt.",
+  "rejected": "Tarifwechsel abgelehnt.",
+  "type": {
+    "Upgrade": "Upgrade",
+    "Downgrade": "Downgrade"
+  },
+  "status": {
+    "Pending": "Ausstehend",
+    "Approved": "Genehmigt",
+    "Completed": "Abgeschlossen",
+    "Rejected": "Abgelehnt"
+  }
+}

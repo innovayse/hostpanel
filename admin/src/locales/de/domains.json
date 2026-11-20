@@ -1,0 +1,12 @@
+{
+  "domainsList": {
+    "manageAllRegisteredDomainNames": "Alle registrierten Domainnamen über alle Kunden hinweg verwalten",
+    "searchDomains": "Domains suchen",
+    "expiresAt": "Läuft ab am",
+    "renewalPrice": "Verlängerungspreis",
+    "regPeriod": "Registrierungszeitraum",
+    "noDomainsMatchYourFilters": "Keine Domains entsprechen Ihren Filtern",
+    "clearFilters": "Filter zurücksetzen",
+    "noDomainsFound": "Keine Domains gefunden"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "permissionLabels": {
+    "modifyMasterAccountProfile": "Profil des Hauptkontos ändern",
+    "viewManageContacts": "Kontakte anzeigen und verwalten",
+    "viewProductsServices": "Produkte und Services anzeigen",
+    "viewModifyProductPasswords": "Produktpasswörter anzeigen und ändern",
+    "viewDomains": "Domains anzeigen",
+    "manageDomainSettings": "Domain-Einstellungen verwalten",
+    "viewPayInvoices": "Rechnungen anzeigen und bezahlen",
+    "viewAcceptQuotes": "Angebote anzeigen und annehmen",
+    "viewOpenSupportTickets": "Support-Tickets anzeigen und eröffnen",
+    "viewManageAffiliateAccount": "Partnerkonto anzeigen und verwalten",
+    "viewEmails": "E-Mails anzeigen",
+    "placeNewOrdersUpgradesCancellations": "Neue Bestellungen, Upgrades und Kündigungen aufgeben"
+  }
+}

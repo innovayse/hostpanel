@@ -1,0 +1,65 @@
+{
+  "bankTransfer": {
+    "shortDescription": "Ermöglichen Sie Kunden die Zahlung per Banküberweisung mit Ihren Bankdaten.",
+    "fieldAccountName": "Kontoinhaber",
+    "fieldInstructions": "Zahlungshinweise"
+  },
+  "namecheap": {
+    "shortDescription": "Domains über die Reseller-API von Namecheap registrieren und verwalten.",
+    "fieldApiKey": "API-Schlüssel",
+    "fieldClientIp": "Freigegebene Client-IP",
+    "fieldApiUsername": "API-Benutzername"
+  },
+  "nameam": {
+    "shortDescription": "Registrieren und verwalten Sie .am-Domains über die Name.am-Registrar-API.",
+    "fieldEmail": "Konto-E-Mail",
+    "fieldPassword": "Kontopasswort",
+    "fieldApiUrl": "API-URL",
+    "fieldTest_mode": "Testmodus"
+  },
+  "resellerclub": {
+    "shortDescription": "Domainregistrierungen über die Reseller-Plattform von ResellerClub verwalten.",
+    "fieldResellerId": "Reseller-ID"
+  },
+  "enom": {
+    "shortDescription": "Verbindung zu eNom für Domainregistrierung und DNS-Verwaltung herstellen.",
+    "fieldAccountId": "Konto-ID"
+  },
+  "cpanel": {
+    "shortDescription": "Hosting-Konten über die cPanel-WHM-Server-API bereitstellen und verwalten.",
+    "fieldHost": "WHM-Host",
+    "fieldPort": "Port",
+    "fieldApiToken": "API-Token"
+  },
+  "plesk": {
+    "shortDescription": "Server- und Hosting-Verwaltung über die XML-API von Plesk automatisieren.",
+    "fieldHost": "Plesk-Host"
+  },
+  "cwp": {
+    "shortDescription": "Hosting-Konten auf CentOS-Web-Panel-Servern verwalten.",
+    "fieldHost": "CWP-Host"
+  },
+  "cwp7": {
+    "shortDescription": "Hosting-Konten über die Control-Web-Panel-7-API bereitstellen und verwalten.",
+    "fieldMonthly_cost": "Monatliche Kosten",
+    "fieldDatacenter": "Rechenzentrum/NOC",
+    "fieldAccess_hash": "Access-Hash",
+    "fieldPort": "API-Port",
+    "fieldMax_accounts": "Maximale Anzahl Konten",
+    "fieldNs1": "Primärer Nameserver",
+    "fieldNs1_ip": "IP des primären Nameservers",
+    "fieldNs2": "Sekundärer Nameserver",
+    "fieldNs2_ip": "IP des sekundären Nameservers",
+    "fieldSecure": "SSL für Verbindungen verwenden"
+  },
+  "smtp": {
+    "shortDescription": "Den E-Mail-Versand über Ihren SMTP-Mailserver konfigurieren.",
+    "fieldHost": "SMTP-Host",
+    "fieldFromAddress": "Absenderadresse",
+    "fieldEncryption": "Verschlüsselung"
+  },
+  "maxmind": {
+    "shortDescription": "Betrügerische Bestellungen mit dem GeoIP-Risiko-Scoring von MaxMind erkennen.",
+    "fieldLicenseKey": "Lizenzschlüssel"
+  }
+}

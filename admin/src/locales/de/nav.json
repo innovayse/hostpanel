@@ -1,0 +1,90 @@
+{
+  "dashboard": "Dashboard",
+  "clients": "Kunden",
+  "clientsChildren": {
+    "view": "Kunden anzeigen/suchen",
+    "users": "Benutzer verwalten",
+    "groups": "Kundengruppen",
+    "sharedHostings": "Shared Hostings",
+    "addons": "Service-Add-ons",
+    "cancellations": "Kündigungsanfragen",
+    "planChanges": "Tarifwechsel",
+    "affiliates": "Affiliates verwalten"
+  },
+  "billing": "Abrechnung",
+  "billingChildren": {
+    "transactions": "Transaktionsliste",
+    "invoices": "Rechnungen",
+    "billableItems": "Abrechenbare Positionen",
+    "quotes": "Angebote",
+    "offlineCc": "Offline-Kreditkartenverarbeitung",
+    "disputes": "Zahlungsstreitfälle",
+    "gatewayLog": "Gateway-Protokoll",
+    "paymentClaims": "Zahlungsmeldungen",
+    "bankTransfers": "Ausstehende Banküberweisungen",
+    "creditNotes": "Gutschriften",
+    "renewals": "Anstehende Verlängerungen"
+  },
+  "reports": "Berichte",
+  "orders": "Bestellungen",
+  "domains": "Domains",
+  "support": "Support",
+  "supportChildren": {
+    "overview": "Support-Übersicht",
+    "tickets": "Support-Tickets",
+    "newTicket": "Neues Ticket eröffnen",
+    "predefinedReplies": "Vordefinierte Antworten",
+    "announcements": "Ankündigungen",
+    "emailCampaigns": "E-Mail-Kampagnen",
+    "downloads": "Downloads",
+    "knowledgebase": "Wissensdatenbank",
+    "networkIssues": "Netzwerkstörungen"
+  },
+  "plugins": "Plugins",
+  "servers": "Server",
+  "integrations": "Integrationen",
+  "migration": "Migration",
+  "fraud": "Betrugsprävention",
+  "fraudChildren": {
+    "settings": "Einstellungen",
+    "blockLists": "Sperrlisten",
+    "log": "Betrugsprotokoll"
+  },
+  "settings": "Einstellungen",
+  "settingsChildren": {
+    "general": "Allgemein",
+    "products": "Produkte",
+    "productBundles": "Produktpakete",
+    "tldPricing": "TLD-Preise",
+    "slides": "Slides",
+    "emailTemplates": "E-Mail-Vorlagen",
+    "gateways": "Zahlungs-Gateways",
+    "currencies": "Währungen",
+    "taxRules": "Steuerregeln",
+    "vatRates": "MwSt.-Sätze"
+  },
+  "storefront": "Storefront-Inhalte",
+  "storefrontChildren": {
+    "testimonials": "Kundenstimmen",
+    "partners": "Partner",
+    "projects": "Projekte",
+    "faqs": "FAQ",
+    "locations": "Serverstandorte"
+  },
+  "servicesTitle": "Services",
+  "documentation": "Dokumentation",
+  "sections": {
+    "sales": "Vertrieb",
+    "support": "Support",
+    "catalog": "Katalog",
+    "infrastructure": "Infrastruktur",
+    "insights": "Auswertungen",
+    "addons": "Add-ons",
+    "system": "System"
+  },
+  "storefrontTitles": {
+    "faqs": "Fragen und Antworten",
+    "locations": "Serverstandorte"
+  },
+  "openTickets": "{count} offenes Ticket | {count} offene Tickets"
+}

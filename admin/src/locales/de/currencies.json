@@ -1,0 +1,88 @@
+{
+  "description": "Abrechnungswährungen, Wechselkurse und die Basiswährung konfigurieren",
+  "updateRates": "Wechselkurse aktualisieren",
+  "updateProductPrices": "Produktpreise aktualisieren",
+  "addCurrency": "Währung hinzufügen",
+  "rateProvider": {
+    "title": "Wechselkursquelle",
+    "description": "Wählen Sie die Bank, von der die Wechselkurse bezogen werden. Die tägliche Aktualisierung und die Schaltfläche „Wechselkurse aktualisieren“ verwenden beide diese Quelle. Die Europäische Zentralbank notiert gegenüber dem Euro, daher muss die Basiswährung eine von ihr veröffentlichte Währung sein.",
+    "label": "Bank",
+    "placeholder": "Bank auswählen",
+    "hint": "Eine Änderung gilt ab der nächsten Aktualisierung. Bei einer fehlgeschlagenen Aktualisierung bleiben die bisherigen Kurse erhalten.",
+    "notSeeded": "Die Einstellung {key} wurde noch nicht initialisiert und kann daher hier nicht geändert werden.",
+    "options": {
+      "Cba": "Zentralbank von Armenien",
+      "Ecb": "Europäische Zentralbank"
+    }
+  },
+  "table": {
+    "code": "Code",
+    "numeric": "Numerisch",
+    "format": "Format",
+    "decimals": "Dezimalstellen",
+    "rateToBase": "Kurs zur Basiswährung",
+    "base": "Basis",
+    "enabled": "Aktiviert",
+    "actions": "Aktionen"
+  },
+  "makeBase": "Als Basis festlegen",
+  "baseBadge": "Basis",
+  "enabledBadge": "Aktiviert",
+  "disabledBadge": "Deaktiviert",
+  "empty": "Noch keine Währungen konfiguriert. Fügen Sie Ihre erste Währung hinzu, um zu beginnen.",
+  "makeBaseModal": {
+    "title": "Basiswährung festlegen",
+    "message": "{code} als Basiswährung festlegen? Die Kurse aller anderen Währungen werden auf die neue Basis umgerechnet.",
+    "confirmLabel": "Als Basis festlegen"
+  },
+  "pricesPicker": {
+    "title": "Produktpreise aktualisieren",
+    "description": "Wählen Sie, welche Nicht-Basiswährungen aus den Basispreisen neu berechnet werden sollen.",
+    "cancel": "Abbrechen",
+    "continue": "Weiter"
+  },
+  "pricesConfirm": {
+    "title": "Produktpreise überschreiben",
+    "message": "Dadurch werden die Produktpreise in {codes} überschrieben und aus der Basiswährung neu berechnet. Dies kann nicht rückgängig gemacht werden.",
+    "confirmLabel": "Überschreiben"
+  },
+  "toasts": {
+    "makeBaseSucceeded": "{code} ist jetzt die Basiswährung.",
+    "ratesUpdated": "Kurse aktualisiert: {updated}{missing}",
+    "ratesMissing": "; nicht notiert: {codes}",
+    "pricesUpdated": "{count} Produktpreiszeile neu berechnet. | {count} Produktpreiszeilen neu berechnet.",
+    "none": "keine"
+  },
+  "form": {
+    "editTitle": "Währung bearbeiten",
+    "addTitle": "Währung hinzufügen",
+    "code": {
+      "label": "ISO-Code",
+      "placeholder": "z. B. USD"
+    },
+    "numeric": {
+      "label": "Numerischer Code",
+      "placeholder": "z. B. 840"
+    },
+    "prefix": {
+      "label": "Präfix",
+      "placeholder": "z. B. $"
+    },
+    "suffix": {
+      "label": "Suffix",
+      "placeholder": "z. B. ֏"
+    },
+    "formatSample": "Formatbeispiel: 2.99 → {sample}",
+    "decimals": "Dezimalstellen",
+    "rateToBase": "Kurs zur Basiswährung",
+    "rateToBaseBaseHint": "Die Basiswährung hat immer den Wert 1 zu sich selbst.",
+    "enabled": {
+      "label": "Aktiviert",
+      "baseHint": "Die Basiswährung ist immer aktiviert.",
+      "hint": "Ob Zahler in dieser Währung abgerechnet werden dürfen"
+    },
+    "cancel": "Abbrechen",
+    "save": "Änderungen speichern",
+    "add": "Währung hinzufügen"
+  }
+}

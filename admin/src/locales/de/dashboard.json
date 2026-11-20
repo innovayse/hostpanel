@@ -1,0 +1,61 @@
+{
+  "subtitle": "Was heute Aufmerksamkeit erfordert.",
+  "greeting": {
+    "morning": "Guten Morgen",
+    "afternoon": "Guten Tag",
+    "evening": "Guten Abend"
+  },
+  "period": {
+    "label": "Zeitraum",
+    "days30": "30 Tage",
+    "days90": "90 Tage"
+  },
+  "stats": {
+    "revenue": {
+      "Days30": "Umsatz, 30 Tage",
+      "Days90": "Umsatz, 90 Tage"
+    },
+    "activeServices": "Aktive Services",
+    "overdueInvoices": "Überfällige Rechnungen",
+    "openTickets": "Offene Tickets"
+  },
+  "recentInvoices": "Neueste Rechnungen",
+  "viewAll": "Alle anzeigen",
+  "noInvoices": "Noch keine Rechnungen.",
+  "attention": {
+    "title": "Handlungsbedarf",
+    "kind": {
+      "overdueInvoice": "Überfällige Rechnungen",
+      "pendingOrder": "Ausstehende Bestellungen",
+      "expiringDomain": "Domains, die in 30 Tagen ablaufen",
+      "urgentTicket": "Dringende Tickets"
+    }
+  },
+  "revenue": {
+    "title": "Umsatz im Vergleich zum Ziel",
+    "note": "Gestrichelte Linie: Tagesdurchschnitt",
+    "income": "Einnahmen",
+    "average": "Tagesdurchschnitt"
+  },
+  "growth": {
+    "title": "Neue Bestellungen und Kunden",
+    "note": "Pro Tag im gewählten Zeitraum",
+    "orders": "Neue Bestellungen",
+    "clients": "Neue Kunden"
+  },
+  "invoiceStatus": {
+    "title": "Rechnungen nach Status",
+    "note": "Im gewählten Zeitraum erstellt",
+    "count": "Rechnungen"
+  },
+  "tickets": {
+    "title": "Offene Tickets nach Priorität",
+    "note": "Aktueller Stand, unabhängig vom Zeitraum",
+    "open": "Offene Tickets"
+  },
+  "serverLoad": {
+    "title": "Server-Kapazität",
+    "emptyTitle": "Keine Auslastungsdaten",
+    "emptyDescription": "Server mit Limit und Verbindungstest zeigen hier ihre Account-Auslastung an."
+  }
+}

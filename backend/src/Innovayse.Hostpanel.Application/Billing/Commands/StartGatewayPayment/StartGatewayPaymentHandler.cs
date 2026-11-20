@@ -210,11 +210,22 @@ public sealed class StartGatewayPaymentHandler
         // The Application layer owns the major to minor conversion, by the currency's ISO 4217 exponent.
         var amountMinor = CurrencyCode.ToMinorUnits(invoice.AmountDue, invoice.Currency);
 
+        // The payer's address and language go to the plugin for gateways that refuse a payment without them; a client the
+        // Clients module cannot give an address for still starts the payment, with both left null.
+        var payer = await _bus.FindClientBriefAsync(invoice.ClientId, withEmail: true, ct);
+
         PaymentSession session;
         try
         {
             session = await plugin.CreatePaymentAsync(
-                new PaymentInstruction(orderNumber, amountMinor, cmd.ReturnUrl, $"Invoice #{invoice.Id}", null, cmd.SavePaymentMethod),
+                new PaymentInstruction(
+                    orderNumber,
+                    amountMinor,
+                    cmd.ReturnUrl,
+                    $"Invoice #{invoice.Id}",
+                    payer?.Language,
+                    cmd.SavePaymentMethod,
+                    PayerEmail: payer?.Email),
                 ct);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))

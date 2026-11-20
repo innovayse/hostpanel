@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The client portal is available in German (#282). The language switcher shows the German flag, a client can choose German as their language in the profile, and search engines are given the German pages as alternates of every page. The legal texts stay in English for now.
 - The client portal is available in Spanish (#283). The language switcher shows the Spanish flag, a client can choose Spanish as their language in the profile, and search engines are given the Spanish pages as alternates of every page. The legal texts stay in English for now.
 
+### Fixed
+
+- A payment started for an invoice now tells the payment plugin the address and the language of the client who owns it (#1351), so gateways that refuse a payment without a payer email can be used. A client without an address still starts the payment, with the field left empty.
+
 ## [0.7.2] - 2026-11-20
 
 ### Removed

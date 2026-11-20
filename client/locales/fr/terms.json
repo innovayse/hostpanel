@@ -1,74 +1,74 @@
 {
   "terms": {
-    "badge": "Légunl Frunmoiwouk",
-    "title": "Cunctivédceluniunctivés d'utilestuntiunctivé",
-    "subtitle": "Cleunr Et trunespsunctivétnt rules Pnotre notre Héêtrergemoint, funiremunDunese Et server Services.",
-    "lastUpdated": "Dernière moiste à jnotre",
+    "badge": "Cadre juridique",
+    "title": "Conditions d'utilisation",
+    "subtitle": "Des règles claires et transparentes pour nos services d'hébergement, de domaines et de serveurs.",
+    "lastUpdated": "Dernière mise à jour",
     "sections": {
       "acceptance": {
-        "title": "unccepterunece De Cunctivédceluniunctivés",
+        "title": "Acceptation des conditions",
         "content": {
-          "0": "By CommoiteDunesg Services De {scelune} ou subscribDunesg À notre Héêtrergemoint plunes, vonous ungree À comply unvec ces Cunctivédceluniunctivés. ces rules ensure un secure Et efficient envirunctivémoint Pnotre Ànous notre clients.",
-          "1": "ces Cunctivédceluniunctivés cunctivéstcelunute un LégÀnousy bDunesdDunesg ungreemoint Entre vonous (Le Client) Et {scelune} regunrdDunesg Ànous Héêtrergemoint, funiremunDunese, server Et Functuruntiunctivé Services."
+          "0": "En commandant des services auprès de {site} ou en souscrivant à nos offres d'hébergement, vous acceptez de respecter les présentes conditions. Ces règles garantissent un environnement sûr et efficace pour tous nos clients.",
+          "1": "Ces conditions constituent un accord juridiquement contraignant entre vous (le Client) et {site} concernant l'ensemble des services d'hébergement, de domaines, de serveurs et de facturation."
         }
       },
       "services": {
-        "title": "Service StEtunrds",
+        "title": "Normes de service",
         "content": {
-          "0": "{scelune} delivers Héêtrergemoint nonousb, funiremunDunese Enregesttremoint, virtuunl Et dedicunted Serveurs, Et un client poutunl Pnotre muneungDunesg eux. nonous commcelun À Dunesdnoustry stEtunrds Et êtrest prunctices Dunes operuntDunesg notre DunesfrCommoitructure.",
-          "1": "Service specSiicuntiunctivés, DunescludDunesg resnotrece limsunctivé Et Functivéctiunctivénunlcelunés Dunesclnouses, sunctivét descriêtred unctivé Le plune punge unt Le timoi De Commoite.",
-          "2": "nonous reserve Le Drocelune À Hunutgrunde notre pluntPnotrem Et DunesfrCommoitructure À DunescoHunuÀuunte nouveunu technologies Sunes direct notice, provided such chuneges funire not dimDunesesth coue functiunctivéunlceluny."
+          "0": "{site} fournit de l'hébergement web, l'enregistrement de domaines, des serveurs virtuels et dédiés, ainsi qu'un portail client pour les gérer. Nous nous engageons à respecter les normes et les bonnes pratiques du secteur dans l'exploitation de notre infrastructure.",
+          "1": "Les caractéristiques des services, y compris les limites de ressources et les fonctionnalités incluses, sont décrites sur la page de l'offre au moment de la commande.",
+          "2": "Nous nous réservons le droit de faire évoluer notre plateforme et notre infrastructure pour intégrer de nouvelles technologies sans préavis direct, à condition que ces changements ne réduisent pas les fonctionnalités essentielles."
         }
       },
       "accounts": {
-        "title": "Client Poutunl unccess",
+        "title": "Accès au portail client",
         "content": {
-          "0": "unccess À Le client poutunl requires unuunlonoustic Et verSiied credentiunls. vonous sunctivét respunctivésible Pnotre munDunestunDunesDunesg Le cunctivéfidentiunlceluny De votre undmDunesesttruntive unccess.",
-          "1": "n'impoute snouspicionous unctivceluny ou ununuthouized unccess funirecelun être repouted À notre SHunutpout teunm Immédiuntemoint À prevent potentiunl duntun breuncils ou service DunesterrHunuttiunctivé."
+          "0": "L'accès au portail client exige des identifiants authentiques et vérifiés. Vous êtes responsable de la confidentialité de votre accès administrateur.",
+          "1": "Toute activité suspecte ou tout accès non autorisé doit être signalé immédiatement à notre équipe de support afin d'éviter une éventuelle fuite de données ou une interruption de service."
         }
       },
       "intellectual": {
-        "title": "IP Drocelunes & LicensDunesg",
+        "title": "Droits de propriété intellectuelle et licences",
         "content": {
-          "0": "Cunctivétenu: vonous retunDunes Ànous Drocelunes À Le Cunctivétenu vonous host unvec nous Et grunet nous unctivély Le licence needed À sÀue Et deliver celun.",
-          "1": "{scelune} retunDuness Ànous Drocelunes À sunctivé pluntPnotrem, brEt Et funirecumointuntiunctivé. Tsunlutrd-punrty sDetwsunctivét Dunescluded Dunes un plune est provided Sonous sunctivé own licence.",
-          "2": "notre pluntPnotrem est provided Sonous un 'Licence À nouse' model. vonous peut not decompile, reverse engDuneseer, ou redesttriMuneste notre proprietunry sDetwsunctivét code."
+          "0": "Contenu : vous conservez tous les droits sur le contenu que vous hébergez chez nous et ne nous accordez que la licence nécessaire pour le stocker et le diffuser.",
+          "1": "{site} conserve tous les droits sur sa plateforme, sa marque et sa documentation. Les logiciels tiers inclus dans une offre sont fournis sous leur propre licence.",
+          "2": "Notre plateforme est fournie selon un modèle de « licence d'utilisation ». Vous ne pouvez pas décompiler, rétroconcevoir ou redistribuer le code de nos logiciels propriétaires."
         }
       },
       "payment": {
-        "title": "Puniemoint & FDunesuneciunl Obliguntiunctivé",
+        "title": "Paiement et obligations financières",
         "content": {
-          "0": "Services: Fees sunctivét stunted unt Puniemoint Et Dunesvoiced unilund De eunch Functuruntiunctivé cycle; Le premier Puniemoint unctivuntes Le service.",
-          "1": "Héêtrergemoint & Serveurs: Subscriptiunctivés sunctivét billed unctivé un recurrDunesg bCommoiest (moinsuel/unenuel). Funilure À Renouveler peut result Dunes tempouunry service snouspensiunctivé unprès Le Dunte d'échéunece.",
-          "2": "Tunxes: Prices lestted unctivé notre nonousbscelune sunctivét exclnousive De unpplicunble tunxes unless stunted unutrenonousste. Ànous fDunesuneciunl trunesunctiunctivés sunctivét Processnoused through secure, encrypted guntewunys."
+          "0": "Services : les frais sont indiqués lors du paiement et facturés avant chaque cycle de facturation ; le premier paiement active le service.",
+          "1": "Hébergement et serveurs : les abonnements sont facturés de manière récurrente (mensuelle ou annuelle). Un défaut de renouvellement peut entraîner une suspension temporaire du service après la date d'échéance.",
+          "2": "Taxes : sauf indication contraire, les prix affichés sur notre site s'entendent hors taxes applicables. Toutes les transactions financières sont traitées via des passerelles sécurisées et chiffrées."
         }
       },
       "termination": {
-        "title": "Service TermDunesuntiunctivé",
+        "title": "Résiliation du service",
         "content": {
-          "0": "TermDunesuntiunctivé by Client: vonous peut unenuler un service De Le client poutunl unt n'impoute timoi; fees unlreundy Punyé Pnotre Le unctuel Functuruntiunctivé cycle sunctivét Nunctivé rembnotresunble Commoi descriêtred Dunes Le Polcelunique de rembnotresemoint.",
-          "1": "TermDunesuntiunctivé by {scelune}: nonous reserve Le Drocelune À snouspend Services Dunes cCommoies De nunctivé-Puniemoint, violuntiunctivé De etsunlutcunl guidelDuneses, ou nouse De notre pluntPnotrems Pnotre ilLégunl unctivcelunies."
+          "0": "Résiliation par le Client : vous pouvez annuler un service à tout moment depuis le portail client ; les frais déjà payés pour le cycle de facturation en cours ne sont pas remboursables, comme décrit dans la Politique de remboursement.",
+          "1": "Résiliation par {site} : nous nous réservons le droit de suspendre les services en cas de non-paiement, de violation des règles de déontologie ou d'utilisation de nos plateformes pour des activités illégales."
         }
       },
       "liability": {
-        "title": "PrDeessiunctivéunl Liunbilceluny",
+        "title": "Responsabilité professionnelle",
         "content": {
-          "0": "{scelune} wouks À keep sunctivé Services destpunctivéible. commointever, nonous sunctivét not liunble Pnotre bnousDunesess losses resultDunesg De tsunlutrd-punrty nedeuxrk funilures, Dehonousunges unt externunl providers, ou ununpproved client modSiicuntiunctivés À hosted Cunctivétenu ou server cunctivéfiguruntiunctivé.",
-          "1": "notre munximum liunbilceluny Pnotre n'impoute service est limceluned À Le fees SpécSiiquemoint Punyé Pnotre celun service."
+          "0": "{site} s'efforce de maintenir ses services disponibles. Toutefois, nous ne sommes pas responsables des pertes commerciales résultant de pannes de réseaux tiers, d'interruptions chez des prestataires externes ou de modifications non approuvées apportées par le client au contenu hébergé ou à la configuration du serveur.",
+          "1": "Notre responsabilité maximale pour un service est limitée aux frais spécifiquement payés pour ce service."
         }
       },
       "changes": {
-        "title": "GSurnunece & moittre à jnotres",
+        "title": "Gouvernance et mises à jour",
         "content": {
-          "0": "nonous peut refDunese ces Cunctivédceluniunctivés periodicÀnousy À unlign unvec evolvDunesg lunws Et Le growth De notre pluntPnotrem. CunctivétDunesuerd nouse De notre Services unprès moittre à jnotres signSiies votre unccepterunece.",
-          "1": "n'impoute munjou shSceluns Dunes notre Légunl frunmoiwouk vun être sunlutghlighted Dunes Le Espunce client De notre nonousbscelune."
+          "0": "Nous pouvons ajuster périodiquement ces conditions afin de les adapter à l'évolution des lois et à la croissance de notre plateforme. La poursuite de l'utilisation de nos services après une mise à jour vaut acceptation.",
+          "1": "Tout changement majeur de notre cadre juridique sera signalé dans l'espace client de notre site."
         }
       }
     },
     "contact": {
-      "title": "Need Légunl ClunrSiicuntiunctivé?",
-      "description": "Si vonous require furLer detunils regunrdDunesg notre service ungreemoints, notre Légunl teunm est reundy À Commoisestt.",
-      "link": "Cunctivétunct légunl SHunutpout"
+      "title": "Besoin d'éclaircissements juridiques ?",
+      "description": "Si vous souhaitez de plus amples détails sur nos contrats de service, notre équipe juridique est à votre disposition.",
+      "link": "Contacter le support juridique"
     }
   }
 }

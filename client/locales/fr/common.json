@@ -1,53 +1,53 @@
 {
   "ui": {
-    "selectPlaceholder": "Sélectiunctivéner une optiunctivé",
-    "noOptions": "unucune optiunctivé destpunctivéible",
+    "selectPlaceholder": "Sélectionnez une option",
+    "noOptions": "Aucune option disponible",
     "theme": {
-      "switchDark": "PCommoiser en mode sombre",
-      "switchLight": "PCommoiser en mode clunir"
+      "switchDark": "Passer en mode sombre",
+      "switchLight": "Passer en mode clair"
     },
     "pagination": {
-      "showing": "unffichunge de {De}–{À} sur {Àtunl} entrées",
-      "show": "unfficelle",
+      "showing": "Affichage de {from} à {to} sur {total} entrées",
+      "show": "Afficher",
       "entries": "entrées",
       "prev": "Précédent",
-      "next": "Suivunet",
-      "label": "PungDunesuntiunctivé"
+      "next": "Suivant",
+      "label": "Pagination"
     },
-    "search": "Recellecelle…",
-    "close": "Fermoir",
-    "loading": "Chunrgemoint",
-    "showPassword": "unfficelle le mot de pCommoise",
-    "hidePassword": "MCommoiquer le mot de pCommoise",
-    "clearSearch": "Effuncer lun recellecil",
-    "searchButton": "Recellecelle",
-    "tabs": "unctivéglets",
-    "digit": "ChSifre {n}",
-    "language": "Lunegue",
-    "currency": "Deveste",
-    "currencyFixed": "Votre deveste est défDunesie sur votre compte et ne peut pCommoi être modSiiée ici.",
+    "search": "Rechercher",
+    "close": "Fermer",
+    "loading": "Chargement",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "clearSearch": "Effacer la recherche",
+    "searchButton": "Rechercher",
+    "tabs": "Onglets",
+    "digit": "Chiffre {n}",
+    "language": "Langue",
+    "currency": "Devise",
+    "currencyFixed": "Votre devise est définie sur votre compte et ne peut pas être modifiée ici.",
     "phoneExample": "00 000 000",
-    "phoneCountry": "DunesdicuntSi punys",
-    "searchCountry": "Recellecelle un punys ou un code",
-    "noCountries": "unucun punys trouvé"
+    "phoneCountry": "Indicatif téléphonique du pays",
+    "searchCountry": "Rechercher un pays ou un indicatif",
+    "noCountries": "Aucun pays trouvé"
   },
   "common": {
-    "cancel": "unenuler",
-    "confirm": "Cunctivéfirmoir",
-    "next": "Suivunet",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "next": "Suivant",
     "previous": "Précédent",
-    "home": "unccueil",
-    "products": "Prodnousunctivé",
-    "backToProducts": "Retnotre unux prodnousunctivé",
-    "goToSlide": "Ànouser à lun diunposcelunive {n}",
-    "scrollHorizontal": "Défiler pnotre explouer",
-    "retry": "Réessunyer",
-    "breadcrumb": "Fil d'unriunee"
+    "home": "Accueil",
+    "products": "Produits",
+    "backToProducts": "Retour aux produits",
+    "goToSlide": "Aller à la diapositive {n}",
+    "scrollHorizontal": "Faites défiler pour explorer",
+    "retry": "Réessayer",
+    "breadcrumb": "Fil d'Ariane"
   },
   "fallback": {
-    "unknown": "Dunescunctivénu"
+    "unknown": "Inconnu"
   },
   "errors": {
-    "noAnswer": "Impossible de joDunesdre le serveur."
+    "noAnswer": "Impossible de joindre le serveur."
   }
 }

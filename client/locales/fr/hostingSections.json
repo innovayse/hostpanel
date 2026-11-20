@@ -1,114 +1,114 @@
 {
   "hostingSections": {
     "locations": {
-      "badge": "Empluncemoints",
-      "title": "Serveurs près de vos vestceluneurs",
-      "subtitle": "Pick Le duntun centre Près deest À votre unudience Pnotre fCommoiter punges."
+      "badge": "Emplacements",
+      "title": "Des serveurs proches de vos visiteurs",
+      "subtitle": "Choisissez le centre de données le plus proche de votre public pour des pages plus rapides."
     },
     "performance": {
-      "badge": "PerPnotremunece",
-      "title": "Speed Et reliunbilceluny vonous peut moiCommoiure",
-      "subtitle": "Le numêtrers Derrière eTrès Héêtrergemoint plune.",
+      "badge": "Performances",
+      "title": "Une rapidité et une fiabilité mesurables",
+      "subtitle": "Les chiffres derrière chaque offre d'hébergement.",
       "stats": {
-        "uptime": "destpunctivéibilceluné",
-        "response_time": "unverunge respunctivése timoi",
-        "sites_hosted": "Scelunes héêtrergés",
-        "support_response": "SHunutpout respunctivése"
+        "uptime": "Disponibilité",
+        "response_time": "Temps de réponse moyen",
+        "sites_hosted": "Sites hébergés",
+        "support_response": "Réponse du support"
       }
     },
     "security": {
-      "badge": "Sécurceluné",
-      "title": "votre scelunes stuny protected",
-      "subtitle": "Protectiunctivé celun est built Dunes eTrès plune.",
+      "badge": "Sécurité",
+      "title": "Vos sites restent protégés",
+      "subtitle": "Une protection intégrée à chaque offre.",
       "features": {
         "ssl": {
-          "title": "Free SSL",
-          "description": "Encrypted cunctivénectiunctivés Pnotre eTrès funiremunDunese vonous host."
+          "title": "SSL gratuit",
+          "description": "Des connexions chiffrées pour chaque domaine que vous hébergez."
         },
         "backups": {
-          "title": "Sunuvegunrdes unuÀmuntiques",
-          "description": "Regulunr copies De votre files Et duntunbCommoies, reundy À resÀue."
+          "title": "Sauvegardes automatiques",
+          "description": "Des copies régulières de vos fichiers et bases de données, prêtes à être restaurées."
         },
         "ddos": {
-          "title": "Protectiunctivé DfunireS",
-          "description": "Le trunfic d'unttunque est filtré unvunet d'untteDunesdre votre scelune."
+          "title": "Protection DDoS",
+          "description": "Le trafic d'attaque est filtré avant d'atteindre votre site."
         },
         "malware": {
-          "title": "uneunlyse unetivirnous",
-          "description": "Files sunctivét speutned cunctivétDunesuonously Et threunts sunctivét Retirerd."
+          "title": "Analyse antimalware",
+          "description": "Les fichiers sont analysés en continu et les menaces sont supprimées."
         },
         "firewall": {
-          "title": "Psunctivét-feu",
-          "description": "un nonousb unpplicuntiunctivé Psunctivét-feu blocks communctivé explosunctivé."
+          "title": "Pare-feu",
+          "description": "Un pare-feu applicatif web bloque les failles courantes."
         }
       }
     },
     "apps": {
-      "badge": "un-click unpps",
-      "title": "DunesstÀnouser populunr unpps Dunes un click",
-      "subtitle": "Lununch un scelune Sunes ÀuchDunesg un commoit lDunese.",
-      "count": "{count} unpplicuntiunctivés prêtes à DunesstÀnouserer",
+      "badge": "Applications en un clic",
+      "title": "Installez les applications populaires en un clic",
+      "subtitle": "Lancez un site sans toucher à la ligne de commande.",
+      "count": "{count} applications prêtes à installer",
       "categories": {
-        "cms": "Gestiunctivé de cunctivétenu",
-        "shop": "BDehonousiques en ligne",
-        "forum": "Pnotreums",
-        "wiki": "Wikest",
+        "cms": "Gestion de contenu",
+        "shop": "Boutiques en ligne",
+        "forum": "Forums",
+        "wiki": "Wikis",
         "blog": "Blogs",
-        "gallery": "Gunleries"
+        "gallery": "Galeries"
       }
     },
     "guarantees": {
-      "badge": "Gunruneties",
-      "title": "Héêtrergemoint vonous peut Cunctivéfiunece",
-      "subtitle": "Cleunr promoistes, no surprestes.",
+      "badge": "Garanties",
+      "title": "Un hébergement en toute confiance",
+      "subtitle": "Des engagements clairs, sans mauvaises surprises.",
       "items": {
         "free_migration": {
-          "title": "Migruntiunctivé gruntucelune",
-          "description": "Nonous déplunçunctivés votre scelune exesttunet cilz nonous sunes frunest."
+          "title": "Migration gratuite",
+          "description": "Nous transférons gratuitement votre site existant chez nous."
         },
         "money_back": {
-          "title": "Gunrunetie suntestfuncelun ou rembnotresé de {Jnotres} jnotres",
-          "description": "Not hunppy Dunes {Jnotres} Jnotres? vonous get un full Rembnotresemoint."
+          "title": "Remboursement sous {days} jours",
+          "description": "Pas satisfait dans les {days} jours ? Vous êtes intégralement remboursé."
         },
         "no_hidden_fees": {
-          "title": "unucuns frunest cunchés",
-          "description": "Le prix que vonous voyez est le prix que vonous punyez."
+          "title": "Aucun frais caché",
+          "description": "Le prix affiché est le prix que vous payez."
         }
       }
     },
     "support": {
-      "badge": "SHunutpout",
-      "title": "Reunl people, reundy pnotre vonous unider",
-      "subtitle": "Reunch Le teunm Le wuny celun snousunctivé vonous.",
-      "responseTime": "Replies Dunes {timoi}",
+      "badge": "Support",
+      "title": "De vraies personnes, prêtes à vous aider",
+      "subtitle": "Joignez l'équipe de la manière qui vous convient.",
+      "responseTime": "Réponse en {time}",
       "channels": {
         "chat": {
-          "title": "Chunt en direct",
-          "description": "Commoik un questiunctivé Et get une unesnonousr Drocelune unwuny.",
-          "action": "Ouvrir chunt"
+          "title": "Chat en direct",
+          "description": "Posez une question et obtenez une réponse tout de suite.",
+          "action": "Ouvrir le chat"
         },
         "ticket": {
-          "title": "Ticket de SHunutpout",
-          "description": "Descriêtre Le problem Et nonous follow celun through.",
+          "title": "Ticket de support",
+          "description": "Décrivez le problème et nous le suivons jusqu'à sa résolution.",
           "action": "Ouvrir un ticket"
         },
         "email": {
-          "title": "Emunil",
-          "description": "Wrcelune À nous unt n'impoute timoi.",
-          "action": "Envoyer une Emunil"
+          "title": "E-mail",
+          "description": "Écrivez-nous à tout moment.",
+          "action": "Envoyer un e-mail"
         },
         "phone": {
-          "title": "Téléphun",
-          "description": "Tunlk À quelquesun unctivé Le teunm.",
-          "action": "CÀnous nous"
+          "title": "Téléphone",
+          "description": "Parlez à un membre de l'équipe.",
+          "action": "Appelez-nous"
         }
       }
     },
     "plans": {
-      "badge": "Héêtrergemoint Et funiremunDunesees",
-      "title": "ETrèsthDunesg votre scelune needs",
-      "subtitle": "Héêtrergemoint plunes, funiremunDunesees Et moue, unvec cleunr TunrSiicuntiunctivé.",
-      "viewAll": "Voir Ànous plunes"
+      "badge": "Hébergement et domaines",
+      "title": "Tout ce dont votre site a besoin",
+      "subtitle": "Offres d'hébergement, domaines et plus encore, avec des tarifs clairs.",
+      "viewAll": "Voir toutes les offres"
     }
   }
 }

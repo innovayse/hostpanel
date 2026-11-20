@@ -18,7 +18,7 @@ import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
 const PRIVATE_AREAS = ['client', 'cart', 'checkout', 'order'] as const
 
 /** Locale URL prefixes the private areas also live under (the default language has none). */
-const LOCALE_PREFIXES = ['', '/ru', '/hy'] as const
+const LOCALE_PREFIXES = ['', '/ru', '/hy', '/de', '/fr'] as const
 
 /** Static assets that stay crawlable, so pages render fully for the crawler. */
 const ASSET_EXTENSIONS = [

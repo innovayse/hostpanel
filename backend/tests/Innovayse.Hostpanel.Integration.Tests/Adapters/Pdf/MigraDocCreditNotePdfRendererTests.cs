@@ -90,7 +90,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("de")]
+    [InlineData("it")]
     public async Task Render_UnknownLanguage_FallsBackToEnglish(string? language)
     {
         var text = await TextAsync(Sample(language ?? string.Empty));

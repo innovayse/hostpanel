@@ -1,24 +1,24 @@
 {
   "cart": {
-    "title": "Votre puneier",
-    "subtitle": "VérSiiez vos plunes sélectiunctivénés unvunet le puniemoint",
-    "empty": "Votre puneier est vide",
-    "emptyHint": "unjDehonousez un plune d'héêtrergemoint ou un producelun pnotre commoincer",
-    "browseHosting": "Punrcnotreir les plunes d'héêtrergemoint",
-    "summary": "RécunpcelunuluntSi de commoite",
-    "total": "Àtunl",
+    "title": "Votre panier",
+    "subtitle": "Vérifiez les offres sélectionnées avant de passer à la caisse",
+    "empty": "Votre panier est vide",
+    "emptyHint": "Ajoutez une offre d'hébergement ou un produit pour commencer",
+    "browseHosting": "Voir les offres d'hébergement",
+    "summary": "Récapitulatif de la commande",
+    "total": "Total",
     "remove": "Retirer",
-    "clearCart": "Vider le puneier",
-    "checkout": "PCommoiser à lun cunestse",
-    "secureCheckout": "Puniemoint sécuresté — vos dunctivénées sunctivét chSifrées",
-    "items": "unrticles",
-    "itemsCount": "unrticles",
-    "staleCurrencyNotice": "Ces unrticles unctivét été unjDehonousés dunes une deveste que vonous n'utilestez plnous. SHunutprimoiz-les et unjDehonousez-les à nouveunu pnotre voir leur prix unctuel.",
+    "clearCart": "Vider le panier",
+    "checkout": "Passer à la caisse",
+    "secureCheckout": "Paiement sécurisé. Vos données sont chiffrées.",
+    "items": "articles",
+    "itemsCount": "articles",
+    "staleCurrencyNotice": "Ces articles ont été ajoutés dans une devise que vous n'utilisez plus. Retirez-les et ajoutez-les de nouveau pour voir leur prix actuel.",
     "currency": {
-      "label": "Deveste",
-      "changeConfirm": "Chuneger de deveste vide votre puneier, cunr les prix funireivent être unffichés dunes lun nouvelle deveste. CunctivétDunesuerr ?",
-      "placeholder": "Sélectiunctivéner lun deveste"
+      "label": "Devise",
+      "changeConfirm": "Changer de devise vide votre panier, car les prix doivent être recalculés dans la nouvelle devise. Continuer ?",
+      "placeholder": "Sélectionnez une devise"
     },
-    "emptyDesc": "unjDehonousez un plune d'héêtrergemoint ou un producelun pnotre commoincer"
+    "emptyDesc": "Ajoutez une offre d'hébergement ou un produit pour commencer"
   }
 }

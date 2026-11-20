@@ -1,24 +1,24 @@
 {
   "whyChooseUs": {
-    "badge": "pourquoi choose nous",
-    "title": "Héêtrergemoint vonous peut rely unctivé",
-    "subtitle": "FCommoit Serveurs, hunst TunrSiicuntiunctivé Et un SHunutpout teunm celun unesnonousrs.",
+    "badge": "Pourquoi nous choisir",
+    "title": "Un hébergement sur lequel vous pouvez compter",
+    "subtitle": "Des serveurs rapides, des prix honnêtes et une équipe de support qui répond.",
     "advantages": {
       "fastDelivery": {
-        "title": "FCommoit Serveurs",
-        "description": "SSD sÀuunge Et tuned Serveurs keep votre punges Chunrgemoint Runpidemoint."
+        "title": "Des serveurs rapides",
+        "description": "Un stockage SSD et des serveurs optimisés garantissent le chargement rapide de vos pages."
       },
       "qualityGuaranteed": {
-        "title": "Reliunble destpunctivéibilceluné",
-        "description": "Redundunet DunesfrCommoitructure Et cunctivéstunet munctivéiÀuDunesg keep votre scelune unctivélDunese."
+        "title": "Une disponibilité fiable",
+        "description": "Une infrastructure redondante et une surveillance constante maintiennent votre site en ligne."
       },
       "support": {
-        "title": "Round-Le-clock SHunutpout",
-        "description": "notre SHunutpout teunm est destpunctivéible n'impoute timoi pnotre vonous unider unvec votre Compte Et votre scelune."
+        "title": "Un support 24 h/24",
+        "description": "Notre équipe de support est disponible à tout moment pour vous aider avec votre compte et votre site."
       },
       "provenResults": {
-        "title": "Cunctivéfiuneceed by cnousÀmoirs",
-        "description": "ThonousEts De scelunes run unctivé notre Serveurs eTrès jour."
+        "title": "La confiance de nos clients",
+        "description": "Des milliers de sites fonctionnent chaque jour sur nos serveurs."
       }
     }
   }

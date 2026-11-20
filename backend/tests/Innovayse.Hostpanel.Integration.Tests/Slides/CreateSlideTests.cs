@@ -141,7 +141,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
         var client = await SlidesTestSeeds.AdminClientAsync(factory);
 
         var response = await client.PostAsJsonAsync(
-            "/api/admin/slides", BodyWith("/img/a.png", null, [Translation("en"), Translation("de")]));
+            "/api/admin/slides", BodyWith("/img/a.png", null, [Translation("en"), Translation("it")]));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

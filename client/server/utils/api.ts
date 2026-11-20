@@ -87,7 +87,7 @@ export const getApiUrl = (): string => {
  * Resolves the language the backend should answer in for this request.
  *
  * Reads the `X-Language` header the browser-side `useApi` stamps and validates it against
- * `en|ru|hy`, so an arbitrary header value never reaches the backend.
+ * `en|ru|hy|de|fr`, so an arbitrary header value never reaches the backend.
  *
  * @param event - H3 event of the incoming browser request.
  * @returns A supported language code, the i18n default when the header is missing or unsupported.

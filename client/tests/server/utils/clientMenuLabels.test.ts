@@ -10,6 +10,7 @@ import en from '~/locales/en/client.json'
 import ru from '~/locales/ru/client.json'
 import hy from '~/locales/hy/client.json'
 import de from '~/locales/de/client.json'
+import fr from '~/locales/fr/client.json'
 import { CLIENT_MENU_MESSAGES, clientMenuLabel } from '~/server/utils/clientMenuLabels'
 import { AppLocale } from '~/types/applocale'
 import { ClientMenuIcon } from '~/types/clientmenuicon'
@@ -19,7 +20,8 @@ const CATALOGUES: Record<AppLocale, { client: { nav: Record<string, string> } }>
   [AppLocale.En]: en,
   [AppLocale.Ru]: ru,
   [AppLocale.Hy]: hy,
-  [AppLocale.De]: de
+  [AppLocale.De]: de,
+  [AppLocale.Fr]: fr
 }
 
 describe('CLIENT_MENU_MESSAGES', () => {
@@ -39,6 +41,10 @@ describe('CLIENT_MENU_MESSAGES', () => {
 describe('clientMenuLabel', () => {
   it('returns the sentence in the asked language', () => {
     expect(clientMenuLabel(ClientMenuIcon.Services, AppLocale.Ru)).toBe('Мои услуги')
+  })
+
+  it('returns the French sentence for the French language', () => {
+    expect(clientMenuLabel(ClientMenuIcon.Services, AppLocale.Fr)).toBe('Mes services')
   })
 
   it('falls back to English for an unknown language', () => {

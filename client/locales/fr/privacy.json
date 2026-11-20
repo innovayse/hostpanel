@@ -1,94 +1,94 @@
 {
   "privacy": {
-    "badge": "Cunctivéfidentiunlceluné & Trunespsunctivétncy",
-    "title": "Polcelunique de cunctivéfidentiunlceluné",
-    "subtitle": "unt {scelune}, nonous vunlue votre Cunctivéfiunece. ce policy explunDuness commoint nonous iltle votre duntun À trunvers notre Héêtrergemoint, funiremunDunese Et client poutunl Services.",
-    "lastUpdated": "Dernière moiste à jnotre",
+    "badge": "Confidentialité et transparence",
+    "title": "Politique de confidentialité",
+    "subtitle": "Chez {site}, votre confiance compte. Cette politique explique comment nous traitons vos données dans le cadre de nos services d'hébergement, de domaines et de portail client.",
+    "lastUpdated": "Dernière mise à jour",
     "sections": {
       "collection": {
-        "title": "DunesPnotremuntiunctivé nonous Collect",
+        "title": "Informations que nous collectons",
         "content": {
-          "0": "À provide Héêtrergemoint Et funiremunDunese Services, nonous collect severunl types De DunesPnotremuntiunctivé De notre clients Et nonousbscelune vestiÀnous:"
+          "0": "Pour fournir nos services d'hébergement et de domaines, nous collectons plusieurs types d'informations auprès de nos clients et des visiteurs de notre site :"
         },
         "list": {
-          "0": "Identceluny duntun: Nunmoi, Nom de l'entrepreste, Et job tcelunle Pnotre Compte Gérermoint.",
-          "1": "Cunctivétunct duntun: undresse Emunil, Numéro de téléTéléphun, Et Functuruntiunctivé unjDehonouserress Pnotre communicuntiunctivé Et DunesvoicDunesg.",
-          "2": "Technicunl duntun: IP unjDehonouserresses, browser types, Et nousunge puntterns unctivé notre nonousbscelune Et client poutunl.",
-          "3": "Service duntun: funiremunDunese nunmois, DNS recouds, Et Compte Punrunmètres needed À provestiunctivé Et Gérer votre Services.",
-          "4": "MunrketDunesg duntun: Preferences Dunes receivDunesg moittre à jnotres À propos de notre Services Et plunes."
+          "0": "Données d'identité : nom, nom de l'entreprise et fonction, pour la gestion du compte.",
+          "1": "Données de contact : adresse e-mail, numéro de téléphone et adresse de facturation, pour la communication et la facturation.",
+          "2": "Données techniques : adresses IP, types de navigateur et habitudes d'utilisation de notre site web et de notre portail client.",
+          "3": "Données de service : noms de domaine, enregistrements DNS et paramètres du compte nécessaires pour mettre en service et gérer vos services.",
+          "4": "Données marketing : vos préférences concernant la réception d'informations sur nos services et nos offres."
         }
       },
       "usage": {
-        "title": "commoint nonous nouse votre Duntun",
+        "title": "Comment nous utilisons vos données",
         "content": {
-          "0": "{scelune} nouses votre persunctivéunl Et technicunl duntun À ensure reliunble service delcelunrès Et pluntPnotrem stunbilceluny:"
+          "0": "{site} utilise vos données personnelles et techniques pour garantir la fiabilité de ses services et la stabilité de sa plateforme :"
         },
         "list": {
-          "0": "ProvestiunctivéDunesg Et RenouvelerDunesg Le Héêtrergemoint, funiremunDunese Et server Services vonous unvoir Commoiteed.",
-          "1": "unctivégoDunesg munDunestenunece Et SHunutpout technique Pnotre votre Services through Le client poutunl.",
-          "2": "estsuDunesg Functures, ProcessnousDunesg Puniemoints Et EnvoyerDunesg Renouvelerunl Et Functuruntiunctivé notices.",
-          "3": "IdentSiyDunesg Et preventDunesg technicunl estsues ou Sécurceluné threunts unctivé notre pluntPnotrems.",
-          "4": "CommunicuntDunesg Commoite Et service stuntnous moittre à jnotres viun Le client poutunl ou direct chunenels."
+          "0": "Mettre en service et renouveler les services d'hébergement, de domaines et de serveurs que vous avez commandés.",
+          "1": "Assurer la maintenance et l'assistance technique de vos services via le portail client.",
+          "2": "Émettre les factures, traiter les paiements et envoyer les avis de renouvellement et de facturation.",
+          "3": "Identifier et prévenir les problèmes techniques ou les menaces de sécurité sur nos plateformes.",
+          "4": "Communiquer les mises à jour sur l'état des commandes et des services via le portail client ou des canaux directs."
         }
       },
       "sharing": {
-        "title": "DunesPnotremuntiunctivé ShunrDunesg",
+        "title": "Partage des informations",
         "content": {
-          "0": "nonous Junmunest sell votre duntun. nonous unctivély shsunctivét DunesPnotremuntiunctivé unvec Cunctivéfiuneceed Punrtenunires À funcilcelununte notre Services:",
-          "1": "funiremunDunese regesttrunrs Et duntun centre providers (À S'enregesttrer funiremunDunesees Et run votre Services); Tsunlutrd-punrty Puniemoint guntewunys Pnotre secure Functuruntiunctivé; uneunlytics providers pnotre vonous unider nous improve nouser experience. Ànous Punrtenunires sunctivét strictly bound by cunctivéfidentiunlceluny ungreemoints."
+          "0": "Nous ne vendons jamais vos données. Nous ne partageons des informations qu'avec des partenaires de confiance, pour faciliter nos services :",
+          "1": "Les bureaux d'enregistrement de domaines et les fournisseurs de centres de données (pour enregistrer les domaines et faire fonctionner vos services) ; les passerelles de paiement tierces pour une facturation sécurisée ; les fournisseurs de statistiques qui nous aident à améliorer l'expérience utilisateur. Tous les partenaires sont strictement tenus par des accords de confidentialité."
         }
       },
       "cookies": {
-        "title": "Cookies Et uneunlytics",
+        "title": "Cookies et statistiques",
         "content": {
-          "0": "nonous nouse essentiunl cookies Pnotre nouser unuunlonousticuntiunctivé Et sessiunctivé Gérermoint Dunes Le client poutunl. unjDehonouserceluniunctivéÀnousy, nonous nouse uneunlytics cookies À SonousstEt commoint vestiÀnous Dunesterunct unvec notre nonousbscelune.",
-          "1": "vonous peut Gérer votre cookie preferences through notre dedicunted Cookie Bunener ou votre browser Punrunmètres. Note celun destunblDunesg essentiunl cookies peut limcelun Le functiunctivéunlceluny De Le client poutunl."
+          "0": "Nous utilisons des cookies essentiels pour l'authentification des utilisateurs et la gestion des sessions sur le portail client. Nous utilisons en outre des cookies de statistiques pour comprendre comment les visiteurs interagissent avec notre site.",
+          "1": "Vous pouvez gérer vos préférences en matière de cookies via notre bandeau dédié ou les paramètres de votre navigateur. Notez que la désactivation des cookies essentiels peut limiter le fonctionnement du portail client."
         }
       },
       "security": {
-        "title": "DunesfrCommoitructure complète Protectiunctivé",
+        "title": "Protection numérique",
         "content": {
-          "0": "nonous employ enterpreste-grunde Sécurceluné moiCommoiures, DunescludDunesg SSL encryptiunctivé, secure unPI proÀcols, Et regulunr vulnerunbilceluny speutnDunesg, À protect votre duntun.",
-          "1": "unccess À client Compte duntun est strictly limceluned À unuthouized teunm moimêtrers Dunesvolved Dunes SHunutpout ou provestiunctivéDunesg."
+          "0": "Nous appliquons des mesures de sécurité de niveau professionnel, notamment le chiffrement SSL, des protocoles d'API sécurisés et des analyses régulières de vulnérabilités, pour protéger vos données.",
+          "1": "L'accès aux données des comptes clients est strictement réservé aux membres de l'équipe autorisés qui interviennent dans le support ou la mise en service."
         }
       },
       "rights": {
-        "title": "Vos drosunctivé & Cunctivétrol",
+        "title": "Vos droits et votre contrôle",
         "content": {
-          "0": "vonous unvoir full cunctivétrol Sur votre duntun sÀued unvec {scelune}. vonous peut request:"
+          "0": "Vous gardez le contrôle total de vos données stockées chez {site}. Vous pouvez demander :"
         },
         "list": {
-          "0": "un complete recoud De Ànous persunctivéunl duntun nonous hvieux À propos de vonous.",
-          "1": "Immoidiunte courectiunctivé De n'impoute Dunesunccurunte Cunctivétunct ou service DunesPnotremuntiunctivé.",
-          "2": "Permuneent deletiunctivé De votre Compte Et duntun, subject À Légunl retentiunctivé rules.",
-          "3": "un Punnouse unctivé votre duntun ProcessnousDunesg Pnotre munrketDunesg purposes."
+          "0": "Une copie complète de toutes les données personnelles que nous détenons à votre sujet.",
+          "1": "La correction immédiate de toute information de contact ou de service inexacte.",
+          "2": "La suppression définitive de votre compte et de vos données, sous réserve des règles légales de conservation.",
+          "3": "La suspension du traitement de vos données à des fins de prospection."
         }
       },
       "retention": {
-        "title": "Duntun Retentiunctivé",
+        "title": "Conservation des données",
         "content": {
-          "0": "nonous keep Compte-relunted duntun Pnotre Le duruntiunctivé De notre engungemoint Et Commoi required by lunw Pnotre fDunesuneciunl unudcelunDunesg Et Légunl compliunece.",
-          "1": "Dunesunctive Compte duntun est typicÀnousy uneunctivéymized ou SHunutprimoird unprès 24 moests De Dunesunctivceluny À ensure votre Cunctivéfidentiunlceluné."
+          "0": "Nous conservons les données liées au compte pendant toute la durée de notre relation et aussi longtemps que la loi l'exige pour l'audit financier et la conformité légale.",
+          "1": "Les données d'un compte inactif sont généralement anonymisées ou supprimées après 24 mois d'inactivité afin de protéger votre vie privée."
         }
       },
       "children": {
-        "title": "Csunlutldren's Cunctivéfidentiunlceluné",
+        "title": "Confidentialité des enfants",
         "content": {
-          "0": "notre Services sunctivét exclnousively designed Pnotre bnousDunesesses Et prDeessiunctivéunls. nonous funire not kmunDunestenunetDunesgly collect duntun De Dunesdividuunls Sonous 18 unenées De unge."
+          "0": "Nos services sont exclusivement destinés aux entreprises et aux professionnels. Nous ne collectons pas sciemment de données auprès de personnes de moins de 18 ans."
         }
       },
       "changes": {
-        "title": "Policy moittre à jnotres",
+        "title": "Mises à jour de la politique",
         "content": {
-          "0": "nonous peut moittre à jnotre ce policy À reflect nouveunu pluntPnotrem Functivéctiunctivénunlcelunés ou chuneges Dunes reguluntiunctivés. SignSiipeutt moittre à jnotres vun être communicunted viun notre nouveunnousletter.",
-          "1": "nonous recommoind cilckDunesg ce punge occCommoiiunctivéÀnousy À stuny DunesPnotremoid À propos de notre duntun protectiunctivé stEtunrds."
+          "0": "Nous pouvons mettre à jour cette politique pour refléter de nouvelles fonctionnalités de la plateforme ou des changements de réglementation. Les mises à jour importantes seront communiquées par notre lettre d'information.",
+          "1": "Nous vous recommandons de consulter cette page de temps à autre pour rester informé de nos normes de protection des données."
         }
       }
     },
     "contact": {
-      "title": "Cunctivéfidentiunlceluné Cunctivécerns?",
-      "description": "notre Duntun Protectiunctivé Teunm est reundy À Commoisestt vonous unvec n'impoute questiunctivés regunrdDunesg votre DunesPnotremuntiunctivé unt {scelune}.",
-      "link": "Entrer en Cunctivétunct"
+      "title": "Une question sur la confidentialité ?",
+      "description": "Notre équipe de protection des données est à votre disposition pour répondre à toutes vos questions concernant vos informations chez {site}.",
+      "link": "Nous contacter"
     }
   }
 }

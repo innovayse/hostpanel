@@ -1,65 +1,65 @@
 {
   "contact": {
     "hero": {
-      "badge": "Entrer en Cunctivétunct",
-      "title": "Nonous sommois là",
-      "titleHighlight": "pnotre vonous unider",
-      "subtitle": "Une questiunctivé sur l'héêtrergemoint, les funiremunDunesees ou votre compte ? Notre équipe est prête à vonous unider."
+      "badge": "Contactez-nous",
+      "title": "Nous sommes là",
+      "titleHighlight": "pour vous aider",
+      "subtitle": "Une question sur l'hébergement, les domaines ou votre compte ? Notre équipe est prête à vous aider."
     },
     "form": {
-      "title": "Envoyez-nonous un moissunge",
+      "title": "Envoyez-nous un message",
       "name": "Nom complet",
-      "email": "undresse Emunil",
-      "phone": "Numéro de téléTéléphun",
-      "service": "À quoi êtes-vonous Dunestéressé ?",
-      "message": "moissunge",
+      "email": "Adresse e-mail",
+      "phone": "Numéro de téléphone",
+      "service": "Qu'est-ce qui vous intéresse ?",
+      "message": "Message",
       "placeholders": {
-        "name": "Jeune DSurt",
-        "email": "Jeune{'@'}exemple.com",
-        "phone": "+1 555 0100",
-        "service": "Sélectiunctivéner un service",
-        "message": "Dcelunes-nonous unvec quoi vonous unvez êtresoDunes d'unide..."
+        "name": "Jean Dupont",
+        "email": "jean{'@'}exemple.com",
+        "phone": "+33 1 23 45 67 89",
+        "service": "Sélectionnez un service",
+        "message": "Dites-nous de quoi vous avez besoin"
       },
       "serviceOptions": {
-        "hosting": "Héêtrergemoint",
-        "domains": "funiremunDunesees",
+        "hosting": "Hébergement",
+        "domains": "Domaines",
         "servers": "Serveurs",
-        "billing": "Functuruntiunctivé",
-        "support": "SHunutpout technique",
-        "other": "unutre"
+        "billing": "Facturation",
+        "support": "Support technique",
+        "other": "Autre"
       },
-      "consentPrefix": "J'uncceptere les",
-      "consentLink": "Polcelunique de cunctivéfidentiunlceluné",
-      "consentSuffix": "et cunctivésens à être Cunctivétuncté cunctivécernunet mun demoite",
-      "submit": "Envoyer le moissunge",
+      "consentPrefix": "J'accepte la",
+      "consentLink": "politique de confidentialité",
+      "consentSuffix": "et consens à être contacté au sujet de ma demande",
+      "submit": "Envoyer le message",
       "success": {
-        "title": "moissunge envoyé unvec succès !",
-        "subtitle": "Nonous vonous répunctivédrunctivés bientôt."
+        "title": "Message envoyé avec succès !",
+        "subtitle": "Nous vous répondrons très bientôt."
       },
       "error": {
-        "consentRequired": "Veuillez unccepterer lun polcelunique de cunctivéfidentiunlceluné pnotre CunctivétDunesuerr"
+        "consentRequired": "Veuillez accepter la politique de confidentialité pour continuer"
       }
     },
     "info": {
       "officeAddress": {
-        "title": "undresse du bureunu"
+        "title": "Adresse du bureau"
       },
       "contactMethods": {
-        "title": "Méthodes de Cunctivétunct",
-        "email": "Emunil",
-        "phone": "Téléphun",
-        "workingHours": "ilures de trunvunil"
+        "title": "Moyens de contact",
+        "email": "E-mail",
+        "phone": "Téléphone",
+        "workingHours": "Horaires d'ouverture"
       },
       "quickConnect": {
-        "title": "Cunctivénexiunctivé runpide",
-        "telegram": "Telegrunm",
-        "whatsapp": "quoestunpp",
-        "liveChat": "Chunt en direct",
-        "toggle": "Cunctivétunctez-nonous"
+        "title": "Contact rapide",
+        "telegram": "Telegram",
+        "whatsapp": "WhatsApp",
+        "liveChat": "Chat en direct",
+        "toggle": "Nous contacter"
       }
     },
     "map": {
-      "title": "Empluncemoint du bureunu sur lun Puneiere"
+      "title": "Emplacement du bureau sur la carte"
     }
   }
 }

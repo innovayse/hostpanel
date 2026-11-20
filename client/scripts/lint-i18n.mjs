@@ -1,9 +1,9 @@
 /**
- * `yarn lint:i18n`: checks the three locale trees against each other and against the source.
+ * `yarn lint:i18n`: checks the locale trees against each other and against the source.
  *
  * Reports, per module file under `locales/<lang>/`:
- *  - missing: a key present in `en` but absent from `ru` or `hy`;
- *  - extra: a key present in `ru`/`hy` but absent from `en`;
+ *  - missing: a key present in `en` but absent from another language;
+ *  - extra: a key present in another language but absent from `en`;
  *  - unused: a key in `en` no source file references (a quoted literal of the full key, or a
  *    template literal whose static prefix covers it counts as a reference);
  *  - undefined: a literal `t('a.b')` call whose key is absent from `en`.

@@ -48,6 +48,7 @@ import { format, isValid, parseISO } from 'date-fns'
 // agree, and states outright which languages the portal actually ships.
 import { de } from 'date-fns/locale/de'
 import { enUS } from 'date-fns/locale/en-US'
+import { fr } from 'date-fns/locale/fr'
 import { hy } from 'date-fns/locale/hy'
 import { ru } from 'date-fns/locale/ru'
 import type { Locale } from 'date-fns'
@@ -72,7 +73,8 @@ const DATE_LOCALES: Record<AppLocale, Locale> = {
   [AppLocale.En]: enUS,
   [AppLocale.Ru]: ru,
   [AppLocale.Hy]: hy,
-  [AppLocale.De]: de
+  [AppLocale.De]: de,
+  [AppLocale.Fr]: fr
 }
 
 /**

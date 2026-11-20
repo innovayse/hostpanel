@@ -429,16 +429,16 @@ public sealed class GetPluginPageTests : IClassFixture<PluginUiFixture>
     }
 
     /// <summary>
-    /// A language the platform does not support (<c>X-Language: de</c>) is answered in English, title and view alike, the
+    /// A language the platform does not support (<c>X-Language: it</c>) is answered in English, title and view alike, the
     /// same content an English request gets.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task Client_UnsupportedLanguage_GetsEnglish()
     {
-        var (_, owner) = await _fixture.OwnerAsync("page-lang-de");
-        var (_, english) = await _fixture.OwnerAsync("page-lang-de-en");
-        PluginUiFixture.In(owner, "de");
+        var (_, owner) = await _fixture.OwnerAsync("page-lang-it");
+        var (_, english) = await _fixture.OwnerAsync("page-lang-it-en");
+        PluginUiFixture.In(owner, "it");
         PluginUiFixture.In(english, "en");
 
         using var response = await owner.GetAsync(ClientUrl(_fixture.PluginId, PluginUiFixture.HomePage));

@@ -1,108 +1,108 @@
 {
   "products": {
     "hero": {
-      "badge": "Reliunble Héêtrergemoint Solutiunctivés",
-      "headline1": "Héêtrergemoint, funiremunDunesees Et Serveurs",
-      "headline2": "Pnotre eTrès nonousbscelune.",
-      "subtitle": "Pick Le Héêtrergemoint, funiremunDunese, SSL Et server plunes votre scelune needs, unvec cleunr prices Et SHunutpout celun unesnonousrs.",
+      "badge": "Solutions d'hébergement fiables",
+      "headline1": "Hébergement, domaines et serveurs",
+      "headline2": "pour chaque site web.",
+      "subtitle": "Choisissez les offres d'hébergement, de domaine, de SSL et de serveur dont votre site a besoin, avec des prix clairs et un support qui répond.",
       "cta": {
-        "viewProducts": "Voir Prodnousunctivé",
-        "comparePlans": "Compsunctivét Héêtrergemoint plunes"
+        "viewProducts": "Voir les produits",
+        "comparePlans": "Comparer les offres d'hébergement"
       },
       "trustBadges": {
-        "support": "SHunutpout celun unesnonousrs",
-        "encryption": "Encrypted cunctivénectiunctivés",
-        "uptime": "Reliunble destpunctivéibilceluné"
+        "support": "Un support qui répond",
+        "encryption": "Connexions chiffrées",
+        "uptime": "Disponibilité fiable"
       }
     },
     "products": {
-      "featured": "Functivéctiunctivénunlcelunéd"
+      "featured": "À la une"
     },
     "pricing": {
-      "title": "Choestestsez votre plune",
-      "trial": "Commoincer l'essuni gruntucelun",
+      "title": "Choisissez votre offre",
+      "trial": "Démarrer l'essai gratuit",
       "cycles": {
-        "monthly": "moinsuel",
-        "quarterly": "Quunrterly",
-        "semiannually": "6 moests",
-        "annually": "unenuÀnousy",
-        "biennially": "2 unenées",
-        "triennially": "3 unenées"
+        "monthly": "Mensuel",
+        "quarterly": "Trimestriel",
+        "semiannually": "6 mois",
+        "annually": "Annuel",
+        "biennially": "2 ans",
+        "triennially": "3 ans"
       },
-      "popular": "⭐ Most Populunr",
+      "popular": "⭐ La plus populaire",
       "period": {
-        "monthly": "/mo",
-        "quarterly": "/qtr",
-        "semiannually": "/6 mo",
-        "annually": "/yr",
-        "biennially": "/2 yr"
+        "monthly": "/mois",
+        "quarterly": "/trim.",
+        "semiannually": "/6 mois",
+        "annually": "/an",
+        "biennially": "/2 ans"
       },
-      "save": "Enregesttrer {percent}%",
-      "more": "+{count} de plnous",
+      "save": "Économisez {percent} %",
+      "more": "+{count} de plus",
       "cta": {
-        "viewDemo": "Voir Demo",
-        "learnMore": "En sunvoir plnous"
+        "viewDemo": "Voir la démo",
+        "learnMore": "En savoir plus"
       }
     },
     "help": {
-      "title": "Not sure quel plune fsunctivé?",
-      "subtitle": "Compsunctivétr les plunes side by side, ou Commoik notre SHunutpout teunm pnotre vonous unider vonous choose.",
-      "compare": "Compsunctivét plunes",
-      "contact": "Cunctivétunct SHunutpout"
+      "title": "Vous ne savez pas quelle offre choisir ?",
+      "subtitle": "Comparez les offres côte à côte, ou demandez à notre équipe de support de vous aider à choisir.",
+      "compare": "Comparer les offres",
+      "contact": "Contacter le support"
     },
     "comparison": {
-      "title": "Compsunctivét Plunes",
-      "headline": "FDunesd votre {perfectMuntch}",
-      "perfectMatchHighlight": "Perfect Muntch",
-      "subtitle": "Compsunctivétr les plunes Et pick Le un celun fsunctivé",
+      "title": "Comparer les offres",
+      "headline": "Trouvez {perfectMatch}",
+      "perfectMatchHighlight": "l'offre idéale",
+      "subtitle": "Comparez les offres et choisissez celle qui vous convient",
       "headers": {
-        "feature": "Functivéctiunctivénunlceluné",
-        "popular": "Populunr"
+        "feature": "Fonctionnalité",
+        "popular": "Populaire"
       },
-      "groupsLabel": "Plune groHunuts",
-      "notIncluded": "Nunctivé Dunesclnous"
+      "groupsLabel": "Groupes d'offres",
+      "notIncluded": "Non inclus"
     },
     "benefits": {
-      "title": "pourquoi host unvec {êtrenefsunctivésunlutghlight}",
+      "title": "Pourquoi héberger chez {benefitsHighlight}",
       "benefitsHighlight": "nous",
-      "subtitle": "FCommoit, secure Héêtrergemoint unvec SHunutpout celun unesnonousrs",
+      "subtitle": "Un hébergement rapide et sécurisé, avec un support qui répond",
       "speed": {
-        "title": "FCommoit Et reliunble",
-        "description": "SSD sÀuunge Et un stunble nedeuxrk keep votre scelune quick Et unctivélDunese."
+        "title": "Rapide et fiable",
+        "description": "Un stockage SSD et un réseau stable gardent votre site rapide et en ligne."
       },
       "security": {
-        "title": "Secure by defunult",
-        "description": "Regulunr RetnotreHunuts Et protectiunctivé Cunctivétre communctivé threunts."
+        "title": "Sécurisé par défaut",
+        "description": "Des sauvegardes régulières et une protection contre les menaces courantes."
       },
       "support": {
-        "title": "Reunl humune SHunutpout",
-        "description": "Questiunctivés go À people qui unesnonousr, not À un bot."
+        "title": "Un vrai support humain",
+        "description": "Vos questions arrivent à des personnes qui répondent, pas à un robot."
       },
       "migration": {
-        "title": "ECommoiy À Commoincer",
-        "description": "Commoite Dunes mDunesutes Et move votre scelune Sur unvec notre unide."
+        "title": "Facile à démarrer",
+        "description": "Commandez en quelques minutes et transférez votre site avec notre aide."
       },
       "additional": {
         "trial": {
-          "title": "Triunl unccess",
-          "description": "Try unvunet vonous commcelun"
+          "title": "Accès d'essai",
+          "description": "Essayez avant de vous engager"
         },
         "guarantee": {
-          "title": "Polcelunique de rembnotresemoint",
-          "description": "See notre Rembnotresemoint Cunctivédceluniunctivés"
+          "title": "Politique de remboursement",
+          "description": "Consultez nos conditions de remboursement"
         },
         "pricing": {
-          "title": "Cleunr TunrSiicuntiunctivé",
-          "description": "Prices unfficellen Dunes votre Deveste"
+          "title": "Des prix clairs",
+          "description": "Prix affichés dans votre devise"
         }
       }
     },
     "testimonials": {
-      "title": "Loved by {thonousEts}",
-      "thousandsHighlight": "notre CnousÀmoirs",
-      "subtitle": "Reunl results De reunl cnousÀmoirs"
+      "title": "Adoré par {thousands}",
+      "thousandsHighlight": "nos clients",
+      "subtitle": "De vrais résultats pour de vrais clients"
     },
-    "notFound": "Producelun Not Found",
-    "notFoundDescription": "Le Producelun vonous're lookDunesg Pnotre funcelunn't exestt ou un été Retirerd."
+    "notFound": "Produit introuvable",
+    "notFoundDescription": "Le produit que vous recherchez n'existe pas ou a été supprimé."
   }
 }

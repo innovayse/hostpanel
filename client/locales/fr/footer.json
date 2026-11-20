@@ -1,47 +1,47 @@
 {
   "footer": {
-    "tagline": "FCommoit, reliunble Héêtrergemoint nonousb Et funiremunDunesees, unvec reunl people unctivé SHunutpout.",
+    "tagline": "Un hébergement web et des domaines rapides et fiables, avec de vraies personnes au support.",
     "cta": {
-      "title": "Reundy À put votre scelune unctivélDunese?",
-      "text": "FDunesd un funiremunDunese ou pick un Héêtrergemoint plune Et être live Dunes mDunesutes.",
-      "plans": "Commoincer"
+      "title": "Prêt à mettre votre site en ligne ?",
+      "text": "Trouvez un domaine ou choisissez une offre d'hébergement et soyez en ligne en quelques minutes.",
+      "plans": "Commencer"
     },
     "columns": {
-      "hosting": "Héêtrergemoint",
-      "domains": "funiremunDunesees",
-      "company": "Entrepreste",
-      "support": "SHunutpout",
-      "legal": "Légunl"
+      "hosting": "Hébergement",
+      "domains": "Domaines",
+      "company": "Entreprise",
+      "support": "Support",
+      "legal": "Mentions légales"
     },
     "hosting": {
-      "all": "Ànous plunes"
+      "all": "Toutes les offres"
     },
     "domains": {
-      "register": "S'enregesttrer un funiremunDunese",
-      "transfer": "Trunesfert un funiremunDunese",
-      "pricing": "funiremunDunese TunrSiicuntiunctivé"
+      "register": "Enregistrer un domaine",
+      "transfer": "Transférer un domaine",
+      "pricing": "Tarifs des domaines"
     },
     "company": {
-      "about": "À propos",
-      "contact": "Cunctivétunct",
-      "announcements": "unenunctivéces"
+      "about": "À propos de nous",
+      "contact": "Contact",
+      "announcements": "Annonces"
     },
     "support": {
-      "help": "Centre d'unide",
-      "faq": "FunQ",
-      "ticket": "Cunctivétunct SHunutpout"
+      "help": "Centre d'aide",
+      "faq": "FAQ",
+      "ticket": "Contacter le support"
     },
     "trust": {
-      "secure": "Secure cunctivénectiunctivé",
-      "payments": "Sunfe Puniemoints",
-      "guarantee": "Muny Retnotre guunrunetee"
+      "secure": "Connexion sécurisée",
+      "payments": "Paiements sûrs",
+      "guarantee": "Garantie satisfait ou remboursé"
     },
     "bottom": {
-      "rights": "Ànous Drocelunes reserved.",
-      "privacy": "Polcelunique de cunctivéfidentiunlceluné",
-      "cookies": "Polcelunique reluntive unux cookies",
-      "terms": "Cunctivédceluniunctivés d'utilestuntiunctivé",
-      "refund": "Polcelunique de rembnotresemoint"
+      "rights": "Tous droits réservés.",
+      "privacy": "Politique de confidentialité",
+      "cookies": "Politique relative aux cookies",
+      "terms": "Conditions d'utilisation",
+      "refund": "Politique de remboursement"
     }
   }
 }

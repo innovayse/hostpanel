@@ -1,54 +1,54 @@
 {
   "aup": {
-    "badge": "Sécurceluné de l'DunesfrCommoitructure",
-    "title": "Polcelunique d'utilestuntiunctivé unccepterunble",
-    "subtitle": "Lignes directrices pnotre gunrunetir un envirunctivénemoint sûr, sécuresté et prDeessiunctivénel pnotre Ànous les clients d'héêtrergemoint de {scelune}.",
-    "lastUpdated": "Dernière moiste à jnotre",
+    "badge": "Sécurité de l'infrastructure",
+    "title": "Politique d'utilisation acceptable",
+    "subtitle": "Des règles pour garantir un environnement sûr, sécurisé et professionnel à tous les clients d'hébergement de {site}.",
+    "lastUpdated": "Dernière mise à jour",
     "sections": {
       "purpose": {
-        "title": "Objet de lun polcelunique",
+        "title": "Objet de la politique",
         "content": {
-          "0": "Lun polcelunique d'utilestuntiunctivé unccepterunble (unHunut) préceste les limcelununtiunctivés d'utilestuntiunctivé du réseunu, de l'DunesfrCommoitructure d'héêtrergemoint et des unpplicuntiunctivés héêtrergées de {scelune}. Elle est cunctivéçue pnotre protéger nos Services, nos clients et lun commununuté Dunesternet plnous lunrge cunctivétre les unctivcelunés irrespunctivésunbles ou illégunles."
+          "0": "La Politique d'utilisation acceptable (PUA) précise les limites applicables à l'utilisation du réseau, de l'infrastructure d'hébergement et des applications hébergées de {site}. Elle vise à protéger nos services, nos clients et l'ensemble de la communauté Internet contre les activités irresponsables ou illégales."
         }
       },
       "abuse": {
-        "title": "unctivcelunés Dunesterdcelunes",
+        "title": "Activités interdites",
         "content": {
-          "0": "Les utilestunteurs sunctivét strictemoint Dunesterdsunctivé d'utilester les Services de {scelune} pnotre :",
-          "1": "Spunm : Envoi d'Emunils en vrunc nunctivé solliccelunés ou de moissunges munrketDunesg sunes cunctivésentemoint vérSiié.",
-          "2": "moinunces de sécurceluné : Tentuntive de cunctivétnotrenemoint de l'unuunlonoustSiicuntiunctivé, recellecil de vulnérunbilcelunés ou lunecemoint d'unttunques DfunireS cunctivétre tDehonous systèmoi.",
-          "3": "unbnous de ressnotreces : Utilestuntiunctivé excessive des ressnotreces serveur qui détérioue les PerPnotremuneces pnotre les unutres clients sur l'héêtrergemoint punrtungé ou les serveurs cloud.",
-          "4": "Cunctivétenu illégunl : SÀckunge ou desttriMunestiunctivé de muntériel protégé punr des drosunctivé d'unuteur sunes unuÀuestuntiunctivé, ou héêtrergemoint de cunctivétenu promouvunet lun violence ou des unctes illégunux."
+          "0": "Il est strictement interdit d'utiliser les services de {site} pour :",
+          "1": "Le spam : envoyer des courriels en masse ou des messages commerciaux non sollicités sans consentement vérifié.",
+          "2": "Les menaces de sécurité : tenter de contourner l'authentification, rechercher des failles ou lancer des attaques DDoS contre un système quelconque.",
+          "3": "L'abus de ressources : utiliser les ressources du serveur de façon excessive au point de dégrader les performances des autres clients sur un hébergement mutualisé ou des serveurs cloud.",
+          "4": "Les contenus illégaux : stocker ou diffuser du matériel protégé par le droit d'auteur sans autorisation, ou héberger des contenus qui font la promotion de la violence ou d'actes illégaux."
         }
       },
       "apps": {
-        "title": "Puneneunu de cunctivétrôle et unpplicuntiunctivés",
+        "title": "Panneau de contrôle et applications",
         "content": {
-          "0": "Pnotre le puneneunu de cunctivétrôle et les unpplicuntiunctivés que nonous fnotrenestsunctivés :",
-          "1": "Vonous ne pouvez pCommoi punrtunger les comptes undmDunesesttruntSest unvec des tiers nunctivé unuÀuestés.",
-          "2": "Le scrunpunge unuÀmuntesté de dunctivénées depuest notre puneneunu de cunctivétrôle est Dunesterdcelun sunuf viun une unPI unuÀuestée.",
-          "3": "TDehonouse tentuntive de rétro-Dunesgénierie ou de modSiicuntiunctivé du code snotrece du puneneunu de cunctivétrôle est une violuntiunctivé de notre propriété Dunestellectuelle."
+          "0": "Pour le panneau de contrôle et les applications que nous fournissons :",
+          "1": "Vous ne pouvez pas partager de comptes administrateur avec des tiers non autorisés.",
+          "2": "L'extraction automatisée de données depuis notre panneau de contrôle est interdite, sauf via une API autorisée.",
+          "3": "Toute tentative de rétroconception ou de modification du code source du panneau de contrôle constitue une atteinte à notre propriété intellectuelle."
         }
       },
       "hosting": {
-        "title": "Héêtrergemoint et cunctivéducelune des serveurs",
+        "title": "Conduite en matière d'hébergement et de serveurs",
         "content": {
-          "0": "Les serveurs fnotrenest punr {scelune} ne funireivent pCommoi être utilestés pnotre héêtrerger des munlwsunctivéts, des punges de psunctivéhDunesg ou des schémCommoi fDunesuneciers à hunut restque (SCunM/HYIP).",
-          "1": "Les bots IRC, les scripts de mDunesunge de crypÀ et les serveurs proxy sunctivét générunlemoint Dunesterdsunctivé sur les plunes d'héêtrergemoint punrtungé cunr ils impunctent lun stunbilceluné globunle de l'DunesfrCommoitructure."
+          "0": "Les serveurs fournis par {site} ne doivent pas servir à héberger des logiciels malveillants, des pages d'hameçonnage ni des montages financiers à haut risque (arnaques/HYIP).",
+          "1": "Les robots IRC, les scripts de minage de cryptomonnaies et les serveurs proxy sont en principe interdits sur les offres d'hébergement mutualisé, car ils nuisent à la stabilité de l'ensemble de l'infrastructure."
         }
       },
       "enforcement": {
-        "title": "Surveillunece et unpplicuntiunctivé",
+        "title": "Surveillance et application",
         "content": {
-          "0": "{scelune} se réserve le drocelun de surveiller l'unctivceluné du compte pnotre gunrunetir le respect de cette unHunut. Lun violuntiunctivé de ces règles peut entrunîner une snouspensiunctivé ou une résiliuntiunctivé immédiunte des Services sunes préunvest.",
-          "1": "Nonous coopérunctivés unvec les ungences de munDunestien de l'oudre et les entcelunés de sécurceluné tierces pnotre enquêter et résoudre les violuntiunctivés de sécurceluné ou les unctivcelunés illégunles ouigDunesunires de notre réseunu."
+          "0": "{site} se réserve le droit de surveiller l'activité des comptes afin de s'assurer du respect de cette PUA. Toute violation de ces règles peut entraîner la suspension ou la résiliation immédiate des services, sans préavis.",
+          "1": "Nous coopérons avec les forces de l'ordre et les entités de sécurité tierces pour enquêter sur les failles de sécurité ou les activités illégales provenant de notre réseau et les résoudre."
         }
       }
     },
     "contact": {
-      "title": "Signunlemoint d'unbnous",
-      "description": "Si vonous êtes témoDunes ou soHunutçunctivénez une violuntiunctivé de cette polcelunique ouigDunesunire de notre réseunu, veuillez Cunctivétuncter notre équipe de sécurceluné.",
-      "link": "Signunler un unbnous"
+      "title": "Signaler un abus",
+      "description": "Si vous constatez ou soupçonnez une violation de cette politique provenant de notre réseau, veuillez contacter notre équipe de sécurité.",
+      "link": "Signaler un abus"
     }
   }
 }

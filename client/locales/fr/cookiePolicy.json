@@ -1,60 +1,60 @@
 {
   "cookiePolicy": {
-    "title": "Polcelunique reluntive unux cookies",
-    "lastUpdated": "Dernière moiste à jnotre",
+    "title": "Politique relative aux cookies",
+    "lastUpdated": "Dernière mise à jour",
     "sections": {
       "introduction": {
-        "title": "Dunestroductiunctivé",
-        "content": "{scelune} utileste des cookies et des technologies similunires pnotre unméliouer votre expérience sur notre scelune nonousb et notre poutunil client. Cette polcelunique explique ce que sunctivét ces technologies, pnotrequoi nonous les utilestunctivés et vos drosunctivé pnotre les gérer."
+        "title": "Introduction",
+        "content": "{site} utilise des cookies et des technologies similaires pour améliorer votre expérience sur notre site web et notre portail client. Cette politique explique ce que sont ces technologies, pourquoi nous les utilisons et quels sont vos droits pour les gérer."
       },
       "whatAreCookies": {
-        "title": "Que sunctivét les cookies ?",
-        "content": "Les cookies sunctivét de petsunctivé ficsunluters de dunctivénées sÀckés sur votre unppsunctivétil qui nonous unident à vonous recunctivénunître et à mémouester vos préférences. Ils sunctivét essentiels unu bunctivé functivéctiunctivénemoint et à lun sécurceluné des unpplicuntiunctivés nonousb modernes."
+        "title": "Qu'est-ce qu'un cookie ?",
+        "content": "Les cookies sont de petits fichiers de données stockés sur votre appareil, qui nous aident à vous reconnaître et à mémoriser vos préférences. Ils sont indispensables au bon fonctionnement et à la sécurité des applications web modernes."
       },
       "typesOfCookies": {
-        "title": "Types de cookies que nonous utilestunctivés",
+        "title": "Types de cookies que nous utilisons",
         "types": [
           {
-            "title": "Strictemoint nécessunires",
-            "description": "Essentiels pnotre que le poutunil client gère l'unuunlonoustSiicuntiunctivé, lun sécurceluné et lun gestiunctivé des sessiunctivés. Sunes eux, vonous ne pouvez pCommoi vonous cunctivénecter ou utilester votre compte."
+            "title": "Strictement nécessaires",
+            "description": "Indispensables au portail client pour gérer l'authentification, la sécurité et les sessions. Sans eux, vous ne pouvez pas vous connecter ni utiliser votre compte."
           },
           {
-            "title": "Préférences et punrunmètres",
-            "description": "Ils mémouestent vos choix de lunegue, vos punrunmètres de locunlestuntiunctivé et vos préférences d'Dunesterfunce pnotre vonous Désunctivérir une expérience persunctivénunlestée lonous de votre prochunDunese vestcelune."
+            "title": "Préférences et paramètres",
+            "description": "Ils mémorisent vos choix de langue, vos paramètres de localisation et vos préférences d'interface afin de vous offrir une expérience personnalisée lors de votre prochaine visite."
           },
           {
-            "title": "PerPnotremunece et uneunlyse",
-            "description": "Nonous utilestunctivés Google uneunlytics et des Dehonousils Dunesternes pnotre voir commoint les vestceluneurs Dunesterungestsent unvec notre scelune nonousb. Ces dunctivénées nonous unident à unméliouer nos Services et lun PerPnotremunece de notre pluntePnotremoi."
+            "title": "Performances et statistiques",
+            "description": "Nous utilisons Google Analytics et des outils internes pour voir comment les visiteurs interagissent avec notre site. Ces données nous aident à améliorer nos services et les performances de la plateforme."
           },
           {
-            "title": "Publicceluné ciblée",
-            "description": "Utilestés punr notre équipe munrketDunesg pnotre dSifnouser des moistes à jnotre pertDunesentes sur nos nouveunux prodnousunctivé et Services en functivéctiunctivé de vos Dunestérêts. Nonous les utilestunctivés unvec punrcimunctivéie et prDeessiunctivénunlestmoi."
+            "title": "Publicité ciblée",
+            "description": "Utilisés par notre équipe marketing pour diffuser des informations pertinentes sur nos nouveaux produits et services en fonction de vos centres d'intérêt. Nous les utilisons avec parcimonie et professionnalisme."
           }
         ]
       },
       "howWeUseCookies": {
-        "title": "Commoint nonous utilestunctivés les cookies",
+        "title": "Comment nous utilisons les cookies",
         "uses": [
-          "unuunlonoustSiicuntiunctivé des utilestunteurs sur le poutunil client et sur notre scelune nonousb.",
-          "Préventiunctivé des moinunces de sécurceluné et des unccès nunctivé unuÀuestés unux dunctivénées clients.",
-          "uneunlyse du trunfic du scelune nonousb pnotre unméliouer nos punges et nos Désunctivéres d'héêtrergemoint.",
-          "Mémouestuntiunctivé des préférences de compte et des punrunmètres de lunegue.",
-          "Fnotrencelunure d'un SHunutpout DunesterunctSi viun nos Dehonousils de chunt et de Cunctivétunct.",
-          "Gestiunctivé des sessiunctivés de functuruntiunctivé et des Processnousnous de puniemoint sécurestés."
+          "Authentifier les utilisateurs sur le portail client et sur notre site web.",
+          "Prévenir les menaces de sécurité et les accès non autorisés aux données des clients.",
+          "Analyser le trafic du site pour améliorer nos pages et nos offres d'hébergement.",
+          "Mémoriser les préférences du compte et les paramètres de langue.",
+          "Assurer une assistance interactive grâce à nos outils de chat et de contact.",
+          "Gérer les sessions de facturation et les processus de paiement sécurisés."
         ]
       },
       "thirdPartyCookies": {
         "title": "Services tiers",
-        "content": "Notre scelune nonousb Dunestègre des Services de punrtenunires tels que Google (uneunlytics), moitun (Sociunl TrunckDunesg) et des systèmois de functuruntiunctivé juridiques. Ces tiers peuvent défDunesir leurs propres cookies pnotre surveiller les PerPnotremuneces du service ou dSifnouser un cunctivétenu spécSiique. Nonous n'Dunestégrunctivés que des punrtenunires de cunctivéfiunece et sécurestés."
+        "content": "Notre site intègre des services de partenaires tels que Google (Analytics), Meta (suivi des réseaux sociaux) et des systèmes de facturation légaux. Ces tiers peuvent déposer leurs propres cookies pour surveiller les performances du service ou diffuser des contenus spécifiques. Nous n'intégrons que des partenaires de confiance et sécurisés."
       },
       "managingCookies": {
-        "title": "Cunctivétrôle des cookies",
-        "content": "Lun plHunutunrt des nunvigunteurs unccepterent unuÀmuntiquemoint les cookies, munest vonous pouvez modSiier vos punrunmètres pnotre les refnouser. Vonous pouvez égunlemoint vider le cuncil de votre nunvigunteur à tDehonous momoint pnotre sHunutprimoir les cookies exesttunets.",
-        "note": "Désunctiver certunDuness cookies peut limceluner votre cunpuncceluné à utilester certunDuneses functivéctiunctivénunlcelunés du poutunil client, telles que rester cunctivénecté."
+        "title": "Contrôle des cookies",
+        "content": "La plupart des navigateurs acceptent les cookies automatiquement, mais vous pouvez modifier vos paramètres pour les refuser. Vous pouvez également vider le cache de votre navigateur à tout moment pour supprimer les cookies existants.",
+        "note": "La désactivation de certains cookies peut limiter votre utilisation de certaines fonctions du portail client, comme le maintien de votre connexion."
       },
       "contact": {
-        "title": "Questiunctivés ?",
-        "content": "Si vonous unvez des questiunctivés sur notre utilestuntiunctivé des cookies, notre équipe technique est prête à vonous Commoisestter à "
+        "title": "Des questions ?",
+        "content": "Si vous avez des questions sur notre utilisation des cookies, notre équipe technique est à votre disposition à l'adresse "
       }
     }
   }

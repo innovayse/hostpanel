@@ -1,11 +1,11 @@
 {
   "whatsapp": {
-    "contactUs": "Cunctivétunctez-nonous unctivé quoestunpp",
-    "tooltip": "Chunt unvec nous unctivé quoestunpp",
-    "defaultMessage": "bunctivéjnotre! I'm Dunesterested Dunes votre Services."
+    "contactUs": "Contactez-nous sur WhatsApp",
+    "tooltip": "Discutez avec nous sur WhatsApp",
+    "defaultMessage": "Bonjour ! Vos services m'intéressent."
   },
   "telegram": {
-    "contactUs": "Cunctivétunctez-nonous unctivé Telegrunm",
-    "tooltip": "moissunge nous unctivé Telegrunm"
+    "contactUs": "Contactez-nous sur Telegram",
+    "tooltip": "Écrivez-nous sur Telegram"
   }
 }

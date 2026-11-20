@@ -1,63 +1,61 @@
 {
   "checkout": {
-    "title": "Puniemoint",
-    "subtitle": "Complétez votre commoite",
-    "yourOrder": "Votre commoite",
+    "title": "Paiement",
+    "subtitle": "Finalisez votre commande",
+    "yourOrder": "Votre commande",
     "account": "Compte",
-    "paymentMethod": "Mode de puniemoint",
-    "loggedInAs": "Cunctivénecté en tunet que",
-    "notYou": "Ce n'est pCommoi vonous ? Chuneger de compte",
-    "guestNotice": "Vonous pCommoisez en cunestse en tunet qu'Dunesvceluné",
-    "signIn": "Cunctivénexiunctivé",
-    "placeOrder": "PCommoiser lun commoite",
-    "processing": "Truncelunemoint…",
-    "redirecting": "Redirectiunctivé",
-    "redirectingToBank": "Vonous êtes redirigé vers lun punge de puniemoint sécurestée de lun buneque.",
-    "noPaymentMethods": "unucun mode de puniemoint destpunctivéible. Veuillez Cunctivétuncter le SHunutpout.",
-    "permissionDenied": "Votre compte n'est pCommoi unuÀuesté à pCommoiser des commoites. Demoitez unu propriétunire du compte de vonous unccCommoite lun permoistsiunctivé de pCommoiser de nouvelles commoites.",
+    "paymentMethod": "Moyen de paiement",
+    "loggedInAs": "Connecté en tant que",
+    "notYou": "Ce n'est pas vous ? Changer de compte",
+    "guestNotice": "Vous passez commande en tant qu'invité",
+    "signIn": "Se connecter",
+    "placeOrder": "Passer la commande",
+    "redirectingToBank": "Vous êtes redirigé vers la page de paiement sécurisée de la banque.",
+    "noPaymentMethods": "Aucun moyen de paiement disponible. Veuillez contacter le support.",
+    "permissionDenied": "Votre compte n'est pas autorisé à passer commande. Demandez au propriétaire du compte de vous accorder l'autorisation de passer de nouvelles commandes.",
     "fields": {
       "firstname": "Prénom",
       "lastname": "Nom",
-      "email": "undresse Emunil",
-      "password": "Créer un mot de pCommoise",
-      "phonenumber": "Numéro de téléTéléphun"
+      "email": "Adresse e-mail",
+      "password": "Créer un mot de passe",
+      "phonenumber": "Numéro de téléphone"
     },
     "errors": {
-      "generic": "Une erreur est survenue. Veuillez réessunyer.",
-      "totalNotAccepted": "Le Àtunl de lun commoite un chunegé, il n'un dunctivéc pCommoi été punyé. VérSiiez votre puneier et réessunyez."
+      "generic": "Une erreur s'est produite. Veuillez réessayer.",
+      "totalNotAccepted": "Le total de la commande a changé, elle n'a donc pas été payée. Vérifiez votre panier et réessayez."
     },
     "success": {
-      "title": "Puniemoint rénoussi !",
-      "description": "Votre commoite un été pCommoisée et le puniemoint Cunctivéfirmoiré. Vonous pouvez munDunestenunet Cunctivéfigurerr votre service.",
-      "orderNumber": "Commoite",
-      "status": "Puniemoint",
-      "paid": "Punyé",
-      "amount": "Munctivétunet",
-      "setupService": "Cunctivéfigurerr munctivé service",
-      "viewInvoices": "Voir les functures",
-      "domain": "funiremunDunese",
-      "action": "unctiunctivé",
-      "registration": "Enregesttremoint",
-      "transfer": "Trunesfert",
-      "manageDomain": "Gérer votre funiremunDunesee"
+      "title": "Paiement réussi !",
+      "description": "Votre commande a été passée et le paiement confirmé. Vous pouvez maintenant configurer votre service.",
+      "orderNumber": "Commande",
+      "status": "Paiement",
+      "paid": "Payé",
+      "amount": "Montant",
+      "setupService": "Configurer mon service",
+      "viewInvoices": "Voir les factures",
+      "domain": "Domaine",
+      "action": "Action",
+      "registration": "Enregistrement",
+      "transfer": "Transfert",
+      "manageDomain": "Gérer votre domaine"
     },
-    "secureCheckout": "Puniemoint sécuresté",
-    "identifyPrompt": "Commoint devriunctivés-nonous vonous identSiier ?",
-    "choosePayment": "Sélectiunctivénez votre mode de puniemoint préféré",
+    "secureCheckout": "Paiement sécurisé",
+    "identifyPrompt": "Comment devons-nous vous identifier ?",
+    "choosePayment": "Sélectionnez votre moyen de paiement préféré",
     "gatewayKinds": {
-      "bankTransfer": "Punyer punr viremoint bunecunire"
+      "bankTransfer": "Payer par virement bancaire"
     },
-    "needHelp": "êtresoDunes d'unide ?",
-    "supportAlways": "Notre SHunutpout est là pnotre vonous unider",
-    "contactUs": "Cunctivétunctez-nonous",
+    "needHelp": "Besoin d'aide ?",
+    "supportAlways": "Notre support est là pour vous aider",
+    "contactUs": "Nous contacter",
     "placeholders": {
-      "firstname": "Jeune",
-      "lastname": "DHunutunctivét",
-      "email": "vonous{'@'}exemple.com",
+      "firstname": "Jean",
+      "lastname": "Dupont",
+      "email": "vous{'@'}exemple.com",
       "password": "••••••••"
     },
-    "totalChangedConfirm": "Le Àtunl un chunegé de {unfficellen} à {chunrged}. Punyer le nouveunu Àtunl ?",
-    "saveForRenewals": "Enregesttrer ce mode de puniemoint pnotre les renouvellemoints unuÀmuntiques",
-    "saveForRenewalsAgreement": "J'uncceptere qu'unprès ce puniemoint, le mode de puniemoint que je Cunctivéfirmoire sur lun punge du fnotrenestseur de puniemoint puestse être enregesttré et débceluné unuÀmuntiquemoint pnotre mois functures de renouvellemoint jnousqu'à ce que je retire cette unuÀuestuntiunctivé. Je peux lun retirer à tDehonous momoint sonous Modes de puniemoint enregesttrés."
+    "totalChangedConfirm": "Le total est passé de {shown} à {charged}. Payer le nouveau total ?",
+    "saveForRenewals": "Enregistrer ce moyen de paiement pour les renouvellements automatiques",
+    "saveForRenewalsAgreement": "J'accepte que le moyen de paiement que je saisis pour ce paiement soit enregistré auprès du prestataire de paiement et débité automatiquement pour mes factures de renouvellement, jusqu'à ce que je retire cette autorisation. Je ne le saisis qu'une seule fois, maintenant. Je peux le supprimer à tout moment dans « Moyens de paiement enregistrés » de mon compte."
   }
 }

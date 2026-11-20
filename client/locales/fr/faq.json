@@ -1,21 +1,21 @@
 {
   "faq": {
-    "badge": "FunQ",
-    "filterLabel": "Filtrer by Àpic",
-    "title": "Questiunctivés fréquentes",
-    "subtitle": "FDunesd unesnonousrs À communctivé questiunctivés À propos de Héêtrergemoint, funiremunDunesees, Functuruntiunctivé Et votre Compte",
-    "viewAll": "Voir Ànous FunQs",
-    "noResults": "No questiunctivés found Dunes ce cuntegouy.",
-    "backToAll": "Retnotre À Ànous FunQs",
+    "badge": "FAQ",
+    "filterLabel": "Filtrer par sujet",
+    "title": "Questions fréquentes",
+    "subtitle": "Trouvez des réponses aux questions courantes sur l'hébergement, les domaines, la facturation et votre compte",
+    "viewAll": "Voir toutes les questions",
+    "noResults": "Aucune question trouvée dans cette catégorie.",
+    "backToAll": "Retour à toutes les questions",
     "categories": {
-      "all": "Ànous",
-      "general": "Generunl",
-      "products": "Prodnousunctivé"
+      "all": "Toutes",
+      "general": "Général",
+      "products": "Produits"
     },
     "cta": {
-      "title": "Still unvoir Questiunctivés ?",
-      "description": "peut't fDunesd Le unesnonousr vonous're lookDunesg Pnotre? s'il vonous plunît chunt unvec notre friendly teunm.",
-      "button": "Entrer en Cunctivétunct"
+      "title": "D'autres questions ?",
+      "description": "Vous ne trouvez pas la réponse que vous cherchez ? Discutez avec notre équipe, elle sera ravie de vous aider.",
+      "button": "Nous contacter"
     }
   }
 }

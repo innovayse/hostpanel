@@ -1,0 +1,25 @@
+{
+  "whyChooseUs": {
+    "badge": "Warum wir",
+    "title": "Hosting, auf das Sie sich verlassen können",
+    "subtitle": "Schnelle Server, ehrliche Preise und ein Support-Team, das antwortet.",
+    "advantages": {
+      "fastDelivery": {
+        "title": "Schnelle Server",
+        "description": "SSD-Speicher und optimierte Server sorgen dafür, dass Ihre Seiten schnell laden."
+      },
+      "qualityGuaranteed": {
+        "title": "Zuverlässige Verfügbarkeit",
+        "description": "Redundante Infrastruktur und ständiges Monitoring halten Ihre Website online."
+      },
+      "support": {
+        "title": "Support rund um die Uhr",
+        "description": "Unser Support-Team hilft Ihnen jederzeit bei Ihrem Konto und Ihrer Website."
+      },
+      "provenResults": {
+        "title": "Das Vertrauen unserer Kunden",
+        "description": "Tausende Websites laufen täglich auf unseren Servern."
+      }
+    }
+  }
+}

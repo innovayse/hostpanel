@@ -1,0 +1,24 @@
+{
+  "cart": {
+    "title": "Ihr Warenkorb",
+    "subtitle": "Prüfen Sie Ihre ausgewählten Tarife vor dem Checkout",
+    "empty": "Ihr Warenkorb ist leer",
+    "emptyHint": "Fügen Sie einen Hosting-Tarif oder ein Produkt hinzu, um zu beginnen",
+    "browseHosting": "Hosting-Tarife ansehen",
+    "summary": "Bestellübersicht",
+    "total": "Gesamt",
+    "remove": "Entfernen",
+    "clearCart": "Warenkorb leeren",
+    "checkout": "Zur Kasse",
+    "secureCheckout": "Sicherer Checkout. Ihre Daten sind verschlüsselt.",
+    "items": "Artikel",
+    "itemsCount": "Artikel",
+    "staleCurrencyNotice": "Diese Artikel wurden in einer Währung hinzugefügt, in der Sie nicht mehr zahlen. Entfernen Sie sie und fügen Sie sie erneut hinzu, um den aktuellen Preis zu sehen.",
+    "currency": {
+      "label": "Währung",
+      "changeConfirm": "Beim Wechsel der Währung wird Ihr Warenkorb geleert, da die Preise in der neuen Währung neu angezeigt werden müssen. Fortfahren?",
+      "placeholder": "Währung auswählen"
+    },
+    "emptyDesc": "Fügen Sie einen Hosting-Tarif oder ein Produkt hinzu, um zu beginnen"
+  }
+}

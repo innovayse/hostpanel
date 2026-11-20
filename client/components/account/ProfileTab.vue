@@ -112,11 +112,12 @@ const paymentOptions = computed(() => [
 const LANGUAGE_LABEL_KEYS: Record<AppLocale, string> = {
   [AppLocale.En]: 'client.profile.langEnglish',
   [AppLocale.Ru]: 'client.profile.langRussian',
-  [AppLocale.Hy]: 'client.profile.langArmenian'
+  [AppLocale.Hy]: 'client.profile.langArmenian',
+  [AppLocale.De]: 'client.profile.langGerman'
 }
 
 /**
- * The languages the backend accepts, keyed by the codes in `LocaleOptions.SupportedLocales`.
+ * The languages the backend accepts, keyed by the codes in `LocaleOptions.SupportedLocales`: every portal language.
  * One vocabulary end to end: a language word such as "english" matches no supported locale and
  * would be served as English by accident.
  */

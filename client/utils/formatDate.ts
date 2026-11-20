@@ -8,8 +8,8 @@
  * 2. **A calendar date is not a moment.** A renewal date is a day on a bill; a ticket reply is
  *    an instant. {@link formatDate} answers the first, {@link formatDateTime} the second, and
  *    they differ in more than the presence of a clock: see the timezone note below.
- * 3. **The locale is the visitor's, not the server's.** The portal ships en/ru/hy and date-fns
- *    carries all three, so an Armenian customer reads an Armenian month name.
+ * 3. **The locale is the visitor's, not the server's.** The portal ships en/ru/hy/de and date-fns
+ *    carries every one of them, so an Armenian customer reads an Armenian month name.
  *
  * ## Timezone: why the calendar path never touches `Date` arithmetic
  *
@@ -42,15 +42,17 @@
 
 import { format, isValid, parseISO } from 'date-fns'
 // Imported from their own paths rather than the `date-fns/locale` barrel. The barrel
-// re-exports 98 locales, and Vite pre-bundles the whole of it in development: three
+// re-exports 98 locales, and Vite pre-bundles the whole of it in development: a few
 // named imports still cost all 98 modules there, which is enough to stall the first
 // page load on a slow machine. Production tree-shakes either way; this makes the two
-// agree, and states outright which three the portal actually ships.
+// agree, and states outright which languages the portal actually ships.
+import { de } from 'date-fns/locale/de'
 import { enUS } from 'date-fns/locale/en-US'
 import { hy } from 'date-fns/locale/hy'
 import { ru } from 'date-fns/locale/ru'
 import type { Locale } from 'date-fns'
 import type { AppWithI18n } from '~/types/appwithi18n'
+import { AppLocale } from '~/types/applocale'
 
 /**
  * What a date renders as when there is nothing to render.
@@ -62,11 +64,16 @@ export const EMPTY_DATE = '—'
 /**
  * The date-fns locale for each language the portal ships, keyed by `@nuxtjs/i18n` code.
  *
- * The three codes match `nuxt.config.ts`'s `i18n.locales`. Anything else, a locale added to
+ * The codes match `nuxt.config.ts`'s `i18n.locales`. Anything else, a locale added to
  * the config without a line here, resolves to `enUS` rather than throwing, because a month
  * name in the wrong language is a smaller failure than a blank service page.
  */
-const DATE_LOCALES: Record<string, Locale> = { en: enUS, ru, hy }
+const DATE_LOCALES: Record<AppLocale, Locale> = {
+  [AppLocale.En]: enUS,
+  [AppLocale.Ru]: ru,
+  [AppLocale.Hy]: hy,
+  [AppLocale.De]: de
+}
 
 /**
  * Leading `YYYY-MM-DD` of an ISO-8601 value, whether or not a time follows it.
@@ -117,7 +124,7 @@ const resolveLocale = (locale?: string): string => {
  * @returns The date-fns locale, defaulting to `enUS`.
  */
 const dateLocale = (locale?: string): Locale =>
-  DATE_LOCALES[resolveLocale(locale).split('-')[0] ?? 'en'] ?? enUS
+  DATE_LOCALES[resolveLocale(locale).split('-')[0] as AppLocale] ?? enUS
 
 /**
  * Parses a value the API sent into a `Date`, or `null` when it does not denote one.

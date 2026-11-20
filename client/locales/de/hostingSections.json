@@ -1,0 +1,114 @@
+{
+  "hostingSections": {
+    "locations": {
+      "badge": "Standorte",
+      "title": "Server in der Nähe Ihrer Besucher",
+      "subtitle": "Wählen Sie das Rechenzentrum, das Ihrer Zielgruppe am nächsten liegt, für schnellere Seiten."
+    },
+    "performance": {
+      "badge": "Leistung",
+      "title": "Geschwindigkeit und Zuverlässigkeit, die Sie messen können",
+      "subtitle": "Die Zahlen hinter jedem Hosting-Tarif.",
+      "stats": {
+        "uptime": "Verfügbarkeit",
+        "response_time": "Durchschnittliche Antwortzeit",
+        "sites_hosted": "Gehostete Websites",
+        "support_response": "Support-Antwortzeit"
+      }
+    },
+    "security": {
+      "badge": "Sicherheit",
+      "title": "Ihre Websites bleiben geschützt",
+      "subtitle": "Schutz, der in jedem Tarif enthalten ist.",
+      "features": {
+        "ssl": {
+          "title": "Kostenloses SSL",
+          "description": "Verschlüsselte Verbindungen für jede Domain, die Sie hosten."
+        },
+        "backups": {
+          "title": "Automatische Backups",
+          "description": "Regelmäßige Kopien Ihrer Dateien und Datenbanken, jederzeit wiederherstellbar."
+        },
+        "ddos": {
+          "title": "DDoS-Schutz",
+          "description": "Angriffsverkehr wird gefiltert, bevor er Ihre Website erreicht."
+        },
+        "malware": {
+          "title": "Malware-Scan",
+          "description": "Dateien werden laufend geprüft und Bedrohungen entfernt."
+        },
+        "firewall": {
+          "title": "Firewall",
+          "description": "Eine Web Application Firewall blockiert gängige Angriffe."
+        }
+      }
+    },
+    "apps": {
+      "badge": "1-Klick-Apps",
+      "title": "Beliebte Apps mit einem Klick installieren",
+      "subtitle": "Starten Sie eine Website, ohne die Kommandozeile zu berühren.",
+      "count": "{count} Apps sofort installierbar",
+      "categories": {
+        "cms": "Content-Management",
+        "shop": "Online-Shops",
+        "forum": "Foren",
+        "wiki": "Wikis",
+        "blog": "Blogs",
+        "gallery": "Galerien"
+      }
+    },
+    "guarantees": {
+      "badge": "Garantien",
+      "title": "Hosting, dem Sie vertrauen können",
+      "subtitle": "Klare Zusagen, keine Überraschungen.",
+      "items": {
+        "free_migration": {
+          "title": "Kostenlose Migration",
+          "description": "Wir ziehen Ihre bestehende Website kostenlos zu uns um."
+        },
+        "money_back": {
+          "title": "{days} Tage Geld-zurück-Garantie",
+          "description": "Nicht zufrieden innerhalb von {days} Tagen? Sie erhalten eine vollständige Erstattung."
+        },
+        "no_hidden_fees": {
+          "title": "Keine versteckten Kosten",
+          "description": "Der angezeigte Preis ist der Preis, den Sie zahlen."
+        }
+      }
+    },
+    "support": {
+      "badge": "Support",
+      "title": "Echte Menschen, die Ihnen helfen",
+      "subtitle": "Erreichen Sie das Team auf dem Weg, der Ihnen passt.",
+      "responseTime": "Antwort innerhalb von {time}",
+      "channels": {
+        "chat": {
+          "title": "Live-Chat",
+          "description": "Stellen Sie eine Frage und erhalten Sie sofort eine Antwort.",
+          "action": "Chat öffnen"
+        },
+        "ticket": {
+          "title": "Support-Ticket",
+          "description": "Beschreiben Sie das Problem, wir verfolgen es bis zur Lösung.",
+          "action": "Ticket erstellen"
+        },
+        "email": {
+          "title": "E-Mail",
+          "description": "Schreiben Sie uns jederzeit.",
+          "action": "E-Mail senden"
+        },
+        "phone": {
+          "title": "Telefon",
+          "description": "Sprechen Sie mit jemandem aus dem Team.",
+          "action": "Jetzt anrufen"
+        }
+      }
+    },
+    "plans": {
+      "badge": "Hosting und Domains",
+      "title": "Alles, was Ihre Website braucht",
+      "subtitle": "Hosting-Tarife, Domains und mehr, mit klaren Preisen.",
+      "viewAll": "Alle Tarife ansehen"
+    }
+  }
+}

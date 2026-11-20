@@ -1,0 +1,83 @@
+{
+  "seo": {
+    "home": {
+      "title": "{site}: Webhosting, Domains und Server {'|'} Kundenportal",
+      "h1": "Webhosting, Domains und Server mit Self-Service-Kundenportal",
+      "description": "{site} bietet Webhosting, Domain-Registrierung, VPS und dedizierte Server mit automatischer Einrichtung, Online-Abrechnung und einem Kundenportal für Services, Rechnungen und Support.",
+      "keywords": "Webhosting, Domain-Registrierung, VPS, dedizierte Server, SSL-Zertifikate, Kundenportal, Online-Abrechnung, Hosting-Control-Panel"
+    },
+    "contact": {
+      "title": "Kontakt: Nehmen Sie Verbindung auf {'|'} {site}",
+      "description": "Kontaktieren Sie {site} bei Fragen zu Hosting, Domains, Servern oder Abrechnung. E-Mail: contact{'@'}yourdomain.com, Telefon: +1 000 000 0000.",
+      "keywords": "{site} kontaktieren, Hosting-Support, Fragen zur Abrechnung, Domain-Hilfe, Vertriebsanfrage"
+    },
+    "products": {
+      "title": "Hosting-, Server- und Domain-Services {'|'} {site}",
+      "description": "Entdecken Sie die Hosting-Tarife, Server, Domains und Zusatzservices von {site}. Bestellen Sie online und verwalten Sie alles in Ihrem Kundenportal.",
+      "keywords": "Hosting-Services, VPS, dedizierte Server, Domains, SSL-Zertifikate, Zusatzservices, online bestellen"
+    },
+    "faq": {
+      "title": "FAQ: Häufig gestellte Fragen {'|'} {site}",
+      "description": "Antworten auf häufige Fragen zu Hosting, Domains, Servern, Abrechnung und Ihrem Kundenkonto bei {site}.",
+      "keywords": "FAQ, Hosting-Fragen, Domain-Fragen, Abrechnung, Rechnungen, Support, Kundenkonto"
+    },
+    "faqCategory": {
+      "general": {
+        "title": "Allgemeine FAQ: Häufige Fragen {'|'} {site}",
+        "h1": "Allgemeine Fragen",
+        "description": "Antworten auf die häufigsten Fragen zu Bestellung, Abrechnung, Kundenkonto und Support.",
+        "keywords": "allgemeine FAQ, Bestellung, Abrechnung, Kundenkonto, Support, Erste Schritte"
+      },
+      "products": {
+        "title": "FAQ zu Hosting und Services: Tarife und Einrichtung {'|'} {site}",
+        "h1": "Fragen zu Hosting und Services",
+        "description": "Antworten auf Fragen zu Hosting-Tarifen, Domains, Servern, Preisen, Einrichtung und Verlängerungen.",
+        "keywords": "Hosting-FAQ, Domain-FAQ, Serverfragen, Preise, Einrichtung, Verlängerungen"
+      }
+    },
+    "hosting": {
+      "title": "Webhosting-Tarife: Schnelles & zuverlässiges Hosting {'|'} {site}",
+      "description": "Wählen Sie den passenden Webhosting-Tarif für Ihre Website. SSD-Speicher, kostenloses SSL-Zertifikat und Experten-Support. Online bestellen und automatisch einrichten lassen.",
+      "keywords": "Webhosting, SSD-Hosting, Cloud-Hosting, Webhosting-Tarife, Managed Hosting, SSL-Hosting, Hosting-Control-Panel"
+    },
+    "hostingPlan": {
+      "named": "{name}: Webhosting-Tarif {'|'} {site}",
+      "title": "Details zum Hosting-Tarif {'|'} {site}",
+      "description": "Alle Details zu unserem Hosting-Tarif. SSD-Speicher, kostenloses SSL, hohe Leistung und Support inklusive.",
+      "keywords": "Hosting-Tarif, Webhosting, SSD-Speicher, SSL-Zertifikat, Managed Hosting"
+    },
+    "domains": {
+      "title": "Domain-Registrierung & Transfer {'|'} {site}",
+      "description": "Registrieren oder transferieren Sie Ihre Domain. Suchen Sie TLDs wie .com, .net und .org und verwalten Sie DNS und Verlängerungen im Kundenportal.",
+      "keywords": "Domain-Registrierung, Domain-Transfer, Domain kaufen, Domainsuche, Domain-Verlängerung, DNS-Verwaltung, WHOIS-Datenschutz"
+    },
+    "legal": {
+      "aup": {
+        "title": "Richtlinie zur akzeptablen Nutzung {'|'} {site}",
+        "description": "Informieren Sie sich über die Richtlinien zur akzeptablen Nutzung der Hosting-, Server- und Domain-Services von {site}."
+      },
+      "privacy": {
+        "title": "Datenschutzerklärung {'|'} {site}",
+        "description": "Erfahren Sie, wie {site} Ihre personenbezogenen Daten erhebt, verwendet und schützt. Lesen Sie unsere Datenschutzerklärung zu den Details der Datenverarbeitung."
+      },
+      "refund": {
+        "title": "Erstattungs- & Kündigungsrichtlinie {'|'} {site}",
+        "description": "Informieren Sie sich über die Erstattungs- und Kündigungsrichtlinien für die Hosting-, Server- und Domain-Services von {site}."
+      },
+      "terms": {
+        "title": "Nutzungsbedingungen {'|'} {site}",
+        "description": "Lesen Sie unsere Nutzungsbedingungen, um die Regeln und Richtlinien für die Nutzung der Services von {site} zu verstehen."
+      },
+      "cookies": {
+        "title": "Cookie-Richtlinie {'|'} {site}",
+        "description": "Erfahren Sie, wie {site} Cookies verwendet, um Ihr Surferlebnis zu verbessern, was Cookies sind und wie Sie Ihre Cookie-Einstellungen verwalten.",
+        "ogDescription": "Erfahren Sie, wie {site} Cookies auf unserer Website verwendet und wie Sie Ihre Einstellungen verwalten können.",
+        "twitterDescription": "So verwenden wir Cookies auf unserer Website"
+      }
+    },
+    "about": {
+      "title": "Über uns {'|'} {site}",
+      "description": "Wer {site} ist, was das Unternehmen tut und wie Sie das Team erreichen."
+    }
+  }
+}

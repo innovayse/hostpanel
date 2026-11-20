@@ -50,6 +50,11 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
         {
             text.Should().MatchRegex("[԰-֏]");
         }
+
+        if (language is "de" or "es")
+        {
+            text.Should().NotContain("bank transfer");
+        }
     }
 
     /// <summary>The client mail prints the amount, the reference and every bank detail that is set, and skips the ones that are not.</summary>
@@ -59,6 +64,8 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task Details_PrintsTheReferenceTheAmountAndOnlyTheDetailsThatAreSet(string language)
     {
         using var scope = factory.Services.CreateScope();
@@ -86,6 +93,8 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task RequestedAdmin_NamesTheInvoiceTheClientTheReferenceAndTheAmount(string language)
     {
         using var scope = factory.Services.CreateScope();
@@ -107,6 +116,8 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task Confirmed_PrintsTheReferenceAndTheAmount(string language)
     {
         using var scope = factory.Services.CreateScope();
@@ -127,6 +138,8 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task Rejected_PrintsTheReasonEscapedAndTheReference(string language)
     {
         using var scope = factory.Services.CreateScope();

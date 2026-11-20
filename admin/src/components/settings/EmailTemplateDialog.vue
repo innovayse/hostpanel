@@ -18,8 +18,8 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { filledLocales } from '@/lib/storefrontTranslations'
-import { MessageLanguage } from '@/locales/messages'
+import { blankTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -39,13 +39,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** Emitted on submit with the language on screen, its stored version id (null when new) and its words. */
-  save: [language: MessageLanguage, existingId: number | null, content: EmailTemplateContent]
+  save: [language: ContentLanguage, existingId: number | null, content: EmailTemplateContent]
   /** Emitted when the user closes or cancels the dialog. */
   close: []
 }>()
 
 /** The language whose version is on screen. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /**
  * Creates the words of a language with no stored version.
@@ -55,18 +55,14 @@ const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
 const blank = (): EmailTemplateContent => ({ subject: '', body: '', description: null })
 
 /** The words of each language being edited. */
-const forms = reactive<Record<MessageLanguage, EmailTemplateContent>>({
-  [MessageLanguage.En]: blank(),
-  [MessageLanguage.Ru]: blank(),
-  [MessageLanguage.Hy]: blank(),
-})
+const forms = reactive<Record<ContentLanguage, EmailTemplateContent>>(blankTranslations(blank))
 
 /** Whether each language has a subject written, for the markers on the tabs. */
 const filled = computed(() => filledLocales(forms, (form) => form.subject.trim() !== ''))
 
 /** Fills every tab from the stored versions, blank where a language has none. */
 watch(() => props.versions, (versions) => {
-  for (const language of Object.values(MessageLanguage)) {
+  for (const language of Object.values(ContentLanguage)) {
     const stored = versions.find((v) => v.language === language)
     forms[language] = stored
       ? { subject: stored.subject, body: stored.body, description: stored.description }
@@ -93,7 +89,7 @@ const handleSubmit = (): void => {
 <template>
   <UiDialog :title="slug" size="xl" @close="emit('close')">
     <UiForm stacked data-testid="email-template-form" @submit="handleSubmit">
-      <UiLocalizedField v-model="activeLocale" :filled="filled" testid="email-template-tab" />
+      <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="email-template-tab" />
 
       <UiText v-if="!activeVersion" tone="muted" size="sm" data-testid="email-template-missing">
         {{ t('settings.emailTemplates.missingVersion') }}

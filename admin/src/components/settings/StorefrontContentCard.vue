@@ -9,7 +9,7 @@
  */
 import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
+import { useLocalizedSettingDrafts, SETTING_LOCALES } from '@/composables/useLocalizedSettingDrafts'
 import type { LocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import type { SettingDraft } from '@/composables/useSettingDraft'
@@ -272,6 +272,7 @@ const localizedOf = (group: StorefrontGroup): LocalizedStorefrontField[] => LOCA
         :key="field.testid"
         :label="t(field.labelKey)"
         :hint="t('settings.storefrontContent.localeFallbackHint')"
+        :locales="SETTING_LOCALES"
         :filled="field.localized.filled.value"
         :errors="field.localized.errors.value"
         :testid="`storefront-${field.testid}-tab`"

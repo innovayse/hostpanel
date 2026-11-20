@@ -13,7 +13,7 @@ namespace Innovayse.Hostpanel.Application.Projects.Commands.UpdateProject;
 /// <param name="ImageUrls">The project's image URLs, in display order.</param>
 /// <param name="SortOrder">Display order (ascending).</param>
 /// <param name="IsActive">Whether the project is shown on the storefront.</param>
-/// <param name="Translations">Per-locale translations keyed by locale code (<c>en</c>, <c>ru</c>, <c>hy</c>).</param>
+/// <param name="Translations">Per-locale translations keyed by locale code (<c>en</c>, <c>ru</c>, <c>hy</c>, <c>de</c>, <c>es</c>).</param>
 public sealed record UpdateProjectCommand(
     int Id,
     string Slug,

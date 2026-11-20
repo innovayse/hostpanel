@@ -1250,7 +1250,7 @@
     <value>Provide at least one translation.</value>
   </data>
   <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
-    <value>A translation can only be given for a supported language: en, ru or hy.</value>
+    <value>A translation can only be given for a supported language: en, ru, hy, de or es.</value>
   </data>
   <data name="ContentDefaultTranslationRequired" xml:space="preserve">
     <value>A translation in the default language (en) is required.</value>

@@ -1,0 +1,1786 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Neutral (English) error messages, the key list for this product.
+    A key missing from every file resolves to the key name itself, which is how an
+    untranslated message shows up as SCREAMING text rather than silently as English.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ContactEmailInvalid" xml:space="preserve">
+    <value>Die E-Mail-Adresse muss gültig sein.</value>
+    <comment>SendContactMessageHandler.</comment>
+  </data>
+  <data name="ContactFieldRequired" xml:space="preserve">
+    <value>{0} ist erforderlich.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label.</comment>
+  </data>
+  <data name="ContactFieldTooLong" xml:space="preserve">
+    <value>{0} darf höchstens {1} Zeichen lang sein.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label, {1} the limit.</comment>
+  </data>
+  <data name="ContactFieldName" xml:space="preserve">
+    <value>Name</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldEmail" xml:space="preserve">
+    <value>E-Mail</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldMessage" xml:space="preserve">
+    <value>Nachricht</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldPhone" xml:space="preserve">
+    <value>Telefon</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldService" xml:space="preserve">
+    <value>Leistung</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldSubmittedAt" xml:space="preserve">
+    <value>Gesendet am</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="InvalidFilterValue" xml:space="preserve">
+    <value>Ungültiger Filterwert: {0}.</value>
+    <comment>GetMigrationLogsValidator. {0} is the value submitted for the action or entity-type filter.</comment>
+  </data>
+  <data name="MigrationJobIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Migrationsauftrag an.</value>
+  </data>
+  <data name="MigrationSelectionRequired" xml:space="preserve">
+    <value>Wählen Sie aus, welche Daten exportiert werden sollen.</value>
+  </data>
+  <data name="MigrationSourceUrlRequired" xml:space="preserve">
+    <value>Geben Sie die Adresse des Quellsystems ein.</value>
+  </data>
+  <data name="MigrationSourceUrlInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige absolute URL ein.</value>
+  </data>
+<data name="CurrencyCodeInvalid" xml:space="preserve">
+    <value>Der Währungscode muss ein dreibuchstabiger ISO-4217-Code sein.</value>
+  </data>
+<data name="TwoFactorCodeInvalid" xml:space="preserve">
+    <value>Geben Sie den sechsstelligen Code aus Ihrer Authenticator-App ein.</value>
+  </data>
+<data name="CurrencyNumericInvalid" xml:space="preserve">
+    <value>Der numerische Währungscode muss ein dreistelliger ISO-4217-Code sein.</value>
+  </data>
+<data name="CurrencyAffixInvalid" xml:space="preserve">
+    <value>Ein Währungspräfix und -suffix sind erforderlich und dürfen höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="CurrencyDecimalsInvalid" xml:space="preserve">
+    <value>Die Nachkommastellen der Währung müssen zwischen 0 und {0} liegen.</value>
+  </data>
+<data name="CurrencyRateInvalid" xml:space="preserve">
+    <value>Der Kurs zur Basiswährung muss größer als null sein.</value>
+  </data>
+<data name="CurrenciesRequired" xml:space="preserve">
+    <value>Geben Sie mindestens eine zu aktualisierende Währung an.</value>
+  </data>
+<data name="InvoiceIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Rechnung an.</value>
+  </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Erfüllungsdatensatz an.</value>
+  </data>
+<data name="InvoiceClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Kunden für die Rechnung an.</value>
+  </data>
+<data name="InvoiceDueDateInPast" xml:space="preserve">
+    <value>'Fälligkeitsdatum' darf nicht in der Vergangenheit liegen.</value>
+  </data>
+<data name="InvoiceItemsRequired" xml:space="preserve">
+    <value>Fügen Sie mindestens eine Position hinzu.</value>
+  </data>
+<data name="InvoiceItemDescriptionInvalid" xml:space="preserve">
+    <value>Eine Position benötigt eine Beschreibung mit höchstens {0} Zeichen.</value>
+  </data>
+<data name="InvoiceItemUnitPriceInvalid" xml:space="preserve">
+    <value>Der Einzelpreis einer Position darf nicht negativ sein.</value>
+  </data>
+<data name="InvoiceItemQuantityInvalid" xml:space="preserve">
+    <value>Die Menge einer Position muss mindestens 1 betragen.</value>
+  </data>
+<data name="InvoiceNotesTooLong" xml:space="preserve">
+    <value>Notizen dürfen höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="InvoiceTaxRateInvalid" xml:space="preserve">
+    <value>Der Steuersatz muss zwischen 0 und 100 liegen.</value>
+  </data>
+<data name="InvoicePaymentMethodTooLong" xml:space="preserve">
+    <value>Die Zahlungsart darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="QuoteIdInvalid" xml:space="preserve">
+    <value>Geben Sie ein gültiges Angebot an.</value>
+  </data>
+<data name="QuoteClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Kunden für das Angebot an.</value>
+  </data>
+<data name="QuoteSubjectInvalid" xml:space="preserve">
+    <value>Ein Angebot benötigt einen Betreff mit höchstens {0} Zeichen.</value>
+  </data>
+<data name="QuoteStageInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Angebotsphase an.</value>
+  </data>
+<data name="QuoteValidityInvalid" xml:space="preserve">
+    <value>Geben Sie an, ob die Angebote gültig oder abgelaufen sind.</value>
+  </data>
+<data name="QuoteItemsRequired" xml:space="preserve">
+    <value>Fügen Sie mindestens eine Position hinzu.</value>
+  </data>
+<data name="QuoteItemDescriptionInvalid" xml:space="preserve">
+    <value>Eine Position benötigt eine Beschreibung mit höchstens {0} Zeichen.</value>
+  </data>
+<data name="QuoteItemUnitPriceInvalid" xml:space="preserve">
+    <value>Der Einzelpreis einer Position darf nicht negativ sein.</value>
+  </data>
+<data name="QuoteItemQuantityInvalid" xml:space="preserve">
+    <value>Die Menge einer Position muss mindestens 1 betragen.</value>
+  </data>
+<data name="QuoteItemDiscountInvalid" xml:space="preserve">
+    <value>Der Rabatt einer Position muss zwischen 0 und 100 liegen.</value>
+  </data>
+<data name="BillableItemIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen abrechenbaren Posten an.</value>
+  </data>
+<data name="BillableItemClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Kunden für die Abrechnung an.</value>
+  </data>
+<data name="BillableItemDescriptionInvalid" xml:space="preserve">
+    <value>Ein abrechenbarer Posten benötigt eine Beschreibung mit höchstens {0} Zeichen.</value>
+  </data>
+<data name="BillableItemAmountInvalid" xml:space="preserve">
+    <value>Der Betrag eines abrechenbaren Postens darf nicht negativ sein.</value>
+  </data>
+<data name="BillableItemCurrencyInvalid" xml:space="preserve">
+    <value>Der Währungscode muss ein dreibuchstabiger ISO-4217-Code sein.</value>
+  </data>
+<data name="BillableItemTypeInvalid" xml:space="preserve">
+    <value>Der Typ muss OneTime oder Recurring sein.</value>
+  </data>
+<data name="BillableItemRecurringPeriodRequired" xml:space="preserve">
+    <value>Geben Sie für einen wiederkehrenden Posten einen Wiederholungszeitraum an.</value>
+  </data>
+<data name="InvoiceSelectedItemsRequired" xml:space="preserve">
+    <value>Geben Sie mindestens einen abrechenbaren Posten für die Rechnung an.</value>
+  </data>
+<data name="TimeBillingEntriesRequired" xml:space="preserve">
+    <value>Fügen Sie mindestens einen Zeiteintrag hinzu.</value>
+  </data>
+<data name="TimeBillingDescriptionInvalid" xml:space="preserve">
+    <value>Ein Zeiteintrag benötigt eine Beschreibung mit höchstens {0} Zeichen.</value>
+  </data>
+<data name="TimeBillingHoursInvalid" xml:space="preserve">
+    <value>Die Stunden eines Zeiteintrags müssen größer als null sein.</value>
+  </data>
+<data name="TimeBillingRateInvalid" xml:space="preserve">
+    <value>Der Satz eines Zeiteintrags darf nicht negativ sein.</value>
+  </data>
+<data name="TransactionClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Kunden für die Transaktion an.</value>
+  </data>
+<data name="TransactionDirectionInvalid" xml:space="preserve">
+    <value>Geben Sie an, ob es sich bei den Transaktionen um Einnahmen oder Ausgaben handelt.</value>
+  </data>
+<data name="TransactionAmountInvalid" xml:space="preserve">
+    <value>Der gesuchte Betrag muss größer als null sein.</value>
+  </data>
+<data name="TransactionPaymentMethodTooLong" xml:space="preserve">
+    <value>Die Zahlungsart darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="TransactionDescriptionInvalid" xml:space="preserve">
+    <value>Eine Transaktion benötigt eine Beschreibung mit höchstens {0} Zeichen.</value>
+  </data>
+<data name="TransactionPaymentMethodInvalid" xml:space="preserve">
+    <value>Geben Sie die verwendete Zahlungsart an.</value>
+  </data>
+<data name="TransactionAmountInInvalid" xml:space="preserve">
+    <value>Der gutgeschriebene Betrag darf nicht negativ sein.</value>
+  </data>
+<data name="TransactionAmountOutInvalid" xml:space="preserve">
+    <value>Der belastete Betrag darf nicht negativ sein.</value>
+  </data>
+<data name="TransactionFeesInvalid" xml:space="preserve">
+    <value>Gebühren dürfen nicht negativ sein.</value>
+  </data>
+<data name="TransactionAmountRequired" xml:space="preserve">
+    <value>Mindestens einer der Beträge (gutgeschrieben oder belastet) muss größer als null sein.</value>
+  </data>
+<data name="TransactionIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Transaktion an.</value>
+  </data>
+<data name="InvoicePaymentGatewayInvalid" xml:space="preserve">
+    <value>Geben Sie das verwendete Zahlungsgateway an (höchstens {0} Zeichen).</value>
+  </data>
+<data name="InvoicePaymentTransactionIdInvalid" xml:space="preserve">
+    <value>Geben Sie die externe Transaktionsreferenz an (höchstens {0} Zeichen).</value>
+  </data>
+<data name="InvoicePaymentAmountInvalid" xml:space="preserve">
+    <value>Der Zahlungsbetrag muss größer als null sein.</value>
+  </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>Eine Begründung ist erforderlich und darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="InvoicePaymentNotesInvalid" xml:space="preserve">
+    <value>Notizen dürfen höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="InvoiceCreditAmountInvalid" xml:space="preserve">
+    <value>Der Gutschriftsbetrag muss größer als null sein.</value>
+  </data>
+<data name="InvoiceRefundAmountInvalid" xml:space="preserve">
+    <value>Der Erstattungsbetrag darf nicht negativ sein; bei null wird die gesamte ursprüngliche Transaktion erstattet.</value>
+  </data>
+<data name="InvoiceRefundTypeInvalid" xml:space="preserve">
+    <value>Die Erstattungsart muss Gateway, Manual oder CreditBalance sein.</value>
+  </data>
+<data name="InvoiceRefundGatewayInvalid" xml:space="preserve">
+    <value>Geben Sie für eine Gateway- oder manuelle Erstattung das Zahlungsgateway an.</value>
+  </data>
+<data name="InvoiceRefundGatewayMaxLengthInvalid" xml:space="preserve">
+    <value>Der Gateway-Name darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="InvoiceRefundTransactionIdRequiredInvalid" xml:space="preserve">
+    <value>Geben Sie für eine manuelle Erstattung die externe Erstattungsreferenz an.</value>
+  </data>
+<data name="InvoiceRefundNotesInvalid" xml:space="preserve">
+    <value>Notizen dürfen höchstens {0} Zeichen lang sein.</value>
+  </data>
+<data name="BulkInvoiceActionIdsRequired" xml:space="preserve">
+    <value>Geben Sie mindestens eine Rechnung für die Aktion an.</value>
+  </data>
+<data name="BulkInvoiceActionIdInvalid" xml:space="preserve">
+    <value>Jede Rechnungs-ID muss gültig sein.</value>
+  </data>
+<data name="BulkInvoiceActionNameInvalid" xml:space="preserve">
+    <value>Die Aktion muss eine der folgenden sein: MarkPaid, MarkUnpaid, MarkCancelled, Duplicate, Delete.</value>
+  </data>
+<data name="TicketIdInvalid" xml:space="preserve">
+    <value>Die Ticket-ID muss eine positive Zahl sein.</value>
+  </data>
+<data name="TicketClientIdInvalid" xml:space="preserve">
+    <value>Die Kunden-ID muss eine positive Zahl sein.</value>
+  </data>
+<data name="TicketDepartmentIdInvalid" xml:space="preserve">
+    <value>Die Abteilungs-ID muss eine positive Zahl sein.</value>
+  </data>
+<data name="TicketDepartmentRequired" xml:space="preserve">
+    <value>Wählen Sie eine Abteilung aus.</value>
+  </data>
+<data name="TicketStaffIdInvalid" xml:space="preserve">
+    <value>Die Mitarbeiter-ID muss eine positive Zahl sein.</value>
+  </data>
+<data name="TicketSubjectRequired" xml:space="preserve">
+    <value>Der Betreff ist erforderlich und darf höchstens 255 Zeichen lang sein.</value>
+  </data>
+<data name="TicketMessageRequired" xml:space="preserve">
+    <value>Die Nachricht ist erforderlich.</value>
+  </data>
+<data name="TicketPriorityInvalid" xml:space="preserve">
+    <value>Die Priorität muss eine der folgenden sein: Low, Medium, High.</value>
+  </data>
+<data name="TicketStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Open, AwaitingReply, Closed.</value>
+  </data>
+<data name="TicketTagRequired" xml:space="preserve">
+    <value>Das Tag ist erforderlich und darf höchstens 64 Zeichen lang sein.</value>
+  </data>
+<data name="TicketIdsRequired" xml:space="preserve">
+    <value>Mindestens eine Ticket-ID ist erforderlich.</value>
+  </data>
+<data name="TicketBulkActionInvalid" xml:space="preserve">
+    <value>Die Aktion muss eine der folgenden sein: close, delete, flag, unflag.</value>
+  </data>
+<data name="TicketRatingInvalid" xml:space="preserve">
+    <value>Die Bewertung muss zwischen 1 und 10 liegen.</value>
+  </data>
+<data name="TicketFeedbackLeftByRequired" xml:space="preserve">
+    <value>Der Name der Person, die das Feedback abgegeben hat, ist erforderlich.</value>
+  </data>
+  <data name="DomainClientIdRequired" xml:space="preserve">
+    <value>Die Kunden-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="DomainNameRequired" xml:space="preserve">
+    <value>Der Domainname muss ein gültiger vollqualifizierter Domainname sein (z. B. 'example.com').</value>
+  </data>
+  <data name="DomainYearsRange" xml:space="preserve">
+    <value>Die Laufzeit in Jahren muss zwischen 1 und 10 liegen.</value>
+  </data>
+  <data name="DomainIdRequired" xml:space="preserve">
+    <value>Die Domain-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="AutoRenewValueRequired" xml:space="preserve">
+    <value>Der Wert für die automatische Verlängerung ist erforderlich: Senden Sie true oder false.</value>
+  </data>
+  <data name="RegistrarLockValueRequired" xml:space="preserve">
+    <value>Der Wert für die Registrar-Sperre ist erforderlich: Senden Sie true oder false.</value>
+  </data>
+  <data name="WhoisPrivacyValueRequired" xml:space="preserve">
+    <value>Der Wert für den WHOIS-Datenschutz ist erforderlich: Senden Sie true oder false.</value>
+  </data>
+  <data name="DomainEppCodeRequired" xml:space="preserve">
+    <value>Der EPP-/Autorisierungscode muss mindestens 6 Zeichen lang sein.</value>
+  </data>
+  <data name="DomainStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
+  </data>
+  <data name="DomainListRegistrarInvalid" xml:space="preserve">
+    <value>Der Registrar muss einer der folgenden sein: NameAm, Namecheap.</value>
+  </data>
+  <data name="EmailLogPageRequired" xml:space="preserve">
+    <value>Die Seite muss 1 oder größer sein.</value>
+  </data>
+  <data name="EmailLogPageSizeRange" xml:space="preserve">
+    <value>Die Seitengröße muss zwischen 1 und 100 liegen.</value>
+  </data>
+  <data name="TicketPeriodInvalid" xml:space="preserve">
+    <value>Der Zeitraum ist kein bekannter Berichtszeitraum.</value>
+  </data>
+  <data name="GatewayLogResultInvalid" xml:space="preserve">
+    <value>Das Ergebnis muss eines der folgenden sein: Payment, Refund, Credit, Pending.</value>
+  </data>
+  <data name="KbArticleIdInvalid" xml:space="preserve">
+    <value>Die Artikel-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="KbArticleTitleRequired" xml:space="preserve">
+    <value>Der Titel ist erforderlich.</value>
+  </data>
+  <data name="KbArticleContentRequired" xml:space="preserve">
+    <value>Der Inhalt ist erforderlich.</value>
+  </data>
+  <data name="KbArticleTitleTooLong" xml:space="preserve">
+    <value>Der Titel darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="KbArticleSlugInvalid" xml:space="preserve">
+    <value>Die Artikeladresse ist ungültig.</value>
+  </data>
+  <data name="KbArticleCategoryTooLong" xml:space="preserve">
+    <value>Die Kategorie darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="KbCategoryIdInvalid" xml:space="preserve">
+    <value>Die Kategorie-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="KbCategoryNameRequired" xml:space="preserve">
+    <value>Der Name ist erforderlich.</value>
+  </data>
+  <data name="KbCategoryDescriptionRequired" xml:space="preserve">
+    <value>Die Beschreibung ist erforderlich.</value>
+  </data>
+  <data name="KbCategoryParentIdInvalid" xml:space="preserve">
+    <value>Die ID der übergeordneten Kategorie muss eine positive Zahl sein.</value>
+  </data>
+  <data name="AnnouncementIdInvalid" xml:space="preserve">
+    <value>Die Ankündigungs-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="AnnouncementTitleRequired" xml:space="preserve">
+    <value>Der Titel ist erforderlich.</value>
+  </data>
+  <data name="AnnouncementContentRequired" xml:space="preserve">
+    <value>Der Inhalt ist erforderlich.</value>
+  </data>
+  <data name="NetworkIssueIdInvalid" xml:space="preserve">
+    <value>Die ID der Netzwerkstörung muss eine positive Zahl sein.</value>
+  </data>
+  <data name="NetworkIssueTitleRequired" xml:space="preserve">
+    <value>Der Titel ist erforderlich.</value>
+  </data>
+  <data name="NetworkIssueTypeInvalid" xml:space="preserve">
+    <value>Der Typ muss einer der folgenden sein: Server, Other.</value>
+  </data>
+  <data name="NetworkIssuePriorityInvalid" xml:space="preserve">
+    <value>Die Priorität muss eine der folgenden sein: Low, Medium, High, Critical.</value>
+  </data>
+  <data name="NetworkIssueStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Reported, Investigating, Scheduled, Resolved.</value>
+  </data>
+  <data name="NetworkIssueDescriptionRequired" xml:space="preserve">
+    <value>Die Beschreibung ist erforderlich.</value>
+  </data>
+  <data name="DnsRecordIdRequired" xml:space="preserve">
+    <value>Die DNS-Eintrags-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="DnsHostRequired" xml:space="preserve">
+    <value>Der Host des Eintrags ist erforderlich.</value>
+  </data>
+  <data name="DnsValueRequired" xml:space="preserve">
+    <value>Der Wert des Eintrags ist erforderlich.</value>
+  </data>
+  <data name="DnsTtlPositive" xml:space="preserve">
+    <value>Die TTL muss größer als 0 sein.</value>
+  </data>
+  <data name="DnsPriorityRequiredForMxSrv" xml:space="preserve">
+    <value>Die Priorität muss bei MX- und SRV-Einträgen größer als 0 sein.</value>
+  </data>
+  <data name="EmailForwardingRuleIdRequired" xml:space="preserve">
+    <value>Die ID der E-Mail-Weiterleitungsregel muss eine positive Zahl sein.</value>
+  </data>
+  <data name="EmailForwardingSourceRequired" xml:space="preserve">
+    <value>Der Quell-Alias ist erforderlich.</value>
+  </data>
+  <data name="EmailForwardingDestinationRequired" xml:space="preserve">
+    <value>Die Ziel-E-Mail-Adresse ist erforderlich.</value>
+  </data>
+  <data name="EmailForwardingDestinationInvalid" xml:space="preserve">
+    <value>Das Ziel muss eine gültige E-Mail-Adresse sein.</value>
+  </data>
+  <data name="TldConfigIdRequired" xml:space="preserve">
+    <value>Die TLD-Konfigurations-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="TldExtensionRequired" xml:space="preserve">
+    <value>Die TLD-Endung ist erforderlich.</value>
+  </data>
+  <data name="TldRegistrarModuleRequired" xml:space="preserve">
+    <value>Das Registrar-Modul ist erforderlich.</value>
+  </data>
+  <data name="TldCurrencyInvalid" xml:space="preserve">
+    <value>Der Währungscode muss aus 3 Buchstaben bestehen.</value>
+  </data>
+  <data name="TldSellCurrencyInvalid" xml:space="preserve">
+    <value>Der Verkaufswährungscode muss aus 3 Buchstaben bestehen.</value>
+  </data>
+  <data name="TldSortOrderInvalid" xml:space="preserve">
+    <value>Die Sortierreihenfolge darf nicht negativ sein.</value>
+  </data>
+  <data name="DomainNameserversMinimumTwo" xml:space="preserve">
+    <value>Es sind mindestens 2 Nameserver erforderlich.</value>
+  </data>
+  <data name="DomainContactRequired" xml:space="preserve">
+    <value>Die Kontaktdaten des Domaininhabers sind erforderlich.</value>
+  </data>
+  <data name="DomainContactFirstNameRequired" xml:space="preserve">
+    <value>Der Vorname des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactLastNameRequired" xml:space="preserve">
+    <value>Der Nachname des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactEmailRequired" xml:space="preserve">
+    <value>Die E-Mail-Adresse des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactEmailInvalid" xml:space="preserve">
+    <value>Die E-Mail-Adresse des Domaininhabers muss gültig sein.</value>
+  </data>
+  <data name="DomainContactPhoneRequired" xml:space="preserve">
+    <value>Die Telefonnummer des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactAddress1Required" xml:space="preserve">
+    <value>Die Straße des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactCityRequired" xml:space="preserve">
+    <value>Der Ort des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactStateRequired" xml:space="preserve">
+    <value>Das Bundesland bzw. die Provinz des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactPostalCodeRequired" xml:space="preserve">
+    <value>Die Postleitzahl des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="DomainContactCountryRequired" xml:space="preserve">
+    <value>Der Ländercode des Domaininhabers ist erforderlich.</value>
+  </data>
+  <data name="OrderIdInvalid" xml:space="preserve">
+    <value>Die Bestell-ID muss größer als null sein.</value>
+  </data>
+  <data name="OrderItemIdInvalid" xml:space="preserve">
+    <value>Die ID der Bestellposition muss größer als null sein.</value>
+  </data>
+  <data name="OrderLineOutcomeInvalid" xml:space="preserve">
+    <value>Das Ergebnis der Bestellposition muss Fulfilled oder Failed sein.</value>
+  </data>
+  <data name="OrderLineAttemptInvalid" xml:space="preserve">
+    <value>Der Versuch der Bestellposition muss größer als null sein.</value>
+  </data>
+  <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
+    <value>Das Erstattungsergebnis der Bestellposition muss NothingRefunded oder PartlyRefunded sein.</value>
+  </data>
+  <data name="OrderStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Pending, Active, Cancelled, Fraud, Incomplete, UnderReview.</value>
+  </data>
+  <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
+    <value>Wählen Sie eine Zahlungsart aus.</value>
+  </data>
+  <data name="PaymentMethodRequired" xml:space="preserve">
+    <value>Wählen Sie eine Zahlungsart aus.</value>
+  </data>
+  <data name="PlaceOrderItemsRequired" xml:space="preserve">
+    <value>Fügen Sie der Bestellung mindestens einen Artikel hinzu.</value>
+  </data>
+  <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
+    <value>Jeder Artikel benötigt ein gültiges Produkt.</value>
+  </data>
+  <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
+    <value>Das Paket ist ungültig.</value>
+  </data>
+  <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
+    <value>Der Abrechnungszyklus muss 'monthly', 'annual' oder 'annually' sein.</value>
+  </data>
+  <data name="PlaceOrderItemDomainActionInvalid" xml:space="preserve">
+    <value>Die Domainaktion muss 'register', 'transfer' oder 'renew' sein.</value>
+  </data>
+  <data name="PlaceOrderGuestFirstNameRequired" xml:space="preserve">
+    <value>Für die Bestellung als Gast ist ein Vorname erforderlich.</value>
+  </data>
+  <data name="PlaceOrderGuestLastNameRequired" xml:space="preserve">
+    <value>Für die Bestellung als Gast ist ein Nachname erforderlich.</value>
+  </data>
+  <data name="PlaceOrderGuestEmailRequired" xml:space="preserve">
+    <value>Für die Bestellung als Gast ist eine gültige E-Mail-Adresse erforderlich.</value>
+  </data>
+  <data name="PlaceOrderGuestPasswordRequired" xml:space="preserve">
+    <value>Für die Bestellung als Gast ist ein Passwort erforderlich.</value>
+  </data>
+  <data name="GatewayModuleRequired" xml:space="preserve">
+    <value>Wählen Sie ein Zahlungsgateway aus.</value>
+  </data>
+  <data name="ConsentTextVersionInvalid" xml:space="preserve">
+    <value>Die Version des Einwilligungstextes ist erforderlich und muss eine der veröffentlichten Versionen sein.</value>
+  </data>
+  <data name="ReturnUrlRequired" xml:space="preserve">
+    <value>Eine Rücksprung-URL ist erforderlich.</value>
+  </data>
+  <data name="ReturnUrlInvalid" xml:space="preserve">
+    <value>Die Rücksprung-URL muss eine absolute http- oder https-Adresse sein.</value>
+  </data>
+  <data name="InvitationTokenRequired" xml:space="preserve">
+    <value>Ein Einladungstoken ist erforderlich.</value>
+  </data>
+  <data name="ClientIdInvalid" xml:space="preserve">
+    <value>Die Kunden-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="UserSubjectInvalid" xml:space="preserve">
+    <value>Ein Benutzer-Subject darf nicht leer sein.</value>
+  </data>
+  <data name="ClientContactFirstNameInvalid" xml:space="preserve">
+    <value>Der Vorname ist erforderlich und darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactLastNameInvalid" xml:space="preserve">
+    <value>Der Nachname ist erforderlich und darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactCompanyNameInvalid" xml:space="preserve">
+    <value>Der Firmenname darf 200 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactEmailInvalid" xml:space="preserve">
+    <value>Eine gültige E-Mail-Adresse ist erforderlich.</value>
+  </data>
+  <data name="ClientContactPhoneInvalid" xml:space="preserve">
+    <value>Das Telefon darf 50 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactTypeInvalid" xml:space="preserve">
+    <value>Das ist kein bekannter Kontakttyp.</value>
+  </data>
+  <data name="ClientContactStreetInvalid" xml:space="preserve">
+    <value>Die Straße darf 200 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactAddress2Invalid" xml:space="preserve">
+    <value>Die zweite Adresszeile darf 200 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactCityInvalid" xml:space="preserve">
+    <value>Der Ort darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactStateInvalid" xml:space="preserve">
+    <value>Das Bundesland darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactPostCodeInvalid" xml:space="preserve">
+    <value>Die Postleitzahl darf 20 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientContactCountryInvalid" xml:space="preserve">
+    <value>Das Land muss ein zweistelliger ISO-3166-1-Alpha-2-Code sein.</value>
+  </data>
+  <data name="ClientContactIdInvalid" xml:space="preserve">
+    <value>Die Kontakt-ID muss eine positive Zahl sein.</value>
+  </data>
+  <data name="ClientUserIdRequired" xml:space="preserve">
+    <value>Eine Benutzer-ID ist erforderlich.</value>
+  </data>
+  <data name="ClientPermissionsInvalid" xml:space="preserve">
+    <value>Die Berechtigungen sind keine gültige Kombination der bekannten Berechtigungs-Flags.</value>
+  </data>
+  <data name="ClientNewUserEmailInvalid" xml:space="preserve">
+    <value>Eine gültige E-Mail-Adresse ist erforderlich.</value>
+  </data>
+  <data name="ClientNewUserPasswordInvalid" xml:space="preserve">
+    <value>Ein Passwort mit mindestens {0} Zeichen ist erforderlich.</value>
+  </data>
+  <data name="ClientFirstNameInvalid" xml:space="preserve">
+    <value>Der Vorname ist erforderlich und darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientLastNameInvalid" xml:space="preserve">
+    <value>Der Nachname ist erforderlich und darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientCompanyNameInvalid" xml:space="preserve">
+    <value>Der Firmenname darf 200 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientPhoneInvalid" xml:space="preserve">
+    <value>Das Telefon darf 50 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientCountryInvalid" xml:space="preserve">
+    <value>Das Land muss ein zweistelliger ISO-3166-1-Alpha-2-Code sein.</value>
+  </data>
+  <data name="ClientCurrencyInvalid" xml:space="preserve">
+    <value>Die Währung muss ein dreistelliger ISO-4217-Code sein.</value>
+  </data>
+  <data name="ClientAdminNotesInvalid" xml:space="preserve">
+    <value>Die Admin-Notizen dürfen 2000 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientPaymentMethodInvalid" xml:space="preserve">
+    <value>Die Zahlungsart darf 50 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientBillingContactInvalid" xml:space="preserve">
+    <value>Der Rechnungskontakt darf 256 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientStreetInvalid" xml:space="preserve">
+    <value>Die Straße darf 200 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientCityInvalid" xml:space="preserve">
+    <value>Der Ort darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientStateInvalid" xml:space="preserve">
+    <value>Das Bundesland darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientPostCodeInvalid" xml:space="preserve">
+    <value>Die Postleitzahl darf 20 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientLanguageInvalid" xml:space="preserve">
+    <value>Die Sprache muss eine der unterstützten Sprachen dieser Installation sein.</value>
+  </data>
+  <data name="ClientStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Active, Inactive, Suspended, Closed.</value>
+  </data>
+  <data name="ClientInviteEmailInvalid" xml:space="preserve">
+    <value>Eine gültige E-Mail-Adresse ist erforderlich.</value>
+  </data>
+  <data name="ClientInviteFirstNameInvalid" xml:space="preserve">
+    <value>Der Vorname ist erforderlich und darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientInviteLastNameInvalid" xml:space="preserve">
+    <value>Der Nachname ist erforderlich und darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientNewOwnerUserIdRequired" xml:space="preserve">
+    <value>Eine Benutzer-ID des neuen Inhabers ist erforderlich.</value>
+  </data>
+  <data name="DepartmentNameRequired" xml:space="preserve">
+    <value>Ein Abteilungsname ist erforderlich.</value>
+  </data>
+  <data name="DepartmentEmailInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige E-Mail-Adresse der Abteilung an.</value>
+  </data>
+  <data name="DepartmentIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Abteilungs-ID an.</value>
+  </data>
+  <data name="DownloadIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Download-ID an.</value>
+  </data>
+  <data name="DownloadTitleRequired" xml:space="preserve">
+    <value>Ein Download-Titel ist erforderlich.</value>
+  </data>
+  <data name="DownloadCategoryIdInvalid" xml:space="preserve">
+    <value>Wählen Sie eine gültige Download-Kategorie aus.</value>
+  </data>
+  <data name="DownloadCategoryNameRequired" xml:space="preserve">
+    <value>Ein Kategoriename ist erforderlich.</value>
+  </data>
+  <data name="DownloadCategoryDescriptionInvalid" xml:space="preserve">
+    <value>Die Kategoriebeschreibung ist zu lang.</value>
+  </data>
+  <data name="PredefinedReplyIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige ID der vordefinierten Antwort an.</value>
+  </data>
+  <data name="PredefinedReplyNameRequired" xml:space="preserve">
+    <value>Ein Antwortname ist erforderlich.</value>
+  </data>
+  <data name="PredefinedReplyContentRequired" xml:space="preserve">
+    <value>Der Antwortinhalt ist erforderlich.</value>
+  </data>
+  <data name="PredefinedReplyCategoryIdInvalid" xml:space="preserve">
+    <value>Wählen Sie eine gültige Kategorie für vordefinierte Antworten aus.</value>
+  </data>
+  <data name="PredefinedReplyCategoryNameRequired" xml:space="preserve">
+    <value>Ein Kategoriename ist erforderlich.</value>
+  </data>
+  <data name="SearchTermRequired" xml:space="preserve">
+    <value>Ein Suchbegriff ist erforderlich.</value>
+  </data>
+  <data name="ServiceIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Service an.</value>
+  </data>
+  <data name="CancellationTypeInvalid" xml:space="preserve">
+    <value>Der Typ muss 'Immediate' oder 'EndOfBillingPeriod' sein.</value>
+  </data>
+  <data name="CancellationStatusInvalid" xml:space="preserve">
+    <value>Der Status muss 'Open' oder 'Closed' sein.</value>
+  </data>
+  <data name="CancellationRequestIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Kündigungsanfrage an.</value>
+  </data>
+  <data name="OrderServiceClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Kunden an.</value>
+  </data>
+  <data name="OrderServiceProductIdInvalid" xml:space="preserve">
+    <value>Geben Sie ein gültiges Produkt an.</value>
+  </data>
+  <data name="OrderServiceBillingCycleInvalid" xml:space="preserve">
+    <value>Der Abrechnungszyklus muss 'monthly', 'annual' oder 'annually' sein.</value>
+  </data>
+  <data name="OrderServiceAmountInvalid" xml:space="preserve">
+    <value>Der Betrag darf nicht negativ sein.</value>
+  </data>
+  <data name="ServiceDomainRequired" xml:space="preserve">
+    <value>Die Domain ist erforderlich.</value>
+  </data>
+  <data name="ServiceDomainInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Domain ein, z. B. example.com.</value>
+  </data>
+  <data name="ServiceUsernameRequired" xml:space="preserve">
+    <value>Der Benutzername ist erforderlich.</value>
+  </data>
+  <data name="ServiceUsernameInvalid" xml:space="preserve">
+    <value>Der Benutzername muss mit einem Buchstaben beginnen, darf nur Kleinbuchstaben und Ziffern enthalten und muss 3 bis 8 Zeichen lang sein.</value>
+  </data>
+  <data name="ServicePasswordRequired" xml:space="preserve">
+    <value>Das Passwort ist erforderlich.</value>
+  </data>
+  <data name="ServicePasswordInvalid" xml:space="preserve">
+    <value>Das Passwort muss mindestens 8 Zeichen lang sein.</value>
+  </data>
+  <data name="ServicePackageRequired" xml:space="preserve">
+    <value>Ein Hosting-Paket ist erforderlich.</value>
+  </data>
+  <data name="ServicePageInvalid" xml:space="preserve">
+    <value>Die Seite muss 1 oder größer sein.</value>
+  </data>
+  <data name="ServicePageSizeInvalid" xml:space="preserve">
+    <value>Die Seitengröße muss zwischen 1 und 100 liegen.</value>
+  </data>
+  <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Kunden zum Filtern an.</value>
+  </data>
+  <data name="ServiceListStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Pending, Active, Suspended, Terminated.</value>
+  </data>
+  <data name="ServiceListBillingCycleInvalid" xml:space="preserve">
+    <value>Der Abrechnungszyklus muss einer der folgenden sein: Monthly, Quarterly, SemiAnnual, Annual, Biennial.</value>
+  </data>
+  <data name="HostingAccountDomainTooLong" xml:space="preserve">
+    <value>Die Domain darf nicht länger als 253 Zeichen sein.</value>
+  </data>
+  <data name="HostingAccountDedicatedIpTooLong" xml:space="preserve">
+    <value>Die dedizierte IP darf nicht länger als 45 Zeichen sein.</value>
+  </data>
+  <data name="HostingAccountUsernameTooLong" xml:space="preserve">
+    <value>Der Benutzername darf nicht länger als 100 Zeichen sein.</value>
+  </data>
+  <data name="HostingAccountPasswordTooLong" xml:space="preserve">
+    <value>Das Passwort darf nicht länger als 256 Zeichen sein.</value>
+  </data>
+  <data name="ServiceBillingCycleInvalid" xml:space="preserve">
+    <value>Der Abrechnungszyklus ist erforderlich und darf nicht länger als 20 Zeichen sein.</value>
+  </data>
+  <data name="ServiceRecurringAmountInvalid" xml:space="preserve">
+    <value>Der wiederkehrende Betrag darf nicht negativ sein.</value>
+  </data>
+  <data name="ServicePaymentMethodInvalid" xml:space="preserve">
+    <value>Die Zahlungsart darf nicht länger als 50 Zeichen sein.</value>
+  </data>
+  <data name="ServiceSubscriptionIdInvalid" xml:space="preserve">
+    <value>Die Abonnementreferenz darf nicht länger als 256 Zeichen sein.</value>
+  </data>
+  <data name="ServiceAutoTerminateReasonInvalid" xml:space="preserve">
+    <value>Der Grund für die automatische Kündigung darf nicht länger als 2000 Zeichen sein.</value>
+  </data>
+  <data name="ServiceAdminNotesInvalid" xml:space="preserve">
+    <value>Die Admin-Notizen dürfen nicht länger als 2000 Zeichen sein.</value>
+  </data>
+  <data name="HostingAccountProvisioningRefTooLong" xml:space="preserve">
+    <value>Die Bereitstellungsreferenz darf nicht länger als 256 Zeichen sein.</value>
+  </data>
+  <data name="ServiceFirstPaymentAmountInvalid" xml:space="preserve">
+    <value>Der Betrag der ersten Zahlung darf nicht negativ sein.</value>
+  </data>
+  <data name="ServicePromotionCodeInvalid" xml:space="preserve">
+    <value>Der Aktionscode darf nicht länger als 50 Zeichen sein.</value>
+  </data>
+  <data name="ServiceStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Active, Suspended, Terminated.</value>
+  </data>
+  <data name="ServiceQuantityInvalid" xml:space="preserve">
+    <value>Die Menge muss mindestens 1 betragen.</value>
+  </data>
+  <data name="ServiceProductIdInvalid" xml:space="preserve">
+    <value>Geben Sie ein gültiges Produkt an.</value>
+  </data>
+  <data name="HostingAccountServerIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Server an.</value>
+  </data>
+  <data name="ServiceSuspendUntilWithoutOverride" xml:space="preserve">
+    <value>Legen Sie ein Haltedatum nur fest, wenn die Sperrhaltung aktiv ist.</value>
+  </data>
+  <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
+    <value>Geben Sie einen Kündigungsgrund nur an, wenn der Service mit seinem Zyklus endet.</value>
+  </data>
+  <data name="ServiceTerminatedAtRequired" xml:space="preserve">
+    <value>Geben Sie das Datum ein, an dem der Service beendet wurde.</value>
+  </data>
+  <data name="EmailTemplateSlugRequired" xml:space="preserve">
+    <value>Ein Vorlagen-Slug ist erforderlich.</value>
+  </data>
+  <data name="EmailTemplateSubjectRequired" xml:space="preserve">
+    <value>Ein Vorlagenbetreff ist erforderlich.</value>
+  </data>
+  <data name="EmailTemplateBodyRequired" xml:space="preserve">
+    <value>Ein Vorlagentext ist erforderlich.</value>
+  </data>
+  <data name="EmailTemplateDescriptionInvalid" xml:space="preserve">
+    <value>Die Beschreibung darf höchstens 500 Zeichen lang sein.</value>
+  </data>
+  <data name="EmailTemplateLanguageInvalid" xml:space="preserve">
+    <value>Wählen Sie eine der unterstützten Sprachen für die Vorlage aus.</value>
+  </data>
+  <data name="EmailTemplateIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige E-Mail-Vorlagen-ID an.</value>
+  </data>
+  <data name="EmailLogIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige E-Mail-Protokoll-ID an.</value>
+  </data>
+  <data name="SendEmailToInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige E-Mail-Adresse des Empfängers an.</value>
+  </data>
+  <data name="SendEmailTemplateSlugRequired" xml:space="preserve">
+    <value>Geben Sie die zu sendende Vorlage an.</value>
+  </data>
+  <data name="SendEmailIdempotencyKeyInvalid" xml:space="preserve">
+    <value>Der Idempotenzschlüssel muss aus 64 hexadezimalen Kleinbuchstaben bestehen.</value>
+  </data>
+  <data name="ProductGroupIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Produktgruppen-ID an.</value>
+  </data>
+  <data name="ProductGroupNameRequired" xml:space="preserve">
+    <value>Eine Produktgruppe benötigt einen Namen.</value>
+  </data>
+  <data name="ProductGroupNameTooLong" xml:space="preserve">
+    <value>Der Gruppenname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
+    <value>Die Beschreibung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductBundleIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Produktpaket-ID an.</value>
+  </data>
+  <data name="ProductBundleNameRequired" xml:space="preserve">
+    <value>Ein Produktpaket benötigt einen Namen.</value>
+  </data>
+  <data name="ProductBundleNameTooLong" xml:space="preserve">
+    <value>Der Paketname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductBundleDescriptionTooLong" xml:space="preserve">
+    <value>Die Beschreibung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductBundleSortOrderInvalid" xml:space="preserve">
+    <value>Die Sortierposition darf nicht negativ sein.</value>
+  </data>
+  <data name="ProductBundleDomainTermInvalid" xml:space="preserve">
+    <value>Ein Paket mit Domain benötigt 1 bis {0} Jahre Registrierung; ein Paket ohne Domain muss die Jahre leer lassen.</value>
+  </data>
+  <data name="ProductBundleDiscountInvalid" xml:space="preserve">
+    <value>Der Rabatt passt nicht zu seinem Typ: Ein Prozentsatz liegt zwischen 0 und {0}, ein fester Betrag ist nicht negativ und benötigt einen Währungscode, und ohne Rabatt ist beides nicht anzugeben.</value>
+  </data>
+  <data name="ProductBundleItemsRequired" xml:space="preserve">
+    <value>Fügen Sie dem Paket mindestens ein Produkt hinzu.</value>
+  </data>
+  <data name="ProductBundleItemProductInvalid" xml:space="preserve">
+    <value>Geben Sie für jede Paketposition eine gültige Produkt-ID an.</value>
+  </data>
+  <data name="ProductIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Produkt-ID an.</value>
+  </data>
+  <data name="ProductNameRequired" xml:space="preserve">
+    <value>Ein Produkt benötigt einen Namen.</value>
+  </data>
+  <data name="ProductNameTooLong" xml:space="preserve">
+    <value>Der Produktname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductDescriptionTooLong" xml:space="preserve">
+    <value>Die Beschreibung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductPackageNameTooLong" xml:space="preserve">
+    <value>Der Paketname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductSortOrderInvalid" xml:space="preserve">
+    <value>Die Sortierreihenfolge darf nicht negativ sein.</value>
+  </data>
+  <data name="ProductSkuInvalid" xml:space="preserve">
+    <value>Verwenden Sie für die SKU Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, höchstens {0} Zeichen.</value>
+  </data>
+  <data name="ProductMetadataInvalid" xml:space="preserve">
+    <value>Die Metadaten müssen ein JSON-Objekt sein.</value>
+  </data>
+  <data name="ProductMetadataTooLarge" xml:space="preserve">
+    <value>Die Metadaten dürfen höchstens {0} Bytes groß sein.</value>
+  </data>
+  <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
+    <value>Die Karenzzeit muss zwischen {0} und {1} Tagen liegen.</value>
+  </data>
+  <data name="ProductTrialInvalid" xml:space="preserve">
+    <value>Die Testphase muss {0} bis {1} Tage dauern, mit höchstens {2} verschiedenen Erinnerungstagen vor ihrem Ende und einer Karenzzeit von {3} bis {4} Tagen.</value>
+  </data>
+  <data name="ProductPriceRequired" xml:space="preserve">
+    <value>Ein neues Produkt benötigt mindestens einen Preis.</value>
+  </data>
+  <data name="ProductPriceCurrencyInvalid" xml:space="preserve">
+    <value>Der Währungscode muss ein dreibuchstabiger ISO-4217-Code sein.</value>
+  </data>
+  <data name="ProductPriceAmountInvalid" xml:space="preserve">
+    <value>Ein Preis darf nicht negativ sein.</value>
+  </data>
+  <data name="ProductFeatureIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige ID der Spezifikationszeile an.</value>
+  </data>
+  <data name="ProductFeatureLabelRequired" xml:space="preserve">
+    <value>Eine Spezifikationszeile benötigt eine Bezeichnung.</value>
+  </data>
+  <data name="ProductFeatureLabelTooLong" xml:space="preserve">
+    <value>Die Bezeichnung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductFeatureValueRequired" xml:space="preserve">
+    <value>Eine Spezifikationszeile benötigt einen Wert.</value>
+  </data>
+  <data name="ProductFeatureValueTooLong" xml:space="preserve">
+    <value>Der Wert darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductFeatureSortOrderInvalid" xml:space="preserve">
+    <value>Die Sortierreihenfolge darf nicht negativ sein.</value>
+  </data>
+  <data name="ProductOptionGroupIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige ID der Optionsgruppe an.</value>
+  </data>
+  <data name="ProductOptionIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Options-ID an.</value>
+  </data>
+  <data name="ProductOptionGroupNameRequired" xml:space="preserve">
+    <value>Eine Optionsgruppe benötigt einen Namen.</value>
+  </data>
+  <data name="ProductOptionGroupNameTooLong" xml:space="preserve">
+    <value>Der Name darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
+    <value>Wählen Sie einen gültigen Typ der Optionsgruppe aus.</value>
+  </data>
+  <data name="ProductOptionNameRequired" xml:space="preserve">
+    <value>Eine Option benötigt einen Namen.</value>
+  </data>
+  <data name="ProductOptionNameTooLong" xml:space="preserve">
+    <value>Der Name darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductOptionDisplayOrderInvalid" xml:space="preserve">
+    <value>Die Anzeigereihenfolge darf nicht negativ sein.</value>
+  </data>
+  <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
+    <value>Wählen Sie eine gültige Preisart aus.</value>
+  </data>
+  <data name="ProductOptionPriceInvalid" xml:space="preserve">
+    <value>Ein Preis darf nicht negativ sein.</value>
+  </data>
+  <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
+    <value>Geben Sie die IDs der Optionsgruppen in der neuen Reihenfolge an.</value>
+  </data>
+  <data name="SlideIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Slide-ID an.</value>
+  </data>
+  <data name="SlideIconNameRequired" xml:space="preserve">
+    <value>Ein Slide benötigt ein Symbol.</value>
+  </data>
+  <data name="SlideBrandColorRequired" xml:space="preserve">
+    <value>Ein Slide benötigt eine Markenfarbe.</value>
+  </data>
+  <data name="SlideImageUrlRequired" xml:space="preserve">
+    <value>Ein Slide benötigt ein Bild.</value>
+  </data>
+  <data name="SlideDemoUrlTooLong" xml:space="preserve">
+    <value>Der Demo-Link darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideLearnMoreUrlTooLong" xml:space="preserve">
+    <value>Der Link „Mehr erfahren“ darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideSortOrderInvalid" xml:space="preserve">
+    <value>Die Sortierreihenfolge darf nicht negativ sein.</value>
+  </data>
+  <data name="SlideTargetAudienceInvalid" xml:space="preserve">
+    <value>Wählen Sie eine bekannte Zielgruppe aus.</value>
+  </data>
+  <data name="SlideTranslationLocaleRequired" xml:space="preserve">
+    <value>Jede Übersetzung benötigt eine Sprache.</value>
+  </data>
+  <data name="SlideTranslationTitleRequired" xml:space="preserve">
+    <value>Jede Übersetzung benötigt einen Titel.</value>
+  </data>
+  <data name="ServerNameRequired" xml:space="preserve">
+    <value>Ein Servername ist erforderlich.</value>
+  </data>
+  <data name="ServerNameTooLong" xml:space="preserve">
+    <value>Der Servername darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ServerHostnameRequired" xml:space="preserve">
+    <value>Ein Hostname ist erforderlich.</value>
+  </data>
+  <data name="ServerHostnameTooLong" xml:space="preserve">
+    <value>Der Hostname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ServerUsernameRequired" xml:space="preserve">
+    <value>Ein Benutzername ist erforderlich.</value>
+  </data>
+  <data name="ServerUsernameTooLong" xml:space="preserve">
+    <value>Der Benutzername darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ServerMonthlyCostInvalid" xml:space="preserve">
+    <value>Die monatlichen Kosten dürfen nicht negativ sein.</value>
+  </data>
+  <data name="ServerMaxAccountsInvalid" xml:space="preserve">
+    <value>Die maximale Kontenanzahl muss, sofern angegeben, größer als null sein.</value>
+  </data>
+  <data name="ServerIdInvalid" xml:space="preserve">
+    <value>Das ist keine gültige Server-ID.</value>
+  </data>
+  <data name="ServerGroupNameRequired" xml:space="preserve">
+    <value>Ein Gruppenname ist erforderlich.</value>
+  </data>
+  <data name="ServerGroupNameTooLong" xml:space="preserve">
+    <value>Der Gruppenname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ServerGroupIdInvalid" xml:space="preserve">
+    <value>Das ist keine gültige Servergruppen-ID.</value>
+  </data>
+  <data name="PluginZipRequired" xml:space="preserve">
+    <value>Wählen Sie ein Plugin-Archiv zum Hochladen aus.</value>
+  </data>
+  <data name="PluginIdRequired" xml:space="preserve">
+    <value>Eine Plugin-ID ist erforderlich.</value>
+  </data>
+  <data name="PluginIdInvalid" xml:space="preserve">
+    <value>Eine Plugin-ID darf nur Kleinbuchstaben, Ziffern und einzelne Bindestriche enthalten, höchstens 64 Zeichen.</value>
+  </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value>Die Slot-ID ist ungültig.</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value>Die Widget-ID ist ungültig.</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Wählen Sie höchstens {0} Produkte aus.</value>
+  </data>
+  <data name="IntegrationSlugRequired" xml:space="preserve">
+    <value>Ein Integrations-Slug ist erforderlich.</value>
+  </data>
+  <data name="IntegrationConfigRequired" xml:space="preserve">
+    <value>Konfigurationsfelder sind erforderlich.</value>
+  </data>
+  <data name="UserIdRequired" xml:space="preserve">
+    <value>Die Benutzer-ID ist erforderlich.</value>
+  </data>
+  <data name="UserFirstNameInvalid" xml:space="preserve">
+    <value>Der Vorname ist erforderlich und darf höchstens 100 Zeichen lang sein.</value>
+  </data>
+  <data name="UserLastNameInvalid" xml:space="preserve">
+    <value>Der Nachname ist erforderlich und darf höchstens 100 Zeichen lang sein.</value>
+  </data>
+  <data name="UserEmailInvalid" xml:space="preserve">
+    <value>Eine gültige E-Mail-Adresse mit höchstens 256 Zeichen ist erforderlich.</value>
+  </data>
+  <data name="UserPasswordRequired" xml:space="preserve">
+    <value>Das Passwort ist erforderlich.</value>
+  </data>
+  <data name="UserPasswordTooShort" xml:space="preserve">
+    <value>Das Passwort muss mindestens 8 Zeichen lang sein.</value>
+  </data>
+  <data name="SettingIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Einstellungs-ID an.</value>
+  </data>
+  <data name="SettingKeysRequired" xml:space="preserve">
+    <value>Geben Sie mindestens einen Einstellungsschlüssel an.</value>
+  </data>
+  <data name="BrandingKindInvalid" xml:space="preserve">
+    <value>Die Art muss 'logo', 'logodark', 'logomark' oder 'favicon' sein.</value>
+  </data>
+  <data name="BrandingImageRequired" xml:space="preserve">
+    <value>Eine Bilddatei ist erforderlich.</value>
+  </data>
+  <data name="ActivityLogClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Kunden-ID an.</value>
+  </data>
+  <data name="DateRangeInvalid" xml:space="preserve">
+    <value>Das Enddatum darf nicht vor dem Startdatum liegen.</value>
+  </data>
+  <data name="ReportMonthInvalid" xml:space="preserve">
+    <value>Der Monat muss zwischen 1 und 12 liegen.</value>
+  </data>
+  <data name="ReportClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Kunden-ID an.</value>
+  </data>
+  <data name="ReportPageRequired" xml:space="preserve">
+    <value>Die Seite muss 1 oder größer sein.</value>
+  </data>
+  <data name="ReportPageSizeRange" xml:space="preserve">
+    <value>Die Seitengröße muss zwischen 1 und 200 liegen.</value>
+  </data>
+  <data name="ReportQuarterInvalid" xml:space="preserve">
+    <value>Das Quartal muss zwischen 1 und 4 liegen.</value>
+  </data>
+  <data name="ReportYearInvalid" xml:space="preserve">
+    <value>Das Jahr muss zwischen 2015 und 2100 liegen.</value>
+  </data>
+  <data name="ReportTakeInvalid" xml:space="preserve">
+    <value>Der Wert für Take muss zwischen 1 und 100 liegen.</value>
+  </data>
+  <data name="BackchannelLogoutEmailInvalid" xml:space="preserve">
+    <value>Eine gültige E-Mail-Adresse ist erforderlich.</value>
+  </data>
+  <data name="SignInEmailRequired" xml:space="preserve">
+    <value>Eine E-Mail-Adresse ist erforderlich.</value>
+  </data>
+  <data name="SignInPasswordRequired" xml:space="preserve">
+    <value>Ein Passwort ist erforderlich.</value>
+  </data>
+  <data name="RegisterEmailRequired" xml:space="preserve">
+    <value>Eine E-Mail-Adresse ist erforderlich.</value>
+  </data>
+  <data name="RegisterPasswordRequired" xml:space="preserve">
+    <value>Ein Passwort ist erforderlich.</value>
+  </data>
+  <data name="RegisterFirstNameRequired" xml:space="preserve">
+    <value>Ein Vorname ist erforderlich.</value>
+  </data>
+  <data name="RegisterLastNameRequired" xml:space="preserve">
+    <value>Ein Nachname ist erforderlich.</value>
+  </data>
+  <data name="SlideIconNameTooLong" xml:space="preserve">
+    <value>Der Symbolname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideBrandColorTooLong" xml:space="preserve">
+    <value>Die Markenfarbe darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideImageUrlTooLong" xml:space="preserve">
+    <value>Der Bildlink darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideTranslationTitleTooLong" xml:space="preserve">
+    <value>Der Titel der Übersetzung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideTranslationTaglineTooLong" xml:space="preserve">
+    <value>Der Slogan der Übersetzung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideTranslationDescriptionTooLong" xml:space="preserve">
+    <value>Die Beschreibung der Übersetzung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideTranslationCtaTextTooLong" xml:space="preserve">
+    <value>Die Schaltflächenbeschriftung der Übersetzung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SlideTranslationFeaturesTooMany" xml:space="preserve">
+    <value>Es sind höchstens {0} Aufzählungspunkte erlaubt.</value>
+  </data>
+  <data name="SlideTranslationFeatureTooLong" xml:space="preserve">
+    <value>Jeder Aufzählungspunkt darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ContentIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige ID an.</value>
+  </data>
+  <data name="ContentSortOrderInvalid" xml:space="preserve">
+    <value>Die Anzeigereihenfolge darf nicht negativ sein.</value>
+  </data>
+  <data name="ContentTranslationsRequired" xml:space="preserve">
+    <value>Geben Sie mindestens eine Übersetzung an.</value>
+  </data>
+  <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
+    <value>Eine Übersetzung ist nur für eine unterstützte Sprache möglich: en, ru, hy, de oder es.</value>
+  </data>
+  <data name="ContentDefaultTranslationRequired" xml:space="preserve">
+    <value>Eine Übersetzung in der Standardsprache (en) ist erforderlich.</value>
+  </data>
+  <data name="ContentTranslationLocaleDuplicate" xml:space="preserve">
+    <value>Jede Sprache darf nur einmal vorkommen.</value>
+  </data>
+  <data name="ContentUrlTooLong" xml:space="preserve">
+    <value>Ein Link darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ContentUrlInvalid" xml:space="preserve">
+    <value>Ein Link muss mit https://, http:// oder / beginnen.</value>
+  </data>
+  <data name="TestimonialNameRequired" xml:space="preserve">
+    <value>Geben Sie den Namen des Kunden ein.</value>
+  </data>
+  <data name="TestimonialNameTooLong" xml:space="preserve">
+    <value>Der Name darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="TestimonialCompanyTooLong" xml:space="preserve">
+    <value>Der Firmenname darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="TestimonialRatingInvalid" xml:space="preserve">
+    <value>Die Bewertung muss zwischen 1 und 5 liegen.</value>
+  </data>
+  <data name="TestimonialPublishedAtFuture" xml:space="preserve">
+    <value>Das Datum der Kundenstimme darf nicht in der Zukunft liegen.</value>
+  </data>
+  <data name="TestimonialRoleTooLong" xml:space="preserve">
+    <value>Die Position darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="TestimonialQuoteRequired" xml:space="preserve">
+    <value>Geben Sie den Text der Kundenstimme ein.</value>
+  </data>
+  <data name="TestimonialQuoteTooLong" xml:space="preserve">
+    <value>Die Kundenstimme darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="PartnerNameRequired" xml:space="preserve">
+    <value>Geben Sie den Namen des Partners ein.</value>
+  </data>
+  <data name="PartnerNameTooLong" xml:space="preserve">
+    <value>Der Name darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="LocationNameRequired" xml:space="preserve">
+    <value>Geben Sie den Standortnamen ein.</value>
+  </data>
+  <data name="LocationNameTooLong" xml:space="preserve">
+    <value>Der Name darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="LocationCityTooLong" xml:space="preserve">
+    <value>Der Ort darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="LocationLatencyNoteTooLong" xml:space="preserve">
+    <value>Der Latenzhinweis darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="LocationCountryCodeInvalid" xml:space="preserve">
+    <value>Der Ländercode muss aus zwei Buchstaben bestehen, zum Beispiel DE.</value>
+  </data>
+  <data name="ProjectSlugRequired" xml:space="preserve">
+    <value>Geben Sie den Slug des Projekts ein.</value>
+  </data>
+  <data name="ProjectSlugTooLong" xml:space="preserve">
+    <value>Der Slug darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProjectSlugInvalid" xml:space="preserve">
+    <value>Der Slug darf nur Kleinbuchstaben, Ziffern und einzelne Bindestriche enthalten.</value>
+  </data>
+  <data name="ProjectImageUrlsRequired" xml:space="preserve">
+    <value>Geben Sie die Bildliste an. Sie muss leer sein, wenn es keine Bilder gibt.</value>
+  </data>
+  <data name="ProjectImagesTooMany" xml:space="preserve">
+    <value>Ein Projekt darf höchstens {0} Bilder haben.</value>
+  </data>
+  <data name="ProjectTitleRequired" xml:space="preserve">
+    <value>Geben Sie den Titel des Projekts ein.</value>
+  </data>
+  <data name="ProjectTitleTooLong" xml:space="preserve">
+    <value>Der Titel darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProjectSummaryTooLong" xml:space="preserve">
+    <value>Die Zusammenfassung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProjectDescriptionTooLong" xml:space="preserve">
+    <value>Die Beschreibung darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="FaqCategoryInvalid" xml:space="preserve">
+    <value>Wählen Sie eine gültige Kategorie aus.</value>
+  </data>
+  <data name="FaqQuestionRequired" xml:space="preserve">
+    <value>Geben Sie die Frage ein.</value>
+  </data>
+  <data name="FaqQuestionTooLong" xml:space="preserve">
+    <value>Die Frage darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="FaqAnswerRequired" xml:space="preserve">
+    <value>Geben Sie die Antwort ein.</value>
+  </data>
+  <data name="FaqAnswerTooLong" xml:space="preserve">
+    <value>Die Antwort darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ContentOrderItemsRequired" xml:space="preserve">
+    <value>Geben Sie die Liste der anzuwendenden IDs und Positionen an.</value>
+  </data>
+  <data name="ContentOrderItemsTooMany" xml:space="preserve">
+    <value>Eine Neuordnung darf höchstens {0} Einträge enthalten.</value>
+  </data>
+  <data name="SshKeyIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen SSH-Schlüssel an.</value>
+  </data>
+  <data name="SshLabelRequired" xml:space="preserve">
+    <value>Geben Sie eine Bezeichnung für den Schlüssel ein.</value>
+  </data>
+  <data name="SshLabelTooLong" xml:space="preserve">
+    <value>Die Bezeichnung darf höchstens 100 Zeichen lang sein.</value>
+  </data>
+  <data name="SshPublicKeyRequired" xml:space="preserve">
+    <value>Fügen Sie den öffentlichen Schlüssel ein.</value>
+  </data>
+  <data name="SshPublicKeyTooLong" xml:space="preserve">
+    <value>Der öffentliche Schlüssel ist zu lang.</value>
+  </data>
+  <data name="SshHostnameInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Hostnamen ein.</value>
+  </data>
+  <data name="SshPortInvalid" xml:space="preserve">
+    <value>Der Port muss zwischen 1 und 65535 liegen.</value>
+  </data>
+  <data name="SshAgentUsernameInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Verwaltungsbenutzernamen ein.</value>
+  </data>
+  <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
+    <value>Der Fingerabdruck des Host-Schlüssels muss mit SHA256: beginnen und von 43 Zeichen gefolgt sein.</value>
+  </data>
+  <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
+    <value>Der private Schlüssel ist zu lang.</value>
+  </data>
+  <data name="SshTimeoutInvalid" xml:space="preserve">
+    <value>Die Zeitlimits liegen außerhalb des zulässigen Bereichs.</value>
+  </data>
+  <data name="InvoiceStatusInvalid" xml:space="preserve">
+    <value>Der Status muss ein bekannter Rechnungsstatus sein.</value>
+  </data>
+  <data name="ClientNewEmailInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige neue E-Mail-Adresse ein.</value>
+  </data>
+  <data name="ClientCurrentPasswordRequired" xml:space="preserve">
+    <value>Geben Sie Ihr aktuelles Passwort ein.</value>
+  </data>
+  <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
+    <value>Der Bestätigungslink ist unvollständig. Öffnen Sie den Link aus der E-Mail erneut.</value>
+  </data>
+  <data name="CurrencyCodeDuplicate" xml:space="preserve">
+    <value>Jede Währung darf nur einmal aufgeführt werden.</value>
+  </data>
+  <data name="ListPageRequired" xml:space="preserve">
+    <value>Die Seite muss 1 oder größer sein.</value>
+  </data>
+  <data name="ListPageSizeRange" xml:space="preserve">
+    <value>Die Seitengröße muss zwischen {0} und {1} liegen.</value>
+  </data>
+  <data name="ClientListStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Active, Inactive, Suspended, Closed.</value>
+  </data>
+  <data name="ListSearchTooLong" xml:space="preserve">
+    <value>Der Suchtext darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ListClientIdInvalid" xml:space="preserve">
+    <value>Geben Sie einen gültigen Kunden an.</value>
+  </data>
+  <data name="ClientListEmailTooLong" xml:space="preserve">
+    <value>Der E-Mail-Filter darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ClientListPhoneTooLong" xml:space="preserve">
+    <value>Der Telefonfilter darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ClientExportFieldUnknown" xml:space="preserve">
+    <value>Unbekannter Exportbereich: {0}.</value>
+  </data>
+  <data name="ServerCredentialTooLong" xml:space="preserve">
+    <value>Die Server-Zugangsdaten dürfen höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="SettingValueTooLong" xml:space="preserve">
+    <value>Der Einstellungswert darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ContactNotificationTopicInvalid" xml:space="preserve">
+    <value>Die Benachrichtigungsart ist ungültig.</value>
+  </data>
+  <data name="ClientExternalAccountPairRequired" xml:space="preserve">
+    <value>Das externe System und die Konto-ID sind beide erforderlich; zum Aufheben der Verknüpfung lassen Sie beide leer.</value>
+  </data>
+  <data name="ClientExternalAccountProviderInvalid" xml:space="preserve">
+    <value>Der Name des externen Systems ist erforderlich und darf höchstens 64 Zeichen lang sein.</value>
+  </data>
+  <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
+    <value>Die externe Konto-ID ist erforderlich und darf höchstens 256 Zeichen lang sein.</value>
+  </data>
+  <data name="IntegrationFieldExpected" xml:space="preserve">
+    <value>Erwartet: {0}.</value>
+  </data>
+  <data name="IntegrationFieldUnknown" xml:space="preserve">
+    <value>Dieses Feld wird von der Integration nicht deklariert.</value>
+  </data>
+  <data name="IntegrationFieldExpectSecret" xml:space="preserve">
+    <value>ein nicht leerer Wert; lassen Sie das Feld weg, um das gespeicherte Geheimnis beizubehalten</value>
+  </data>
+  <data name="IntegrationFieldExpectUrl" xml:space="preserve">
+    <value>eine absolute http- oder https-Adresse</value>
+  </data>
+  <data name="IntegrationFieldExpectToggle" xml:space="preserve">
+    <value>true oder false</value>
+  </data>
+  <data name="IntegrationFieldExpectSelect" xml:space="preserve">
+    <value>einer von {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberRange" xml:space="preserve">
+    <value>eine Zahl von {0} bis {1}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMin" xml:space="preserve">
+    <value>eine Zahl von mindestens {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMax" xml:space="preserve">
+    <value>eine Zahl von höchstens {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumber" xml:space="preserve">
+    <value>eine Zahl</value>
+  </data>
+  <data name="IntegrationFieldExpectValue" xml:space="preserve">
+    <value>ein nicht leerer Wert</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Bestätigen Sie, dass die gespeicherte Zahlungsmethode für Ihre Rechnungen belastet werden darf.</value>
+  </data>
+  <data name="StoredChargeSessionIdRequired" xml:space="preserve">
+    <value>Geben Sie die Speichersitzung an.</value>
+  </data>
+  <data name="CardConsentIdInvalid" xml:space="preserve">
+    <value>Geben Sie die Einwilligung an.</value>
+  </data>
+  <data name="StoredChargeInvalid" xml:space="preserve">
+    <value>Geben Sie die Belastung und ihr Ergebnis an.</value>
+  </data>
+  <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der bekannten Status von Zahlungsmeldungen sein.</value>
+  </data>
+  <data name="PluginVersionRequired" xml:space="preserve">
+    <value>Die Plugin-Version ist erforderlich.</value>
+  </data>
+  <data name="PluginLicenceKeyRequired" xml:space="preserve">
+    <value>Ein Lizenzschlüssel ist erforderlich.</value>
+  </data>
+  <data name="PluginLicenceKeyTooLong" xml:space="preserve">
+    <value>Der Lizenzschlüssel ist zu lang.</value>
+  </data>
+  <data name="PluginLicenceKeyInvalid" xml:space="preserve">
+    <value>Der Lizenzschlüssel darf nur druckbare Zeichen ohne Leerzeichen enthalten.</value>
+  </data>
+  <data name="PluginVersionInvalid" xml:space="preserve">
+    <value>Die Plugin-Version muss eine semantische Version wie 1.2.3 sein.</value>
+  </data>
+  <data name="PluginRegistrySearchTooLong" xml:space="preserve">
+    <value>Der Suchtext darf höchstens 100 Zeichen lang sein.</value>
+  </data>
+  <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
+    <value>Wählen Sie eine gültige Kategorie aus.</value>
+  </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Rechnungsposition an.</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Wählen Sie ein Verlängerungsfenster von 30, 60 oder 90 Tagen.</value>
+  </data>
+  <data name="CreditAdjustmentDirectionInvalid" xml:space="preserve">
+    <value>Wählen Sie, ob Guthaben hinzugefügt oder abgezogen werden soll.</value>
+  </data>
+  <data name="CreditAdjustmentAmountInvalid" xml:space="preserve">
+    <value>Der Betrag muss größer als null sein.</value>
+  </data>
+  <data name="CreditAdjustmentReasonRequired" xml:space="preserve">
+    <value>Geben Sie einen Grund für die Anpassung an.</value>
+  </data>
+  <data name="CreditAdjustmentReasonTooLong" xml:space="preserve">
+    <value>Der Grund darf höchstens 500 Zeichen lang sein.</value>
+  </data>
+  <data name="CreditTopUpAmountInvalid" xml:space="preserve">
+    <value>Der Betrag muss größer als null sein.</value>
+  </data>
+  <data name="CreditNoteIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Gutschrift an.</value>
+  </data>
+  <data name="CreditNoteMethodInvalid" xml:space="preserve">
+    <value>Wählen Sie, ob die Gutschrift auf das Kontoguthaben oder über das Gateway zurückgebucht wird.</value>
+  </data>
+  <data name="CreditNoteStatusInvalid" xml:space="preserve">
+    <value>Wählen Sie einen gültigen Gutschriftsstatus aus.</value>
+  </data>
+  <data name="CreditNoteReasonRequired" xml:space="preserve">
+    <value>Geben Sie einen Grund für die Gutschrift an.</value>
+  </data>
+  <data name="CreditNoteReasonTooLong" xml:space="preserve">
+    <value>Der Grund darf höchstens 500 Zeichen lang sein.</value>
+  </data>
+  <data name="CreditNoteVoidReasonRequired" xml:space="preserve">
+    <value>Geben Sie einen Grund für die Stornierung der Gutschrift an.</value>
+  </data>
+  <data name="CreditNoteItemsRequired" xml:space="preserve">
+    <value>Fügen Sie der Gutschrift mindestens eine Position hinzu.</value>
+  </data>
+  <data name="CreditNoteItemsTooMany" xml:space="preserve">
+    <value>Eine Gutschrift darf höchstens 100 Positionen enthalten.</value>
+  </data>
+  <data name="CreditNoteItemDescriptionInvalid" xml:space="preserve">
+    <value>Jede Position benötigt eine Beschreibung mit höchstens 500 Zeichen.</value>
+  </data>
+  <data name="CreditNoteItemPriceInvalid" xml:space="preserve">
+    <value>Jede Position benötigt einen Preis größer als null.</value>
+  </data>
+  <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
+    <value>Jede Position benötigt eine Menge zwischen 1 und 100000.</value>
+  </data>
+  <data name="StatusNameRequired" xml:space="preserve">
+    <value>Geben Sie einen Namen ein.</value>
+  </data>
+  <data name="StatusNameTooLong" xml:space="preserve">
+    <value>Der Name darf nicht länger als {0} Zeichen sein.</value>
+  </data>
+  <data name="StatusDescriptionTooLong" xml:space="preserve">
+    <value>Die Beschreibung darf nicht länger als {0} Zeichen sein.</value>
+  </data>
+  <data name="StatusTitleRequired" xml:space="preserve">
+    <value>Geben Sie den Titel des Vorfalls ein.</value>
+  </data>
+  <data name="StatusTitleTooLong" xml:space="preserve">
+    <value>Der Titel darf nicht länger als {0} Zeichen sein.</value>
+  </data>
+  <data name="StatusMessageRequired" xml:space="preserve">
+    <value>Geben Sie eine Nachricht ein.</value>
+  </data>
+  <data name="StatusMessageTooLong" xml:space="preserve">
+    <value>Die Nachricht darf nicht länger als {0} Zeichen sein.</value>
+  </data>
+  <data name="StatusStateInvalid" xml:space="preserve">
+    <value>Wählen Sie einen gültigen Zustand aus.</value>
+  </data>
+  <data name="StatusCheckUrlRequired" xml:space="preserve">
+    <value>Geben Sie die zu prüfende Adresse ein.</value>
+  </data>
+  <data name="StatusCheckUrlInvalid" xml:space="preserve">
+    <value>Geben Sie eine vollständige Webadresse ein, die mit http:// oder https:// beginnt.</value>
+  </data>
+  <data name="StatusCheckUrlTooLong" xml:space="preserve">
+    <value>Die Adresse darf nicht länger als {0} Zeichen sein.</value>
+  </data>
+  <data name="StatusFailureThresholdInvalid" xml:space="preserve">
+    <value>Wählen Sie eine Anzahl fehlgeschlagener Prüfungen von 1 bis {0}.</value>
+  </data>
+  <data name="StatusUptimeWindowInvalid" xml:space="preserve">
+    <value>Wählen Sie 30, 60 oder 90 Tage.</value>
+  </data>
+  <data name="StatusDaysInvalid" xml:space="preserve">
+    <value>Wählen Sie eine Anzahl von Tagen von 1 bis {0}.</value>
+  </data>
+  <data name="ClientGroupNameInvalid" xml:space="preserve">
+    <value>Ein Gruppenname ist erforderlich und darf höchstens 100 Zeichen lang sein.</value>
+  </data>
+  <data name="ClientGroupDescriptionInvalid" xml:space="preserve">
+    <value>Eine Beschreibung darf höchstens 500 Zeichen lang sein.</value>
+  </data>
+  <data name="ClientGroupDiscountDecimalsInvalid" xml:space="preserve">
+    <value>Ein Rabatt darf höchstens zwei Nachkommastellen haben.</value>
+  </data>
+  <data name="ClientGroupDiscountInvalid" xml:space="preserve">
+    <value>Ein Rabatt muss zwischen 0 und 100 Prozent liegen.</value>
+  </data>
+  <data name="ClientGroupColorInvalid" xml:space="preserve">
+    <value>Eine Farbe muss im Format #RRGGBB angegeben werden.</value>
+  </data>
+  <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Tarifwechsel-Anfrage an.</value>
+  </data>
+  <data name="ServiceChangeNoteTooLong" xml:space="preserve">
+    <value>Die Notiz darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ServiceChangeStatusInvalid" xml:space="preserve">
+    <value>Wählen Sie einen gültigen Status für den Tarifwechsel aus.</value>
+  </data>
+  <data name="CampaignIdInvalid" xml:space="preserve">
+    <value>Geben Sie eine gültige Kampagne an.</value>
+  </data>
+  <data name="CampaignSubjectRequired" xml:space="preserve">
+    <value>Geben Sie einen Betreff für die E-Mail ein.</value>
+  </data>
+  <data name="CampaignSubjectTooLong" xml:space="preserve">
+    <value>Der Betreff darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="CampaignBodyRequired" xml:space="preserve">
+    <value>Verfassen Sie den Text der E-Mail.</value>
+  </data>
+  <data name="CampaignBodyTooLong" xml:space="preserve">
+    <value>Der Text darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="CampaignSegmentsRequired" xml:space="preserve">
+    <value>Geben Sie die Liste der Segmente an; sie darf leer sein.</value>
+  </data>
+  <data name="CampaignSegmentsTooMany" xml:space="preserve">
+    <value>Eine Kampagne darf höchstens {0} Segmente haben.</value>
+  </data>
+  <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
+    <value>Wählen Sie für jedes Segment einen bekannten Filter aus.</value>
+  </data>
+  <data name="CampaignSegmentValueInvalid" xml:space="preserve">
+    <value>Der Wert passt nicht zum Filter: Ein Produkt benötigt eine Produkt-ID, ein Land einen zweibuchstabigen Code, ein Ablauf eine Anzahl von Tagen von 1 bis 365, eine Kundengruppe eine Gruppen-ID, ein Anmeldefilter eine Anzahl von Tagen von 1 bis 3650, und „Alle aktiven Kunden“ erwartet keinen Wert.</value>
+  </data>
+  <data name="CampaignSegmentSignInUnavailable" xml:space="preserve">
+    <value>Die Filterung nach der letzten Anmeldung ist hier nicht verfügbar: Diese Installation meldet Benutzer über einen Single-Sign-on-Anbieter an, der diesem Produkt nicht mitteilt, wann sie sich zuletzt angemeldet haben.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
+    <value>Der Abmeldelink enthält kein Token.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
+    <value>Dieser Abmeldelink ist ungültig.</value>
+  </data>
+  <data name="CampaignMailLinkInvalid" xml:space="preserve">
+    <value>Dieser Link ist ungültig.</value>
+  </data>
+  <data name="EmailDeliveryKeyRequired" xml:space="preserve">
+    <value>Der Schlüssel der E-Mail ist erforderlich.</value>
+  </data>
+  <data name="ClientTaxIdInvalid" xml:space="preserve">
+    <value>Die Steuer-ID darf 50 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="ClientTaxExemptionReasonInvalid" xml:space="preserve">
+    <value>Der Grund für die Steuerbefreiung darf 500 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="TaxRuleNameInvalid" xml:space="preserve">
+    <value>Geben Sie einen Namen mit höchstens 100 Zeichen an.</value>
+  </data>
+  <data name="TaxRuleCountryInvalid" xml:space="preserve">
+    <value>Geben Sie einen zweibuchstabigen Ländercode an.</value>
+  </data>
+  <data name="TaxRuleRegionInvalid" xml:space="preserve">
+    <value>Die Region darf 100 Zeichen nicht überschreiten.</value>
+  </data>
+  <data name="TaxRuleRateInvalid" xml:space="preserve">
+    <value>Ein Steuersatz muss zwischen 0 und 100 Prozent liegen.</value>
+  </data>
+  <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
+    <value>Ein Steuersatz darf höchstens drei Nachkommastellen haben.</value>
+  </data>
+  <data name="VatRateCountryInvalid" xml:space="preserve">
+    <value>Geben Sie den zweibuchstabigen Code eines EU-Mitgliedstaats an.</value>
+  </data>
+  <data name="VatRateKindInvalid" xml:space="preserve">
+    <value>Wählen Sie Standard oder Ermäßigt.</value>
+  </data>
+  <data name="VatRateRateInvalid" xml:space="preserve">
+    <value>Ein MwSt.-Satz muss zwischen 0 und 100 Prozent liegen.</value>
+  </data>
+  <data name="VatRateRateDecimalsInvalid" xml:space="preserve">
+    <value>Ein MwSt.-Satz darf höchstens drei Nachkommastellen haben.</value>
+  </data>
+  <data name="VatRateValidFromInvalid" xml:space="preserve">
+    <value>Geben Sie ein Startdatum zwischen 1993 und 2100 an.</value>
+  </data>
+  <data name="FraudBlockListTypeInvalid" xml:space="preserve">
+    <value>Der Typ der Sperrliste ist ungültig.</value>
+  </data>
+  <data name="FraudBlockListValueInvalid" xml:space="preserve">
+    <value>Der Wert passt nicht zum gewählten Typ der Sperrliste.</value>
+  </data>
+  <data name="FraudBlockListNoteTooLong" xml:space="preserve">
+    <value>Die Notiz darf nicht länger als 500 Zeichen sein.</value>
+  </data>
+  <data name="FraudBlockListEntryIdInvalid" xml:space="preserve">
+    <value>Die ID des Sperrlisteneintrags muss größer als null sein.</value>
+  </data>
+  <data name="FraudScoreOutOfRange" xml:space="preserve">
+    <value>Ein Risikowert muss eine ganze Zahl von 0 bis 100 sein.</value>
+  </data>
+  <data name="FraudReviewBelowReject" xml:space="preserve">
+    <value>Der Prüfwert muss niedriger sein als der Wert für die automatische Ablehnung.</value>
+  </data>
+  <data name="FraudVelocityWindowOutOfRange" xml:space="preserve">
+    <value>Das Velocity-Zeitfenster muss zwischen 1 und 1440 Minuten liegen.</value>
+  </data>
+  <data name="FraudCountOutOfRange" xml:space="preserve">
+    <value>Das Limit muss eine ganze Zahl von 1 bis 100 sein.</value>
+  </data>
+  <data name="FraudCheckKindInvalid" xml:space="preserve">
+    <value>Die Art der Betrugsprüfung ist ungültig.</value>
+  </data>
+  <data name="FraudDecisionInvalid" xml:space="preserve">
+    <value>Die Betrugsentscheidung ist ungültig.</value>
+  </data>
+  <data name="FraudReasonInvalid" xml:space="preserve">
+    <value>Der Betrugsgrund ist ungültig.</value>
+  </data>
+  <data name="OrderReviewReasonRequired" xml:space="preserve">
+    <value>Geben Sie den Grund an, der dem Kunden mitgeteilt wird.</value>
+  </data>
+  <data name="OrderReviewReasonTooLong" xml:space="preserve">
+    <value>Der Grund darf nicht länger als 1000 Zeichen sein.</value>
+  </data>
+  <data name="DashboardPeriodInvalid" xml:space="preserve">
+    <value>Wählen Sie einen Zeitraum von 30 oder 90 Tagen.</value>
+  </data>
+  <data name="CampaignListStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Draft, Scheduled, Sending, Sent.</value>
+  </data>
+  <data name="ServerListModuleInvalid" xml:space="preserve">
+    <value>Das Modul muss eines der folgenden sein: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  </data>
+  <data name="ServerListStateInvalid" xml:space="preserve">
+    <value>Der Zustand muss einer der folgenden sein: Online, Offline, Untested.</value>
+  </data>
+  <data name="ProductListTypeInvalid" xml:space="preserve">
+    <value>Der Typ muss einer der folgenden sein: SharedHosting, Vps, Dedicated, Domain, Ssl, Other, Email, Addon, Backup, Digital.</value>
+  </data>
+  <data name="ProductListStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Active, Inactive.</value>
+  </data>
+  <data name="PaymentReturnParametersTooMany" xml:space="preserve">
+    <value>Es gibt zu viele Rückgabeparameter.</value>
+  </data>
+  <data name="PaymentReturnParameterNameTooLong" xml:space="preserve">
+    <value>Der Name eines Rückgabeparameters ist auf 64 Zeichen begrenzt.</value>
+  </data>
+  <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
+    <value>Der Wert eines Rückgabeparameters ist zu lang.</value>
+  </data>
+  <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
+    <value>Die maximale Anzahl aktiver Services muss 0 oder leer für unbegrenzt oder eine positive Zahl sein.</value>
+  </data>
+  <data name="VatRateListKindInvalid" xml:space="preserve">
+    <value>Die Art muss eine der folgenden sein: Standard, Reduced.</value>
+  </data>
+  <data name="VatRateListStatusInvalid" xml:space="preserve">
+    <value>Der Status muss einer der folgenden sein: Active, Superseded, Upcoming.</value>
+  </data>
+</root>

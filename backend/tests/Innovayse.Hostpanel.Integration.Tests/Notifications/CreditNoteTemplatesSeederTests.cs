@@ -42,6 +42,8 @@ public sealed class CreditNoteTemplatesSeederTests(IntegrationTestFactory factor
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public async Task PrintsTheNumberTheTotalTheInvoiceAndTheLink(string language)
     {
         var text = await RenderAsync(language);
@@ -58,6 +60,8 @@ public sealed class CreditNoteTemplatesSeederTests(IntegrationTestFactory factor
     {
         (await RenderAsync("ru")).Should().MatchRegex("[Ѐ-ӿ]");
         (await RenderAsync("hy")).Should().MatchRegex("[԰-֏]");
+        (await RenderAsync("de")).Should().NotBe(await RenderAsync("en"));
+        (await RenderAsync("es")).Should().NotBe(await RenderAsync("en"));
     }
 
     /// <summary>Seeding again adds nothing twice.</summary>
@@ -72,7 +76,7 @@ public sealed class CreditNoteTemplatesSeederTests(IntegrationTestFactory factor
 
         await CreditNoteTemplatesSeeder.EnsureSeededAsync(context, CancellationToken.None);
 
-        before.Should().Be(3);
+        before.Should().Be(5);
         (await context.EmailTemplates.AsNoTracking().CountAsync(t => t.Slug == CreditNoteTemplatesSeeder.IssuedSlug)).Should().Be(before);
     }
 }

@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
@@ -37,7 +37,7 @@ describe('useSettingsApi', () => {
 
   it('createEmailTemplate POSTs the new language version and returns its id', async () => {
     const mock = stubFetch(json(5))
-    const payload = { slug: 'welcome', language: MessageLanguage.Ru, subject: 'S', body: 'B', description: null }
+    const payload = { slug: 'welcome', language: ContentLanguage.Ru, subject: 'S', body: 'B', description: null }
 
     expect(await useSettingsApi().createEmailTemplate(payload)).toBe(5)
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/email-templates', method: 'POST', body: payload })

@@ -1,6 +1,6 @@
 ---
 title: Email templates
-description: "Edit Hostpanel transactional email templates per language (English, Russian, Armenian), use placeholders and check mail delivery."
+description: "Edit Hostpanel transactional email templates per language (English, Russian, Armenian, German, Spanish), use placeholders and check mail delivery."
 keywords: "email templates, placeholders, transactional email, mail delivery"
 ---
 
@@ -10,7 +10,7 @@ keywords: "email templates, placeholders, transactional email, mail delivery"
 
 ## How templates work
 
-Each email template has a **slug** that identifies it in the code. One version is stored per language (English, Russian and Armenian). Some templates are created at start-up; others are created on first use. If a version does not exist for the client's language, the email is sent in English.
+Each email template has a **slug** that identifies it in the code. One version is stored per language (English, Russian, Armenian, German and Spanish). Some templates are created at start-up; others are created on first use. If a version does not exist for the client's language, the email is sent in English.
 
 Creating a version for a slug and language that already exists returns `EMAIL_TEMPLATE_ALREADY_EXISTS`. A template that does not exist returns `EMAIL_TEMPLATE_NOT_FOUND`.
 

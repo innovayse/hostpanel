@@ -1,7 +1,7 @@
 namespace Innovayse.Hostpanel.Application.Slides.Common;
 
 /// <summary>DTO representing a single locale-specific translation of a slide.</summary>
-/// <param name="Locale">BCP-47 locale code (e.g. "en", "ru", "hy").</param>
+/// <param name="Locale">BCP-47 locale code (e.g. "en", "ru", "hy", "de", "es").</param>
 /// <param name="Title">Slide headline.</param>
 /// <param name="Tagline">Optional short subtitle.</param>
 /// <param name="Description">Optional longer body text.</param>

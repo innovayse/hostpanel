@@ -94,8 +94,8 @@ Every response carries `"v":1` and `"ok"`. Refusals are `{"ok":false,"error":"<c
 `invalid_request`, `unsupported_version`, `unknown_operation`, `request_too_large`,
 `invalid_account`, `account_not_found`, `account_not_eligible`, `account_suspended`,
 `invalid_key`, `duplicate_key`, `key_id_conflict`, `too_many_keys`, `ssh_disabled`, `unsafe_path`,
-`file_too_large`, `timeout`, `internal_error`; from the optional ops: `not_supported`, `site_not_owned`, `site_prepare_failed`
-(1.3.0+), `account_exists` (1.4.0+), and since 1.5.0 `website_conflict`, `php_version_unsupported`, `website_failed`,
+`file_too_large`, `timeout`, `internal_error`; from the optional ops: `not_supported`, `site_not_owned`,
+`account_exists` (1.4.0+), and since 1.5.0 `website_conflict`, `php_version_unsupported`, `website_failed`,
 `database_failed`, `database_limit`. Unknown request fields are refused. `add` and
 `revoke` are idempotent by `key_id`. Fields added since 1.0 (`provider`, `binding`, `reason`) are
 additive; older HostPanels ignore them and older agents simply omit them.
@@ -172,25 +172,6 @@ prints nothing: while the bind mount is active, `<jail_root>/<user>/home/<user>`
 customer's website, and `rm -rf` on the jail would delete it. Only when nothing is mounted, remove
 the jail with `rm -rf --one-file-system <jail_root>/<user>`.
 
-## Innovayse Sites site preparation (`prepare-site`, agent 1.3.0+)
-
-`{"v":1,"op":"prepare-site","account":"<user>","domain":"<the account's domain>"}` runs `site_prepare_command`
-(empty = the op answers `not_supported`) as root with `<user> <domain>`, after the usual account checks and under the
-account lock; with `jail_enrol` on, the jail is made first. The CWP profile ships the helper as
-`/usr/local/libexec/hostpanel-ssh-key-agent/prepare-site`; set `site_prepare_command` to it to enable the op.
-
-The CWP helper is idempotent and touches only that account: php-fpm 8.3 pool (with `opcache.validate_timestamps=1`,
-`revalidate_freq=0`, `revalidate_path=1`, `realpath_cache_size=0`, which a `current` symlink switch behind Apache needs),
-the vhost handler plus CWP's `~/.conf/webservers/<domain>.conf` record, a `<user>_site` database, `~/shared/.env`
-(secrets generated on the server, never printed), `releases/` and `shared/` setgid `nobody`, `public_html ->
-current/public` (the old placeholder is backed up), and PHP 8.3 in the jail. Everything it edits is copied to
-`/root/isites-provision-backup/<user>-<time>/` first; Apache and php-fpm are reloaded gracefully, only after their config
-tests pass, and the vhost is restored if a test fails.
-
-Answers: `{"ok":true,"prepared":true,"steps":[...]}`, or `not_supported`, `site_not_owned` (the vhost does not belong to
-the account, or no jail/vhost), `site_prepare_failed`. HostPanel calls it with a 10 minute timeout after provisioning a
-service whose product metadata holds `{"innovayseSites": {"prepare": true}}`.
-
 ## Removing the jail of a deleted account (`remove-jail`, agent 1.4.0+)
 
 `{"v":1,"op":"remove-jail","account":"<user>"}` runs before the usual account checks, because the account is gone by
@@ -208,14 +189,13 @@ knowing anything about the panel underneath. Each runs a provider helper from `h
 `providers/cwp/` (plus the shared `hp-common.sh`). Like every op they run after the account checks and under the
 account's lock, and they write one audit line each with the outcome and the hostname or label, never a helper's answer.
 A fifth helper, `php-versions` (no arguments, one `N.N` per line on stdout, sorted by the agent), is not an op: ping runs it to report `php_versions`, and a server without it, or whose helper fails, reports `[]`. `ensure-website` accepts only a `php` the provider also lists there.
-`prepare-site` stays for now.
 
 ### Requests
 
 | Field | Rule |
 |---|---|
 | `account` | as everywhere |
-| `hostname` | a lower case domain name (the same pattern as `prepare-site`'s `domain`). The CWP helper accepts only the account's own CWP domain or a subdomain of it |
+| `hostname` | a lower case domain name. The CWP helper accepts only the account's own CWP domain or a subdomain of it |
 | `docroot` | relative to the home: 1 to 6 segments of `A-Za-z0-9._-`, no segment starting with a dot (so no `..`, `.ssh`, `.conf`), at most 200 characters. The helper also resolves it and refuses anything that leaves the home through a symlink |
 | `php` (optional) | `8.3` style; the helper maps it to the installed php-fpm of that version. Left out: no php-fpm pool and no handler |
 | `link_root` (optional, boolean) | the document root is a symlink that deploys switch (`current/public`). Needs `php`. Adds the pool lines such a switch needs behind Apache (`opcache.validate_timestamps=1`, `opcache.revalidate_freq=0`, `opcache.revalidate_path=1`, `realpath_cache_size=0`) and leaves the last path component to the deploys instead of creating a directory |

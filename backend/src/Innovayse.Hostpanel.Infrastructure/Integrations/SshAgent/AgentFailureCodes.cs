@@ -31,7 +31,6 @@ internal static class AgentFailureCodes
             ["account_suspended"] = SshProviderFailure.AccountSuspended,
             ["not_supported"] = SshProviderFailure.NotSupported,
             ["site_not_owned"] = SshProviderFailure.SiteNotOwned,
-            ["site_prepare_failed"] = SshProviderFailure.SitePrepareFailed,
             ["account_exists"] = SshProviderFailure.AccountExists,
             ["website_conflict"] = SshProviderFailure.WebsiteConflict,
             ["php_version_unsupported"] = SshProviderFailure.PhpVersionUnsupported,

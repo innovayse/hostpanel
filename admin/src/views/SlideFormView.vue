@@ -38,7 +38,7 @@ import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { Icon } from '@/lib/icons'
 import { nextRowKey } from '@/lib/rowKey'
 import { enumValueOf } from '@/lib/enumValue'
-import { filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { blankTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { useSettingsStore } from '@/stores/settings'
 import { useSlidesStore } from '@/stores/slides'
 import type { CreateSlidePayload, SlideTranslation, UpdateSlidePayload } from '@/types/slide'
@@ -182,18 +182,8 @@ const createEmptyTranslation = (): TranslationForm => ({
   ctaUrl: '',
 })
 
-/**
- * Reactive translations keyed by locale code. Written out per locale rather than built from the
- * enum: `Object.fromEntries` produces a string index signature, which cannot prove every locale is
- * present, so adding a locale to the enum fails to compile here until its tab is initialised too.
- */
-const translations = reactive<Record<ContentLanguage, TranslationForm>>({
-  [ContentLanguage.En]: createEmptyTranslation(),
-  [ContentLanguage.Ru]: createEmptyTranslation(),
-  [ContentLanguage.Hy]: createEmptyTranslation(),
-  [ContentLanguage.De]: createEmptyTranslation(),
-  [ContentLanguage.Es]: createEmptyTranslation(),
-})
+/** Reactive translations keyed by locale code, one blank form per content language. */
+const translations = reactive<Record<ContentLanguage, TranslationForm>>(blankTranslations(createEmptyTranslation))
 
 /** Whether a linked product is selected. */
 const hasLinkedProduct = computed<boolean>(() => !!productId.value)

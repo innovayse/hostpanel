@@ -12,7 +12,7 @@ namespace Innovayse.Hostpanel.Application.Partners.Commands.UpdatePartner;
 /// <param name="Url">The partner's website, or <c>null</c></param>
 /// <param name="SortOrder">Display order (ascending).</param>
 /// <param name="IsActive">Whether the partner is shown on the storefront.</param>
-/// <param name="Translations">Per-locale translations keyed by locale code (<c>en</c>, <c>ru</c>, <c>hy</c>).</param>
+/// <param name="Translations">Per-locale translations keyed by locale code (<c>en</c>, <c>ru</c>, <c>hy</c>, <c>de</c>, <c>es</c>).</param>
 public sealed record UpdatePartnerCommand(
     int Id,
     string? LogoUrl,

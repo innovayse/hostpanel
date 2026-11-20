@@ -18,7 +18,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { blankTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { ContentLanguage } from '@/locales/contentLanguage'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -55,13 +55,7 @@ const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 const blank = (): EmailTemplateContent => ({ subject: '', body: '', description: null })
 
 /** The words of each language being edited. */
-const forms = reactive<Record<ContentLanguage, EmailTemplateContent>>({
-  [ContentLanguage.En]: blank(),
-  [ContentLanguage.Ru]: blank(),
-  [ContentLanguage.Hy]: blank(),
-  [ContentLanguage.De]: blank(),
-  [ContentLanguage.Es]: blank(),
-})
+const forms = reactive<Record<ContentLanguage, EmailTemplateContent>>(blankTranslations(blank))
 
 /** Whether each language has a subject written, for the markers on the tabs. */
 const filled = computed(() => filledLocales(forms, (form) => form.subject.trim() !== ''))

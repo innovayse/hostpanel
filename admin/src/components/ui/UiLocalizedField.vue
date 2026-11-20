@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="L extends string">
+<script setup lang="ts" generic="L extends ContentLanguage">
 /**
  * One value that is written per language: a tab strip with a tab for every shipped language
  * (the `locales` prop) and, under it, the control of the language on screen.
@@ -14,6 +14,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiField from '@/components/ui/UiField.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { UiTabMarker } from '@/utils/ui/tabs'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
@@ -73,17 +74,17 @@ const active = computed<L>({
 })
 
 /** Tab captions by language; written out so each key is a literal the i18n lint can follow. */
-const captions = computed<Record<string, string>>(() => ({
-  en: t('storefront.locales.en'),
-  ru: t('storefront.locales.ru'),
-  hy: t('storefront.locales.hy'),
-  de: t('storefront.locales.de'),
-  es: t('storefront.locales.es'),
+const captions = computed<Record<ContentLanguage, string>>(() => ({
+  [ContentLanguage.En]: t('storefront.locales.en'),
+  [ContentLanguage.Ru]: t('storefront.locales.ru'),
+  [ContentLanguage.Hy]: t('storefront.locales.hy'),
+  [ContentLanguage.De]: t('storefront.locales.de'),
+  [ContentLanguage.Es]: t('storefront.locales.es'),
 }))
 
 /** One tab per language, with the marker its state calls for (a refusal wins over an empty value). */
 const tabs = computed<UiTabItem[]>(() => props.locales.map((locale) => {
-  const item: UiTabItem = { value: locale, label: captions.value[locale] ?? locale, testid: `${props.testid}-${locale}` }
+  const item: UiTabItem = { value: locale, label: captions.value[locale], testid: `${props.testid}-${locale}` }
   if (props.errors[locale]) {
     return { ...item, marker: UiTabMarker.Invalid, markerLabel: t('ui.uiLocalizedField.invalidTab') }
   }

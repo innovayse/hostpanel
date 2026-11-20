@@ -1093,7 +1093,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     `IssueSshAccessAsync` and `RevokeSshAccessAsync` are served by `PluginSshAccessService` (see "SSH access to a
     client's hosting (#758)" below).
     *Store* (`Infrastructure/Plugins/PluginStore`): table `PluginDataEntries` (aggregate `PluginDataEntry`: `PluginId`,
-    `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
+    `ClientRef`, `Key`, `Value` text, `ExpiresAt` nullable, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
     distinct) and table `PluginDataScopes` (aggregate `PluginDataScope`: `PluginId`, `ClientRef`, `KeyCount`, `StoredChars`,
     `Revision`, xmin concurrency token; unique `IX_PluginDataScopes_PluginId_ClientRef`, nulls not distinct). A scope is per
     client in the client area and plugin wide (null `ClientRef`) on an admin call. A key is 1 to 200 characters of letters,
@@ -1101,11 +1101,19 @@ docker/                              compose set (shared·dev·prod·platform), 
     null refused. A contract breach throws `DomainRuleException` `PLUGIN_STORE_KEY_INVALID` or `PLUGIN_STORE_VALUE_INVALID`
     (`Domain/Plugins/PluginStoreErrors`, sentences in en/ru/hy); the runner answers it like any plugin throw, 502
     `PLUGIN_FAILED`, and logs it, so these two codes never reach a caller and have no `StatusMapping` row.
+    - **Advanced store (`IPluginStoreAdvanced`, SDK 3.7.0).** `PluginStore` and `PluginWideStore` implement it: `SetAsync` with a
+      time to live (above zero, at most `PluginStoreLimits.MaxTimeToLive`, else `ArgumentOutOfRangeException` and no write),
+      `SetIfAbsentAsync` (one atomic step on the same scope xmin token, so exactly one of several racing callers writes) and
+      `ListKeysAsync` (prefix as a key may start, limit 1 to `MaxListLimit`, ascending ordinal order by `COLLATE "C"`). A plain
+      `SetAsync` clears the expiry. An expired row (`ExpiresAt` at or before `IClock.UtcNow`) is absent for every operation and
+      does not count toward the quota: a write that does not fit first releases the scope's expired rows in the same attempt, and
+      the recurring job `SweepExpiredPluginDataCron` (`AdminScheduledJobsStartup`, every
+      `ScheduledJobs:SweepExpiredPluginDataIntervalMinutes`, default 15) removes the rest through their scope.
     - **Quota, one rule.** `PluginApi:MaxStoreKeysPerScope` (keys, default 1000, 1 to 100,000) and
       `PluginApi:MaxStoreCharsPerScope` (characters of every key and value, default 4 Mi, from one full key and value to
       1 Gi), both on `PluginApiOptions`, validated on start, read as one `PluginStoreQuota`. `PluginDataScope.Admit` is the only
       place either is checked: a write that would take the scope past either measure is refused with `DomainRuleException`
-      `PLUGIN_STORE_QUOTA_EXCEEDED`; a write that shrinks or keeps the size is always allowed, even in a scope over a lowered
+      `PLUGIN_STORE_QUOTA_EXCEEDED` (the store translates it, in `PluginStore.PutAsync` only, into the SDK's `PluginStoreQuotaException` for the plugin); a write that shrinks or keeps the size is always allowed, even in a scope over a lowered
       quota. The refusal fails closed (nothing is written, whether or not the plugin catches it), and the store raises the
       call's `PluginStoreQuotaSignal`, host state the plugin cannot set: when the plugin then throws, the runner answers 402
       `PLUGIN_STORE_QUOTA_EXCEEDED` (its own exact `StatusMapping` row, the 402 every quota refusal answers; en/ru/hy) instead of

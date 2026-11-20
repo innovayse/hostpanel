@@ -84,20 +84,4 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
         var response = await _agent.SendAsync(_agent.Request("remove-jail", account), ct);
         return response["removed"]?.GetValue<bool>() == true;
     }
-
-    /// <summary>The longest a site preparation may run: the first one copies PHP into the jail.</summary>
-    private static readonly TimeSpan PrepareSiteTimeout = TimeSpan.FromMinutes(10);
-
-    /// <inheritdoc />
-    public async Task<IReadOnlyList<string>> PrepareSiteAsync(SshAccount account, string domain, CancellationToken ct)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(domain);
-        var request = _agent.Request("prepare-site", account);
-        request["domain"] = domain.Trim().ToLowerInvariant();
-        var endpoint = _agent.Endpoint.OperationTimeout >= PrepareSiteTimeout ? _agent.Endpoint : _agent.Endpoint with { OperationTimeout = PrepareSiteTimeout };
-        var response = await _agent.SendAsync(request, endpoint, ct);
-        return response["steps"] is JsonArray steps
-            ? steps.Select(s => s?.GetValue<string>() ?? string.Empty).Where(s => s.Length > 0).ToList()
-            : [];
-    }
 }

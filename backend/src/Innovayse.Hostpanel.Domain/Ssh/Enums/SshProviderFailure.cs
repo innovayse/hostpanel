@@ -81,14 +81,11 @@ public enum SshProviderFailure
     /// </summary>
     BindingMismatch,
 
-    /// <summary>The agent does not offer the operation on this server (for example site preparation is not configured).</summary>
+    /// <summary>The agent does not offer the operation on this server (for example the server has no helper for it).</summary>
     NotSupported,
 
     /// <summary>The domain asked for is not one of the account's own; nothing was changed.</summary>
     SiteNotOwned,
-
-    /// <summary>Preparing the account's site for deploys failed on the server.</summary>
-    SitePrepareFailed,
 
     /// <summary>A jail removal was asked for an account that still exists on the server; nothing was changed.</summary>
     AccountExists,

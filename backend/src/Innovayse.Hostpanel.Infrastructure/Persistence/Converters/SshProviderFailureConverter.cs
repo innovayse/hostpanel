@@ -41,7 +41,6 @@ public sealed class SshProviderFailureConverter : ValueConverter<SshProviderFail
             [SshProviderFailure.BindingMismatch] = "binding_mismatch",
             [SshProviderFailure.NotSupported] = "not_supported",
             [SshProviderFailure.SiteNotOwned] = "site_not_owned",
-            [SshProviderFailure.SitePrepareFailed] = "site_prepare_failed",
             [SshProviderFailure.AccountExists] = "account_exists",
             [SshProviderFailure.WebsiteConflict] = "website_conflict",
             [SshProviderFailure.PhpVersionUnsupported] = "php_version_unsupported",

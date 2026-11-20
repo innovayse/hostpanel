@@ -101,7 +101,8 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
             sp.GetRequiredService<IPayerCurrencyResolver>(),
             oneKey,
             sp.GetRequiredService<PluginSshAccessService>(),
-            sp.GetRequiredService<PluginHostingService>());
+            sp.GetRequiredService<PluginHostingService>(),
+            sp.GetRequiredService<IClock>());
 
         var over = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
         var other = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
@@ -170,7 +171,8 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
     {
         PublicMethodNames(typeof(PluginHostApi))
             .Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginHostApi)).Concat(InterfaceMethodNames(typeof(IPluginHostHostingApi))));
-        PublicMethodNames(typeof(PluginStore)).Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginStore)));
+        PublicMethodNames(typeof(PluginStore)).Should()
+            .BeEquivalentTo(InterfaceMethodNames(typeof(IPluginStore)).Concat(InterfaceMethodNames(typeof(IPluginStoreAdvanced))));
 
         string[] named =
         [
@@ -181,7 +183,12 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
         var parameters = typeof(IPluginHostApi).GetMethods().Where(m => !named.Contains(m.Name))
             .Concat(typeof(IPluginStore).GetMethods()).SelectMany(m => m.GetParameters());
         parameters.Should().NotContain(p => p.ParameterType == typeof(int) || p.ParameterType == typeof(int?));
-        parameters.Select(p => p.Name!.ToLowerInvariant())
+
+        // The advanced store's one number is the page size of a listing, never an id.
+        var advanced = typeof(IPluginStoreAdvanced).GetMethods().SelectMany(m => m.GetParameters()).ToArray();
+        advanced.Where(p => p.ParameterType == typeof(int) || p.ParameterType == typeof(int?)).Select(p => p.Name)
+            .Should().Equal("limit");
+        parameters.Concat(advanced).Select(p => p.Name!.ToLowerInvariant())
             .Should().NotContain(n => n.Contains("clientid") || n.Contains("pluginid") || n.Contains("scope"));
     }
 

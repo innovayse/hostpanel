@@ -3271,6 +3271,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -3289,6 +3292,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_PluginDataEntries_ExpiresAt")
+                        .HasFilter("\"ExpiresAt\" IS NOT NULL");
 
                     b.HasIndex("PluginId", "ClientRef", "Key")
                         .IsUnique()

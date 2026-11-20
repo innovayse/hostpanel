@@ -8,6 +8,7 @@ using Innovayse.Hostpanel.Domain.Plugins.Events;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -33,7 +34,8 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
     /// <returns>The store.</returns>
     private static PluginStore CallStore(AppDbContext db, string pluginId, string? clientRef)
     {
-        return new PluginStore(pluginId, clientRef, db, new PluginApiOptions().StoreQuota, new PluginStoreQuotaSignal());
+        return new PluginStore(
+            pluginId, clientRef, db, new PluginApiOptions().StoreQuota, new PluginStoreQuotaSignal(), new SystemClock(TimeProvider.System));
     }
 
     /// <summary>Enables the plugin if it is not yet and activates a new instance of it over the given context.</summary>

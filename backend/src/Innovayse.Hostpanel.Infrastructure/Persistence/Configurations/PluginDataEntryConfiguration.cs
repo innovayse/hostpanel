@@ -28,6 +28,12 @@ public sealed class PluginDataEntryConfiguration : IEntityTypeConfiguration<Plug
         builder.Property(x => x.Value).IsRequired().HasColumnType("text");
         builder.Property(x => x.CreatedAt).IsRequired();
 
+        // Null while the value lives until it is removed. The partial index serves the sweep that removes expired rows
+        // and holds only rows that can expire.
+        builder.HasIndex(x => x.ExpiresAt)
+            .HasFilter("\"ExpiresAt\" IS NOT NULL")
+            .HasDatabaseName("IX_PluginDataEntries_ExpiresAt");
+
         // One row per plugin, client reference and key. Nulls are not distinct, so a plugin-wide value (no client
         // reference) is one row per key too.
         builder.HasIndex(x => new { x.PluginId, x.ClientRef, x.Key })

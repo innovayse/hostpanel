@@ -47,6 +47,24 @@ export const formsFromTranslations = <T extends object>(
 }
 
 /**
+ * Tells, per locale, whether its form carries text; the language tabs mark the ones that do not.
+ *
+ * Written out per locale for the same reason as {@link blankTranslations}.
+ *
+ * @param forms - The per-locale forms.
+ * @param isFilled - Whether a form carries text.
+ * @returns Whether each locale is filled.
+ */
+export const filledLocales = <T>(
+  forms: Record<MessageLanguage, T>,
+  isFilled: (form: T) => boolean,
+): Record<MessageLanguage, boolean> => ({
+  [MessageLanguage.En]: isFilled(forms[MessageLanguage.En]),
+  [MessageLanguage.Ru]: isFilled(forms[MessageLanguage.Ru]),
+  [MessageLanguage.Hy]: isFilled(forms[MessageLanguage.Hy]),
+})
+
+/**
  * Collects the translations worth sending: the trimmed forms of the locales whose main field is filled.
  *
  * @param forms - The per-locale forms.
@@ -82,4 +100,22 @@ export const displayTranslation = <T>(stored: StorefrontTranslations<T>): T | un
     }
   }
   return undefined
+}
+
+/**
+ * Spreads the API's one `translations` refusal over the fields of the active locale tab.
+ *
+ * The server reports a missing or invalid translation under `translations` as a whole, while the form shows a
+ * sentence under each field that makes it up, so the same sentence is copied to the keys of those fields.
+ *
+ * @param errors - The store's field sentences by key.
+ * @param keys - Keys of the translated fields of the form.
+ * @returns The sentences by key, with the `translations` one repeated under every key in `keys`.
+ */
+export const translationErrors = (errors: Readonly<Record<string, string>>, keys: readonly string[]): Record<string, string> => {
+  const sentence = errors.translations
+  if (sentence === undefined) {
+    return { ...errors }
+  }
+  return { ...errors, ...Object.fromEntries(keys.map((key) => [key, sentence])) }
 }

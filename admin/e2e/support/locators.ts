@@ -20,6 +20,21 @@ export const fieldOf = (page: Page, testId: string): Locator =>
   )
 
 /**
+ * Measures an element that must be on screen.
+ *
+ * @param locator - The element.
+ * @returns Its bounding box.
+ * @throws When the element is not rendered, so a missing element fails the test with its name instead of a null read.
+ */
+export const boxOf = async (locator: Locator): Promise<{ x: number, y: number, width: number, height: number }> => {
+  const box = await locator.boundingBox()
+  if (box === null) {
+    throw new Error(`${String(locator)} has no box: it is not rendered`)
+  }
+  return box
+}
+
+/**
  * One tab's panel on the system settings screen.
  *
  * Every panel stays mounted and only the selected one shows, so a test id such as the Save bar's
@@ -30,3 +45,15 @@ export const fieldOf = (page: Page, testId: string): Locator =>
  * @returns A locator for the panel.
  */
 export const settingsPanel = (page: Page, tab: string): Locator => page.getByTestId(`settings-panel-${tab}`)
+
+/**
+ * The toast that carries a sentence.
+ *
+ * A success is confirmed in a self-dismissing toast drawn by `UiToastHost`, not in an inline banner; several toasts can be on
+ * screen at once (a repeated save leaves two with the same text), so the locator narrows to the newest one holding the text.
+ *
+ * @param page - The page under test.
+ * @param text - The sentence, or a part of it, the toast must show.
+ * @returns A locator for the newest toast with that text.
+ */
+export const toastWith = (page: Page, text: string): Locator => page.getByTestId('ui-toast').filter({ hasText: text }).last()

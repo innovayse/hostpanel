@@ -1,23 +1,32 @@
 /**
- * Tests for the settings tab catalogue: every tab is listed once, in order, with its label key and cards.
+ * Tests for the settings tab catalogue: each tab of the screen's schema has its cards, the Advanced tab has none, and
+ * the schema is the one list of the tabs.
  */
 import { describe, expect, it } from 'vitest'
 import BrandingCard from '@/components/settings/BrandingCard.vue'
 import SiteIdentityCard from '@/components/settings/SiteIdentityCard.vue'
 import TrackingChatCard from '@/components/settings/TrackingChatCard.vue'
-import { DEFAULT_SETTINGS_TAB, SETTINGS_TABS, SettingsTab } from '@/lib/settingsTabs'
+import { DEFAULT_SETTINGS_TAB, cardsOfTab } from '@/lib/settingsTabs'
+import { SettingsTab } from '@/types/setting'
+import schema from '@/views/SystemSettingsView.schema'
 
-/**
- * Finds the cards of one tab.
- *
- * @param tab - The tab to look up.
- * @returns Its cards, or an empty list when the tab is not catalogued.
- */
-const cardsOf = (tab: SettingsTab) => SETTINGS_TABS.find((entry) => entry.tab === tab)?.cards ?? []
+describe('cardsOfTab', () => {
+  it('places the cards on their tabs', () => {
+    expect(cardsOfTab(SettingsTab.General)).toHaveLength(3)
+    expect(cardsOfTab(SettingsTab.General)[0]).toBe(SiteIdentityCard)
+    expect(cardsOfTab(SettingsTab.Appearance)).toHaveLength(5)
+    expect(cardsOfTab(SettingsTab.Appearance)).toContain(BrandingCard)
+    expect(cardsOfTab(SettingsTab.Integrations)).toEqual([TrackingChatCard])
+  })
 
-describe('SETTINGS_TABS', () => {
+  it('leaves the advanced tab without cards, for the raw table', () => {
+    expect(cardsOfTab(SettingsTab.Advanced)).toEqual([])
+  })
+})
+
+describe('the settings tabs of the screen schema', () => {
   it('lists every tab once, in display order', () => {
-    expect(SETTINGS_TABS.map((entry) => entry.tab)).toEqual([
+    expect(schema.tabs.map((entry) => entry.key)).toEqual([
       SettingsTab.General,
       SettingsTab.Appearance,
       SettingsTab.Integrations,
@@ -26,21 +35,9 @@ describe('SETTINGS_TABS', () => {
   })
 
   it('names each label after its tab', () => {
-    SETTINGS_TABS.forEach((entry) => {
-      expect(entry.label).toBe(`settings.tabs.${entry.tab}`)
+    schema.tabs.forEach((entry) => {
+      expect(entry.label).toBe(`settings.tabs.${entry.key}`)
     })
-  })
-
-  it('places the cards on their tabs', () => {
-    expect(cardsOf(SettingsTab.General)).toHaveLength(3)
-    expect(cardsOf(SettingsTab.General)[0]).toBe(SiteIdentityCard)
-    expect(cardsOf(SettingsTab.Appearance)).toHaveLength(5)
-    expect(cardsOf(SettingsTab.Appearance)).toContain(BrandingCard)
-    expect(cardsOf(SettingsTab.Integrations)).toEqual([TrackingChatCard])
-  })
-
-  it('leaves the advanced tab without cards, for the raw table', () => {
-    expect(cardsOf(SettingsTab.Advanced)).toEqual([])
   })
 
   it('opens on the general tab', () => {

@@ -17,7 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 /// again and is refused with <c>SSH_KEY_LIMIT_REACHED</c>, and the service never holds more than the limit.
 /// </summary>
 /// <param name="fixture">The host with SSH-enabled servers.</param>
-public sealed class SshKeyLimitRaceTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
+public sealed class SshKeyLimitRaceTests(PluginHostAccessFixture fixture) : IClassFixture<PluginHostAccessFixture>
 {
     /// <summary>The last slot taken during the save: the loser answers 409, the agent never sees it, the limit holds.</summary>
     /// <returns>A task that completes when the test has run.</returns>

@@ -12,7 +12,6 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TaxRuleFormModal from '@/components/settings/TaxRuleFormModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -27,12 +26,12 @@ import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -41,15 +40,23 @@ import { enabledOfFilter } from '@/lib/enabledFilter'
 import { Icon } from '@/lib/icons'
 import { reportCountryName } from '@/lib/reportsCountry'
 import { statusLabel } from '@/lib/tones'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useTaxRulesStore } from '@/stores/taxRules'
 import { EnabledFilter } from '@/types/enabledfilter'
 import type { SaveTaxRulePayload, TaxRuleDto, TaxRuleListFilters } from '@/types/taxrule'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
+import schema from '@/views/TaxRulesView.schema'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('taxRules.addRule'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'tax-rules-add', onSelect: openCreate },
+])
 
 /** The filter field the dialog edits; it is one query key and one `TaxRuleListFilters` member. */
 const FilterKey = {
@@ -190,6 +197,7 @@ const dismissDelete = (): void => {
 const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     testid: `tax-rule-edit-${rule.id}`,
     /**
      * Opens the edit dialog for this rule.
@@ -202,6 +210,7 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `tax-rule-delete-${rule.id}`,
     danger: true,
     /**
@@ -217,20 +226,13 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="tax-rules-view">
-    <UiPageHeader :title="t('taxRules.title')" :subtitle="t('taxRules.description')">
-      <template #actions>
-        <UiButton type="button" variant="primary" data-testid="tax-rules-add" @click="openCreate">
-          <UiIcon :markup="Icon.Add" size="sm" />
-          {{ t('taxRules.addRule') }}
-        </UiButton>
-      </template>
+  <UiStack data-testid="tax-rules-view">
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiAlert
       v-if="banner.message.value"
-      :variant="banner.isError.value ? UiTone.Danger : UiTone.Success"
-      class="mb-5"
+      :variant="UiTone.Danger"
       data-testid="tax-rules-result"
     >
       {{ banner.message.value }}
@@ -272,18 +274,9 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" class="overflow-hidden">
+    <UiCard v-else-if="hasRows || store.loading" clip>
       <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="tax-rules-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader align="left">{{ t('taxRules.table.name') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('taxRules.table.country') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('taxRules.table.region') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('taxRules.table.rate') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('taxRules.table.enabled') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('taxRules.table.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="rule in store.taxRules"
@@ -296,9 +289,13 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
             <UiTableCell muted>{{ rule.region ?? t('taxRules.wholeCountry') }}</UiTableCell>
             <UiTableCell numeric muted>{{ rule.ratePercent }}%</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="rule.isEnabled ? UiTone.Success : UiTone.Danger" small>
-                {{ rule.isEnabled ? t('taxRules.enabledBadge') : t('taxRules.disabledBadge') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="rule.isEnabled"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('taxRules.enabledBadge')"
+                :off-label="t('taxRules.disabledBadge')"
+              />
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="ruleActions(rule)" :testid="`tax-rule-actions-${rule.id}`" />

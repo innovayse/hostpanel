@@ -1,7 +1,7 @@
 /**
  * Unit tests for UiTable: native table, status row for loading and empty, shared density.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -11,7 +11,7 @@ import UiTableFoot from '@/components/ui/UiTableFoot.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiHideBelow } from '@/utils/ui/table'
+import { UiColumnSize, UiHideBelow } from '@/utils/ui/table'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** Global options giving the table its i18n plugin. */
@@ -48,6 +48,24 @@ describe('UiTable', () => {
     expect(wrapper.element.firstElementChild?.tagName).toBe('TABLE')
   })
 
+  it('fades the edge of the box that still hides columns, and drops the fade once the end is reached', async () => {
+    const wrapper = mount(UiTable, { global: global(), attachTo: document.body })
+    const box = wrapper.element as HTMLElement
+    // jsdom has no layout: the box is given a width narrower than its content.
+    Object.defineProperty(box, 'clientWidth', { configurable: true, value: 300 })
+    Object.defineProperty(box, 'scrollWidth', { configurable: true, value: 900 })
+
+    box.dispatchEvent(new Event('scroll'))
+    await nextTick()
+    expect(wrapper.classes().join(' ')).toContain('mask-image')
+
+    Object.defineProperty(box, 'scrollLeft', { configurable: true, value: 600 })
+    box.dispatchEvent(new Event('scroll'))
+    await nextTick()
+    expect(wrapper.classes().join(' ')).toContain('to_left')
+    wrapper.unmount()
+  })
+
   it('can drop its scrolling box, so a dropdown opened from a cell is not clipped', () => {
     const wrapper = mount(UiTable, { props: { scrollable: false }, global: global() })
 
@@ -71,6 +89,34 @@ describe('UiTable', () => {
     const wrapper = mount(UiTable, { props: { scrollable: false, maxHeight: 'md' }, global: global() })
 
     expect(wrapper.classes()).toEqual([])
+  })
+
+  it('draws the placeholder cells at the size of their column', async () => {
+    const wrapper = mount(headerHarness([{ size: UiColumnSize.Compact }, { size: UiColumnSize.Grow }, {}]), { global: global() })
+    await nextTick()
+
+    const cells = wrapper.findAll('[data-testid="ui-table-skeleton"] tr:first-child td')
+    expect(cells[0]?.classes()).toEqual(expect.arrayContaining(['w-px', 'whitespace-nowrap']))
+    expect(cells[1]?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0', 'truncate']))
+    expect(cells[2]?.classes()).toContain('whitespace-nowrap')
+  })
+
+  it('accepts one growing column without a warning', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mount(headerHarness([{ size: UiColumnSize.Compact }, { size: UiColumnSize.Grow }]), { global: global() })
+    await nextTick()
+
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('warns in development when two columns both want to grow', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mount(headerHarness([{ size: UiColumnSize.Grow }, { size: UiColumnSize.Grow }]), { global: global() })
+    await nextTick()
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('at most one'))
+    warn.mockRestore()
   })
 
   it('passes classes and data attributes through', () => {
@@ -110,12 +156,38 @@ describe('UiTable', () => {
     expect(wrapper.text()).toBe('No clients yet')
   })
 
-  it('pads the default message but leaves a custom empty slot to its own spacing', () => {
+  it('draws the default message as a compact empty state with an icon, and the screen text when given', () => {
     const plain = mount(UiTable, { props: { empty: true }, global: global() })
+    const custom = mount(UiTable, { props: { empty: true, emptyText: 'No claims' }, global: global() })
+
+    expect(plain.get('[data-testid="ui-table-empty"]').text()).toBe('No data')
+    expect(plain.find('[data-testid="ui-empty-state-icon"]').exists()).toBe(true)
+    expect(custom.get('[data-testid="ui-table-empty"]').text()).toBe('No claims')
+  })
+
+  it('leaves a custom empty slot to its own spacing', () => {
     const custom = mount(UiTable, { props: { empty: true }, slots: { empty: 'Nothing' }, global: global() })
 
-    expect(plain.get('td').classes()).toContain('py-8')
+    expect(custom.find('[data-testid="ui-table-empty"]').exists()).toBe(false)
     expect(custom.get('td').classes()).not.toContain('py-8')
+  })
+
+  it('hides the column captions of the empty table but keeps the row as wide as the header', async () => {
+    const Harness = defineComponent({
+      render: () => h(UiTable, { empty: true }, {
+        default: () => h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => [
+          h(UiTableHeader, null, { default: () => 'A' }),
+          h(UiTableHeader, null, { default: () => 'B' }),
+        ] }) }),
+      }),
+    })
+
+    const wrapper = mount(Harness, { global: global(), attachTo: document.body })
+    await nextTick()
+
+    expect(wrapper.get('thead').isVisible()).toBe(false)
+    expect(wrapper.get('tbody td').attributes('colspan')).toBe('2')
+    wrapper.unmount()
   })
 
   it('keeps the real header and draws one bar per column in every placeholder row while loading', async () => {
@@ -185,11 +257,13 @@ describe('UiTable', () => {
     expect(cells).toHaveLength(3)
     expect(cells[0]?.classes()).not.toContain('hidden')
     expect(cells[1]?.classes()).toEqual(expect.arrayContaining(['hidden', 'md:table-cell']))
-    expect(cells[2]?.classes()).toEqual(expect.arrayContaining(['w-16', 'sm:w-28', 'text-end']))
+    expect(cells[2]?.classes()).toEqual(expect.arrayContaining(['w-px', 'text-end']))
   })
 
   it('drops the placeholder cell of a header that unmounts', async () => {
+    /** Whether the second header is shown. */
     const shown = ref(true)
+    /** Table whose second header unmounts when the flag is cleared. */
     const Harness = defineComponent({
       render: () => h(UiTable, { loading: true, skeletonRows: 1 }, {
         default: () => h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => [

@@ -22,7 +22,8 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { nextRowKey } from '@/lib/rowKey'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -138,10 +139,10 @@ onMounted(() => fetchServices())
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.addTimeBilling.item') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.description') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow" :card-role="UiCardRole.Control">{{ t('shared.description') }}</UiTableHeader>
             <UiTableHeader :card-role="UiCardRole.Control">{{ t('shared.hours') }}</UiTableHeader>
             <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.addTimeBilling.rate') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('shared.amount') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -173,7 +174,7 @@ onMounted(() => fetchServices())
       </UiTable>
     </UiStack>
     <template #footer>
-      <UiButton
+      <UiButton :action="UiActionKind.Cancel"
         type="button"
         :variant="UiButtonVariant.Secondary"
         data-testid="clients-time-billing-cancel"
@@ -181,7 +182,7 @@ onMounted(() => fetchServices())
       >
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         type="button"
         :variant="UiButtonVariant.Primary"
         :loading="internalSaving"

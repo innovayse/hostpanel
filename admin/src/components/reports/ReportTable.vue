@@ -5,15 +5,19 @@
  * Columns are data (`ReportColumn`): the key reads a property of the row, the format turns the raw
  * value into text (money, percent, date, status badge and so on), and an empty value shows a dash. A
  * screen that needs a cell the formats cannot express fills the `cell-<key>` slot; one that needs
- * grouped rows replaces the whole body with the `body` slot. `totals` adds a footer row, and the
- * empty text shows when there are no rows. The card is glass; the table scrolls inside it past a
- * height cap with its header stuck, and sideways on a narrow screen.
+ * grouped rows replaces the whole body with the `body` slot. `totals` adds a footer row. With no
+ * rows nothing of the table is drawn (no header, no scrollbar): the page shows its one compact empty
+ * state when every part of the report is empty, otherwise the table is replaced by that same
+ * state, titled with the report's empty sentence (the page's, from its schema; see `lib/reportEmpty`), in its place. With no columns (no field
+ * chosen) the same compact state asks to choose fields, never a bare bar of header or rows without
+ * cells. The card is glass; the table scrolls inside it past a height cap with its header stuck, and
+ * sideways on a narrow screen.
  */
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ReportEmptyState from '@/components/reports/ReportEmptyState.vue'
 import ReportStatusBadge from '@/components/reports/ReportStatusBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -23,12 +27,13 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatCurrencyCode, formatReportAmount } from '@/lib/money'
+import { useReportEmptyText, useReportPartEmpty } from '@/lib/reportEmpty'
 import { NOT_LOADING, REPORT_LOADING } from '@/lib/reportLoading'
 import { valueAtPath } from '@/lib/valueAtPath'
-import { ReportCellFormat } from '@/types/reportcolumn'
-import { isNumericColumn } from '@/types/reportcolumn'
+import { isNumericColumn, ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiCardRole } from '@/utils/ui/table'
 
 const { t } = useI18n()
 
@@ -40,7 +45,7 @@ const props = withDefaults(defineProps<{
   rows?: T[]
   /** What identifies a row: the name of a unique property, or a function building a key from the row. Required whenever `rows` is passed. */
   rowKey?: (keyof T & string) | ((row: T) => string)
-  /** Text shown when there are no rows; "No data." when omitted. */
+  /** Sentence of the empty state when it is not the report's own (one server's table of many, already translated); the report's sentence when omitted. */
   emptyText?: string
   /** Forces the empty state on or off; by default it follows `rows`. */
   empty?: boolean
@@ -50,6 +55,8 @@ const props = withDefaults(defineProps<{
   totalsLabel?: string
   /** Formats a money cell; US dollars when omitted. */
   formatMoney?: (amount: number) => string
+  /** Whether the rows come in groups opened by heading rows, so the loading placeholder opens with one too. */
+  grouped?: boolean
   /** Prefix of the `data-testid`s (`<prefix>`, `<prefix>-row`). */
   testid?: string
 }>(), {
@@ -71,6 +78,7 @@ const props = withDefaults(defineProps<{
    * @returns The formatted amount.
    */
   formatMoney: (amount: number) => formatReportAmount(amount),
+  grouped: false,
   testid: 'report-table',
 })
 
@@ -78,8 +86,8 @@ const props = withDefaults(defineProps<{
 defineSlots<{
   /** Replaces the cell of one column; the slot name is `cell-` plus the column key. */
   [slot: `cell-${string}`]: (scope: { row: T; value: unknown }) => unknown
-  /** Replaces all body rows (grouped reports). */
-  body?: () => unknown
+  /** Replaces all body rows (grouped reports); gets the columns, so a heading row can span them. */
+  body?: (scope: { columns: readonly ReportColumn[] }) => unknown
   /** Extra rows under the totals. */
   footer?: () => unknown
 }>()
@@ -87,8 +95,23 @@ defineSlots<{
 /** True while the report loads: the real columns stay and skeleton rows stand in for the data. */
 const loading = inject(REPORT_LOADING, NOT_LOADING)
 
+/** The sentence of the report's empty state, which a table without a sentence of its own uses. */
+const reportEmptyText = useReportEmptyText()
+
+/** The sentence this table's empty state shows: its own, else the report's, else the generic one. */
+const emptySentence = computed<string | undefined>(() => props.emptyText ?? reportEmptyText.value)
+
 /** Whether the empty state shows. */
 const isEmpty = computed<boolean>(() => props.empty ?? props.rows.length === 0)
+
+/** Whether there is no column to draw, so the rows and the header would be bars without cells. */
+const noColumns = computed<boolean>(() => props.columns.length === 0)
+
+/** Whether this table has no data to show: columns are chosen, the report has loaded, and there are no rows. */
+const noData = computed<boolean>(() => !noColumns.value && !loading.value && isEmpty.value)
+
+/** True when the page shows the single empty state for the whole report, so this table draws nothing. */
+const collapsed = useReportPartEmpty(noData)
 
 /**
  * Reads the raw value a column shows for a row.
@@ -174,17 +197,20 @@ const totalText = (column: ReportColumn, position: number): string => {
 </script>
 
 <template>
-  <UiCard class="overflow-hidden" :data-testid="testid">
-    <UiTable :density="UiTableDensity.Comfortable" :loading="loading" :empty="isEmpty && !loading">
+  <template v-if="collapsed" />
+  <ReportEmptyState v-else-if="noColumns" :title="t('shared.chooseFieldsToInclude')" hint="" :testid="`${testid}-empty`" />
+  <ReportEmptyState v-else-if="noData" :title="emptySentence" :testid="`${testid}-empty`" />
+  <UiCard v-else clip :data-testid="testid">
+    <UiTable :density="UiTableDensity.Comfortable" :loading="loading" :skeleton-group="grouped">
       <UiTableHead>
         <UiTableRow>
-          <UiTableHeader v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
-            {{ column.label }}
+          <UiTableHeader v-for="column in columns" :key="column.key" :align="column.align" :size="column.size" :numeric="isNumericColumn(column)" :card-role="column.format === ReportCellFormat.Status ? UiCardRole.Badge : undefined">
+            <span :title="column.hint">{{ column.label }}</span>
           </UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody divided>
-        <slot name="body">
+        <slot name="body" :columns="columns">
           <UiTableRow v-for="row in rows" :key="keyOf(row)" hoverable :data-testid="`${testid}-row`">
             <UiTableCell v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
               <slot :name="`cell-${column.key}`" :row="row" :value="valueOf(row, column.key)">
@@ -200,7 +226,7 @@ const totalText = (column: ReportColumn, position: number): string => {
           </UiTableRow>
         </slot>
       </UiTableBody>
-      <UiTableFoot v-if="totals && !isEmpty && !loading">
+      <UiTableFoot v-if="totals && !loading">
         <UiTableRow data-testid="report-totals">
           <UiTableCell v-for="(column, position) in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)" class="text-text-primary">
             {{ totalText(column, position) }}
@@ -208,9 +234,6 @@ const totalText = (column: ReportColumn, position: number): string => {
         </UiTableRow>
       </UiTableFoot>
       <slot name="footer" />
-      <template #empty>
-        <UiEmptyState :title="emptyText ?? t('shared.noData')" />
-      </template>
     </UiTable>
   </UiCard>
 </template>

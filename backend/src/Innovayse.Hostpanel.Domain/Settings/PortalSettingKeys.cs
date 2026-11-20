@@ -166,7 +166,11 @@ public static class PortalSettingKeys
     /// <summary>Support working hours shown on the contact page, e.g. <c>Mon-Fri 09:00-18:00</c>.</summary>
     public const string ContactHours = "portal.contact.hours";
 
-    /// <summary>Time zone the working hours are stated in, e.g. <c>GMT+4</c>; shown only beside the hours.</summary>
+    /// <summary>
+    /// IANA time zone the working hours are stated in, e.g. <c>Asia/Yerevan</c> or <c>UTC</c>; shown only beside the hours.
+    /// A row written before the setting held an id may still hold a free-text offset such as <c>UTC+4</c>: the admin
+    /// reads it as the fixed-offset zone it means, and the storefront shows it as it is until it is saved again.
+    /// </summary>
     public const string ContactTimezone = "portal.contact.timezone";
 
     /// <summary>Whether the operator states that backups are offered: <c>true</c> or <c>false</c>.</summary>
@@ -408,6 +412,10 @@ public static class PortalSettingKeys
                 HttpsAddress,
                 "an https:// address like https://maps.example.com/embed",
                 v => v),
+            [ContactTimezone] = new(
+                new Regex("^(UTC|[A-Za-z]+(/[A-Za-z0-9_+\\-]+){1,2})$", RegexOptions.CultureInvariant),
+                "an IANA time zone id like Asia/Yerevan, or UTC",
+                v => v),
             [Logo] = ImageAddress,
             [LogoDark] = ImageAddress,
             [LogoMark] = ImageAddress,
@@ -537,7 +545,7 @@ public static class PortalSettingKeys
         new(ContactMapUrl,       "",       "Embeddable map address of the office, https:// only. Empty hides the map."),
         new(SocialTwitter,       "",       "Twitter profile URL. Empty hides the icon."),
         new(ContactHours,        "",       "Support working hours shown on the contact page. Empty hides the row."),
-        new(ContactTimezone,     "",       "Time zone the working hours are stated in, shown beside them. Ignored while the hours are empty."),
+        new(ContactTimezone,     "",       "IANA time zone (like Asia/Yerevan) the working hours are stated in, shown beside them. Ignored while the hours are empty."),
         new(ContactAddressRu,    "",       "Office address for Russian visitors. Empty uses the default address."),
         new(ContactAddressHy,    "",       "Office address for Armenian visitors. Empty uses the default address."),
         new(ContactHoursRu,      "",       "Support working hours for Russian visitors. Empty uses the default hours."),

@@ -90,16 +90,26 @@ export const FLOATING_PANEL_CLASSES = 'bg-surface-elevated border border-border 
  * @param anchor - The trigger's box in viewport pixels.
  * @param viewport - The viewport without scrollbars.
  * @param options - How the panel hangs from the trigger.
+ * @param panelWidth - The measured width of the open panel; when known, an end aligned panel that would reach past the left edge
+ *   flips to hang from the trigger's left edge (a trigger at the left of the screen, like the sidebar's account card), and a start
+ *   aligned one is pulled back inside the right edge.
  * @returns The edges to draw the panel at.
  */
-export const computeFloatingPlace = (anchor: FloatingAnchor, viewport: FloatingViewport, options: FloatingOptions): FloatingPlace => {
+export const computeFloatingPlace = (
+  anchor: FloatingAnchor,
+  viewport: FloatingViewport,
+  options: FloatingOptions,
+  panelWidth?: number,
+): FloatingPlace => {
   const below = viewport.height - anchor.bottom
   const opensAbove = below < options.minRoom && anchor.top > below
   const place: FloatingPlace = { width: anchor.width }
-  if (options.align === FloatingAlign.End) {
+  const fitWidth = options.keepInsideWidth ?? panelWidth
+  const endFits = panelWidth === undefined || anchor.right - panelWidth >= VIEWPORT_MARGIN_PX
+  if (options.align === FloatingAlign.End && endFits) {
     place.right = viewport.width - anchor.right
-  } else if (options.keepInsideWidth !== undefined) {
-    const furthest = viewport.width - options.keepInsideWidth - VIEWPORT_EDGE_GAP_PX
+  } else if (fitWidth !== undefined) {
+    const furthest = viewport.width - fitWidth - VIEWPORT_EDGE_GAP_PX
     place.left = Math.max(Math.min(anchor.left, furthest), VIEWPORT_MARGIN_PX)
   } else {
     place.left = anchor.left

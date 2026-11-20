@@ -98,6 +98,15 @@ export function useInvoices() {
   `<select>` / `<option>` / `<datalist>`; the same holds for date/time/colour pickers, kit
   components only. The OS dropdown cannot be themed (light/dark, radius, scrollbar) and differs
   per browser. A native `<select>` in a screen or domain component is a review failure.
+- **Every action carries an icon with its label.** A `UiButton` or a button-look `UiLink` names its kind with
+  `:action="UiActionKind.Save"` (the one map from kind to icon is `utils/ui/actions`) or passes its own `:icon`;
+  it never draws the icon as a `UiIcon` child. Text-only controls are the `link` look in prose, a plain `UiLink` and
+  an explicit `plain` button. A table row has no text action: one action is an icon button and several are one "…"
+  menu (`UiRowActions`); a link whose label is the record's own data (a client name, `#{{ id }}`) is navigation.
+  A page header's actions are data (`UiPageHeader` `actions`, `UiHeaderAction`, `icon` required), never buttons in
+  the `actions` slot, so on a phone only the primary one stays a button and the rest fold into one "…" menu
+  (`useFoldedActions`, shared with `UiBulkBar`). `tests/lint/actionIcons.test.ts` and `tests/lint/tableShape.test.ts`
+  enforce it, each with self-tests and a checked allow list.
 
 ```vue
 <!-- CORRECT -->
@@ -136,7 +145,9 @@ export function useInvoices() {
 records hold plain `() => import()` loaders, never `defineAsyncComponent`, so the router keeps the
 old screen until the next one has downloaded; `RoutedView` reads the navigation store and stands
 the skeleton (or the load error) in for the one level the navigation replaces, so a click is
-answered at once.
+answered at once. The skeleton is drawn from the screen's own schema (`views/<Name>.schema.ts`, see
+`lib/skeletonRegistry.ts`); `AppLayout` is the one eager layout, so a hard load already shows the
+sidebar and the top bar around the skeleton of the screen still downloading.
 
 A routed view therefore starts at its own content, no `p-4 sm:p-6 lg:p-8` on a view
 root, and no re-padding further down. This was previously repeated on 63 view roots,

@@ -80,6 +80,10 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         // xmin token (above) makes two adds of one service conflict; the loser recounts, so the per-service key limit
         // holds. An unrelated save of the same service in that window conflicts too, which the installer retries.
         builder.Property(x => x.SshKeyRevision).IsRequired().HasDefaultValue(0L);
+
+        // The same serialisation for the per-service website and database limits: every change of a resource moves
+        // HostingResourceRevision in the same save, so two concurrent changes of one service conflict on xmin.
+        builder.Property(x => x.HostingResourceRevision).IsRequired().HasDefaultValue(0L);
         builder.Ignore(x => x.DomainEvents);
 
         // A client who still has this record cannot be deleted: billing, service and support history

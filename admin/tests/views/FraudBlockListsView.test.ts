@@ -7,11 +7,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import FraudBlockListsView from '@/views/FraudBlockListsView.vue'
 import { BlockListType } from '@/types/fraud'
+import { BLOCK_LIST_TABLE, BLOCK_LIST_TABS_PART } from '@/views/FraudBlockListsView.schema'
 import type { BlockListEntry } from '@/types/fraud'
 import { callsOf, invalid, json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable, stubRoutes } from '../helpers/routes'
 import { pickOption } from '../helpers/select'
+import { useToastStore } from '@/stores/toast'
 
 /** Request line of the first page of the IP list. */
 const LIST_IP = 'GET /admin/fraud/blocklist?page=1&pageSize=20&type=Ip'
@@ -103,7 +105,7 @@ describe('FraudBlockListsView', () => {
     const post = callsOf(mock).find((call) => call.method === 'POST')
     expect(post?.body).toEqual({ type: 'Ip', value: '203.0.113.9', note: 'chargebacks' })
     expect(requestsOf(mock).slice(-1)).toEqual([LIST_IP])
-    expect(wrapper.get('[data-testid="fraud-block-list-result"]').text()).toBe('Entry added to the block list.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Entry added to the block list.'])
     expect(wrapper.get('[data-testid="fraud-block-list-table"]').text()).toContain('203.0.113.9')
     expect((wrapper.get('[data-testid="fraud-block-list-value"]').element as HTMLInputElement).value).toBe('')
     expect((wrapper.get('[data-testid="fraud-block-list-note"]').element as HTMLInputElement).value).toBe('')
@@ -126,6 +128,19 @@ describe('FraudBlockListsView', () => {
     expect(post?.body).toEqual({ type: 'Country', value: 'FR', note: null })
   })
 
+  it('draws a tab per list and the columns of the schema, and keeps the tabs the members of the block list type', async () => {
+    stubRouteTable({ 'GET /admin/fraud/blocklist': () => json(pageOf([entry(4, '203.0.113.7')])) })
+    const { wrapper } = await mountScreen(FraudBlockListsView)
+    await flushPromises()
+
+    expect(BLOCK_LIST_TABS_PART.tabs.map((tab) => tab.key)).toEqual(Object.values(BlockListType))
+    for (const tab of BLOCK_LIST_TABS_PART.tabs) {
+      expect(wrapper.find(`[data-testid="fraud-block-list-tab-${tab.key}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.get('[data-testid="fraud-block-list-table"]').findAll('[role="columnheader"]')).toHaveLength(BLOCK_LIST_TABLE.columns.length)
+    expect(wrapper.find('[data-testid="ui-form-section-add"]').exists()).toBe(true)
+  })
+
   it('shows a refused value under its field and not in the banner', async () => {
     stubRouteTable({
       'GET /admin/fraud/blocklist': () => json(pageOf([])),
@@ -137,7 +152,7 @@ describe('FraudBlockListsView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="fraud-block-list-value-error"]').text()).toBe('Enter a valid IP address.')
+    expect(wrapper.get('[data-testid="ui-form-field-value-error"]').text()).toBe('Enter a valid IP address.')
     expect(wrapper.find('[data-testid="fraud-block-list-result"]').exists()).toBe(false)
     expect((wrapper.get('[data-testid="fraud-block-list-value"]').element as HTMLInputElement).value).toBe('nope')
   })
@@ -169,7 +184,7 @@ describe('FraudBlockListsView', () => {
     await wrapper.get('[data-testid="fraud-block-list-tab-EmailDomain"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="fraud-block-list-value-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-form-field-value-error"]').exists()).toBe(false)
   })
 
   it('asks before deleting, then deletes and reads the list again', async () => {
@@ -192,7 +207,7 @@ describe('FraudBlockListsView', () => {
 
     expect(requestsOf(mock)).toContain('DELETE /admin/fraud/blocklist/4')
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="fraud-block-list-result"]').text()).toBe('Entry removed from the block list.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Entry removed from the block list.'])
     expect(wrapper.find('[data-testid="fraud-block-list-row-4"]').exists()).toBe(false)
   })
 

@@ -12,6 +12,7 @@
 
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useLocalizedSetting } from '~/composables/useLocalizedSetting'
+import { timezoneOffsetLabel } from '~/utils/timezoneOffsetLabel'
 
 /**
  * Reads the published working hours.
@@ -23,7 +24,7 @@ export const useContactHours = () => {
   const { getLocalized } = useLocalizedSetting()
 
   /**
-   * Hours followed by the time zone, e.g. the two values joined by a space.
+   * Hours followed by the time zone's current offset (the zone is an IANA id; an old free-text value is shown as written).
    * Empty when the hours are empty, even if a time zone is set: a zone alone says nothing.
    */
   const workingHours = computed(() => {
@@ -37,7 +38,7 @@ export const useContactHours = () => {
     }
 
     const timezone = get(PortalSettingKey.ContactTimezone, 'portalContactTimezone')
-    return timezone ? `${hours} ${timezone}` : hours
+    return timezone ? `${hours} ${timezoneOffsetLabel(timezone)}` : hours
   })
 
   return { workingHours }

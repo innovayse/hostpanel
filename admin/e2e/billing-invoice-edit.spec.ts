@@ -7,6 +7,7 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { unpaidInvoiceDetail } from './fixtures/invoices'
 import type { InvoiceDetail, InvoiceItemUpdate } from '../src/types/invoice'
+import { toastWith } from './support/locators'
 import { stubApi } from './support/stubApi'
 
 test('saving the edited lines sends the edits and the screen shows the stored result', async ({ page }) => {
@@ -48,7 +49,7 @@ test('saving the edited lines sends the edits and the screen shows the stored re
   await page.getByTestId('billing-invoice-item-description-0').fill('Managed hosting')
   await page.getByTestId('billing-invoice-items-save').click()
 
-  await expect(page.getByTestId('billing-invoice-items-feedback')).toHaveText('Changes saved successfully.')
+  await expect(toastWith(page, 'Changes saved successfully.')).toBeVisible()
   expect(api.callsTo(HttpMethod.Put, `/api/billing/${stored.id}/items`)[0]?.body).toEqual({
     items: [
       { id: 1, description: 'Managed hosting', unitPrice: 120, quantity: 1, isDeleted: false },

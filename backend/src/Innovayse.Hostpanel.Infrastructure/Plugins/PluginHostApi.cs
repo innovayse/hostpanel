@@ -1,4 +1,3 @@
-using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Host;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
@@ -12,17 +11,18 @@ using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
  * makes the invoices query run, and one without the master profile right never has the sign-in address placed in the
  * profile. The rows of other modules come through IPluginHostFactsReader, so this adapter holds no data context.
  *
- * The two SSH methods (#758) only delegate to the Application's PluginSshAccessService with this call's binding, and turn
- * its refusal into the SDK's PluginHostAccessException at the plugin boundary. No use case is dispatched from here: an
- * adapter never calls a handler.
+ * The two SSH methods (#758) and the hosting methods (#1294) only delegate to the Application's PluginSshAccessService and
+ * PluginHostingService with this call's binding, and turn its refusal into the SDK's PluginHostAccessException at the
+ * plugin boundary. No use case is dispatched from here: an adapter never calls a handler.
  */
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
 /// The SDK's <see cref="IPluginHostApi"/> for one call, bound when it is built to the call's
-/// <see cref="PluginCallBinding"/>: no method takes an id, so a plugin reads only the facts of that client, and only
-/// what the caller could see in the portal.
+/// <see cref="PluginCallBinding"/>: no method takes a client id, so a plugin reads only the facts of that client, and
+/// only what the caller could see in the portal. It also implements the optional <see cref="IPluginHostHostingApi"/>
+/// (websites and databases on the client's hosting, #1294).
 /// </summary>
 /// <remarks>
 /// <list type="bullet">
@@ -37,7 +37,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// Each list is the newest <see cref="PluginHostLimits.MaxListed"/> rows, and a call without a client, or whose client row
 /// is gone, gets no profile and empty lists.
 /// </remarks>
-internal sealed class PluginHostApi : IPluginHostApi
+internal sealed class PluginHostApi : IPluginHostHostingApi
 {
     /// <summary>The call's client and the permissions its caller holds there.</summary>
     private readonly PluginCallBinding _binding;
@@ -54,24 +54,30 @@ internal sealed class PluginHostApi : IPluginHostApi
     /// <summary>Issues and revokes the plugin's SSH identities for the bound client.</summary>
     private readonly PluginSshAccessService _ssh;
 
+    /// <summary>Reads what the hosting can do, and sets up and removes the plugin's websites and databases for the bound client.</summary>
+    private readonly PluginHostingService _hosting;
+
     /// <summary>Initializes the facts of one call.</summary>
     /// <param name="binding">The call's client and the permissions its caller holds there.</param>
     /// <param name="facts">Reads the client, service and invoice rows of the bound client.</param>
     /// <param name="identity">The identity provider that holds the client's sign-in email and language.</param>
     /// <param name="payerCurrency">Resolves the currency the client is billed in.</param>
     /// <param name="ssh">Issues and revokes the plugin's SSH identities for the bound client.</param>
+    /// <param name="hosting">Reads what the hosting can do, and sets up and removes the plugin's websites and databases.</param>
     public PluginHostApi(
         PluginCallBinding binding,
         IPluginHostFactsReader facts,
         IIdentityProvider identity,
         IPayerCurrencyResolver payerCurrency,
-        PluginSshAccessService ssh)
+        PluginSshAccessService ssh,
+        PluginHostingService hosting)
     {
         _binding = binding;
         _facts = facts;
         _identity = identity;
         _payerCurrency = payerCurrency;
         _ssh = ssh;
+        _hosting = hosting;
     }
 
     /// <inheritdoc/>
@@ -135,22 +141,44 @@ internal sealed class PluginHostApi : IPluginHostApi
     /// <inheritdoc/>
     public async Task<PluginSshAccess> IssueSshAccessAsync(int serviceId, string label, CancellationToken ct)
     {
-        var outcome = await _ssh.IssueAsync(_binding, serviceId, label, ct);
-        if (outcome.Access is { } access)
-        {
-            return access;
-        }
-
-        throw new PluginHostAccessException(outcome.Failure ?? PluginHostAccessFailure.ServerUnavailable);
+        return (await _ssh.IssueAsync(_binding, serviceId, label, ct)).GrantedOrThrow();
     }
 
     /// <inheritdoc/>
     public async Task RevokeSshAccessAsync(int serviceId, Guid keyId, CancellationToken ct)
     {
-        var failure = await _ssh.RevokeAsync(_binding, serviceId, keyId, ct);
-        if (failure is { } refused)
-        {
-            throw new PluginHostAccessException(refused);
-        }
+        (await _ssh.RevokeAsync(_binding, serviceId, keyId, ct)).ThrowIfRefused();
+    }
+
+    /// <inheritdoc/>
+    public async Task<PluginHostingCapabilities> GetHostingCapabilitiesAsync(int serviceId, CancellationToken ct)
+    {
+        return (await _hosting.GetCapabilitiesAsync(_binding, serviceId, ct)).GrantedOrThrow().ToPlugin();
+    }
+
+    /// <inheritdoc/>
+    public async Task<PluginWebsite> EnsureWebsiteAsync(int serviceId, PluginWebsiteSpec spec, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(spec);
+        return (await _hosting.EnsureWebsiteAsync(_binding, serviceId, spec.ToHosted(), ct)).GrantedOrThrow().ToPlugin();
+    }
+
+    /// <inheritdoc/>
+    public async Task RemoveWebsiteAsync(int serviceId, Guid websiteId, CancellationToken ct)
+    {
+        (await _hosting.RemoveWebsiteAsync(_binding, serviceId, websiteId, ct)).ThrowIfRefused();
+    }
+
+    /// <inheritdoc/>
+    public async Task<PluginDatabase> EnsureDatabaseAsync(int serviceId, string label, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(label);
+        return (await _hosting.EnsureDatabaseAsync(_binding, serviceId, label, ct)).GrantedOrThrow().ToPlugin();
+    }
+
+    /// <inheritdoc/>
+    public async Task RemoveDatabaseAsync(int serviceId, Guid databaseId, CancellationToken ct)
+    {
+        (await _hosting.RemoveDatabaseAsync(_binding, serviceId, databaseId, ct)).ThrowIfRefused();
     }
 }

@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
+using Innovayse.Hostpanel.Domain.Products;
+using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -65,6 +68,54 @@ public sealed class GetCustomerRetentionTests(IntegrationTestFactory factory) : 
         row.GetProperty("avgMonths").GetInt32().Should().Be(5);
         row.GetProperty("termYears").GetInt32().Should().Be(1);
         row.GetProperty("billingCycle").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    /// <summary>
+    /// Terminated services of one product and billing cycle are counted and their lifetimes averaged
+    /// in SQL, grouped under the product's group: lifetimes of 100 and 200 days average to 150.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AveragesTheLifetimesOfOneProduct()
+    {
+        var marker = $"Retention{Guid.NewGuid():N}";
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, marker);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var group = ProductGroup.Create($"RetGroup-{marker}", null);
+            db.ProductGroups.Add(group);
+            await db.SaveChangesAsync();
+            var product = Product.Create(
+                group.Id, $"RetProduct-{marker}", null, null, null, null, ProductType.SharedHosting, 10m, 100m, TestMoments.Seeded);
+            db.Products.Add(product);
+            await db.SaveChangesAsync();
+
+            foreach (var lifetimeDays in new[] { 100, 200 })
+            {
+                var service = ClientService.Create(clientId, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+                service.Backdate(TestMoments.Seeded);
+                service.Terminate(TestMoments.Seeded.AddDays(lifetimeDays), hostingAlreadyUpdated: true);
+                db.ClientServices.Add(service);
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        var client = await ReportsTestSeeds.AdminClientAsync(factory);
+        var response = await client.GetAsync("/api/reports/customer-retention?includeActive=false");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var serviceGroup = body.GetProperty("groups").EnumerateArray()
+            .Single(g => g.GetProperty("groupName").GetString() == $"RetGroup-{marker}");
+        serviceGroup.GetProperty("kind").GetString().Should().Be("ProductGroup");
+        var row = serviceGroup.GetProperty("rows").EnumerateArray().Single();
+        row.GetProperty("productName").GetString().Should().Be($"RetProduct-{marker}");
+        row.GetProperty("billingCycle").GetString().Should().Be("Monthly");
+        row.GetProperty("productCount").GetInt32().Should().Be(2);
+        row.GetProperty("avgDaysActive").GetInt32().Should().Be(150);
+        row.GetProperty("termYears").ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     /// <summary>The route is not for anonymous callers.</summary>

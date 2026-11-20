@@ -1,8 +1,7 @@
 {
-  "title": "Валюты",
   "description": "Настройка валют, курсов обмена и базовой валюты",
-  "updateRates": "Обновить курсы обмена",
-  "updateProductPrices": "Обновить цены товаров",
+  "updateRates": "Обновить курсы",
+  "updateProductPrices": "Обновить цены",
   "addCurrency": "Добавить валюту",
   "rateProvider": {
     "title": "Источник курсов обмена",

@@ -34,7 +34,7 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
 
     /// <summary>
     /// Once an integration's required fields are stored, its row reports it as configured;
-    /// the list carries no description and no last test moment, which nothing stores.
+    /// the list carries no last test moment, which nothing stores.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -52,7 +52,6 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
 
         var gateway = list!.Single(i => i.GetProperty("slug").GetString() == "smtp");
         gateway.GetProperty("isConfigured").GetBoolean().Should().BeTrue();
-        gateway.TryGetProperty("description", out _).Should().BeFalse();
         gateway.TryGetProperty("lastTestedAt", out _).Should().BeFalse();
     }
 

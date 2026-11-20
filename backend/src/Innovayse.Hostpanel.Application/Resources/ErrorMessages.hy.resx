@@ -615,6 +615,9 @@
 <data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
     <value>Մանիֆեստում սերվերի հաշվի նույնացուցչի պիտակը պետք է լինի 1-ից 60 նիշ՝ առանց կառավարող նիշերի։</value>
   </data>
+  <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Մանիֆեստի agentProfile-ը պետք է լինի SDK-ի սահմանած SSH բանալիների գործակալի պրոֆիլներից մեկը՝ գրված ճշգրիտ։</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
   </data>
@@ -1210,6 +1213,9 @@
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>Արտոնյալ ժամկետը պետք է լինի 0-ից 365 օր։</value>
   </data>
+  <data name="PRODUCT_TRIAL_INVALID" xml:space="preserve">
+    <value>Փորձաշրջանը պետք է տևի 1-ից 365 օր, ունենա առավելագույնը 5 տարբեր հիշեցման օր՝ մինչև ավարտը, և 0-ից 30 օր արտոնյալ ժամկետ։</value>
+  </data>
   <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
     <value>Այս արտաքին հաշիվն արդեն կապված է մեկ այլ հաճախորդի։</value>
   </data>
@@ -1332,6 +1338,9 @@
   </data>
   <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
     <value>Այս պլագինի տեսքի փաստաթղթերից մեկը գործողության հարցման մարմինը կազմում է էջի տվյալներից այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>
+  </data>
+  <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
+    <value>Այս պլագինի տեսքի փաստաթղթերից մեկը պատասխանից հասցե է բացում այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>
   </data>
   <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
     <value>Այս պլագինի դիտման փաստաթղթերից մեկը հայտարարում է տարրերի ընտրություն այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>

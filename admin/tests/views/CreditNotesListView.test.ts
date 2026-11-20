@@ -6,6 +6,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import CreditNotesListView from '@/views/CreditNotesListView.vue'
+import schema from '@/views/CreditNotesListView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
 import { creditNoteFixture, creditNotePage } from '../helpers/creditNoteFixtures'
@@ -142,5 +144,14 @@ describe('CreditNotesListView', () => {
     const wrapper = await mountView(CreditNotesListView)
 
     expect(wrapper.get('[data-testid="billing-credit-notes-error"]').text()).toContain('Not allowed.')
+  })
+
+  it('draws the table skeleton under the schema head while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(CreditNotesListView, '/billing/credit-notes', '/billing/credit-notes')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

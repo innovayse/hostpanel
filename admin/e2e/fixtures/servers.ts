@@ -35,6 +35,7 @@ export const hostServer: ServerDto = {
   lastTestedAt: null,
   accountsCount: 12,
   credentials: { hasPassword: false, hasApiToken: false, hasAccessHash: true },
+  usage: { activeServices: 3, monthlyRevenue: 45, currency: 'USD' },
 }
 
 /**

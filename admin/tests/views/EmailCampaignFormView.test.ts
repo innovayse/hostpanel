@@ -16,6 +16,7 @@ import type { RecordedCall } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 vi.mock('@vuepic/vue-datepicker', async () => {
   const { defineComponent, h } = await import('vue')
@@ -220,7 +221,7 @@ describe('EmailCampaignFormView, a new campaign', () => {
       segments: [{ filterType: CampaignFilterType.AllActive, filterValue: null }],
     })
     expect(callsTo(mock, 'GET', '/api/admin/email-campaigns/7')).toHaveLength(1)
-    expect(wrapper.get('[data-testid="email-campaign-feedback"]').text()).toBe('Draft saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Draft saved.'])
     expect((wrapper.get('[data-testid="email-campaign-subject"]').element as HTMLInputElement).value).toBe('Spring offer')
   })
 
@@ -289,14 +290,15 @@ describe('EmailCampaignFormView, a new campaign', () => {
 })
 
 describe('EmailCampaignFormView, loading', () => {
-  it('keeps the form fields and the actions in place as placeholders while the campaign loads', async () => {
+  it('keeps the form fields in place as placeholders and holds the actions back while the campaign loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await open('/support/email-campaigns/7')
 
-    expect(wrapper.get('[data-testid="email-campaign-form"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(3)
+    expect(wrapper.get('[data-testid="ui-form-section-campaign"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="ui-form-field-bar"]')).toHaveLength(1)
     expect(wrapper.find('[data-testid="email-campaign-subject"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="email-campaign-save"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-testid="email-campaign-save"]').exists()).toBe(false)
   })
 })
 
@@ -321,7 +323,7 @@ describe('EmailCampaignFormView, a draft', () => {
       body: '<p>Hello</p>',
       segments: [{ filterType: CampaignFilterType.Country, filterValue: 'AM' }],
     })
-    expect(wrapper.get('[data-testid="email-campaign-feedback"]').text()).toBe('Draft saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Draft saved.'])
   })
 
   it('saves and then shows the rendered mail in the preview dialog', async () => {
@@ -458,7 +460,7 @@ describe('EmailCampaignFormView, past the draft stage', () => {
     await flushPromises()
 
     expect(callsTo(mock, 'POST', '/api/admin/email-campaigns/7/cancel')).toHaveLength(1)
-    expect(wrapper.get('[data-testid="email-campaign-feedback"]').text()).toBe('The schedule is cancelled.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['The schedule is cancelled.'])
     expect(wrapper.find('[data-testid="email-campaign-save"]').exists()).toBe(true)
   })
 

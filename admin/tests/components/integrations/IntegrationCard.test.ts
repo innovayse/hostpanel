@@ -1,6 +1,7 @@
 /**
- * Mount tests for IntegrationCard: name, status badge, plugin, plugin type and not-configured badges and the
- * link to the configuration page.
+ * Mount tests for IntegrationCard: name, status badge, the one plugin marker, the not-configured badge, the body text
+ * (a built-in's catalogue text, a plugin's own description), the connection badge with the plugin's sentence as its
+ * tooltip, and the link to the configuration page.
  */
 import { describe, expect, it } from 'vitest'
 import IntegrationCard from '@/components/integrations/IntegrationCard.vue'
@@ -38,23 +39,42 @@ describe('IntegrationCard', () => {
     expect(wrapper.text()).toContain('Plugin')
   })
 
-  it.each([
-    [PluginType.Fulfilment, 'Fulfilment'],
-    [PluginType.Identity, 'Identity'],
-    [PluginType.Hosted, 'Background worker'],
-    [PluginType.Payment, 'Payment'],
-    [PluginType.Provisioning, 'Provisioning'],
-    [PluginType.Registrar, 'Registrar'],
-  ])('labels a %s plugin with its type', (pluginType, label) => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true, pluginType }) } })
+  it('marks a plugin once and draws no badge for its category or type', () => {
+    const wrapper = mountWithApp(IntegrationCard, {
+      props: { integration: integrationDto({ isPlugin: true, pluginType: PluginType.Fulfilment }) },
+    })
 
-    expect(wrapper.get('[data-testid="integration-type-bank-transfer"]').text()).toBe(label)
+    expect(wrapper.findAll('[data-testid="integration-plugin-bank-transfer"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="integration-type-bank-transfer"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Fulfilment')
   })
 
-  it('shows no type badge on a built-in integration', () => {
+  it('shows no plugin marker on a built-in integration', () => {
     const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
 
-    expect(wrapper.find('[data-testid="integration-type-bank-transfer"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="integration-plugin-bank-transfer"]').exists()).toBe(false)
+  })
+
+  it('keeps the name on one line and gives the full name as its tooltip', () => {
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ name: 'A very long integration name' }) } })
+    const name = wrapper.get('[data-testid="integration-card-name"]')
+
+    expect(name.classes()).toContain('truncate')
+    expect(name.attributes('title')).toBe('A very long integration name')
+  })
+
+  it('shows the catalogue text of a built-in integration', () => {
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+
+    expect(wrapper.text()).toContain('Allow clients to pay via direct bank transfer with your banking details.')
+  })
+
+  it("shows the plugin's own description as the body", () => {
+    const wrapper = mountWithApp(IntegrationCard, {
+      props: { integration: integrationDto({ slug: 'deliver', isPlugin: true, description: 'Delivers licence keys after payment.' }) },
+    })
+
+    expect(wrapper.text()).toContain('Delivers licence keys after payment.')
   })
 
   it('shows a plugin integration with its icon and falls back to the initial', () => {
@@ -67,7 +87,7 @@ describe('IntegrationCard', () => {
     expect(builtIn.find('[data-testid="integration-plugin-avatar"]').exists()).toBe(false)
   })
 
-  it('shows the connection state a plugin reported, with its message', () => {
+  it('shows the connection state a plugin reported as a short badge, with its message only as the tooltip', () => {
     const wrapper = mountWithApp(IntegrationCard, {
       props: {
         integration: integrationDto({
@@ -83,8 +103,9 @@ describe('IntegrationCard', () => {
     })
 
     const connection = wrapper.get('[data-testid="integration-connection-bank-transfer"]')
-    expect(connection.text()).toContain('Connected')
-    expect(connection.text()).toContain('Both services answer.')
+    expect(connection.text()).toBe('Connected')
+    expect(connection.attributes('title')).toBe('Both services answer.')
+    expect(wrapper.text()).not.toContain('Both services answer.')
   })
 
   it('shows no connection state when the API sent none', () => {

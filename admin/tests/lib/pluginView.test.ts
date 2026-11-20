@@ -16,6 +16,7 @@ import {
   pluginIconPath,
   pluginLinkParams,
   pluginLinkTarget,
+  pluginOpenUrlTarget,
   pluginMenuLinks,
   pluginPageValues,
   pluginRouteMethod,
@@ -218,5 +219,25 @@ describe('groupPluginBlocks', () => {
 
   it('returns no group for no blocks', () => {
     expect(groupPluginBlocks([])).toEqual([])
+  })
+})
+
+describe('pluginOpenUrlTarget', () => {
+  const origins = ['https://*.sites.example.test']
+
+  it('admits an absolute address of an allowed origin read from the named field', () => {
+    expect(pluginOpenUrlTarget({ url: 'https://a.sites.example.test/x' }, 'url', origins)).toEqual({ href: 'https://a.sites.example.test/x', external: true })
+  })
+
+  it.each<[unknown, string]>([
+    [{ url: 'https://evil.test/' }, 'another origin'],
+    [{ url: 'http://a.sites.example.test/' }, 'plain http'],
+    [{ url: '/client/dashboard' }, 'a path of the panel'],
+    [{ url: 'javascript:alert(1)' }, 'a script'],
+    [{ other: 'https://a.sites.example.test/' }, 'a missing field'],
+    [{ url: 5 }, 'a non-string'],
+    [null, 'no reply'],
+  ])('refuses %j (%s)', (reply) => {
+    expect(pluginOpenUrlTarget(reply, 'url', origins)).toBeNull()
   })
 })

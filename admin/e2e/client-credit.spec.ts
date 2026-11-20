@@ -6,7 +6,7 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
 import { credit, creditAfter, insufficientRefusal, insufficientSentence } from './fixtures/clientCredit'
-import { fieldOf } from './support/locators'
+import { fieldOf, toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 test('the tab shows the balance and the history with the reasons', async ({ page }) => {
@@ -52,7 +52,7 @@ test('an adjustment needs an amount and a reason, posts both and shows the new b
   await fieldOf(page, 'client-credit-reason').fill('Promo')
   await page.getByTestId('client-credit-submit').click()
 
-  await expect(page.getByTestId('client-credit-feedback')).toContainText('adjusted')
+  await expect(toastWith(page, 'adjusted')).toBeVisible()
   await expect(page.getByTestId('client-credit-balance')).toContainText('35.00')
   await expect(page.getByTestId('client-credit-entry-13')).toContainText('Promo')
   expect(api.callsTo(HttpMethod.Post, '/api/clients/7/credit/adjustments')[0]?.body).toEqual({ direction: 'Add', amount: 10, reason: 'Promo' })

@@ -18,7 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 /// alone, and a repeat delivery changes nothing.
 /// </summary>
 /// <param name="fixture">The host with the SSH plugin.</param>
-public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
+public sealed class RevokePluginIssuedSshKeysTests(PluginHostAccessFixture fixture) : IClassFixture<PluginHostAccessFixture>
 {
     /// <summary>The removal event revokes the plugin's key, audits it and leaves the client's own key in place.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -30,7 +30,7 @@ public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : I
         using var http = AppPluginFixture.WithBearerOf(fixture.Host, owner.Http);
         var clientKey = await SshTestSeeds.AddKeyAsync(http, owner.ServiceId, 9);
         var issued = await fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, "deploy", CancellationToken.None));
 
         await fixture.Host.Services.PublishAndWaitAsync(new PluginRemovedEvent(fixture.SshPluginId, TestMoments.Seeded));
@@ -52,7 +52,7 @@ public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : I
         var owner = await fixture.OwnerWithServiceAsync("removed-plugin-retry");
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
         var issued = await fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, "deploy", CancellationToken.None));
         var agent = fixture.Agents().AgentFor(owner.ServerId);
         agent.FailWith = SshProviderFailure.Unreachable;
@@ -103,7 +103,7 @@ public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : I
         var owner = await fixture.OwnerWithServiceAsync("removed-plugin-twice");
         await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
         var issued = await fixture.AsPluginAsync(
-            PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
             api => api.IssueSshAccessAsync(owner.ServiceId, "deploy", CancellationToken.None));
         (await RunAsync(fixture.SshPluginId)).Revoked.Should().BeGreaterThanOrEqualTo(1);
         var callsAfterFirst = fixture.Agents().AgentFor(owner.ServerId).Calls.Count;

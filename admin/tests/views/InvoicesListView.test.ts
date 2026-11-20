@@ -6,10 +6,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import InvoicesListView from '@/views/InvoicesListView.vue'
+import schema from '@/views/InvoicesListView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { invoiceRowFixture } from '../helpers/billingFixtures'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { requestsOf, stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /**
  * Mounts the list and waits for its first load.
@@ -234,7 +237,7 @@ describe('InvoicesListView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoices-feedback"]').text()).toBe('Invoice deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Invoice deleted.'])
   })
 
   it('shows the API sentence when the delete is refused, without the load error', async () => {
@@ -276,7 +279,7 @@ describe('InvoicesListView', () => {
 
     const post = mock.mock.calls.find(([url]) => String(url).endsWith('/billing/bulk'))
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toEqual({ invoiceIds: [1], action: 'MarkCancelled' })
-    expect(wrapper.get('[data-testid="billing-invoices-feedback"]').text()).toBe('Done for the selected invoices.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Done for the selected invoices.'])
   })
 
   it('shows the API sentence when a bulk action is refused', async () => {
@@ -300,5 +303,14 @@ describe('InvoicesListView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="billing-invoices-error"]').exists()).toBe(false)
+  })
+
+  it('draws the table skeleton under the schema head while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

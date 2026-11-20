@@ -9,6 +9,7 @@ import { FaqCategory } from '@/types/storefrontenums'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import schema from '@/views/FaqFormView.schema'
 
 /** A stored entry with English and Armenian text. */
 const stored: Faq = {
@@ -40,11 +41,30 @@ afterEach(() => {
 })
 
 describe('FaqFormView', () => {
+  it('draws every section and field of its schema', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(FaqFormView, {}, '/storefront/faqs/create', '/storefront/faqs/create')
+
+    const sections = schema.columns.flat()
+    expect(wrapper.findAll('[data-testid^="ui-form-section-"]')).toHaveLength(sections.length)
+    expect(wrapper.findAll('[data-testid^="ui-form-field-"]')).toHaveLength(sections.flatMap((section) => section.fields).length)
+  })
+
+  it('keeps the fields as placeholders while the entry being edited loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    const { wrapper } = await mountScreen(FaqFormView, {}, '/storefront/faqs/3/edit', '/storefront/faqs/:id/edit')
+
+    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="faq-form-active"]').exists()).toBe(false)
+  })
+
   it('opens an empty create form with the General category', async () => {
     stubRouteTable(routes)
     const { wrapper } = await mountScreen(FaqFormView, {}, '/storefront/faqs/create', '/storefront/faqs/create')
 
-    expect(wrapper.get('[data-testid="settings-breadcrumb"]').text()).toContain('Create question')
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Create question')
     expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create question')
     expect(wrapper.get('[data-testid="faq-form-category"]').text()).toContain('General')
   })
@@ -113,5 +133,19 @@ describe('FaqFormView', () => {
       expect(wrapper.get('[data-testid="faq-form-error"]').text()).toBe('A question needs text.')
     })
     expect(router.currentRoute.value.path).toBe('/storefront/faqs/create')
+  })
+
+  it('marks the language tabs with no text and drops the mark of a language once it is written', async () => {
+    stubRouteTable(routes)
+    const { wrapper } = await mountScreen(FaqFormView, {}, '/storefront/faqs/create', '/storefront/faqs/create')
+
+    for (const locale of ['en', 'ru', 'hy']) {
+      expect(wrapper.find(`[data-testid="faq-form-tab-${locale}-empty"]`).exists()).toBe(true)
+    }
+
+    await wrapper.get('[data-testid="faq-form-question"]').setValue('Written')
+
+    expect(wrapper.find('[data-testid="faq-form-tab-en-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="faq-form-tab-ru-empty"]').exists()).toBe(true)
   })
 })

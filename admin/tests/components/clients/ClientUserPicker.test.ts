@@ -64,4 +64,27 @@ describe('ClientUserPicker', () => {
 
     expect(wrapper.emitted('update:modelValue')).toEqual([[null]])
   })
+
+  it('draws rows of skeleton bars where the hits will appear while the search is in flight', async () => {
+    const wrapper = mountPicker(vi.fn(() => new Promise<UserSearchHit[]>(() => undefined)))
+
+    await wrapper.get('[data-testid="picker-search"]').setValue('ada')
+    await vi.advanceTimersByTimeAsync(300)
+
+    const loading = wrapper.get('[data-testid="picker-loading"]')
+    expect(loading.attributes('aria-busy')).toBe('true')
+    expect(loading.findAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(0)
+    expect(wrapper.find('[data-testid="picker-result-u1"]').exists()).toBe(false)
+  })
+
+  it('replaces the skeleton rows with the hits once the search answers', async () => {
+    const wrapper = mountPicker(vi.fn().mockResolvedValue([ADA]))
+
+    await wrapper.get('[data-testid="picker-search"]').setValue('ada')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="picker-loading"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="picker-result-u1"]').exists()).toBe(true)
+  })
 })

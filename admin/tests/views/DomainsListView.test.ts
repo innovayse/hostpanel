@@ -7,6 +7,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import DomainsListView from '@/views/DomainsListView.vue'
+import schema from '@/views/DomainsListView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
@@ -71,11 +73,19 @@ describe('DomainsListView', () => {
     expect(row.text()).toContain('example.com')
     expect(row.text()).toContain('Grace Hopper')
     expect(row.text()).toContain('$12.99 USD')
-    expect(row.text()).toContain('Yes')
+    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-full')
     expect(row.text()).toContain('Name.am')
     expect(wrapper.get('[data-testid="domains-name-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-view-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-client-4"]').attributes('href')).toBe('/clients/9')
+  })
+
+  it('draws the headers of the schema columns, in order', async () => {
+    stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const wrapper = await mountList()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {

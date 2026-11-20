@@ -24,6 +24,7 @@ import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -143,7 +144,7 @@ const removeCredit = async (): Promise<void> => {
             </UiHeading>
             <UiStack direction="row" gap="sm" align="center">
               <UiNumberInput v-model="addAmount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-invoice-credit-add-amount" />
-              <UiButton
+              <UiButton :action="UiActionKind.Add"
                 variant="secondary"
                 :disabled="!canAdd"
                 data-testid="billing-invoice-credit-add"
@@ -161,7 +162,7 @@ const removeCredit = async (): Promise<void> => {
             </UiHeading>
             <UiStack direction="row" gap="sm" align="center">
               <UiNumberInput v-model="removeAmount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-invoice-credit-remove-amount" />
-              <UiButton
+              <UiButton :action="UiActionKind.Remove"
                 variant="secondary"
                 :disabled="!canRemove"
                 data-testid="billing-invoice-credit-remove"

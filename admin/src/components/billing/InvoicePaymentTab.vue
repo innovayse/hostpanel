@@ -28,6 +28,7 @@ import { useInvoicePaymentForm } from '@/composables/useInvoicePaymentForm'
 import { InvoiceStatus } from '@/types/invoice'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -145,7 +146,7 @@ const submit = async (): Promise<void> => {
             </UiField>
           </UiGrid>
           <UiFormActions>
-            <UiButton
+            <UiButton :action="UiActionKind.Add"
               type="submit"
               variant="primary"
               :loading="form.submitting.value"

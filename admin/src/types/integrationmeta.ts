@@ -3,22 +3,29 @@
  * (label, logo and settings fields) the admin renders.
  */
 
-import { IntegrationEncryption, IntegrationFieldType, IntegrationYesNo } from '@/types/integration'
-import type { IntegrationMeta, IntegrationSlug, IntegrationCategory } from '@/types/integration'
-import { PluginType } from '@/types/plugin'
+import { IntegrationCategory, IntegrationEncryption, IntegrationFieldType, IntegrationYesNo } from '@/types/integration'
+import type { IntegrationMeta, IntegrationSlug } from '@/types/integration'
+import { PluginCategory } from '@/types/plugin'
+import { Icon } from '@/lib/icons'
 import { translate } from '@/lib/translate'
 import { publicAssetUrl } from '@/lib/runtimeConfig'
 
 /**
  * Metadata for a single integration category section.
  */
-interface IntegrationCategoryMeta {
+export interface IntegrationCategoryMeta {
   /** Category key matching IntegrationCategory. */
   key: IntegrationCategory
-  /** Human-readable label for the section header. */
-  label: string
-  /** Emoji icon for the section header. */
+  /** Locale key of the full title: the page header and the menu entry's tooltip. */
+  labelKey: string
+  /** Locale key of the short caption the inner menu shows; the layout skeleton draws its entries from it. */
+  menuLabelKey: string
+  /** Locale key of the sentence that says what the category holds; the page shows it while the category is empty. */
+  descriptionKey: string
+  /** The category icon, a member of {@link Icon}, drawn by `UiIcon`. */
   icon: string
+  /** The plugin registry category whose listing holds the plugins of this category; undefined when the registry has none for it. */
+  registryCategory?: PluginCategory
 }
 
 /**
@@ -191,25 +198,73 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
 }
 
 /**
- * Ordered category definitions for rendering sections on the main page.
+ * Ordered category definitions: the order of the inner menu and of the layout skeleton.
  */
 export const INTEGRATION_CATEGORIES: IntegrationCategoryMeta[] = [
-  { key: 'payments', get label() { return translate('nav.settingsChildren.gateways') }, icon: '💳' },
-  { key: 'registrars', get label() { return translate('integrationMeta.maxmind.fieldRegistrars') }, icon: '🌐' },
-  { key: 'provisioning', get label() { return translate('integrations.cwp7Integration.hostingProvisioning') }, icon: '🖥️' },
-  { key: 'email', get label() { return translate('integrationMeta.maxmind.fieldEmail') }, icon: '📧' },
-  { key: 'fraud', get label() { return translate('integrationMeta.maxmind.fieldFraud') }, icon: '🛡️' },
-  { key: 'fulfilment', get label() { return translate('integrations.categories.fulfilment') }, icon: '📦' },
-  { key: 'identity', get label() { return translate('integrations.categories.identity') }, icon: '🪪' },
-  { key: 'hosted', get label() { return translate('integrations.categories.hosted') }, icon: '⚙️' },
+  {
+    key: IntegrationCategory.Payments,
+    labelKey: 'integrations.categories.payments',
+    menuLabelKey: 'integrations.categoryMenu.payments',
+    descriptionKey: 'integrations.categoryEmpty.payments',
+    icon: Icon.CreditCard,
+    registryCategory: PluginCategory.Payment,
+  },
+  {
+    key: IntegrationCategory.Provisioning,
+    labelKey: 'integrations.categories.provisioning',
+    menuLabelKey: 'integrations.categoryMenu.provisioning',
+    descriptionKey: 'integrations.categoryEmpty.provisioning',
+    icon: Icon.Server,
+    registryCategory: PluginCategory.Provisioning,
+  },
+  {
+    key: IntegrationCategory.Registrars,
+    labelKey: 'integrations.categories.registrars',
+    menuLabelKey: 'integrations.categoryMenu.registrars',
+    descriptionKey: 'integrations.categoryEmpty.registrars',
+    icon: Icon.Globe,
+    registryCategory: PluginCategory.Registrar,
+  },
+  {
+    key: IntegrationCategory.Email,
+    labelKey: 'integrations.categories.email',
+    menuLabelKey: 'integrations.categoryMenu.email',
+    descriptionKey: 'integrations.categoryEmpty.email',
+    icon: Icon.Mail,
+  },
+  {
+    key: IntegrationCategory.Fulfilment,
+    labelKey: 'integrations.categories.fulfilment',
+    menuLabelKey: 'integrations.categoryMenu.fulfilment',
+    descriptionKey: 'integrations.categoryEmpty.fulfilment',
+    icon: Icon.Box,
+  },
+  {
+    key: IntegrationCategory.Fraud,
+    labelKey: 'integrations.categories.fraud',
+    menuLabelKey: 'integrations.categoryMenu.fraud',
+    descriptionKey: 'integrations.categoryEmpty.fraud',
+    icon: Icon.Shield,
+  },
+  {
+    key: IntegrationCategory.Identity,
+    labelKey: 'integrations.categories.identity',
+    menuLabelKey: 'integrations.categoryMenu.identity',
+    descriptionKey: 'integrations.categoryEmpty.identity',
+    icon: Icon.User,
+  },
+  {
+    key: IntegrationCategory.Hosted,
+    labelKey: 'integrations.categories.hosted',
+    menuLabelKey: 'integrations.categoryMenu.hosted',
+    descriptionKey: 'integrations.categoryEmpty.hosted',
+    icon: Icon.Activity,
+  },
 ]
 
-/** The badge label of each plugin type, read in the active language. */
-export const PLUGIN_TYPE_LABELS: Record<PluginType, string> = {
-  get [PluginType.Provisioning]() { return translate('integrations.pluginType.provisioning') },
-  get [PluginType.Payment]() { return translate('integrations.pluginType.payment') },
-  get [PluginType.Registrar]() { return translate('integrations.pluginType.registrar') },
-  get [PluginType.Identity]() { return translate('integrations.pluginType.identity') },
-  get [PluginType.Fulfilment]() { return translate('integrations.pluginType.fulfilment') },
-  get [PluginType.Hosted]() { return translate('integrations.pluginType.hosted') },
-}
+/**
+ * The category entries by key, for a caller that holds a key and needs the entry (the menu, the page).
+ */
+export const INTEGRATION_CATEGORY_BY_KEY = Object.fromEntries(
+  INTEGRATION_CATEGORIES.map(category => [category.key, category]),
+) as Record<IntegrationCategory, IntegrationCategoryMeta>

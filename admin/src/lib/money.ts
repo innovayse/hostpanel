@@ -170,3 +170,16 @@ export const formatCurrencyCode = (amount: number, code: string): string => {
     return `${amount.toFixed(2)} ${code}`
   }
 }
+
+/**
+ * Builds the money formatter of a report whose amounts the API converted to one base currency.
+ *
+ * The currency is read when an amount is formatted, so the formatter built before the report loads
+ * follows the currency once it is known. Every report screen shares this one rule instead of
+ * restating it.
+ *
+ * @param currency - Reads the base currency code the report names; empty until it loads.
+ * @returns A function that formats an amount in that currency.
+ */
+export const baseCurrencyFormatter = (currency: () => string): ((amount: number) => string) =>
+  (amount) => formatCurrencyCode(amount, currency())

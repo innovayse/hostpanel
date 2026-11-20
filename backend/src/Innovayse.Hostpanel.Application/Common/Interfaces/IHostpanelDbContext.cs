@@ -210,6 +210,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the SSH keys customers added to their hosting services.</summary>
     public DbSet<SshKey> SshKeys { get; }
 
+    /// <summary>Gets the websites plugins set up on customers' hosting services.</summary>
+    public DbSet<ServiceWebsite> ServiceWebsites { get; }
+
+    /// <summary>Gets the databases plugins set up on customers' hosting services.</summary>
+    public DbSet<ServiceDatabase> ServiceDatabases { get; }
+
     /// <summary>Gets the per-server SSH key management settings.</summary>
     public DbSet<ServerSshSettings> ServerSshSettings { get; }
 
@@ -315,6 +321,13 @@ public interface IHostpanelDbContext
     /// <c>IPluginSlotContextReader</c>, and the Plugins module purge of a removed plugin deletes its rows.
     /// </summary>
     public DbSet<PluginSlotProductBinding> PluginSlotProductBindings { get; }
+
+    /// <summary>
+    /// Gets the install records of the plugins an operator uploaded or fetched from the registry, one row per plugin:
+    /// when it was installed and last replaced, by whom, and what the latest accepted package was. Written by the
+    /// install use cases, deleted by the removal, read by the admin list.
+    /// </summary>
+    public DbSet<InstalledPlugin> InstalledPlugins { get; }
 
     /// <summary>Saves every tracked change in one transaction.</summary>
     /// <param name="ct">Cancellation token.</param>

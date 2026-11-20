@@ -33,9 +33,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ClientEmailsView.schema'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
@@ -153,18 +153,13 @@ loadOnChange(load)
 
     <UiCard v-else class="overflow-x-auto">
       <UiTable
+        :empty-text="t('shared.noRecordsFound')"
         :density="UiTableDensity.Comfortable"
         :loading="store.loading && store.emails.length === 0"
         :empty="!store.loading && store.emails.length === 0"
         data-testid="client-emails-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.clientEmails.status') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="email in store.emails" :key="email.id" hoverable>
             <UiTableCell muted>{{ formatDate(email.sentAt) }}</UiTableCell>
@@ -176,9 +171,6 @@ loadOnChange(load)
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('shared.noRecordsFound') }}
-        </template>
       </UiTable>
       <UiStack
         v-if="store.totalCount > 0"

@@ -6,9 +6,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
+import { usePageTitleStore } from '@/stores/pageTitle'
 import { stubRoutes } from '../../helpers/routes'
 import { json } from '../../helpers/fetch'
 import { mountView } from '../../helpers/mount'
+import { stubPhone } from '../../helpers/phone'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
 import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
 import { AdminTheme } from '@/types/admintheme'
@@ -43,7 +45,7 @@ describe('AppTopbar', () => {
   })
 
   it('titles the bar after the current section', async () => {
-    const wrapper = await mountBar('/servers/anything')
+    const wrapper = await mountBar('/servers')
 
     expect(wrapper.get('[data-testid="topbar-title"]').text()).toBe('Servers')
   })
@@ -58,6 +60,21 @@ describe('AppTopbar', () => {
     expect(wrapper.get('[data-testid="notifications-drawer"]').text()).toContain('example.com expires')
   })
 
+  it('lists the notifications in a side panel on a wide screen and in a bottom sheet on a phone', async () => {
+    stubPhone(false)
+    const wide = await mountBar('/dashboard')
+    await wide.get('[data-testid="topbar-notifications"]').trigger('click')
+    expect(wide.get('aside[role="dialog"]').classes()).toContain('right-0')
+    expect(wide.find('[data-testid="drawer-grip"]').exists()).toBe(false)
+    wide.unmount()
+
+    stubPhone(true)
+    const narrow = await mountBar('/dashboard')
+    await narrow.get('[data-testid="topbar-notifications"]').trigger('click')
+    expect(narrow.get('aside[role="dialog"]').classes()).toContain('rounded-t-panel')
+    expect(narrow.find('[data-testid="drawer-grip"]').exists()).toBe(true)
+  })
+
   it('hangs the count off the bell corner, names the button with the count and caps it at 9+', async () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ type: 'ClientRegistered', message: `Client ${i}`, occurredAt: '2026-10-14T08:00:00Z', entityId: i }))
     const wrapper = await mountBar('/dashboard', many)
@@ -68,6 +85,7 @@ describe('AppTopbar', () => {
     expect(corner?.classList).toContain('absolute')
     expect(corner?.classList).toContain('-right-1')
     expect(corner?.classList).toContain('-top-1')
+    expect(corner?.parentElement?.getAttribute('data-testid')).toBe('topbar-notifications')
     expect(corner?.parentElement?.classList.contains('relative')).toBe(true)
     expect(wrapper.get('[data-testid="topbar-notifications"]').attributes('aria-label')).toBe('Notifications, 12 new')
   })
@@ -76,14 +94,13 @@ describe('AppTopbar', () => {
     const wrapper = await mountBar('/dashboard')
 
     const dot = wrapper.get('[data-testid="topbar-notification-dot"]')
-    expect(dot.attributes('aria-hidden')).toBe('true')
+    expect(dot.element.parentElement?.getAttribute('aria-hidden')).toBe('true')
     expect(dot.text()).toBe('')
     expect(dot.classes()).toEqual(expect.arrayContaining(['rounded-full', 'bg-primary-500']))
-    expect(dot.element.parentElement?.classList).toContain('sm:hidden')
+    expect(dot.classes()).toContain('sm:hidden')
     const count = wrapper.get('[data-testid="topbar-notification-count"]')
     expect(count.classes()).toEqual(expect.arrayContaining(['rounded-pill', 'ring-2']))
-    expect(count.element.parentElement?.classList).toContain('hidden')
-    expect(count.element.parentElement?.classList).toContain('sm:flex')
+    expect(count.classes()).toContain('max-sm:hidden')
   })
 
   it('shows the empty message for an empty feed and hides the badge', async () => {
@@ -134,11 +151,14 @@ describe('AppTopbar', () => {
     const trigger = wrapper.get('[data-testid="topbar-search"]')
 
     expect(trigger.attributes('aria-label')).toBe('Search the panel')
-    expect(trigger.classes()).toEqual(expect.arrayContaining(['bg-surface-field', 'rounded-control', 'md:max-w-[460px]']))
-    // On a phone it is a bare icon like the bell, theme and language triggers.
-    expect(trigger.classes()).toEqual(expect.arrayContaining(['max-md:bg-transparent', 'max-md:border-transparent', 'max-md:w-10.5']))
+    // A narrow bar (a phone, the tablet rail layout) shows a bare icon like the bell, theme and language triggers; a bar of 4xl or more the wide field.
+    expect(trigger.classes()).toEqual(expect.arrayContaining(['rounded-control', 'bg-transparent', 'border-transparent', 'w-10.5']))
+    expect(trigger.classes()).toEqual(expect.arrayContaining(['@4xl:bg-surface-field', '@4xl:max-w-[460px]', '@4xl:flex-1']))
     expect(trigger.text()).toContain('Search pages and actions')
+    // The shortcut chip is the first thing to go as the bar narrows: it needs 5xl, the wide field only 4xl.
     expect(wrapper.get('[data-testid="topbar-search-shortcut"]').text()).toBe('Ctrl K')
+    expect(wrapper.get('[data-testid="topbar-search-shortcut"]').classes()).toEqual(expect.arrayContaining(['hidden', '@5xl:block']))
+    expect(wrapper.get('[data-testid="app-topbar"]').classes()).toContain('@container')
     expect(useCommandPaletteStore().isOpen).toBe(false)
 
     await trigger.trigger('click')
@@ -188,5 +208,41 @@ describe('AppTopbar', () => {
     expect(drawer.findAll('[data-testid^="notification-"]')).toHaveLength(3)
     expect(drawer.findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(6)
     expect(drawer.text()).not.toContain('No notifications')
+  })
+
+  it('draws the trail from the section down to the page in place of the plain section title', async () => {
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json(events) })
+    const wrapper = await mountView(AppTopbar, { path: '/settings/slides/create', pattern: '/settings/slides/create' })
+
+    const bar = wrapper.get('[data-testid="app-topbar"]')
+    expect(bar.get('[data-testid="ui-breadcrumb"]').text()).toContain('Settings')
+    expect(bar.get('[data-testid="ui-breadcrumb"]').text()).toContain('Slides')
+    expect(bar.get('[data-testid="topbar-title"]').text()).toBe('New')
+    expect(bar.get('[data-testid="topbar-title"]').attributes('aria-current')).toBe('page')
+  })
+
+  it('names the page by its own title on a phone, not by the generic last step of the trail', async () => {
+    stubPhone(true)
+    const wrapper = await mountView(AppTopbar, { path: '/clients/7', pattern: '/clients/:id' })
+    usePageTitleStore().announce(Symbol('header'), 'Ada Lovelace')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="topbar-title"]').text()).toBe('Ada Lovelace')
+  })
+
+  it('keeps the trail on a phone until a header shows a title', async () => {
+    stubPhone(true)
+    const wrapper = await mountView(AppTopbar, { path: '/orders/8', pattern: '/orders/:id' })
+
+    expect(wrapper.get('[data-testid="topbar-title"]').text()).toBe('Details')
+  })
+
+  it('keeps the trail from a tablet up, whatever title a header shows', async () => {
+    stubPhone(false)
+    const wrapper = await mountView(AppTopbar, { path: '/orders/8', pattern: '/orders/:id' })
+    usePageTitleStore().announce(Symbol('header'), 'Order 8')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="topbar-title"]').text()).toBe('Details')
   })
 })

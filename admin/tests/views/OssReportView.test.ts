@@ -5,10 +5,14 @@
  */
 import { vi } from 'vitest'
 import OssReportView from '@/views/OssReportView.vue'
+import schema from '@/views/OssReportView.schema'
 import { json } from '../helpers/fetch'
 import { runReportCase } from '../helpers/reportViews'
+import { runReportSchemaCases, schemaCaptionsOf } from '../helpers/reportSchema'
 
 vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
+
+runReportSchemaCases([{ name: 'OssReportView', view: OssReportView, schema }])
 
 runReportCase({
   name: 'OssReportView',
@@ -20,6 +24,6 @@ runReportCase({
       rows: [{ countryCode: 'DE', vatRate: 19, numberOfInvoices: 2, totalExclVat: 100, totalVatCollected: 19, currency: 'EUR' }],
     }),
   },
-  expected: ['OSS Report (One Stop Shop)', 'For the period 01/01/2024 to 31/03/2024', 'Germany', '19%', '€100.00', '€19.00'],
+  expected: [...schemaCaptionsOf(schema), 'OSS Report (One Stop Shop)', 'For the period 01/01/2024 to 31/03/2024', 'Germany', '19%', '€100.00', '€19.00'],
   retryable: true,
 })

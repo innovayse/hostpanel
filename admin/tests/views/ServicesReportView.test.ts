@@ -4,12 +4,16 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ServicesReportView from '@/views/ServicesReportView.vue'
+import schema from '@/views/ServicesReportView.schema'
 import { json } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { runReportCase } from '../helpers/reportViews'
+import { runReportSchemaCases } from '../helpers/reportSchema'
 import { stubRouteTable } from '../helpers/routes'
 
 vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
+
+runReportSchemaCases([{ name: 'ServicesReportView', view: ServicesReportView, schema }])
 
 runReportCase({
   name: 'ServicesReportView',

@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent.Extensions;
 
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 
@@ -46,26 +47,6 @@ public sealed class SshKeyProviderFactory : ISshKeyProviderFactory
     /// <exception cref="InvalidOperationException">Thrown when the settings are missing or incomplete.</exception>
     public ISshKeyProvider? CreateFor(ServerSshTargetDto target)
     {
-        if (!Supports(target.Module))
-        {
-            return null;
-        }
-
-        if (target.Agent is not { IsComplete: true } settings)
-        {
-            throw new InvalidOperationException($"SSH settings of server {target.ServerId} are missing or incomplete.");
-        }
-
-        var endpoint = new SshAgentEndpoint(
-            target.ServerId,
-            settings.AgentHost,
-            settings.AgentPort,
-            settings.AgentUsername,
-            settings.AgentPrivateKey!,
-            settings.AgentHostKeyFingerprint,
-            TimeSpan.FromSeconds(settings.ConnectTimeoutSeconds),
-            TimeSpan.FromSeconds(settings.OperationTimeoutSeconds));
-
-        return new AgentSshKeyProvider(endpoint, _transport.SendAsync);
+        return Supports(target.Module) ? new AgentSshKeyProvider(target.ToAgentEndpoint(), _transport.SendAsync) : null;
     }
 }

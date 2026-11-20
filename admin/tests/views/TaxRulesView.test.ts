@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import TaxRulesView from '@/views/TaxRulesView.vue'
+import schema from '@/views/TaxRulesView.schema'
 import UiCountrySelect from '@/components/ui/UiCountrySelect.vue'
 import { EnabledFilter } from '@/types/enabledfilter'
 import type { TaxRuleDto } from '@/types/taxrule'
@@ -13,6 +14,8 @@ import { json, problem } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
+import { useToastStore } from '@/stores/toast'
 
 /** The address the screen is registered under. */
 const PATH = '/settings/tax-rules'
@@ -73,6 +76,13 @@ afterEach(() => {
 })
 
 describe('TaxRulesView', () => {
+  it('draws the table head from the schema columns', async () => {
+    stubRoutes({ 'GET /api/admin/tax-rules?': () => json(page([germany])) })
+    const { wrapper } = await mountListAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('lists the rules with country, region, rate and status', async () => {
     stubRoutes({ 'GET /api/admin/tax-rules?': () => json(page([germany, bavaria])) })
     const { wrapper } = await mountListAt()
@@ -83,11 +93,12 @@ describe('TaxRulesView', () => {
     expect(first).toContain('Germany')
     expect(first).toContain('Whole country')
     expect(first).toContain('19%')
-    expect(first).toContain('Enabled')
+    expect(wrapper.get('[data-testid="tax-rule-row-1"] [role="img"]').attributes('aria-label')).toBe('Enabled')
     const second = wrapper.get('[data-testid="tax-rule-row-2"]').text()
     expect(second).toContain('Bavaria')
     expect(second).toContain('7.5%')
-    expect(second).toContain('Disabled')
+    expect(wrapper.get('[data-testid="tax-rule-row-2"] [role="img"]').attributes('aria-label')).toBe('Disabled')
+    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
     expect(wrapper.text()).toContain('Tax rules: 2')
   })
 
@@ -262,7 +273,7 @@ describe('TaxRulesView', () => {
 
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tax-rules-result"]').text()).toBe('The tax rule was deleted.')
+      expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['The tax rule was deleted.'])
     })
     expect(requestsOf(mock)).toContain('DELETE /api/admin/tax-rules/1')
     expect(listUrls(mock).length).toBe(before + 1)

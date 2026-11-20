@@ -53,6 +53,13 @@ public static class RateLimitPolicies
     public const string SshKeys = "ssh-keys";
 
     /// <summary>
+    /// What a plugin may change on a client's hosting through the host API: websites and databases, and reading what the
+    /// server can do. Not a route tier: it is taken inside a plugin call, per plugin and client, because every permit is
+    /// an SSH connection to a managed server and a helper that runs for up to a minute.
+    /// </summary>
+    public const string HostingResources = "hosting-resources";
+
+    /// <summary>
     /// Operations whose cost is measured in what they hold rather than how often they are asked
     /// for: report exports, a migration run. Limited by how many may be in flight at once,
     /// because a per-minute budget does not describe the harm.

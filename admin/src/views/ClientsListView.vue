@@ -26,9 +26,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
@@ -36,24 +34,29 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
-import UiTooltip from '@/components/ui/UiTooltip.vue'
+import schema from '@/views/ClientsListView.schema'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
-import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, clientPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTableDensity } from '@/utils/ui/injection'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('clients.clientsList.addClient'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'clients-list-add', to: AppRoute.ClientsAdd },
+])
 
 /** The filter fields the dialog edits; each is one query key and one `ClientFilters` member. */
 const FilterKey = {
@@ -193,17 +196,7 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiPageHeader :title="t('shared.clients')" :subtitle="t('clients.clientsList.manageYourClientAccounts')">
-      <template #actions>
-        <UiLink
-          :to="AppRoute.ClientsAdd"
-          :variant="UiButtonVariant.Primary"
-          data-testid="clients-list-add"
-        >
-          <UiIcon :markup="Icon.Add" :size="UiSize.Sm" />
-          {{ t('clients.clientsList.addClient') }}
-        </UiLink>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiListToolbar
@@ -274,28 +267,14 @@ onMounted(() => {
       @retry="load"
     />
 
-    <UiCard v-else-if="initialLoading || store.clients.length > 0">
+    <UiCard v-else-if="initialLoading || store.clients.length > 0" clip>
       <UiTable
         :density="UiTableDensity.Comfortable"
         :scrollable="false"
         :loading="initialLoading"
         data-testid="clients-list-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader hide-below="md">{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader hide-below="lg" :card-role="UiCardRole.Field">{{ t('shared.email') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl" :card-role="UiCardRole.Field">{{ t('shared.company') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('clients.clientGroups.group') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('clients.clientsList.2fa') }}</UiTableHeader>
-            <UiTableHeader hide-below="lg">{{ t('clients.clientsList.joined') }}</UiTableHeader>
-            <UiTableHeader actions>
-              <UiText :as="UiTextTag.Span" class="sr-only">{{ t('shared.actions') }}</UiText>
-            </UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow
             v-for="client in store.clients"
@@ -306,7 +285,7 @@ onMounted(() => {
             @click="openClient(client.id)"
           >
             <UiTableCell muted hide-below="md">{{ client.id }}</UiTableCell>
-            <UiTableCell truncate>
+            <UiTableCell>
               <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
                 <UiBadge :tone="UiTone.Primary" small class="shrink-0">
                   {{ client.firstName.charAt(0) }}{{ client.lastName.charAt(0) }}
@@ -334,15 +313,13 @@ onMounted(() => {
               <template v-else>{{ EMPTY_VALUE }}</template>
             </UiTableCell>
             <UiTableCell hide-below="xl">
-              <UiTooltip
-                :text="client.twoFactorEnabled
-                  ? t('clients.clientsList.twoFactorAuthenticationEnabled')
-                  : t('clients.clientsList.twoFactorAuthenticationDisabled')"
-              >
-                <UiBadge :tone="client.twoFactorEnabled ? UiTone.Success : UiTone.Neutral" small>
-                  {{ client.twoFactorEnabled ? t('clients.clientsList.on') : t('clients.clientsList.off') }}
-                </UiBadge>
-              </UiTooltip>
+              <UiStatusIcon
+                :state="client.twoFactorEnabled"
+                :on-icon="Icon.ShieldCheck"
+                :off-icon="Icon.ShieldOff"
+                :on-label="t('clients.clientsList.twoFactorAuthenticationEnabled')"
+                :off-label="t('clients.clientsList.twoFactorAuthenticationDisabled')"
+              />
             </UiTableCell>
             <UiTableCell muted hide-below="lg">{{ formatDate(client.createdAt) }}</UiTableCell>
             <UiTableCell actions @click.stop>

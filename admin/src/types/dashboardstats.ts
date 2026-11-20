@@ -10,5 +10,3 @@ export interface DashboardStats {
   totalClients: number
 }
 
-/** The fields of `DashboardStats` that hold a number a tile shows. */
-export type DashboardFigure = keyof DashboardStats

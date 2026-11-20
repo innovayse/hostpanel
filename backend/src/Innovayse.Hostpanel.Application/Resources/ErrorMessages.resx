@@ -615,6 +615,9 @@
 <data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
     <value>The server account id label in the manifest must be 1 to 60 characters with no control character.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>The agentProfile in the manifest must be one of the SSH key agent profiles this SDK defines, written exactly.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>
@@ -1210,6 +1213,9 @@
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>The grace period must be from 0 to 365 days.</value>
   </data>
+  <data name="PRODUCT_TRIAL_INVALID" xml:space="preserve">
+    <value>The trial must last from 1 to 365 days, with at most 5 different reminder days that fall before its end, and a grace period of 0 to 30 days.</value>
+  </data>
   <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
     <value>This external account is already linked to another client.</value>
   </data>
@@ -1332,6 +1338,9 @@
   </data>
   <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
     <value>One of this plugin's view documents builds an action's body from page data in a shape or place this server does not accept.</value>
+  </data>
+  <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
+    <value>One of this plugin's view documents opens an address from a reply in a shape or place this server does not accept.</value>
   </data>
   <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
     <value>One of this plugin's view documents declares element selection in a shape or place this server does not accept.</value>

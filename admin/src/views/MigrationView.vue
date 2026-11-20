@@ -2,7 +2,7 @@
 /**
  * Migration tools page.
  *
- * Lists the migration jobs (history), shows the selected job's progress card, the one-time setup
+ * Lists the migration jobs (history) in a column a third wide that scrolls inside, beside the selected job's progress card, the one-time setup
  * instructions of a pending job and the import report of a finished one, and opens a dialog that
  * creates a job. Jobs, polling, and every refusal sentence belong to the migration store. Deleting
  * a job is confirmed first; creating and deleting report their outcome (success, or the API's
@@ -10,17 +10,17 @@
  */
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useMigrationStore } from '@/stores/migration'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
-import { isJobActive, migrationStatusLabelKey } from '@/lib/migrationStatus'
-import { migrationStatusTone } from '@/lib/tones'
+import { isJobActive } from '@/lib/migrationStatus'
 import { MIGRATION_ENTITY_KEYS, MigrationStatus } from '@/types/migration'
 import type { MigrationEntityKey, MigrationExportFlags, MigrationJob } from '@/types/migration'
+import MigrationHistoryItem from '@/components/migration/MigrationHistoryItem.vue'
 import MigrationProgressCard from '@/components/migration/MigrationProgressCard.vue'
 import MigrationReportTable from '@/components/migration/MigrationReportTable.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
@@ -30,12 +30,12 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -43,10 +43,23 @@ import { API_BASE } from '@/lib/apiPaths'
 import { COPIED_VISIBLE_MS } from '@/lib/limits'
 import { placeholderRows } from '@/lib/placeholderRows'
 import { UiButtonVariant } from '@/utils/ui/button'
+import schema from '@/views/MigrationView.schema'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** Translation function. */
 const { t } = useI18n()
+
+/** Opens the dialog that starts a new migration. */
+const openNewJob = (): void => {
+  showNewJobModal.value = true
+}
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('migration.migration.newMigration'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'migration-new', onSelect: openNewJob },
+])
 
 /** Migration store: the jobs, the selected job, polling and the refusal sentence. */
 const store = useMigrationStore()
@@ -280,167 +293,140 @@ onUnmounted(() => {
       @retry="load"
     />
 
-    <UiPageHeader
-      :title="t('migration.migration.migrationTools')"
-      :subtitle="t('migration.migration.importExistingClientDataInto')"
-    >
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
       <template #actions>
         <PageHelpLink :url="guideUrl" />
-        <UiButton variant="primary" data-testid="migration-new" @click="showNewJobModal = true">
-          {{ t('migration.migration.newMigration') }}
-        </UiButton>
       </template>
     </UiPageHeader>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="migration-feedback" />
 
-    <!-- Body: history + selected job; the cards stay in place while the list loads -->
-    <UiStack direction="row" align="start" gap="md" wrap>
-      <!-- History -->
-      <UiCard padding="sm" class="w-full lg:w-72 shrink-0" :aria-busy="historyLoading ? 'true' : undefined" data-testid="migration-history">
-        <template #header>
-          <UiStack direction="row" align="center" justify="between">
-            <UiHeading :level="3" variant="card">{{ t('migration.migration.history') }}</UiHeading>
-            <UiText v-if="store.jobs.length > 0" tone="muted" size="xs">{{ store.jobs.length }}</UiText>
-          </UiStack>
-        </template>
-        <UiStack gap="sm" class="mt-3">
-
-          <UiText v-if="!historyLoading && store.jobs.length === 0" tone="muted" size="sm" data-testid="migration-history-empty">
-            {{ t('migration.migration.noMigrationsYet') }}
-          </UiText>
-
-          <!-- The jobs; while the history loads the same rows are drawn with bars where a job goes -->
-          <UiStack
-            v-for="(job, index) in historyRows"
-            :key="job?.id ?? `placeholder-${index}`"
-            direction="row"
-            align="center"
-            gap="xs"
-            :data-testid="job ? `migration-job-${job.id}` : undefined"
-          >
-            <UiStack v-if="job === null" gap="xs" class="min-w-0 flex-1 px-3 py-1.5" aria-hidden="true">
-              <UiSkeletonBar class="h-4 w-32 rounded-md" />
-              <UiSkeletonBar class="h-3 w-24 rounded-md" />
+    <!-- Body: the history on a third and the selected job on two thirds, both as tall as the taller of the two -->
+    <UiSplit :ratio="schema.ratio" gap="md">
+      <!-- History: fills the height of the row and scrolls inside, so a long history never stretches the page -->
+      <UiStack class="relative min-h-80">
+        <UiCard
+          padding="sm"
+          class="flex max-h-[28rem] w-full flex-col lg:absolute lg:inset-0 lg:max-h-none"
+          :aria-busy="historyLoading ? 'true' : undefined"
+          data-testid="migration-history"
+        >
+          <template #header>
+            <UiStack direction="row" align="center" justify="between">
+              <UiHeading :level="3" variant="card">{{ t('migration.migration.history') }}</UiHeading>
+              <UiText v-if="store.jobs.length > 0" tone="muted" size="xs">{{ store.jobs.length }}</UiText>
             </UiStack>
-            <UiButton
-              v-else
-              type="button"
-              :variant="store.activeJob?.id === job.id ? UiButtonVariant.Secondary : UiButtonVariant.Ghost"
-              size="sm"
-              class="min-w-0 flex-1 justify-start"
-              :data-testid="`migration-select-${job.id}`"
-              @click="selectJob(job)"
-            >
-              <UiStack gap="xs" class="min-w-0 text-left">
-                <UiText size="sm" class="truncate font-medium">
-                  {{ job.label ?? t('migration.migration.migration') }}
-                </UiText>
-                <UiStack direction="row" align="center" gap="xs">
-                  <UiText tone="muted" size="xs">#{{ job.id }} · {{ job.overallPercent }}%</UiText>
-                  <UiBadge :tone="migrationStatusTone[job.status]" small>
-                    {{ t(migrationStatusLabelKey[job.status]) }}
-                  </UiBadge>
-                </UiStack>
+          </template>
+          <UiStack gap="xs" class="mt-3 min-h-0 flex-1 overflow-y-auto">
+            <UiText v-if="!historyLoading && store.jobs.length === 0" tone="muted" size="sm" data-testid="migration-history-empty">
+              {{ t('migration.migration.noMigrationsYet') }}
+            </UiText>
+
+            <!-- The jobs; while the history loads the same rows are drawn with bars where a job goes -->
+            <template v-for="(job, index) in historyRows" :key="job?.id ?? `placeholder-${index}`">
+              <UiStack v-if="job === null" gap="xs" class="px-3 py-2" aria-hidden="true">
+                <UiSkeletonBar class="h-4 w-32 rounded-md" />
+                <UiSkeletonBar class="h-2 w-full rounded-md" />
+                <UiSkeletonBar class="h-3 w-24 rounded-md" />
               </UiStack>
-            </UiButton>
-            <UiSkeletonBar v-if="job === null" class="size-8 shrink-0 rounded-control" aria-hidden="true" />
-            <UiIconButton
-              v-else
-              :label="t('migration.migration.deleteMigration')"
-              variant="danger"
-              size="sm"
-              :disabled="deleting && deleteTarget?.id === job.id"
-              :data-testid="`migration-delete-${job.id}`"
-              @click="deleteTarget = job"
-            >
-              ×
-            </UiIconButton>
+              <MigrationHistoryItem
+                v-else
+                :job="job"
+                :selected="store.activeJob?.id === job.id"
+                :deleting="deleting && deleteTarget?.id === job.id"
+                @select="selectJob"
+                @delete="deleteTarget = $event"
+              />
+            </template>
           </UiStack>
-        </UiStack>
-      </UiCard>
+        </UiCard>
+      </UiStack>
 
       <!-- Selected job -->
-      <UiStack gap="md" class="min-w-0 flex-1">
-        <UiCard v-if="!store.activeJob && !store.loading" data-testid="migration-none-selected">
-          <UiEmptyState
-            :title="t('migration.migration.noMigrationSelected')"
-            :description="t('migration.migration.createANewMigrationOr')"
-          >
-            <template #actions>
-              <UiButton variant="primary" data-testid="migration-start-first" @click="showNewJobModal = true">
-                {{ t('migration.migration.startYourFirstMigration') }}
-              </UiButton>
-            </template>
-          </UiEmptyState>
-        </UiCard>
-
-        <MigrationProgressCard v-if="store.activeJob || store.loading" :job="store.activeJob" />
-
-        <!-- Setup instructions (pending jobs only) -->
-        <UiCard v-if="store.activeJob?.status === MigrationStatus.Pending" padding="md" data-testid="migration-setup">
-          <UiStack gap="md">
-            <UiHeading :level="3" variant="card">{{ t('migration.migration.setupRequired') }}</UiHeading>
-
-            <UiStack gap="xs">
-              <UiText tone="primary" size="md" class="font-semibold">
-                1. {{ t('migration.migration.downloadTheMigrationPlugin') }}
-              </UiText>
-              <UiLink :href="PLUGIN_DOWNLOAD_URL" variant="link" data-testid="migration-download-plugin">
-                {{ t('migration.migration.innovayseMigrationZip') }}
-              </UiLink>
-            </UiStack>
-
-            <UiStack gap="xs">
-              <UiText tone="primary" size="md" class="font-semibold">
-                2. {{ t('migration.migration.installOnYourSourceServer') }}
-              </UiText>
-              <UiText tone="muted" size="sm">
-                {{ t('migration.migration.extractToYourSourceSystem') }}
-                {{ t('migration.migration.pluginPath') }}
-                {{ t('migration.migration.thenActivateInAdminAddons') }}
-              </UiText>
-            </UiStack>
-
-            <UiStack gap="xs">
-              <UiText tone="primary" size="md" class="font-semibold">
-                3. {{ t('migration.migration.copyTheSecretKeyInto') }}
-              </UiText>
-              <UiStack direction="row" align="center" gap="sm">
-                <UiText tone="secondary" size="sm" class="min-w-0 flex-1 truncate font-mono" data-testid="migration-secret-key">
-                  {{ activeKey }}
-                </UiText>
-                <UiButton
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  data-testid="migration-copy-key"
-                  @click="copyKey(activeKey)"
-                >
-                  {{ copiedKey ? t('migration.migration.copied') : t('migration.migration.copy') }}
+      <template #aside>
+        <UiStack gap="md" class="min-w-0">
+          <UiCard v-if="!store.activeJob && !store.loading" data-testid="migration-none-selected">
+            <UiEmptyState v-if="store.jobs.length > 0" :title="t('migration.migration.selectFromHistory')" />
+            <UiEmptyState
+              v-else
+              :title="t('migration.migration.noMigrationSelected')"
+              :description="t('migration.migration.createANewMigration')"
+            >
+              <template #actions>
+                <UiButton :action="UiActionKind.Generate" variant="primary" data-testid="migration-start-first" @click="showNewJobModal = true">
+                  {{ t('migration.migration.startYourFirstMigration') }}
                 </UiButton>
+              </template>
+            </UiEmptyState>
+          </UiCard>
+
+          <MigrationProgressCard v-if="store.activeJob || store.loading" :job="store.activeJob" />
+
+          <!-- Setup instructions (pending jobs only) -->
+          <UiCard v-if="store.activeJob?.status === MigrationStatus.Pending" padding="md" data-testid="migration-setup">
+            <UiStack gap="md">
+              <UiHeading :level="3" variant="card">{{ t('migration.migration.setupRequired') }}</UiHeading>
+
+              <UiStack gap="xs">
+                <UiText tone="primary" size="md" class="font-semibold">
+                  1. {{ t('migration.migration.downloadTheMigrationPlugin') }}
+                </UiText>
+                <UiLink :href="PLUGIN_DOWNLOAD_URL" variant="link" data-testid="migration-download-plugin">
+                  {{ t('migration.migration.innovayseMigrationZip') }}
+                </UiLink>
+              </UiStack>
+
+              <UiStack gap="xs">
+                <UiText tone="primary" size="md" class="font-semibold">
+                  2. {{ t('migration.migration.installOnYourSourceServer') }}
+                </UiText>
+                <UiText tone="muted" size="sm">
+                  {{ t('migration.migration.extractToYourSourceSystem') }}
+                  {{ t('migration.migration.pluginPath') }}
+                  {{ t('migration.migration.thenActivateInAdminAddons') }}
+                </UiText>
+              </UiStack>
+
+              <UiStack gap="xs">
+                <UiText tone="primary" size="md" class="font-semibold">
+                  3. {{ t('migration.migration.copyTheSecretKeyInto') }}
+                </UiText>
+                <UiStack direction="row" align="center" gap="sm">
+                  <UiText tone="secondary" size="sm" class="min-w-0 flex-1 truncate font-mono" data-testid="migration-secret-key">
+                    {{ activeKey }}
+                  </UiText>
+                  <UiButton :action="UiActionKind.Copy"
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    data-testid="migration-copy-key"
+                    @click="copyKey(activeKey)"
+                  >
+                    {{ copiedKey ? t('migration.migration.copied') : t('migration.migration.copy') }}
+                  </UiButton>
+                </UiStack>
+              </UiStack>
+
+              <UiStack gap="xs">
+                <UiText tone="primary" size="md" class="font-semibold">
+                  4. {{ t('migration.migration.testConnectionAndStartImport') }}
+                </UiText>
+                <UiText tone="muted" size="sm">
+                  {{ t('migration.migration.click') }}
+                  {{ t('migration.migration.check') }}
+                  {{ t('migration.migration.toVerifyConnectivityThen') }}
+                  {{ t('migration.migration.startImport') }}
+                  {{ t('migration.migration.toBegin') }}
+                </UiText>
               </UiStack>
             </UiStack>
+          </UiCard>
 
-            <UiStack gap="xs">
-              <UiText tone="primary" size="md" class="font-semibold">
-                4. {{ t('migration.migration.testConnectionAndStartImport') }}
-              </UiText>
-              <UiText tone="muted" size="sm">
-                {{ t('migration.migration.click') }}
-                {{ t('migration.migration.check') }}
-                {{ t('migration.migration.toVerifyConnectivityThen') }}
-                {{ t('migration.migration.startImport') }}
-                {{ t('migration.migration.toBegin') }}
-              </UiText>
-            </UiStack>
-          </UiStack>
-        </UiCard>
-
-        <!-- Import report -->
-        <MigrationReportTable v-if="store.activeJob && showReport" :job-id="store.activeJob.id" />
-      </UiStack>
-    </UiStack>
+          <!-- Import report -->
+          <MigrationReportTable v-if="store.activeJob && showReport" :job-id="store.activeJob.id" />
+        </UiStack>
+      </template>
+    </UiSplit>
 
     <!-- New job dialog -->
     <UiDialog
@@ -499,10 +485,10 @@ onUnmounted(() => {
       </UiStack>
 
       <template #footer>
-        <UiButton variant="secondary" data-testid="migration-dialog-cancel" @click="closeNewJob">
+        <UiButton :action="UiActionKind.Cancel" variant="secondary" data-testid="migration-dialog-cancel" @click="closeNewJob">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           variant="primary"
           :loading="creatingJob"
           :disabled="!newJobSourceUrl.trim()"

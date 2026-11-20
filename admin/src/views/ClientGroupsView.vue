@@ -11,7 +11,6 @@ import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
 import ClientGroupFormDialog from '@/components/clients/ClientGroupFormDialog.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -23,17 +22,26 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ClientGroupsView.schema'
 import { useClientGroupsStore } from '@/stores/clientGroups'
 import type { ClientGroup, ClientGroupPayload } from '@/types/clientgroup'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import { EMPTY_VALUE } from '@/lib/format'
+import { Icon } from '@/lib/icons'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('clients.clientGroups.add'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'client-groups-add', onSelect: openCreate },
+])
 
 /** Client groups store, the only caller of the group endpoints. */
 const store = useClientGroupsStore()
@@ -142,6 +150,7 @@ const stageDelete = (group: ClientGroup): void => {
 const rowActions = (group: ClientGroup): UiMenuAction[] => [
   {
     label: t('shared.edit'),
+    icon: Icon.Edit,
     /**
      * Opens the edit dialog for this row's group.
      *
@@ -152,6 +161,7 @@ const rowActions = (group: ClientGroup): UiMenuAction[] => [
   },
   {
     label: group.isDefault ? t('clients.clientGroups.clearDefault') : t('clients.clientGroups.setDefault'),
+    icon: Icon.Star,
     /**
      * Toggles whether this row's group is the default.
      *
@@ -162,6 +172,7 @@ const rowActions = (group: ClientGroup): UiMenuAction[] => [
   },
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     danger: true,
     /**
      * Stages this row's group for the delete confirmation.
@@ -182,12 +193,7 @@ onMounted(async () => {
 
 <template>
   <UiStack>
-    <UiPageHeader :title="t('clients.clientGroups.title')" :subtitle="t('clients.clientGroups.subtitle')">
-      <template #actions>
-        <UiButton :variant="UiButtonVariant.Primary" data-testid="client-groups-add" @click="openCreate">
-          {{ t('clients.clientGroups.add') }}
-        </UiButton>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiAlert v-if="store.actionError" :variant="UiTone.Danger" data-testid="client-groups-action-error">
@@ -204,16 +210,7 @@ onMounted(async () => {
 
     <UiCard v-else-if="initialLoading || store.groups.length > 0">
       <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-groups-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.clientGroups.discount') }}</UiTableHeader>
-            <UiTableHeader>{{ t('clients.clientGroups.clients') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.default') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="group in store.groups" :key="group.id" data-testid="client-group-row">
             <UiTableCell><ClientGroupBadge :name="group.name" :color="group.color" /></UiTableCell>

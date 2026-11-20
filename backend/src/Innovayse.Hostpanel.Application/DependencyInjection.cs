@@ -88,8 +88,15 @@ public static class DependencyInjection
         services.AddScoped<KbSlugAllocator>();
         services.AddScoped<KbSlugSaver>();
 
+        // The one gate every plugin host access to a client's hosting passes (#1294).
+        services.AddScoped<PluginHostingGate>();
+
         // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
         services.AddScoped<PluginSshAccessService>();
+
+        // The websites and databases half of the plugin host API: reads the hosting capabilities and sets up and removes a
+        // plugin's sites and databases for the call's client (#1294).
+        services.AddScoped<PluginHostingService>();
 
         // Which plans a service can move to and what each move costs, shared by the client's option list and the request itself.
         services.AddScoped<ServicePlanChangeQuoter>();
@@ -108,6 +115,8 @@ public static class DependencyInjection
         // The update a registry row offers for an installed plugin: only a version that runs on this host.
         services.AddScoped<RegistryPluginReader>();
         services.AddScoped<PluginUpdateOffer>();
+        // The install record both plugin install use cases (upload and registry) write for an accepted package.
+        services.AddScoped<InstalledPluginRecorder>();
 
         return services;
     }

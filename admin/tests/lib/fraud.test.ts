@@ -3,7 +3,7 @@
  * settings check mirrors the API's validator (whole numbers inside each range, review below reject).
  */
 import { describe, expect, it } from 'vitest'
-import { FRAUD_NUMBER_FIELDS, FRAUD_NOTE_MAX_LENGTH, fraudSettingsErrors } from '@/lib/fraud'
+import { FRAUD_NUMBER_FIELDS, FRAUD_NOTE_MAX_LENGTH, FraudBand, changedFraudSettingsCount, fraudRiskBands, fraudSettingsErrors } from '@/lib/fraud'
 import { FraudSettingsField } from '@/types/fraud'
 import type { FraudSettings } from '@/types/fraud'
 
@@ -19,17 +19,18 @@ const valid: FraudSettings = {
 
 describe('FRAUD_NUMBER_FIELDS', () => {
   it('lists every numeric settings field once, in screen order', () => {
-    expect(FRAUD_NUMBER_FIELDS.map((spec) => spec.field)).toEqual(Object.values(FraudSettingsField))
+    expect(Object.keys(FRAUD_NUMBER_FIELDS)).toEqual(Object.values(FraudSettingsField))
+    expect(Object.entries(FRAUD_NUMBER_FIELDS).every(([name, spec]) => spec.field === name)).toBe(true)
   })
 
   it('keeps each range ordered and inside the API limits', () => {
-    for (const spec of FRAUD_NUMBER_FIELDS) {
+    for (const spec of Object.values(FRAUD_NUMBER_FIELDS)) {
       expect(spec.min).toBeLessThan(spec.max)
     }
-    const score = FRAUD_NUMBER_FIELDS.find((spec) => spec.field === FraudSettingsField.ManualReviewRiskScore)
-    expect([score?.min, score?.max]).toEqual([0, 100])
-    const window = FRAUD_NUMBER_FIELDS.find((spec) => spec.field === FraudSettingsField.VelocityWindowMinutes)
-    expect([window?.min, window?.max]).toEqual([1, 1440])
+    const score = FRAUD_NUMBER_FIELDS[FraudSettingsField.ManualReviewRiskScore]
+    expect([score.min, score.max]).toEqual([0, 100])
+    const window = FRAUD_NUMBER_FIELDS[FraudSettingsField.VelocityWindowMinutes]
+    expect([window.min, window.max]).toEqual([1, 1440])
   })
 
   it('matches the note length the API accepts', () => {
@@ -80,5 +81,50 @@ describe('fraudSettingsErrors', () => {
     const errors = fraudSettingsErrors({ ...valid, manualReviewRiskScore: 150, autoRejectRiskScore: 40 })
 
     expect(errors.manualReviewRiskScore).toBe('Enter a whole number from 0 to 100.')
+  })
+})
+
+describe('fraudRiskBands', () => {
+  it('cuts the scale at the two thresholds: allow below review, review below reject, reject from there', () => {
+    expect(fraudRiskBands(50, 80)).toEqual([
+      { band: FraudBand.Allow, from: 0, to: 49, share: 50 },
+      { band: FraudBand.Review, from: 50, to: 79, share: 30 },
+      { band: FraudBand.Reject, from: 80, to: 100, share: 20 },
+    ])
+  })
+
+  it('leaves a band empty when a threshold sits on the edge of the scale', () => {
+    const [allow, review] = fraudRiskBands(0, 100)
+
+    expect(allow).toMatchObject({ from: 0, to: -1, share: 0 })
+    expect(review).toMatchObject({ from: 0, to: 99, share: 100 })
+  })
+
+  it('pulls a threshold that is off the scale or not a number onto it, and lifts reject to review when inverted', () => {
+    expect(fraudRiskBands(-5, 150).map((segment) => segment.share)).toEqual([0, 100, 0])
+    expect(fraudRiskBands(Number.NaN, 40).map((segment) => segment.share)).toEqual([0, 40, 60])
+    expect(fraudRiskBands(90, 60).map((segment) => segment.share)).toEqual([90, 0, 10])
+  })
+
+  it('always covers the whole scale', () => {
+    for (const [review, reject] of [[10, 20], [0, 0], [100, 100], [33.4, 66.6]] as const) {
+      expect(fraudRiskBands(review, reject).reduce((total, segment) => total + segment.share, 0)).toBe(100)
+    }
+  })
+})
+
+describe('changedFraudSettingsCount', () => {
+  it('is zero for equal settings and counts each setting that differs, the switch included', () => {
+    expect(changedFraudSettingsCount(valid, { ...valid })).toBe(0)
+    expect(changedFraudSettingsCount({ ...valid, enabled: false }, valid)).toBe(1)
+    expect(changedFraudSettingsCount({ ...valid, enabled: false, velocityMaxOrders: 9, manualReviewRiskScore: 10 }, valid)).toBe(3)
+  })
+})
+
+describe('FRAUD_NUMBER_FIELDS units', () => {
+  it('names a unit for every numeric field', () => {
+    for (const spec of Object.values(FRAUD_NUMBER_FIELDS)) {
+      expect(spec.unitKey).toMatch(/^fraud\.settings\.units\./)
+    }
   })
 })

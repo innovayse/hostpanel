@@ -76,26 +76,17 @@
       "label": "Working hours",
       "hint": "Mon-Fri 09:00-18:00"
     },
-    "contactHoursRu": {
-      "label": "Working hours (Russian)",
-      "hint": "Shown to Russian visitors; empty uses the default hours"
-    },
-    "contactHoursHy": {
-      "label": "Working hours (Armenian)",
-      "hint": "Shown to Armenian visitors; empty uses the default hours"
+    "groups": {
+      "figures": "Figures",
+      "contacts": "Contacts",
+      "messengers": "Messengers",
+      "address": "Address and hours"
     },
     "contactTimezone": {
       "label": "Time zone",
-      "hint": "UTC+4"
+      "hint": "The zone the working hours are stated in, shown beside them. Pick a city in the zone."
     },
-    "contactAddressRu": {
-      "label": "Address (Russian)",
-      "hint": "Shown to Russian visitors; empty uses the default address"
-    },
-    "contactAddressHy": {
-      "label": "Address (Armenian)",
-      "hint": "Shown to Armenian visitors; empty uses the default address"
-    }
+    "localeFallbackHint": "A language left empty shows the English text."
   },
   "portalAppearance": {
     "title": "Portal appearance",
@@ -215,6 +206,12 @@
   "hostingDetails": {
     "title": "Hosting details",
     "description": "The figures and facts behind the performance, security, installer, guarantee and support sections. Leave a figure empty to hide it.",
+    "groups": {
+      "performance": "Performance figures",
+      "guarantees": "Guarantees",
+      "support": "Support response",
+      "features": "Features"
+    },
     "statsResponseTime": {
       "label": "Response time",
       "hint": "e.g. 180 ms"
@@ -325,6 +322,7 @@
     "title": "Tracking & chat",
     "description": "Third-party services the storefront talks to. Nothing loads until it is configured here.",
     "gtm": {
+      "title": "Tag manager",
       "label": "Google Tag Manager container",
       "hint": "Loads only after a visitor accepts all cookies. Empty loads no tag at all."
     },
@@ -334,8 +332,6 @@
       "baseUrlHint": "https://chat.example.com",
       "token": "Website token",
       "tokenHint": "From the chat inbox settings",
-      "tokenRu": "Token for Russian visitors",
-      "tokenHy": "Token for Armenian visitors",
       "tokenLocaleHint": "Optional; empty uses the default token",
       "hint": "The widget appears only when a provider, the server and a token are all set."
     },
@@ -406,6 +402,21 @@
     "maxActiveServicesPlaceholder": "Unlimited",
     "onePerClient": "One per client",
     "onePerClientHint": "A client who already has an active service of this product cannot order it again.",
+    "trial": "Free trial",
+    "trialHint": "Let clients start this product for free for a limited time, without paying.",
+    "trialDays": "Trial length (days)",
+    "trialDaysPlaceholder": "e.g. 14",
+    "trialReminderDays": "Reminder days",
+    "trialReminderDaysHint": "Days before the end of the trial a reminder is emailed, separated by commas. Each must be before the end; at most five.",
+    "trialReminderDaysPlaceholder": "e.g. 3, 1",
+    "trialGracePeriod": "Grace period after the trial (days)",
+    "trialGracePeriodPlaceholder": "e.g. 3",
+    "trialGracePeriodHint": "Days the invoice of a converted trial may stay unpaid before the service is ended.",
+    "trialAutoConvert": "Convert to a paid service at the end",
+    "trialAutoConvertHint": "An invoice is raised when the trial ends. When off, the service is ended instead.",
+    "trialNotice": "Clients cannot start a trial yet: these settings are only stored for now.",
+    "trialInvalid": "A trial lasts {minDays} to {maxDays} days, the grace period {minGrace} to {maxGrace} days, and each reminder day is a whole number from 1 up to one day before the end (at most {maxReminders}, none repeated).",
+    "trialReminderDaysInvalid": "Reminder days must be whole numbers separated by commas.",
     "createProduct": "Create Product",
     "sharedHosting": "Shared Hosting",
     "dedicated": "Dedicated",
@@ -421,6 +432,51 @@
     "emailTemplates": "Email Templates",
     "noTemplatesFound": "No templates found.",
     "languages": "Languages",
+    "searchPlaceholder": "Search by name or subject",
+    "groupFilter": "Group",
+    "noMatches": "No templates match your search",
+    "groups": {
+      "bank": "Bank transfer",
+      "card": "Card",
+      "credit": "Credit",
+      "domain": "Domains",
+      "email": "Campaigns",
+      "gateway": "Gateway payments",
+      "invoice": "Invoices",
+      "order": "Orders",
+      "service": "Services",
+      "user": "Accounts"
+    },
+    "names": {
+      "bank-transfer-confirmed": "Bank transfer confirmed",
+      "bank-transfer-details": "Bank transfer details",
+      "bank-transfer-rejected": "Bank transfer rejected",
+      "bank-transfer-requested-admin": "Bank transfer requested (staff)",
+      "card-charge-action-required": "Card charge needs action",
+      "card-charge-declined": "Card charge declined",
+      "credit-balance-changed": "Credit balance changed",
+      "credit-note-issued": "Credit note issued",
+      "domain-expired": "Domain expired",
+      "domain-expiring": "Domain expiring",
+      "domain-registered": "Domain registered",
+      "domain-registration-failed": "Domain registration failed",
+      "domain-registration-failed-admin": "Domain registration failed (staff)",
+      "domain-renewal-failed-admin": "Domain renewal failed (staff)",
+      "domain-renewed": "Domain renewed",
+      "domain-transferred": "Domain transferred",
+      "email-campaign": "Email campaign",
+      "gateway-payment-credited-admin": "Gateway payment credited (staff)",
+      "gateway-payment-stalled-admin": "Gateway payment stalled (staff)",
+      "gateway-payment-without-reference-admin": "Gateway payment without reference (staff)",
+      "invoice-renewal-reminder": "Invoice renewal reminder",
+      "order-rejected": "Order rejected",
+      "service-termination-failed-admin": "Service termination failed (staff)",
+      "user-email-change": "Email change confirmation",
+      "user-email-changed-notice": "Email changed notice",
+      "user-email-verification": "Email verification",
+      "user-invite": "User invitation",
+      "user-password-reset": "Password reset"
+    },
     "body": "Body (HTML)",
     "missingVersion": "This template has no version in this language yet, so mail in it is sent in English. Saving adds it.",
     "subjectPlaceholder": "Subject line, variables allowed",
@@ -428,7 +484,6 @@
     "descriptionPlaceholder": "When this mail is sent"
   },
   "products": {
-    "products": "Products",
     "manageHostingPlansAndServices": "Manage hosting plans and services available for purchase",
     "createProduct": "Create Product",
     "group": "Group",
@@ -451,7 +506,6 @@
     "typeSsl": "SSL"
   },
   "productBundles": {
-    "title": "Product bundles",
     "subtitle": "Sell products together as one offer, with an optional domain registration and a discount.",
     "add": "Create bundle",
     "empty": "No product bundles yet.",
@@ -491,16 +545,12 @@
     "activeHint": "An inactive bundle is hidden from the storefront."
   },
   "slideForm": {
-    "slides": "Slides",
     "generalSettings": "General Settings",
     "icon": "Icon",
     "orTypeMdiIconName": "Or type MDI icon name (e.g. cloud-check)",
     "brandColor": "Brand Color",
     "image": "Image",
     "slidePreview": "Slide preview",
-    "removeImage": "Remove image",
-    "jpegPngWebpSvgMax": "JPEG, PNG, WebP, SVG, max 5MB",
-    "orPasteImageUrl": "Or paste image URL",
     "demoUrl": "Demo URL",
     "demoUrlPlaceholder": "https://demo.example.com",
     "optionalTryDemoButtonLink": "Optional \"Try Demo\" button link on the slide",
@@ -548,19 +598,11 @@
     "finance": "Finance",
     "media": "Media",
     "health": "Health",
-    "pageTitleEdit": "Edit Slide",
-    "pageTitleCreate": "Create Slide",
     "featureNumber": "Feature {number}",
-    "locales": {
-      "en": "English",
-      "ru": "Russian",
-      "hy": "Armenian"
-    },
     "notFound": "Slide #{id} not found.",
     "ai": "AI"
   },
   "slides": {
-    "slides": "Slides",
     "manageHomepageHeroSlidesDrag": "Manage homepage hero slides. Drag to reorder.",
     "addSlide": "Add Slide",
     "image": "Image",
@@ -579,7 +621,6 @@
     "deleteMessage": "Delete \"{title}\"? This action cannot be undone."
   },
   "tldConfigForm": {
-    "tldPricing": "TLD Pricing",
     "generalSettings": "General Settings",
     "tld": "TLD",
     "domainExtensionWithoutTheDot": "Domain extension without the dot (e.g. \"com\", \"net\", \"am\")",
@@ -597,16 +638,16 @@
     "costCostsymbol": "Cost ({costSymbol})",
     "sellSellsymbol": "Sell ({sellSymbol})",
     "margin": "Margin",
+    "marginDifferentCurrencies": "Cost and sell price are in different currencies, so no margin is worked out here. The price list shows it at the current exchange rate",
     "years": "Years",
     "transferPricing": "Transfer Pricing",
     "renewalPricing": "Renewal Pricing",
     "createTld": "Create TLD",
+    "editTld": "Edit TLD",
     "unsavedChanges": "Unsaved changes",
     "youHaveUnsavedChangesAre": "You have unsaved changes. Are you sure you want to leave?",
     "leave": "Leave",
     "tldIsRequired": "TLD is required.",
-    "addTld": "Add TLD",
-    "editTld": "Edit TLD",
     "notFound": "TLD config #{id} not found."
   },
   "tldConfigs": {
@@ -623,6 +664,7 @@
     "cost1yr": "Cost (1yr)",
     "sell1yr": "Sell (1yr)",
     "margin": "Margin",
+    "marginUnavailable": "No margin: a price is missing, or there is no exchange rate between the cost currency and the sell currency",
     "lastSynced": "Last Synced",
     "editTld": "Edit TLD",
     "deleteTld": "Delete TLD",
@@ -637,7 +679,6 @@
     "never": "Never"
   },
   "index": {
-    "title": "Settings",
     "subtitle": "Everything that shapes the panel and the storefront, grouped by what it controls.",
     "groups": {
       "storefront": "Storefront and catalogue",
@@ -703,12 +744,27 @@
     "title": "Advanced settings",
     "description": "Settings that have no card of their own. Edit the key and value pairs here."
   },
+  "timezone": {
+    "none": "No time zone",
+    "placeholder": "Choose a time zone",
+    "regions": {
+      "Africa": "Africa",
+      "America": "Americas",
+      "Antarctica": "Antarctica",
+      "Arctic": "Arctic",
+      "Asia": "Asia",
+      "Atlantic": "Atlantic Ocean",
+      "Australia": "Australia",
+      "Europe": "Europe",
+      "Indian": "Indian Ocean",
+      "Pacific": "Pacific Ocean",
+      "UTC": "UTC"
+    }
+  },
   "saveBar": {
     "unsaved": "{count} unsaved change | {count} unsaved changes",
     "clean": "No unsaved changes",
-    "saveAll": "Save changes",
-    "discard": "Discard changes",
-    "saveShort": "Save",
-    "discardShort": "Discard"
+    "save": "Save",
+    "discard": "Discard"
   }
 }

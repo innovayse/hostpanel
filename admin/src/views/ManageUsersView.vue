@@ -9,13 +9,11 @@
  */
 import { computed, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import { useUsersStore } from '@/stores/clientAccounts'
 import type { UserDetail, UserListItem } from '@/types/useraccount'
 import UserFormModal from '@/components/clients/UserFormModal.vue'
 import ChangePasswordModal from '@/components/clients/ChangePasswordModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
@@ -28,21 +26,28 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/ManageUsersView.schema'
 import { useListQuery } from '@/composables/useListQuery'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
 import { UiTextSize } from '@/utils/ui/text'
+import { Icon } from '@/lib/icons'
+import { schemaHeader } from '@/lib/schemaHeader'
+import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
 
-/** Router, for the "Add Client" shortcut. */
-const router = useRouter()
+/** The header actions, each with its icon; on a phone only the primary one stays a button. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { label: t('clients.manageUsers.addClient'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'users-add-client', to: AppRoute.ClientsAdd },
+])
 
 /** Users store: the paged list, the detail and the refusal sentences. */
 const store = useUsersStore()
@@ -244,9 +249,9 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
    */
   const onPassword = (): void => openChangePasswordModal(user.id)
   return [
-    { label: t('clients.manageUsers.manageUser'), testid: `users-manage-${user.id}`, onSelect: onManage },
-    { label: t('clients.manageUsers.sendPasswordResetEmail'), testid: `users-reset-${user.id}`, onSelect: onReset },
-    { label: t('shared.changePassword'), testid: `users-password-${user.id}`, onSelect: onPassword },
+    { label: t('clients.manageUsers.manageUser'), icon: Icon.Settings, testid: `users-manage-${user.id}`, onSelect: onManage },
+    { label: t('clients.manageUsers.sendPasswordResetEmail'), icon: Icon.Mail, testid: `users-reset-${user.id}`, onSelect: onReset },
+    { label: t('shared.changePassword'), icon: Icon.Key, testid: `users-password-${user.id}`, onSelect: onPassword },
   ]
 }
 </script>
@@ -261,15 +266,7 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       {{ actionError }}
     </UiAlert>
 
-    <UiPageHeader
-      :title="t('clients.manageUsers.manageUsers')"
-      :subtitle="t('clients.manageUsers.viewAndManageUserAccounts')"
-    >
-      <template #actions>
-        <UiButton variant="primary" data-testid="users-add-client" @click="router.push(AppRoute.ClientsAdd)">
-          {{ t('clients.manageUsers.addClient') }}
-        </UiButton>
-      </template>
+    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)" >
     </UiPageHeader>
 
     <!-- Search box: the search is the only thing the identity provider can narrow the list by -->
@@ -297,16 +294,7 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       :empty="!store.loading && store.users.length === 0"
       data-testid="users-table"
     >
-      <UiTableHead>
-        <UiTableRow>
-          <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-          <UiTableHeader>{{ t('shared.firstName') }}</UiTableHeader>
-          <UiTableHeader>{{ t('shared.lastName') }}</UiTableHeader>
-          <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
-          <UiTableHeader>{{ t('clients.manageUsers.lastLogin') }}</UiTableHeader>
-          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-        </UiTableRow>
-      </UiTableHead>
+      <UiSchemaTableHead :columns="schema.table.columns" />
       <UiTableBody divided>
         <UiTableRow v-for="user in store.users" :key="user.id" hoverable :data-testid="`users-row-${user.id}`">
           <UiTableCell muted>{{ user.clientId ?? EMPTY_VALUE }}</UiTableCell>

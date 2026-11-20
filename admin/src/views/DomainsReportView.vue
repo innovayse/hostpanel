@@ -9,11 +9,14 @@ import ReportQueryPage from '@/components/reports/ReportQueryPage.vue'
 import { reportApiPath } from '@/lib/apiPaths'
 import type { FieldOption } from '@/components/ui/UiAdvancedFilters.vue'
 import { useQueryReport } from '@/composables/useQueryReport'
+import { QUERY_REPORT_DEFAULT_PRESET } from '@/lib/reportsQuery'
+import { reportColumnKeys, reportQueryRanges } from '@/lib/reportsSchema'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportDomainRow } from '@/types/reportdomainrow'
 import type { ReportQueryConfig, ReportQueryRange } from '@/types/reportquery'
 import { REPORT_PAGE_SIZE } from '@/lib/limits'
+import schema from '@/views/DomainsReportView.schema'
 
 const { t } = useI18n()
 
@@ -37,12 +40,8 @@ const columns = computed<ReportColumn[]>(() => [
   { key: 'notes', label: t('shared.notes') },
 ])
 
-/** Date-range filters. */
-const ranges = computed<ReportQueryRange[]>(() => [
-  { key: 'registered', label: t('reports.domainsReport.registrationDateRange'), param: 'registered' },
-  { key: 'nextDue', label: t('reports.domainsReport.nextDueDateRange'), param: 'nextDue' },
-  { key: 'expiry', label: t('reports.domainsReport.expiryDateRange'), param: 'expires' },
-])
+/** Date-range filters: the schema's filters besides the column picker; each key is the prefix of its two query parameters. */
+const ranges = computed<ReportQueryRange[]>(() => reportQueryRanges(schema.filters, t))
 
 /** Fields the advanced filters can target. */
 const filterFields = computed<FieldOption[]>(() => [
@@ -54,25 +53,34 @@ const filterFields = computed<FieldOption[]>(() => [
   { value: 'orderType', label: t('reports.domainsReport.regType') },
 ])
 
+/** Preset each date range starts on, so the first result is not unbounded. */
+const DEFAULT_RANGES = { registered: QUERY_REPORT_DEFAULT_PRESET } as const
+
+/** Field the first advanced filter row starts on. */
+const DEFAULT_FILTER_FIELD = 'status'
+
 /** What the report is. */
 const config: ReportQueryConfig = {
   path: reportApiPath('domains'),
   serverFields: ['status', 'registrar'],
   pageSize: REPORT_PAGE_SIZE,
+  defaultRanges: DEFAULT_RANGES,
+  defaultFilterField: DEFAULT_FILTER_FIELD,
+  defaultColumns: reportColumnKeys(schema.table),
 }
+
 
 const report = useQueryReport<ReportDomainRow>(config, { columns, ranges })
 </script>
 
 <template>
   <ReportQueryPage
-    :title="t('shared.domains')"
-    :description="t('reports.domainsReport.thisReportCanBeUsed')"
+    :schema="schema"
     :report="report"
     :columns="columns"
     :ranges="ranges"
     :filter-fields="filterFields"
+    :default-filter-field="config.defaultFilterField"
     :found-text="t('reports.domainsReport.totalcountDomainSFound', { totalCount: report.totalCount })"
-    :empty-text="t('reports.domainsReport.noDomainsFound')"
   />
 </template>

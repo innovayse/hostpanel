@@ -13,6 +13,7 @@ import type { PluginChatResult } from '@/types/pluginview'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for PluginChatCardActions. */
 const props = defineProps<{
@@ -72,7 +73,7 @@ const shown = computed<boolean>(() =>
       @resend="emit('resend')"
       @visibility="setShown(action.key, $event)"
     />
-    <UiButton
+    <UiButton :action="UiActionKind.View"
       v-if="result.details.length > 0"
       :variant="UiButtonVariant.Secondary"
       :size="UiSize.Sm"

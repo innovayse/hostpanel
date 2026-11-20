@@ -6,6 +6,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import QuoteDetailView from '@/views/QuoteDetailView.vue'
+import { QUOTE_ITEMS_PART } from '@/lib/quoteSchemaParts'
+import { QUOTE_GENERAL_PART, QUOTE_NOTES_PART } from '@/views/QuoteDetailView.schema'
 import { CurrencyCode } from '@/types/currency'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
@@ -32,15 +34,27 @@ afterEach(() => {
 })
 
 describe('QuoteDetailView', () => {
-  it('keeps the real sections as placeholders while the quote loads', async () => {
+  it('draws the cards of its schema as placeholders while the quote loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
 
-    expect(wrapper.find('[data-testid="billing-quote-loading"]').exists()).toBe(true)
+    const cards = [QUOTE_GENERAL_PART, QUOTE_ITEMS_PART, QUOTE_NOTES_PART].flatMap((part) => part.columns.flat())
+    expect(wrapper.findAll('[data-testid^="ui-detail-card-"]')).toHaveLength(cards.length)
+    expect(wrapper.findAll('[data-testid="ui-detail-row"]')).toHaveLength(cards.reduce((sum, card) => sum + (card.rows?.length ?? 0), 0))
     expect(wrapper.text()).toContain('General Information')
     expect(wrapper.find('[data-testid="billing-quote-subject"]').exists()).toBe(false)
-    expect(wrapper.findAll('[data-testid="ui-field-skeleton"]').length).toBeGreaterThan(0)
     expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+  })
+
+  it('puts the line items between the general card and the notes', async () => {
+    stubRoutes({ 'GET /api/quotes/3': () => json(quote) })
+    const { wrapper } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
+    await flushPromises()
+
+    const html = wrapper.html()
+    expect(wrapper.find('[data-testid="ui-detail-card-items"] [data-testid="billing-quote-items"]').exists()).toBe(true)
+    expect(html.indexOf('ui-detail-card-general')).toBeLessThan(html.indexOf('ui-detail-card-items'))
+    expect(html.indexOf('ui-detail-card-items')).toBeLessThan(html.indexOf('ui-detail-card-notes'))
   })
 
   it('fills the form from the quote and saves the edited subject', async () => {
@@ -189,5 +203,16 @@ describe('QuoteDetailView', () => {
     release(json({ ...quote, id: 4, currency: CurrencyCode.Eur }))
     await flushPromises()
     expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('20.00 EUR')
+  })
+
+  it('returns to the quotes list with the back pill in the header', async () => {
+    stubRoutes({ 'GET /api/quotes/3': () => json(quote) })
+    const { wrapper } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
+    await flushPromises()
+
+    const back = wrapper.get('[data-testid="billing-quote-back"]')
+
+    expect(back.attributes('href')).toBe('/billing/quotes')
+    expect(back.text()).toBe('Quotes')
   })
 })

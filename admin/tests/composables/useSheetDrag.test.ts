@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import {
   flickVelocity,
+  isSheetPointerType,
   resolveRelease,
   SHEET_CLOSE_RATIO,
   SHEET_DRAG_SLOP,
@@ -16,6 +17,14 @@ import {
   useSheetDrag,
 } from '@/composables/useSheetDrag'
 import type { SheetPointerEvent } from '@/composables/useSheetDrag'
+
+describe('isSheetPointerType', () => {
+  it('accepts the three kinds a drag knows and nothing else', () => {
+    expect(['touch', 'pen', 'mouse'].every(isSheetPointerType)).toBe(true)
+    expect(isSheetPointerType('')).toBe(false)
+    expect(isSheetPointerType('trackpad')).toBe(false)
+  })
+})
 
 describe('flickVelocity', () => {
   it('is zero without samples or without elapsed time', () => {

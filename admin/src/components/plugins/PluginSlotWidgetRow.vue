@@ -23,6 +23,7 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { Product } from '@/types/product'
 import type { PluginSlotWidgetBindingDto } from '@/types/plugin'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -150,7 +151,7 @@ const submit = (): void => {
         data-testid="plugin-widget-add"
         @update:model-value="add"
       />
-      <UiButton
+      <UiButton :action="UiActionKind.Save"
         type="button"
         :variant="UiButtonVariant.Primary"
         :disabled="!dirty"

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Icon } from '@/lib/icons'
-import { NAV_SECTIONS, NavSectionId, withAddons } from '@/lib/navigation'
+import { NAV_SECTIONS, NavSectionId, navTitleKey, withAddons } from '@/lib/navigation'
 import { DEFAULT_PLUGIN_ICON } from '@/lib/pluginView'
 import { AppRoute } from '@/lib/routes'
 import { MessageLanguage, messages } from '@/locales/messages'
@@ -47,13 +47,38 @@ describe('NAV_SECTIONS', () => {
   it('has a label for every section, entry and sub-menu item in every language', () => {
     const keys = NAV_SECTIONS.flatMap((section) => [
       section.labelKey,
-      ...section.items.flatMap((item) => [item.labelKey, ...(item.children ?? []).map((child) => child.labelKey)]),
+      ...section.items.flatMap((item) => [item.labelKey, item.titleKey, ...(item.children ?? []).flatMap((child) => [child.labelKey, child.titleKey])]),
     ]).filter((key): key is string => key !== undefined)
     for (const language of Object.values(MessageLanguage)) {
       for (const key of keys) {
         expect(typeof valueAtPath(messages[language], key), `${language}: ${key}`).toBe('string')
       }
     }
+  })
+})
+
+describe('navTitleKey', () => {
+  it('gives the full title of an entry that has one and the menu label of one that does not', () => {
+    expect(navTitleKey(AppRoute.BillingGatewayLog)).toBe('billing.gatewayLog.gatewayTransactionLog')
+    expect(navTitleKey(AppRoute.Orders)).toBe('nav.orders')
+  })
+
+  it('finds a sub-menu item as well as a top-level entry', () => {
+    expect(navTitleKey(AppRoute.BillingPaymentClaims)).toBe('billing.paymentClaims.heading')
+    expect(navTitleKey(AppRoute.Billing)).toBe('nav.billing')
+  })
+
+  it('gives a key that resolves to a sentence in every language for the address of every entry and sub-menu item', () => {
+    const addresses = NAV_SECTIONS.flatMap((section) => section.items.flatMap((item) => [item.to, ...(item.children ?? []).map((child) => child.to)]))
+    for (const language of Object.values(MessageLanguage)) {
+      for (const address of addresses) {
+        expect(typeof valueAtPath(messages[language], navTitleKey(address)), `${language}: ${address}`).toBe('string')
+      }
+    }
+  })
+
+  it('rejects a path that no entry owns', () => {
+    expect(() => navTitleKey('/nowhere')).toThrow('No navigation entry for /nowhere')
   })
 })
 

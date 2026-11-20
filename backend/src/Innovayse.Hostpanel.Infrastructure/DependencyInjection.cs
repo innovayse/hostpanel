@@ -435,8 +435,9 @@ public static class DependencyInjection
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
         services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
 
-        // The plugin SSH issue budget: the portal's ssh-keys tier per plugin and client, over the plugin limiters (#758).
-        services.AddScoped<IPluginSshIssueLimiter, PluginSshIssueLimiter>();
+        // The budgets of plugin host access, per plugin and client, over the plugin limiters: the ssh-keys tier for SSH keys
+        // (#758) and the hosting-resources tier for websites and databases (#1294).
+        services.AddScoped<IPluginHostAccessLimiter, PluginHostAccessLimiter>();
         services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 
         // What the signed-in user may do on a client account. The portal's permission filter decides
@@ -463,6 +464,7 @@ public static class DependencyInjection
         // own ServerSshSettings row. Nothing here names a server; every value is per row.
         services.AddSingleton<SshAgentTransport>();
         services.AddScoped<ISshKeyProviderFactory, SshKeyProviderFactory>();
+        services.AddScoped<IHostingResourceProviderFactory, HostingResourceProviderFactory>();
         services.AddScoped<ISshServiceContextResolver, SshServiceContextResolver>();
         services.AddScoped<IHostedAccountOperations, HostedAccountOperations>();
         services.AddScoped<ISshKeyRevoker, SshKeyRevoker>();

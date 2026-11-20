@@ -263,7 +263,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.7.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.10.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -589,6 +589,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     client (`ActionBlock.vue`, `pluginActionBody`) the button is disabled until every member is read as a scalar, the body
     is fixed at the click, and a refused call reads the data and `refresh` again. Absent, an action posts `{}`. A result
     card's action carries a literal `body` instead (`readResultBody`), and a malformed one drops that action.
+  - **Open a URL from the reply (#1333, SDK 3.10.0).** An action's `openUrlFrom` names the field of its JSON reply that holds an absolute https URL. Both panels (`PluginActionBlock.vue`, `ActionBlock.vue`) open a blank tab in the click (`openBlankTab`, opener cut), call the route, read the field through `pluginOpenUrlTarget` (`pluginLinkTarget` with the page's `externalOrigins`, a `https://*.host` pattern admits subdomains, external addresses only) and send the tab there; a failed call or a refused address closes it and shows the error. The reader checks the member in `CheckOpenUrl` (`PLUGIN_VIEW_OPEN_URL_INVALID`, `ViewOpenUrlInvalid`): a name of 1 to 64 ASCII letters, digits or underscores, on an action with a route and no `navigate`, checked with the SDK's `PluginViews.IsOpenUrlFieldName`.
   - **Layout, split and preview (#910, SDK 3.2.0, schema stays 1).** A client page's `layout` is a `PluginPageLayouts`
     value and the page answers it (`PluginPageViewDto.Layout`, `standard` when absent); another value or any layout on an
     admin page is `PLUGIN_PAGE_LAYOUT_UNKNOWN` (`CheckPageLayouts` in the manifest validator). `split` holds exactly two
@@ -744,6 +745,19 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`IPluginRegistry.GetRefusedPlugins`); `GET /api/admin/plugins` lists it with `status: "Refused"`, `refusedRule` and
   `refusedDetail`, never as loaded, and it can be removed like any upload. A removed plugin that still keeps data is listed
   with `status: "Removed"` so the operator can purge it. Needs no database migration.
+- **Install records (`InstalledPlugins`).** An uploaded or registry plugin has one row, `InstalledPlugin` (Domain, unique per
+  `PluginId`): when it was first installed and by whom (`InstalledAt`, `InstalledByUserId`, `InstalledByName`), when a later
+  package was accepted (`UpdatedAt`, null until one is; an upgrade stays staged until the restart, so the package facts describe
+  the latest accepted package), and what that package was: `Source` (`PluginSource`: `BuiltIn` is never stored, `Uploaded`,
+  `Registry`), `Signer` (`PluginSignerKind`: `Unsigned`, `VerifiedPublisher` for a maintainers' key, `OwnKey` for an operator key)
+  with `SignerKeyId`, `PackageSizeBytes` and `PackageSha256`. Both install use cases write it through the one
+  `InstalledPluginRecorder` (Application `Admin/Plugins/Common`, in the save that writes the audit line), from the
+  `PluginPackageResult` the store fills (`SizeBytes`, and `SignerKeyId`, which `PluginSignatureVerifier.VerifiedKeyId` names only
+  after the signature verified, so a claim in an unsigned package is never recorded). A removal deletes the row. `ListPlugins`
+  reads it into `PluginListItemDto` (`Source`, `InstalledAt`, `UpdatedAt`, `InstalledBy`, `Signer`, `SignerKeyId`,
+  `PackageSizeBytes`, `PackageSha256`, all null for a plugin installed before the table existed and for a refused or removed
+  row; a built-in plugin reports `BuiltIn` and nothing else). The manifest carries no homepage, documentation or licence
+  member, so the admin overview takes those links and the licence name from the registry details only.
 - **Plugin package checks come from `Hostpanel.Sdk.Packaging` (SDK 3.1.0).** The checks a plugin package must pass are written
   once, in the SDK repository's second package (MIT, versioned in step with `Hostpanel.Sdk`, project reference at
   `backend/src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging`): the signature format, signing and verification (`PluginSignatureFile`,
@@ -1142,7 +1156,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     declares `hostAccess: ["ssh"]`, and the label is 1 to 100 characters (`NotAllowed`); the service is the binding's
     client's (`NotFound` for a foreign and a missing one alike); its product is bound to the plugin (`NotAllowed`); SSH is
     `Available` on it (`Unavailable`); it holds fewer than `SshLimits.MaxKeysPerService` keys (`LimitReached`); the
-    plugin's issue budget for the client is not spent (`ServerUnavailable`, fail closed: `IPluginSshIssueLimiter` takes
+    plugin's issue budget for the client is not spent (`ServerUnavailable`, fail closed: `IPluginHostAccessLimiter` takes
     from `PluginRateLimiter`'s `ssh-keys` tier, `RateLimit:SshKeys`, keyed per plugin and `client:{id}`); then
     `ISshIdentityGenerator` makes an Ed25519 pair and `SshKeyInstaller` installs the public half exactly as a client's key
     (`ServerUnavailable` when the agent fails).
@@ -1181,6 +1195,33 @@ docker/                              compose set (shared·dev·prod·platform), 
       SSH key ...`). **The private key is never stored, logged or put in an exception**: it exists only in the returned
       `PluginSshAccess`; the tests assert no column of the database and no log line contains it. `HostKeyFingerprint` is
       the agent's pinned fingerprint only when the customer-facing SSH address is the agent's own.
+  - **Websites and databases on a client's hosting (#1294).** `PluginHostApi` also implements the SDK 3.9.0 optional
+    `IPluginHostHostingApi` (`GetHostingCapabilitiesAsync`, `EnsureWebsiteAsync`, `RemoveWebsiteAsync`,
+    `EnsureDatabaseAsync`, `RemoveDatabaseAsync`) and only hands the `PluginCallBinding` to the Application's
+    `Services/Common/PluginHostingService`; `Infrastructure/Plugins/Extensions/PluginHostingMappingExtensions` is the one
+    place the SDK's records and the host's `Hosted*` records are translated, and `PluginHostOutcomeExtensions` the one place
+    a refusal becomes `PluginHostAccessException`. Every kind of host access (SSH included) passes `PluginHostingGate` in a
+    fixed order: the manifest declares the kind and the caller holds `ViewModifyPasswords` (`NotAllowed`), the service is
+    the client's (`NotFound`), the operator bound its product (`NotAllowed`; a removal never needs it), the request shape
+    (`HostingSpecRules`, mirroring the agent: host name = the service's domain or a subdomain, document root 1 to 6 plain
+    segments, PHP `N.N`, database label `[a-z][a-z0-9]{0,14}`: `InvalidRequest`), the service has a usable agent
+    (`Unavailable`), another plugin's host name or label (`Conflict`), at most `HostingResourceLimits` websites and
+    databases (`LimitReached`), the `RateLimit:HostingResources` budget per plugin and client (the `hosting-resources` tier of
+    `PluginRateLimiter`, fail closed: `ServerUnavailable`), and `IsStillAvailableAsync` before and after the server is called
+    (a plugin switched off mid-call gets `NotAllowed` and what it created is taken back). Records are `ServiceWebsite` and
+    `ServiceDatabase` (table-per-concrete-type under `HostingResource`; the plugin that holds one is `IssuedToPluginId`, the
+    server and account are pinned) and are saved `Pending` before the server is called, so a retry resumes them; the same save
+    moves `ClientService.HostingResourceRevision`, which serialises the per-service limit. Idempotency is from the records: an
+    Active website with the same specification, and an Active database, answer with no server call, and a repeated database
+    answers a null password. **The password** comes back from the agent only for the call that creates the database; it is never
+    stored, logged, put in an activity line or an exception (`HostedDatabase` and `ProvisionedDatabase` mask it; the tests
+    search every column and log line). Removal drops only the plugin's own record (`NotFound` otherwise), is idempotent, and
+    marks `RemoveFailed` when the server does not confirm. The server side is `IHostingResourceProvider`
+    (`Infrastructure/Integrations/SshAgent/AgentHostingResourceProvider`, agent contract `ensure-website`, `remove-website`,
+    `ensure-database`, `remove-database`, `ping.capabilities` and `ping.php_versions`); its factory asks
+    `ISshKeyProviderFactory.Supports`, so the module-to-agent mapping exists once, and the adapter tests run the agent's
+    golden vectors (`backend/agent/ssh-key-agent/tests/contract`, linked into the test output). When a service is terminated
+    `RemoveHostingResourcesOnServiceTerminatedHandler` marks its resources `Removed` with no server call.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
     `PLUGIN_FAILED` 502 and `PLUGIN_STORE_QUOTA_EXCEEDED` 402 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
@@ -2754,7 +2795,7 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   (`UiIcon` builds SVG nodes with `h()` from a whitelist); Tailwind 4 classes are literals and colours
   are theme tokens in `assets/main.css`. Every input-like has a `placeholder` (`local/require-placeholder`)
   and every interactive element a `data-testid` (`<area>-<element>[-<id>]`). chart.js is only used
-  behind `UiChart`; reports share one scaffold (`ReportPage`, `ReportTable`, `ReportQueryPage`).
+  behind `UiChart`; reports share one scaffold (`ReportPage`, `ReportTable`, `ReportQueryPage`), and `ReportPage` draws everything the report's skeleton schema (`views/<Name>.schema.ts`) lists: the header buttons (`actions`, a closed `ReportAction` list of Refresh, Export and Print), the filters (the month, year and currency dropdowns need no slot), the tiles, the chart, the table (`size` per column, `grouped` heading rows) with its pager, the parts only the data fills in (`map`, `alert`, `summary`, `closing`, drawn as a placeholder while the report loads), the `note` naming the base currency and the `emptyText` sentence, so a view passes only the data and the slots of its custom controls and cells and `UiSkeletonOf` draws the same blocks.
 - **Closed sets are enums or `as const` objects with a derived union** (`AuthMode`, `TicketStatus`,
   `InvoiceBulkAction`, `CancellationType`, `UiTone` and so on); tones for API status words live in
   `lib/tones.ts`. A screen whose feature is not built (affiliates, addons, disputes, offline card
@@ -2766,6 +2807,13 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `` t(`area.${x}`) `` prefix counts as use of the keys under it) and a literal `t('...')` /
   `translate('...')` with no `en` entry; `tests/locales/parity.test.ts` also checks values and
   `{placeholders}`. A server-decided sentence is never copied into a locale file.
+- **A value written once per language is one `UiLocalizedField`, never one field per language.** The kit's
+  `UiLocalizedField` is the only language tab strip of the admin: tabs for `STOREFRONT_LOCALES` (the one shared list),
+  a marker on a tab whose value is empty (`filled`), a red one on a tab the server refused (`errors`), the control of the
+  language on screen in its slot. A form with several fields per language draws the strip alone (no slot) and shows its
+  fields from the bound locale. A setting stored once per language (`portal.contact.address`, `.ru`, `.hy`) takes its drafts
+  from `useLocalizedSettingDrafts`; the saved keys and payloads are unchanged. A label such as "(Russian)" or a key such
+  as `addressRu` in a locale file is the sign someone wrote the second implementation.
 - **Plugin pages and the Add-ons menu (#647).** A page a serving plugin adds to the admin lives at
   `/apps/<plugin>/<path>` (`views/PluginPageView.vue`, route `apps/:plugin/:page*`); the store asks the API's
   lookup by path (`GET /api/admin/plugins/ui/{plugin}/pages/by-path`) and shows its `PLUGIN_PAGE_NOT_FOUND`

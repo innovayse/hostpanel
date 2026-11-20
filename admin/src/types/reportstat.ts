@@ -13,6 +13,11 @@ export interface ReportStat {
   value: string | number
   /** Line under the figure (already translated). */
   hint?: string
+  /** Explanation of the metric (already translated), shown as a tooltip on an info icon beside the label. */
+  tooltip?: string
   /** Colour of the figure. */
   tone?: UiTone
 }
+
+/** What a screen adds to a schema stat tile: its figure and the optional hint, tooltip and tone. */
+export type ReportStatValue = Pick<ReportStat, 'value' | 'hint' | 'tooltip' | 'tone'>

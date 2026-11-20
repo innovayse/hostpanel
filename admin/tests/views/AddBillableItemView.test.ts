@@ -6,12 +6,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import AddBillableItemView from '@/views/AddBillableItemView.vue'
+import schema from '@/views/AddBillableItemView.schema'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { toIsoDay } from '@/lib/format'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { fieldsOf } from '../helpers/schemaParity'
 
 /** The clients endpoint answer: nobody to pick. */
 const noClients = () => json({ items: [], totalCount: 0 })
@@ -42,7 +44,7 @@ describe('AddBillableItemView', () => {
       'GET /api/billing/billable-items': emptyItems,
     })
     const { wrapper, router } = await mountForm()
-    expect(wrapper.get('[data-testid="billing-add-billable-item-next-due-date-field"]').text()).toContain('Invoice on')
+    expect(wrapper.get('[data-testid="ui-form-field-nextDueDate"]').text()).toContain('Invoice on')
 
     await wrapper.get('[data-testid="billing-add-billable-item-description"]').setValue('Domain renewal')
     await wrapper.get('[data-testid="billing-add-billable-item-amount"] input').setValue('12')
@@ -74,7 +76,7 @@ describe('AddBillableItemView', () => {
     wrapper.findAllComponents(UiSelect).find((select) => select.attributes('data-testid') === 'billing-add-billable-item-type')?.vm.$emit('update:modelValue', BillableItemType.Recurring)
     await flushPromises()
     expect(wrapper.find('[data-testid="billing-add-billable-item-recurring-period"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="billing-add-billable-item-next-due-date-field"]').text()).toContain('Next due date')
+    expect(wrapper.get('[data-testid="ui-form-field-nextDueDate"]').text()).toContain('Next due date')
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -95,5 +97,17 @@ describe('AddBillableItemView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="billing-add-billable-item-error"]').text()).toContain('Client is required.')
+  })
+
+  it('draws every section and field of its schema', async () => {
+    stubRoutes({ 'GET /api/clients': noClients })
+    const { wrapper } = await mountForm()
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+    }
+    for (const field of fieldsOf(schema)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
   })
 })

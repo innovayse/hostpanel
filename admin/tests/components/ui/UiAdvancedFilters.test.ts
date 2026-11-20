@@ -18,10 +18,11 @@ const fields = [
  * Mounts the filters with the English catalogue.
  *
  * @param max - Row limit.
+ * @param defaultField - Field the first row starts on.
  * @returns The wrapper.
  */
-const mountFilters = (max?: number) =>
-  mount(UiAdvancedFilters, { props: { fields, max }, global: { plugins: [createTestI18n()] } })
+const mountFilters = (max?: number, defaultField?: string) =>
+  mount(UiAdvancedFilters, { props: { fields, max, defaultField }, global: { plugins: [createTestI18n()] } })
 
 describe('UiAdvancedFilters', () => {
   it('starts with one row and no remove button', () => {
@@ -66,5 +67,38 @@ describe('UiAdvancedFilters', () => {
     const emitted = wrapper.emitted('update:filters')
 
     expect(emitted?.[emitted.length - 1]).toEqual([[{ field: 'name', condition: 'exact', value: 'acme' }]])
+  })
+
+  it('starts the first row on the default field instead of None', () => {
+    const wrapper = mountFilters(undefined, 'email')
+
+    expect((wrapper.getComponent(UiSelect).props() as { modelValue: string }).modelValue).toBe('email')
+  })
+
+  it('starts on None when no default field is given', () => {
+    expect((mountFilters().getComponent(UiSelect).props() as { modelValue: string }).modelValue).toBe('')
+  })
+})
+
+describe('UiAdvancedFilters with filters already in force', () => {
+  it('starts its rows from them, so a screen that mounts it again still shows what is applied', () => {
+    const wrapper = mount(UiAdvancedFilters, {
+      props: {
+        fields,
+        initial: [
+          { field: 'name', condition: 'exact', value: 'Ada' },
+          { field: 'email', condition: 'contains', value: 'example' },
+        ],
+      },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    expect(wrapper.findAll('[data-testid^="advanced-filters-value-"]').map((row) => (row.element as HTMLInputElement).value)).toEqual(['Ada', 'example'])
+  })
+
+  it('falls back to one blank row when none is in force', () => {
+    const wrapper = mount(UiAdvancedFilters, { props: { fields, initial: [] }, global: { plugins: [createTestI18n()] } })
+
+    expect(wrapper.findAll('[data-testid^="advanced-filters-value-"]')).toHaveLength(1)
   })
 })

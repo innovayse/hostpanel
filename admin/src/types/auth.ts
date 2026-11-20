@@ -51,6 +51,16 @@ export interface RegisterResponse {
   userId: string
 }
 
+/** Roles an account can hold locally, from the most to the least privileged (the order decides which one an account card names). */
+export enum AccountRole {
+  /** Back-office operator. */
+  Admin = 'Admin',
+  /** Sells on behalf of the operator. */
+  Reseller = 'Reseller',
+  /** Customer. */
+  Client = 'Client',
+}
+
 /** Body of `GET /api/auth/me`. */
 export interface MeResponse {
   /** Email address of the signed-in account. */

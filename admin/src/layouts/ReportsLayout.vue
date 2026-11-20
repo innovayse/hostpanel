@@ -2,18 +2,22 @@
 /**
  * Shell of the reports area: the report list as an inner sidebar and the chosen report beside it.
  *
- * From `md` up the list is the icon sidebar; below it the sidebar would eat the width of a phone, so the same
- * list becomes a horizontally scrollable tab strip above the report.
+ * From `md` up the list is the icon sidebar; below it, as the schema asks (`stripBelowMd`), the sidebar would eat the
+ * width of a phone, so the kit's sidebar layout swaps it for a tab strip of the same reports above the report.
  */
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import RoutedView from '@/components/layout/RoutedView.vue'
 import ReportsInnerSidebar from '@/components/reports/ReportsInnerSidebar.vue'
 import UiSidebarLayout from '@/components/ui/UiSidebarLayout.vue'
-import UiTabs from '@/components/ui/UiTabs.vue'
-import { REPORTS } from '@/lib/reports'
+import schema from '@/layouts/ReportsLayout.schema'
 import { AppRoute, reportPagePath } from '@/lib/routes'
+import { tabItemsOfSchema } from '@/utils/ui/tabs'
 import type { UiTabItem } from '@/utils/ui/tabs'
+
+/** Translation function. */
+const { t } = useI18n()
 
 /** Current route, whose path names the open report. */
 const route = useRoute()
@@ -21,10 +25,8 @@ const route = useRoute()
 /** Router that opens the report a tab stands for. */
 const router = useRouter()
 
-/** One tab per report; labels are read each time, so a language switch applies. */
-const tabs = computed<UiTabItem[]>(() =>
-  REPORTS.map(report => ({ value: report.slug, label: report.label, testid: `reports-tab-${report.slug}` })),
-)
+/** One tab per report, listed by the layout's schema; captions are read each time, so a language switch applies. */
+const tabs = computed<UiTabItem[]>(() => tabItemsOfSchema(schema.tabs, t, 'reports-tab-'))
 
 /** Slug of the open report, or an empty string outside any report (no tab selected). */
 const activeSlug = computed<string>(() => {
@@ -43,18 +45,16 @@ const openReport = (slug: string): void => {
 </script>
 
 <template>
-  <UiSidebarLayout data-testid="reports-layout">
+  <UiSidebarLayout
+    :strip="schema.stripBelowMd ? tabs : undefined"
+    :strip-value="activeSlug"
+    strip-testid="reports-tabs"
+    data-testid="reports-layout"
+    @select-strip="openReport"
+  >
     <template #sidebar>
-      <ReportsInnerSidebar class="max-md:hidden" />
+      <ReportsInnerSidebar />
     </template>
-    <UiTabs
-      :items="tabs"
-      :model-value="activeSlug"
-      hide-scrollbar
-      class="mb-4 md:hidden"
-      data-testid="reports-tabs"
-      @update:model-value="openReport"
-    />
     <RoutedView />
   </UiSidebarLayout>
 </template>

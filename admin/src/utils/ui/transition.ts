@@ -101,7 +101,7 @@ export const modalPanelClasses = {
   drawerLeft: 'transition-transform duration-(--duration-slow) ease-out group-[.ui-from]/overlay:-translate-x-full motion-reduce:transition-none motion-reduce:group-[.ui-from]/overlay:translate-x-0',
   /** A drawer's panel on the right edge: slides in from the right. */
   drawerRight: 'transition-transform duration-(--duration-slow) ease-out group-[.ui-from]/overlay:translate-x-full motion-reduce:transition-none motion-reduce:group-[.ui-from]/overlay:translate-x-0',
-  /** A drawer's panel that is a bottom sheet (`UiDrawer` with `sheet` on a narrow screen): rises from the bottom edge. */
+  /** A drawer's panel that is a bottom sheet (`UiDrawer` with the sheet presentation): rises from the bottom edge. */
   sheet: 'transition-transform duration-(--duration-slow) ease-out group-[.ui-from]/overlay:translate-y-full motion-reduce:transition-none motion-reduce:group-[.ui-from]/overlay:translate-y-0',
 } as const
 

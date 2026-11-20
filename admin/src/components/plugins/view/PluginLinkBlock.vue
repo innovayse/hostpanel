@@ -17,6 +17,7 @@ import { pluginLinkTarget } from '@/lib/pluginView'
 import type { PluginLinkBlock, PluginLinkTarget } from '@/types/pluginview'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
+import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for PluginLinkBlock. */
 const props = defineProps<{
@@ -37,9 +38,9 @@ const target = computed<PluginLinkTarget | null>(() =>
 
 <template>
   <UiSkeletonBar v-if="loading" class="h-8 w-32 rounded-control" aria-hidden="true" data-testid="plugin-link-loading" />
-  <UiLink v-else-if="target?.external" :href="target.href" external :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="plugin-link">
+  <UiLink :action="UiActionKind.Open" v-else-if="target?.external" :href="target.href" external :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="plugin-link">
     {{ block.label }}
     <UiIcon :markup="Icon.ExternalLink" :size="UiSize.Sm" data-testid="plugin-link-external" />
   </UiLink>
-  <UiLink v-else-if="target" :to="target.href" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="plugin-link">{{ block.label }}</UiLink>
+  <UiLink :action="UiActionKind.Open" v-else-if="target" :to="target.href" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="plugin-link">{{ block.label }}</UiLink>
 </template>

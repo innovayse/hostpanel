@@ -81,15 +81,27 @@ public enum SshProviderFailure
     /// </summary>
     BindingMismatch,
 
-    /// <summary>The agent does not offer the operation on this server (for example site preparation is not configured).</summary>
+    /// <summary>The agent does not offer the operation on this server (for example the server has no helper for it).</summary>
     NotSupported,
 
     /// <summary>The domain asked for is not one of the account's own; nothing was changed.</summary>
     SiteNotOwned,
 
-    /// <summary>Preparing the account's site for deploys failed on the server.</summary>
-    SitePrepareFailed,
-
     /// <summary>A jail removal was asked for an account that still exists on the server; nothing was changed.</summary>
     AccountExists,
+
+    /// <summary>The host name is already served from another document root by a configuration the agent did not create; nothing was changed.</summary>
+    WebsiteConflict,
+
+    /// <summary>The PHP version asked for is not installed on the server; nothing was changed.</summary>
+    PhpVersionUnsupported,
+
+    /// <summary>Setting up or removing a website failed on the server; its configuration was restored.</summary>
+    WebsiteFailed,
+
+    /// <summary>Creating or dropping a database failed on the server; a failed creation was rolled back.</summary>
+    DatabaseFailed,
+
+    /// <summary>The account already holds as many databases as the server allows; nothing was created.</summary>
+    DatabaseLimit,
 }

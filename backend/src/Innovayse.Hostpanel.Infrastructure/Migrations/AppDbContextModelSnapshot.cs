@@ -24,6 +24,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
             modelBuilder.HasSequence("CreditNoteNumberSequence");
 
+            modelBuilder.HasSequence("HostingResourceSequence");
+
             modelBuilder.HasSequence("OrderNumberSequence");
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Admin.LatestRelease", b =>
@@ -3197,6 +3199,63 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("PartnerTranslations");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Plugins.InstalledPlugin", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("InstalledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InstalledByName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("InstalledByUserId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("PackageSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("PackageSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("PluginId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Signer")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("SignerKeyId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PluginId")
+                        .IsUnique();
+
+                    b.ToTable("InstalledPlugins");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Plugins.PluginDataEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -3395,6 +3454,29 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<bool>("TrialAutoConvert")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TrialDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(14);
+
+                    b.Property<bool>("TrialEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TrialGracePeriodDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
+                    b.Property<string>("TrialReminderDays")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("3,1");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -3417,6 +3499,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Products_GracePeriodDays", "\"GracePeriodDays\" BETWEEN 0 AND 365");
 
                             t.HasCheckConstraint("CK_Products_MaxActiveServices", "\"MaxActiveServices\" IS NULL OR \"MaxActiveServices\" >= 1");
+
+                            t.HasCheckConstraint("CK_Products_TrialDays", "\"TrialDays\" BETWEEN 1 AND 365");
+
+                            t.HasCheckConstraint("CK_Products_TrialGracePeriodDays", "\"TrialGracePeriodDays\" BETWEEN 0 AND 30");
                         });
                 });
 
@@ -4111,6 +4197,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<decimal>("FirstPaymentAmount")
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<long>("HostingResourceRevision")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
                     b.Property<DateTimeOffset?>("NextRenewalAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4203,6 +4294,47 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("Status", "NextRenewalAt");
 
                     b.ToTable("ClientServices");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.HostingResource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValueSql("nextval('\"HostingResourceSequence\"')");
+
+                    NpgsqlPropertyBuilderExtensions.UseSequence(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountUsername")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("ClientServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IssuedToPluginId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientServiceId");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable((string)null);
+
+                    b.UseTpcMappingStrategy();
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ServiceChangeRequest", b =>
@@ -5559,6 +5691,74 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ServiceDatabase", b =>
+                {
+                    b.HasBaseType("Innovayse.Hostpanel.Domain.Services.HostingResource");
+
+                    b.Property<Guid>("DatabaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasIndex("DatabaseId")
+                        .IsUnique();
+
+                    b.HasIndex("ClientServiceId", "IssuedToPluginId", "Label")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ServiceDatabases_ClientServiceId_IssuedToPluginId_Label")
+                        .HasFilter("\"State\" <> 'Removed'");
+
+                    b.ToTable("ServiceDatabases");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ServiceWebsite", b =>
+                {
+                    b.HasBaseType("Innovayse.Hostpanel.Domain.Services.HostingResource");
+
+                    b.Property<string>("DocumentRoot")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("DocumentRootMayBeLink")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Hostname")
+                        .IsRequired()
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)");
+
+                    b.Property<string>("PhpVersion")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("WebsiteId")
+                        .HasColumnType("uuid");
+
+                    b.HasIndex("WebsiteId")
+                        .IsUnique();
+
+                    b.HasIndex("ClientServiceId", "Hostname")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ServiceWebsites_ClientServiceId_Hostname")
+                        .HasFilter("\"State\" <> 'Removed'");
+
+                    b.ToTable("ServiceWebsites");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Audit.ActivityLog", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
@@ -6050,6 +6250,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.HostingResource", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Services.ClientService", null)
+                        .WithMany()
+                        .HasForeignKey("ClientServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

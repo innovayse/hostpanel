@@ -91,6 +91,6 @@ test('a refused empty form shows the API field message under the field', async (
   await page.goto('/clients/add')
   await page.getByTestId('add-client-submit').click()
 
-  await expect(page.getByTestId('add-client-email-error')).toBeVisible()
+  await expect(page.getByTestId('ui-form-field-email').getByRole('alert')).toBeVisible()
   expect(new URL(page.url()).pathname).toBe('/clients/add')
 })

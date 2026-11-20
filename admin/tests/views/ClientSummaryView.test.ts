@@ -5,8 +5,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientSummaryView from '@/views/ClientSummaryView.vue'
+import schema, { SUMMARY_DOMAINS_TABLE, SUMMARY_QUOTES_TABLE, SUMMARY_SERVICES_TABLE } from '@/views/ClientSummaryView.schema'
+import { partsOf } from '@/utils/ui/skeletonParts'
+import { SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import { useClientsStore } from '@/stores/clients'
 import { mountClientView } from '../helpers/clientViews'
+import { createTestI18n } from '../helpers/i18n'
 import { callOf, json, problem } from '../helpers/fetch'
 import { quoteRowFixture } from '../helpers/billingFixtures'
 import { mountRouted } from '../helpers/mount'
@@ -17,6 +21,7 @@ import type { InvoiceStatusCount } from '@/types/invoice'
 import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 import { ClientVatStatus } from '@/types/clientvat'
 import type { ClientVat } from '@/types/clientvat'
+import { useToastStore } from '@/stores/toast'
 
 /** A client's tax ID with the last completed check of it, as the detail endpoint carries them. */
 interface ClientVatCase {
@@ -125,6 +130,12 @@ const mountSummary = async () => {
   return wrapper
 }
 
+/** Every card of the schema, the information cards and the cards of the three tables. */
+const schemaCards = partsOf(schema).flatMap((part) => (part.kind === SkeletonPartKind.Cards ? part.columns.flat() : []))
+
+/** The English catalogue, to read the titles the schema names. */
+const english = createTestI18n()
+
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -182,7 +193,7 @@ describe('ClientSummaryView', () => {
 
     expect(mock.mock.calls.map((_, index) => callOf(mock, index)).some((call) => call.method === 'POST' && call.url === '/api/clients/7/vat-check')).toBe(true)
     expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
-    expect(wrapper.get('[data-testid="client-vat-feedback"]').text()).toBe('VAT number checked.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['VAT number checked.'])
   })
 
   it('shows the API sentence when the service gave no verdict and keeps the status', async () => {
@@ -204,16 +215,41 @@ describe('ClientSummaryView', () => {
     expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
   })
 
-  it('keeps every card with its heading and captions as placeholders while the summary loads', async () => {
+  it('draws the cards of the schema with their captions and bars while the summary loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountRouted(ClientSummaryView, '/clients/:id/summary', '/clients/7/summary')
 
-    expect(wrapper.get('[data-testid="client-summary-loading"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.find('[data-testid="client-external-account-skeleton"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="client-summary-info"]').text()).toContain('First Name')
-    expect(wrapper.get('[data-testid="client-summary-billing"]').text()).toContain('Paid')
+    const cards = schemaCards
+    expect(cards.map(card => wrapper.find(`[data-testid="ui-detail-card-${card.key}"]`).exists())).not.toContain(false)
+    expect(wrapper.get('[data-testid="ui-detail-card-info"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('[data-testid="ui-detail-card-info"]').text()).toContain('First Name')
+    expect(wrapper.get('[data-testid="ui-detail-card-billing"]').text()).toContain('Paid')
     expect(wrapper.find('[data-testid="client-summary-billing-count"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+  })
+
+  it('draws every card of the schema, with its title, once the summary and the client are loaded', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    for (const card of schemaCards) {
+      const drawn = wrapper.get(`[data-testid="ui-detail-card-${card.key}"]`)
+      expect(drawn.attributes('aria-busy')).toBeUndefined()
+      expect(drawn.text()).toContain(english.global.t(card.title ?? ''))
+    }
+  })
+
+  it('heads the services, domains and quotes tables with the columns of its schema', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    for (const [testid, table] of [
+      ['client-summary-services', SUMMARY_SERVICES_TABLE],
+      ['client-summary-domains', SUMMARY_DOMAINS_TABLE],
+      ['client-summary-quotes', SUMMARY_QUOTES_TABLE],
+    ] as const) {
+      expect(wrapper.get(`[data-testid="${testid}"]`).findAll('[role="columnheader"]')).toHaveLength(table.columns.length)
+    }
   })
 
   it('mounts without throwing', async () => {
@@ -244,7 +280,7 @@ describe('ClientSummaryView', () => {
     stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
     const wrapper = await mountSummary()
 
-    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    const billing = wrapper.get('[data-testid="ui-detail-card-billing"]').text()
     expect(billing).toContain('Partially Refunded')
     expect(billing).toMatch(/Partially Refunded\s*1/)
   })
@@ -278,7 +314,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-summary-notes-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-summary-notes-feedback"]').text()).toBe('Notes saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Notes saved.'])
   })
 
   it('shows the API sentence under the Save button when the notes are refused', async () => {
@@ -301,7 +337,7 @@ describe('ClientSummaryView', () => {
     await flushPromises()
 
     expect(externalAccountPuts(mock)[0]?.body).toEqual({ provider: 'crm', accountId: 'acct-1' })
-    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['External account link saved.'])
   })
 
   it('shows the conflict sentence of the API when another client holds the pair', async () => {
@@ -362,7 +398,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-summary-notes-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-summary-notes-feedback"]').text()).toBe('Notes saved.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Notes saved.'])
     expect((wrapper.get('[data-testid="client-external-account-provider"]').element as HTMLInputElement).value).toBe('billing')
   })
 
@@ -385,7 +421,7 @@ describe('ClientSummaryView', () => {
     expect(externalAccountPuts(mock)[0]?.body).toEqual({ provider: null, accountId: null })
     expect((wrapper.get('[data-testid="client-external-account-provider"]').element as HTMLInputElement).value).toBe('')
     expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link cleared.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['External account link cleared.'])
   })
 
   it('prints each figure in the currency the summary names for it, never in an assumed one', async () => {
@@ -399,7 +435,7 @@ describe('ClientSummaryView', () => {
     })
     const wrapper = await mountSummary()
 
-    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    const billing = wrapper.get('[data-testid="ui-detail-card-billing"]').text()
     expect(billing).toContain('5000.00 AMD')
     expect(billing).toContain('40.00 USD')
     expect(billing).not.toContain('40.00 AMD')
@@ -438,7 +474,7 @@ describe('ClientSummaryView', () => {
     })
     const wrapper = await mountSummary()
 
-    const billing = wrapper.get('[data-testid="client-summary-billing"]').text()
+    const billing = wrapper.get('[data-testid="ui-detail-card-billing"]').text()
     expect(billing).toContain('20000.00 AMD')
     expect(billing).toContain('50.00 USD')
     expect(billing).toContain('19000.00 AMD')
@@ -449,7 +485,7 @@ describe('ClientSummaryView', () => {
     stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), undefined, () => client(null, CurrencyCode.Amd)))
     const wrapper = await mountSummary()
 
-    expect(wrapper.get('[data-testid="client-summary-billing"]').text()).toMatch(/Client Expenses\s*0\.00 AMD/)
+    expect(wrapper.get('[data-testid="ui-detail-card-billing"]').text()).toMatch(/Client Expenses\s*0\.00 AMD/)
   })
 
   it('prints a quote total in the currency of the quote', async () => {

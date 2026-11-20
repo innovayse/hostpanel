@@ -30,6 +30,7 @@ import { InvoiceStatus } from '@/types/invoice'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -127,7 +128,7 @@ onMounted(populate)
           </UiField>
         </UiGrid>
         <UiFormActions>
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             type="submit"
             variant="primary"
             :loading="saving"

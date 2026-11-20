@@ -24,30 +24,32 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatTile from '@/components/ui/UiStatTile.vue'
+import UiStatRow from '@/components/ui/UiStatRow.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema, { CLIENT_TRANSACTIONS_STATS } from '@/views/ClientTransactionsView.schema'
 import type { Transaction } from '@/types/transaction'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import type { UiStatFigure } from '@/utils/ui/statRow'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -72,6 +74,14 @@ const draftRange = useFilterDateRange(draft, TransactionFilterKey.From, Transact
 
 /** True while the first load is in flight and there are no transactions yet; the tiles and the table then draw their placeholders. */
 const initialLoading = computed<boolean>(() => store.loading && store.transactions.length === 0)
+
+/** The figure and colour of each ledger tile by its key; the captions come from the schema. */
+const figures = computed<Record<string, UiStatFigure>>(() => ({
+  totalIn: { value: formatPlainAmount(store.summary.totalIn, store.summary.currency), tone: UiTone.Success },
+  totalFees: { value: formatPlainAmount(store.summary.totalFees, store.summary.currency), tone: UiTone.Warning },
+  totalOut: { value: formatPlainAmount(store.summary.totalOut, store.summary.currency), tone: UiTone.Danger },
+  balance: { value: formatPlainAmount(store.summary.balance, store.summary.currency), tone: UiTone.Primary },
+}))
 
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
@@ -172,6 +182,7 @@ const dismissDelete = (): void => {
 const transactionActions = (tx: Transaction): UiMenuAction[] => [
   {
     label: t('shared.delete'),
+    icon: Icon.Trash,
     testid: `client-transactions-delete-${tx.id}`,
     /**
      * Asks for confirmation, then deletes this row.
@@ -192,7 +203,7 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
     <UiSectionHeader :level="1" variant="card">
       {{ t('shared.transactions') }}
       <template #actions>
-        <UiButton
+        <UiButton :action="UiActionKind.Add"
           type="button"
           :variant="UiButtonVariant.Primary"
           data-testid="client-transactions-add"
@@ -214,32 +225,7 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
     />
 
     <template v-else>
-      <UiGrid :columns="4">
-        <UiStatTile
-          :label="t('clients.clientTransactions.totalIn')"
-          :value="formatPlainAmount(store.summary.totalIn, store.summary.currency)"
-          :tone="UiTone.Success"
-          :loading="initialLoading"
-        />
-        <UiStatTile
-          :label="t('clients.clientTransactions.totalFees')"
-          :value="formatPlainAmount(store.summary.totalFees, store.summary.currency)"
-          :tone="UiTone.Warning"
-          :loading="initialLoading"
-        />
-        <UiStatTile
-          :label="t('clients.clientTransactions.totalOut')"
-          :value="formatPlainAmount(store.summary.totalOut, store.summary.currency)"
-          :tone="UiTone.Danger"
-          :loading="initialLoading"
-        />
-        <UiStatTile
-          :label="t('shared.balance')"
-          :value="formatPlainAmount(store.summary.balance, store.summary.currency)"
-          :tone="UiTone.Primary"
-          :loading="initialLoading"
-        />
-      </UiGrid>
+      <UiStatRow :stats="CLIENT_TRANSACTIONS_STATS" :figures="figures" :loading="initialLoading" testid-prefix="client-transactions-stat" />
 
       <UiListToolbar
         v-model:search="search"
@@ -271,17 +257,7 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
           :empty="!initialLoading && store.transactions.length === 0"
           data-testid="client-transactions-table"
         >
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('shared.amountIn') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('shared.amountOut') }}</UiTableHeader>
-              <UiTableHeader numeric>{{ t('shared.fees') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+          <UiSchemaTableHead :columns="schema.table.columns" />
           <UiTableBody divided>
             <UiTableRow v-for="tx in store.transactions" :key="tx.id" hoverable>
               <UiTableCell muted>{{ formatDate(tx.date) }}</UiTableCell>

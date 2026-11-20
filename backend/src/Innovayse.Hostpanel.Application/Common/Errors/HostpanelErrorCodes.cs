@@ -874,6 +874,9 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest serverAccountIdLabel is empty, too long or holds a control character (400).</summary>
     public const string PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID = "PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID";
 
+    /// <summary>The manifest agentProfile is not one of the SSH key agent profiles the SDK defines (400).</summary>
+    public const string PLUGIN_MANIFEST_AGENT_PROFILE_INVALID = "PLUGIN_MANIFEST_AGENT_PROFILE_INVALID";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 
@@ -948,6 +951,12 @@ public static class HostpanelErrorCodes
     /// default arm: it is answered only by a plugin install).
     /// </summary>
     public const string PLUGIN_VIEW_ACTION_BODY_INVALID = "PLUGIN_VIEW_ACTION_BODY_INVALID";
+
+    /// <summary>
+    /// A view document holds an action's <c>openUrlFrom</c> that is not a field name, or sits outside an action that calls a
+    /// route, or beside a <c>navigate</c> (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_OPEN_URL_INVALID = "PLUGIN_VIEW_OPEN_URL_INVALID";
 
     /// <summary>A view document holds a preview or chat <c>selection</c> this server does not accept.</summary>
     public const string PLUGIN_VIEW_SELECTION_INVALID = "PLUGIN_VIEW_SELECTION_INVALID";
@@ -1677,6 +1686,12 @@ public static class HostpanelErrorCodes
     /// <see cref="Domain.Products.Product.SetGracePeriodDays"/>.
     /// </summary>
     public const string PRODUCT_GRACE_PERIOD_OUT_OF_RANGE = Domain.Products.ProductsErrors.ProductGracePeriodOutOfRange;
+
+    /// <summary>
+    /// The free-trial settings of a product are outside what is accepted (400):
+    /// <see cref="Domain.Products.Product.ConfigureTrial"/>.
+    /// </summary>
+    public const string PRODUCT_TRIAL_INVALID = Domain.Products.ProductsErrors.ProductTrialInvalid;
 
     /// <summary>
     /// The cap on live services is negative (400): <see cref="Domain.Products.Product.SetMaxActiveServices"/>. Zero is

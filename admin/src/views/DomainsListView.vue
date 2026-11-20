@@ -27,13 +27,13 @@ import type { UiMenuAction } from '@/utils/ui/menu'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiCardRole } from '@/utils/ui/table'
+import schema from '@/views/DomainsListView.schema'
 import { Icon } from '@/lib/icons'
 import { DOMAIN_STATUS_OPTIONS, REGISTRAR_MODULE_OPTIONS } from '@/lib/constants'
 import { EMPTY_VALUE, formatDate } from '@/lib/format'
@@ -44,10 +44,10 @@ import { DomainStatus } from '@/types/domain'
 import type { DomainListFilters, DomainRegistration } from '@/types/domain'
 import { RegistrarModule } from '@/types/registrarmodule'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { useListQuery } from '@/composables/useListQuery'
 import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
@@ -126,6 +126,7 @@ const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
   {
     label: t('shared.view'),
+    icon: Icon.Eye,
     testid: `domains-view-${domain.id}`,
     to: clientItemPath(domain.clientId, ClientSection.Domains, domain.id),
   },
@@ -135,8 +136,7 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
 <template>
   <UiStack>
     <UiPageHeader
-      :title="t('shared.domains')"
-      :subtitle="t('domains.domainsList.manageAllRegisteredDomainNames')"
+      v-bind="schemaHeader(schema, t)"
       data-testid="domains-header"
     />
 
@@ -193,20 +193,7 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
         :loading="initialLoading"
         data-testid="domains-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :card-role="UiCardRole.Title">{{ t('shared.domainName') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader hide-below="lg">{{ t('shared.registrar') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('domains.domainsList.regPeriod') }}</UiTableHeader>
-            <UiTableHeader :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader hide-below="xl">{{ t('shared.nextDueDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('domains.domainsList.expiresAt') }}</UiTableHeader>
-            <UiTableHeader numeric>{{ t('domains.domainsList.renewalPrice') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody>
           <UiTableRow
             v-for="domain in store.domains"
@@ -240,9 +227,13 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
             <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
             <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="domain.autoRenew ? UiTone.Success : UiTone.Neutral" small>
-                {{ domain.autoRenew ? t('shared.yes') : t('shared.no') }}
-              </UiBadge>
+              <UiStatusIcon
+                :state="domain.autoRenew"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.yes')"
+                :off-label="t('shared.no')"
+              />
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="domainActions(domain)" :testid="`domains-actions-${domain.id}`" />

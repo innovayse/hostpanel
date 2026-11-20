@@ -242,6 +242,8 @@ The following settings are set directly on the API service in a compose override
 | `RateLimit__Strict__WindowSeconds` | `60` | Strict window length in seconds |
 | `RateLimit__SshKeys__PermitLimit` | `20` | SSH key endpoints limit per window |
 | `RateLimit__SshKeys__WindowSeconds` | `60` | SSH key window length in seconds |
+| `RateLimit__HostingResources__PermitLimit` | `10` | Limit per window for what a plugin changes on a client's hosting (websites and databases). Counted per plugin and client account |
+| `RateLimit__HostingResources__WindowSeconds` | `60` | Hosting changes window length in seconds |
 | `RateLimit__ConcurrentPermitLimit` | `5` | Maximum concurrent requests from one address |
 | `RateLimit__PluginDefault__PermitLimit` | `120` | Plugin route limit per window, for a route that names no tier. Counted per plugin and per caller (the client account, or the administrator on an admin call) |
 | `RateLimit__PluginDefault__WindowSeconds` | `60` | Plugin default window length in seconds |

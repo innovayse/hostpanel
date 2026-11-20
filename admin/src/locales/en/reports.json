@@ -1,8 +1,4 @@
 {
-  "reportComingSoon": {
-    "comingSoon": "Coming Soon",
-    "thisReportIsUnderDevelopment": "This report is under development."
-  },
   "reportTimestamp": {
     "reportGeneratedOnTimestamp": "Report Generated on {timestamp}"
   },
@@ -25,7 +21,12 @@
     "income": "Income",
     "totalIncome": "Total income",
     "averageMonth": "Average per month",
-    "bestMonth": "Best month"
+    "bestMonth": "Best month",
+    "tooltips": {
+      "total": "Payments received in the year, less refunds, in the base currency.",
+      "average": "The year's income divided by the months listed.",
+      "best": "The month with the highest income of the year."
+    }
   },
   "clientsByCountry": {
     "clientsByCountry": "Clients by Country",
@@ -34,12 +35,15 @@
     "clearSelection": "Clear selection",
     "activeClients": "Active Clients",
     "totalClients": "Total Clients:",
-    "mapHint": "Hover a dot to see the city."
+    "legendNoData": "No data",
+    "legendFewer": "Fewer",
+    "legendMore": "More: up to {count}"
   },
   "clientsReport": {
     "thisReportCanBeUsed": "This report can be used to generate a custom export of clients by applying up to 5 filters. CSV Export is available via the Tools menu to the right.",
     "creationDateRange": "Creation Date Range",
     "totalcountClientSFound": "{totalCount} client(s) found",
+    "creditBalance": "Credit balance",
     "noClientsFoundClickFilter": "No clients found. Click Filter to load results."
   },
   "clientStatement": {
@@ -85,7 +89,13 @@
     "paidInvoices": "Paid Invoices",
     "openedTickets": "Opened Tickets",
     "ticketReplies": "Ticket Replies",
-    "cancellationRequests": "Cancellation Requests"
+    "cancellationRequests": "Cancellation Requests",
+    "tooltips": {
+      "completedOrders": "Orders marked completed in the chosen days.",
+      "paidInvoices": "Invoices paid in the chosen days.",
+      "openedTickets": "Support tickets opened in the chosen days.",
+      "cancellationRequests": "Cancellation requests sent in the chosen days."
+    }
   },
   "directDebit": {
     "directDebitProcessing": "Direct Debit Processing",
@@ -102,7 +112,12 @@
     "diskSpaceBandwidthUsageSummary": "Disk Space & Bandwidth Usage Summary",
     "thisReportShowsTheDisk": "This report shows the Disk Space & Bandwidth Usage Statistics for hosting accounts.",
     "diskSpaceUsageStatsLast": "Disk Space Usage Stats Last Updated at {value}",
-    "noDataYetClickUpdate": "No data yet. Click Update Now to fetch it from the servers.",
+    "failuresTitle": "These servers gave no figures:",
+    "failure": {
+      "unsupportedModule": "its control panel cannot report disk and bandwidth use yet.",
+      "missingCredentials": "no API token or access hash is set.",
+      "unreachable": "the server did not answer or refused the request."
+    },
     "updateNow": "Update Now",
     "clientNameDomain": "Client Name / Domain",
     "diskUsage": "Disk Usage",
@@ -111,12 +126,12 @@
     "bwUsage": "BW Usage",
     "bwLimit": "BW Limit",
     "noAccountsOnThisServer": "No accounts on this server.",
-    "noData": "No data found. Click Update Now to fetch stats from your hosting servers."
+    "noData": "No data found.",
+    "noDataHint": "Click Update Now to fetch stats from your hosting servers."
   },
   "domainRenewalEmails": {
     "domainRenewalReminderEmails": "Domain Renewal Reminder Emails",
     "thisReportCanBeUsed": "This report can be used to generate a custom export of the Domain Renewal Reminder Emails.",
-    "optional": "Optional",
     "dateSent": "Date Sent",
     "reminder": "Reminder",
     "recipients": "Recipients",
@@ -143,7 +158,14 @@
     "quarterly": "Quarterly",
     "semiAnnual": "Semi Annual",
     "annual": "Annual",
-    "incomePerMonthWithTrailingWindows": "Income received per month, with the trailing quarter, half year and year to date."
+    "incomePerMonthWithTrailingWindows": "Income received per month, with the trailing quarter, half year and year to date.",
+    "hints": {
+      "monthly": "Income received in this month.",
+      "quarterly": "Income of this month and the two before it.",
+      "semiAnnual": "Income of this month and the five before it.",
+      "annual": "Income of this month and the eleven before it.",
+      "total": "Running total from January to this month."
+    }
   },
   "invoicesReport": {
     "thisReportCanBeUsed": "This report can be used to generate a custom export of invoices by applying up to 5 filters.",
@@ -164,19 +186,29 @@
     "monthlyNewSignupsAndOrder": "Monthly new signups and order activity",
     "newSignups": "New Signups",
     "ordersPlaced": "Orders Placed",
-    "ordersCompleted": "Orders Completed"
-  },
-  "pdfBatch": {
-    "pdfBatch": "Pdf Batch"
+    "ordersCompleted": "Orders Completed",
+    "conversionRate": "Conversion Rate",
+    "newSignupsHint": "Client accounts created in the month.",
+    "ordersPlacedHint": "Orders placed in the month.",
+    "ordersCompletedHint": "Orders placed in the month that are completed.",
+    "conversionRateHint": "Orders placed in the month as a percentage of the sign-ups of the month."
   },
   "productSuspensions": {
     "productSuspensions": "Product Suspensions",
     "thisReportAllowsYouTo": "This report allows you to review all suspended products and the reasons specified for their suspensions.",
     "serviceId": "Service ID",
-    "suspendReason": "Suspend Reason"
+    "suspendReason": "Suspend Reason",
+    "noSuspendedServices": "No suspended services."
   },
   "promotions": {
-    "promotions": "Promotions"
+    "promotions": "Promotions",
+    "thisReportShowsHowOften": "How often each promotion code is used and what the active services under it renew for.",
+    "code": "Code",
+    "services": "Services",
+    "activeServices": "Active services",
+    "monthlyRevenue": "Monthly revenue",
+    "monthlyRevenueHint": "What the active services with this code renew for each month, an annual service counted as a twelfth.",
+    "noPromotionCodesUsed": "No promotion codes are used on any service."
   },
   "salesTax": {
     "salesTaxLiability": "Sales Tax Liability",
@@ -188,7 +220,16 @@
     "thisReportExcludesInvoicesThat": "This report excludes invoices that affect a client's credit balance since this income will be counted and reported when it is applied to invoices for products/services."
   },
   "serverRevenueForecasts": {
-    "serverRevenueForecasts": "Server Revenue Forecasts"
+    "serverRevenueForecasts": "Server Revenue Forecasts",
+    "thisReportShowsWhatTheActive": "What the active services on each server renew for, per month and over a year.",
+    "server": "Server",
+    "hostname": "Hostname",
+    "activeServices": "Active services",
+    "monthlyRevenue": "Monthly revenue",
+    "annualRevenue": "Annual revenue",
+    "monthlyRevenueHint": "What the active services on the server renew for each month, an annual service counted as a twelfth.",
+    "annualRevenueHint": "Twelve times the monthly revenue.",
+    "noServers": "No servers."
   },
   "servicesReport": {
     "services": "Services",
@@ -200,24 +241,36 @@
     "productId": "Product ID",
     "terminatedAt": "Terminated At"
   },
-  "smartyCompatibility": {
-    "smartyCompatibility": "Smarty Compatibility"
-  },
   "sslMonitoring": {
     "sslCertificateMonitoring": "SSL Certificate Monitoring",
     "displaysAListOfDomains": "Displays a list of domains with their SSL status, if available.",
-    "hideInactiveDomains": "Hide Inactive Domains",
-    "showInactiveDomains": "Show Inactive Domains",
-    "reValidateSslStatus": "Re-validate SSL Status",
     "issuer": "Issuer",
     "expiry": "Expiry",
     "lastUpdate": "Last Update",
     "valid": "Valid",
-    "noSsl": "No SSL"
+    "noSsl": "No SSL",
+    "groups": {
+      "within30Days": "Expires within 30 days",
+      "within90Days": "Expires within 90 days",
+      "within180Days": "Expires within 180 days",
+      "over180Days": "Expires in over 180 days",
+      "noSsl": "No SSL detected"
+    },
+    "showInactive": "Show inactive domains",
+    "showInactiveHint": "Also list domains that are not active.",
+    "recheck": "Re-check SSL status",
+    "recheckHint": "Check the certificates again now.",
+    "noDomains": "No domains to monitor.",
+    "summary": "Domains per expiry group"
   },
   "supportTicketsReport": {
     "thisReportShowsABreakdown": "This report shows a breakdown of support tickets dealt with per admin for a given month.",
-    "admin": "Admin"
+    "admin": "Admin",
+    "averagePerDay": "Average per day",
+    "byDay": "By day",
+    "totalHint": "Ticket replies the admin wrote in the month.",
+    "averagePerDayHint": "Replies in the month divided by the days of the month.",
+    "dayReplies": "Day {day}: {count} replies | Day {day}: {count} reply | Day {day}: {count} replies"
   },
   "ticketFeedbackComments": {
     "ticketFeedbackComments": "Ticket Feedback Comments",
@@ -226,28 +279,40 @@
     "ticketId": "Ticket ID",
     "feedbackLeft": "Feedback Left",
     "rating": "Rating",
-    "comments": "Comments"
+    "comments": "Comments",
+    "ratingHint": "Rating on the scale of 1 (worst) to 10 (best)."
   },
   "ticketFeedbackScores": {
     "ticketFeedbackScores": "Ticket Feedback Scores",
     "thisReportProvidesASummary": "This report provides a summary of scores received on a per staff member basis for a given date range.",
     "staffName": "Staff Name",
     "totalRatings": "Total Ratings",
-    "averageRating": "Average Rating"
+    "averageRating": "Average Rating",
+    "distribution": "Ratings (1 to 10)",
+    "distributionHint": "How the ratings split into poor, fair and good. Hover a part for its count.",
+    "totalRatingsHint": "Ratings the staff member received in the period.",
+    "averageRatingHint": "Mean of all ratings on the scale of 1 to 10.",
+    "bands": {
+      "poor": "Poor ({from} to {to})",
+      "fair": "Fair ({from} to {to})",
+      "good": "Good ({from} to {to})"
+    }
   },
   "ticketRatingsReviewer": {
     "supportTicketRatingsReviewer": "Support Ticket Ratings Reviewer",
-    "thisReportIsShowingAll": "This report is showing all 0-ticket replies rated 1 between the selected date range for review.",
+    "thisReportIsShowingAll": "Ticket replies customers rated in the selected date range, for review. Choose a rating to list only replies rated at or above it.",
     "rating": "Rating",
     "ticket": "Ticket #",
     "admin": "Admin",
-    "ratingAtLeast": "{rating}+"
+    "ratingAtLeast": "{rating}+",
+    "ratingHint": "Rating on the scale of 1 (worst) to 10 (best)."
   },
   "ticketTags": {
     "ticketTagsOverview": "Ticket Tags Overview",
     "thisReportProvidesAnOverview": "This report provides an overview of ticket tags assigned to tickets for a given date range.",
     "tag": "Tag",
-    "count": "Count"
+    "count": "Count",
+    "countHint": "Tickets that carry the tag in the period."
   },
   "topClients": {
     "top10ClientsByIncome": "Top 10 Clients by Income",
@@ -255,7 +320,10 @@
     "noData": "No data",
     "leader": "Top client",
     "totalIncome": "Total income",
-    "rankedClients": "Ranked clients"
+    "rankedClients": "Ranked clients",
+    "leaderHint": "The client with the highest net income of the ranking.",
+    "totalIncomeHint": "Net income of all ranked clients together, in the base currency.",
+    "rankedClientsHint": "How many clients the ranking holds, up to ten."
   },
   "transactionsReport": {
     "thisReportCanBeUsed": "This report can be used to generate a custom export of transactions by applying up to 5 filters.",
@@ -275,12 +343,7 @@
     "totalVatCollected": "Total VAT Collected",
     "totals": "Totals",
     "ifACountryDoesNot": "* If a country does not appear in the report, then no VAT was collected from customers in that country during the period selected.",
-    "period": "For the period {from} to {to}",
-    "quarter1": "January - March",
-    "quarter2": "April - June",
-    "quarter3": "July - September",
-    "quarter4": "October - December",
-    "quarterOption": "{year} Q{quarter} - {months}"
+    "period": "For the period {from} to {to}"
   },
   "titles": {
     "reports": {
@@ -305,6 +368,54 @@
   "common": {
     "years": "{count} yr",
     "clientCount": "{count} client | {count} clients",
-    "convertedToBaseCurrency": "Amounts are in {currency}, converted from each invoice currency at the configured rates."
+    "convertedToBaseCurrency": "Amounts are in {currency}, converted from each invoice currency at the configured rates.",
+    "recurringInBaseCurrency": "Recurring amounts converted to {currency}, longer cycles spread over their months."
+  },
+  "menu": {
+    "dailyPerformance": "Daily",
+    "annualIncome": "Annual income",
+    "incomeForecast": "Forecast",
+    "incomeByProduct": "By product",
+    "invoices": "Invoices",
+    "agingInvoices": "Overdue",
+    "monthlyTransactions": "Transactions / month",
+    "transactions": "Transactions",
+    "salesTax": "Sales tax",
+    "oss": "OSS",
+    "directDebit": "Direct debit",
+    "creditsReviewer": "Credits",
+    "clients": "Clients",
+    "newCustomers": "New customers",
+    "topClients": "Top clients",
+    "clientsByCountry": "By country",
+    "customerRetention": "Retention",
+    "clientStatement": "Statement",
+    "monthlyOrders": "Orders / month",
+    "services": "Services",
+    "productSuspensions": "Suspensions",
+    "promotions": "Promotions",
+    "domains": "Domains",
+    "domainRenewalEmails": "Renewal emails",
+    "sslMonitoring": "SSL monitoring",
+    "supportTicketReplies": "Ticket replies",
+    "ticketTags": "Tags",
+    "ticketFeedbackScores": "Feedback scores",
+    "ticketFeedbackComments": "Feedback comments",
+    "ticketRatingsReviewer": "Reviewer ratings",
+    "diskUsage": "Disk",
+    "serverRevenueForecasts": "Server revenue"
+  },
+  "groups": {
+    "overview": "Overview",
+    "finance": "Finance",
+    "clients": "Clients",
+    "ordersServices": "Orders and services",
+    "domains": "Domains",
+    "support": "Support",
+    "servers": "Servers"
+  },
+  "sidebar": {
+    "search": "Search reports",
+    "empty": "No reports found"
   }
 }

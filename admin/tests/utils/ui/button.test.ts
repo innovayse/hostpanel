@@ -31,6 +31,12 @@ describe('button variants', () => {
     expect(buttonRadiusClasses(UiButtonVariant.Field, 'sm')).toBe('rounded-pill')
   })
 
+  it('draws a pill of any look when asked, and a round control at the smallest size', () => {
+    expect(buttonRadiusClasses(UiButtonVariant.Ghost, 'sm', true)).toBe('rounded-pill')
+    expect(buttonRadiusClasses(UiButtonVariant.Ghost, 'sm')).toBe('rounded-[9px]')
+    expect(buttonRadiusClasses(UiButtonVariant.Ghost, 'xs')).toBe('rounded-full')
+  })
+
   it('shares a base set with a focus ring and a not-allowed cursor', () => {
     expect(buttonBaseClasses).toContain('focus-visible:ring-2')
     expect(buttonBaseClasses).toContain('focus-visible:ring-text-accent')

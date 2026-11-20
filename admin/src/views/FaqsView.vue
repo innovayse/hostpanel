@@ -7,17 +7,20 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
+import { storefrontColumnCaptions } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useFaqsStore } from '@/stores/faqs'
 import type { Faq } from '@/types/faq'
 import { storefrontTestIds } from '@/types/storefront'
 import { FaqCategory } from '@/types/storefrontenums'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import schema from '@/views/FaqsView.schema'
 
 const { t } = useI18n()
 
@@ -37,11 +40,7 @@ const CATEGORY_LABEL_KEYS: Record<FaqCategory, string> = {
 }
 
 /** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => [
-  t('storefront.faqs.question'),
-  t('storefront.faqs.category'),
-  t('shared.status'),
-])
+const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
 
 /**
  * Label of a category; a category this build does not know is shown as received.
@@ -89,7 +88,7 @@ const editRoute = (item: Faq): string => editPath(AppRoute.StorefrontFaqs, item.
 <template>
   <StorefrontListTable
     :testids="testids"
-    :title="t('storefront.faqs.title')"
+    :title="t(navTitleKey(AppRoute.StorefrontFaqs))"
     :subtitle="t('storefront.faqs.subtitle')"
     :add-label="t('storefront.faqs.add')"
     :empty-label="t('storefront.faqs.empty')"

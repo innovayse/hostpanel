@@ -22,8 +22,9 @@ public static class ServerMapper
     /// </summary>
     /// <param name="s">The server entity.</param>
     /// <param name="groupMap">Lookup of group ids to names.</param>
+    /// <param name="usage">What the server's active services renew for, or null when the caller does not read it.</param>
     /// <returns>The mapped DTO.</returns>
-    public static ServerDto ToDto(Server s, IReadOnlyDictionary<int, string> groupMap) =>
+    public static ServerDto ToDto(Server s, IReadOnlyDictionary<int, string> groupMap, ServerUsageDto? usage = null) =>
         new(
             s.Id, s.Name,
             new ServerEndpointDto(s.Hostname, s.IpAddress, s.AssignedIpAddresses, s.UseSSL),
@@ -39,5 +40,6 @@ public static class ServerMapper
             s.IsOnline,
             s.LastTestedAt,
             s.AccountsCount,
-            new ServerCredentialStatusDto(s.HasPassword, s.HasApiToken, s.HasAccessHash));
+            new ServerCredentialStatusDto(s.HasPassword, s.HasApiToken, s.HasAccessHash),
+            usage);
 }

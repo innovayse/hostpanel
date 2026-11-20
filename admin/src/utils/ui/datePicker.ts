@@ -6,7 +6,6 @@
  * cannot drift apart; every colour in the class sets is a theme token, so the popups follow the
  * light/dark switch.
  */
-import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
 import { fieldBaseClasses, fieldWidthClasses, focusRingClasses } from '@/utils/ui/input'
 import { fieldSizeClasses } from '@/utils/ui/size'
 
@@ -118,8 +117,8 @@ export const dateLibraryThemeClasses =
 /** Classes of the text field that opens a popup. */
 export const dateFieldClasses = `${fieldWidthClasses} ${fieldBaseClasses} ${fieldSizeClasses.md}`
 
-/** Classes of the popup panel (the position is added by the component); opaque, so nothing shows through it. */
-export const datePopupClasses = `${FLOATING_PANEL_CLASSES} rounded-card`
+/** Shape of the popup panel; its place and its opaque surface come from the floating surface (`UiFloatingSurface`). */
+export const datePopupClasses = 'rounded-card'
 
 /** Classes of the previous/next month arrows. */
 export const dateArrowClasses = `rounded-lg px-2 text-text-secondary hover:text-text-primary text-lg transition-colors ${focusRingClasses}`
@@ -128,19 +127,25 @@ export const dateArrowClasses = `rounded-lg px-2 text-text-secondary hover:text-
 export const dateActionClasses = `rounded-lg text-sm text-text-secondary hover:text-text-primary transition-colors ${focusRingClasses}`
 
 /** Classes of one calendar cell, common to every state. */
-export const dateCellBaseClasses = `h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${focusRingClasses}`
+export const dateCellBaseClasses = `h-8 flex items-center justify-center text-sm transition-colors ${focusRingClasses}`
 
-/** Classes of the selected day (and of a range edge). */
+/** Classes of the selected day (and of a one-day range), fully rounded. */
 export const dateCellSelectedClasses = 'bg-primary-400 light:bg-primary-600 text-surface-base rounded-lg font-semibold'
 
-/** Classes of a day inside a range. */
-export const dateCellInRangeClasses = 'bg-primary-500/25 text-text-primary'
+/** Classes of the first day of a longer range: square on the side that joins the band. */
+export const dateCellRangeStartClasses = 'bg-primary-400 light:bg-primary-600 text-surface-base rounded-l-lg rounded-r-none font-semibold'
+
+/** Classes of the last day of a longer range: square on the side that joins the band. */
+export const dateCellRangeEndClasses = 'bg-primary-400 light:bg-primary-600 text-surface-base rounded-r-lg rounded-l-none font-semibold'
+
+/** Classes of a day inside a range: a square band cell, so neighbouring days join into one strip. */
+export const dateCellInRangeClasses = 'bg-primary-500/25 text-text-primary rounded-none'
 
 /** Classes of an empty padding cell before the first of the month. */
-export const dateCellEmptyClasses = 'text-text-muted opacity-60 cursor-not-allowed'
+export const dateCellEmptyClasses = 'text-text-muted opacity-60 cursor-not-allowed rounded-lg'
 
 /** Classes of a selectable, unselected day. */
-export const dateCellIdleClasses = 'text-text-primary hover:bg-surface-hover'
+export const dateCellIdleClasses = 'text-text-primary hover:bg-surface-hover rounded-lg'
 
 /** Classes of a preset/quick-choice button in its idle state. */
 export const datePresetIdleClasses = `text-text-secondary hover:text-text-primary hover:bg-surface-hover ${focusRingClasses}`
@@ -396,4 +401,37 @@ export const presetRange = (preset: DateRangePreset, today: Date = new Date()): 
     default:
       return daysBack(0)
   }
+}
+
+/**
+ * Resolves a range preset to its first and last day as ISO days, the form a range is stored and sent in.
+ *
+ * @param preset - The preset.
+ * @param today - Reference day; injectable for tests.
+ * @returns The ISO start and end of the range.
+ */
+export const presetIsoRange = (preset: DateRangePreset, today: Date = new Date()): [string, string] => {
+  const [start, end] = presetRange(preset, today)
+  return [formatIsoDate(start), formatIsoDate(end)]
+}
+
+/**
+ * Tells which range preset a stored range is, by comparing it with the days of every preset.
+ *
+ * @param range - The stored ISO `[start, end]`, or null.
+ * @param today - Reference day; injectable for tests.
+ * @returns The first preset that stands for exactly this range, or null when none does (a custom range) or nothing is stored.
+ */
+export const matchDateRangePreset = (
+  range: readonly [string, string] | null,
+  today: Date = new Date(),
+): DateRangePreset | null => {
+  if (!range) {
+    return null
+  }
+  const hit = dateRangePresets.find(({ preset }) => {
+    const [start, end] = presetIsoRange(preset, today)
+    return start === range[0] && end === range[1]
+  })
+  return hit?.preset ?? null
 }

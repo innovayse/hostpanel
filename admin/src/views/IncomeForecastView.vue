@@ -5,22 +5,19 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ReportChartCard from '@/components/reports/ReportChartCard.vue'
 import ReportPage from '@/components/reports/ReportPage.vue'
-import ReportTable from '@/components/reports/ReportTable.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { useReport } from '@/composables/useReport'
-import { formatCurrencyCode } from '@/lib/money'
+import { reportApiPath } from '@/lib/apiPaths'
+import { baseCurrencyFormatter } from '@/lib/money'
+import type { ReportChartData } from '@/types/reportchartdata'
 import { ReportCellFormat } from '@/types/reportcolumn'
-import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportForecastRow } from '@/types/reportforecast'
-import { UiChartType } from '@/utils/ui/chart'
-import type { UiChartSeries } from '@/utils/ui/chart'
-import { UiAlign } from '@/utils/ui/table'
+import type { ReportTableData } from '@/types/reporttabledata'
+import schema from '@/views/IncomeForecastView.schema'
 
 const { t } = useI18n()
 
-const { data, load } = useReport<ReportForecastRow[]>(() => '/reports/income-forecast')
+const { data, load } = useReport<ReportForecastRow[]>(() => reportApiPath('income-forecast'))
 
 /** Months with their income; empty until loaded. */
 const rows = computed<ReportForecastRow[]>(() => data.value ?? [])
@@ -28,39 +25,31 @@ const rows = computed<ReportForecastRow[]>(() => data.value ?? [])
 /** Base currency the amounts are converted to; empty until loaded. */
 const currency = computed<string>(() => rows.value[0]?.currency ?? '')
 
-/**
- * Formats an amount in the base currency the API converted the report to.
- *
- * @param amount - Amount in the report currency.
- * @returns The amount with its currency symbol.
- */
-const formatMoney = (amount: number): string => formatCurrencyCode(amount, currency.value)
+/** Formats an amount in the base currency the API converted the report to. */
+const formatMoney = baseCurrencyFormatter(() => currency.value)
 
-/** Table columns. */
-const columns = computed<ReportColumn[]>(() => [
-  { key: 'month', label: t('shared.month') },
-  { key: 'monthly', label: t('reports.incomeForecast.monthly'), align: UiAlign.Right, format: ReportCellFormat.Money },
-  { key: 'quarterly', label: t('reports.incomeForecast.quarterly'), align: UiAlign.Right, format: ReportCellFormat.Money },
-  { key: 'semiAnnual', label: t('reports.incomeForecast.semiAnnual'), align: UiAlign.Right, format: ReportCellFormat.Money },
-  { key: 'annual', label: t('reports.incomeForecast.annual'), align: UiAlign.Right, format: ReportCellFormat.Money },
-  { key: 'total', label: t('shared.total'), align: UiAlign.Right, format: ReportCellFormat.Money },
-])
+/** The line chart of the running total from January. */
+const chart = computed<ReportChartData>(() => ({
+  labels: rows.value.map(row => row.month),
+  series: [{ label: t('reports.incomeForecast.cumulativeForecast'), data: rows.value.map(row => row.total) }],
+  valueFormatter: formatMoney,
+}))
 
-/** Chart labels. */
-const labels = computed<string[]>(() => rows.value.map(row => row.month))
-
-/** Chart series: the running total from January. */
-const series = computed<UiChartSeries[]>(() => [
-  { label: t('reports.incomeForecast.cumulativeForecast'), data: rows.value.map(row => row.total) },
-])
+/** The table of the months; every figure but the month is money, with the explanation of its window. */
+const table = computed<ReportTableData<ReportForecastRow>>(() => ({
+  rows: rows.value,
+  rowKey: 'month',
+  extras: {
+    monthly: { format: ReportCellFormat.Money, hint: t('reports.incomeForecast.hints.monthly') },
+    quarterly: { format: ReportCellFormat.Money, hint: t('reports.incomeForecast.hints.quarterly') },
+    semiAnnual: { format: ReportCellFormat.Money, hint: t('reports.incomeForecast.hints.semiAnnual') },
+    annual: { format: ReportCellFormat.Money, hint: t('reports.incomeForecast.hints.annual') },
+    total: { format: ReportCellFormat.Money, hint: t('reports.incomeForecast.hints.total') },
+  },
+  formatMoney,
+}))
 </script>
 
 <template>
-  <ReportPage :retry="load" :title="t('reports.incomeForecast.incomeForecast')" :description="t('reports.incomeForecast.incomePerMonthWithTrailingWindows')">
-    <ReportChartCard :type="UiChartType.Line" :labels="labels" :series="series" :value-formatter="formatMoney" />
-    <ReportTable :columns="columns" :rows="rows" row-key="month" :format-money="formatMoney" />
-    <UiText tone="muted" size="sm">
-      {{ t('reports.common.convertedToBaseCurrency', { currency }) }}
-    </UiText>
-  </ReportPage>
+  <ReportPage :retry="load" :schema="schema" :chart="chart" :table="table" :base-currency="currency" />
 </template>

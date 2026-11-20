@@ -3,7 +3,9 @@
  * Advanced filter rows (up to a maximum, five by default).
  *
  * Each row is a field, a condition (exact / containing) and a value. Emits the rows that are
- * complete (field and value set) whenever any of them changes.
+ * complete (field and value set) whenever any of them changes. `defaultField` starts the first
+ * row on that field instead of "None". `initial` starts the rows from filters already applied, for a screen that mounts the
+ * editor again (a phone's filter sheet closes and opens) and must show what is in force.
  */
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,6 +18,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import { Icon } from '@/lib/icons'
 import { nextRowKey } from '@/lib/rowKey'
 import { UiFilterCondition } from '@/utils/ui/filter'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -49,6 +52,10 @@ const props = defineProps<{
   fields: FieldOption[]
   /** Maximum number of filter rows. */
   max?: number
+  /** Key of the field the first row starts on; "None" when left out. */
+  defaultField?: string
+  /** Filters already in force; the rows start from them. */
+  initial?: readonly FilterRow[]
 }>()
 
 const emit = defineEmits<{
@@ -62,12 +69,17 @@ const maxFilters = props.max ?? 5
 /**
  * An empty row with a fresh key.
  *
+ * @param field - Key of the field the row starts on; none by default.
  * @returns The empty row.
  */
-const blankFilter = (): FilterDraft => ({ key: nextRowKey(), field: '', condition: UiFilterCondition.Exact, value: '' })
+const blankFilter = (field = ''): FilterDraft => ({ key: nextRowKey(), field, condition: UiFilterCondition.Exact, value: '' })
 
-/** The rows being edited; there is always at least one. */
-const filters = ref<FilterDraft[]>([blankFilter()])
+/** The rows being edited; there is always at least one, the first on the default field unless filters are already in force. */
+const filters = ref<FilterDraft[]>(
+  props.initial !== undefined && props.initial.length > 0
+    ? props.initial.map((row) => ({ ...row, key: nextRowKey() }))
+    : [blankFilter(props.defaultField)],
+)
 
 /** Options of the field dropdown: an empty "none" entry plus the caller's fields. */
 const fieldOptions = [{ value: '', label: t('shared.none') }, ...props.fields]
@@ -138,12 +150,12 @@ watch(filters, (val) => {
     <!-- Add filter -->
     <UiButton
       v-if="filters.length < maxFilters"
+      :action="UiActionKind.Add"
       variant="link"
       size="sm"
       data-testid="advanced-filters-add"
       @click="addFilter"
     >
-      <UiIcon :markup="Icon.Add" size="sm" />
       {{ t('ui.uiAdvancedFilters.addFilter') }}
     </UiButton>
   </div>

@@ -7,17 +7,20 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
+import { storefrontColumnCaptions } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useLocationsStore } from '@/stores/locations'
 import type { ServerLocation } from '@/types/serverlocation'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { EMPTY_VALUE } from '@/lib/format'
+import schema from '@/views/LocationsView.schema'
 
 const { t } = useI18n()
 
@@ -31,12 +34,7 @@ const store = useLocationsStore()
 const list = useStorefrontList<ServerLocation>(store)
 
 /** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => [
-  t('storefront.locations.country'),
-  t('storefront.locations.name'),
-  t('storefront.locations.city'),
-  t('shared.status'),
-])
+const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
 
 /**
  * The name to show for a location: the first written locale, an empty string when none.
@@ -80,7 +78,7 @@ const editRoute = (item: ServerLocation): string => editPath(AppRoute.Storefront
 <template>
   <StorefrontListTable
     :testids="testids"
-    :title="t('storefront.locations.title')"
+    :title="t(navTitleKey(AppRoute.StorefrontLocations))"
     :subtitle="t('storefront.locations.subtitle')"
     :add-label="t('storefront.locations.add')"
     :empty-label="t('storefront.locations.empty')"

@@ -19,13 +19,18 @@ public sealed class GetServicesReportHandler
     /// <summary>The bus the owning clients' and the products' names are asked through.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>The currency each owning client is billed in, which a service amount is in.</summary>
+    private readonly IPayerCurrencyResolver _payerCurrency;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">The bus the owning clients' and the products' names are asked through.</param>
-    public GetServicesReportHandler(IHostpanelDbContext context, IMessageBus bus)
+    /// <param name="payerCurrency">The currency each owning client is billed in.</param>
+    public GetServicesReportHandler(IHostpanelDbContext context, IMessageBus bus, IPayerCurrencyResolver payerCurrency)
     {
         _context = context;
         _bus = bus;
+        _payerCurrency = payerCurrency;
     }
 
     /// <summary>Handles the query.</summary>
@@ -93,6 +98,9 @@ public sealed class GetServicesReportHandler
         var productIds = items.Select(s => s.ProductId).Distinct().ToList();
         var products = await _bus.GetRequiredProductSummariesByIdAsync(productIds, ct);
 
+        // A service is priced in its owner's billing currency, so the report shows each amount with that code.
+        var currencies = await _payerCurrency.ForClientsAsync(clientIds, ct);
+
         var result = items.Select(s => new ServiceReportDto(
             s.Id,
             s.ClientId,
@@ -103,6 +111,7 @@ public sealed class GetServicesReportHandler
             s.BillingCycle,
             s.FirstPaymentAmount,
             s.RecurringAmount,
+            currencies[s.ClientId].Code,
             s.PaymentMethod,
             s.CreatedAt.ToString("yyyy-MM-dd"),
             s.NextRenewalAt?.ToString("yyyy-MM-dd"),

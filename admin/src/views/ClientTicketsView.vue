@@ -22,26 +22,27 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatTile from '@/components/ui/UiStatTile.vue'
+import UiStatRow from '@/components/ui/UiStatRow.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema, { CLIENT_TICKETS_STATS } from '@/views/ClientTicketsView.schema'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize } from '@/utils/ui/text'
+import type { UiStatFigure } from '@/utils/ui/statRow'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientItemPath, clientTicketNewPath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -50,6 +51,14 @@ const route = useRoute()
 
 /** Client ticket store, the only caller of the ticket endpoints. */
 const store = useClientTicketsStore()
+
+/** The figure and colour of each opened-tickets tile by its key; the captions come from the schema. */
+const figures = computed<Record<string, UiStatFigure>>(() => ({
+  openedThisMonth: { value: store.stats.openedThisMonth, tone: UiTone.Primary },
+  openedLastMonth: { value: store.stats.openedLastMonth, tone: UiTone.Info },
+  openedThisYear: { value: store.stats.openedThisYear, tone: UiTone.Success },
+  openedLastYear: { value: store.stats.openedLastYear, tone: UiTone.Neutral },
+}))
 
 /** Client ID from route params. */
 const clientId = computed(() => route.params.id as string)
@@ -89,7 +98,7 @@ onMounted(() => {
     <UiSectionHeader :level="1" variant="card">
       {{ t('clients.clientTickets.tickets') }}
       <template #actions>
-        <UiLink
+        <UiLink :action="UiActionKind.Add"
           :to="clientTicketNewPath(clientId)"
           :variant="UiButtonVariant.Primary"
           data-testid="client-tickets-new"
@@ -108,32 +117,7 @@ onMounted(() => {
     />
 
     <template v-else>
-      <UiGrid :columns="4">
-        <UiStatTile
-          :label="t('clients.clientTickets.openedThisMonth')"
-          :value="store.stats.openedThisMonth"
-          :tone="UiTone.Primary"
-          :loading="initialLoading"
-        />
-        <UiStatTile
-          :label="t('clients.clientTickets.openedLastMonth')"
-          :value="store.stats.openedLastMonth"
-          :tone="UiTone.Info"
-          :loading="initialLoading"
-        />
-        <UiStatTile
-          :label="t('clients.clientTickets.openedThisYear')"
-          :value="store.stats.openedThisYear"
-          :tone="UiTone.Success"
-          :loading="initialLoading"
-        />
-        <UiStatTile
-          :label="t('clients.clientTickets.openedLastYear')"
-          :value="store.stats.openedLastYear"
-          :tone="UiTone.Neutral"
-          :loading="initialLoading"
-        />
-      </UiGrid>
+      <UiStatRow :stats="CLIENT_TICKETS_STATS" :figures="figures" :loading="initialLoading" testid-prefix="client-tickets-stat" />
 
       <UiListToolbar
         v-model:search="search"
@@ -165,16 +149,7 @@ onMounted(() => {
           :empty="!initialLoading && store.tickets.length === 0"
           data-testid="client-tickets-table"
         >
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader>{{ t('clients.clientTickets.dateOpened') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.department') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.lastReply') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
+          <UiSchemaTableHead :columns="schema.table.columns" />
           <UiTableBody divided>
             <UiTableRow v-for="ticket in store.tickets" :key="ticket.id" hoverable :data-testid="`client-tickets-row-${ticket.id}`">
               <UiTableCell muted>{{ formatDate(ticket.createdAt) }}</UiTableCell>

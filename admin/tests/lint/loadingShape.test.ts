@@ -7,7 +7,8 @@
  * - give a `UiCard` generic placeholder lines (`skeleton-lines`) or a bare `loading` that swaps its whole body for them;
  * - hand-roll a stand-in in a `#fallback` slot: a couple of bars that fit no layout in particular.
  *
- * What a screen draws instead is its own layout in two states: the loading props of the kit (`UiPageHeader`,
+ * While its chunk downloads a screen is drawn from its skeleton schema (`UiSkeletonOf`, see `tests/lint/skeletonRoutes.test.ts`).
+ * Its own layout, in two states, is drawn from the loading props of the kit (`UiPageHeader`,
  * `UiStatTile`, `UiTable`, `UiPagination`, `UiChart`, `UiProgress`, `UiField` through `UI_FIELD_LOADING`) and single
  * `UiSkeletonBar`s where a value goes. A few files may not know their shape while they load, each named below with
  * the reason. The list is checked too: an entry whose file is gone or no longer breaks its rule fails, so the list
@@ -51,7 +52,12 @@ const ALLOWED: readonly AllowedException[] = [
   {
     file: 'components/layout/ViewLoading.vue',
     rule: LoadingRule.CardLines,
-    reason: 'the screen about to open is a chunk still downloading, so only a title and a card can be drawn for it',
+    reason: 'the named fallback of RoutedView for a routed screen with no skeleton schema (lib/skeletonExceptions.ts), whose chunk is still downloading, so only a title and a card can be drawn for it',
+  },
+  {
+    file: 'components/reports/ReportPage.vue',
+    rule: LoadingRule.SkeletonPreset,
+    reason: 'the map, notice, lines and small print of a report have a fixed place in its schema, so the page draws their placeholder shape (UiSkeletonShape, the same one UiSkeletonOf draws) while the answer loads',
   },
   {
     file: 'components/plugins/PluginWidget.vue',

@@ -6,9 +6,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import SupportOpenTicketView from '@/views/SupportOpenTicketView.vue'
+import schema from '@/views/SupportOpenTicketView.schema'
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { fieldsOf } from '../helpers/schemaParity'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -84,5 +86,28 @@ describe('SupportOpenTicketView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="support-open-ticket-error"]').text()).toBe('The client is closed.')
+  })
+
+  it('returns to the tickets list with the back pill in the header', async () => {
+    stubPathRoutes([{ path: '/tickets/departments', body: [] }])
+
+    const wrapper = await mountView(SupportOpenTicketView)
+    const back = wrapper.get('[data-testid="support-open-ticket-back"]')
+
+    expect(back.attributes('href')).toBe('/support/tickets')
+    expect(back.text()).toBe('Tickets')
+  })
+
+  it('draws every section and field of its schema', async () => {
+    stubPathRoutes([{ path: '/tickets/departments', body: [{ id: 1, name: 'Support', email: 'support@example.test' }] }])
+
+    const wrapper = await mountView(SupportOpenTicketView)
+
+    for (const section of schema.columns.flat()) {
+      expect(wrapper.find(`[data-testid="ui-form-section-${section.key}"]`).exists()).toBe(true)
+    }
+    for (const field of fieldsOf(schema)) {
+      expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
+    }
   })
 })

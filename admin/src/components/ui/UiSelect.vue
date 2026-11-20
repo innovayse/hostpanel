@@ -14,16 +14,15 @@
  * pauses) and shows `loading` while they are on the way. A picked option is remembered, so the
  * trigger keeps its label when the owner replaces the options with the next search.
  * The list is drawn in the page body (a teleport) and placed under the trigger with fixed positioning, because the
- * frosted cards of a page create stacking contexts and would paint a list rendered in place under the next card.
+ * frosted cards of a page create stacking contexts and would paint a list rendered in place under the next card; on a
+ * phone (below `sm`) it is a bottom sheet titled with the placeholder or the accessible name ({@link UiFloatingSurface}).
  * `data-testid` and classes land on the root element.
  */
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
-import UiTransition from '@/components/ui/UiTransition.vue'
+import UiFloatingSurface from '@/components/ui/UiFloatingSurface.vue'
 import { useDropdown } from '@/composables/useDropdown'
-import { useFloatingPlace } from '@/composables/useFloatingPlace'
-import { FLOATING_PANEL_CLASSES, FLOATING_PLACE_CLASSES, FloatingAlign } from '@/utils/ui/floating'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { fieldInvalidClasses, fieldSurfaceClasses } from '@/utils/ui/input'
 import { Key } from '@/utils/ui/keys'
@@ -36,7 +35,6 @@ import {
   typeaheadIndex,
 } from '@/utils/ui/select'
 import type { UiSelectOption } from '@/utils/ui/select'
-import { UiTransitionKind } from '@/utils/ui/transition'
 
 const { t } = useI18n()
 
@@ -108,9 +106,6 @@ const LIST_MIN_ROOM_PX = 300
 /** Gap between the trigger and the list, in pixels. */
 const LIST_GAP_PX = 6
 
-// The list is drawn in the page body, so no frosted card after the trigger can paint over it.
-useFloatingPlace(trigger, panel, open, { align: FloatingAlign.Start, minRoom: LIST_MIN_ROOM_PX, gap: LIST_GAP_PX })
-
 /** Id of the listbox, from which every option id derives. */
 const listId = `${useId()}-list`
 
@@ -159,17 +154,22 @@ const triggerSizeClasses = computed<string>(() => {
 })
 
 /**
- * The list's frame: the default, or a softer inset one when compact.
+ * The popover's shape: the default, or a softer inset one when compact (the place and the surface are the floating surface's).
  *
- * @returns The panel's fixed place, border, surface and width classes (the width of the trigger unless `wide`).
+ * @returns The panel's radius, padding and width classes (the width of the trigger unless `wide`).
  */
 const panelClasses = computed<string>(() => {
   // A wide list is at least 18rem, but never wider than the screen less a margin, so on a phone it cannot reach past the page edge and widen the page.
   const width = props.wide ? 'min-w-[18rem] max-w-[calc(100vw-4rem)]' : 'w-[var(--fp-width)]'
   return props.compact
-    ? `${FLOATING_PLACE_CLASSES} z-50 min-w-[5.5rem] origin-top overflow-hidden rounded-xl p-1 ${FLOATING_PANEL_CLASSES} ${width}`
-    : `${FLOATING_PLACE_CLASSES} z-50 overflow-hidden rounded-[10px] ${FLOATING_PANEL_CLASSES} ${width}`
+    ? `min-w-[5.5rem] origin-top overflow-hidden rounded-xl p-1 ${width}`
+    : `overflow-hidden rounded-[10px] ${width}`
 })
+
+/** Size and shape of one row of the list, shared by the options and by the loading rows that stand in for them. */
+const optionShapeClasses = computed<string>(() =>
+  props.compact ? 'rounded-lg px-2.5 py-1.5 text-[0.78rem]' : 'px-3 py-1.5 text-[0.82rem]',
+)
 
 /**
  * The classes of one row of the list.
@@ -180,7 +180,7 @@ const panelClasses = computed<string>(() => {
  * @returns The row's size, shape and colours.
  */
 const optionClasses = (selected: boolean, active: boolean, muted: boolean): string => {
-  const base = props.compact ? 'rounded-lg px-2.5 py-1.5 text-[0.78rem]' : 'px-3 py-1.5 text-[0.82rem]'
+  const base = optionShapeClasses.value
   if (selected) {
     const look = props.compact
       ? 'bg-primary-500/10 font-medium text-primary-400 light:text-primary-700'
@@ -225,6 +225,9 @@ const showingPlaceholder = computed<boolean>(() =>
 const activeId = computed<string | undefined>(() =>
   open.value && activeIndex.value >= 0 ? optionDomId(listId, activeIndex.value) : undefined,
 )
+
+/** Title of the sheet a phone shows the list in: the accessible name, else the placeholder, else a generic prompt. */
+const sheetTitle = computed<string>(() => props.ariaLabel ?? props.placeholder ?? t('ui.uiSelect.choose'))
 
 /** The sentence of the empty row. */
 const emptyText = computed<string>(() => props.emptyLabel ?? t('ui.uiSelect.noResults'))
@@ -439,86 +442,97 @@ onUnmounted(cancelSearchTimer)
       </svg>
     </button>
 
-    <!-- Dropdown panel: in the page body, so no card around the trigger can paint over it -->
-    <Teleport to="body">
-      <UiTransition :kind="UiTransitionKind.Dropdown">
-        <div
-          v-if="open"
-          ref="panel"
-          data-testid="ui-select-panel"
-          :class="panelClasses"
-          @mousedown.stop
+    <!-- The list: a popover in the page body (no card around the trigger can paint over it) or a bottom sheet on a phone -->
+    <UiFloatingSurface
+      :open="open"
+      :anchor="trigger"
+      :title="sheetTitle"
+      :min-room="LIST_MIN_ROOM_PX"
+      :gap="LIST_GAP_PX"
+      :popover-class="panelClasses"
+      data-testid="ui-select-panel"
+      @close="hide(true)"
+      @panel="panel = $event"
+      @mousedown.stop
+    >
+      <!-- Filter field -->
+      <div v-if="hasSearch" class="p-1.5 border-b border-border">
+        <input
+          ref="searchInput"
+          v-model="search"
+          type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="true"
+          :aria-controls="listId"
+          :aria-activedescendant="activeId"
+          :aria-label="t('shared.search')"
+          :placeholder="t('shared.search')"
+          data-testid="ui-select-search"
+          class="w-full h-8 px-3 text-[0.8125rem] rounded-[9px]"
+          :class="fieldSurfaceClasses"
+          @keydown="onKeydown"
         >
-          <!-- Filter field -->
-          <div v-if="hasSearch" class="p-1.5 border-b border-border">
-            <input
-              ref="searchInput"
-              v-model="search"
-              type="text"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded="true"
-              :aria-controls="listId"
-              :aria-activedescendant="activeId"
-              :aria-label="t('shared.search')"
-              :placeholder="t('shared.search')"
-              data-testid="ui-select-search"
-              class="w-full h-8 px-3 text-[0.8125rem] rounded-[9px]"
-              :class="fieldSurfaceClasses"
-              @keydown="onKeydown"
-            >
-          </div>
+      </div>
 
+      <div
+        :id="listId"
+        role="listbox"
+        class="max-h-56 max-sm:max-h-[50dvh] overflow-y-auto"
+        :class="compact ? 'flex flex-col gap-0.5' : 'py-1'"
+      >
+        <template v-for="(opt, index) in visibleOptions" :key="String(opt.value)">
           <div
-            :id="listId"
-            role="listbox"
-            class="max-h-56 overflow-y-auto"
-            :class="compact ? 'flex flex-col gap-0.5' : 'py-1'"
+            v-if="opt.group && opt.group !== visibleOptions[index - 1]?.group"
+            role="presentation"
+            data-testid="ui-select-group"
+            class="px-3 pb-0.5 pt-2 text-[0.68rem] font-semibold uppercase tracking-wide text-text-muted"
           >
-            <div
-              v-for="(opt, index) in visibleOptions"
-              :id="optionDomId(listId, index)"
-              :key="String(opt.value)"
-              :ref="(el) => setOptionEl(index, el)"
-              role="option"
-              data-testid="ui-select-option"
-              :aria-selected="opt.value === props.modelValue"
-              class="w-full flex cursor-pointer items-center justify-between transition-colors duration-150"
-              :class="optionClasses(opt.value === props.modelValue, index === activeIndex, Boolean(opt.muted))"
-              @mousedown.prevent.stop="select(opt)"
-              @mousemove="activeIndex = index"
+            {{ opt.group }}
+          </div>
+          <div
+            :id="optionDomId(listId, index)"
+            :ref="(el) => setOptionEl(index, el)"
+            role="option"
+            data-testid="ui-select-option"
+            :aria-selected="opt.value === props.modelValue"
+            class="w-full flex cursor-pointer items-center justify-between transition-colors duration-150"
+            :class="optionClasses(opt.value === props.modelValue, index === activeIndex, Boolean(opt.muted))"
+            @mousedown.prevent.stop="select(opt)"
+            @mousemove="activeIndex = index"
+          >
+            <span class="flex min-w-0 flex-1 flex-col">
+              <span v-if="opt.caption" class="truncate text-[0.68rem] font-semibold opacity-70">{{ opt.caption }}</span>
+              <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
+              <span v-if="opt.description" class="truncate text-[0.75rem] opacity-70">{{ opt.description }}</span>
+            </span>
+            <svg
+              v-if="opt.value === props.modelValue"
+              class="w-3.5 h-3.5 shrink-0 ml-2"
+              :class="compact ? 'text-primary-400 light:text-primary-700' : 'text-surface-base'"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              aria-hidden="true"
             >
-              <span class="flex min-w-0 flex-1 flex-col">
-                <span v-if="opt.caption" class="truncate text-[0.68rem] font-semibold opacity-70">{{ opt.caption }}</span>
-                <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
-                <span v-if="opt.description" class="truncate text-[0.75rem] opacity-70">{{ opt.description }}</span>
-              </span>
-              <svg
-                v-if="opt.value === props.modelValue"
-                class="w-3.5 h-3.5 shrink-0 ml-2"
-                :class="compact ? 'text-primary-400 light:text-primary-700' : 'text-surface-base'"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                aria-hidden="true"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           </div>
+        </template>
+      </div>
 
-          <!-- Loading and empty rows sit beside the listbox, not in it: they are not options -->
-          <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" class="flex flex-col gap-2 px-3 py-2">
-            <!-- Rows of the height of an option, the last one shorter, like the options that will replace them -->
-            <UiSkeletonBar v-for="row in LOADING_ROWS" :key="row" class="h-4 rounded-md" :class="row === LOADING_ROWS ? 'w-2/3' : 'w-full'" aria-hidden="true" />
-            <span class="sr-only">{{ t('ui.loading') }}</span>
-          </div>
-          <p v-else-if="visibleOptions.length === 0" role="status" data-testid="ui-select-empty" class="px-3 py-2 text-[0.82rem] text-text-secondary">
-            {{ emptyText }}
-          </p>
+      <!-- Loading and empty rows sit beside the listbox, not in it: they are not options -->
+      <div v-if="props.loading" role="status" aria-busy="true" data-testid="ui-select-loading" :class="compact ? 'flex flex-col gap-0.5' : 'flex flex-col py-1'">
+        <!-- Rows of the shape of an option (same padding), the last one shorter, like the options that will replace them -->
+        <div v-for="row in LOADING_ROWS" :key="row" :class="optionShapeClasses" aria-hidden="true">
+          <UiSkeletonBar class="h-4 rounded-md" :class="row === LOADING_ROWS ? 'w-2/3' : 'w-full'" />
         </div>
-      </UiTransition>
-    </Teleport>
+        <span class="sr-only">{{ t('ui.loading') }}</span>
+      </div>
+      <p v-else-if="visibleOptions.length === 0" role="status" data-testid="ui-select-empty" class="px-3 py-2 text-[0.82rem] text-text-secondary">
+        {{ emptyText }}
+      </p>
+    </UiFloatingSurface>
   </div>
 </template>

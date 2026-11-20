@@ -7,5 +7,10 @@
   "viewAllNotifications": "Смотреть все уведомления",
   "newCount": "{count} новый | {count} новых | {count} новых",
   "noNotifications": "Нет уведомлений",
-  "help": "Справка"
+  "help": "Справка",
+  "roles": {
+    "Admin": "Администратор",
+    "Reseller": "Реселлер",
+    "Client": "Клиент"
+  }
 }

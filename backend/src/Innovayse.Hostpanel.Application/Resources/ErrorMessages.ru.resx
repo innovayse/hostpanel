@@ -615,6 +615,9 @@
 <data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
     <value>Подпись поля идентификатора аккаунта сервера в манифесте должна содержать от 1 до 60 символов без управляющих символов.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Профиль agentProfile в манифесте должен быть одним из профилей SSH-агента ключей, которые задаёт SDK, и записан точно.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
   </data>
@@ -1210,6 +1213,9 @@
   <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
     <value>Льготный период должен быть от 0 до 365 дней.</value>
   </data>
+  <data name="PRODUCT_TRIAL_INVALID" xml:space="preserve">
+    <value>Триал должен длиться от 1 до 365 дней, с не более чем 5 разными днями напоминаний до его окончания и льготным периодом от 0 до 30 дней.</value>
+  </data>
   <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
     <value>Эта внешняя учётная запись уже привязана к другому клиенту.</value>
   </data>
@@ -1332,6 +1338,9 @@
   </data>
   <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
     <value>Один из документов представления этого плагина собирает тело запроса действия из данных страницы в виде или месте, которые этот сервер не принимает.</value>
+  </data>
+  <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
+    <value>Один из документов представления этого плагина открывает адрес из ответа в виде или месте, которые этот сервер не принимает.</value>
   </data>
   <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
     <value>Один из документов представления этого плагина объявляет выбор элементов в форме или месте, которые этот сервер не принимает.</value>

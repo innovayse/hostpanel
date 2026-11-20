@@ -72,6 +72,6 @@ test('a slot nobody fills leaves the page as it was', async ({ page }) => {
 
   await page.goto('/clients/7/summary')
 
-  await expect(page.getByTestId('client-summary-billing')).toBeVisible()
+  await expect(page.getByTestId('ui-detail-card-billing')).toBeVisible()
   await expect(page.locator('[data-testid^="plugin-slot-"]')).toHaveCount(0)
 })

@@ -19,6 +19,8 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiColumnSize } from '@/utils/ui/table'
+import { Icon } from '@/lib/icons'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -54,6 +56,7 @@ const keptActions = (id: string): UiMenuAction[] => {
   }
   return [{
     label: t('plugins.keptData.purge'),
+    icon: Icon.Trash,
     testid: `plugin-purge-${id}`,
     danger: true,
     disabled: props.purgingId !== null,
@@ -66,11 +69,11 @@ const keptActions = (id: string): UiMenuAction[] => {
   <UiStack gap="sm" data-testid="plugins-kept-data">
     <UiHeading :level="2" variant="section">{{ t('plugins.keptData.title') }}</UiHeading>
     <UiText tone="muted" size="sm">{{ t('plugins.keptData.description') }}</UiText>
-    <UiCard class="overflow-hidden">
+    <UiCard clip>
       <UiTable :density="UiTableDensity.Comfortable" data-testid="plugins-kept-data-table">
         <UiTableHead>
           <UiTableRow>
-            <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
+            <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.id') }}</UiTableHeader>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>

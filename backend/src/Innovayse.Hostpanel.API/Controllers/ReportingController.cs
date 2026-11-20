@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Queries.AgingInvoices;
 using Innovayse.Hostpanel.Application.Reports.Queries.AgingInvoicesSummary;
 using Innovayse.Hostpanel.Application.Reports.Queries.AnnualIncome;
-using Innovayse.Hostpanel.Application.Reports.Queries.ClientsByCity;
 using Innovayse.Hostpanel.Application.Reports.Queries.ClientsByCountry;
 using Innovayse.Hostpanel.Application.Reports.Queries.ClientStatement;
 using Innovayse.Hostpanel.Application.Reports.Queries.DailyPerformance;
@@ -25,7 +24,9 @@ using Innovayse.Hostpanel.Application.Reports.Queries.GetIncomeForecast;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetMonthlyOrders;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetOssReport;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetProductSuspensions;
+using Innovayse.Hostpanel.Application.Reports.Queries.GetPromotionsUsage;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetSalesTaxReport;
+using Innovayse.Hostpanel.Application.Reports.Queries.GetServerRevenueForecasts;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetServicesReport;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetSslMonitoring;
 using Innovayse.Hostpanel.Application.Reports.Queries.GetSupportTicketReplies;
@@ -164,21 +165,6 @@ public sealed class ReportingController : BaseApiController
     public async Task<IActionResult> GetClientStatementAsync([FromQuery] ClientStatementQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<ClientStatementDto>>(query, ct);
-        return HandleResult(outcome);
-    }
-
-    /// <summary>Returns client counts grouped by city and country.</summary>
-    /// <param name="query">The query. Carries no filters.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 with the grouped counts, largest first; 400 when a filter is not a valid value; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
-    [HttpGet("clients-by-city")]
-    [ProducesResponseType(typeof(IReadOnlyList<ClientsByCityDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetClientsByCityAsync([FromQuery] ClientsByCityQuery query, CancellationToken ct)
-    {
-        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ClientsByCityDto>>>(query, ct);
         return HandleResult(outcome);
     }
 
@@ -519,6 +505,38 @@ public sealed class ReportingController : BaseApiController
         [FromQuery] GetProductSuspensionsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ProductSuspensionRowDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Returns how often each promotion code is used and what the services under it renew for.</summary>
+    /// <param name="query">The query. Carries no filters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the report, one row per code and the base currency of its amounts; 400 when a filter is not a valid value; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
+    [HttpGet("promotions")]
+    [ProducesResponseType(typeof(PromotionsUsageReportDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetPromotionsUsageAsync(
+        [FromQuery] GetPromotionsUsageQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PromotionsUsageReportDto>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Returns what the active services on each server renew for, monthly and over a year.</summary>
+    /// <param name="query">The query. Carries no filters.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the report, one row per server and the base currency of its amounts; 400 when a filter is not a valid value; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
+    [HttpGet("server-revenue-forecasts")]
+    [ProducesResponseType(typeof(ServerRevenueForecastsReportDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetServerRevenueForecastsAsync(
+        [FromQuery] GetServerRevenueForecastsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<ServerRevenueForecastsReportDto>>(query, ct);
         return HandleResult(outcome);
     }
 

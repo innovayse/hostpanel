@@ -15,6 +15,7 @@ import { mountRouted } from '../helpers/mount'
 import { integrationDetail, integrationDto } from '../helpers/integrationFixtures'
 import { makeDetails, makeInstalled, makeVersion } from '../helpers/pluginDetails'
 import { stubRoutes as stubAllRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 /** The address of the fixture plugin's details. */
 const DETAILS_URL = 'GET /api/admin/plugins/registry/example-pay'
@@ -84,7 +85,8 @@ describe('PluginDetailsView', () => {
     stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
     const wrapper = await mountPage()
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Example Pay')
     expect(wrapper.find('[data-testid="plugin-details-link-documentation"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugin-version-3.0.0"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-details-tab-licence"]').exists()).toBe(false)
@@ -101,11 +103,14 @@ describe('PluginDetailsView', () => {
     stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
     const { wrapper } = await mountRouted(PluginDetailsView, '/plugins/:id', '/plugins/example-pay')
 
-    expect(wrapper.find('[data-testid="plugin-details-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="plugin-details-tab-overview"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="plugin-details-links"]').exists()).toBe(true)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Plugin')
+    expect(wrapper.find('[data-testid="ui-detail-card-head"]').attributes('aria-busy')).toBe('true')
+    expect(wrapper.find('[data-testid="ui-detail-card-tabs"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-detail-card-links"]').exists()).toBe(true)
     await flushPromises()
-    expect(wrapper.find('[data-testid="plugin-details-loading"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-detail-card-head"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-header"]').exists()).toBe(true)
   })
 
   it('shows the installed plugin and the API sentence when only the registry is refused, and loads again from the retry', async () => {
@@ -118,7 +123,8 @@ describe('PluginDetailsView', () => {
     })
     const wrapper = await mountPage()
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Example Pay')
     expect(wrapper.get('[data-testid="plugin-details-registry-error"]').text()).toContain('The registry is unavailable.')
     expect(wrapper.find('[data-testid="plugin-details-tab-versions"]').exists()).toBe(false)
     await wrapper.get('[data-testid="plugin-details-registry-error-retry"]').trigger('click')
@@ -137,12 +143,15 @@ describe('PluginDetailsView', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.get('[data-testid="plugin-details-error"]').text()).toContain('The server is busy.')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Plugin')
     expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(false)
     refused = false
     await wrapper.get('[data-testid="plugin-details-error-retry"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Example Pay')
   })
 
   it('shows the not-found state for an id that is not installed', async () => {
@@ -150,7 +159,8 @@ describe('PluginDetailsView', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="plugin-details-name"]').exists()).toBe(false)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Plugin')
   })
 
   it('shows a removed plugin that only keeps data as not found', async () => {
@@ -164,7 +174,8 @@ describe('PluginDetailsView', () => {
     stubRoutes({ [DETAILS_URL]: () => problem('No such plugin.', 404) })
     const wrapper = await mountPage()
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Example Pay')
     expect(wrapper.find('[data-testid="plugin-details-not-found"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-details-registry-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-details-overview"]').exists()).toBe(true)
@@ -181,7 +192,8 @@ describe('PluginDetailsView', () => {
     })
     const wrapper = await mountPage()
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Example Pay')
     expect(wrapper.find('[data-testid="plugin-details-registry-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-details-tab-versions"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-details-update"]').exists()).toBe(false)
@@ -194,7 +206,8 @@ describe('PluginDetailsView', () => {
     })
     const wrapper = await mountPage()
 
-    expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Example Pay')
     expect(wrapper.find('[data-testid="plugin-details-uninstall"]').exists()).toBe(false)
   })
 
@@ -245,12 +258,14 @@ describe('PluginDetailsView', () => {
     expect(mock.mock.calls.some(([url]) => String(url).includes('slot-widgets'))).toBe(false)
   })
 
-  it('links back to the list from the start of the row, with an icon', async () => {
+  it('links back to the list from the page header, as the kit back pill with an icon', async () => {
     stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
     const wrapper = await mountPage()
 
     const back = wrapper.get('[data-testid="plugin-details-back"]')
-    expect(back.classes()).toContain('self-start')
+    expect(back.classes()).toContain('rounded-pill')
+    expect(back.attributes('href')).toBe('/plugins')
+    expect(back.text()).toBe('Plugins')
     expect(back.find('svg').exists()).toBe(true)
   })
 
@@ -278,7 +293,8 @@ describe('PluginDetailsView', () => {
       const [put] = callsWith(mock, 'PUT')
       expect(callOf(mock, put as number).body).toEqual({ key: 'KEY-123' })
       expect(wrapper.find('[data-testid="plugin-details-registry-error"]').exists()).toBe(false)
-      expect(wrapper.get('[data-testid="plugin-details-name"]').text()).toBe('Example Pay')
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+      expect(wrapper.get('h1').text()).toBe('Example Pay')
     },
   )
 
@@ -520,7 +536,7 @@ describe('PluginDetailsView', () => {
     expect(callOf(mock, put as number).body).toEqual({ key: 'KEY-123' })
     expect(wrapper.find('[data-testid="plugin-licence-saved"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugin-details-licence-needed"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('licence key is saved')
+    expect(useToastStore().toasts.map((toast) => toast.message).join(' ')).toContain('licence key is saved')
   })
 
   it('removes the saved licence key', async () => {

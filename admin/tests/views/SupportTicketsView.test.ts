@@ -8,7 +8,10 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import SupportTicketsView from '@/views/SupportTicketsView.vue'
+import schema from '@/views/SupportTicketsView.schema'
+import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { TicketFlagFilter, TicketPriority, TicketStatus } from '@/types/ticket'
+import { useToastStore } from '@/stores/toast'
 import { mountRouted } from '../helpers/mount'
 import { json, problem, stubFetch, findCall } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
@@ -93,6 +96,14 @@ afterEach(() => {
 })
 
 describe('SupportTicketsView', () => {
+  it('draws the table head of its schema columns, in order', async () => {
+    stubList()
+
+    const { wrapper } = await mountListAt()
+
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
+  })
+
   it('lists the tickets with subject, department and translated status', async () => {
     stubList()
 
@@ -103,6 +114,7 @@ describe('SupportTicketsView', () => {
     expect(row.text()).toContain('Support')
     expect(row.text()).toContain('Awaiting Reply')
     expect(wrapper.get('[data-testid="support-tickets-count"]').text()).toContain('1')
+    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
   })
 
   it('shows the priority of each ticket beside its status', async () => {
@@ -227,6 +239,27 @@ describe('SupportTicketsView', () => {
     expect(listUrls(mock).at(-1)).toBe('/api/tickets?page=1&pageSize=20&priority=High')
   })
 
+  it('hides the flag of an unflagged ticket until hover and fills it with the warning colour once flagged', async () => {
+    stubList([ticket, { ...ticket, id: 6, isFlagged: true }])
+    const { wrapper } = await mountListAt()
+
+    const unflagged = wrapper.get('[data-testid="support-tickets-flag-5"]')
+    expect(unflagged.classes()).toEqual(expect.arrayContaining(['opacity-0', 'text-text-muted']))
+    expect(unflagged.attributes('aria-label')).toBe('Flag')
+    const flagged = wrapper.get('[data-testid="support-tickets-flag-6"]')
+    expect(flagged.classes()).toContain('text-status-yellow')
+    expect(flagged.classes()).not.toContain('opacity-0')
+    expect(flagged.attributes('aria-label')).toBe('Unflag')
+  })
+
+  it('says "No replies yet" for an unanswered ticket and a relative date for an answered one', async () => {
+    stubList([ticket, { ...ticket, id: 6, lastReplyAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString() }])
+    const { wrapper } = await mountListAt()
+
+    expect(wrapper.get('[data-testid="support-tickets-row-5"]').text()).toContain('No replies yet')
+    expect(wrapper.get('[data-testid="support-tickets-row-6"]').text()).toContain('3 hours ago')
+  })
+
   it('shows the bulk bar for a selection and sends the chosen action', async () => {
     const mock = stubList()
     const { wrapper } = await mountListAt()
@@ -237,7 +270,8 @@ describe('SupportTicketsView', () => {
     await flushPromises()
 
     expect(findCall(mock, 'POST', '/api/tickets/bulk')?.body).toEqual({ ticketIds: [5], action: 'close' })
-    expect(wrapper.get('[data-testid="support-tickets-feedback"]').text()).toBe('Changes saved successfully.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
+    expect(wrapper.find('[data-testid="support-tickets-feedback"]').exists()).toBe(false)
   })
 
   it('deletes the selection only after the danger confirmation', async () => {
@@ -255,7 +289,7 @@ describe('SupportTicketsView', () => {
     await flushPromises()
 
     expect(findCall(mock, 'POST', '/api/tickets/bulk')?.body).toEqual({ ticketIds: [5], action: 'delete' })
-    expect(wrapper.get('[data-testid="support-tickets-feedback"]').text()).toBe('Record deleted.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Record deleted.'])
   })
 
   it('shows the API sentence when a bulk action is refused', async () => {

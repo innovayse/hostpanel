@@ -20,6 +20,7 @@ export const integrationDto = (overrides: Partial<IntegrationDto> = {}): Integra
   pluginType: null,
   iconUrl: null,
   connection: null,
+  description: null,
   ...overrides,
 })
 

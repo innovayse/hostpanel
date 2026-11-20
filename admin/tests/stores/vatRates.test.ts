@@ -5,7 +5,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 import { useVatRatesStore } from '@/stores/vatRates'
-import { VatRateKind } from '@/types/vatrate'
+import { VatRateKind, VatRateStatus } from '@/types/vatrate'
 import type { SaveVatRatePayload } from '@/types/vatrate'
 import { callOf, json, problem, stubFetch } from '../helpers/fetch'
 import { installStoreHooks, NO_ANSWER } from '../helpers/storeHooks'
@@ -20,12 +20,20 @@ describe('vatRatesStore', () => {
     const mock = stubFetch(json({ items: [{ id: 1, country: 'DE' }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }))
     const store = useVatRatesStore()
 
-    expect(await store.fetchAll(2, ' de ')).toBe(true)
+    expect(await store.fetchAll(2, { search: ' de ' })).toBe(true)
     expect(callOf(mock).url).toBe('/api/admin/vat-rates?page=2&pageSize=20&search=de')
     expect(store.vatRates).toEqual([{ id: 1, country: 'DE' }])
     expect(store.totalCount).toBe(21)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
+  })
+
+  it('fetchAll sends the kind and status filters', async () => {
+    const mock = stubFetch(json({ items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }))
+
+    await useVatRatesStore().fetchAll(1, { kind: VatRateKind.Reduced, status: VatRateStatus.Superseded })
+
+    expect(callOf(mock).url).toBe('/api/admin/vat-rates?page=1&pageSize=20&kind=Reduced&status=Superseded')
   })
 
   it('fetchAll keeps the API sentence on refusal', async () => {

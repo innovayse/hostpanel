@@ -24,12 +24,16 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiColumnSize } from '@/utils/ui/table'
+import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { Icon } from '@/lib/icons'
 import type { UserDetail } from '@/types/useraccount'
 import { ClientPermission, PERMISSION_LABELS } from '@/types/clientuser'
 import { LANGUAGE_OPTIONS } from '@/lib/constants'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -242,10 +246,10 @@ const confirmDelete = (): void => {
         <UiTable v-if="user.accounts.length > 0" :density="UiTableDensity.Compact" data-testid="clients-userform-accounts">
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.id') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.clientName') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.companyName') }}</UiTableHeader>
-              <UiTableHeader>{{ t('clients.userForm.owner') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Compact">{{ t('clients.userForm.owner') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody>
@@ -253,7 +257,15 @@ const confirmDelete = (): void => {
               <UiTableCell muted>{{ acc.clientId }}</UiTableCell>
               <UiTableCell>{{ acc.firstName }} {{ acc.lastName }}</UiTableCell>
               <UiTableCell muted>{{ acc.companyName || EMPTY_VALUE }}</UiTableCell>
-              <UiTableCell :muted="!acc.isOwner">{{ acc.isOwner ? '✓' : EMPTY_VALUE }}</UiTableCell>
+              <UiTableCell>
+                <UiStatusIcon
+                  :state="acc.isOwner"
+                  :on-icon="Icon.CheckCircle"
+                  :off-icon="Icon.Close"
+                  :on-label="t('clients.userForm.owner')"
+                  :off-label="t('shared.no')"
+                />
+              </UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>
@@ -264,15 +276,15 @@ const confirmDelete = (): void => {
 
     <template #footer>
       <UiStack direction="row" justify="between" align="center" class="w-full">
-        <UiButton variant="danger" data-testid="clients-userform-delete" @click="handleDelete">
+        <UiButton :action="UiActionKind.Confirm" variant="danger" data-testid="clients-userform-delete" @click="handleDelete">
           {{ t('clients.userForm.permanentlyDelete') }}
         </UiButton>
 
         <UiStack direction="row" gap="sm" align="center">
-          <UiButton variant="secondary" data-testid="clients-userform-close" @click="emit('close')">
+          <UiButton :action="UiActionKind.Close" variant="secondary" data-testid="clients-userform-close" @click="emit('close')">
             {{ t('shared.close') }}
           </UiButton>
-          <UiButton
+          <UiButton :action="UiActionKind.Save"
             variant="primary"
             :loading="saving"
             data-testid="clients-userform-save"

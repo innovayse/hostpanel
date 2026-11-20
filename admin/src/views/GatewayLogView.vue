@@ -22,15 +22,16 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import UiTableHead from '@/components/ui/UiTableHead.vue'
-import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import schema from '@/views/GatewayLogView.schema'
 import UiText from '@/components/ui/UiText.vue'
 import { useFilterDateRange } from '@/composables/useFilterDateRange'
 import { useListQuery } from '@/composables/useListQuery'
 import { usePeriodFilter } from '@/composables/usePeriodFilter'
 import { GATEWAY_LOG_RESULT_OPTIONS } from '@/lib/constants'
 import { gatewayLogResultTone, statusLabel } from '@/lib/tones'
+import { schemaHeader } from '@/lib/schemaHeader'
 import { useGatewayLogStore } from '@/stores/gatewayLog'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import type { GatewayLogFilters } from '@/types/gatewaylog'
@@ -93,10 +94,7 @@ loadOnChange(load)
 
 <template>
   <UiStack data-testid="billing-gateway-log-view">
-    <UiPageHeader
-      :title="t('billing.gatewayLog.gatewayTransactionLog')"
-      :subtitle="t('billing.gatewayLog.viewPaymentGatewayTransactionLogs')"
-    />
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <UiListToolbar
       v-model:search="search"
@@ -147,18 +145,12 @@ loadOnChange(load)
 
     <UiCard>
       <UiTable
+        :empty-text="t('shared.noRecordsFound')"
         :loading="store.loading && store.entries.length === 0"
         :empty="!store.loading && store.entries.length === 0"
         data-testid="billing-gateway-log-table"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.gatewayLog.gateway') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.gatewayLog.debugData') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.gatewayLog.result') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
+        <UiSchemaTableHead :columns="schema.table.columns" />
         <UiTableBody divided>
           <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable>
             <UiTableCell muted>{{ new Date(entry.dateTime).toLocaleString() }}</UiTableCell>
@@ -171,9 +163,6 @@ loadOnChange(load)
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-        <template #empty>
-          {{ t('shared.noRecordsFound') }}
-        </template>
       </UiTable>
     </UiCard>
 

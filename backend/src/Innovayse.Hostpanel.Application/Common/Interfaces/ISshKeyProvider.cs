@@ -47,18 +47,6 @@ public interface ISshKeyProvider
     public Task RevokeKeyAsync(SshAccount account, Guid keyId, CancellationToken ct);
 
     /// <summary>
-    /// Prepares the account's <paramref name="domain"/> for Innovayse Sites deploys (agent 1.3.0+, op <c>prepare-site</c>):
-    /// PHP pool, web server handler, database, deploy settings, document root. Idempotent; the server refuses a
-    /// domain that is not the account's own. Can take minutes the first time.
-    /// </summary>
-    /// <param name="account">The hosting account on this provider's server.</param>
-    /// <param name="domain">The account's domain.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The steps the server reported.</returns>
-    /// <exception cref="SshProviderException">Thrown when the server fails or refuses.</exception>
-    public Task<IReadOnlyList<string>> PrepareSiteAsync(SshAccount account, string domain, CancellationToken ct);
-
-    /// <summary>
     /// Removes the SSH jail (and its home mount) of an account the panel has already deleted (agent 1.4.0+, op
     /// <c>remove-jail</c>). The server refuses while the account still exists, so a live account's jail is never touched.
     /// </summary>

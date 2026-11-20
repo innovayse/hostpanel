@@ -6,9 +6,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PendingBankTransfersView from '@/views/PendingBankTransfersView.vue'
-import { mountRoutedSettled } from '../helpers/mount'
+import schema from '@/views/PendingBankTransfersView.schema'
+import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
+import { mountRouted, mountRoutedSettled } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
+import { useToastStore } from '@/stores/toast'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -81,7 +84,7 @@ describe('PendingBankTransfersView', () => {
 
     expect(lines(mock)).toContain('POST /api/billing/5/bank-transfer/confirm')
     expect(lines(mock).filter((line) => line.startsWith('GET /api/billing/bank-transfers/pending')).length).toBe(2)
-    expect(wrapper.get('[data-testid="billing-bank-transfers-feedback"]').text()).toBe('Invoice #5 is paid.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Invoice #5 is paid.'])
   })
 
   it('does not confirm when the prompt is cancelled', async () => {
@@ -128,7 +131,7 @@ describe('PendingBankTransfersView', () => {
     const post = mock.mock.calls.find(([url]) => (url as string).endsWith('/reject'))
     const init = post?.[1] as RequestInit | undefined
     expect(JSON.parse(String(init?.body))).toEqual({ note: 'Amount too low' })
-    expect(wrapper.get('[data-testid="billing-bank-transfers-feedback"]').text()).toBe('Invoice #5 is open again and the client was told why.')
+    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Invoice #5 is open again and the client was told why.'])
   })
 
   it('shows the API sentence when the decision is refused and still reloads the list', async () => {
@@ -160,5 +163,14 @@ describe('PendingBankTransfersView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  it('draws the table skeleton under the schema head while the first load is in flight', async () => {
+    stubPendingFetch()
+    const { wrapper } = await mountRouted(PendingBankTransfersView, '/billing/bank-transfers', '/billing/bank-transfers')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 })

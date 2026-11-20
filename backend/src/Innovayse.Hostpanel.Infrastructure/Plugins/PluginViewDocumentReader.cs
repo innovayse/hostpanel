@@ -86,6 +86,9 @@ internal static partial class PluginViewDocumentReader
     /// <summary>The member of an action block that builds the body of its call from what the page has read.</summary>
     private const string BodySourceMember = "bodySource";
 
+    /// <summary>The member of an action block that opens a page of the panel after the call; it and an open-URL field exclude each other.</summary>
+    private const string NavigateMember = "navigate";
+
     /// <summary>The member of a body source mapping each body member to a dotted path into the reply.</summary>
     private const string BodySourceFieldsMember = "fields";
 
@@ -773,10 +776,18 @@ internal static partial class PluginViewDocumentReader
                     PluginManifestRule.ViewSelectionInvalid, $"has a '{ChatKind}' whose '{SelectionMember}' is anything but true");
             }
         }
-        else if (string.Equals(kind, ActionKind, StringComparison.Ordinal) && block.TryGetProperty(BodySourceMember, out var bodySource))
+        else if (string.Equals(kind, ActionKind, StringComparison.Ordinal))
         {
-            scan.HasActionBody = true;
-            CheckActionBody(block, bodySource, scan);
+            if (block.TryGetProperty(BodySourceMember, out var bodySource))
+            {
+                scan.HasActionBody = true;
+                CheckActionBody(block, bodySource, scan);
+            }
+
+            if (block.TryGetProperty(PluginViews.OpenUrlFromProperty, out var openUrlFrom))
+            {
+                CheckOpenUrl(block, openUrlFrom, scan);
+            }
         }
     }
 
@@ -904,6 +915,29 @@ internal static partial class PluginViewDocumentReader
         }
 
         scan.Routes.Add(route);
+    }
+
+    /// <summary>
+    /// Checks an action's <c>openUrlFrom</c>: a field name (<see cref="PluginViews.IsOpenUrlFieldName"/>),
+    /// on an action that calls a route and does not also <c>navigate</c>. Whether the address the reply
+    /// holds under it may be opened is decided by the panel against the page's allowed origins when the reply arrives.
+    /// </summary>
+    /// <param name="action">The action block.</param>
+    /// <param name="value">The <c>openUrlFrom</c> value.</param>
+    /// <param name="scan">Receives the first broken rule.</param>
+    private static void CheckOpenUrl(JsonElement action, JsonElement value, DocumentScan scan)
+    {
+        var valid = value.ValueKind == JsonValueKind.String
+            && PluginViews.IsOpenUrlFieldName(value.GetString())
+            && action.TryGetProperty(ActionRouteMember, out var called)
+            && ReadRoute(called) is not null
+            && !action.TryGetProperty(NavigateMember, out _);
+        if (!valid)
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewOpenUrlInvalid,
+                $"has an '{PluginViews.OpenUrlFromProperty}' that is not a field name of 1 to {PluginViews.MaxOpenUrlFieldLength} letters, digits or underscores on an action that calls a route and has no '{NavigateMember}'");
+        }
     }
 
     /// <summary>
@@ -1158,6 +1192,18 @@ internal static partial class PluginViewDocumentReader
             {
                 scan.StateViolation ??= new PluginManifestViolation(
                     PluginManifestRule.ViewActionBodyInvalid, $"has a '{BodySourceMember}' outside an action block");
+            }
+
+            return true;
+        }
+
+        if (member.NameEquals(PluginViews.OpenUrlFromProperty))
+        {
+            // On an action it was checked with its block; the name is never content, so it is not walked.
+            if (!string.Equals(kind, ActionKind, StringComparison.Ordinal))
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewOpenUrlInvalid, $"has an '{PluginViews.OpenUrlFromProperty}' outside an action block");
             }
 
             return true;

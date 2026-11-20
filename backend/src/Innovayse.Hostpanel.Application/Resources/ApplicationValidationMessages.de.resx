@@ -1244,7 +1244,7 @@
     <value>Geben Sie mindestens eine Übersetzung an.</value>
   </data>
   <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
-    <value>Eine Übersetzung ist nur für eine unterstützte Sprache möglich: en, ru oder hy.</value>
+    <value>Eine Übersetzung ist nur für eine unterstützte Sprache möglich: en, ru, hy, de oder es.</value>
   </data>
   <data name="ContentDefaultTranslationRequired" xml:space="preserve">
     <value>Eine Übersetzung in der Standardsprache (en) ist erforderlich.</value>

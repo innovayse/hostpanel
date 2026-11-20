@@ -15,7 +15,7 @@ public sealed class LocaleOptions
     /// <summary>
     /// The languages this product answers in, most specific first. Used by the API to build the
     /// request-localisation culture list, and it is the same set the portal ships under
-    /// <c>client/locales/</c>: adding a fourth language means a new folder there, a new
+    /// <c>client/locales/</c>: adding a language means a new folder there, a new
     /// <c>ApplicationValidationMessages.&lt;code&gt;.resx</c> beside the neutral one, and this list.
     /// </summary>
     /// <remarks>

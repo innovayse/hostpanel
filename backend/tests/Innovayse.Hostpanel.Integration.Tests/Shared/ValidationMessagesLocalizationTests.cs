@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 /// <summary>
 /// Proves a request that asks for Russian, Armenian, German or Spanish is answered in that language.
 /// <para>
-/// The client app ships three languages and does not translate error codes itself: the sentence
+/// The client app ships several languages and does not translate error codes itself: the sentence
 /// comes from
 /// <c>Innovayse.Hostpanel.Application/Resources/ApplicationValidationMessages*.resx</c>, selected by the culture
 /// <c>UsePlatformLocalization</c> reads off <c>X-Language</c>.

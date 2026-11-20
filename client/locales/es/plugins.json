@@ -28,6 +28,8 @@
     "chatCopy": "Copiar respuesta",
     "chatCopyCode": "Copiar código",
     "chatCopied": "Copiado",
+    "openUrlBlocked": "El navegador bloqueó la nueva pestaña. Permita las ventanas emergentes para este sitio y vuelva a intentarlo.",
+    "openUrlRefused": "El plugin respondió con una dirección que no se puede abrir.",
     "chatRetry": "Reintentar",
     "chatWriting": "Escribiendo una respuesta"
   }

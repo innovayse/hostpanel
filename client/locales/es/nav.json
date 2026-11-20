@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "products": "Productos",
+    "hosting": "Hosting",
+    "domains": "Dominios",
+    "clientArea": "Área de clientes",
+    "hostingDesc": "Planes de hosting web compartido",
+    "openMenu": "Abrir menú",
+    "allHosting": "Todos los planes de hosting",
+    "vpsDesc": "Su propio servidor virtual con acceso root",
+    "serversDesc": "Máquinas completas para cargas de trabajo exigentes",
+    "emailDesc": "Buzones con su propia marca para su equipo",
+    "sslDesc": "Cifre el tráfico y gane la confianza de los visitantes",
+    "backupDesc": "Copias automáticas que se restauran rápidamente",
+    "support": "Soporte",
+    "help": "Centro de ayuda",
+    "helpDesc": "Guías y artículos prácticos",
+    "faq": "Preguntas frecuentes",
+    "faqDesc": "Respuestas rápidas a las dudas más comunes",
+    "contact": "Contáctenos",
+    "contactDesc": "Hable con nuestro equipo",
+    "signIn": "Iniciar sesión",
+    "getStarted": "Empezar",
+    "menu": "Menú",
+    "primary": "Navegación principal",
+    "preferences": "Preferencias"
+  }
+}

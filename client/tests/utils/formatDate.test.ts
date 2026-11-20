@@ -84,6 +84,13 @@ describe('formatDate', () => {
     expect(hy).toMatch(/[԰-֏]/)
   })
 
+  it('renders Spanish month names for the Spanish portal', () => {
+    const es = formatDate('2026-01-08', 'es')
+
+    expect(es).toContain('ene')
+    expect(es).not.toBe(formatDate('2026-01-08', 'en'))
+  })
+
   it('renders German month names for the German portal', () => {
     expect(formatDate('2026-03-08', 'de')).toBe('8. März 2026')
     expect(formatDate('2026-03-08', 'de-DE')).toBe('8. März 2026')

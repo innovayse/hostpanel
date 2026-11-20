@@ -26,7 +26,8 @@ const LANGUAGE_NAMES: Record<AppLocale, string> = {
   [AppLocale.En]: 'English',
   [AppLocale.Ru]: 'Russian',
   [AppLocale.Hy]: 'Armenian',
-  [AppLocale.De]: 'German'
+  [AppLocale.De]: 'German',
+  [AppLocale.Es]: 'Spanish'
 }
 
 /**

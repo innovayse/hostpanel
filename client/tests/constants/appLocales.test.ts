@@ -10,7 +10,7 @@ import { AppLocale } from '~/types/applocale'
 
 describe('APP_LOCALES', () => {
   it('lists every AppLocale member in declaration order', () => {
-    expect([...APP_LOCALES]).toEqual([AppLocale.En, AppLocale.Ru, AppLocale.Hy, AppLocale.De])
+    expect([...APP_LOCALES]).toEqual([AppLocale.En, AppLocale.Ru, AppLocale.Hy, AppLocale.De, AppLocale.Es])
   })
 
   it('defaults to English, the language served without a prefix', () => {

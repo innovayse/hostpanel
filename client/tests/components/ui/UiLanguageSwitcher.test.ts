@@ -60,6 +60,19 @@ describe('LanguageSwitcher', () => {
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
   })
 
+  it('shows the Spanish flag beside the Spanish option', async () => {
+    vi.stubGlobal('useI18n', () => ({
+      t: (key: string) => key,
+      locale: ref('es'),
+      locales: ref([{ code: 'en', name: 'English' }, { code: 'es', name: 'Spanish' }]),
+    }))
+    stubSwitchLocalePath()
+    const wrapper = mountWithKit(LanguageSwitcher)
+    await wrapper.find('[data-testid="language-switcher-trigger"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="language-option-es"] img').attributes('src')).toBe('/flags/es.svg')
+  })
+
   it('shows the German flag beside the German option', async () => {
     const wrapper = mountWithKit(LanguageSwitcher)
     await wrapper.find('[data-testid="language-switcher-trigger"]').trigger('click')

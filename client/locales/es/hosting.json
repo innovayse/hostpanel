@@ -1,0 +1,44 @@
+{
+  "hosting": {
+    "badge": "Planes de hosting web",
+    "title": "Hosting web",
+    "titleHighlight": "rápido y fiable",
+    "subtitle": "Elija el plan de hosting perfecto para su sitio web. Almacenamiento SSD, SSL gratuito y soporte incluido.",
+    "recommended": "Recomendado",
+    "getStarted": "Empezar",
+    "addToCart": "Añadir al carrito",
+    "inCart": "En el carrito",
+    "orderNow": "Pedir ahora",
+    "custom": "Personalizado",
+    "loadError": "No se pudieron cargar los planes de hosting. Inténtelo de nuevo más tarde.",
+    "planNotFound": "Plan no encontrado.",
+    "viewAllPlans": "Ver todos los planes",
+    "backToPlans": "Volver a los planes de hosting",
+    "billingCycles": "Ciclos de facturación",
+    "includedFeatures": "Características incluidas",
+    "cycles": {
+      "monthly": "Mensual",
+      "quarterly": "Trimestral",
+      "semiannually": "6 meses",
+      "annually": "Anual",
+      "biennially": "2 años",
+      "triennially": "3 años",
+      "free": "Gratis"
+    },
+    "comparison": {
+      "title": "Comparar planes",
+      "subtitle": "Elija las características que mejor se adapten a sus necesidades.",
+      "notIncluded": "No incluido",
+      "feature": "Característica"
+    },
+    "customContact": "Contáctenos para soluciones personalizadas",
+    "getStartedForFree": "Empezar gratis",
+    "foreverFree": "Gratis para siempre",
+    "viewAllFeatures": "Ver todas las características",
+    "premiumSolutions": "Soluciones de hosting premium",
+    "enterpriseSolutions": "Soluciones para agencias y empresas",
+    "agencyBadge": "Máximo rendimiento",
+    "select": "Seleccionar",
+    "free": "Gratis"
+  }
+}

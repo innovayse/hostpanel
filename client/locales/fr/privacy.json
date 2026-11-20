@@ -1,0 +1,94 @@
+{
+  "privacy": {
+    "badge": "Confidentialité et transparence",
+    "title": "Politique de confidentialité",
+    "subtitle": "Chez {site}, votre confiance compte. Cette politique explique comment nous traitons vos données dans le cadre de nos services d'hébergement, de domaines et de portail client.",
+    "lastUpdated": "Dernière mise à jour",
+    "sections": {
+      "collection": {
+        "title": "Informations que nous collectons",
+        "content": {
+          "0": "Pour fournir nos services d'hébergement et de domaines, nous collectons plusieurs types d'informations auprès de nos clients et des visiteurs de notre site :"
+        },
+        "list": {
+          "0": "Données d'identité : nom, nom de l'entreprise et fonction, pour la gestion du compte.",
+          "1": "Données de contact : adresse e-mail, numéro de téléphone et adresse de facturation, pour la communication et la facturation.",
+          "2": "Données techniques : adresses IP, types de navigateur et habitudes d'utilisation de notre site web et de notre portail client.",
+          "3": "Données de service : noms de domaine, enregistrements DNS et paramètres du compte nécessaires pour mettre en service et gérer vos services.",
+          "4": "Données marketing : vos préférences concernant la réception d'informations sur nos services et nos offres."
+        }
+      },
+      "usage": {
+        "title": "Comment nous utilisons vos données",
+        "content": {
+          "0": "{site} utilise vos données personnelles et techniques pour garantir la fiabilité de ses services et la stabilité de sa plateforme :"
+        },
+        "list": {
+          "0": "Mettre en service et renouveler les services d'hébergement, de domaines et de serveurs que vous avez commandés.",
+          "1": "Assurer la maintenance et l'assistance technique de vos services via le portail client.",
+          "2": "Émettre les factures, traiter les paiements et envoyer les avis de renouvellement et de facturation.",
+          "3": "Identifier et prévenir les problèmes techniques ou les menaces de sécurité sur nos plateformes.",
+          "4": "Communiquer les mises à jour sur l'état des commandes et des services via le portail client ou des canaux directs."
+        }
+      },
+      "sharing": {
+        "title": "Partage des informations",
+        "content": {
+          "0": "Nous ne vendons jamais vos données. Nous ne partageons des informations qu'avec des partenaires de confiance, pour faciliter nos services :",
+          "1": "Les bureaux d'enregistrement de domaines et les fournisseurs de centres de données (pour enregistrer les domaines et faire fonctionner vos services) ; les passerelles de paiement tierces pour une facturation sécurisée ; les fournisseurs de statistiques qui nous aident à améliorer l'expérience utilisateur. Tous les partenaires sont strictement tenus par des accords de confidentialité."
+        }
+      },
+      "cookies": {
+        "title": "Cookies et statistiques",
+        "content": {
+          "0": "Nous utilisons des cookies essentiels pour l'authentification des utilisateurs et la gestion des sessions sur le portail client. Nous utilisons en outre des cookies de statistiques pour comprendre comment les visiteurs interagissent avec notre site.",
+          "1": "Vous pouvez gérer vos préférences en matière de cookies via notre bandeau dédié ou les paramètres de votre navigateur. Notez que la désactivation des cookies essentiels peut limiter le fonctionnement du portail client."
+        }
+      },
+      "security": {
+        "title": "Protection numérique",
+        "content": {
+          "0": "Nous appliquons des mesures de sécurité de niveau professionnel, notamment le chiffrement SSL, des protocoles d'API sécurisés et des analyses régulières de vulnérabilités, pour protéger vos données.",
+          "1": "L'accès aux données des comptes clients est strictement réservé aux membres de l'équipe autorisés qui interviennent dans le support ou la mise en service."
+        }
+      },
+      "rights": {
+        "title": "Vos droits et votre contrôle",
+        "content": {
+          "0": "Vous gardez le contrôle total de vos données stockées chez {site}. Vous pouvez demander :"
+        },
+        "list": {
+          "0": "Une copie complète de toutes les données personnelles que nous détenons à votre sujet.",
+          "1": "La correction immédiate de toute information de contact ou de service inexacte.",
+          "2": "La suppression définitive de votre compte et de vos données, sous réserve des règles légales de conservation.",
+          "3": "La suspension du traitement de vos données à des fins de prospection."
+        }
+      },
+      "retention": {
+        "title": "Conservation des données",
+        "content": {
+          "0": "Nous conservons les données liées au compte pendant toute la durée de notre relation et aussi longtemps que la loi l'exige pour l'audit financier et la conformité légale.",
+          "1": "Les données d'un compte inactif sont généralement anonymisées ou supprimées après 24 mois d'inactivité afin de protéger votre vie privée."
+        }
+      },
+      "children": {
+        "title": "Confidentialité des enfants",
+        "content": {
+          "0": "Nos services sont exclusivement destinés aux entreprises et aux professionnels. Nous ne collectons pas sciemment de données auprès de personnes de moins de 18 ans."
+        }
+      },
+      "changes": {
+        "title": "Mises à jour de la politique",
+        "content": {
+          "0": "Nous pouvons mettre à jour cette politique pour refléter de nouvelles fonctionnalités de la plateforme ou des changements de réglementation. Les mises à jour importantes seront communiquées par notre lettre d'information.",
+          "1": "Nous vous recommandons de consulter cette page de temps à autre pour rester informé de nos normes de protection des données."
+        }
+      }
+    },
+    "contact": {
+      "title": "Une question sur la confidentialité ?",
+      "description": "Notre équipe de protection des données est à votre disposition pour répondre à toutes vos questions concernant vos informations chez {site}.",
+      "link": "Nous contacter"
+    }
+  }
+}

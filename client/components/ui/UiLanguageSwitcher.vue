@@ -113,6 +113,7 @@ const FLAGS: Record<AppLocale, string> = {
   [AppLocale.Ru]: '/flags/ru.svg',
   [AppLocale.Hy]: '/flags/am.svg',
   [AppLocale.De]: '/flags/de.svg',
+  [AppLocale.Fr]: '/flags/fr.svg',
 }
 
 /** Active locale code and the locales the portal offers. */

@@ -1,0 +1,83 @@
+{
+  "seo": {
+    "home": {
+      "title": "{site} : hébergement web, domaines et serveurs {'|'} Portail client",
+      "h1": "Hébergement web, domaines et serveurs avec un portail client en libre-service",
+      "description": "{site} propose de l'hébergement web, l'enregistrement de domaines, des serveurs VPS et dédiés avec installation automatique, facturation en ligne et un portail client pour gérer vos services, vos factures et le support.",
+      "keywords": "hébergement web, enregistrement de domaine, VPS, serveurs dédiés, certificats SSL, portail client, facturation en ligne, panneau de contrôle d'hébergement"
+    },
+    "contact": {
+      "title": "Nous contacter : prenez contact {'|'} {site}",
+      "description": "Contactez {site} pour obtenir de l'aide sur l'hébergement, les domaines, les serveurs ou la facturation. E-mail : contact{'@'}yourdomain.com, téléphone : +1 000 000 0000.",
+      "keywords": "contacter {site}, support d'hébergement, questions de facturation, aide sur les domaines, demande commerciale"
+    },
+    "products": {
+      "title": "Services d'hébergement, de serveurs et de domaines {'|'} {site}",
+      "description": "Parcourez les offres d'hébergement, les serveurs, les domaines et les services complémentaires proposés par {site}. Commandez en ligne et gérez tout depuis votre portail client.",
+      "keywords": "services d'hébergement, VPS, serveurs dédiés, domaines, certificats SSL, services complémentaires, commande en ligne"
+    },
+    "faq": {
+      "title": "FAQ : questions fréquentes {'|'} {site}",
+      "description": "Trouvez des réponses aux questions fréquentes sur l'hébergement, les domaines, les serveurs, la facturation et votre compte client chez {site}.",
+      "keywords": "FAQ, questions sur l'hébergement, questions sur les domaines, facturation, factures, support, compte client"
+    },
+    "faqCategory": {
+      "general": {
+        "title": "FAQ générale : questions courantes {'|'} {site}",
+        "h1": "Questions générales",
+        "description": "Réponses aux questions les plus courantes sur la commande, la facturation, votre compte client et le support.",
+        "keywords": "FAQ générale, commande, facturation, compte client, support, premiers pas"
+      },
+      "products": {
+        "title": "FAQ hébergement et services : offres et installation {'|'} {site}",
+        "h1": "Questions sur l'hébergement et les services",
+        "description": "Réponses aux questions sur les offres d'hébergement, les domaines, les serveurs, les tarifs, l'installation et les renouvellements.",
+        "keywords": "FAQ hébergement, FAQ domaines, questions sur les serveurs, tarifs, installation, renouvellements"
+      }
+    },
+    "hosting": {
+      "title": "Offres d'hébergement web : un hébergement rapide et fiable {'|'} {site}",
+      "description": "Choisissez l'offre d'hébergement web adaptée à votre site. Stockage SSD, certificat SSL gratuit et support d'experts. Commandez en ligne et soyez configuré automatiquement.",
+      "keywords": "hébergement web, hébergement SSD, hébergement cloud, offres d'hébergement web, hébergement géré, hébergement SSL, panneau de contrôle d'hébergement"
+    },
+    "hostingPlan": {
+      "named": "{name} : offre d'hébergement web {'|'} {site}",
+      "title": "Détails de l'offre d'hébergement {'|'} {site}",
+      "description": "Découvrez les détails de notre offre d'hébergement. Stockage SSD, SSL gratuit, hautes performances et support inclus.",
+      "keywords": "offre d'hébergement, hébergement web, stockage SSD, certificat SSL, hébergement géré"
+    },
+    "domains": {
+      "title": "Enregistrement et transfert de domaine {'|'} {site}",
+      "description": "Enregistrez ou transférez votre nom de domaine. Recherchez des extensions dont .com, .net et .org, et gérez le DNS et les renouvellements depuis votre portail client.",
+      "keywords": "enregistrement de domaine, transfert de domaine, acheter un domaine, recherche de nom de domaine, renouvellement de domaine, gestion DNS, confidentialité WHOIS"
+    },
+    "legal": {
+      "aup": {
+        "title": "Politique d'utilisation acceptable {'|'} {site}",
+        "description": "Découvrez les règles d'utilisation acceptable des services d'hébergement, de serveurs et de domaines de {site}."
+      },
+      "privacy": {
+        "title": "Politique de confidentialité {'|'} {site}",
+        "description": "Découvrez comment {site} collecte, utilise et protège vos données personnelles. Lisez notre politique de confidentialité pour connaître nos pratiques de traitement des données."
+      },
+      "refund": {
+        "title": "Politique de remboursement et d'annulation {'|'} {site}",
+        "description": "Découvrez les règles de remboursement et d'annulation des services d'hébergement, de serveurs et de domaines de {site}."
+      },
+      "terms": {
+        "title": "Conditions d'utilisation {'|'} {site}",
+        "description": "Lisez nos conditions d'utilisation pour connaître les règles et les consignes applicables aux services de {site}."
+      },
+      "cookies": {
+        "title": "Politique relative aux cookies {'|'} {site}",
+        "description": "Découvrez comment {site} utilise les cookies pour améliorer votre navigation. Comprenez ce que sont les cookies, comment nous les utilisons et comment gérer vos préférences.",
+        "ogDescription": "Découvrez comment {site} utilise les cookies sur notre site web et comment gérer vos préférences.",
+        "twitterDescription": "Comprenez comment nous utilisons les cookies sur notre site web"
+      }
+    },
+    "about": {
+      "title": "À propos de nous {'|'} {site}",
+      "description": "Qui est {site}, ce que nous faisons et comment joindre l'équipe."
+    }
+  }
+}

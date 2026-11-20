@@ -19,8 +19,8 @@ import {
   WHY_FEATURES,
 } from '~/templates/nova/content'
 
-/** The locales the portal ships; plugins/i18n.ts loads all three. */
-const LOCALES = ['en', 'ru', 'hy'] as const
+/** The locales the portal ships; plugins/i18n.ts loads every one of them. */
+const LOCALES = ['en', 'ru', 'hy', 'fr'] as const
 
 /**
  * Reads one locale's nova module.

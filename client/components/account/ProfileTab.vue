@@ -113,7 +113,8 @@ const LANGUAGE_LABEL_KEYS: Record<AppLocale, string> = {
   [AppLocale.En]: 'client.profile.langEnglish',
   [AppLocale.Ru]: 'client.profile.langRussian',
   [AppLocale.Hy]: 'client.profile.langArmenian',
-  [AppLocale.De]: 'client.profile.langGerman'
+  [AppLocale.De]: 'client.profile.langGerman',
+  [AppLocale.Fr]: 'client.profile.langFrench'
 }
 
 /**

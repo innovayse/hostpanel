@@ -1,0 +1,59 @@
+{
+  "refundPolicy": {
+    "badge": "Transparence financière",
+    "title": "Remboursement et annulation",
+    "subtitle": "Des règles claires pour les annulations de services et les demandes de remboursement des services d'hébergement, de domaines et de serveurs de {site}.",
+    "lastUpdated": "Dernière mise à jour",
+    "sections": {
+      "general": {
+        "title": "Principes généraux",
+        "content": {
+          "0": "Chez {site}, nous nous efforçons de garantir votre entière satisfaction. Toutefois, en raison de la nature numérique des services d'hébergement et de domaines, des règles de remboursement spécifiques s'appliquent selon les catégories de services."
+        }
+      },
+      "subscriptions": {
+        "title": "Abonnements",
+        "content": {
+          "0": "Pour les abonnements récurrents d'hébergement et de services :",
+          "1": "Les abonnements mensuels peuvent être annulés à tout moment. Les mois partiels déjà facturés ne sont pas remboursés. Après l'annulation, l'accès reste actif jusqu'à la fin du cycle de facturation en cours.",
+          "2": "Abonnements annuels : les demandes de remboursement sont examinées selon les conditions de remboursement en vigueur au moment de l'achat, au cas par cas et à notre discrétion."
+        }
+      },
+      "domains": {
+        "title": "Domaines et certificats",
+        "content": {
+          "0": "Pour les enregistrements et transferts de domaines et les certificats SSL :",
+          "1": "Frais d'enregistrement et de renouvellement : les frais de domaine sont reversés au registre et ne sont pas remboursables une fois le domaine enregistré ou renouvelé.",
+          "2": "Transferts : les frais de transfert ne sont pas remboursables une fois le transfert engagé auprès de l'ancien bureau d'enregistrement.",
+          "3": "Certificats : les frais des certificats SSL ne sont pas remboursables une fois le certificat émis."
+        }
+      },
+      "hosting": {
+        "title": "Services d'hébergement",
+        "content": {
+          "0": "Les services d'hébergement de {site} pour les nouveaux comptes suivent les conditions de remboursement publiées au moment de l'achat. Les frais d'enregistrement de domaine sont exclus, car ils ne sont pas remboursables selon les usages du secteur.",
+          "1": "Les frais de renouvellement des services d'hébergement ne sont pas remboursables une fois le nouveau cycle de facturation commencé."
+        }
+      },
+      "servers": {
+        "title": "Serveurs",
+        "content": {
+          "0": "Les abonnements VPS et serveurs dédiés suivent les mêmes règles d'annulation mensuelles et annuelles que les autres abonnements ; la durée non utilisée d'un cycle de facturation déjà commencé n'est pas remboursée.",
+          "1": "Les frais des adresses IP supplémentaires, des licences et des autres options ne sont pas remboursables une fois ceux-ci mis en service."
+        }
+      },
+      "process": {
+        "title": "Comment demander un remboursement",
+        "content": {
+          "0": "Pour demander un remboursement ou annuler un service, veuillez ouvrir un ticket de support depuis notre portail client ou écrire à notre service de facturation à l'adresse billing{'@'}yourdomain.com.",
+          "1": "Les demandes sont généralement traitées sous 3 à 5 jours ouvrés. Les remboursements approuvés sont crédités sur le moyen de paiement d'origine utilisé lors de l'achat."
+        }
+      }
+    },
+    "contact": {
+      "title": "Des questions sur la facturation ?",
+      "description": "Notre service financier est là pour répondre à toutes vos questions sur vos factures ou l'état de votre remboursement.",
+      "link": "Contacter la facturation"
+    }
+  }
+}

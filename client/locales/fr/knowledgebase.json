@@ -1,0 +1,23 @@
+{
+  "kb": {
+    "badge": "Centre d'aide",
+    "title": "Base de connaissances",
+    "subtitle": "Parcourez les articles et les guides, ou recherchez des réponses à vos questions.",
+    "searchPlaceholder": "Saisissez une question pour chercher des réponses dans notre base de connaissances",
+    "search": "Rechercher",
+    "categories": "Catégories",
+    "articles": "Articles",
+    "article": "Article",
+    "articlesHeading": "Articles",
+    "noResults": "Aucun article ne correspond à votre recherche.",
+    "empty": "Aucun article disponible.",
+    "backToKb": "Retour à la base de connaissances",
+    "categorySeoTitle": "Articles {category} de la base de connaissances",
+    "categorySeoDescription": "Articles et guides sur {category} : parcourez les réponses de notre base de connaissances.",
+    "views": "vues",
+    "lastUpdated": "Dernière mise à jour",
+    "helpful": "Cet article vous a-t-il été utile ?",
+    "yes": "Oui",
+    "no": "Non"
+  }
+}

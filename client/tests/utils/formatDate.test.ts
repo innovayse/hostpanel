@@ -74,12 +74,13 @@ describe('formatDate', () => {
 
   it('formats in the language the visitor is reading', () => {
     // Not asserting exact punctuation: date-fns may reword a locale between releases. What
-    // must hold is that the three languages differ and that hy is not silently English.
+    // must hold is that the languages differ and that hy and fr are not silently English.
     const en = formatDate(PRODUCTION_NEXT_DUE, 'en')
     const ru = formatDate(PRODUCTION_NEXT_DUE, 'ru')
     const hy = formatDate(PRODUCTION_NEXT_DUE, 'hy')
+    const fr = formatDate(PRODUCTION_NEXT_DUE, 'fr')
 
-    expect(new Set([en, ru, hy]).size).toBe(3)
+    expect(new Set([en, ru, hy, fr]).size).toBe(4)
     expect(ru).toMatch(/[а-яё]/i)
     expect(hy).toMatch(/[԰-֏]/)
   })

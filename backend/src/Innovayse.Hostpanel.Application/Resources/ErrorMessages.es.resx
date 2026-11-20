@@ -1545,4 +1545,10 @@
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>El número máximo de servicios activos debe ser 0 o estar vacío para ilimitado, o un número positivo.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>El agentProfile del manifiesto debe ser uno de los perfiles del agente de claves SSH que define este SDK, escrito exactamente igual.</value>
+  </data>
+  <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
+    <value>Uno de los documentos de vista de este plugin abre una dirección de una respuesta con una forma o en un lugar que este servidor no acepta.</value>
+  </data>
 </root>

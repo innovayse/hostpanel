@@ -597,6 +597,14 @@ read as a string, number or boolean. The body is fixed at the click. A refused c
 is still current. A result card's action in a chat event carries a literal `body` of the same shape; an event with a
 malformed one loses that action.
 
+An action may open an address the route answers with in a new tab: `openUrlFrom` names the field of the JSON reply
+that holds an absolute https URL (for example a one-time sign-in link). The panel opens the blank tab on the click, so the
+browser allows it, reads the field after the call, and sends the tab there only when the address passes the same check as
+a link block (an origin in the page's `externalOrigins`, a `https://*.example.com` pattern admits every subdomain). A
+failed call or a refused address closes the tab and shows the usual error. `openUrlFrom` is a name of 1 to 64 letters,
+digits or underscores, on an action that calls a route and has no `navigate`; anything else is
+`PLUGIN_VIEW_OPEN_URL_INVALID`.
+
 A view that breaks these rules is refused at install and skipped at startup: `PLUGIN_VIEW_ACTION_BODY_INVALID` (a bad
 `bodySource`, or one in the wrong place), `PLUGIN_VIEW_CONDITION_INVALID` (a bad
 condition, a condition route that is not `GET`, `visibleWhen` outside a block), `PLUGIN_VIEW_FOLLOW_UP_INVALID` (a bad

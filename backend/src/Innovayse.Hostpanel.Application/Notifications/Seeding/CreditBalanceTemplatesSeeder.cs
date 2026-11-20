@@ -61,5 +61,27 @@ public static class CreditBalanceTemplatesSeeder
                 "Դիտել իմ մնացորդը",
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Ihr Guthaben beträgt jetzt {{ credit.balance }} {{ credit.currency }} | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihr Guthaben hat sich geändert",
+                [
+                    "Ihr Guthaben hat sich um {{ credit.change }} {{ credit.currency }} geändert. Ihr Guthaben beträgt jetzt <strong>{{ credit.balance }} {{ credit.currency }}</strong>.",
+                    "Sie können es zur Bezahlung Ihrer Rechnungen verwenden.",
+                ],
+                "{{ credit.url }}",
+                "Mein Guthaben ansehen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Su saldo a favor es ahora {{ credit.balance }} {{ credit.currency }} | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su saldo a favor ha cambiado",
+                [
+                    "Su saldo a favor ha cambiado en {{ credit.change }} {{ credit.currency }}. Su saldo es ahora de <strong>{{ credit.balance }} {{ credit.currency }}</strong>.",
+                    "Puede usarlo para pagar sus facturas.",
+                ],
+                "{{ credit.url }}",
+                "Ver mi saldo",
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 }

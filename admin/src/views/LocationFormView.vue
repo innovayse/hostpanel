@@ -16,7 +16,7 @@ import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
 import { blankTranslations, collectTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useLocationsStore } from '@/stores/locations'
 import type { ServerLocation, ServerLocationPayload, ServerLocationTranslation } from '@/types/serverlocation'
 import { AppRoute } from '@/lib/routes'
@@ -102,7 +102,7 @@ const build = (): ServerLocationPayload => ({
 })
 
 /** The language whose fields are on screen. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /** Whether each language has its text written, for the markers on the tabs. */
 const filled = computed(() => filledLocales(form.translations, isFilled))
@@ -147,7 +147,7 @@ const flow = useStorefrontForm<ServerLocation, ServerLocationPayload>({ store, f
       </template>
 
       <template #field-locale>
-        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="location-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="location-form-tab" />
       </template>
 
       <template #field-translations="{ id }">

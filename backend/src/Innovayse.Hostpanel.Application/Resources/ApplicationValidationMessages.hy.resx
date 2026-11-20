@@ -1187,7 +1187,7 @@
     <value>Նշեք առնվազն մեկ թարգմանություն։</value>
   </data>
   <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
-    <value>Թարգմանություն կարելի է նշել միայն աջակցվող լեզվով՝ en, ru կամ hy։</value>
+    <value>Թարգմանություն կարելի է նշել միայն աջակցվող լեզվով՝ en, ru, hy, de կամ es։</value>
   </data>
   <data name="ContentDefaultTranslationRequired" xml:space="preserve">
     <value>Պահանջվում է թարգմանություն լռելյայն լեզվով (en)։</value>

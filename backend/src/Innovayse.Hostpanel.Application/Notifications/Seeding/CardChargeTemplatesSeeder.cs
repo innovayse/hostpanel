@@ -55,6 +55,22 @@ public static class CardChargeTemplatesSeeder
                 "Վճարել հաշիվը",
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Ihre Karte wurde für Rechnung #{{ invoice.id }} abgelehnt | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Wir konnten Ihre Karte nicht belasten",
+                ["Ihre hinterlegte Zahlungsmethode wurde für Rechnung #{{ invoice.id }} ({{ invoice.total }} {{ invoice.currency }}) abgelehnt. Es wurde nichts abgebucht. Bitte öffnen Sie die Rechnung, um sie auf andere Weise zu bezahlen."],
+                "{{ invoice.url }}",
+                "Rechnung bezahlen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Su tarjeta fue rechazada para la factura n.º {{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "No pudimos cobrar a su tarjeta",
+                ["Su método de pago guardado fue rechazado para la factura n.º {{ invoice.id }} ({{ invoice.total }} {{ invoice.currency }}). No se ha realizado ningún cargo. Abra la factura para pagarla de otra forma."],
+                "{{ invoice.url }}",
+                "Pagar factura",
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>The "card charge needs your action" email, one version per language.</summary>
@@ -85,6 +101,22 @@ public static class CardChargeTemplatesSeeder
                 ["Ձեր բանկը խնդրում է հաստատել {{ invoice.total }} {{ invoice.currency }} վճարումը №{{ invoice.id }} հաշվի համար։ Մինչև հաստատումը հաշիվը մնում է չվճարված։"],
                 "{{ action_url }}",
                 "Հաստատել վճարումը",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Zahlung für Rechnung #{{ invoice.id }} bestätigen | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Karte benötigt Ihre Bestätigung",
+                ["Ihre Bank bittet Sie, die Zahlung von {{ invoice.total }} {{ invoice.currency }} für Rechnung #{{ invoice.id }} zu bestätigen. Die Rechnung bleibt unbezahlt, bis Sie dies tun."],
+                "{{ action_url }}",
+                "Zahlung bestätigen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Confirme el pago de la factura n.º {{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su tarjeta necesita su confirmación",
+                ["Su banco le solicita que confirme el pago de {{ invoice.total }} {{ invoice.currency }} de la factura n.º {{ invoice.id }}. La factura seguirá sin pagar hasta que lo haga."],
+                "{{ action_url }}",
+                "Confirmar pago",
                 Note: null,
                 EchoButtonUrl: false)),
         ]);

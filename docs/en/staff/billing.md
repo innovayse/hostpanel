@@ -274,7 +274,7 @@ An issued credit note is never deleted. It can only be voided, and a voided note
 
 - **Void credit note** asks for a reason. For a note given as account credit, the value comes off the client's balance and off the invoice's credited amount, so the invoice can be credited or refunded again. If the client has already spent the credit and the balance is short, the void is refused whole (`CLIENT_CREDIT_INSUFFICIENT`).
 - A note paid out as a gateway refund cannot be voided (`CREDIT_NOTE_REFUND_NOT_VOIDABLE`): the refund cannot be taken back.
-- **Download PDF** prints the note in the client's language (English, Russian or Armenian), with the seller from System Settings. A note over the line limit (`InvoicePdf__MaxLines`) cannot be rendered (`INVOICE_PDF_EXCEEDS_LIMIT`).
+- **Download PDF** prints the note in the client's language (English, Russian, Armenian, German or Spanish), with the seller from System Settings. A note over the line limit (`InvoicePdf__MaxLines`) cannot be rendered (`INVOICE_PDF_EXCEEDS_LIMIT`).
 
 ### Reports
 

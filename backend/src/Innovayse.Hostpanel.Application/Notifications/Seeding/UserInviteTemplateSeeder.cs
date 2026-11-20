@@ -61,6 +61,30 @@ public static class UserInviteTemplateSeeder
                     "Սահմանել գաղտնաբառ",
                     "Հղումը գործում է 7 օր։ Եթե չէիք սպասում այս հրավերին, պարզապես անտեսեք այս նամակը։",
                     EchoButtonUrl: true)),
+                new SeededEmailVersion("Sie wurden zu {{ site.name }} eingeladen", new SeededEmailCopy(
+                    "de",
+                    "Sie wurden eingeladen!",
+                    [
+                        "Guten Tag {{ first_name }},",
+                        $"Sie wurden eingeladen, das Konto von {ClientName} zu verwalten.",
+                        "Klicken Sie auf die Schaltfläche unten, um Ihr Passwort festzulegen und loszulegen:",
+                    ],
+                    "{{ invite_link }}",
+                    "Passwort festlegen",
+                    "Dieser Link ist 7 Tage gültig. Wenn Sie diese Einladung nicht erwartet haben, können Sie diese E-Mail einfach ignorieren.",
+                    EchoButtonUrl: true)),
+                new SeededEmailVersion("Ha sido invitado a {{ site.name }}", new SeededEmailCopy(
+                    "es",
+                    "¡Ha sido invitado!",
+                    [
+                        "Hola, {{ first_name }}:",
+                        $"Ha sido invitado a administrar la cuenta de {ClientName}.",
+                        "Haga clic en el botón de abajo para establecer su contraseña y comenzar:",
+                    ],
+                    "{{ invite_link }}",
+                    "Establecer contraseña",
+                    "Este enlace caduca en 7 días. Si no esperaba esta invitación, puede ignorar este correo electrónico.",
+                    EchoButtonUrl: true)),
             ]), ct);
     }
 }

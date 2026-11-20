@@ -73,6 +73,8 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     [InlineData("en", "Creditnote", "Totalcredited")]
     [InlineData("ru", "Кредит-нота", "Итогокзачёту")]
     [InlineData("hy", "Կրեդիտ-նոտա", "Կրեդիտիընդհանուրգումար")]
+    [InlineData("de", "Gutschrift", "GutgeschriebenerGesamtbetrag")]
+    [InlineData("es", "Notadecrédito", "Totalacreditado")]
     public async Task Render_PrintsTheLabelsInTheLanguage(string language, string title, string totalLabel)
     {
         var text = await TextAsync(Sample(language));
@@ -118,6 +120,8 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     [InlineData("en", "VOIDED")]
     [InlineData("ru", "АННУЛИРОВАНА")]
     [InlineData("hy", "ՉԵՂԱՐԿՎԱԾ")]
+    [InlineData("de", "STORNIERT")]
+    [InlineData("es", "ANULADA")]
     public async Task Render_StampsAVoidedNoteInItsLanguage(string language, string stamp)
     {
         var voided = await TextAsync(Sample(language, CreditNoteStatus.Voided));
@@ -157,6 +161,8 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void LabelSets_HaveNoBlankLabel(string language)
     {
         var labels = CreditNotePdfLabelSets.For(language);

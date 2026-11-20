@@ -5,7 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useSettingsStore } from '@/stores/settings'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { callOf, invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
@@ -112,7 +112,7 @@ describe('settingsStore.saveEmailTemplateVersion', () => {
   it('adds a version the template does not have yet and refreshes', async () => {
     const fetchMock = stubFetch(json(7), json([]))
 
-    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', MessageLanguage.Hy, null, content)).toBe(true)
+    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', ContentLanguage.Hy, null, content)).toBe(true)
     expect(fetchMock.mock.calls[0]![0]).toBe('/api/admin/email-templates')
     expect((fetchMock.mock.calls[0]![1] as RequestInit).method).toBe('POST')
   })
@@ -120,7 +120,7 @@ describe('settingsStore.saveEmailTemplateVersion', () => {
   it('rewrites a stored version by its id', async () => {
     const fetchMock = stubFetch(new Response(null, { status: 204 }), json([]))
 
-    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', MessageLanguage.Ru, 4, content)).toBe(true)
+    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', ContentLanguage.Ru, 4, content)).toBe(true)
     expect(fetchMock.mock.calls[0]![0]).toBe('/api/admin/email-templates/4')
   })
 
@@ -128,7 +128,7 @@ describe('settingsStore.saveEmailTemplateVersion', () => {
     stubFetch(problem('This template already has a version in that language.', 409))
     const store = useSettingsStore()
 
-    expect(await store.saveEmailTemplateVersion('welcome', MessageLanguage.Ru, null, content)).toBe(false)
+    expect(await store.saveEmailTemplateVersion('welcome', ContentLanguage.Ru, null, content)).toBe(false)
     expect(store.actionError).toBe('This template already has a version in that language.')
   })
 })

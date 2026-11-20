@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- German and Spanish as API and content languages (#282, #283, #284, the API and admin content side of the three). The API answers in German and Spanish: error and validation messages, the seeded email templates (now five language versions each), the credit note PDF labels and the demo content. A client or a user can be given German or Spanish as their language, and the admin panel keeps slides, FAQ, locations, partners, projects, testimonials, knowledge base articles, the storefront texts and email templates in German and Spanish next to English, Russian and Armenian. The admin interface itself and the client portal pages are not translated by this entry. Machine translations wait for a native review.
+
 ## [0.7.2] - 2026-11-20
 
 ### Removed

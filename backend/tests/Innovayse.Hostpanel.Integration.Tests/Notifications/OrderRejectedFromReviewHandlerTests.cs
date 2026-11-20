@@ -48,6 +48,6 @@ public sealed class OrderRejectedFromReviewHandlerTests(IntegrationTestFactory f
             .Where(t => t.Slug == OrderRejectedTemplatesSeeder.RejectedSlug)
             .Select(t => t.Language)
             .ToListAsync();
-        languages.Should().BeEquivalentTo(["en", "ru", "hy"]);
+        languages.Should().BeEquivalentTo(["en", "ru", "hy", "de", "es"]);
     }
 }

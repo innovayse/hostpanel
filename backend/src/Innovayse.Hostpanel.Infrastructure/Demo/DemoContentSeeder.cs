@@ -7,17 +7,17 @@ using Microsoft.EntityFrameworkCore;
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 
 /// <summary>
-/// Seeds the storefront and client-area content: homepage slides with English, Russian and Armenian text,
+/// Seeds the storefront and client-area content: homepage slides with English, Russian, Armenian, German and Spanish text,
 /// and the downloads library with its categories. Everything is built through the entities' factories and
 /// behaviour methods, added only when its table is empty.
 /// </summary>
 internal sealed class DemoContentSeeder
 {
-    /// <summary>The call-to-action text per locale, in the order en, ru, hy.</summary>
-    private static readonly string[] CallToAction = ["Get Started", "Начать", "Սկսել"];
+    /// <summary>The call-to-action text per locale, in the order en, ru, hy, de, es.</summary>
+    private static readonly string[] CallToAction = ["Get Started", "Начать", "Սկսել", "Jetzt starten", "Comenzar"];
 
     /// <summary>The locales every slide is translated into, in the order the tables below use.</summary>
-    private static readonly string[] Locales = ["en", "ru", "hy"];
+    private static readonly string[] Locales = ["en", "ru", "hy", "de", "es"];
 
     /// <summary>The storefront folder the bundled slide covers are served from.</summary>
     private const string SlideImageFolder = "/demo/slides/";
@@ -75,42 +75,56 @@ internal sealed class DemoContentSeeder
                 ("Web Hosting", "Fast and reliable hosting", "Launch your website on high-performance servers with free SSL and daily backups.", ["Free SSL certificate", "99.9% uptime", "Daily backups", "24/7 support"]),
                 ("Веб-хостинг", "Быстрый и надёжный хостинг", "Разместите сайт на производительных серверах с бесплатным SSL и ежедневными резервными копиями.", ["Бесплатный SSL", "99,9% аптайм", "Ежедневные копии", "Поддержка 24/7"]),
                 ("Վեբ հոսթինգ", "Արագ և հուսալի հոսթինգ", "Տեղադրեք ձեր կայքը բարձր արտադրողականությամբ սերվերների վրա՝ անվճար SSL-ով և ամենօրյա պահուստավորմամբ։", ["Անվճար SSL", "99,9% աշխատանք", "Ամենօրյա պահուստ", "Աջակցություն 24/7"]),
+                ("Webhosting", "Schnelles und zuverlässiges Hosting", "Starten Sie Ihre Website auf Hochleistungsservern mit kostenlosem SSL und täglichen Backups.", ["Kostenloses SSL-Zertifikat", "99,9 % Verfügbarkeit", "Tägliche Backups", "Support rund um die Uhr"]),
+                ("Alojamiento web", "Hosting rápido y fiable", "Lance su sitio web en servidores de alto rendimiento con SSL gratuito y copias de seguridad diarias.", ["Certificado SSL gratuito", "99,9 % de disponibilidad", "Copias de seguridad diarias", "Soporte 24/7"]),
             ]),
             ("earth", "#3b82f6", SlideImageUrl("domains"), "/domains", true, SlideAudience.All, false,
             [
                 ("Domain Registration", "Find and register your domain", "Search and register your domain name at competitive prices with instant activation.", ["Free DNS management", "WHOIS privacy", "Auto-renewal"]),
                 ("Регистрация доменов", "Найдите и зарегистрируйте домен", "Ищите и регистрируйте домен по конкурентным ценам с мгновенной активацией.", ["Бесплатное управление DNS", "Скрытие данных WHOIS", "Автопродление"]),
                 ("Դոմեյնների գրանցում", "Գտեք և գրանցեք ձեր դոմեյնը", "Որոնեք և գրանցեք ձեր դոմեյնը մրցունակ գներով՝ անմիջական ակտիվացմամբ։", ["Անվճար DNS կառավարում", "WHOIS գաղտնիություն", "Ավտոմատ երկարաձգում"]),
+                ("Domain-Registrierung", "Finden und registrieren Sie Ihre Domain", "Suchen und registrieren Sie Ihren Domainnamen zu attraktiven Preisen mit sofortiger Aktivierung.", ["Kostenlose DNS-Verwaltung", "WHOIS-Datenschutz", "Automatische Verlängerung"]),
+                ("Registro de dominios", "Encuentre y registre su dominio", "Busque y registre su nombre de dominio a precios competitivos con activación inmediata.", ["Gestión DNS gratuita", "Privacidad WHOIS", "Renovación automática"]),
             ]),
             ("server", "#6366f1", SlideImageUrl("cloud-vps"), "/products/cloud-vps", true, SlideAudience.All, false,
             [
                 ("Cloud VPS", "Full control, instant setup", "Isolated virtual servers with root access and NVMe storage, ready in minutes.", ["Root access", "NVMe storage", "Instant setup", "Snapshots"]),
                 ("Облачный VPS", "Полный контроль, мгновенный запуск", "Изолированные виртуальные серверы с root-доступом и NVMe-накопителями, готовые за минуты.", ["Root-доступ", "NVMe-диски", "Мгновенный запуск", "Снимки"]),
                 ("Ամպային VPS", "Լիարժեք վերահսկողություն", "Մեկուսացված վիրտուալ սերվերներ root հասանելիությամբ և NVMe կրիչներով՝ պատրաստ րոպեների ընթացքում։", ["Root հասանելիություն", "NVMe կրիչ", "Արագ գործարկում", "Պատկերներ"]),
+                ("Cloud-VPS", "Volle Kontrolle, sofort startklar", "Isolierte virtuelle Server mit Root-Zugriff und NVMe-Speicher, in wenigen Minuten bereit.", ["Root-Zugriff", "NVMe-Speicher", "Sofortige Bereitstellung", "Snapshots"]),
+                ("VPS en la nube", "Control total, puesta en marcha inmediata", "Servidores virtuales aislados con acceso root y almacenamiento NVMe, listos en minutos.", ["Acceso root", "Almacenamiento NVMe", "Puesta en marcha inmediata", "Instantáneas"]),
             ]),
             ("shield-check", "#10b981", SlideImageUrl("ssl"), "/products/ssl-certificates", true, SlideAudience.Guest, false,
             [
                 ("SSL Certificates", "Protect your site", "Certificates that encrypt the connection and build trust with your visitors.", ["Domain and organisation validation", "Wildcard option", "Warranty included"]),
                 ("SSL-сертификаты", "Защитите свой сайт", "Сертификаты, которые шифруют соединение и повышают доверие посетителей.", ["Проверка домена и организации", "Wildcard-вариант", "Гарантия включена"]),
                 ("SSL վկայագրեր", "Պաշտպանեք ձեր կայքը", "Վկայագրեր, որոնք գաղտնագրում են կապը և մեծացնում այցելուների վստահությունը։", ["Դոմեյնի և կազմակերպության ստուգում", "Wildcard տարբերակ", "Երաշխիք"]),
+                ("SSL-Zertifikate", "Schützen Sie Ihre Website", "Zertifikate, die die Verbindung verschlüsseln und das Vertrauen Ihrer Besucher stärken.", ["Domain- und Organisationsvalidierung", "Wildcard-Option", "Garantie inklusive"]),
+                ("Certificados SSL", "Proteja su sitio web", "Certificados que cifran la conexión y generan confianza en sus visitantes.", ["Validación de dominio y de organización", "Opción Wildcard", "Garantía incluida"]),
             ]),
             ("email", "#f59e0b", SlideImageUrl("email"), "/products/business-email", true, SlideAudience.All, true,
             [
                 ("Business Email", "Mail on your own domain", "Professional mailboxes with spam protection and shared calendars.", ["Spam filter", "Shared calendars", "Mobile sync"]),
                 ("Деловая почта", "Почта на вашем домене", "Профессиональные почтовые ящики с защитой от спама и общими календарями.", ["Защита от спама", "Общие календари", "Синхронизация с телефоном"]),
                 ("Բիզնես փոստ", "Փոստ ձեր դոմեյնում", "Մասնագիտական փոստարկղեր սպամի պաշտպանությամբ և ընդհանուր օրացույցներով։", ["Սպամի զտիչ", "Ընդհանուր օրացույցներ", "Համաժամացում հեռախոսի հետ"]),
+                ("Business-E-Mail", "E-Mail auf Ihrer eigenen Domain", "Professionelle Postfächer mit Spam-Schutz und gemeinsamen Kalendern.", ["Spam-Filter", "Gemeinsame Kalender", "Synchronisation mit dem Smartphone"]),
+                ("Correo empresarial", "Correo en su propio dominio", "Buzones profesionales con protección antispam y calendarios compartidos.", ["Filtro antispam", "Calendarios compartidos", "Sincronización con el móvil"]),
             ]),
             ("server-network", "#ef4444", SlideImageUrl("dedicated"), "/products/dedicated-servers", true, SlideAudience.All, false,
             [
                 ("Dedicated Servers", "Maximum power", "Single-tenant hardware for demanding workloads, with no noisy neighbours.", ["Up to 24 cores", "NVMe arrays", "Private network"]),
                 ("Выделенные серверы", "Максимальная мощность", "Отдельное оборудование для требовательных проектов без соседей.", ["До 24 ядер", "Массивы NVMe", "Частная сеть"]),
                 ("Նվիրված սերվերներ", "Առավելագույն հզորություն", "Առանձին սարքավորում պահանջկոտ ծրագրերի համար՝ առանց այլ օգտատերերի հետ կիսելու։", ["Մինչև 24 միջուկ", "NVMe զանգվածներ", "Մասնավոր ցանց"]),
+                ("Dedizierte Server", "Maximale Leistung", "Exklusive Hardware für anspruchsvolle Projekte, ganz ohne störende Nachbarn.", ["Bis zu 24 Kerne", "NVMe-Arrays", "Privates Netzwerk"]),
+                ("Servidores dedicados", "Máxima potencia", "Hardware exclusivo para cargas de trabajo exigentes, sin vecinos que molesten.", ["Hasta 24 núcleos", "Matrices NVMe", "Red privada"]),
             ]),
             ("tag", "#8b5cf6", SlideImageUrl("offers"), "/products", false, SlideAudience.All, false,
             [
                 ("Seasonal Offer", "Switched off", "A seasonal offer that is prepared but not shown to visitors yet.", ["Prepared in advance"]),
                 ("Сезонное предложение", "Отключено", "Сезонное предложение, которое подготовлено, но пока не показывается посетителям.", ["Подготовлено заранее"]),
                 ("Սեզոնային առաջարկ", "Անջատված է", "Սեզոնային առաջարկ, որը պատրաստ է, բայց դեռ չի ցուցադրվում այցելուներին։", ["Նախապես պատրաստված"]),
+                ("Saisonangebot", "Deaktiviert", "Ein Saisonangebot, das vorbereitet ist, aber Besuchern noch nicht angezeigt wird.", ["Im Voraus vorbereitet"]),
+                ("Oferta de temporada", "Desactivada", "Una oferta de temporada que está preparada, pero que aún no se muestra a los visitantes.", ["Preparada con antelación"]),
             ]),
         ];
 

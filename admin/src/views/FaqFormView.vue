@@ -3,7 +3,7 @@
  * Full-page form for creating or editing a storefront FAQ entry.
  *
  * Detects edit mode from the route params, loads the entry when editing, and carries the question
- * and answer in en / ru / hy tabs. Asks before leaving with unsaved edits.
+ * and answer in one tab per content language. Asks before leaving with unsaved edits.
  */
 import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,8 +16,8 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations } from '@/lib/storefrontTranslations'
-import { MessageLanguage } from '@/locales/messages'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useFaqsStore } from '@/stores/faqs'
 import type { Faq, FaqPayload, FaqTranslation } from '@/types/faq'
 import { FaqCategory } from '@/types/storefrontenums'
@@ -54,7 +54,7 @@ const form = reactive({
 })
 
 /** The language whose fields are on screen. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /** Whether each language has its text written, for the markers on the tabs. */
 const filled = computed(() => filledLocales(form.translations, isFilled))
@@ -128,7 +128,7 @@ const flow = useStorefrontForm<Faq, FaqPayload>({ store, form, listPath: AppRout
       </template>
 
       <template #field-locale>
-        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="faq-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="faq-form-tab" />
       </template>
 
       <template #field-translations="{ id }">

@@ -17,7 +17,7 @@ public sealed class PartnerTranslation : BaseEntity
     /// <summary>Gets the FK to the parent <see cref="Partner"/>.</summary>
     public int PartnerId { get; private set; }
 
-    /// <summary>Gets the BCP-47 locale code (e.g. "en", "ru", "hy").</summary>
+    /// <summary>Gets the BCP-47 locale code (e.g. "en", "ru", "hy", "de", "es").</summary>
     public string Locale { get; private set; } = string.Empty;
 
     /// <summary>Gets the partner's name in this locale.</summary>

@@ -32,6 +32,8 @@ public sealed class IntegrationFieldMessagesTests
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void EveryFieldSentence_HasAValueInEachLanguage(string locale)
     {
         var manager = new ResourceManager(typeof(ApplicationValidationMessages));
@@ -56,6 +58,8 @@ public sealed class IntegrationFieldMessagesTests
     [InlineData("en")]
     [InlineData("ru")]
     [InlineData("hy")]
+    [InlineData("de")]
+    [InlineData("es")]
     public void FieldSentences_KeepTheirPlaceholders(string locale)
     {
         var manager = new ResourceManager(typeof(ApplicationValidationMessages));

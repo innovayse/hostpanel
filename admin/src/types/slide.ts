@@ -5,7 +5,7 @@
 
 /** A single slide translation for a specific locale. */
 export interface SlideTranslation {
-  /** BCP-47 locale code (e.g. "en", "ru", "hy"). */
+  /** BCP-47 locale code (e.g. "en", "ru", "hy", "de", "es"). */
   locale: string
   /** Slide headline. */
   title: string

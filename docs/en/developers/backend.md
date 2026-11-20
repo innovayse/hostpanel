@@ -63,7 +63,7 @@ Adapters implement ports and live in `Infrastructure/<Capability>/`. They are re
 Error codes are string constants defined in `HostpanelErrorCodes.cs` (feature-specific) and `SharedErrorCodes.cs` (cross-cutting).
 
 Each code needs three things:
-1. An English sentence in `ErrorMessages.resx` (with `ru` and `hy` variants in sibling files).
+1. An English sentence in `ErrorMessages.resx` (with `ru`, `hy`, `de` and `es` variants in sibling files).
 2. An HTTP status in `StatusMapping.cs`.
 3. Nothing else. `ResourceCoverageTests` fails the build when a code has no sentence.
 

@@ -14,7 +14,7 @@ import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { dropFieldError, runAction } from '@/lib/runAction'
 import type { ActionResult } from '@/lib/runAction'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
-import type { MessageLanguage } from '@/locales/messages'
+import type { ContentLanguage } from '@/locales/contentLanguage'
 import type { CreateProductPayload, Product, ProductGroup, ProductListFilters, UpdateProductPayload } from '@/types/product'
 import { ProductErrorCode } from '@/types/productenums'
 import type { Setting, SettingSave } from '@/types/setting'
@@ -157,7 +157,7 @@ export const useSettingsStore = defineStore('settings', () => {
    */
   const saveEmailTemplateVersion = async (
     slug: string,
-    language: MessageLanguage,
+    language: ContentLanguage,
     existingId: number | null,
     content: EmailTemplateContent,
   ): Promise<boolean> => {

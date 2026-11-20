@@ -38,12 +38,12 @@ import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { Icon } from '@/lib/icons'
 import { nextRowKey } from '@/lib/rowKey'
 import { enumValueOf } from '@/lib/enumValue'
-import { filledLocales } from '@/lib/storefrontTranslations'
+import { blankTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { useSettingsStore } from '@/stores/settings'
 import { useSlidesStore } from '@/stores/slides'
 import type { CreateSlidePayload, SlideTranslation, UpdateSlidePayload } from '@/types/slide'
 import { SlideAudience } from '@/types/slideaudience'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { AppRoute } from '@/lib/routes'
 import { withoutFields } from '@/lib/formSchema'
 import schema, { SLIDE_LEARN_MORE_FIELD } from '@/views/SlideFormView.schema'
@@ -166,7 +166,7 @@ const visibleFrom = ref<Date | null>(null)
 const visibleUntil = ref<Date | null>(null)
 
 /** Currently active translation tab locale. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /**
  * Creates a blank translation form object.
@@ -182,16 +182,8 @@ const createEmptyTranslation = (): TranslationForm => ({
   ctaUrl: '',
 })
 
-/**
- * Reactive translations keyed by locale code. Written out per locale rather than built from the
- * enum: `Object.fromEntries` produces a string index signature, which cannot prove every locale is
- * present, so adding a locale to the enum fails to compile here until its tab is initialised too.
- */
-const translations = reactive<Record<MessageLanguage, TranslationForm>>({
-  [MessageLanguage.En]: createEmptyTranslation(),
-  [MessageLanguage.Ru]: createEmptyTranslation(),
-  [MessageLanguage.Hy]: createEmptyTranslation(),
-})
+/** Reactive translations keyed by locale code, one blank form per content language. */
+const translations = reactive<Record<ContentLanguage, TranslationForm>>(blankTranslations(createEmptyTranslation))
 
 /** Whether a linked product is selected. */
 const hasLinkedProduct = computed<boolean>(() => !!productId.value)
@@ -263,11 +255,11 @@ const loadSlide = async (): Promise<void> => {
   visibleFrom.value = slide.visibleFrom ? new Date(slide.visibleFrom) : null
   visibleUntil.value = slide.visibleUntil ? new Date(slide.visibleUntil) : null
 
-  for (const locale of Object.values(MessageLanguage)) {
+  for (const locale of Object.values(ContentLanguage)) {
     translations[locale] = createEmptyTranslation()
   }
   for (const stored of slide.translations) {
-    const locale = enumValueOf(MessageLanguage, stored.locale)
+    const locale = enumValueOf(ContentLanguage, stored.locale)
     if (locale !== null) {
       translations[locale] = {
         title: stored.title,
@@ -296,7 +288,7 @@ onMounted(async () => {
  *
  * @param locale - The locale to add the feature to.
  */
-const addFeature = (locale: MessageLanguage): void => {
+const addFeature = (locale: ContentLanguage): void => {
   translations[locale].features.push({ key: nextRowKey(), text: '' })
 }
 
@@ -306,7 +298,7 @@ const addFeature = (locale: MessageLanguage): void => {
  * @param locale - The locale to remove the feature from.
  * @param index - The index of the feature to remove.
  */
-const removeFeature = (locale: MessageLanguage, index: number): void => {
+const removeFeature = (locale: ContentLanguage, index: number): void => {
   translations[locale].features.splice(index, 1)
 }
 
@@ -328,7 +320,7 @@ const filled = computed(() => filledLocales(translations, isFilled))
  */
 const collectTranslations = (): SlideTranslation[] => {
   const collected: SlideTranslation[] = []
-  for (const locale of Object.values(MessageLanguage)) {
+  for (const locale of Object.values(ContentLanguage)) {
     const form = translations[locale]
     if (isFilled(form)) {
       const features = form.features.map((f) => f.text).filter((text) => text.trim())
@@ -520,7 +512,7 @@ const handleCancel = (): void => {
         </template>
 
         <template #field-locales>
-          <UiLocalizedField v-model="activeLocale" :filled="filled" testid="slide-form-tab" />
+          <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="slide-form-tab" />
         </template>
 
         <template #field-title="{ id }">

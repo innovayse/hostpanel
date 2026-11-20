@@ -1,7 +1,7 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="L extends ContentLanguage">
 /**
  * One value that is written per language: a tab strip with a tab for every shipped language
- * (`STOREFRONT_LOCALES`, the one shared list) and, under it, the control of the language on screen.
+ * (the `locales` prop) and, under it, the control of the language on screen.
  *
  * With a default slot it draws the whole field (caption, strip, the slot, the hint or the active
  * language's refusal) and the slot receives `{ locale, id, invalid, describedby }` to bind on the control.
@@ -14,9 +14,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiField from '@/components/ui/UiField.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
-import { enumValueOf } from '@/lib/enumValue'
-import { STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { UiTabMarker } from '@/utils/ui/tabs'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
@@ -32,10 +30,12 @@ const props = withDefaults(defineProps<{
   required?: boolean
   /** Draws a skeleton instead of the control while the value is still loading. */
   loading?: boolean
+  /** The languages the strip carries a tab for, in tab order: the content languages for a translated record, the three admin languages for a setting kept per language. */
+  locales: readonly [L, ...L[]]
   /** Whether each language holds a value; a language that does not gets the "empty" marker. */
-  filled: Record<MessageLanguage, boolean>
+  filled: Record<L, boolean>
   /** The sentence the server refused each language with; such a tab gets the red marker. */
-  errors?: Partial<Record<MessageLanguage, string>>
+  errors?: Partial<Record<L, string>>
   /** Prefix of the tab test ids: `<testid>-en`, `<testid>-ru`, `<testid>-hy`. */
   testid?: string
 }>(), {
@@ -52,18 +52,38 @@ const props = withDefaults(defineProps<{
   testid: 'localized-field-tab',
 })
 
-/** The language whose control is on screen (two-way bound with `v-model`). */
-const active = defineModel<MessageLanguage>({ default: MessageLanguage.En })
+/** The language whose control is on screen when the parent binds it (two-way, `v-model`); without a binding the first language shows. */
+const selected = defineModel<L>()
+
+/** The language on screen: the bound one, else the first of the strip. */
+const active = computed<L>({
+  /**
+   * Reads the language on screen.
+   *
+   * @returns The bound language, or the first one of the strip.
+   */
+  get: () => selected.value ?? props.locales[0],
+  /**
+   * Switches the language on screen.
+   *
+   * @param value - The language to show.
+   */
+  set: (value) => {
+    selected.value = value
+  },
+})
 
 /** Tab captions by language; written out so each key is a literal the i18n lint can follow. */
-const captions = computed<Record<MessageLanguage, string>>(() => ({
-  [MessageLanguage.En]: t('storefront.locales.en'),
-  [MessageLanguage.Ru]: t('storefront.locales.ru'),
-  [MessageLanguage.Hy]: t('storefront.locales.hy'),
+const captions = computed<Record<ContentLanguage, string>>(() => ({
+  [ContentLanguage.En]: t('storefront.locales.en'),
+  [ContentLanguage.Ru]: t('storefront.locales.ru'),
+  [ContentLanguage.Hy]: t('storefront.locales.hy'),
+  [ContentLanguage.De]: t('storefront.locales.de'),
+  [ContentLanguage.Es]: t('storefront.locales.es'),
 }))
 
 /** One tab per language, with the marker its state calls for (a refusal wins over an empty value). */
-const tabs = computed<UiTabItem[]>(() => STOREFRONT_LOCALES.map((locale) => {
+const tabs = computed<UiTabItem[]>(() => props.locales.map((locale) => {
   const item: UiTabItem = { value: locale, label: captions.value[locale], testid: `${props.testid}-${locale}` }
   if (props.errors[locale]) {
     return { ...item, marker: UiTabMarker.Invalid, markerLabel: t('ui.uiLocalizedField.invalidTab') }
@@ -80,8 +100,8 @@ const tabs = computed<UiTabItem[]>(() => STOREFRONT_LOCALES.map((locale) => {
  * @param value - The tab value the strip reported.
  */
 const select = (value: string): void => {
-  const locale = enumValueOf(MessageLanguage, value)
-  if (locale !== null) {
+  const locale = props.locales.find((candidate) => candidate === value)
+  if (locale !== undefined) {
     active.value = locale
   }
 }
@@ -91,7 +111,7 @@ watch(() => props.errors, (errors) => {
   if (errors[active.value]) {
     return
   }
-  const refused = STOREFRONT_LOCALES.find((locale) => errors[locale])
+  const refused = props.locales.find((locale) => errors[locale])
   if (refused !== undefined) {
     active.value = refused
   }

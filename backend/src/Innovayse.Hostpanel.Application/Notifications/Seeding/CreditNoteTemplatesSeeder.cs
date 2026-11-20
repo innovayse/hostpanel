@@ -61,5 +61,27 @@ public static class CreditNoteTemplatesSeeder
                 "Դիտել իմ կրեդիտ-նոտաները",
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Gutschrift {{ credit_note.number }} | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Es wurde eine Gutschrift ausgestellt",
+                [
+                    "Wir haben die Gutschrift <strong>{{ credit_note.number }}</strong> über <strong>{{ credit_note.total }} {{ credit_note.currency }}</strong> zu Rechnung #{{ credit_note.invoice_id }} ausgestellt.",
+                    "Sie können sie in Ihrem Kundenbereich ansehen und herunterladen.",
+                ],
+                "{{ credit_note.url }}",
+                "Meine Gutschriften ansehen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Nota de crédito {{ credit_note.number }} | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Se emitió una nota de crédito",
+                [
+                    "Hemos emitido la nota de crédito <strong>{{ credit_note.number }}</strong> por <strong>{{ credit_note.total }} {{ credit_note.currency }}</strong> correspondiente a la factura n.º {{ credit_note.invoice_id }}.",
+                    "Puede verla y descargarla desde su área de cliente.",
+                ],
+                "{{ credit_note.url }}",
+                "Ver mis notas de crédito",
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 }

@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<{
   /** Draws a skeleton instead of the control while the value is still loading. */
   loading?: boolean
   /** The languages the strip carries a tab for, in tab order: the content languages for a translated record, the three admin languages for a setting kept per language. */
-  locales: readonly L[]
+  locales: readonly [L, ...L[]]
   /** Whether each language holds a value; a language that does not gets the "empty" marker. */
   filled: Record<L, boolean>
   /** The sentence the server refused each language with; such a tab gets the red marker. */
@@ -62,7 +62,7 @@ const active = computed<L>({
    *
    * @returns The bound language, or the first one of the strip.
    */
-  get: () => selected.value ?? props.locales[0] as L,
+  get: () => selected.value ?? props.locales[0],
   /**
    * Switches the language on screen.
    *

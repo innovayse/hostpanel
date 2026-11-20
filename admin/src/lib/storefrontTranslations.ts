@@ -6,8 +6,11 @@
 import { ContentLanguage } from '@/locales/contentLanguage'
 import type { StorefrontTranslations } from '@/types/storefront'
 
-/** Every locale the forms carry a tab for, in tab order: every content language. */
-export const STOREFRONT_LOCALES: ContentLanguage[] = Object.values(ContentLanguage)
+/** Every locale the forms carry a tab for, in tab order: every content language, English first. */
+export const STOREFRONT_LOCALES: readonly [ContentLanguage, ...ContentLanguage[]] = [
+  ContentLanguage.En,
+  ...Object.values(ContentLanguage).filter((locale) => locale !== ContentLanguage.En),
+]
 
 /**
  * Makes one value per locale.

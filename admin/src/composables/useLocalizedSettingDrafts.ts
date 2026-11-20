@@ -12,7 +12,10 @@ import { MessageLanguage } from '@/locales/messages'
 import type { Setting } from '@/types/setting'
 
 /** The languages a setting kept per language carries a tab for: the admin languages, the ones with a `.ru`/`.hy` key. */
-export const SETTING_LOCALES: MessageLanguage[] = Object.values(MessageLanguage)
+export const SETTING_LOCALES: readonly [MessageLanguage, ...MessageLanguage[]] = [
+  MessageLanguage.En,
+  ...Object.values(MessageLanguage).filter((locale) => locale !== MessageLanguage.En),
+]
 
 /** What {@link useLocalizedSettingDrafts} hands the card. */
 export interface LocalizedSettingDrafts {

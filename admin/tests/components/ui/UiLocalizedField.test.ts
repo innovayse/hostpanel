@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
+import { STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { ContentLanguage } from '@/locales/contentLanguage'
 import { MessageLanguage } from '@/locales/messages'
 import { mountWithApp } from '../../helpers/mount'
@@ -13,7 +14,7 @@ import { mountWithApp } from '../../helpers/mount'
 const allFilled = { [ContentLanguage.En]: true, [ContentLanguage.Ru]: true, [ContentLanguage.Hy]: true, [ContentLanguage.De]: true, [ContentLanguage.Es]: true }
 
 /** Props every mount starts from. */
-const base = { locales: Object.values(ContentLanguage), filled: allFilled, testid: 'demo-tab' }
+const base = { locales: STOREFRONT_LOCALES, filled: allFilled, testid: 'demo-tab' }
 
 /**
  * Mounts the field with a slot that prints the language on screen.

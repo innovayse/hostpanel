@@ -380,4 +380,52 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
         plugin.CreatePaymentCallCount.Should().Be(0);
     }
+
+    /// <summary>The plugin is handed the client's own sign-in address and language, for gateways that refuse a payment without them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StartPassesThePayersEmailAndLanguageToThePlugin()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-payer");
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
+        var update = await admin.PutAsJsonAsync($"/api/admin/users/{signedIn.UserId}", new
+        {
+            firstName = "Billing",
+            lastName = "gw-payer",
+            email = signedIn.Email,
+            language = "ru",
+        });
+        update.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, signedIn.ClientId, 10m);
+
+        var response = await StartAsync(signedIn.Client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.LastCreatePaymentInstruction!.PayerEmail.Should().Be(signedIn.Email);
+        plugin.LastCreatePaymentInstruction.Language.Should().Be("ru");
+    }
+
+    /// <summary>A client who chose no language still starts the payment: the plugin gets the address and a null language.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StartWithoutAChosenLanguageStillRegistersThePayment()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-payer-nolang");
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, signedIn.ClientId, 10m);
+
+        var response = await StartAsync(signedIn.Client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.LastCreatePaymentInstruction!.PayerEmail.Should().Be(signedIn.Email);
+        plugin.LastCreatePaymentInstruction.Language.Should().BeNull();
+    }
 }

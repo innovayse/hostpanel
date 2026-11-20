@@ -1,0 +1,17 @@
+{
+  "announcements": {
+    "badge": "Neuigkeiten & Updates",
+    "title": "Ankündigungen",
+    "subtitle": "Bleiben Sie auf dem Laufenden über aktuelle Neuigkeiten, Updates und Sonderangebote.",
+    "allMonths": "Alle",
+    "filterLabel": "Nach Monat filtern",
+    "readMore": "Weiterlesen",
+    "empty": "Derzeit gibt es keine Ankündigungen.",
+    "signInRequired": "Melden Sie sich an, um Ankündigungen zu lesen",
+    "signInRequiredDesc": "Ankündigungen werden angemeldeten Kunden angezeigt.",
+    "signIn": "Anmelden",
+    "errorDesc": "Bitte versuchen Sie es später erneut.",
+    "backToList": "Zurück zu den Ankündigungen",
+    "published": "Veröffentlicht"
+  }
+}

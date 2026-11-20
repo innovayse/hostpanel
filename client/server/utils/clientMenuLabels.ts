@@ -37,6 +37,13 @@ export const CLIENT_MENU_MESSAGES: Readonly<Record<AppLocale, ClientMenuMessages
     [ClientMenuIcon.Invoices]: 'Հաշիվ-ապրանքագրեր',
     [ClientMenuIcon.Support]: 'Աջակցություն'
   },
+  [AppLocale.De]: {
+    [ClientMenuIcon.Dashboard]: 'Dashboard',
+    [ClientMenuIcon.Services]: 'Meine Services',
+    [ClientMenuIcon.Domains]: 'Meine Domains',
+    [ClientMenuIcon.Invoices]: 'Rechnungen',
+    [ClientMenuIcon.Support]: 'Support'
+  },
   [AppLocale.Es]: {
     [ClientMenuIcon.Dashboard]: 'Panel',
     [ClientMenuIcon.Services]: 'Mis servicios',

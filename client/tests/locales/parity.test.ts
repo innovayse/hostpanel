@@ -69,7 +69,7 @@ const LITERAL_AT = "{'@'}"
 
 /**
  * Module files a language does not translate yet, which fall back to English at runtime (`fallbackLocale`).
- * The long legal texts are left out of the Spanish translation until a person who knows the law of the
+ * The long legal texts are left out of the German translation until a person who knows the law of the
  * operator's country has written them; a machine translation of a privacy policy would mislead. The list is
  * `locales/untranslated.json`, which `scripts/lint-i18n.mjs` reads too.
  */

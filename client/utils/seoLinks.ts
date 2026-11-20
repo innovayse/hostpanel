@@ -38,13 +38,13 @@ export type SeoLink =
     href: string
   }
 
-/** A leading `/<language>` segment, spelled out from every portal language. */
+/** Matches a leading language prefix, derived from the languages the portal publishes. */
 const LOCALE_PREFIX = new RegExp(`^/(${APP_LOCALES.join('|')})`)
 
 /**
  * Removes a leading language prefix from a path.
  *
- * @param path - A route path, possibly starting with a language prefix such as `/ru`.
+ * @param path - A route path, possibly starting with `/ru`, `/hy`, `/de` or `/es`.
  * @returns The path as it is in the default language.
  */
 export const stripLocalePrefix = (path: string): string => path.replace(LOCALE_PREFIX, '')

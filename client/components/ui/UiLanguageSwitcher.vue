@@ -112,6 +112,7 @@ const FLAGS: Record<AppLocale, string> = {
   [AppLocale.En]: '/flags/us.svg',
   [AppLocale.Ru]: '/flags/ru.svg',
   [AppLocale.Hy]: '/flags/am.svg',
+  [AppLocale.De]: '/flags/de.svg',
   [AppLocale.Es]: '/flags/es.svg',
 }
 
@@ -164,7 +165,7 @@ const menuClasses = computed(() => [
  * @param code Locale code.
  * @returns Path of the flag SVG.
  */
-const flagOf = (code: string): string => (FLAGS as Partial<Record<string, string>>)[code] ?? '/flags/un.svg'
+const flagOf = (code: string): string => FLAGS[code as AppLocale] ?? '/flags/un.svg'
 
 /**
  * Switches the portal to another language.

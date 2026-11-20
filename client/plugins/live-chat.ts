@@ -21,12 +21,13 @@ interface I18nLocale {
   locale: Ref<string>
 }
 
-/** English name of each portal language, as recorded on a conversation. */
+/** English name of each portal language, as recorded on the conversation. */
 const LANGUAGE_NAMES: Record<AppLocale, string> = {
   [AppLocale.En]: 'English',
   [AppLocale.Ru]: 'Russian',
   [AppLocale.Hy]: 'Armenian',
-  [AppLocale.Es]: 'Spanish',
+  [AppLocale.De]: 'German',
+  [AppLocale.Es]: 'Spanish'
 }
 
 /**
@@ -35,8 +36,7 @@ const LANGUAGE_NAMES: Record<AppLocale, string> = {
  * @param code Active locale code.
  * @returns The English name of the language; English for any unknown code.
  */
-const languageOf = (code: string): string =>
-  (LANGUAGE_NAMES as Partial<Record<string, string>>)[code] ?? LANGUAGE_NAMES[AppLocale.En]
+const languageOf = (code: string): string => LANGUAGE_NAMES[code as AppLocale] ?? LANGUAGE_NAMES[AppLocale.En]
 
 /**
  * Live-chat widget loader, driven entirely by settings.

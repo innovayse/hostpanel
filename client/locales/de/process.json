@@ -1,0 +1,25 @@
+{
+  "process": {
+    "badge": "So funktioniert es",
+    "title": "Von der Bestellung zur Live-Website in vier Schritten",
+    "description": "Wählen Sie einen Tarif, fügen Sie eine Domain hinzu, und Ihre Website ist noch am selben Tag online.",
+    "steps": {
+      "discovery": {
+        "title": "Tarif wählen",
+        "description": "Vergleichen Sie Shared-, VPS- und Dedicated-Tarife und wählen Sie die Ressourcen, die zu Ihrer Website passen."
+      },
+      "design": {
+        "title": "Domain wählen",
+        "description": "Registrieren Sie eine neue Domain oder verbinden Sie eine bestehende mit Ihrem Hosting-Konto."
+      },
+      "development": {
+        "title": "Website einrichten",
+        "description": "Installieren Sie ein CMS mit einem Klick, laden Sie Ihre Dateien hoch oder lassen Sie Ihre Website kostenlos von uns migrieren."
+      },
+      "launch": {
+        "title": "Live gehen und betreut bleiben",
+        "description": "Ihre Website ist mit SSL und Backups online, und unser Team ist rund um die Uhr für Sie da."
+      }
+    }
+  }
+}

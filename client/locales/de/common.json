@@ -1,0 +1,53 @@
+{
+  "ui": {
+    "selectPlaceholder": "Option auswählen",
+    "noOptions": "Keine Optionen verfügbar",
+    "theme": {
+      "switchDark": "Zum dunklen Modus wechseln",
+      "switchLight": "Zum hellen Modus wechseln"
+    },
+    "pagination": {
+      "showing": "Einträge {from} bis {to} von {total}",
+      "show": "Anzeigen",
+      "entries": "Einträge",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "label": "Seitennavigation"
+    },
+    "search": "Suchen",
+    "close": "Schließen",
+    "loading": "Wird geladen",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen",
+    "clearSearch": "Suche zurücksetzen",
+    "searchButton": "Suchen",
+    "tabs": "Tabs",
+    "digit": "Ziffer {n}",
+    "language": "Sprache",
+    "currency": "Währung",
+    "currencyFixed": "Ihre Währung ist in Ihrem Konto festgelegt und kann hier nicht geändert werden.",
+    "phoneExample": "00 000 000",
+    "phoneCountry": "Landesvorwahl",
+    "searchCountry": "Land oder Vorwahl suchen",
+    "noCountries": "Kein Land gefunden"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "home": "Startseite",
+    "products": "Produkte",
+    "backToProducts": "Zurück zu den Produkten",
+    "goToSlide": "Zu Folie {n} wechseln",
+    "scrollHorizontal": "Zum Entdecken scrollen",
+    "retry": "Erneut versuchen",
+    "breadcrumb": "Brotkrumennavigation"
+  },
+  "fallback": {
+    "unknown": "Unbekannt"
+  },
+  "errors": {
+    "noAnswer": "Der Server ist nicht erreichbar."
+  }
+}

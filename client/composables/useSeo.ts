@@ -66,6 +66,7 @@ export const useSeo = (options: MaybeRefOrGetter<SeoOptions>) => {
     [AppLocale.En]: 'en_US',
     [AppLocale.Ru]: 'ru_RU',
     [AppLocale.Hy]: 'hy_AM',
+    [AppLocale.De]: 'de_DE',
     [AppLocale.Es]: 'es_ES'
   }
 

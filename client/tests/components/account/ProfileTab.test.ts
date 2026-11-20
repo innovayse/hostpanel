@@ -82,13 +82,26 @@ describe('ProfileTab', () => {
     expect(wrapper.text()).toContain('client.profile.langRussian')
   })
 
-  it('names a Spanish profile language with its own label', async () => {
+  it('offers Spanish among the language choices', async () => {
     const wrapper = mountAccount(ProfileTab)
-    useClientStore().user = { ...user, language: 'es' }
+    useClientStore().user = user
     useClientStore().userLoading = false
     await wrapper.vm.$nextTick()
+    await wrapper.find('[data-testid="account-profile-edit"]').trigger('click')
+    await wrapper.find('[data-testid="profile-language"] button').trigger('click')
 
-    expect(wrapper.text()).toContain('client.profile.langSpanish')
+    expect(wrapper.find('[data-testid="profile-language"]').html()).toContain('client.profile.langSpanish')
+  })
+
+  it('offers German among the language choices', async () => {
+    const wrapper = mountAccount(ProfileTab)
+    useClientStore().user = user
+    useClientStore().userLoading = false
+    await wrapper.vm.$nextTick()
+    await wrapper.find('[data-testid="account-profile-edit"]').trigger('click')
+    await wrapper.find('[data-testid="profile-language"] button').trigger('click')
+
+    expect(wrapper.find('[data-testid="profile-language"]').html()).toContain('client.profile.langGerman')
   })
 
   it('switches to the form on edit and back on cancel', async () => {

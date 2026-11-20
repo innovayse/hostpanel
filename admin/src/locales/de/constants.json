@@ -1,0 +1,70 @@
+{
+  "serviceStatusOptions": {
+    "pending": "Ausstehend",
+    "terminated": "Beendet"
+  },
+  "domainStatusOptions": {
+    "pendingRegistration": "Registrierung ausstehend",
+    "pendingTransfer": "Transfer ausstehend",
+    "redemption": "Einlösefrist",
+    "transferred": "Transferiert"
+  },
+  "paymentMethodOptions": {
+    "bankTransfer": "Banküberweisung"
+  },
+  "orderStatusOptions": {
+    "fraud": "Betrug",
+    "incomplete": "Unvollständig",
+    "underReview": "Prüfung ausstehend"
+  },
+  "ticketFilterOptions": {
+    "flagged": "Markiert"
+  },
+  "recurringPeriodOptions": {
+    "weekly": "Wöchentlich",
+    "monthly": "Monatlich",
+    "quarterly": "Vierteljährlich",
+    "annually": "Jährlich"
+  },
+  "orderLineFulfilmentOptions": {
+    "pending": "Noch nicht ausgeführt",
+    "inProgress": "Wird ausgeführt",
+    "fulfilled": "Erfüllt",
+    "failed": "Fehlgeschlagen",
+    "refunded": "Erstattet",
+    "refunding": "Erstattung läuft",
+    "partiallyRefunded": "Teilweise erstattet"
+  },
+  "fraudReasonOptions": {
+    "blockedIp": "IP-Adresse ist gesperrt",
+    "blockedEmailDomain": "E-Mail-Domain ist gesperrt",
+    "blockedCountry": "Land ist gesperrt",
+    "disposableEmail": "Wegwerf-E-Mail-Adresse",
+    "sharedIpAccounts": "Viele Konten von einer IP-Adresse",
+    "orderVelocity": "Zu viele Bestellungen von einer IP-Adresse",
+    "countryMismatch": "Rechnungsland weicht vom IP-Land ab",
+    "providerHighRisk": "Scoring-Dienst stufte das Risiko als hoch ein",
+    "anonymousIp": "Proxy-, VPN- oder Hosting-IP-Adresse"
+  },
+  "fraudDecisionOptions": {
+    "approved": "Genehmigt",
+    "review": "Prüfung ausstehend",
+    "rejected": "Abgelehnt",
+    "manualApproved": "Vom Mitarbeiter genehmigt",
+    "manualRejected": "Vom Mitarbeiter abgelehnt"
+  },
+  "fraudCheckKindOptions": {
+    "registration": "Registrierung",
+    "order": "Bestellung"
+  },
+  "blockListTypeOptions": {
+    "ip": "IP-Adresse",
+    "cidr": "IP-Bereich (CIDR)",
+    "emailDomain": "E-Mail-Domain",
+    "country": "Land"
+  },
+  "emailLogOutcomeOptions": {
+    "delivered": "Zugestellt",
+    "failed": "Nicht zugestellt"
+  }
+}

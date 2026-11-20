@@ -1,0 +1,47 @@
+{
+  "emailVerificationBanner": {
+    "verifyYourEmail": "E-Mail-Adresse bestätigen",
+    "pleaseCheckYourInboxAnd": "Bitte prüfen Sie Ihren Posteingang und klicken Sie auf den Bestätigungslink, um Ihr Admin-Konto zu aktivieren. Das Admin-Panel können Sie erst nutzen, wenn Ihre E-Mail-Adresse bestätigt ist.",
+    "didnTReceiveTheEmail": "Keine E-Mail erhalten? Prüfen Sie Ihren Spam-Ordner.",
+    "resend": "E-Mail erneut senden",
+    "resent": "Bestätigungs-E-Mail gesendet."
+  },
+  "collapseSidebar": "Seitenleiste einklappen",
+  "expandSidebar": "Seitenleiste ausklappen",
+  "userMenu": "Kontomenü",
+  "menu": "Menü",
+  "openMenu": "Menü öffnen",
+  "navigation": "Hauptnavigation",
+  "viewLoadFailed": "Diese Seite konnte nicht geladen werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+  "reload": "Neu laden",
+  "localeLabels": {
+    "en": "English",
+    "hy": "Հայերեն",
+    "ru": "Русский",
+    "de": "Deutsch"
+  },
+  "theme": {
+    "label": "Design",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
+  },
+  "version": {
+    "label": "Hostpanel {version}"
+  },
+  "releaseUpdate": {
+    "title": "Hostpanel {version} verfügbar",
+    "releaseNotes": "Versionshinweise",
+    "copy": "Upgrade-Befehl kopieren",
+    "copied": "Kopiert!"
+  },
+  "newClient": "Neuer Kunde",
+  "breadcrumb": {
+    "label": "Navigationspfad",
+    "hidden": "Ausgeblendete Seiten anzeigen",
+    "new": "Neu",
+    "edit": "Bearbeiten",
+    "details": "Details",
+    "configure": "Konfigurieren"
+  }
+}

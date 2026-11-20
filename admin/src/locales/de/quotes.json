@@ -1,0 +1,5 @@
+{
+  "duplicatedSuccess": "Angebot erfolgreich dupliziert. Neues Angebot #{id} erstellt.",
+  "convertedSuccess": "Angebot erfolgreich in Rechnung #{id} umgewandelt.",
+  "savedSuccess": "Angebot #{id} gespeichert."
+}

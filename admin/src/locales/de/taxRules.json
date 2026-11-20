@@ -1,0 +1,57 @@
+{
+  "title": "Steuerregeln",
+  "description": "Legen Sie den Steuersatz für neue Rechnungen pro Land oder pro Region eines Landes fest",
+  "addRule": "Steuerregel hinzufügen",
+  "empty": "Noch keine Steuerregeln. Fügen Sie eine Regel hinzu, um neue Rechnungen automatisch zu besteuern.",
+  "searchPlaceholder": "Nach Name, Land oder Region suchen",
+  "noMatches": "Keine Steuerregeln entsprechen Ihren Filtern",
+  "clearFilters": "Filter zurücksetzen",
+  "totalCount": "Steuerregeln: {totalCount}",
+  "table": {
+    "name": "Name",
+    "country": "Land",
+    "region": "Region",
+    "rate": "Satz",
+    "enabled": "Status",
+    "actions": "Aktionen"
+  },
+  "wholeCountry": "Ganzes Land",
+  "enabledBadge": "Aktiviert",
+  "disabledBadge": "Deaktiviert",
+  "deleteModal": {
+    "title": "Steuerregel löschen",
+    "message": "Steuerregel {name} löschen? Bereits ausgestellte Rechnungen behalten den Steuersatz, mit dem sie besteuert wurden.",
+    "confirmLabel": "Löschen"
+  },
+  "toasts": {
+    "deleted": "Die Steuerregel wurde gelöscht."
+  },
+  "form": {
+    "addTitle": "Steuerregel hinzufügen",
+    "editTitle": "Steuerregel bearbeiten",
+    "name": {
+      "label": "Name",
+      "placeholder": "z. B. Deutschland MwSt."
+    },
+    "country": {
+      "label": "Land",
+      "placeholder": "Land auswählen"
+    },
+    "region": {
+      "label": "Region",
+      "placeholder": "z. B. Bayern",
+      "hint": "Leer lassen für eine Regel, die das ganze Land abdeckt."
+    },
+    "rate": {
+      "label": "Satz (%)",
+      "placeholder": "z. B. 19"
+    },
+    "enabled": {
+      "label": "Aktiviert",
+      "hint": "Nur aktivierte Regeln werden für neue Rechnungen verwendet."
+    },
+    "cancel": "Abbrechen",
+    "add": "Hinzufügen",
+    "save": "Speichern"
+  }
+}

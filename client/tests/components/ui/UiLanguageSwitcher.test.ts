@@ -37,6 +37,22 @@ describe('LanguageSwitcher', () => {
     expect(trigger.find('img').attributes('src')).toBe('/flags/ru.svg')
   })
 
+  it('shows the Spanish flag for the Spanish locale', () => {
+    vi.stubGlobal('useI18n', () => ({
+      t: (key: string) => key,
+      locale: ref('es'),
+      locales: ref([
+        { code: 'en', name: 'English' },
+        { code: 'es', name: 'Spanish' },
+      ]),
+    }))
+    const wrapper = mountWithKit(LanguageSwitcher)
+
+    const trigger = wrapper.find('[data-testid="language-switcher-trigger"]')
+    expect(trigger.text()).toBe('ES')
+    expect(trigger.find('img').attributes('src')).toBe('/flags/es.svg')
+  })
+
   it('keeps the menu closed until the trigger is clicked', async () => {
     const wrapper = mountWithKit(LanguageSwitcher)
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)

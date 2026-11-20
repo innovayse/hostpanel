@@ -138,6 +138,14 @@ describe('live-chat plugin', () => {
     expect(scripts()[0]!.innerHTML).toContain('tok-ru')
   })
 
+  it('records the Spanish language name on the conversation', async () => {
+    configureChat()
+    locale.value = 'es'
+    await loadPlugin()
+
+    expect(scripts()[0]!.innerHTML).toContain('"Spanish"')
+  })
+
   it('ignores an unsupported provider', async () => {
     configureChat()
     settings[PortalSettingKey.ChatProvider] = 'other'

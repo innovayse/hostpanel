@@ -8,7 +8,7 @@
  * 2. **A calendar date is not a moment.** A renewal date is a day on a bill; a ticket reply is
  *    an instant. {@link formatDate} answers the first, {@link formatDateTime} the second, and
  *    they differ in more than the presence of a clock: see the timezone note below.
- * 3. **The locale is the visitor's, not the server's.** The portal ships en/ru/hy and date-fns
+ * 3. **The locale is the visitor's, not the server's.** The portal ships en/ru/hy/es and date-fns
  *    carries all three, so an Armenian customer reads an Armenian month name.
  *
  * ## Timezone: why the calendar path never touches `Date` arithmetic
@@ -47,10 +47,12 @@ import { format, isValid, parseISO } from 'date-fns'
 // page load on a slow machine. Production tree-shakes either way; this makes the two
 // agree, and states outright which three the portal actually ships.
 import { enUS } from 'date-fns/locale/en-US'
+import { es } from 'date-fns/locale/es'
 import { hy } from 'date-fns/locale/hy'
 import { ru } from 'date-fns/locale/ru'
 import type { Locale } from 'date-fns'
 import type { AppWithI18n } from '~/types/appwithi18n'
+import { AppLocale } from '~/types/applocale'
 
 /**
  * What a date renders as when there is nothing to render.
@@ -66,7 +68,12 @@ export const EMPTY_DATE = '—'
  * the config without a line here, resolves to `enUS` rather than throwing, because a month
  * name in the wrong language is a smaller failure than a blank service page.
  */
-const DATE_LOCALES: Record<string, Locale> = { en: enUS, ru, hy }
+const DATE_LOCALES: Record<AppLocale, Locale> = {
+  [AppLocale.En]: enUS,
+  [AppLocale.Ru]: ru,
+  [AppLocale.Hy]: hy,
+  [AppLocale.Es]: es,
+}
 
 /**
  * Leading `YYYY-MM-DD` of an ISO-8601 value, whether or not a time follows it.
@@ -117,7 +124,7 @@ const resolveLocale = (locale?: string): string => {
  * @returns The date-fns locale, defaulting to `enUS`.
  */
 const dateLocale = (locale?: string): Locale =>
-  DATE_LOCALES[resolveLocale(locale).split('-')[0] ?? 'en'] ?? enUS
+  (DATE_LOCALES as Partial<Record<string, Locale>>)[resolveLocale(locale).split('-')[0] ?? AppLocale.En] ?? enUS
 
 /**
  * Parses a value the API sent into a `Date`, or `null` when it does not denote one.

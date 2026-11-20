@@ -84,6 +84,13 @@ describe('formatDate', () => {
     expect(hy).toMatch(/[԰-֏]/)
   })
 
+  it('renders Spanish month names', () => {
+    const es = formatDate('2026-01-08', 'es')
+
+    expect(es).toContain('ene')
+    expect(es).not.toBe(formatDate('2026-01-08', 'en'))
+  })
+
   it('accepts a regional tag as well as a bare language code', () => {
     expect(formatDate(PRODUCTION_NEXT_DUE, 'hy-AM')).toBe(formatDate(PRODUCTION_NEXT_DUE, 'hy'))
   })

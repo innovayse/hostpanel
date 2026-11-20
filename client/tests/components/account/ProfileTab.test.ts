@@ -82,6 +82,15 @@ describe('ProfileTab', () => {
     expect(wrapper.text()).toContain('client.profile.langRussian')
   })
 
+  it('names a Spanish profile language with its own label', async () => {
+    const wrapper = mountAccount(ProfileTab)
+    useClientStore().user = { ...user, language: 'es' }
+    useClientStore().userLoading = false
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('client.profile.langSpanish')
+  })
+
   it('switches to the form on edit and back on cancel', async () => {
     const wrapper = mountAccount(ProfileTab)
     useClientStore().user = user

@@ -143,6 +143,15 @@ the email and the map address are checked when saved. The address and the hours 
 per language with the `.ru` and `.hy` variants (`portal.contact.address.ru`, `portal.contact.hours.hy`, and so on);
 a language without its own value shows the default one.
 
+**Your own legal texts.** The terms of service, privacy policy, refund policy, acceptable use policy and
+cookie policy pages ship with general wording. To state your own (the seller name, the payment processor,
+your own terms), write it in **Admin → Settings → General → Legal texts**, one text per page and language
+(`portal.legal.terms`, `portal.legal.privacy`, `portal.legal.refund`, `portal.legal.acceptable_use`,
+`portal.legal.cookies`, each with the `.ru` and `.hy` variants). A `## ` line starts a section, a blank line
+starts a paragraph and a `- ` line is a list entry; the text is shown as plain text, never as markup. A
+language left empty shows the English text, and a page with no text at all keeps the built-in wording, so
+nothing changes until you write one. The built-in "last updated" date is not shown above your own text.
+
 The nova template states a hardware or commercial claim only when the operator switches it on
 (`true`; empty or `false` hides it): `portal.features.{backups,storage,caching,cdn,firewall,malware}`
 and `portal.migration.free`. The uptime line in its trust bar prints `portal.stats.uptime`.

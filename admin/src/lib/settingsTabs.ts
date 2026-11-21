@@ -10,6 +10,7 @@ import BrandColorsCard from '@/components/settings/BrandColorsCard.vue'
 import BrandingCard from '@/components/settings/BrandingCard.vue'
 import HomeSectionsCard from '@/components/settings/HomeSectionsCard.vue'
 import HostingDetailsCard from '@/components/settings/HostingDetailsCard.vue'
+import LegalTextsCard from '@/components/settings/LegalTextsCard.vue'
 import PortalAppearanceCard from '@/components/settings/PortalAppearanceCard.vue'
 import SiteIdentityCard from '@/components/settings/SiteIdentityCard.vue'
 import StorefrontContentCard from '@/components/settings/StorefrontContentCard.vue'
@@ -22,7 +23,7 @@ export const DEFAULT_SETTINGS_TAB: SettingsTab = SettingsTab.General
 
 /** The cards of each tab that has cards, in display order, by the tab's address value. */
 const TAB_CARDS: ReadonlyMap<string, readonly Component[]> = new Map<string, readonly Component[]>([
-  [SettingsTab.General, [SiteIdentityCard, StorefrontContentCard, HostingDetailsCard]],
+  [SettingsTab.General, [SiteIdentityCard, StorefrontContentCard, LegalTextsCard, HostingDetailsCard]],
   [SettingsTab.Appearance, [PortalAppearanceCard, HomeSectionsCard, BrandColorsCard, TypographyCard, BrandingCard]],
   [SettingsTab.Integrations, [TrackingChatCard]],
 ])

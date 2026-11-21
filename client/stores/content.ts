@@ -11,6 +11,7 @@
 
 import { defineStore } from 'pinia'
 import { useContentApi } from '~/composables/apis/useContentApi'
+import type { LegalPage } from '~/constants/legalPage'
 import { apiErrorMessage } from '~/lib/errorHandler'
 import type { KbArticle } from '~/types/kbarticle'
 import type { KbArticleSummary } from '~/types/kbarticlesummary'
@@ -46,6 +47,9 @@ export const useContentStore = defineStore('content', () => {
 
   /** Announcements already read in full, keyed by announcement id. */
   const announcementsById = ref<Record<string, PublishedAnnouncement>>({})
+
+  /** The operator's own legal text, by legal page and then by `portal.legal.*` key; a page is absent until {@link loadLegalText}. */
+  const legalTexts = ref<Record<string, Record<string, string>>>({})
 
   /** The latest published announcements for the dashboard card; empty until {@link loadRecentNews}. */
   const recentNews = ref<PublishedAnnouncement[]>([])
@@ -135,6 +139,27 @@ export const useContentStore = defineStore('content', () => {
    * @returns The announcement, or null when it was not read.
    */
   const announcementFor = (id: string): PublishedAnnouncement | null => announcementsById.value[id] ?? null
+
+  /**
+   * Reads the operator's own text of one legal page and keeps it.
+   *
+   * @param page - The legal page.
+   * @returns The page's `portal.legal.*` rows that have a value; empty when the operator wrote none or the read failed, which
+   * leaves the page on its built-in text.
+   */
+  const loadLegalText = async (page: LegalPage): Promise<Record<string, string>> => {
+    const texts = await guarded(() => api.fetchLegalText(page), {} as Record<string, string>)
+    legalTexts.value = { ...legalTexts.value, [page]: texts }
+    return texts
+  }
+
+  /**
+   * Looks up the legal text {@link loadLegalText} already read.
+   *
+   * @param page - The legal page.
+   * @returns The page's rows by `portal.legal.*` key; empty when the page was not read.
+   */
+  const legalTextFor = (page: LegalPage): Record<string, string> => legalTexts.value[page] ?? {}
 
   /**
    * Reads the latest published announcements for the dashboard card.
@@ -262,6 +287,9 @@ export const useContentStore = defineStore('content', () => {
     loadAnnouncements,
     loadAnnouncement,
     announcementFor,
+    legalTexts,
+    loadLegalText,
+    legalTextFor,
     loadRecentNews,
     loadKbCategories,
     loadLandingArticles,

@@ -129,6 +129,7 @@ import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useContactDetails } from '~/composables/useContactDetails'
 import { UiFooterLinkVariant } from '~/utils/ui/enums'
 import {
+  SITE_ACCEPTABLE_USE_PATH,
   SITE_ABOUT_PATH,
   SITE_CONTACT_PATH,
   SITE_COOKIE_POLICY_PATH,
@@ -212,6 +213,7 @@ const columns = computed(() => [
       { label: t('aurora.footer.privacy'), to: localePath(SITE_PRIVACY_PATH) },
       { label: t('aurora.footer.cookies'), to: localePath(SITE_COOKIE_POLICY_PATH) },
       { label: t('aurora.footer.refund'), to: localePath(SITE_REFUND_POLICY_PATH) },
+      { label: t('aurora.footer.acceptableUse'), to: localePath(SITE_ACCEPTABLE_USE_PATH) },
     ],
   },
 ])

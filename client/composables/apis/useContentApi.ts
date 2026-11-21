@@ -9,6 +9,7 @@
  */
 
 import { apiFetch } from '~/composables/useApi'
+import type { LegalPage } from '~/constants/legalPage'
 import type { KbArticle } from '~/types/kbarticle'
 import type { KbArticleSummary } from '~/types/kbarticlesummary'
 import type { KbArticleQuery } from '~/types/kbarticlequery'
@@ -51,6 +52,16 @@ export const useContentApi = () => {
     apiFetch<PublishedAnnouncement>(`/api/portal/public/announcements/${id}`)
 
   /**
+   * Reads the operator's own text of one legal page, in every language it is written in.
+   *
+   * @param page - The legal page.
+   * @returns The page's setting rows that have a value, by their `portal.legal.*` key; empty when the operator wrote none.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchLegalText = (page: LegalPage): Promise<Record<string, string>> =>
+    apiFetch<Record<string, string>>(`/api/portal/public/legal/${page}`)
+
+  /**
    * Reads the knowledgebase categories.
    *
    * @returns The categories.
@@ -83,6 +94,7 @@ export const useContentApi = () => {
     fetchAnnouncements,
     fetchRecentAnnouncements,
     fetchAnnouncement,
+    fetchLegalText,
     fetchKbCategories,
     fetchKbArticles,
     fetchKbArticle

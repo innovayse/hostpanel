@@ -3,7 +3,7 @@
     :badge="t('refundPolicy.badge')"
     :title="t('refundPolicy.title')"
     :subtitle="t('refundPolicy.subtitle', { site: siteName })"
-    :meta="lastUpdatedLine"
+    :meta="isCustom ? undefined : lastUpdatedLine"
     :sections="sections"
     :contact-title="t('refundPolicy.contact.title')"
     :contact-description="t('refundPolicy.contact.description')"
@@ -18,6 +18,8 @@
  * Owns the copy keys and the SEO tags; the layout of the document is `LegalDocument`.
  */
 import { LEGAL_LAST_UPDATED } from '~/constants/legalUpdated'
+import { LegalPage } from '~/constants/legalPage'
+import { useLegalSections } from '~/composables/useLegalSections'
 import type { LegalSection } from '~/types/legalsection'
 
 /** Translates a key in the active language. */
@@ -36,15 +38,18 @@ const SECTION_DEFINITIONS = [
   { id: 'process', icon: 'mdi:help-circle-outline', paragraphs: 2 }
 ]
 
-/** The sections with their copy resolved in the active language. */
-const sections = computed<LegalSection[]>(() => SECTION_DEFINITIONS.map(section => ({
+/** The built-in sections with their copy resolved in the active language. */
+const builtInSections = computed<LegalSection[]>(() => SECTION_DEFINITIONS.map(section => ({
   id: section.id,
   icon: section.icon,
   title: t(`refundPolicy.sections.${section.id}.title`),
   paragraphs: Array.from({ length: section.paragraphs }, (_, index) => t(`refundPolicy.sections.${section.id}.content.${index}`, { site: siteName.value }))
 })))
 
-/** The "last updated" line shown under the title. */
+/** The sections to draw: the operator's own text when it has stated one, otherwise the built-in sections. */
+const { sections, isCustom } = await useLegalSections(LegalPage.Refund, builtInSections)
+
+/** The "last updated" line shown under the title; it dates the built-in text only. */
 const lastUpdatedLine = computed(() => `${t('refundPolicy.lastUpdated')}: ${LEGAL_LAST_UPDATED}`)
 
 useSeoMeta({

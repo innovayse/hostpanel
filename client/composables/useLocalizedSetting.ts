@@ -23,6 +23,19 @@ export interface LocalizedSettingSpec {
 }
 
 /**
+ * Picks the language's own row, when the visitor's language has one.
+ *
+ * The one place that says which languages have a row of their own: English, and any language without a
+ * row, read the default one, so the caller falls back to it when this answers `undefined`.
+ *
+ * @param locale The visitor's language.
+ * @param rows The Russian and Armenian rows of a setting stored once per language.
+ * @returns The row of the visitor's language; `undefined` for a language that reads the default row.
+ */
+export const ownRowFor = <Row>(locale: string, rows: { ru: Row, hy: Row }): Row | undefined =>
+  locale === AppLocale.Ru ? rows.ru : locale === AppLocale.Hy ? rows.hy : undefined
+
+/**
  * Creates the per-language reader.
  *
  * @returns A function that resolves a {@link LocalizedSettingSpec} for the active language.
@@ -38,7 +51,7 @@ export const useLocalizedSetting = () => {
    * @returns The text, trimmed; empty when nothing is set. Reactive when read inside a computed.
    */
   const getLocalized = (spec: LocalizedSettingSpec): string => {
-    const own = locale.value === AppLocale.Ru ? spec.ru : locale.value === AppLocale.Hy ? spec.hy : undefined
+    const own = ownRowFor(locale.value, spec)
     const perLocale = own ? get(own.key, own.envKey) : ''
     return perLocale || get(spec.default.key, spec.default.envKey)
   }

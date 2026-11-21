@@ -1257,7 +1257,7 @@ public static class HostpanelErrorCodes
 
     // Admin: settings
 
-    /// <summary>The id names no configuration setting (404).</summary>
+    /// <summary>The id names no configuration setting, or the public legal text read names no legal page (404).</summary>
     public const string SETTING_NOT_FOUND = "SETTING_NOT_FOUND";
 
     /// <summary>

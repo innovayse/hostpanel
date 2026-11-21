@@ -88,6 +88,17 @@
     },
     "localeFallbackHint": "A language left empty shows the English text."
   },
+  "legalTexts": {
+    "title": "Legal texts",
+    "description": "Your own terms of service, privacy policy, refund policy, acceptable use policy and cookie policy, such as the seller name and payment processor. A page you leave empty keeps the built-in text.",
+    "hint": "A language left empty shows the English text; with no English text the page keeps the built-in text. Start a section with a ## line, separate paragraphs with a blank line and write list entries as - lines. List entries follow the paragraphs of their section.",
+    "placeholder": "e.g. ## Seller details, then the text of the section",
+    "terms": "Terms of service",
+    "privacy": "Privacy policy",
+    "refund": "Refund policy",
+    "acceptableUse": "Acceptable use policy",
+    "cookies": "Cookie policy"
+  },
   "portalAppearance": {
     "title": "Portal appearance",
     "description": "Which template the public storefront renders and which colour mode a visitor starts in. Changes take effect on the next page load.",

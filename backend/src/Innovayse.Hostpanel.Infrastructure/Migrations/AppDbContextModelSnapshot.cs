@@ -4450,8 +4450,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasMaxLength(10719)
-                        .HasColumnType("character varying(10719)");
+                        .HasMaxLength(64051)
+                        .HasColumnType("character varying(64051)");
 
                     b.HasKey("Id");
 

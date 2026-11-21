@@ -760,7 +760,7 @@ deploy:demo:
   script:
     - test -n "$DEPLOY_DIR" || { echo "DEPLOY_DIR must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - test -n "$HEALTH_URL" || { echo "HEALTH_URL must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
-    - test -n "$HOST_VERSION" || { echo "HOST_VERSION is missing: the version:host job did not hand over the release version" >&2; exit 1; }
+    - 'test -n "$HOST_VERSION" || { echo "HOST_VERSION is missing: the version:host job did not hand over the release version" >&2; exit 1; }'
     - test -d "$DEPLOY_DIR/.git" || git init "$DEPLOY_DIR"
     - !reference [.fetch-target-commit, script]
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"

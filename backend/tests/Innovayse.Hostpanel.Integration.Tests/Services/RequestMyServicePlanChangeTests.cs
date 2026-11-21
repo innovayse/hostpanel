@@ -148,7 +148,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     public async Task Upgrade_ToADigitalPlan_RaisesAnInvoiceWhoseLineIsTheNewPlansFulfilmentLine()
     {
         const string metadata = """{"seats":50}""";
-        var sku = $"PRO-{Guid.NewGuid():N}";
+        var sku = $"PRO-{Guid.NewGuid():N}".ToUpperInvariant();
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-digital");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
             factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: sku, toMetadata: metadata, quantity: 2);
@@ -183,7 +183,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     public async Task Upgrade_WithAQuantityThatDoesNotDivideTheAmount_KeepsTheQuantityAndRoundsTheUnitPriceOnly()
     {
         const int quantity = 3;
-        var sku = $"PRO-{Guid.NewGuid():N}";
+        var sku = $"PRO-{Guid.NewGuid():N}".ToUpperInvariant();
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-qty3");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
             factory, clientId, 10m, 17.77m, toType: ProductType.Digital, toSku: sku, quantity: quantity);
@@ -231,7 +231,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     [Fact]
     public async Task Upgrade_ToADigitalPlan_InvoiceNeverLapsesWhenLeftUnpaid()
     {
-        var sku = $"PRO-{Guid.NewGuid():N}";
+        var sku = $"PRO-{Guid.NewGuid():N}".ToUpperInvariant();
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-nolapse");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
             factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: sku);

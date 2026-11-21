@@ -14,7 +14,6 @@ public sealed class UpdateProductGroupValidator : LocalizedValidator<UpdateProdu
     /// <summary>Longest a description may be.</summary>
     private const int DescriptionMaxLength = 500;
 
-
     /// <summary>
     ///     Initializes validator with localization service.
     /// </summary>

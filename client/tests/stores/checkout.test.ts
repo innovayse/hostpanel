@@ -181,7 +181,7 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
     expect(store.methodsLoading).toBe(false)
   })
 
-  it('names the cart's products, so the product groups can narrow the gateways', async () => {
+  it('names the products of the cart, so the product groups can narrow the gateways', async () => {
     table[METHODS_ROUTE] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }] }
     const cart = useCartStore()
     cart.addItem(hosting)

@@ -112,6 +112,7 @@ const handleSubmit = (): void => {
           <UiInput
             :id="id"
             v-model="name"
+            :placeholder="t('settings.productGroups.namePlaceholder')"
             required
             :invalid="invalid"
             :aria-describedby="describedby"
@@ -125,6 +126,7 @@ const handleSubmit = (): void => {
           <UiInput
             :id="id"
             v-model="description"
+            :placeholder="t('settings.productGroups.descriptionPlaceholder')"
             :invalid="invalid"
             :aria-describedby="describedby"
             data-testid="product-group-form-description"

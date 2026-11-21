@@ -364,6 +364,8 @@
     "edit": "Gruppe bearbeiten",
     "name": "Name",
     "description": "Beschreibung",
+    "namePlaceholder": "z. B. Shared-Hosting",
+    "descriptionPlaceholder": "Wofür diese Gruppe gedacht ist",
     "allowedMethods": "Zahlungsmethoden",
     "allowedMethodsHint": "Wählen Sie die Methoden, mit denen diese Gruppe bezahlt werden darf. Ohne Auswahl sind alle Methoden erlaubt. Eine Bestellung mit mehreren Gruppen kann nur Methoden nutzen, die alle erlauben.",
     "allMethods": "Alle Methoden",

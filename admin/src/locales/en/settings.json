@@ -364,6 +364,8 @@
     "edit": "Edit group",
     "name": "Name",
     "description": "Description",
+    "namePlaceholder": "e.g. Shared hosting",
+    "descriptionPlaceholder": "What this group is for",
     "allowedMethods": "Payment methods",
     "allowedMethodsHint": "Tick the methods this group may be paid with. Leave all unticked to allow every method. An order that mixes groups can only use methods all of them allow.",
     "allMethods": "All methods",

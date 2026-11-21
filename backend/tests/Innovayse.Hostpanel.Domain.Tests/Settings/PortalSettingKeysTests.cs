@@ -11,11 +11,11 @@ namespace Innovayse.Hostpanel.Domain.Tests.Settings;
 /// <remarks>The type under test is a Domain policy class with no Application dependency.</remarks>
 public class PortalSettingKeysTests
 {
-    /// <summary>Every seeded key is public and every public key is seeded.</summary>
+    /// <summary>Every seeded key except the operator legal texts is public and every public key is seeded.</summary>
     [Fact]
     public void Public_MatchesDefaults_Exactly()
     {
-        var seeded = PortalSettingKeys.Defaults.Select(d => d.Key).ToHashSet();
+        var seeded = PortalSettingKeys.Defaults.Select(d => d.Key).Where(key => !PortalSettingKeys.IsLegalText(key)).ToHashSet();
 
         Assert.Equal(seeded, PortalSettingKeys.Public);
     }
@@ -159,9 +159,9 @@ public class PortalSettingKeysTests
         }
     }
 
-    /// <summary>Every operator legal text (five documents, three languages) is seeded empty, public, free text and under the legal prefix.</summary>
+    /// <summary>Every operator legal text (five documents, three languages) is seeded empty, editable, free text, under the legal prefix, and kept out of the public set every page carries.</summary>
     [Fact]
-    public void LegalTexts_AreSeededEmptyPublicAndFreeText()
+    public void LegalTexts_AreSeededEmptyEditableFreeTextAndOutOfThePublicSet()
     {
         string[] keys =
         [
@@ -176,12 +176,32 @@ public class PortalSettingKeysTests
         foreach (var key in keys)
         {
             Assert.StartsWith("portal.legal.", key);
-            Assert.Contains(key, PortalSettingKeys.Public);
+            Assert.DoesNotContain(key, PortalSettingKeys.Public);
+            Assert.Contains(key, GeneralSettingKeys.All);
+            Assert.True(PortalSettingKeys.IsLegalText(key), $"{key} is a legal text");
             Assert.True(PortalSettingKeys.AllowsEmpty(key), $"{key} must seed empty so the built-in text stays");
             Assert.False(PortalSettingKeys.Patterns.ContainsKey(key), $"{key} is free text with no shape");
             Assert.False(PortalSettingKeys.AllowedValues.ContainsKey(key), $"{key} is free text with no vocabulary");
         }
     }
+
+    /// <summary>The page slugs list the same fifteen keys, three per page, default language first, and nothing else is a legal text.</summary>
+    [Fact]
+    public void LegalTexts_ListThreeRowsPerPage_AndNothingElseIsALegalText()
+    {
+        Assert.Equal(new[] { "terms", "privacy", "refund", "acceptable_use", "cookies" }, PortalSettingKeys.LegalTexts.Keys.ToArray());
+        foreach (var (page, keys) in PortalSettingKeys.LegalTexts)
+        {
+            Assert.Equal(3, keys.Count);
+            Assert.Equal($"portal.legal.{page}", keys[0]);
+            Assert.Equal($"portal.legal.{page}.ru", keys[1]);
+            Assert.Equal($"portal.legal.{page}.hy", keys[2]);
+        }
+
+        Assert.False(PortalSettingKeys.IsLegalText("portal.legal.tax_id"), "the tax id is a short ordinary setting");
+        Assert.False(PortalSettingKeys.IsLegalText(PortalSettingKeys.AboutText));
+    }
+
     /// <summary>The home-page section toggles seed "true" (projects "false"), are public, and accept only booleans, never empty.</summary>
     [Fact]
     public void SectionToggles_SeedVisible_ExceptProjects_AndAcceptOnlyBooleans()

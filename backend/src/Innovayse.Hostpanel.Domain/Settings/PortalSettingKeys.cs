@@ -666,6 +666,29 @@ public static class PortalSettingKeys
         Defaults.Any(d => d.Key == key && d.Value.Length == 0);
 
     /// <summary>
+    /// The operator's own legal texts: the page slug (the segment <c>GET /api/settings/public/legal/{page}</c> takes)
+    /// and the three rows of that page, default language first, then Russian, then Armenian.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> LegalTexts =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+        {
+            ["terms"] = [LegalTerms, LegalTermsRu, LegalTermsHy],
+            ["privacy"] = [LegalPrivacy, LegalPrivacyRu, LegalPrivacyHy],
+            ["refund"] = [LegalRefund, LegalRefundRu, LegalRefundHy],
+            ["acceptable_use"] = [LegalAcceptableUse, LegalAcceptableUseRu, LegalAcceptableUseHy],
+            ["cookies"] = [LegalCookies, LegalCookiesRu, LegalCookiesHy],
+        };
+
+    /// <summary>Every operator legal text key, the one set <see cref="IsLegalText"/> and <see cref="Public"/> read.</summary>
+    private static readonly IReadOnlySet<string> LegalTextKeys =
+        LegalTexts.Values.SelectMany(keys => keys).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>Tells whether a key holds an operator's legal text, the one kind of setting allowed a long value.</summary>
+    /// <param name="key">The setting key.</param>
+    /// <returns><c>true</c> for the fifteen <c>portal.legal.*</c> text keys.</returns>
+    public static bool IsLegalText(string key) => LegalTextKeys.Contains(key);
+
+    /// <summary>
     /// The only keys the anonymous storefront endpoint will ever return.
     /// <para>
     /// Derived from <see cref="Defaults"/> so the two cannot drift: every seeded
@@ -674,7 +697,12 @@ public static class PortalSettingKeys
     /// renders into public HTML. A future <c>portal.*</c> key that must <b>not</b> be public
     /// does not belong in <see cref="Defaults"/>; give it its own list.
     /// </para>
+    /// <para>
+    /// The one exception is the operator's legal texts (<see cref="LegalTexts"/>): seeded and public, but up to
+    /// 12000 characters each, so they stay out of this set, which rides in every page's settings payload, and are
+    /// served one page at a time by <c>GET /api/settings/public/legal/{page}</c>.
+    /// </para>
     /// </summary>
     public static readonly IReadOnlySet<string> Public =
-        Defaults.Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
+        Defaults.Select(d => d.Key).Where(key => !LegalTextKeys.Contains(key)).ToHashSet(StringComparer.Ordinal);
 }

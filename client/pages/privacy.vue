@@ -51,7 +51,7 @@ const builtInSections = computed<LegalSection[]>(() => SECTION_DEFINITIONS.map(s
 })))
 
 /** The sections to draw: the operator's own text when it has stated one, otherwise the built-in sections. */
-const { sections, isCustom } = useLegalSections(LegalPage.Privacy, builtInSections)
+const { sections, isCustom } = await useLegalSections(LegalPage.Privacy, builtInSections)
 
 /** The "last updated" line shown under the title; it dates the built-in text only. */
 const lastUpdatedLine = computed(() => `${t('privacy.lastUpdated')}: ${LEGAL_LAST_UPDATED}`)

@@ -2823,10 +2823,17 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   from `useLocalizedSettingDrafts`; the saved keys and payloads are unchanged. A label such as "(Russian)" or a key such
   as `addressRu` in a locale file is the sign someone wrote the second implementation.
 - **The operator's own legal text (terms, privacy, refunds, acceptable use, cookies).** Fifteen `portal.legal.<page>[.ru|.hy]`
-  settings (`PortalSettingKeys.Legal*`, seeded empty, public, up to `ProtectedValueLimits.SettingValue` = 12000 characters) are
-  edited in the admin's `LegalTextsCard` (General tab, one `UiLocalizedField` of multi-line fields per page) and read by the
-  storefront through `useLegalSections(page, builtIn)`, the one place that decides: the operator's text in the visitor's language
-  (the default row standing in for a language without its own), else the built-in sections. `parseLegalText` reads the plain
+  settings (`PortalSettingKeys.Legal*`, seeded empty, editable) are edited in the admin's `LegalTextsCard` (General tab, one
+  `UiLocalizedField` of multi-line fields per page). They are the one kind of setting allowed more than
+  `ProtectedValueLimits.SettingValue` (2000): `ProtectedValueLimits.LegalTextValue` = 12000, held by `UpdateSettingHandler`
+  (the validator only holds the shared ceiling, because only the handler knows the key; `PortalSettingKeys.IsLegalText`
+  tells), and the `Settings.Value` column is sized for the larger figure. They are **not** in `PortalSettingKeys.Public`, which
+  rides in every page's settings payload: the storefront reads one page, in all its languages, from
+  `GET /api/settings/public/legal/{page}` (`GetPublicLegalTextQuery`, anonymous, rows named by `PortalSettingKeys.LegalTexts`,
+  an unknown page is `SETTING_NOT_FOUND`) through the BFF `GET /api/portal/public/legal/:page`, `useContentStore.loadLegalText`
+  and `useLegalSections(page, builtIn)`, the one place that decides: the operator's text in the visitor's language (the default
+  row standing in for a language without its own, `ownRowFor` being the one language rule shared with `useLocalizedSetting`),
+  else the built-in sections. There is no runtime-config fallback for them. `parseLegalText` reads the plain
   format (`## ` opens a section, a blank line ends a paragraph, `- ` is a list entry) into `LegalSection[]` of plain strings that
   `LegalDocument` draws as text, never HTML. A page with operator text hides the built-in "last updated" date, which dates only
   the shipped wording.

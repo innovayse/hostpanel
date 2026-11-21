@@ -3,10 +3,13 @@
  * abuse-report card.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
-import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
+import { usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { LegalPage } from '~/constants/legalPage'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { legalTextPath } from '~/tests/helpers/contentPaths'
+import { readOf } from '~/tests/helpers/stubRoutes'
 import LegalDocument from '~/components/legal/LegalDocument.vue'
 import Page from '~/pages/acceptable-use.vue'
 
@@ -64,7 +67,7 @@ describe('pages/acceptable-use', () => {
   })
 
   it('shows the operator text instead of the built-in sections and the built-in date', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.LegalAcceptableUse]: '## Seller\n\nAcme Ltd. sells under these terms.\n- Paid by card' })
+    replies[readOf(legalTextPath(LegalPage.AcceptableUse))] = { body: { [PortalSettingKey.LegalAcceptableUse]: '## Seller\n\nAcme Ltd. sells under these terms.\n- Paid by card' } }
 
     const wrapper = await mountPage(Page)
 

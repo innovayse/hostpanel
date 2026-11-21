@@ -199,31 +199,67 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>
-    /// An operator's legal text longer than the old 2000 character cap is stored with its line breaks,
-    /// served to the anonymous storefront read, and one past the cap is refused.
+    /// An operator's legal text longer than the 2000 characters an ordinary setting takes is stored with its
+    /// line breaks, up to the legal text limit, and the longest one still fits the column.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task LegalText_LongMultiLineText_IsStoredServedAndCappedAsync()
+    public async Task LegalText_LongerThanAnOrdinarySetting_IsStoredWithItsLineBreaksAsync()
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
         var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.LegalTermsRu);
         var text = string.Join("\n\n", Enumerable.Repeat("## Section\n\nA paragraph of the seller's own terms.", 100));
-        text.Length.Should().BeGreaterThan(2000);
+        text.Length.Should().BeGreaterThan(ProtectedValueLimits.SettingValue);
 
         var update = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = text });
         update.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
+        read.GetProperty("value").GetString().Should().Be(text);
 
-        var publicRows = await factory.CreateClient().GetFromJsonAsync<List<JsonElement>>("/api/settings/public");
-        publicRows!.Single(row => row.GetProperty("key").GetString() == PortalSettingKeys.LegalTermsRu)
-            .GetProperty("value").GetString().Should().Be(text);
-
-        var tooLong = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = new string('a', ProtectedValueLimits.SettingValue + 1) });
-        tooLong.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var longest = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = new string('a', ProtectedValueLimits.LegalTextValue) });
+        longest.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Back to the built-in text for any other test that reads the page.
         await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = string.Empty });
     }
+
+    /// <summary>A legal text one character past its limit is refused and keeps the stored text.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task LegalText_PastItsLimit_IsRefusedAsync()
+    {
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.LegalPrivacyHy);
+
+        var tooLong = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = new string('a', ProtectedValueLimits.LegalTextValue + 1) });
+
+        tooLong.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
+        read.GetProperty("value").GetString().Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// An ordinary setting keeps the 2000 character limit: exactly that many characters are stored, one more is
+    /// refused with <c>INVALID_SETTING_VALUE</c> and the stored value stays.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task OrdinarySetting_PastTheSettingLimit_IsRefusedAsync()
+    {
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.AboutText);
+
+        var atLimit = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = new string('a', ProtectedValueLimits.SettingValue) });
+        var pastLimit = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = new string('b', ProtectedValueLimits.SettingValue + 1) });
+
+        atLimit.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await AdminTestSeeds.AssertCodeAsync(pastLimit, HostpanelErrorCodes.INVALID_SETTING_VALUE);
+        var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
+        read.GetProperty("value").GetString().Should().Be(new string('a', ProtectedValueLimits.SettingValue));
+
+        await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = string.Empty });
+    }
+
     /// <summary>Free text with no vocabulary or shape is stored trimmed, unchanged otherwise.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

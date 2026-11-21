@@ -46,7 +46,7 @@ export const ANALYTICS_ID_MAX_LENGTH = 20
 /** Longest a chat server token or address may be. */
 export const CHAT_SETTING_MAX_LENGTH = 300
 
-/** Longest legal text of one page and language the storefront settings take; the API's `ProtectedValueLimits.SettingValue`. */
+/** Longest legal text of one page and language the storefront settings take; the API's `ProtectedValueLimits.LegalTextValue`. */
 export const LEGAL_TEXT_MAX_LENGTH = 12000
 
 /** Longest description the API accepts for a billable item (its create validator's limit). */

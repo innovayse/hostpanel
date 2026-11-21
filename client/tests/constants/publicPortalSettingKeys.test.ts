@@ -1,6 +1,6 @@
 /**
  * Unit tests for `constants/publicPortalSettingKeys.ts`: the list must equal the backend's
- * public key set (`PortalSettingKeys.Public`, which is every key of `PortalSettingKeys.Defaults`),
+ * public key set (`PortalSettingKeys.Public`, which is every key of `PortalSettingKeys.Defaults` except the operator legal texts, read per page from `GET /api/portal/public/legal/:page`),
  * hard-coded here so a drift on either side fails the build.
  *
  * @module tests/constants/publicPortalSettingKeys.test
@@ -53,21 +53,6 @@ const BACKEND_PUBLIC_KEYS: readonly string[] = [
   'portal.features.malware',
   'portal.features.storage',
   'portal.hero.badge',
-  'portal.legal.terms',
-  'portal.legal.terms.hy',
-  'portal.legal.terms.ru',
-  'portal.legal.privacy',
-  'portal.legal.privacy.hy',
-  'portal.legal.privacy.ru',
-  'portal.legal.refund',
-  'portal.legal.refund.hy',
-  'portal.legal.refund.ru',
-  'portal.legal.acceptable_use',
-  'portal.legal.acceptable_use.hy',
-  'portal.legal.acceptable_use.ru',
-  'portal.legal.cookies',
-  'portal.legal.cookies.hy',
-  'portal.legal.cookies.ru',
   'portal.legal.tax_id',
   'portal.logo',
   'portal.logo.dark',

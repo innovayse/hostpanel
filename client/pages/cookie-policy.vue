@@ -77,7 +77,7 @@ const builtInSections = computed<LegalSection[]>(() => [
 ])
 
 /** The sections to draw: the operator's own text when it has stated one, otherwise the built-in sections. */
-const { sections, isCustom } = useLegalSections(LegalPage.Cookies, builtInSections)
+const { sections, isCustom } = await useLegalSections(LegalPage.Cookies, builtInSections)
 
 /** The "last updated" line shown under the title; it dates the built-in text only. */
 const lastUpdatedLine = computed(() => `${t('cookiePolicy.lastUpdated')}: ${LEGAL_LAST_UPDATED}`)

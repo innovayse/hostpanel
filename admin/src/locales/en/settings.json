@@ -88,6 +88,17 @@
     },
     "localeFallbackHint": "A language left empty shows the English text."
   },
+  "legalTexts": {
+    "title": "Legal texts",
+    "description": "Your own terms of service, privacy policy, refund policy, acceptable use policy and cookie policy, such as the seller name and payment processor. A page you leave empty keeps the built-in text.",
+    "hint": "A language left empty shows the English text; with no English text the page keeps the built-in text. Start a section with a ## line, separate paragraphs with a blank line and write list entries as - lines. List entries follow the paragraphs of their section.",
+    "placeholder": "e.g. ## Seller details, then the text of the section",
+    "terms": "Terms of service",
+    "privacy": "Privacy policy",
+    "refund": "Refund policy",
+    "acceptableUse": "Acceptable use policy",
+    "cookies": "Cookie policy"
+  },
   "portalAppearance": {
     "title": "Portal appearance",
     "description": "Which template the public storefront renders and which colour mode a visitor starts in. Changes take effect on the next page load.",
@@ -355,6 +366,25 @@
     "confirmRemoveTitle": "Remove this line?",
     "confirmRemoveMessage": "The line \"{label}\" will be removed from the specification."
   },
+  "productGroups": {
+    "manage": "Product groups",
+    "title": "Product groups",
+    "add": "Add group",
+    "addTitle": "Add product group",
+    "editTitle": "Edit product group",
+    "edit": "Edit group",
+    "name": "Name",
+    "description": "Description",
+    "namePlaceholder": "e.g. Shared hosting",
+    "descriptionPlaceholder": "What this group is for",
+    "allowedMethods": "Payment methods",
+    "allowedMethodsHint": "Tick the methods this group may be paid with. Leave all unticked to allow every method. An order that mixes groups can only use methods all of them allow.",
+    "allMethods": "All methods",
+    "products": "{count} products",
+    "empty": "No product groups yet.",
+    "create": "Create group",
+    "unavailableMethod": "{name} (not on offer now)"
+  },
   "productForm": {
     "editProduct": "Edit Product",
     "createNewProduct": "Create New Product",
@@ -389,7 +419,7 @@
     "sortOrderHint": "Position inside the group, lowest first. Products with the same number are sorted by name.",
     "sortOrderPlaceholder": "e.g. 1",
     "sku": "SKU",
-    "skuHint": "Unique code that names this product, for example in a fulfilment plugin. Letters and digits joined by single hyphens, underscores or dots, at most 64 characters. Leave empty for none.",
+    "skuHint": "Unique code that names this product, for example in a fulfilment plugin. Letters and digits joined by single hyphens, underscores or dots, optionally as two such parts separated by one colon, for example plan:pro, at most 64 characters. Leave empty for none.",
     "skuPlaceholder": "e.g. CREDITS-100",
     "metadata": "Metadata",
     "metadataHint": "Optional JSON object read by a fulfilment plugin, at most 16 KB. Leave empty for none.",

@@ -29,16 +29,22 @@ public sealed class PaymentMethodsController : BaseApiController
     }
 
     /// <summary>Lists every payment gateway available at checkout right now.</summary>
-    /// <param name="query">Names the currency to list for, or none for the caller's own.</param>
+    /// <param name="query">
+    /// Names the currency to list for, or none for the caller's own, and the cart's products or an invoice of the caller whose
+    /// product groups may restrict the methods.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the available methods, empty when none apply; 400 with <c>VALIDATION_ERROR</c> for an
-    /// unusable currency code;
+    /// unusable query or <c>PAYMENT_NO_COMMON_METHOD</c> when the product groups allow no method in common;
+    /// 401 when an invoice is named without a signed-in caller; 404 with <c>INVOICE_NOT_FOUND</c> when the invoice is not the caller's;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AvailablePaymentMethodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListAsync([FromQuery] ListAvailablePaymentMethodsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<AvailablePaymentMethodDto>>>(query, ct);

@@ -1,0 +1,33 @@
+{
+  "bundles": {
+    "title": "Bundles",
+    "subtitle": "Services, die zusammengehören, in einem Schritt bestellt und mit Rabatt berechnet.",
+    "domainIncluded": "Domain inklusive: {years}",
+    "choose": "Dieses Bundle wählen",
+    "back": "Zurück zu den Produkten",
+    "notFound": "Bundle nicht gefunden.",
+    "primary": "Hauptservice",
+    "cycle": "Abrechnungszeitraum",
+    "cyclePlaceholder": "Abrechnungszeitraum auswählen",
+    "unpriced": "Für diesen Service ist derzeit kein Preis hinterlegt, daher kann das Bundle nicht bestellt werden.",
+    "orderSummary": "Bundle-Übersicht",
+    "continue": "Weiter",
+    "discount": {
+      "percentage": "{amount} % Rabatt",
+      "fixed": "{amount} Rabatt"
+    },
+    "summary": {
+      "discount": "Bundle-Rabatt: {name}",
+      "estimate": "Eine Schätzung. Der endgültige Preis und Rabatt werden bei der Bestellung bestätigt.",
+      "incomplete": "Wählen Sie für jeden Service einen Abrechnungszeitraum und, falls im Bundle enthalten, eine Domain, um fortzufahren."
+    },
+    "domain": {
+      "title": "Domain inklusive",
+      "actionLabel": "Eine neue Domain registrieren oder eine bestehende transferieren",
+      "pick": "Auswählen",
+      "useTransfer": "Diese Domain verwenden",
+      "change": "Ändern",
+      "unavailable": "Domains können derzeit nicht bestellt werden."
+    }
+  }
+}

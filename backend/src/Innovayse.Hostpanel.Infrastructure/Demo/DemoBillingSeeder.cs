@@ -11,11 +11,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 
 /// <summary>
-/// Seeds the money side of the history: twelve months of invoices for every customer in the statuses the
+/// Seeds the money side of the history: up to twelve months of invoices for every customer in the statuses the
 /// entity can reach (draft, unpaid, overdue, paid, cancelled, refunded), the payments and refunds behind them,
-/// the ledger rows those produce, and the credit top-ups that match the customers' credit balances. The status
-/// of an invoice is a function of the customer, the customer's state and the month, so the revenue charts have
-/// a shape and every reset reproduces it exactly.
+/// the ledger rows those produce, and the credit top-ups that match the customers' credit balances. Each customer is
+/// invoiced on its own day of the month (<see cref="DemoAnchor.InvoiceDates"/>) and pays a few days later, so income
+/// lands on many different days and the last thirty and ninety days both show a trend; most invoices are paid, the
+/// newest are still open, and only a few are overdue. The status of an invoice is a function of the customer, the
+/// customer's state, how many invoices came after it and how old the newest one is, so every reset reproduces the
+/// same picture, shifted to the reset day.
 /// </summary>
 internal sealed class DemoBillingSeeder
 {
@@ -30,6 +33,18 @@ internal sealed class DemoBillingSeeder
 
     /// <summary>How often, in months, a domain renewal line is added to the monthly invoice.</summary>
     private const int DomainRenewalEvery = 3;
+
+    /// <summary>The longest wait, in days, before a customer pays an invoice.</summary>
+    private const int LongestPaymentLagDays = 9;
+
+    /// <summary>An invoice this young was raised too recently to be paid already; it is waiting for the customer.</summary>
+    private const int UnpayableBelowDays = 2;
+
+    /// <summary>The first hour of the day a payment can arrive at; later hours follow by customer.</summary>
+    private const int FirstPaymentHour = 8;
+
+    /// <summary>How many different payment hours the day offers.</summary>
+    private const int PaymentHours = 10;
 
     /// <summary>The data context the rows are added to and saved through.</summary>
     private readonly AppDbContext _db;
@@ -63,14 +78,17 @@ internal sealed class DemoBillingSeeder
     }
 
     /// <summary>
-    /// The status an invoice ends up in. Recent months are open or overdue, older ones are settled, with the odd
-    /// refund and cancellation; a suspended customer is behind, a closed customer stopped being billed.
+    /// The status an invoice ends up in. The newest invoices are open, paid or, a few, overdue; older ones are settled,
+    /// with the odd refund and cancellation; a suspended customer is behind on its last two invoices, a closed customer
+    /// stopped being billed. Only the newest invoice is judged by its age, because only its age is the same whatever day
+    /// the demo is reset on; an older one is at least a month old whatever the day.
     /// </summary>
     /// <param name="client">The customer.</param>
     /// <param name="position">The customer's position in the id order, the demo client first.</param>
-    /// <param name="monthsBack">How many months before the current one the invoice falls.</param>
+    /// <param name="monthsBack">How many invoices of this customer came after this one.</param>
+    /// <param name="age">Days between the invoice date and the anchor.</param>
     /// <returns>The status, or null when the customer is not billed that month.</returns>
-    private static InvoiceStatus? StatusFor(Client client, int position, int monthsBack)
+    private static InvoiceStatus? StatusFor(Client client, int position, int monthsBack, int age)
     {
         if (client.Status == ClientStatus.Closed)
         {
@@ -79,7 +97,12 @@ internal sealed class DemoBillingSeeder
 
         if (client.Status == ClientStatus.Suspended && monthsBack < 3)
         {
-            return monthsBack == 0 ? InvoiceStatus.Unpaid : InvoiceStatus.Overdue;
+            return monthsBack switch
+            {
+                0 => age > PaymentTermDays ? InvoiceStatus.Overdue : InvoiceStatus.Unpaid,
+                1 => InvoiceStatus.Overdue,
+                _ => InvoiceStatus.Paid,
+            };
         }
 
         // The demo client sees every status the billing area can show: open, overdue, paid, cancelled and refunded
@@ -101,19 +124,42 @@ internal sealed class DemoBillingSeeder
 
         return monthsBack switch
         {
-            0 => position % 4 == 0 ? InvoiceStatus.Draft : InvoiceStatus.Unpaid,
-            1 => (position % 3) switch
-            {
-                0 => InvoiceStatus.Overdue,
-                1 => InvoiceStatus.Unpaid,
-                _ => InvoiceStatus.Paid,
-            },
-            2 => position % 5 == 0 ? InvoiceStatus.Overdue : InvoiceStatus.Paid,
+            0 => NewestStatusFor(position, age),
+            1 => position % 17 == 0 ? InvoiceStatus.Overdue : InvoiceStatus.Paid,
+            2 => InvoiceStatus.Paid,
             _ when (position + monthsBack) % 11 == 0 => InvoiceStatus.Refunded,
             _ when (position + monthsBack) % 13 == 0 => InvoiceStatus.Cancelled,
             _ => InvoiceStatus.Paid,
         };
     }
+
+    /// <summary>
+    /// The status of a customer's newest invoice: one raised today or yesterday is waiting (or still a draft), one inside
+    /// its payment term is already paid for two customers in three, and one past its due date is overdue for every fifth customer
+    /// and paid for the rest.
+    /// </summary>
+    /// <param name="position">The customer's position in the id order.</param>
+    /// <param name="age">Days between the invoice date and the anchor.</param>
+    /// <returns>The status.</returns>
+    private static InvoiceStatus NewestStatusFor(int position, int age)
+    {
+        if (age < UnpayableBelowDays)
+        {
+            return position % 8 == 0 ? InvoiceStatus.Draft : InvoiceStatus.Unpaid;
+        }
+
+        if (age <= PaymentTermDays)
+        {
+            return position % 3 != 1 ? InvoiceStatus.Paid : InvoiceStatus.Unpaid;
+        }
+
+        return position % 5 == 0 ? InvoiceStatus.Overdue : InvoiceStatus.Paid;
+    }
+
+    /// <summary>How many whole days before the anchor an invoice was raised.</summary>
+    /// <param name="invoiceDate">The day the invoice was raised on.</param>
+    /// <returns>The age in days, zero for an invoice raised on the anchor.</returns>
+    private int AgeOf(DateTimeOffset invoiceDate) => (int)(_today - invoiceDate).TotalDays;
 
     /// <summary>Seeds every customer's invoices, newest last, with the payments and refunds on the settled ones.</summary>
     /// <param name="ct">Cancels the save.</param>
@@ -134,16 +180,18 @@ internal sealed class DemoBillingSeeder
         {
             var client = clients[c];
             var clientServices = services.GetValueOrDefault(client.Id) ?? [];
-            for (var monthsBack = DemoAnchor.FirstBillingMonthBack(c); monthsBack >= 0; monthsBack--)
+            var dates = DemoAnchor.InvoiceDates(c, _today);
+            for (var n = 0; n < dates.Count; n++)
             {
-                var status = StatusFor(client, c, monthsBack);
+                var monthsBack = dates.Count - 1 - n;
+                var status = StatusFor(client, c, monthsBack, AgeOf(dates[n]));
                 if (status is null)
                 {
                     continue;
                 }
 
                 var service = clientServices.Count == 0 ? null : clientServices[(c + monthsBack) % clientServices.Count];
-                _db.Invoices.Add(BuildInvoice(client, c, monthsBack, status.Value, service, service is null ? null : products[service.ProductId]));
+                _db.Invoices.Add(BuildInvoice(client, c, monthsBack, dates[n], status.Value, service, service is null ? null : products[service.ProductId]));
             }
 
             // A draft the demo client's account manager is still preparing, beside the current unpaid invoice.
@@ -151,7 +199,7 @@ internal sealed class DemoBillingSeeder
             {
                 var draftService = clientServices.Count == 0 ? null : clientServices[^1];
                 _db.Invoices.Add(BuildInvoice(
-                    client, c, 0, InvoiceStatus.Draft, draftService, draftService is null ? null : products[draftService.ProductId]));
+                    client, c, 0, dates[^1], InvoiceStatus.Draft, draftService, draftService is null ? null : products[draftService.ProductId]));
             }
         }
 
@@ -161,15 +209,16 @@ internal sealed class DemoBillingSeeder
     /// <summary>Builds one invoice with its lines, tax, backdating and the payment history its status implies.</summary>
     /// <param name="client">The customer.</param>
     /// <param name="position">The customer's position in the id order.</param>
-    /// <param name="monthsBack">How many months before the current one the invoice falls.</param>
+    /// <param name="monthsBack">How many invoices of this customer came after this one.</param>
+    /// <param name="invoiceDate">The day the invoice is raised on.</param>
     /// <param name="status">The status to reach.</param>
     /// <param name="service">The service the main line bills, or null when the customer has none.</param>
     /// <param name="product">The service's product, or null when there is no service.</param>
     /// <returns>The invoice, not yet saved.</returns>
-    private Invoice BuildInvoice(Client client, int position, int monthsBack, InvoiceStatus status, ClientService? service, Product? product)
+    private Invoice BuildInvoice(
+        Client client, int position, int monthsBack, DateTimeOffset invoiceDate, InvoiceStatus status, ClientService? service, Product? product)
     {
         var currency = client.Currency ?? DemoCatalogueSeeder.BaseCurrency;
-        var invoiceDate = _today.AddMonths(-monthsBack).AddDays(-(position % 7));
         var dueDate = invoiceDate.AddDays(PaymentTermDays);
 
         var invoice = status == InvoiceStatus.Draft
@@ -197,7 +246,7 @@ internal sealed class DemoBillingSeeder
                 break;
             case InvoiceStatus.Paid:
             case InvoiceStatus.Refunded:
-                RecordPayment(invoice, client, position, monthsBack, invoiceDate, status == InvoiceStatus.Refunded);
+                RecordPayment(invoice, client, position, monthsBack, invoiceDate, AgeOf(invoiceDate), status == InvoiceStatus.Refunded);
                 break;
             default:
                 break;
@@ -210,15 +259,20 @@ internal sealed class DemoBillingSeeder
     /// <param name="invoice">The invoice to settle.</param>
     /// <param name="client">The customer.</param>
     /// <param name="position">The customer's position in the id order.</param>
-    /// <param name="monthsBack">How many months before the current one the invoice falls.</param>
+    /// <param name="monthsBack">How many invoices of this customer came after this one.</param>
     /// <param name="invoiceDate">When the invoice was raised.</param>
+    /// <param name="age">Days between the invoice date and the anchor; the payment is always dated before the anchor.</param>
     /// <param name="refund">Whether the payment is then refunded in full.</param>
-    private static void RecordPayment(Invoice invoice, Client client, int position, int monthsBack, DateTimeOffset invoiceDate, bool refund)
+    private static void RecordPayment(
+        Invoice invoice, Client client, int position, int monthsBack, DateTimeOffset invoiceDate, int age, bool refund)
     {
         var byCard = (position + monthsBack) % 4 != 0;
         var gateway = byCard ? PaymentMethodNames.Card : PaymentMethodNames.BankTransfer;
         var fees = byCard ? Math.Round(invoice.Total * CardFeeRate, 2) : 0m;
-        var paidAt = invoiceDate.AddDays(2 + ((position + monthsBack) % 9));
+
+        // Paid a day or more after the invoice, at a different hour for each customer, and never on or after the anchor.
+        var lag = Math.Min(1 + ((position + monthsBack) % LongestPaymentLagDays), age - 1);
+        var paidAt = invoiceDate.AddDays(lag).AddHours(FirstPaymentHour + ((position + monthsBack) % PaymentHours));
 
         var source = byCard ? TransactionSource.GatewayPayment : TransactionSource.Manual;
         invoice.AddPayment(paidAt, gateway, $"demo_pay_{client.Id}_{monthsBack}", invoice.Total, fees, null, source);
@@ -262,7 +316,7 @@ internal sealed class DemoBillingSeeder
         foreach (var client in credited)
         {
             _db.Transactions.Add(Transaction.Create(
-                client.Id, _today.AddDays(-20), "Account credit top-up", $"demo_credit_{client.Id}", null,
+                client.Id, DemoAnchor.Clamp(_today.AddDays(-20), client.CreatedAt.AddDays(1), _today), "Account credit top-up", $"demo_credit_{client.Id}", null,
                 PaymentMethodNames.Card, client.CreditBalance, 0m, 0m, true,
                 client.Currency ?? DemoCatalogueSeeder.BaseCurrency, TransactionSource.GatewayPayment));
         }

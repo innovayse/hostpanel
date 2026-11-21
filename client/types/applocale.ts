@@ -9,5 +9,9 @@ export enum AppLocale {
   /** Russian. */
   Ru = 'ru',
   /** Armenian. */
-  Hy = 'hy'
+  Hy = 'hy',
+  /** German. */
+  De = 'de',
+  /** Spanish. */
+  Es = 'es'
 }

@@ -54,6 +54,22 @@ public static class PasswordResetTemplateSeeder
                     "Վերականգնել գաղտնաբառը",
                     "Եթե դուք չեք խնդրել գաղտնաբառի վերականգնում, պարզապես անտեսեք այս նամակը։",
                     EchoButtonUrl: true)),
+                new SeededEmailVersion("Passwort zurücksetzen | {{ site.name }}", new SeededEmailCopy(
+                    "de",
+                    "Passwort zurücksetzen",
+                    ["Klicken Sie auf die Schaltfläche unten, um Ihr Passwort zurückzusetzen. Dieser Link ist 24 Stunden lang gültig."],
+                    "{{ reset_link }}",
+                    "Passwort zurücksetzen",
+                    "Wenn Sie das nicht angefordert haben, können Sie diese E-Mail einfach ignorieren.",
+                    EchoButtonUrl: true)),
+                new SeededEmailVersion("Restablecer su contraseña | {{ site.name }}", new SeededEmailCopy(
+                    "es",
+                    "Restablecer su contraseña",
+                    ["Haga clic en el botón de abajo para restablecer su contraseña. Este enlace caduca en 24 horas."],
+                    "{{ reset_link }}",
+                    "Restablecer contraseña",
+                    "Si usted no lo solicitó, puede ignorar este correo electrónico.",
+                    EchoButtonUrl: true)),
             ]), ct);
     }
 }

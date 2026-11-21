@@ -337,6 +337,17 @@ docker/                              compose set (shared·dev·prod·platform), 
   conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
   method, or a reference over `CardChargeConsent.MaxMethodRefLength` (200) is logged and binds nothing. A save that lost to a
   concurrent completion drops the binding with the rest, because the winner bound it in its own save.
+- **Payment methods allowed per product group.** A `ProductGroup` carries `AllowedPaymentMethods` (payment module ids, stored
+  in `ProductGroups`, set by `ProductGroup.SetAllowedPaymentMethods`, which trims, drops blanks and de-duplicates ignoring
+  case); empty means every method on offer, which is what a group has until an operator restricts it. What an order or
+  invoice may be paid with is the intersection of the restricted groups it draws from (`ProductGroup.CommonAllowedPaymentMethods`,
+  `null` when none is restricted). `ListAvailablePaymentMethods` (cart `productIds`, or an `invoiceId`) offers only those
+  methods, and `StartGatewayPayment` and `PlaceOrder` enforce them for a caller that sends another one anyway:
+  `PAYMENT_METHOD_NOT_ALLOWED` for a module outside the set, `PAYMENT_NO_COMMON_METHOD` (both 400) when the groups share
+  none, so nothing can pay the cart. Ownership is settled before the group rule, so a stranger's invoice answers
+  `INVOICE_NOT_FOUND`. **Update semantics:** `UpdateProductGroup` follows the product update's rule for an optional member,
+  `null` (field omitted) keeps the stored set and an empty list lifts the restriction; the limits (50 ids of at most 100
+  characters) are one rule, `MustBePaymentMethodList`, shared by the create and update validators.
 - **Session kinds, the browser step and the plugin HTTP clients (#1174, #1159, SDK 3.7.0).** A payment session is a redirect,
   a form post or a browser step. `StartGatewayPaymentHandler` is the one place that judges it: `PaymentSessionExtensions`
   (`Application/Billing/Extensions`) refuses a form that breaks `PaymentFormPost`'s rules or `PaymentFormPostLimits` (absolute
@@ -1093,7 +1104,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     `IssueSshAccessAsync` and `RevokeSshAccessAsync` are served by `PluginSshAccessService` (see "SSH access to a
     client's hosting (#758)" below).
     *Store* (`Infrastructure/Plugins/PluginStore`): table `PluginDataEntries` (aggregate `PluginDataEntry`: `PluginId`,
-    `ClientRef`, `Key`, `Value` text, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
+    `ClientRef`, `Key`, `Value` text, `ExpiresAt` nullable, `CreatedAt`, `UpdatedAt`; unique `IX_PluginDataEntries_PluginId_ClientRef_Key`, nulls not
     distinct) and table `PluginDataScopes` (aggregate `PluginDataScope`: `PluginId`, `ClientRef`, `KeyCount`, `StoredChars`,
     `Revision`, xmin concurrency token; unique `IX_PluginDataScopes_PluginId_ClientRef`, nulls not distinct). A scope is per
     client in the client area and plugin wide (null `ClientRef`) on an admin call. A key is 1 to 200 characters of letters,
@@ -1101,11 +1112,19 @@ docker/                              compose set (shared·dev·prod·platform), 
     null refused. A contract breach throws `DomainRuleException` `PLUGIN_STORE_KEY_INVALID` or `PLUGIN_STORE_VALUE_INVALID`
     (`Domain/Plugins/PluginStoreErrors`, sentences in en/ru/hy); the runner answers it like any plugin throw, 502
     `PLUGIN_FAILED`, and logs it, so these two codes never reach a caller and have no `StatusMapping` row.
+    - **Advanced store (`IPluginStoreAdvanced`, SDK 3.7.0).** `PluginStore` and `PluginWideStore` implement it: `SetAsync` with a
+      time to live (above zero, at most `PluginStoreLimits.MaxTimeToLive`, else `ArgumentOutOfRangeException` and no write),
+      `SetIfAbsentAsync` (one atomic step on the same scope xmin token, so exactly one of several racing callers writes) and
+      `ListKeysAsync` (prefix as a key may start, limit 1 to `MaxListLimit`, ascending ordinal order by `COLLATE "C"`). A plain
+      `SetAsync` clears the expiry. An expired row (`ExpiresAt` at or before `IClock.UtcNow`) is absent for every operation and
+      does not count toward the quota: a write that does not fit first releases the scope's expired rows in the same attempt, and
+      the recurring job `SweepExpiredPluginDataCron` (`AdminScheduledJobsStartup`, every
+      `ScheduledJobs:SweepExpiredPluginDataIntervalMinutes`, default 15) removes the rest through their scope.
     - **Quota, one rule.** `PluginApi:MaxStoreKeysPerScope` (keys, default 1000, 1 to 100,000) and
       `PluginApi:MaxStoreCharsPerScope` (characters of every key and value, default 4 Mi, from one full key and value to
       1 Gi), both on `PluginApiOptions`, validated on start, read as one `PluginStoreQuota`. `PluginDataScope.Admit` is the only
       place either is checked: a write that would take the scope past either measure is refused with `DomainRuleException`
-      `PLUGIN_STORE_QUOTA_EXCEEDED`; a write that shrinks or keeps the size is always allowed, even in a scope over a lowered
+      `PLUGIN_STORE_QUOTA_EXCEEDED` (the store translates it, in `PluginStore.PutAsync` only, into the SDK's `PluginStoreQuotaException` for the plugin); a write that shrinks or keeps the size is always allowed, even in a scope over a lowered
       quota. The refusal fails closed (nothing is written, whether or not the plugin catches it), and the store raises the
       call's `PluginStoreQuotaSignal`, host state the plugin cannot set: when the plugin then throws, the runner answers 402
       `PLUGIN_STORE_QUOTA_EXCEEDED` (its own exact `StatusMapping` row, the 402 every quota refusal answers; en/ru/hy) instead of
@@ -2121,6 +2140,10 @@ adds the weights and holds the sum to 0 to 100. A block list hit weighs 100, so 
   `ResetDemoDataCommand` truncates every table except the identity roles and reseeds in one
   transaction every `ResetIntervalHours`; `GET /api/public/demo` publishes the accounts and the next
   reset. Seed text names no outside product.
+- **Dates.** Every seeded date is measured from `DemoAnchor.Today(clock)`, never from a calendar: customers (some signed up in the
+  last weeks), invoices (each customer on its own billing day, paid a few days later), orders, tickets and domain expiries all move with the
+  reset day, nothing is dated before its customer signed up or after the anchor (`DemoAnchor.Clamp`), and the number of rows never
+  depends on the day (`DemoAnchorTests`, `DemoSeedRelativeToClockTests`).
 - **Seed.** The demo seed is fixed and deterministic: `DemoCatalogueSeeder`, `DemoPeopleSeeder` and `DemoClientProfile`
   produce the same sample data on every reset, and it is maximal, with every table populated enough to show each
   feature. The site name is `Hostpanel Demo`. The storefront contact is the one operator-set exception: optional
@@ -2316,6 +2339,8 @@ The Dockerfile default `0.0.0-dev` parses as a real version below every minimum,
 argument refuses every plugin that declares a range. The GitLab `.build-image` template therefore derives the version
 once with `scripts/image-version.sh` (full clone, `GIT_DEPTH: "0"`) and passes it as `--build-arg VERSION` to the API
 image; the job fails when no release tag is reachable. The GitHub image publisher passes the tag it is run for.
+An image built in place from a checkout without tags gets the version through `HOST_VERSION`, which
+`docker/docker-compose.prod.yml` passes as the `VERSION` build argument.
 The mirror workflow pushes the `v*` tags with the branch, because GitLab can only see a tag that was mirrored; a
 tag push alone starts nothing on GitLab, it travels with the next push to `main` or `develop`, and a release tag is
 never moved. Without a new tag the version stays at the last release plus the commit id.
@@ -2814,6 +2839,21 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   fields from the bound locale. A setting stored once per language (`portal.contact.address`, `.ru`, `.hy`) takes its drafts
   from `useLocalizedSettingDrafts`; the saved keys and payloads are unchanged. A label such as "(Russian)" or a key such
   as `addressRu` in a locale file is the sign someone wrote the second implementation.
+- **The operator's own legal text (terms, privacy, refunds, acceptable use, cookies).** Fifteen `portal.legal.<page>[.ru|.hy]`
+  settings (`PortalSettingKeys.Legal*`, seeded empty, editable) are edited in the admin's `LegalTextsCard` (General tab, one
+  `UiLocalizedField` of multi-line fields per page). They are the one kind of setting allowed more than
+  `ProtectedValueLimits.SettingValue` (2000): `ProtectedValueLimits.LegalTextValue` = 12000, held by `UpdateSettingHandler`
+  (the validator only holds the shared ceiling, because only the handler knows the key; `PortalSettingKeys.IsLegalText`
+  tells), and the `Settings.Value` column is sized for the larger figure. They are **not** in `PortalSettingKeys.Public`, which
+  rides in every page's settings payload: the storefront reads one page, in all its languages, from
+  `GET /api/settings/public/legal/{page}` (`GetPublicLegalTextQuery`, anonymous, rows named by `PortalSettingKeys.LegalTexts`,
+  an unknown page is `SETTING_NOT_FOUND`) through the BFF `GET /api/portal/public/legal/:page`, `useContentStore.loadLegalText`
+  and `useLegalSections(page, builtIn)`, the one place that decides: the operator's text in the visitor's language (the default
+  row standing in for a language without its own, `ownRowFor` being the one language rule shared with `useLocalizedSetting`),
+  else the built-in sections. There is no runtime-config fallback for them. `parseLegalText` reads the plain
+  format (`## ` opens a section, a blank line ends a paragraph, `- ` is a list entry) into `LegalSection[]` of plain strings that
+  `LegalDocument` draws as text, never HTML. A page with operator text hides the built-in "last updated" date, which dates only
+  the shipped wording.
 - **Plugin pages and the Add-ons menu (#647).** A page a serving plugin adds to the admin lives at
   `/apps/<plugin>/<path>` (`views/PluginPageView.vue`, route `apps/:plugin/:page*`); the store asks the API's
   lookup by path (`GET /api/admin/plugins/ui/{plugin}/pages/by-path`) and shows its `PLUGIN_PAGE_NOT_FOUND`

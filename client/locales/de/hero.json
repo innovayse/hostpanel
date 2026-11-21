@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "badge": "Hosting, Domains und Server an einem Ort",
+    "title": "Schnelles, zuverlässiges Hosting für Ihre Website",
+    "subtitle": "Webhosting, Domains und Server mit echtem Support, in einem Kundenportal",
+    "cta": {
+      "secondary": "Hosting-Tarife ansehen"
+    },
+    "stats": {
+      "clients": "Zufriedene Kunden",
+      "uptime": "Verfügbarkeit",
+      "regions": "Regionen"
+    },
+    "search": {
+      "placeholder": "Finden Sie Ihren Domainnamen"
+    }
+  }
+}

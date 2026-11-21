@@ -6,10 +6,11 @@
 import { HttpMethod } from '../src/types/http'
 import { AdminTheme } from '../src/types/admintheme'
 import { THEME_STORAGE_KEY } from '../src/lib/themeBoot'
+import { InvoiceRow } from '../src/views/ClientSummaryView.schema'
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
-import { servicesPage } from './fixtures/orders'
+import { hostingProductName, servicesPage } from './fixtures/orders'
 import { emptyClientSummary } from './fixtures/clientSummary'
 import { boxOf } from './support/locators'
 import { json, stubApi } from './support/stubApi'
@@ -37,6 +38,15 @@ const fitsItsBox = (list: Locator): Promise<boolean> =>
     return [...el.querySelectorAll('*')].every((child) => child.getBoundingClientRect().right <= right + tolerance)
   }, SCROLL_ROUNDING_PX)
 
+/**
+ * Reads where each matched element ends.
+ *
+ * @param elements - The elements to measure; the caller has already awaited them rendered.
+ * @returns The right edge of every element, rounded to whole pixels.
+ */
+const rightEdges = (elements: Locator): Promise<number[]> =>
+  elements.evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().right)))
+
 test('the client sections are a tab strip above the content on a phone', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
@@ -55,6 +65,8 @@ test('the client sections are a tab strip above the content on a phone', async (
   await expect(strip).toBeVisible()
 
   // The strip sits above the content and scrolls on its own; the page itself does not.
+  await expect(page.getByTestId('ui-detail-card-info')).toBeVisible()
+  await expect(page.getByTestId('client-layout-header')).toBeVisible()
   const stripBox = await boxOf(strip)
   const cardBox = await boxOf(page.getByTestId('ui-detail-card-info'))
   expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(cardBox.y)
@@ -113,6 +125,10 @@ test('the client header on a phone: the status sits beside the name and Export i
 
   await page.goto('/clients/7/summary')
 
+  // The header fills in when the client answers, so each part is awaited rendered before it is measured.
+  await expect(page.getByTestId('client-header-name')).toBeVisible()
+  await expect(page.getByTestId('client-layout-header').getByText(adaDetail.status, { exact: true })).toBeVisible()
+  await expect(page.getByTestId('client-layout-export')).toBeVisible()
   const back = await boxOf(page.getByTestId('client-layout-back'))
   const name = await boxOf(page.getByTestId('client-header-name'))
   const status = await boxOf(page.getByTestId('client-layout-header').getByText(adaDetail.status, { exact: true }))
@@ -141,6 +157,8 @@ test('the top bar fits a phone: the sign-out button is on screen and the control
 
   await page.goto('/clients/7/summary')
 
+  await expect(page.getByTestId('topbar-notifications')).toBeVisible()
+  await expect(page.getByTestId('topbar-title')).toBeVisible()
   const bell = await boxOf(page.getByTestId('topbar-notifications'))
   expect(bell.x + bell.width).toBeLessThanOrEqual(390)
   await expect(page.getByTestId('topbar-toggle-sidebar')).toBeVisible()
@@ -334,13 +352,15 @@ test('the billing card lines its counts and amounts up in columns, and the summa
   await page.goto('/clients/7/summary')
   await expect(page.getByTestId('ui-detail-card-billing')).toBeVisible()
 
-  // Every amount ends on the same line, whatever its width, and so does every count.
-  const edges = async (testid: string): Promise<number[]> =>
-    page.getByTestId(testid).evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().right)))
-  const amounts = await edges('client-summary-billing-amount')
+  // Every amount ends on the same line, whatever its width, and so does every count. The rows draw before the summary
+  // answers (blank counts), so each is awaited rendered, one per invoice line, before its box is measured.
+  const lines = Object.values(InvoiceRow).length
+  await expect(page.getByTestId('client-summary-billing-count')).toHaveText(Array<string>(lines).fill('0'))
+  await expect(page.getByTestId('client-summary-billing-amount')).toHaveCount(lines)
+  const amounts = await rightEdges(page.getByTestId('client-summary-billing-amount'))
   expect(amounts.length).toBeGreaterThan(5)
   expect(new Set(amounts).size).toBe(1)
-  const counts = await edges('client-summary-billing-count')
+  const counts = await rightEdges(page.getByTestId('client-summary-billing-count'))
   expect(counts.length).toBeGreaterThan(5)
   expect(new Set(counts).size).toBe(1)
 
@@ -354,6 +374,8 @@ test('the billing card lines its counts and amounts up in columns, and the summa
   })).toBe(true)
   // The services table is drawn as cards on a phone, so its box has nothing to scroll.
   await expect(page.getByTestId('client-summary-services')).toBeVisible()
+  // The rows come from their own request, so the table is measured once its row is drawn.
+  await expect(page.getByTestId('client-summary-services')).toContainText(hostingProductName)
   // Below sm a table is drawn as cards, so nothing is wider than its box: no sideways scroll, in the card or the content column.
   expect(await fitsItsBox(page.getByTestId('client-summary-services'))).toBe(true)
 })

@@ -3,27 +3,37 @@
  * `translations` object the API takes, and back.
  */
 
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import type { StorefrontTranslations } from '@/types/storefront'
 
-/** Every locale the forms carry a tab for, in tab order. */
-export const STOREFRONT_LOCALES: MessageLanguage[] = [MessageLanguage.En, MessageLanguage.Ru, MessageLanguage.Hy]
+/** Every locale the forms carry a tab for, in tab order: every content language, English first. */
+export const STOREFRONT_LOCALES: readonly [ContentLanguage, ...ContentLanguage[]] = [
+  ContentLanguage.En,
+  ...Object.values(ContentLanguage).filter((locale) => locale !== ContentLanguage.En),
+]
+
+/**
+ * Makes one value per locale.
+ *
+ * @param make - Makes the value of one locale; called once per locale so the values never share an object.
+ * @returns A value for each locale.
+ */
+const perLocale = <T>(make: (locale: ContentLanguage) => T): Record<ContentLanguage, T> => {
+  // Every locale is assigned in the loop below, which the empty literal cannot show to the compiler.
+  const values = {} as Record<ContentLanguage, T>
+  for (const locale of STOREFRONT_LOCALES) {
+    values[locale] = make(locale)
+  }
+  return values
+}
 
 /**
  * Builds one blank form per locale.
  *
- * Written out per locale rather than looped from a string-indexed object: the `Record` type then
- * proves every locale is present, so adding a locale to the enum fails to compile until the helper
- * is updated.
- *
  * @param blank - Makes one blank form; called once per locale so the forms never share an object.
  * @returns A blank form for each locale.
  */
-export const blankTranslations = <T>(blank: () => T): Record<MessageLanguage, T> => ({
-  [MessageLanguage.En]: blank(),
-  [MessageLanguage.Ru]: blank(),
-  [MessageLanguage.Hy]: blank(),
-})
+export const blankTranslations = <T>(blank: () => T): Record<ContentLanguage, T> => perLocale(() => blank())
 
 /**
  * Copies the stored translations into the per-locale forms, leaving a locale with no stored text blank.
@@ -35,7 +45,7 @@ export const blankTranslations = <T>(blank: () => T): Record<MessageLanguage, T>
 export const formsFromTranslations = <T extends object>(
   stored: StorefrontTranslations<T>,
   blank: () => T,
-): Record<MessageLanguage, T> => {
+): Record<ContentLanguage, T> => {
   const forms = blankTranslations(blank)
   for (const locale of STOREFRONT_LOCALES) {
     const text = stored[locale]
@@ -49,20 +59,14 @@ export const formsFromTranslations = <T extends object>(
 /**
  * Tells, per locale, whether its form carries text; the language tabs mark the ones that do not.
  *
- * Written out per locale for the same reason as {@link blankTranslations}.
- *
  * @param forms - The per-locale forms.
  * @param isFilled - Whether a form carries text.
  * @returns Whether each locale is filled.
  */
 export const filledLocales = <T>(
-  forms: Record<MessageLanguage, T>,
+  forms: Record<ContentLanguage, T>,
   isFilled: (form: T) => boolean,
-): Record<MessageLanguage, boolean> => ({
-  [MessageLanguage.En]: isFilled(forms[MessageLanguage.En]),
-  [MessageLanguage.Ru]: isFilled(forms[MessageLanguage.Ru]),
-  [MessageLanguage.Hy]: isFilled(forms[MessageLanguage.Hy]),
-})
+): Record<ContentLanguage, boolean> => perLocale((locale) => isFilled(forms[locale]))
 
 /**
  * Collects the translations worth sending: the trimmed forms of the locales whose main field is filled.
@@ -73,7 +77,7 @@ export const filledLocales = <T>(
  * @returns The translations object of the payload.
  */
 export const collectTranslations = <T>(
-  forms: Record<MessageLanguage, T>,
+  forms: Record<ContentLanguage, T>,
   isFilled: (form: T) => boolean,
   trim: (form: T) => T,
 ): StorefrontTranslations<T> => {

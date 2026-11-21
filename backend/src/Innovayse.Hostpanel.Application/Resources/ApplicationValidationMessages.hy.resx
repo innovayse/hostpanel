@@ -862,6 +862,15 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Նկարագրությունը չպետք է գերազանցի {0} նիշը։</value>
   </data>
+  <data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Նշեք առավելագույնը {0} ապրանք։</value>
+  </data>
+  <data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Վճարման յուրաքանչյուր եղանակը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Թույլատրվում է առավելագույնը {0} վճարման եղանակ։</value>
+  </data>
   <data name="ProductBundleIdInvalid" xml:space="preserve">
     <value>Նշեք փաթեթի ճիշտ ID։</value>
   </data>
@@ -908,7 +917,7 @@
     <value>Դասավորության համարը չի կարող բացասական լինել։</value>
   </data>
   <data name="ProductSkuInvalid" xml:space="preserve">
-    <value>SKU-ն կարող է պարունակել միայն տառեր և թվեր՝ միացված մեկական գծիկով, ընդգծիկով կամ կետով, և չպետք է գերազանցի {0} նիշը։</value>
+    <value>SKU-ն կարող է պարունակել միայն տառեր և թվեր՝ միացված մեկական գծիկով, ընդգծիկով կամ կետով, ցանկության դեպքում՝ երկու այդպիսի մասով՝ բաժանված մեկ երկու կետով, և չպետք է գերազանցի {0} նիշը։</value>
   </data>
   <data name="ProductMetadataInvalid" xml:space="preserve">
     <value>Մետատվյալները պետք է լինեն JSON օբյեկտ։</value>
@@ -1187,7 +1196,7 @@
     <value>Նշեք առնվազն մեկ թարգմանություն։</value>
   </data>
   <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
-    <value>Թարգմանություն կարելի է նշել միայն աջակցվող լեզվով՝ en, ru կամ hy։</value>
+    <value>Թարգմանություն կարելի է նշել միայն աջակցվող լեզվով՝ en, ru, hy, de կամ es։</value>
   </data>
   <data name="ContentDefaultTranslationRequired" xml:space="preserve">
     <value>Պահանջվում է թարգմանություն լռելյայն լեզվով (en)։</value>

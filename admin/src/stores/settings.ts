@@ -14,8 +14,10 @@ import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { dropFieldError, runAction } from '@/lib/runAction'
 import type { ActionResult } from '@/lib/runAction'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
-import type { MessageLanguage } from '@/locales/messages'
-import type { CreateProductPayload, Product, ProductGroup, ProductListFilters, UpdateProductPayload } from '@/types/product'
+import type { ContentLanguage } from '@/locales/contentLanguage'
+import type {
+  CreateProductPayload, PaymentMethodOption, Product, ProductGroup, ProductGroupPayload, ProductListFilters, UpdateProductPayload,
+} from '@/types/product'
 import { ProductErrorCode } from '@/types/productenums'
 import type { Setting, SettingSave } from '@/types/setting'
 import type { BrandingImageKind } from '@/types/upload'
@@ -45,6 +47,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /** Product groups list. */
   const productGroups = ref<ProductGroup[]>([])
+
+  /** The payment methods a checkout offers right now, the choices of the group form; empty until {@link fetchPaymentMethods}. */
+  const paymentMethods = ref<PaymentMethodOption[]>([])
 
 
   /** True while a list request is in flight. */
@@ -157,7 +162,7 @@ export const useSettingsStore = defineStore('settings', () => {
    */
   const saveEmailTemplateVersion = async (
     slug: string,
-    language: MessageLanguage,
+    language: ContentLanguage,
     existingId: number | null,
     content: EmailTemplateContent,
   ): Promise<boolean> => {
@@ -210,6 +215,16 @@ export const useSettingsStore = defineStore('settings', () => {
   const fetchProductGroups = (): Promise<void> =>
     load(api.listProductGroups, (rows) => {
       productGroups.value = rows
+    })
+
+  /**
+   * Fetches the payment methods a checkout offers right now.
+   *
+   * @returns Resolves when the request is over.
+   */
+  const fetchPaymentMethods = (): Promise<void> =>
+    load(api.listPaymentMethods, (rows) => {
+      paymentMethods.value = rows
     })
 
   /**
@@ -270,10 +285,33 @@ export const useSettingsStore = defineStore('settings', () => {
     return result.ok
   }
 
+  /**
+   * Creates a product group.
+   *
+   * @param payload - Group data.
+   * @returns The new group id, or null when refused (see `actionError`).
+   */
+  const createProductGroup = async (payload: ProductGroupPayload): Promise<number | null> => {
+    const result = await runAction(actionError, () => api.createProductGroup(payload), fieldErrors)
+    return result.ok ? result.value : null
+  }
+
+  /**
+   * Updates a product group, replacing its name, description and allowed payment methods.
+   *
+   * @param id - Group ID.
+   * @param payload - Updated group data.
+   * @returns True when updated; false when refused (see `actionError`).
+   */
+  const updateProductGroup = async (id: number, payload: ProductGroupPayload): Promise<boolean> => {
+    const result = await runAction(actionError, () => api.updateProductGroup(id, payload), fieldErrors)
+    return result.ok
+  }
+
   return {
-    settings, emailTemplates, products, productPage, productPageSize, productTotalCount, productGroups, fieldErrors, clearFieldError,
+    settings, emailTemplates, products, productPage, productPageSize, productTotalCount, productGroups, paymentMethods, fieldErrors, clearFieldError,
     loading, error, actionError, uploadError,
-    fetchSettings, updateSetting, saveSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductsPage, fetchProductGroups,
-    createProduct, updateProduct, uploadBrandingFile,
+    fetchSettings, updateSetting, saveSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductsPage, fetchProductGroups, fetchPaymentMethods,
+    createProduct, updateProduct, createProductGroup, updateProductGroup, uploadBrandingFile,
   }
 })

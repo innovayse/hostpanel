@@ -51,4 +51,23 @@ describe('GET /api/portal/order/payment-methods', () => {
 
     expect(error).toMatchObject({ statusCode: 409, statusMessage: 'Refused by the backend.', data: { code: 'SOME_REFUSAL' } })
   })
+
+  it('forwards the cart\'s products, one backend key each, and the invoice', async () => {
+    await route.default(makeEvent({ query: { productIds: '4,9', invoiceId: '12' }, cookies: await signedIn('jwt') }))
+
+    expect(backend.requests[0]?.url).toBe('/api/payment-methods?productIds=4&productIds=9&invoiceId=12')
+  })
+
+  it.each([
+    [{ productIds: '4,x' }],
+    [{ productIds: '4,' }],
+    [{ productIds: ['4', '9'] }],
+    [{ invoiceId: 'abc' }],
+    [{ productIds: Array.from({ length: 101 }, (_, i) => i + 1).join(',') }],
+  ])('refuses a query that is not ids (%j) before the backend is called', async (query) => {
+    const error = await refusal(async () => route.default(makeEvent({ query, cookies: await signedIn('jwt') })))
+
+    expect(error).toMatchObject({ statusCode: 400, data: { code: 'BAD_QUERY' } })
+    expect(backend.requests).toHaveLength(0)
+  })
 })

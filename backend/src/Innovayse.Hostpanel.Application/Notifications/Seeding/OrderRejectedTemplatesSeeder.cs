@@ -61,5 +61,27 @@ public static class OrderRejectedTemplatesSeeder
                 ButtonText: null,
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Ihre Bestellung {{ order_number }} wurde nicht akzeptiert | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Wir konnten Ihre Bestellung nicht akzeptieren",
+                [
+                    "Nach einer Prüfung konnten wir die Bestellung {{ order_number }} nicht akzeptieren. Grund: {{ reason }}",
+                    "Für diese Bestellung wurden keine Dienste eingerichtet. Wenn Sie glauben, dass es sich um einen Irrtum handelt, wenden Sie sich bitte an unseren Support.",
+                ],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Su pedido {{ order_number }} no fue aceptado | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "No pudimos aceptar su pedido",
+                [
+                    "Tras una revisión, no pudimos aceptar el pedido {{ order_number }}. Motivo: {{ reason }}",
+                    "No se configuró ningún servicio para este pedido. Si cree que se trata de un error, póngase en contacto con nuestro soporte.",
+                ],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 }

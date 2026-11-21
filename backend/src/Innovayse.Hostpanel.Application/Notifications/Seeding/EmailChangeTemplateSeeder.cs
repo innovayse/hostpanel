@@ -52,6 +52,22 @@ public static class EmailChangeTemplateSeeder
                     "Հաստատել հասցեն",
                     "Եթե դուք չեք խնդրել այս փոփոխությունը, պարզապես անտեսեք այս նամակը։",
                     EchoButtonUrl: true)),
+                new SeededEmailVersion("Neue E-Mail-Adresse bestätigen | {{ site.name }}", new SeededEmailCopy(
+                    "de",
+                    "Neue E-Mail-Adresse bestätigen",
+                    ["Klicken Sie auf die Schaltfläche unten, um sich künftig mit dieser Adresse anzumelden. Bis dahin behält Ihr Konto seine aktuelle Adresse."],
+                    "{{ confirmation_link }}",
+                    "E-Mail-Adresse bestätigen",
+                    "Wenn Sie diese Änderung nicht angefordert haben, können Sie diese E-Mail einfach ignorieren.",
+                    EchoButtonUrl: true)),
+                new SeededEmailVersion("Confirme su nuevo correo electrónico | {{ site.name }}", new SeededEmailCopy(
+                    "es",
+                    "Confirme su nuevo correo electrónico",
+                    ["Haga clic en el botón de abajo para empezar a iniciar sesión con esta dirección. Hasta entonces, su cuenta conservará su dirección actual."],
+                    "{{ confirmation_link }}",
+                    "Confirmar correo electrónico",
+                    "Si usted no solicitó este cambio, puede ignorar este correo electrónico.",
+                    EchoButtonUrl: true)),
             ]), ct);
     }
 }

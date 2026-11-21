@@ -4,17 +4,17 @@
  */
 import { describe, expect, it } from 'vitest'
 import EmailTemplateDialog from '@/components/settings/EmailTemplateDialog.vue'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import type { EmailTemplate } from '@/types/emailtemplate'
 import { mountScreen } from '../../helpers/mount'
 
 /** The English version of the template. */
 const en: EmailTemplate = {
-  id: 1, slug: 'welcome', language: MessageLanguage.En, subject: 'Welcome', body: '<p>Hi</p>', description: 'On sign-up', isActive: true,
+  id: 1, slug: 'welcome', language: ContentLanguage.En, subject: 'Welcome', body: '<p>Hi</p>', description: 'On sign-up', isActive: true,
 }
 
 /** The Russian version of the template. */
-const ru: EmailTemplate = { ...en, id: 2, language: MessageLanguage.Ru, subject: 'Добро пожаловать', body: '<p>Привет</p>' }
+const ru: EmailTemplate = { ...en, id: 2, language: ContentLanguage.Ru, subject: 'Добро пожаловать', body: '<p>Привет</p>' }
 
 /**
  * Reads the value of the native input behind a test id.
@@ -54,7 +54,7 @@ describe('EmailTemplateDialog', () => {
     await wrapper.get('[data-testid="email-template-form"]').trigger('submit')
 
     expect(wrapper.emitted('save')).toEqual([[
-      MessageLanguage.Hy, null, { subject: 'Բարի գալուստ', body: '<p>Բարև</p>', description: null },
+      ContentLanguage.Hy, null, { subject: 'Բարի գալուստ', body: '<p>Բարև</p>', description: null },
     ]])
   })
 
@@ -64,7 +64,7 @@ describe('EmailTemplateDialog', () => {
     await wrapper.get('[data-testid="email-template-form"]').trigger('submit')
 
     expect(wrapper.emitted('save')).toEqual([[
-      MessageLanguage.En, 1, { subject: 'Welcome', body: '<p>Hi</p>', description: 'On sign-up' },
+      ContentLanguage.En, 1, { subject: 'Welcome', body: '<p>Hi</p>', description: 'On sign-up' },
     ]])
   })
 

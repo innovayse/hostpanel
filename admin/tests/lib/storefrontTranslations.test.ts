@@ -25,7 +25,7 @@ describe('storefrontTranslations', () => {
 
     forms.en.text = 'x'
 
-    expect(Object.keys(forms)).toEqual(['en', 'ru', 'hy'])
+    expect(Object.keys(forms)).toEqual(['en', 'ru', 'hy', 'de', 'es'])
     expect(forms.ru.text).toBe('')
   })
 
@@ -59,7 +59,7 @@ describe('storefrontTranslations', () => {
     const forms = blankTranslations(blank)
     forms.hy.text = 'Բարև'
 
-    expect(filledLocales(forms, (form) => form.text !== '')).toEqual({ en: false, ru: false, hy: true })
+    expect(filledLocales(forms, (form) => form.text !== '')).toEqual({ en: false, ru: false, hy: true, de: false, es: false })
   })
 
   it('translationErrors repeats the translations sentence under every given key', () => {

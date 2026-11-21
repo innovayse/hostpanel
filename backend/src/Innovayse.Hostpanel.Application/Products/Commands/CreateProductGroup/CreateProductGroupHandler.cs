@@ -30,6 +30,11 @@ public sealed class CreateProductGroupHandler
         ArgumentNullException.ThrowIfNull(cmd);
 
         var group = ProductGroup.Create(cmd.Name, cmd.Description);
+        if (cmd.AllowedPaymentMethods is not null)
+        {
+            group.SetAllowedPaymentMethods(cmd.AllowedPaymentMethods);
+        }
+
         _context.ProductGroups.Add(group);
         await _context.SaveChangesAsync(ct);
         return Result<int>.Success(group.Id);

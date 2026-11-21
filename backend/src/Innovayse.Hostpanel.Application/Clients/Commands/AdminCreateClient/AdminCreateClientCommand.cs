@@ -20,7 +20,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Commands.AdminCreateClient;
 /// <param name="Phone">Optional phone number.</param>
 /// <param name="Address">Billing address; the country is an ISO 3166-1 alpha-2 code.</param>
 /// <param name="Preferences">
-/// Language (e.g. "en", "hy", "ru"), ISO 4217 currency, payment method label, billing contact
+/// Language (e.g. "en", "ru", "hy", "de", "es"), ISO 4217 currency, payment method label, billing contact
 /// reference and internal admin-only notes.
 /// </param>
 /// <param name="Status">The status the client starts in; null starts it <see cref="ClientStatus.Active"/>.</param>

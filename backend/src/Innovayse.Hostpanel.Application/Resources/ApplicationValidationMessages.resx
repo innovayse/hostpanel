@@ -925,6 +925,15 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Keep the description within {0} characters.</value>
   </data>
+  <data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Name at most {0} products.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Keep each payment method within {0} characters.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Allow at most {0} payment methods.</value>
+  </data>
   <data name="ProductBundleIdInvalid" xml:space="preserve">
     <value>Provide a valid product bundle id.</value>
   </data>
@@ -971,7 +980,7 @@
     <value>Sort order cannot be negative.</value>
   </data>
   <data name="ProductSkuInvalid" xml:space="preserve">
-    <value>Use letters and digits joined by single hyphens, underscores or dots for the SKU, at most {0} characters.</value>
+    <value>Use letters and digits joined by single hyphens, underscores or dots for the SKU, optionally as two such parts separated by one colon, at most {0} characters.</value>
   </data>
   <data name="ProductMetadataInvalid" xml:space="preserve">
     <value>Metadata must be a JSON object.</value>
@@ -1250,7 +1259,7 @@
     <value>Provide at least one translation.</value>
   </data>
   <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
-    <value>A translation can only be given for a supported language: en, ru or hy.</value>
+    <value>A translation can only be given for a supported language: en, ru, hy, de or es.</value>
   </data>
   <data name="ContentDefaultTranslationRequired" xml:space="preserve">
     <value>A translation in the default language (en) is required.</value>

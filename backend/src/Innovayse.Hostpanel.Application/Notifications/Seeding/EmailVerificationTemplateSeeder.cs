@@ -49,6 +49,22 @@ public static class EmailVerificationTemplateSeeder
                     "Հաստատել հասցեն",
                     "Եթե դուք չեք ստեղծել այս հաշիվը, պարզապես անտեսեք այս նամակը։",
                     EchoButtonUrl: true)),
+                new SeededEmailVersion("E-Mail-Adresse bestätigen | {{ site.name }}", new SeededEmailCopy(
+                    "de",
+                    "E-Mail-Adresse bestätigen",
+                    ["Klicken Sie auf die Schaltfläche unten, um Ihre E-Mail-Adresse zu bestätigen und die Einrichtung Ihres Kontos abzuschließen."],
+                    "{{ verification_link }}",
+                    "E-Mail-Adresse bestätigen",
+                    "Wenn Sie dieses Konto nicht erstellt haben, können Sie diese E-Mail einfach ignorieren.",
+                    EchoButtonUrl: true)),
+                new SeededEmailVersion("Verifique su correo electrónico | {{ site.name }}", new SeededEmailCopy(
+                    "es",
+                    "Verifique su correo electrónico",
+                    ["Haga clic en el botón de abajo para confirmar su dirección de correo electrónico y terminar de configurar su cuenta."],
+                    "{{ verification_link }}",
+                    "Verificar correo electrónico",
+                    "Si usted no creó esta cuenta, puede ignorar este correo electrónico.",
+                    EchoButtonUrl: true)),
             ]), ct);
     }
 }

@@ -1,0 +1,99 @@
+{
+  "cwpBrandHeader": {
+    "centosWebPanel": "CentOS Web Panel",
+    "provisioningProvider": "Provisionierungsanbieter",
+    "connectionError": "Verbindungsfehler",
+    "unknown": "Unbekannt"
+  },
+  "integrationCard": {
+    "plugin": "Plugin",
+    "configure": "Konfigurieren →",
+    "notConfigured": "Nicht konfiguriert"
+  },
+  "categories": {
+    "fulfilment": "Fulfillment",
+    "identity": "Identität",
+    "hosted": "Hintergrundprozesse",
+    "payments": "Zahlungs-Gateways",
+    "provisioning": "Hosting-Panels",
+    "registrars": "Domain-Registrare",
+    "email": "E-Mail / SMTP",
+    "fraud": "Betrugsschutz"
+  },
+  "integrationStatusSidebar": {
+    "connectionStatus": "Verbindungsstatus",
+    "connectionOk": "Verbindung in Ordnung",
+    "connectionFailed": "Verbindung fehlgeschlagen",
+    "endpoint": "Endpunkt",
+    "tested": "Getestet",
+    "roundTrip": "Antwortzeit",
+    "notTestedYet": "Noch nicht getestet",
+    "setupNote": "Einrichtungshinweis"
+  },
+  "cwp7Integration": {
+    "cwp7": "CWP7",
+    "controlWebPanel7Provisioning": "Control Web Panel 7: Provisionierungsanbieter zur Verwaltung von Hosting-Konten, Paketen und Serverressourcen.",
+    "hostingProvisioning": "Hosting / Provisionierung",
+    "moduleType": "Modultyp",
+    "serverModule": "Servermodul",
+    "developer": "Entwickler",
+    "createNewServer": "Neuen Server erstellen",
+    "addACwp7ServerWith": "CWP7-Server mit Hostname, Zugangsdaten und Nameservern hinzufügen",
+    "createNewProduct": "Neues Produkt erstellen",
+    "createAHostingPlanLinked": "Hosting-Tarif erstellen, der mit einem CWP7-Server verknüpft ist",
+    "cwp7Servers": "CWP7-Server",
+    "lengthServerValue": "Server: {length}",
+    "noCwp7ServersConfiguredYet": "Noch keine CWP7-Server konfiguriert.",
+    "addYourFirstServer": "Ersten Server hinzufügen →",
+    "accountsUsage": "{usage} Konten"
+  },
+  "integrations": {
+    "lengthIntegrationValue": "Integrationen: {length}",
+    "activecountActive": "· {activeCount} aktiv",
+    "noIntegrationsInThisCategory": "Keine Integrationen in dieser Kategorie",
+    "emptyHint": "Installieren Sie ein Plugin aus dem Katalog oder laden Sie ein Plugin-Paket hoch, um eines hinzuzufügen.",
+    "browsePlugins": "Plugins durchsuchen"
+  },
+  "common": {
+    "never": "Nie"
+  },
+  "providerStatus": {
+    "notConnected": "Nicht verbunden",
+    "statusUnknown": "Status unbekannt",
+    "lastTested": "Zuletzt getestet",
+    "cwpVersion": "CWP-Version"
+  },
+  "integrationConfigForm": {
+    "enterValue": "{label} eingeben",
+    "chooseValue": "{label} auswählen"
+  },
+  "integrationDetail": {
+    "saved": "Einstellungen gespeichert."
+  },
+  "connectionState": {
+    "Connected": "Verbunden",
+    "Degraded": "Eingeschränkt",
+    "Unavailable": "Nicht verfügbar",
+    "Inactive": "Nicht geprüft"
+  },
+  "categoryMenu": {
+    "payments": "Zahlungen",
+    "provisioning": "Hosting-Panels",
+    "registrars": "Registrare",
+    "email": "E-Mail",
+    "fulfilment": "Fulfillment",
+    "fraud": "Betrug",
+    "identity": "Identität",
+    "hosted": "Hintergrundprozesse"
+  },
+  "categoryEmpty": {
+    "payments": "Zahlungs-Gateways nehmen Karten- und Bankzahlungen für Rechnungen entgegen. Noch ist keines installiert.",
+    "provisioning": "Hosting-Panels erstellen und verwalten Hosting-Konten auf Ihren Servern. Noch ist keines installiert.",
+    "registrars": "Domain-Registrare registrieren und verlängern die Domains, die Ihre Kunden bestellen. Noch ist keiner installiert.",
+    "email": "E-Mail-Anbieter stellen die E-Mails zu, die das Panel versendet. Noch ist keiner installiert.",
+    "fulfilment": "Fulfillment-Plugins liefern digitale Produkte aus, sobald eine Rechnung bezahlt ist. Noch ist keines installiert.",
+    "fraud": "Der Betrugsschutz prüft neue Bestellungen auf Risiken. Noch ist keiner installiert.",
+    "identity": "Identitäts-Plugins legen fest, für welchen Kunden eine angemeldete Person handelt. Noch ist keines installiert.",
+    "hosted": "Plugins für Hintergrundprozesse führen Worker aus, die mit dem Server starten und stoppen. Noch ist keines installiert."
+  }
+}

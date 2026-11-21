@@ -1,0 +1,61 @@
+{
+  "checkout": {
+    "title": "Checkout",
+    "subtitle": "Schließen Sie Ihre Bestellung ab",
+    "yourOrder": "Ihre Bestellung",
+    "account": "Konto",
+    "paymentMethod": "Zahlungsart",
+    "loggedInAs": "Angemeldet als",
+    "notYou": "Nicht Sie? Konto wechseln",
+    "guestNotice": "Sie bestellen als Gast",
+    "signIn": "Anmelden",
+    "placeOrder": "Kostenpflichtig bestellen",
+    "redirectingToBank": "Sie werden zur sicheren Zahlungsseite der Bank weitergeleitet.",
+    "noPaymentMethods": "Keine Zahlungsarten verfügbar. Bitte kontaktieren Sie den Support.",
+    "permissionDenied": "Ihr Konto darf keine Bestellungen aufgeben. Bitten Sie den Kontoinhaber, Ihnen die Berechtigung für neue Bestellungen zu erteilen.",
+    "fields": {
+      "firstname": "Vorname",
+      "lastname": "Nachname",
+      "email": "E-Mail-Adresse",
+      "password": "Passwort erstellen",
+      "phonenumber": "Telefonnummer"
+    },
+    "errors": {
+      "generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+      "totalNotAccepted": "Der Bestellbetrag hat sich geändert, daher wurde nicht bezahlt. Prüfen Sie Ihren Warenkorb und versuchen Sie es erneut."
+    },
+    "success": {
+      "title": "Zahlung erfolgreich!",
+      "description": "Ihre Bestellung wurde aufgegeben und die Zahlung bestätigt. Sie können Ihren Service jetzt einrichten.",
+      "orderNumber": "Bestellung",
+      "status": "Zahlung",
+      "paid": "Bezahlt",
+      "amount": "Betrag",
+      "setupService": "Meinen Service einrichten",
+      "viewInvoices": "Rechnungen ansehen",
+      "domain": "Domain",
+      "action": "Aktion",
+      "registration": "Registrierung",
+      "transfer": "Transfer",
+      "manageDomain": "Domain verwalten"
+    },
+    "secureCheckout": "Sicherer Checkout",
+    "identifyPrompt": "Wie möchten Sie sich identifizieren?",
+    "choosePayment": "Wählen Sie Ihre bevorzugte Zahlungsart",
+    "gatewayKinds": {
+      "bankTransfer": "Per Banküberweisung bezahlen"
+    },
+    "needHelp": "Brauchen Sie Hilfe?",
+    "supportAlways": "Unser Support hilft Ihnen gern",
+    "contactUs": "Kontakt aufnehmen",
+    "placeholders": {
+      "firstname": "Max",
+      "lastname": "Mustermann",
+      "email": "sie{'@'}beispiel.de",
+      "password": "••••••••"
+    },
+    "totalChangedConfirm": "Der Gesamtbetrag hat sich von {shown} auf {charged} geändert. Den neuen Betrag bezahlen?",
+    "saveForRenewals": "Diese Zahlungsart für automatische Verlängerungen speichern",
+    "saveForRenewalsAgreement": "Ich bin damit einverstanden, dass die für diese Zahlung angegebene Zahlungsart beim Zahlungsanbieter gespeichert und für meine Verlängerungsrechnungen automatisch belastet wird, bis ich diese Erlaubnis widerrufe. Ich gebe sie nur einmal an, jetzt. Ich kann sie jederzeit unter Gespeicherte Zahlungsarten in meinem Konto entfernen."
+  }
+}

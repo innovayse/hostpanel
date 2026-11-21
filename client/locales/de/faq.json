@@ -1,0 +1,21 @@
+{
+  "faq": {
+    "badge": "FAQ",
+    "filterLabel": "Nach Thema filtern",
+    "title": "Häufig gestellte Fragen",
+    "subtitle": "Antworten auf häufige Fragen zu Hosting, Domains, Abrechnung und Ihrem Konto",
+    "viewAll": "Alle FAQs ansehen",
+    "noResults": "Keine Fragen in dieser Kategorie gefunden.",
+    "backToAll": "Zurück zu allen FAQs",
+    "categories": {
+      "all": "Alle",
+      "general": "Allgemein",
+      "products": "Produkte"
+    },
+    "cta": {
+      "title": "Noch Fragen?",
+      "description": "Sie finden die gesuchte Antwort nicht? Schreiben Sie unserem freundlichen Team.",
+      "button": "Kontakt aufnehmen"
+    }
+  }
+}

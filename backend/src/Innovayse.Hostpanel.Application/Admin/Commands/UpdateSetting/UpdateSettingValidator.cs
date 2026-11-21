@@ -10,7 +10,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Commands.UpdateSetting;
 ///     Validates <see cref="UpdateSettingCommand"/> before it reaches the handler. <c>Value</c> is
 ///     only capped here: an empty string is meaningful for some keys and refused for
 ///     others, and only the handler, which loads the row, knows which. The cap is the one the
-///     column is sized for.
+///     column is sized for. This is the ceiling of every key; the handler, which knows the key, holds
+///     an ordinary key to the shorter <see cref="ProtectedValueLimits.SettingValue"/>.
 /// </summary>
 public sealed class UpdateSettingValidator : LocalizedValidator<UpdateSettingCommand>
 {
@@ -22,7 +23,7 @@ public sealed class UpdateSettingValidator : LocalizedValidator<UpdateSettingCom
         : base(localizer)
     {
         RuleFor(x => x.Id).MustBePositiveId(L["SettingIdInvalid"]);
-        RuleFor(x => x.Value).MaximumLength(ProtectedValueLimits.SettingValue)
-            .WithMessage(L["SettingValueTooLong", ProtectedValueLimits.SettingValue]);
+        RuleFor(x => x.Value).MaximumLength(ProtectedValueLimits.LegalTextValue)
+            .WithMessage(L["SettingValueTooLong", ProtectedValueLimits.LegalTextValue]);
     }
 }

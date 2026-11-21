@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Application.Products.Queries.GetAllowedPaymentMethods;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductSummaries;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
@@ -64,6 +65,24 @@ public static class ProductBusExtensions
         }
 
         return summaries;
+    }
+
+    /// <summary>The payment methods the product groups of some products allow together.</summary>
+    /// <param name="bus">The Wolverine bus to dispatch the query through.</param>
+    /// <param name="productIds">The products; an id that names no product is ignored.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// <see langword="null"/> when no group is restricted; otherwise the methods all restricted groups share,
+    /// empty when they share none.
+    /// </returns>
+    public static async Task<IReadOnlyList<string>?> GetAllowedPaymentMethodsAsync(
+        this IMessageBus bus, IReadOnlyList<int> productIds, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+
+        var result = await bus.InvokeAsync<Result<IReadOnlyList<string>?>>(new GetAllowedPaymentMethodsQuery(productIds), ct);
+
+        return result.Value;
     }
 
     /// <summary>The failure for a product id that a restricting foreign key should have kept alive.</summary>

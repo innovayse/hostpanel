@@ -1,0 +1,114 @@
+{
+  "hostingSections": {
+    "locations": {
+      "badge": "Ubicaciones",
+      "title": "Servidores cerca de sus visitantes",
+      "subtitle": "Elija el centro de datos más cercano a su audiencia para que sus páginas carguen más rápido."
+    },
+    "performance": {
+      "badge": "Rendimiento",
+      "title": "Velocidad y fiabilidad que se pueden medir",
+      "subtitle": "Las cifras que respaldan cada plan de hosting.",
+      "stats": {
+        "uptime": "Disponibilidad",
+        "response_time": "Tiempo medio de respuesta",
+        "sites_hosted": "Sitios alojados",
+        "support_response": "Respuesta del soporte"
+      }
+    },
+    "security": {
+      "badge": "Seguridad",
+      "title": "Sus sitios, siempre protegidos",
+      "subtitle": "Protección integrada en todos los planes.",
+      "features": {
+        "ssl": {
+          "title": "SSL gratuito",
+          "description": "Conexiones cifradas para cada dominio que aloje."
+        },
+        "backups": {
+          "title": "Copias de seguridad automáticas",
+          "description": "Copias periódicas de sus archivos y bases de datos, listas para restaurar."
+        },
+        "ddos": {
+          "title": "Protección DDoS",
+          "description": "El tráfico de ataque se filtra antes de llegar a su sitio."
+        },
+        "malware": {
+          "title": "Análisis de malware",
+          "description": "Los archivos se analizan de forma continua y las amenazas se eliminan."
+        },
+        "firewall": {
+          "title": "Cortafuegos",
+          "description": "Un cortafuegos de aplicaciones web bloquea los ataques más comunes."
+        }
+      }
+    },
+    "apps": {
+      "badge": "Aplicaciones con un clic",
+      "title": "Instale aplicaciones populares con un clic",
+      "subtitle": "Publique un sitio sin tocar la línea de comandos.",
+      "count": "{count} aplicaciones listas para instalar",
+      "categories": {
+        "cms": "Gestión de contenidos",
+        "shop": "Tiendas en línea",
+        "forum": "Foros",
+        "wiki": "Wikis",
+        "blog": "Blogs",
+        "gallery": "Galerías"
+      }
+    },
+    "guarantees": {
+      "badge": "Garantías",
+      "title": "Un hosting en el que confiar",
+      "subtitle": "Promesas claras, sin sorpresas.",
+      "items": {
+        "free_migration": {
+          "title": "Migración gratuita",
+          "description": "Trasladamos su sitio actual a nuestros servidores sin coste."
+        },
+        "money_back": {
+          "title": "Devolución del dinero en {days} días",
+          "description": "¿No está satisfecho en {days} días? Le reembolsamos el importe íntegro."
+        },
+        "no_hidden_fees": {
+          "title": "Sin costes ocultos",
+          "description": "El precio que ve es el precio que paga."
+        }
+      }
+    },
+    "support": {
+      "badge": "Soporte",
+      "title": "Personas reales, listas para ayudar",
+      "subtitle": "Contacte con el equipo de la forma que más le convenga.",
+      "responseTime": "Respuesta en {time}",
+      "channels": {
+        "chat": {
+          "title": "Chat en vivo",
+          "description": "Haga una pregunta y obtenga respuesta al instante.",
+          "action": "Abrir chat"
+        },
+        "ticket": {
+          "title": "Ticket de soporte",
+          "description": "Describa el problema y le haremos el seguimiento hasta resolverlo.",
+          "action": "Abrir un ticket"
+        },
+        "email": {
+          "title": "Correo electrónico",
+          "description": "Escríbanos en cualquier momento.",
+          "action": "Enviar un correo"
+        },
+        "phone": {
+          "title": "Teléfono",
+          "description": "Hable con una persona del equipo.",
+          "action": "Llámenos"
+        }
+      }
+    },
+    "plans": {
+      "badge": "Hosting y dominios",
+      "title": "Todo lo que su sitio necesita",
+      "subtitle": "Planes de hosting, dominios y más, con precios claros.",
+      "viewAll": "Ver todos los planes"
+    }
+  }
+}

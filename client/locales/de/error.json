@@ -1,0 +1,24 @@
+{
+  "error": {
+    "403": {
+      "title": "Zugriff verweigert",
+      "message": "Sie haben keine Berechtigung, auf diese Seite zuzugreifen."
+    },
+    "404": {
+      "title": "Seite nicht gefunden",
+      "message": "Die gesuchte Seite existiert nicht oder wurde verschoben."
+    },
+    "500": {
+      "title": "Serverfehler",
+      "message": "Bei uns ist etwas schiefgelaufen. Wir arbeiten an der Behebung."
+    },
+    "goBack": "Zurück",
+    "goHome": "Zur Startseite",
+    "helpText": "Wenn Sie Hilfe benötigen, können Sie uns gern",
+    "contactUs": "kontaktieren",
+    "default": {
+      "title": "Etwas ist schiefgelaufen",
+      "message": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."
+    }
+  }
+}

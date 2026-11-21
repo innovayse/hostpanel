@@ -1,0 +1,48 @@
+{
+  "footer": {
+    "tagline": "Schnelles, zuverlässiges Webhosting und Domains, mit echten Menschen im Support.",
+    "cta": {
+      "title": "Bereit, Ihre Website online zu stellen?",
+      "text": "Finden Sie eine Domain oder wählen Sie einen Hosting-Tarif und sind Sie in wenigen Minuten online.",
+      "plans": "Jetzt starten"
+    },
+    "columns": {
+      "hosting": "Hosting",
+      "domains": "Domains",
+      "company": "Unternehmen",
+      "support": "Support",
+      "legal": "Rechtliches"
+    },
+    "hosting": {
+      "all": "Alle Tarife"
+    },
+    "domains": {
+      "register": "Domain registrieren",
+      "transfer": "Domain transferieren",
+      "pricing": "Domain-Preise"
+    },
+    "company": {
+      "about": "Über uns",
+      "contact": "Kontakt",
+      "announcements": "Ankündigungen"
+    },
+    "support": {
+      "help": "Hilfe-Center",
+      "faq": "FAQ",
+      "ticket": "Support kontaktieren"
+    },
+    "trust": {
+      "secure": "Sichere Verbindung",
+      "payments": "Sichere Zahlungen",
+      "guarantee": "Geld-zurück-Garantie"
+    },
+    "bottom": {
+      "rights": "Alle Rechte vorbehalten.",
+      "privacy": "Datenschutzerklärung",
+      "cookies": "Cookie-Richtlinie",
+      "terms": "Nutzungsbedingungen",
+      "refund": "Erstattungsrichtlinie",
+      "acceptableUse": "Richtlinie zur akzeptablen Nutzung"
+    }
+  }
+}

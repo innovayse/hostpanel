@@ -112,6 +112,8 @@ public static class SeededEmailLayout
     {
         "ru" => "Все права защищены.",
         "hy" => "Բոլոր իրավունքները պաշտպանված են։",
+        "de" => "Alle Rechte vorbehalten.",
+        "es" => "Todos los derechos reservados.",
         _ => "All rights reserved.",
     };
 }

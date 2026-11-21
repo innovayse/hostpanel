@@ -1,0 +1,228 @@
+{
+  "aurora": {
+    "nav": {
+      "hosting": "Hosting",
+      "domains": "Domains",
+      "services": "Services",
+      "process": "Ablauf",
+      "faq": "FAQ",
+      "login": "Anmelden",
+      "start": "Jetzt starten",
+      "cart": "Warenkorb",
+      "menu": "Menü"
+    },
+    "hero": {
+      "titleLine1": "Ihre gesamte",
+      "titleLine2": "digitale",
+      "titleAccent": "Infrastruktur",
+      "lead": "Domains, Hosting, Server und Rechnungen in einem Kundenportal. Registrieren Sie in wenigen Minuten eine Domain und verwalten Sie alles in einem Panel.",
+      "ctaPrimary": "Domain prüfen",
+      "ctaSecondary": "Mit einem Experten sprechen",
+      "statClients": "Kunden",
+      "statUptime": "Verfügbarkeit",
+      "statRegions": "Regionen"
+    },
+    "domainSearch": {
+      "title": "Finden Sie Ihre Domain",
+      "placeholder": "beispiel",
+      "cta": "Suchen",
+      "available": "verfügbar",
+      "taken": "vergeben",
+      "empty": "Geben Sie einen Namen ein und klicken Sie auf Suchen.",
+      "noZones": "Für Domain-Endungen sind noch keine Preise hinterlegt.",
+      "unknown": "Prüfung fehlgeschlagen",
+      "add": "Hinzufügen",
+      "inCart": "Im Warenkorb",
+      "transfer": "Transfer"
+    },
+    "trust": {
+      "ssl": "SSL-gesichert",
+      "refund": "Erstattungsrichtlinie",
+      "noHidden": "Keine versteckten Kosten"
+    },
+    "plans": {
+      "eyebrow": "Hosting",
+      "title": "Tarife, die mit Ihnen wachsen",
+      "billingLabel": "Abrechnungszeitraum",
+      "perMonth": "/ Monat",
+      "perMonthBilled": "/ Monat, Abrechnung: {cycle}",
+      "cta": "Tarif wählen",
+      "moreFeatures": "+{count} weitere",
+      "includedTitle": "In jedem Tarif enthalten",
+      "included1": "Kostenloses SSL-Zertifikat",
+      "included2": "Tägliche Backups",
+      "included3": "Unterstützung bei der Migration",
+      "included4": "Support inklusive",
+      "empty": "Die Tarife sind vorübergehend nicht verfügbar.",
+      "freeBadge": "Kostenlos starten",
+      "recommended": "Empfohlen",
+      "freeForever": "Dauerhaft kostenlos"
+    },
+    "services": {
+      "eyebrow": "Services",
+      "title": "Von der Domain bis zum Server",
+      "hostingTitle": "Webhosting",
+      "hostingBody": "Webhosting mit SSL, täglichen Backups und Unterstützung bei der Migration.",
+      "serversTitle": "VPS und Server",
+      "serversBody": "Virtuelle und dedizierte Server mit vollem Root-Zugriff und Monitoring.",
+      "domainsTitle": "Domains und DNS",
+      "domainsBody": "Registrieren, transferieren und verlängern Sie Domains, inklusive DNS und WHOIS-Datenschutz im Panel.",
+      "billingTitle": "Abrechnung und Kundenportal",
+      "billingBody": "Rechnungen, Zahlungen, Verlängerungen und Support-Tickets in einem Konto.",
+      "viewAll": "Alle Services ansehen"
+    },
+    "process": {
+      "eyebrow": "Ablauf",
+      "title": "In vier Schritten online",
+      "lead": "Klare Schritte und ein Support-Team in jeder Phase.",
+      "start": "Jetzt starten",
+      "talk": "Mit einem Experten sprechen",
+      "note": "Unsicher, welcher Tarif passt? Unser Team hilft Ihnen bei der Auswahl.",
+      "step1Title": "Tarif wählen",
+      "step1Body": "Wählen Sie Hosting oder einen Server und suchen Sie Ihre Wunschdomain.",
+      "step2Title": "Bestellen und bezahlen",
+      "step2Body": "Bezahlen Sie zu einem klaren Preis ohne versteckte Kosten; Rechnungen werden automatisch erstellt.",
+      "step3Title": "Aktivierung",
+      "step3Body": "Ihr Service wird automatisch bereitgestellt und die Zugangsdaten kommen per E-Mail.",
+      "step4Title": "Verwalten und Support erhalten",
+      "step4Body": "Verwalten Sie Services, Domains und Rechnungen im Kundenportal; der Support ist jederzeit für Sie da."
+    },
+    "partners": {
+      "eyebrow": "Partner",
+      "title": "Das Vertrauen unserer Partner"
+    },
+    "testimonials": {
+      "eyebrow": "Kunden",
+      "title": "Das sagen Kunden über uns",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "rating": "Bewertet mit {rating} von 5",
+      "slide": "Kundenstimme {current} von {total}",
+      "goTo": "Kundenstimme von {name} anzeigen"
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "lead": "Schnelle Antworten zu Tarifen, Domains und Support.",
+      "contact": "Noch Fragen? Kontaktieren Sie den Support",
+      "viewAll": "Alle Fragen ansehen"
+    },
+    "cta": {
+      "title": "Erzählen Sie uns von Ihrem Projekt",
+      "lead": "Eine Beratung zur Wahl von Domain, Hosting und Server.",
+      "primary": "Gespräch vereinbaren",
+      "secondary": "Tarife ansehen"
+    },
+    "footer": {
+      "tagline": "Hosting, Domains und Server aus einer Hand.",
+      "newsletterTitle": "Newsletter",
+      "newsletterPlaceholder": "sie{'@'}email.de",
+      "newsletterCta": "Abonnieren",
+      "company": "Unternehmen",
+      "support": "Support",
+      "legal": "Rechtliches",
+      "about": "Über uns",
+      "services": "Services",
+      "knowledgebase": "Wissensdatenbank",
+      "helpCenter": "Hilfe-Center",
+      "faq": "FAQ",
+      "domainTransfer": "Domain-Transfer",
+      "contact": "Kontakt",
+      "terms": "Nutzungsbedingungen",
+      "privacy": "Datenschutzerklärung",
+      "cookies": "Cookie-Richtlinie",
+      "refund": "Erstattungen",
+      "acceptableUse": "Akzeptable Nutzung",
+      "newsletterInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+      "taxId": "Steuer-ID"
+    },
+    "hostingPage": {
+      "eyebrow": "Hosting",
+      "title": "Wählen Sie Ihren Tarif",
+      "lead": "Webhosting mit SSL, Backups und Unterstützung bei der Migration."
+    },
+    "domainsPage": {
+      "eyebrow": "Domains",
+      "title": "Registrieren Sie Ihren Namen",
+      "lead": "Kostenloser WHOIS-Datenschutz und DNS-Verwaltung im selben Panel."
+    },
+    "tldTable": {
+      "title": "Preise nach Endung",
+      "lead": "Preise inklusive MwSt.",
+      "zone": "Endung",
+      "register": "Registrierung",
+      "renew": "Verlängerung",
+      "transfer": "Transfer",
+      "all": "Alle",
+      "filterLabel": "Nach Kategorie filtern",
+      "empty": "Keine Endungen in dieser Kategorie.",
+      "note": "Hinweis"
+    },
+    "checkout": {
+      "helpTitle": "Brauchen Sie Hilfe?",
+      "helpBody": "Unser Support ist jederzeit für Sie erreichbar",
+      "helpCta": "Kontakt aufnehmen"
+    },
+    "apps": {
+      "eyebrow": "1-Klick-Installer",
+      "title": "Starten Sie Ihre Website mit einem Klick",
+      "count": "{count} Apps sofort installierbar",
+      "cms": "Content-Management",
+      "shop": "Online-Shops",
+      "forum": "Foren",
+      "wiki": "Wikis",
+      "blog": "Blogs",
+      "gallery": "Galerien"
+    },
+    "comparison": {
+      "title": "Tarife vergleichen",
+      "lead": "Alles, was die einzelnen Tarife enthalten, im direkten Vergleich.",
+      "feature": "Funktion",
+      "notIncluded": "Nicht enthalten"
+    },
+    "locations": {
+      "eyebrow": "Standorte",
+      "title": "Server in der Nähe Ihrer Besucher"
+    },
+    "performance": {
+      "eyebrow": "Leistung",
+      "title": "Schnell und zuverlässig, messbar belegt",
+      "uptime": "Verfügbarkeit",
+      "response_time": "Server-Antwortzeit",
+      "sites_hosted": "Gehostete Websites",
+      "support_response": "Support-Antwortzeit"
+    },
+    "security": {
+      "eyebrow": "Sicherheit",
+      "title": "Ihre Website bleibt geschützt",
+      "sslTitle": "SSL-Zertifikate",
+      "sslBody": "Verschlüsselte Verbindungen für jede Website.",
+      "backupsTitle": "Automatische Backups",
+      "backupsBody": "Regelmäßige Kopien, die Sie bei Bedarf wiederherstellen können.",
+      "ddosTitle": "DDoS-Schutz",
+      "ddosBody": "Angriffsverkehr wird gefiltert, bevor er Ihre Website erreicht.",
+      "malwareTitle": "Malware-Scan",
+      "malwareBody": "Dateien werden fortlaufend auf Bedrohungen geprüft.",
+      "firewallTitle": "Firewall",
+      "firewallBody": "Netzwerkregeln blockieren unerwünschte Zugriffe."
+    },
+    "guarantees": {
+      "eyebrow": "Garantien",
+      "title": "Hosten Sie mit Vertrauen",
+      "free_migrationTitle": "Kostenlose Migration",
+      "free_migrationBody": "Wir ziehen Ihre bestehende Website kostenlos zu uns um.",
+      "money_backTitle": "{days} Tage Geld-zurück-Garantie",
+      "money_backBody": "Nicht zufrieden innerhalb von {days} Tagen? Sie erhalten eine Erstattung.",
+      "no_hidden_feesTitle": "Keine versteckten Kosten",
+      "no_hidden_feesBody": "Der angezeigte Preis ist der Preis, den Sie zahlen."
+    },
+    "support": {
+      "eyebrow": "Support",
+      "title": "Hilfe, wann immer Sie sie brauchen",
+      "chat": "Live-Chat",
+      "ticket": "Support-Ticket",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "response": "Übliche Antwortzeit: {time}"
+    }
+  }
+}

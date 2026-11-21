@@ -1,0 +1,53 @@
+{
+  "ui": {
+    "selectPlaceholder": "Seleccione una opción",
+    "noOptions": "No hay opciones disponibles",
+    "theme": {
+      "switchDark": "Cambiar a modo oscuro",
+      "switchLight": "Cambiar a modo claro"
+    },
+    "pagination": {
+      "showing": "Mostrando {from} a {to} de {total} entradas",
+      "show": "Mostrar",
+      "entries": "entradas",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "label": "Paginación"
+    },
+    "search": "Buscar",
+    "close": "Cerrar",
+    "loading": "Cargando",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "clearSearch": "Borrar búsqueda",
+    "searchButton": "Buscar",
+    "tabs": "Pestañas",
+    "digit": "Dígito {n}",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "currencyFixed": "Su moneda está definida en su cuenta y no se puede cambiar aquí.",
+    "phoneExample": "00 000 000",
+    "phoneCountry": "Prefijo telefónico del país",
+    "searchCountry": "Buscar país o prefijo",
+    "noCountries": "No se encontró ningún país"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "home": "Inicio",
+    "products": "Productos",
+    "backToProducts": "Volver a Productos",
+    "goToSlide": "Ir a la diapositiva {n}",
+    "scrollHorizontal": "Desplácese para explorar",
+    "retry": "Reintentar",
+    "breadcrumb": "Ruta de navegación"
+  },
+  "fallback": {
+    "unknown": "Desconocido"
+  },
+  "errors": {
+    "noAnswer": "No se pudo conectar con el servidor."
+  }
+}

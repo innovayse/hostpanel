@@ -67,6 +67,25 @@ const placeholders = (message: string): string =>
 /** How a message spells an at-sign vue-i18n must not read as a linked message. */
 const LITERAL_AT = "{'@'}"
 
+/**
+ * Module files a language does not translate yet, which fall back to English at runtime (`fallbackLocale`).
+ * The long legal texts are left out of the German translation until a person who knows the law of the
+ * operator's country has written them; a machine translation of a privacy policy would mislead. The list is
+ * `locales/untranslated.json`, which `scripts/lint-i18n.mjs` reads too.
+ */
+const UNTRANSLATED: Partial<Record<AppLocale, readonly string[]>> = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, '../../locales/untranslated.json'), 'utf8')
+)
+
+/**
+ * Tells whether a language ships a module file of the reference.
+ *
+ * @param locale - Locale directory name.
+ * @param file - Module file name.
+ * @returns False when the file is listed in {@link UNTRANSLATED} for the language.
+ */
+const isTranslated = (locale: string, file: string): boolean => !(UNTRANSLATED[locale as AppLocale] ?? []).includes(file)
+
 /** The languages compared against the reference. */
 const TRANSLATIONS = LOCALES.filter((locale) => locale !== REFERENCE)
 
@@ -86,13 +105,13 @@ describe('portal locale parity', () => {
   it.each(TRANSLATIONS)('%s has exactly the module files of en', (locale) => {
     const files = readdirSync(dirOf(locale)).filter((name) => name.endsWith('.json')).sort()
 
-    expect(files).toEqual(FILES)
+    expect(files).toEqual(FILES.filter((file) => isTranslated(locale, file)))
   })
 
   describe.each(FILES)('%s', (file) => {
     const reference = flatten(load(REFERENCE, file))
 
-    it.each(TRANSLATIONS)('%s has exactly the keys of en', (locale) => {
+    it.each(TRANSLATIONS.filter((locale) => isTranslated(locale, file)))('%s has exactly the keys of en', (locale) => {
       const actual = flatten(load(locale, file))
       const expected = Object.keys(reference)
 
@@ -100,7 +119,7 @@ describe('portal locale parity', () => {
       expect(expected.filter((key) => !(key in actual))).toEqual([])
     })
 
-    it.each(LOCALES)('%s holds no empty message', (locale) => {
+    it.each(LOCALES.filter((locale) => isTranslated(locale, file)))('%s holds no empty message', (locale) => {
       const empty = Object.entries(flatten(load(locale, file)))
         .filter(([, value]) => value === '' || value === null || value === undefined || (typeof value === 'string' && value.trim() === ''))
         .map(([key]) => key)
@@ -108,7 +127,7 @@ describe('portal locale parity', () => {
       expect(empty).toEqual([])
     })
 
-    it.each(LOCALES)('%s writes every at-sign as a literal', (locale) => {
+    it.each(LOCALES.filter((locale) => isTranslated(locale, file)))('%s writes every at-sign as a literal', (locale) => {
       // vue-i18n reads a bare @ as the start of a linked message, so `name@example.com` throws
       // when it is compiled and the component that shows it renders nothing.
       const bare = Object.entries(flatten(load(locale, file)))
@@ -118,7 +137,7 @@ describe('portal locale parity', () => {
       expect(bare).toEqual([])
     })
 
-    it.each(TRANSLATIONS)('%s keeps the placeholders of en', (locale) => {
+    it.each(TRANSLATIONS.filter((locale) => isTranslated(locale, file)))('%s keeps the placeholders of en', (locale) => {
       const actual = flatten(load(locale, file))
       const mismatched = Object.entries(reference)
         .filter(([key, value]) => {

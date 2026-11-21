@@ -1,7 +1,7 @@
 ---
 title: Languages
-description: "Send the X-Language header to get Hostpanel API messages in English, Russian or Armenian, with an example request."
-keywords: "x-language header, api languages, english, russian, armenian"
+description: "Send the X-Language header to get Hostpanel API messages in English, Russian, Armenian, German or Spanish, with an example request."
+keywords: "x-language header, api languages, english, russian, armenian, german, spanish"
 ---
 
 # Languages
@@ -12,10 +12,10 @@ Send <code>X-Language</code> to get messages in the language of your user.
 
 ## The X-Language header
 
-Send the language you want in the `X-Language` header. The API answers in English, Russian and Armenian.
+Send the language you want in the `X-Language` header. The API answers in English, Russian, Armenian, German and Spanish.
 
 <SettingTable :settings="[
-  { name: 'X-Language', type: 'request header', default: 'en', description: 'The language code: en, ru or hy. The value is trimmed and compared without regard to case. Anything else, or no header, gives the default language of the install, which is English unless the operator changed it.' },
+  { name: 'X-Language', type: 'request header', default: 'en', description: 'The language code: en, ru, hy, de or es. The value is trimmed and compared without regard to case. Anything else, or no header, gives the default language of the install, which is English unless the operator changed it.' },
 ]" />
 
 Only `X-Language` is read. `Accept-Language` is ignored, so a browser's language setting has no effect on a call to the API.

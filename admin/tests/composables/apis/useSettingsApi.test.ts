@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
@@ -37,7 +37,7 @@ describe('useSettingsApi', () => {
 
   it('createEmailTemplate POSTs the new language version and returns its id', async () => {
     const mock = stubFetch(json(5))
-    const payload = { slug: 'welcome', language: MessageLanguage.Ru, subject: 'S', body: 'B', description: null }
+    const payload = { slug: 'welcome', language: ContentLanguage.Ru, subject: 'S', body: 'B', description: null }
 
     expect(await useSettingsApi().createEmailTemplate(payload)).toBe(5)
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/email-templates', method: 'POST', body: payload })
@@ -58,6 +58,29 @@ describe('useSettingsApi', () => {
     await api.listProductGroups()
     expect(callOf(mock, 0).url).toBe('/api/products?activeOnly=false&includeUnsellable=true')
     expect(callOf(mock, 1).url).toBe('/api/products/groups?activeOnly=false')
+  })
+
+  it('listPaymentMethods reads the methods a checkout offers', async () => {
+    const mock = stubFetch(json([{ module: 'bank_transfer', displayName: 'Bank transfer' }]))
+
+    expect(await useSettingsApi().listPaymentMethods()).toEqual([{ module: 'bank_transfer', displayName: 'Bank transfer' }])
+    expect(callOf(mock).url).toBe('/api/payment-methods')
+  })
+
+  it('createProductGroup POSTs the group with its allowed methods and returns the id', async () => {
+    const mock = stubFetch(json(4))
+    const payload = { name: 'Shared', description: null, allowedPaymentMethods: ['bank_transfer'] }
+
+    expect(await useSettingsApi().createProductGroup(payload)).toBe(4)
+    expect(callOf(mock)).toMatchObject({ url: '/api/products/groups', method: 'POST', body: payload })
+  })
+
+  it('updateProductGroup PUTs the group by id', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const payload = { name: 'Shared', description: 'D', allowedPaymentMethods: [] }
+
+    await useSettingsApi().updateProductGroup(4, payload)
+    expect(callOf(mock)).toMatchObject({ url: '/api/products/groups/4', method: 'PUT', body: payload })
   })
 
   it('listProductsPage reads one page of /admin/products with the page, its size and the filters', async () => {

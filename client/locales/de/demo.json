@@ -1,0 +1,11 @@
+{
+  "demo": {
+    "label": "Demo-Modus",
+    "resetsIn": "Zurücksetzung in {time}",
+    "resetsSoon": "Wird gleich zurückgesetzt",
+    "hoursMinutes": "{hours} Std. {minutes} Min.",
+    "minutes": "{minutes} Min.",
+    "note": "Alle Daten hier sind Beispieldaten und werden regelmäßig zurückgesetzt.",
+    "guide": "Neu hier? Lesen Sie die Anleitung"
+  }
+}

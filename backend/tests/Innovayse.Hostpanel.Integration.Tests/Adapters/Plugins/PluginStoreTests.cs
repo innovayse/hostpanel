@@ -1,9 +1,11 @@
+using Hostpanel.Sdk.Plugins.Store;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Time;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,7 +79,12 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         PluginStoreQuotaSignal? signal = null)
     {
         return new PluginStore(
-            pluginId, clientRef, db, quota ?? new PluginApiOptions().StoreQuota, signal ?? new PluginStoreQuotaSignal());
+            pluginId,
+            clientRef,
+            db,
+            quota ?? new PluginApiOptions().StoreQuota,
+            signal ?? new PluginStoreQuotaSignal(),
+            new SystemClock(TimeProvider.System));
     }
 
     /// <summary>Writes <paramref name="count"/> distinct keys, <c>key-0</c> upwards, through a store.</summary>
@@ -337,18 +344,17 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
             try
             {
                 await StoreOf(db, plugin, clientRef, quota, signal).SetAsync($"racer-{i}", "v", CancellationToken.None);
-                return (Admitted: true, Code: (string?)null, signal.Raised);
+                return (Admitted: true, signal.Raised);
             }
-            catch (DomainRuleException ex)
+            catch (PluginStoreQuotaException)
             {
-                return (Admitted: false, Code: (string?)ex.Code, signal.Raised);
+                return (Admitted: false, signal.Raised);
             }
         })));
 
         outcomes.Count(o => o.Admitted).Should().Be(1);
         outcomes.Where(o => !o.Admitted).Should().AllSatisfy(o =>
         {
-            o.Code.Should().Be(PluginStoreErrors.QuotaExceeded);
             o.Raised.Should().BeTrue();
         });
         (await RowsAsync(plugin)).Should().HaveCount(SmallCap);
@@ -518,10 +524,8 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         await FillAsync(store, SmallCap);
         signal.Raised.Should().BeFalse();
 
-        var refused = (await FluentActions.Awaiting(() => store.SetAsync("one-too-many", "v", CancellationToken.None))
-            .Should().ThrowAsync<DomainRuleException>()).Which;
-
-        refused.Code.Should().Be(PluginStoreErrors.QuotaExceeded);
+        await FluentActions.Awaiting(() => store.SetAsync("one-too-many", "v", CancellationToken.None))
+            .Should().ThrowAsync<PluginStoreQuotaException>();
         signal.Raised.Should().BeTrue();
         (await RowsAsync(plugin)).Should().HaveCount(SmallCap).And.NotContain(row => row.Key == "one-too-many");
         (await store.GetAsync("one-too-many", CancellationToken.None)).Should().BeNull();
@@ -577,12 +581,12 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         var perClient = StoreOf(db, plugin, clientRef, KeyCapQuota);
 
         await FillAsync(wide, SmallCap);
-        await FluentActions.Awaiting(() => wide.SetAsync("extra", "v", CancellationToken.None)).Should().ThrowAsync<DomainRuleException>();
+        await FluentActions.Awaiting(() => wide.SetAsync("extra", "v", CancellationToken.None)).Should().ThrowAsync<PluginStoreQuotaException>();
         await perClient.SetAsync("extra", "of-client", CancellationToken.None);
         await FillAsync(perClient, SmallCap - 1);
 
         (await perClient.GetAsync("extra", CancellationToken.None)).Should().Be("of-client");
-        await FluentActions.Awaiting(() => perClient.SetAsync("another", "v", CancellationToken.None)).Should().ThrowAsync<DomainRuleException>();
+        await FluentActions.Awaiting(() => perClient.SetAsync("another", "v", CancellationToken.None)).Should().ThrowAsync<PluginStoreQuotaException>();
         (await wide.GetAsync("extra", CancellationToken.None)).Should().BeNull();
         (await RowsAsync(plugin)).Should().HaveCount(SmallCap * 2);
     }
@@ -599,11 +603,9 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         var storeY = StoreOf(db, plugin, y, KeyCapQuota);
 
         await FillAsync(storeX, SmallCap);
-        var refused = (await FluentActions.Awaiting(() => storeX.SetAsync("extra", "v", CancellationToken.None))
-            .Should().ThrowAsync<DomainRuleException>()).Which;
+        await FluentActions.Awaiting(() => storeX.SetAsync("extra", "v", CancellationToken.None))
+            .Should().ThrowAsync<PluginStoreQuotaException>();
         await storeY.SetAsync("extra", "of-y", CancellationToken.None);
-
-        refused.Code.Should().Be(PluginStoreErrors.QuotaExceeded);
         (await storeY.GetAsync("extra", CancellationToken.None)).Should().Be("of-y");
         (await storeX.GetAsync("extra", CancellationToken.None)).Should().BeNull();
     }
@@ -625,10 +627,8 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         await store.SetAsync("k", fits, CancellationToken.None);
         var before = await ScopeAsync(plugin, clientRef);
 
-        var refused = (await FluentActions.Awaiting(() => store.SetAsync("k", fits + "xx", CancellationToken.None))
-            .Should().ThrowAsync<DomainRuleException>()).Which;
-
-        refused.Code.Should().Be(PluginStoreErrors.QuotaExceeded);
+        await FluentActions.Awaiting(() => store.SetAsync("k", fits + "xx", CancellationToken.None))
+            .Should().ThrowAsync<PluginStoreQuotaException>();
         signal.Raised.Should().BeTrue();
         (await store.GetAsync("k", CancellationToken.None)).Should().Be(fits);
         var after = await ScopeAsync(plugin, clientRef);
@@ -649,10 +649,8 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         var store = StoreOf(db, plugin, clientRef, SizeCapQuota, signal);
         await store.SetAsync("a", new string('x', (int)SmallChars - 2), CancellationToken.None);
 
-        var refused = (await FluentActions.Awaiting(() => store.SetAsync("b", "y", CancellationToken.None))
-            .Should().ThrowAsync<DomainRuleException>()).Which;
-
-        refused.Code.Should().Be(PluginStoreErrors.QuotaExceeded);
+        await FluentActions.Awaiting(() => store.SetAsync("b", "y", CancellationToken.None))
+            .Should().ThrowAsync<PluginStoreQuotaException>();
         signal.Raised.Should().BeTrue();
         (await RowsAsync(plugin)).Should().ContainSingle().Which.Key.Should().Be("a");
         await AssertTotalsMatchRowsAsync(plugin, clientRef);
@@ -715,7 +713,7 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
 
         await FillAsync(storeA, SmallCap);
         await FluentActions.Awaiting(() => storeA.SetAsync("extra", "v", CancellationToken.None))
-            .Should().ThrowAsync<DomainRuleException>();
+            .Should().ThrowAsync<PluginStoreQuotaException>();
         await FillAsync(storeB, SmallCap);
 
         (await RowsAsync(b)).Should().HaveCount(SmallCap);

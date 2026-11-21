@@ -38,12 +38,12 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
         Clients: 65, Users: 73, SubjectRoles: 73, Contacts: 99, ClientUsers: 3, Invitations: 4,
         Servers: 7, ServerGroups: 3, SslChecks: 66, DiskUsage: 58, Services: 140, Cancellations: 75,
         Domains: 108, DomainReminders: 40, DnsRecords: 280, ForwardingRules: 46,
-        Invoices: 517, InvoiceTransactions: 399, Transactions: 409, Quotes: 66, QuoteItems: 165, BillableItems: 66, Orders: 160,
+        Invoices: 411, InvoiceTransactions: 374, Transactions: 384, Quotes: 66, QuoteItems: 165, BillableItems: 66, Orders: 160,
         Departments: 5, ReplyCategories: 4, Replies: 12, KbCategories: 7, Articles: 33, Tickets: 66, TicketReplies: 117,
         TicketTags: 88, Announcements: 25, NetworkIssues: 12,
-        Slides: 7, SlideTranslations: 21, DownloadCategories: 4, Downloads: 21, ActivityLogs: 160, EmailLogs: 120,
-        Testimonials: 12, TestimonialTranslations: 36, Partners: 16, PartnerTranslations: 48,
-        ServerLocations: 6, ServerLocationTranslations: 18, Projects: 12, ProjectTranslations: 36, Faqs: 24, FaqTranslations: 72);
+        Slides: 7, SlideTranslations: 35, DownloadCategories: 4, Downloads: 21, ActivityLogs: 160, EmailLogs: 120,
+        Testimonials: 12, TestimonialTranslations: 60, Partners: 16, PartnerTranslations: 80,
+        ServerLocations: 6, ServerLocationTranslations: 30, Projects: 12, ProjectTranslations: 60, Faqs: 24, FaqTranslations: 120);
 
     /// <summary>Counts every seeded dataset.</summary>
     /// <param name="provider">The scope to read through.</param>
@@ -341,7 +341,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
 
         var slides = await db.Slides.Include(s => s.Translations).ToListAsync();
         slides.Should().HaveCountGreaterThanOrEqualTo(5);
-        slides.Should().OnlyContain(s => s.Translations.Select(t => t.Locale).OrderBy(l => l).SequenceEqual(new[] { "en", "hy", "ru" }));
+        slides.Should().OnlyContain(s => s.Translations.Select(t => t.Locale).OrderBy(l => l).SequenceEqual(new[] { "de", "en", "es", "hy", "ru" }));
     }
 
     /// <summary>The published accounts are real: both sign in with the published passwords.</summary>
@@ -379,7 +379,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
 
         var testimonials = await db.Testimonials.Include(t => t.Translations).ToListAsync();
         testimonials.Should().HaveCountGreaterThanOrEqualTo(9);
-        testimonials.Should().OnlyContain(t => t.IsActive && t.Rating >= 4 && t.Rating <= 5 && t.Translations.Count == 3);
+        testimonials.Should().OnlyContain(t => t.IsActive && t.Rating >= 4 && t.Rating <= 5 && t.Translations.Count == 5);
         testimonials.Select(t => t.Name).Should().OnlyHaveUniqueItems();
         testimonials.Should().Contain(t => t.AvatarUrl != null && t.AvatarUrl.StartsWith("/demo/avatars/"));
         testimonials.Should().Contain(t => t.AvatarUrl == null);
@@ -401,7 +401,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
         var partners = await db.Partners.Include(p => p.Translations).ToListAsync();
         partners.Should().OnlyContain(p => p.LogoUrl != null && p.LogoUrl.StartsWith("/demo/partners/") && p.LogoUrl.EndsWith(".svg"));
         partners.Select(p => p.LogoUrl).Should().OnlyHaveUniqueItems();
-        partners.SelectMany(p => p.Translations).Select(t => t.Name).Where(name => name.Contains("Vantor") || name.Contains("Вантор") || name.Contains("Վանտոր")).Should().HaveCount(3);
+        partners.SelectMany(p => p.Translations).Select(t => t.Name).Where(name => name.Contains("Vantor") || name.Contains("Вантор") || name.Contains("Վանտոր")).Should().HaveCount(5);
         partners.Should().Contain(p => p.LogoUrl == "/demo/partners/vantor-security.svg");
     }
 

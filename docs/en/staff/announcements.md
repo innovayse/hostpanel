@@ -47,7 +47,7 @@ A category that still has sub-categories or articles cannot be deleted (`KBCATEG
 
 Click **Add Article** and fill in:
 - **Category**: choose one of the existing categories
-- **Title** and **Content**: written per language on the **English**, **Russian** and **Armenian** tabs. The default language (English) is required; the other languages are optional, and a client who reads in a language the article is not written in sees it in the default language.
+- **Title** and **Content**: written per language on the **English**, **Russian**, **Armenian**, **German** and **Spanish** tabs. The default language (English) is required; the other languages are optional, and a client who reads in a language the article is not written in sees it in the default language.
 - **Published**: tick to make the article visible to clients
 
 The article gets a short address (its **slug**) from its title in the default language, for example `getting-started`. The slug is fixed once the article exists, even when the title is changed, so links to the article keep working. Clients can open an article by its slug or by its number.

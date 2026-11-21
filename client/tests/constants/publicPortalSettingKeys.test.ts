@@ -1,6 +1,6 @@
 /**
  * Unit tests for `constants/publicPortalSettingKeys.ts`: the list must equal the backend's
- * public key set (`PortalSettingKeys.Public`, which is every key of `PortalSettingKeys.Defaults`),
+ * public key set (`PortalSettingKeys.Public`, which is every key of `PortalSettingKeys.Defaults` except the operator legal texts, read per page from `GET /api/portal/public/legal/:page`),
  * hard-coded here so a drift on either side fails the build.
  *
  * @module tests/constants/publicPortalSettingKeys.test

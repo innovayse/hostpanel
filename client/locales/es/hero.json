@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "badge": "Hosting, dominios y servidores en un solo lugar",
+    "title": "Hosting rápido y fiable para su sitio web",
+    "subtitle": "Hosting web, dominios y servidores con soporte real, en un único portal de clientes",
+    "cta": {
+      "secondary": "Ver planes de hosting"
+    },
+    "stats": {
+      "clients": "Clientes satisfechos",
+      "uptime": "Disponibilidad",
+      "regions": "Regiones"
+    },
+    "search": {
+      "placeholder": "Busque su nombre de dominio"
+    }
+  }
+}

@@ -15,8 +15,8 @@ import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors } from '@/lib/storefrontTranslations'
-import { MessageLanguage } from '@/locales/messages'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { usePartnersStore } from '@/stores/partners'
 import type { Partner, PartnerPayload, PartnerTranslation } from '@/types/partner'
 import { AppRoute } from '@/lib/routes'
@@ -82,7 +82,7 @@ const build = (): PartnerPayload => ({
 })
 
 /** The language whose fields are on screen. */
-const activeLocale = ref<MessageLanguage>(MessageLanguage.En)
+const activeLocale = ref<ContentLanguage>(ContentLanguage.En)
 
 /** Whether each language has its text written, for the markers on the tabs. */
 const filled = computed(() => filledLocales(form.translations, isFilled))
@@ -136,7 +136,7 @@ const hints = computed(() => ({ isActive: t('storefront.partners.activeHint') })
       </template>
 
       <template #field-locales>
-        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="partner-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="partner-form-tab" />
       </template>
 
       <template #field-name="{ id }">

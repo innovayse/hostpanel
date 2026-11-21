@@ -6,18 +6,28 @@
  * a file to all three language folders; `npm run lint:i18n` fails when one language lacks it.
  */
 
+import { ContentLanguage } from '@/locales/contentLanguage'
+
 /** A nested message tree as stored in one area file. */
 export type MessageTree = { [key: string]: string | MessageTree }
 
-/** Languages the catalogue ships; one folder each. Also the languages storefront content is translated into. */
-export enum MessageLanguage {
+/**
+ * Languages the catalogue ships; one folder each. A subset of {@link ContentLanguage}, the one list of
+ * languages: a language the interface is translated into is a content language too, never the other way round.
+ */
+export const MessageLanguage = {
   /** English. */
-  En = 'en',
+  En: ContentLanguage.En,
   /** Russian. */
-  Ru = 'ru',
+  Ru: ContentLanguage.Ru,
   /** Armenian. */
-  Hy = 'hy',
-}
+  Hy: ContentLanguage.Hy,
+  /** German. */
+  De: ContentLanguage.De,
+} as const
+
+/** A language the admin interface is translated into. */
+export type MessageLanguage = (typeof MessageLanguage)[keyof typeof MessageLanguage]
 
 /** Message trees of one language, keyed by area name. */
 export type LanguageMessages = Record<string, MessageTree>
@@ -36,6 +46,7 @@ export const buildMessages = (files: Record<string, MessageTree>): Record<Messag
     [MessageLanguage.En]: {},
     [MessageLanguage.Ru]: {},
     [MessageLanguage.Hy]: {},
+    [MessageLanguage.De]: {},
   }
   for (const [path, tree] of Object.entries(files)) {
     const match = /^\.\/([^/]+)\/([^/]+)\.json$/.exec(path)

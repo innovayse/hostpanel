@@ -3271,6 +3271,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -3289,6 +3292,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_PluginDataEntries_ExpiresAt")
+                        .HasFilter("\"ExpiresAt\" IS NOT NULL");
 
                     b.HasIndex("PluginId", "ClientRef", "Key")
                         .IsUnique()
@@ -3625,6 +3632,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AllowedPaymentMethods")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
@@ -4437,8 +4450,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasMaxLength(10719)
-                        .HasColumnType("character varying(10719)");
+                        .HasMaxLength(64051)
+                        .HasColumnType("character varying(64051)");
 
                     b.HasKey("Id");
 

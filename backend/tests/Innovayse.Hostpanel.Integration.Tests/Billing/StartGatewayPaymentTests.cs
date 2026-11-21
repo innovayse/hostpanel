@@ -127,6 +127,73 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         plugin.CreatePaymentCallCount.Should().Be(0);
     }
 
+    /// <summary>
+    /// An invoice that charges a service of a product group which does not allow the module is refused with
+    /// <c>PAYMENT_METHOD_NOT_ALLOWED</c> before the gateway is ever called.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ModuleTheInvoiceGroupsDoNotAllowIsRefusedWithoutCallingTheGateway()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-group-denied");
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "other-gateway");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, clientId, productId);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_NOT_ALLOWED);
+        plugin.CreatePaymentCallCount.Should().Be(0);
+    }
+
+    /// <summary>
+    /// A stranger asking to pay an invoice whose product group would refuse the module is told the invoice does not
+    /// exist (<c>INVOICE_NOT_FOUND</c>), not <c>PAYMENT_METHOD_NOT_ALLOWED</c>: ownership is checked before the group
+    /// rule, so the refusal never reveals what another client's invoice charges.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AStrangersInvoiceIsRefusedAsNotFoundBeforeTheGroupRuleIsApplied()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (_, ownerId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-group-owner");
+        var stranger = await BillingTestSeeds.RegisterStrangerAsync(factory, host, "gw-start-group-stranger");
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "other-gateway");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, ownerId, productId);
+
+        var response = await StartAsync(stranger, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_FOUND);
+        plugin.CreatePaymentCallCount.Should().Be(0);
+    }
+
+    /// <summary>An invoice whose product group allows the module starts the payment as usual.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ModuleTheInvoiceGroupsAllowStartsThePayment()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-group-allowed");
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank-gateway");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, clientId, productId);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.CreatePaymentCallCount.Should().Be(1);
+    }
+
     /// <summary>A module the resolver does not know answers <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -379,5 +446,53 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
         plugin.CreatePaymentCallCount.Should().Be(0);
+    }
+
+    /// <summary>The plugin is handed the client's own sign-in address and language, for gateways that refuse a payment without them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StartPassesThePayersEmailAndLanguageToThePlugin()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-payer");
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
+        var update = await admin.PutAsJsonAsync($"/api/admin/users/{signedIn.UserId}", new
+        {
+            firstName = "Billing",
+            lastName = "gw-payer",
+            email = signedIn.Email,
+            language = "ru",
+        });
+        update.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, signedIn.ClientId, 10m);
+
+        var response = await StartAsync(signedIn.Client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.LastCreatePaymentInstruction!.PayerEmail.Should().Be(signedIn.Email);
+        plugin.LastCreatePaymentInstruction.Language.Should().Be("ru");
+    }
+
+    /// <summary>A client who chose no language still starts the payment: the plugin gets the address and a null language.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StartWithoutAChosenLanguageStillRegistersThePayment()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-payer-nolang");
+        var admin = await AuthTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, signedIn.ClientId, 10m);
+
+        var response = await StartAsync(signedIn.Client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.LastCreatePaymentInstruction!.PayerEmail.Should().Be(signedIn.Email);
+        plugin.LastCreatePaymentInstruction.Language.Should().BeNull();
     }
 }

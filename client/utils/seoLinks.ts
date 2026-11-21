@@ -9,6 +9,7 @@
  */
 
 import { AppLocale } from '~/types/applocale'
+import { APP_LOCALES } from '~/constants/appLocales'
 
 /** The `hreflang` value that points search engines at the page to show when no language matches. */
 export const HREFLANG_DEFAULT = 'x-default'
@@ -37,13 +38,16 @@ export type SeoLink =
     href: string
   }
 
+/** Matches a leading language prefix, derived from the languages the portal publishes. */
+const LOCALE_PREFIX = new RegExp(`^/(${APP_LOCALES.join('|')})`)
+
 /**
  * Removes a leading language prefix from a path.
  *
- * @param path - A route path, possibly starting with `/ru` or `/hy`.
+ * @param path - A route path, possibly starting with `/ru`, `/hy`, `/de` or `/es`.
  * @returns The path as it is in the default language.
  */
-export const stripLocalePrefix = (path: string): string => path.replace(/^\/(en|ru|hy)/, '')
+export const stripLocalePrefix = (path: string): string => path.replace(LOCALE_PREFIX, '')
 
 /**
  * Builds the absolute URL of a page in one language.

@@ -5,7 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { MessageLanguage } from '@/locales/messages'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { useSettingsStore } from '@/stores/settings'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { callOf, invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
@@ -112,7 +112,7 @@ describe('settingsStore.saveEmailTemplateVersion', () => {
   it('adds a version the template does not have yet and refreshes', async () => {
     const fetchMock = stubFetch(json(7), json([]))
 
-    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', MessageLanguage.Hy, null, content)).toBe(true)
+    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', ContentLanguage.Hy, null, content)).toBe(true)
     expect(fetchMock.mock.calls[0]![0]).toBe('/api/admin/email-templates')
     expect((fetchMock.mock.calls[0]![1] as RequestInit).method).toBe('POST')
   })
@@ -120,7 +120,7 @@ describe('settingsStore.saveEmailTemplateVersion', () => {
   it('rewrites a stored version by its id', async () => {
     const fetchMock = stubFetch(new Response(null, { status: 204 }), json([]))
 
-    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', MessageLanguage.Ru, 4, content)).toBe(true)
+    expect(await useSettingsStore().saveEmailTemplateVersion('welcome', ContentLanguage.Ru, 4, content)).toBe(true)
     expect(fetchMock.mock.calls[0]![0]).toBe('/api/admin/email-templates/4')
   })
 
@@ -128,7 +128,7 @@ describe('settingsStore.saveEmailTemplateVersion', () => {
     stubFetch(problem('This template already has a version in that language.', 409))
     const store = useSettingsStore()
 
-    expect(await store.saveEmailTemplateVersion('welcome', MessageLanguage.Ru, null, content)).toBe(false)
+    expect(await store.saveEmailTemplateVersion('welcome', ContentLanguage.Ru, null, content)).toBe(false)
     expect(store.actionError).toBe('This template already has a version in that language.')
   })
 })
@@ -277,5 +277,42 @@ describe('settingsStore loads', () => {
     stubFetch(problem('Name taken.', 409))
     expect(await store.createProduct({} as never)).toBeNull()
     expect(store.actionError).toBe('Name taken.')
+  })
+})
+
+describe('settingsStore product groups', () => {
+  installStoreHooks()
+
+  /** A group payload restricted to one method. */
+  const payload = { name: 'Shared', description: null, allowedPaymentMethods: ['bank_transfer'] }
+
+  it('fetchPaymentMethods fills the choices of the group form', async () => {
+    const store = useSettingsStore()
+    stubFetch(json([{ module: 'bank_transfer', displayName: 'Bank transfer' }]))
+
+    await store.fetchPaymentMethods()
+
+    expect(store.paymentMethods).toEqual([{ module: 'bank_transfer', displayName: 'Bank transfer' }])
+  })
+
+  it('createProductGroup returns the new id', async () => {
+    stubFetch(json(7))
+
+    expect(await useSettingsStore().createProductGroup(payload)).toBe(7)
+  })
+
+  it('updateProductGroup reports success as true', async () => {
+    stubFetch(new Response(null, { status: 204 }))
+
+    expect(await useSettingsStore().updateProductGroup(7, payload)).toBe(true)
+  })
+
+  it('a refused group save returns the failure and keeps the API sentence', async () => {
+    const store = useSettingsStore()
+    stubFetch(problem('That group is gone.', 404))
+
+    expect(await store.updateProductGroup(7, payload)).toBe(false)
+    expect(await store.createProductGroup(payload)).toBeNull()
+    expect(store.actionError).toBe('That group is gone.')
   })
 })

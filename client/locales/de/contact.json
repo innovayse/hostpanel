@@ -1,0 +1,65 @@
+{
+  "contact": {
+    "hero": {
+      "badge": "Kontakt aufnehmen",
+      "title": "Wir sind da,",
+      "titleHighlight": "um zu helfen",
+      "subtitle": "Sie haben eine Frage zu Hosting, Domains oder Ihrem Konto? Unser Team hilft Ihnen gern."
+    },
+    "form": {
+      "title": "Senden Sie uns eine Nachricht",
+      "name": "Vollständiger Name",
+      "email": "E-Mail-Adresse",
+      "phone": "Telefonnummer",
+      "service": "Wofür interessieren Sie sich?",
+      "message": "Nachricht",
+      "placeholders": {
+        "name": "Max Mustermann",
+        "email": "max{'@'}beispiel.de",
+        "phone": "+49 30 12345678",
+        "service": "Service auswählen",
+        "message": "Beschreiben Sie, wobei wir Ihnen helfen können"
+      },
+      "serviceOptions": {
+        "hosting": "Hosting",
+        "domains": "Domains",
+        "servers": "Server",
+        "billing": "Abrechnung",
+        "support": "Technischer Support",
+        "other": "Sonstiges"
+      },
+      "consentPrefix": "Ich stimme der",
+      "consentLink": "Datenschutzerklärung",
+      "consentSuffix": "zu und willige ein, wegen meiner Anfrage kontaktiert zu werden",
+      "submit": "Nachricht senden",
+      "success": {
+        "title": "Nachricht erfolgreich gesendet!",
+        "subtitle": "Wir melden uns in Kürze bei Ihnen."
+      },
+      "error": {
+        "consentRequired": "Bitte akzeptieren Sie die Datenschutzerklärung, um fortzufahren"
+      }
+    },
+    "info": {
+      "officeAddress": {
+        "title": "Büroadresse"
+      },
+      "contactMethods": {
+        "title": "Kontaktmöglichkeiten",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "workingHours": "Geschäftszeiten"
+      },
+      "quickConnect": {
+        "title": "Schnellkontakt",
+        "telegram": "Telegram",
+        "whatsapp": "WhatsApp",
+        "liveChat": "Live-Chat",
+        "toggle": "Kontakt aufnehmen"
+      }
+    },
+    "map": {
+      "title": "Bürostandort auf der Karte"
+    }
+  }
+}

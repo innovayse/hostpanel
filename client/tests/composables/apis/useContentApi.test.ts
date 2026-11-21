@@ -12,6 +12,7 @@ import { expectLastRequest, startTransport } from '../../helpers/stubTransport'
 import type { ExpectedRequest } from '../../helpers/stubTransport'
 import type { StubServer } from '../../helpers/stubServer'
 import { useContentApi } from '~/composables/apis/useContentApi'
+import { LegalPage } from '~/constants/legalPage'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub started by the current test. */
@@ -30,6 +31,7 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchAnnouncements reads the list', call: () => api.fetchAnnouncements(), method: HttpMethod.Get, url: '/api/portal/client/announcements' },
   { name: 'fetchRecentAnnouncements reads the dashboard summaries', call: () => api.fetchRecentAnnouncements(), method: HttpMethod.Get, url: '/api/portal/public/announcements' },
   { name: 'fetchAnnouncement reads one announcement by id', call: () => api.fetchAnnouncement('11'), method: HttpMethod.Get, url: '/api/portal/public/announcements/11' },
+  { name: 'fetchLegalText reads the operator text of one legal page', call: () => api.fetchLegalText(LegalPage.AcceptableUse), method: HttpMethod.Get, url: '/api/portal/public/legal/acceptable_use' },
   { name: 'fetchKbCategories reads the list', call: () => api.fetchKbCategories(), method: HttpMethod.Get, url: '/api/portal/knowledgebase/categories' },
   { name: 'fetchKbArticles sends the filters as a query', call: () => api.fetchKbArticles({ category: 'Email', pageSize: 100 }), method: HttpMethod.Get, url: '/api/portal/knowledgebase/articles?category=Email&pageSize=100' },
   { name: 'fetchKbArticles sends a search term', call: () => api.fetchKbArticles({ search: 'vps', pageSize: 50 }), method: HttpMethod.Get, url: '/api/portal/knowledgebase/articles?search=vps&pageSize=50' },

@@ -1,0 +1,206 @@
+{
+  "pluginCard": {
+    "builtIn": "Integriert",
+    "pendingRestart": "Neustart ausstehend",
+    "remove": "Entfernen",
+    "refused": "Abgelehnt",
+    "staged": "Version {version} bereitgestellt, wird nach dem Neustart angewendet",
+    "brokenRule": "{id} · verletzte Regel: {rule}",
+    "updateAvailable": "Update verfügbar: {version}"
+  },
+  "pluginUploader": {
+    "valueKbReadyToInstall": "{value} KB · Bereit zur Installation",
+    "installPlugin": "Plugin installieren"
+  },
+  "pluginInstallDialog": {
+    "title": "{name} {version} installieren?",
+    "byAuthor": "von {author}",
+    "requests": "Dieses Plugin fordert an",
+    "noRequests": "Kein Zugriff auf das Hosting von Kunden und keine zusätzlichen Berechtigungen.",
+    "changelog": "Neuerungen in dieser Version",
+    "noChangelog": "Das Plugin liefert keine Versionshinweise für diese Version.",
+    "rangeBetween": "Läuft auf Serverversionen {min} bis {max}.",
+    "rangeFrom": "Läuft ab Serverversion {min}.",
+    "rangeUpTo": "Läuft auf Serverversionen bis {max}.",
+    "incompatible": "Dieses Plugin läuft nicht auf der Version {host} dieses Servers. {range}",
+    "install": "Installieren",
+    "hostAccess": {
+      "ssh": "Befehle im Hosting-Account eines Kunden per SSH ausführen",
+      "websites": "Die Websites des Hosting-Services eines Kunden verwalten",
+      "databases": "Die Datenbanken des Hosting-Services eines Kunden verwalten"
+    },
+    "capabilities": {
+      "endpoints": "Eigene Seiten, Menüs und Widgets zu den Panels hinzufügen",
+      "paymentReturn": "Eine Zahlung nach der Rückkehr des Zahlers vom Gateway abschließen",
+      "storedCredentials": "Gespeicherte Karten und Zahlungskonten belasten"
+    }
+  },
+  "restartBanner": {
+    "restartRequired": "Neustart erforderlich",
+    "pluginChangesWillTakeEffect": "Plugin-Änderungen werden nach einem Neustart des Servers wirksam.",
+    "restartServer": "Server neu starten"
+  },
+  "pluginSigning": {
+    "title": "Plugin-Signaturen",
+    "description": "Hochgeladene Plugins laufen innerhalb des Servers, daher akzeptiert ein Produktionsserver nur Plugin-Pakete, die mit einem vertrauenswürdigen Schlüssel signiert sind.",
+    "warning": "Wenn Sie dies aktivieren, kann der Server Plugin-Pakete installieren und laden, die unsigniert sind, nach der Signierung geändert wurden oder mit einem unbekannten Schlüssel signiert sind. Jeder, der ein Paket hochladen kann, kann dann Code auf dem Server ausführen. Aktivieren Sie dies nur für Pakete, die Sie selbst geprüft haben.",
+    "notSeeded": "Die Einstellung {key} wurde noch nicht initialisiert und kann daher hier nicht geändert werden.",
+    "active": "Unsignierte Plugins werden akzeptiert. Der Server belegt nicht mehr, wer ein hochgeladenes Plugin erstellt hat.",
+    "label": "Unsignierte Plugins zulassen",
+    "hint": "Standardmäßig deaktiviert. Eine Änderung gilt sofort für den nächsten Upload und für bereits installierte Plugins nach dem nächsten Neustart des Servers. Jede Änderung wird im Aktivitätsprotokoll festgehalten. Ein Server im Entwicklungsmodus akzeptiert immer unsignierte Plugins."
+  },
+  "plugins": {
+    "pluginManager": "Plugin-Manager",
+    "installAndManageProviderPlugins": "Anbieter-Plugins installieren und verwalten",
+    "lengthInstalled": "· {length} installiert",
+    "noPluginsInstalledYet": "Noch keine Plugins installiert",
+    "noPluginsMatch": "Kein installiertes Plugin entspricht den Filtern",
+    "confirmRemoveTitle": "Dieses Plugin entfernen?",
+    "confirmRemoveMessage": "Das Plugin {id} wird vom Server entfernt. Seine Einstellungen und gespeicherten Daten bleiben erhalten, sodass sie bei einer erneuten Installation wiederhergestellt werden. Die Daten können Sie anschließend endgültig löschen.",
+    "dataPurged": "Plugin-Daten endgültig gelöscht.",
+    "confirmPurgeTitle": "Plugin-Daten endgültig löschen?",
+    "confirmPurgeMessage": "Alle Einstellungen und gespeicherten Daten des Plugins {id} werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+    "confirmDowngradeTitle": "Eine ältere Version installieren?",
+    "confirmDowngradeMessage": "Diese Version ist älter als die installierte. Ein Downgrade kann von der neueren Version geschriebene Daten beschädigen.",
+    "forceDowngrade": "Trotzdem downgraden",
+    "pluginStaged": "Version {version} hochgeladen und bereitgestellt. Sie ersetzt die installierte Version nach dem Neustart des Servers.",
+    "tabInstalled": "Installiert",
+    "tabBrowse": "Durchsuchen",
+    "confirmUpdateTitle": "Dieses Plugin aktualisieren?",
+    "confirmUpdateMessage": "{id} auf Version {version} aktualisieren? Die Änderung wird nach einem Neustart des Servers angewendet.",
+    "confirmUpdate": "Aktualisieren",
+    "tabSettings": "Einstellungen",
+    "uploadPlugin": "Plugin hochladen",
+    "uploadTitle": "Plugin-Paket hochladen",
+    "noPluginsInstalledHint": "Laden Sie ein Plugin-Paket hoch oder installieren Sie eines aus der Registry.",
+    "searchInstalled": "Installierte Plugins durchsuchen",
+    "tabsLabel": "Plugin-Bereiche"
+  },
+  "processing": {
+    "installing": "{name} wird installiert",
+    "updating": "{name} wird aktualisiert",
+    "removing": "{name} wird entfernt",
+    "uploading": "{name} wird hochgeladen",
+    "done": "Fertig.",
+    "restartNeeded": "Starten Sie den Server neu, um die Änderung anzuwenden.",
+    "close": "Schließen"
+  },
+  "pluginSlotWidgets": {
+    "title": "Slot-Widgets: {plugin}",
+    "description": "Widgets, die Plugins zu Seiten hinzufügen. Wählen Sie die Produkte aus, für die ein Widget angezeigt wird; lassen Sie das Feld leer, um der eigenen Produktliste des Plugins zu folgen.",
+    "slot": "Slot {slot}",
+    "pluginWidget": "{plugin} · {widget}",
+    "addProduct": "Produkt hinzufügen",
+    "noProducts": "Keine Produkte ausgewählt: Es gilt die eigene Produktliste des Plugins.",
+    "orphaned": "Dieses Widget ist an Produkte gebunden, die nicht mehr existieren, und wird daher nirgends angezeigt. Wählen Sie die Produkte erneut aus oder heben Sie die Zuordnung auf, um der eigenen Liste des Plugins zu folgen.",
+    "removeProduct": "{name} entfernen"
+  },
+  "keptData": {
+    "title": "Entfernte Plugins mit beibehaltenen Daten",
+    "description": "Beim Entfernen eines Plugins bleiben seine Einstellungen und gespeicherten Daten erhalten. Löschen Sie die Daten nur dann endgültig, wenn Sie das Plugin nicht erneut installieren werden.",
+    "purge": "Daten endgültig löschen"
+  },
+  "pluginRegistry": {
+    "categoryPlaceholder": "Kategorie",
+    "search": "Registry durchsuchen",
+    "allCategories": "Alle Kategorien",
+    "byAuthor": "von {author}",
+    "version": "v{version}",
+    "verified": "Verifiziert",
+    "install": "Installieren",
+    "update": "Auf {version} aktualisieren",
+    "details": "Details",
+    "emptyTitle": "Keine Plugins gefunden",
+    "emptyDescription": "Versuchen Sie eine andere Suche oder Kategorie.",
+    "total": "{total} Plugins",
+    "category": {
+      "Payment": "Zahlung",
+      "Provisioning": "Provisionierung",
+      "Registrar": "Registrar",
+      "App": "App",
+      "Other": "Sonstige"
+    },
+    "pricing": {
+      "Free": "Kostenlos",
+      "Paid": "Kostenpflichtig",
+      "Private": "Privat"
+    },
+    "tag": "#{tag}",
+    "downloads": "{count} Downloads",
+    "settings": "Einstellungen"
+  },
+  "registryTrust": {
+    "title": "Registry-Vertrauen",
+    "description": "Legen Sie fest, wessen Plugins dieser Server aus der Registry installieren darf. Pakete müssen weiterhin jede Signatur- und Manifestprüfung bestehen.",
+    "label": "Wer installiert werden darf",
+    "placeholder": "Vertrauensstufe auswählen",
+    "hint": "Eine Änderung gilt sofort für die nächste Installation.",
+    "notSeeded": "Die Einstellung {key} wurde noch nicht initialisiert und kann daher hier nicht geändert werden.",
+    "warning": "„Beliebiger Registry-Publisher“ schließt Publisher ein, die niemand verifiziert hat. Ein Plugin läuft innerhalb des Servers, wählen Sie dies daher nur, wenn Sie dieses Risiko akzeptieren.",
+    "options": {
+      "VerifiedOnly": "Nur verifizierte Publisher",
+      "AnyRegistryPublisher": "Beliebiger Registry-Publisher",
+      "OwnKeysOnly": "Nur mit meinen eigenen Schlüsseln signierte Pakete"
+    }
+  },
+  "registryInstance": {
+    "title": "Registrierung bei der Registry",
+    "description": "Einige Plugins werden nur an eine Installation ausgegeben, die der Registry bekannt ist. Dieser Server registriert sich selbst und weist nach, dass er seine öffentliche Adresse kontrolliert, ohne dass jemand etwas tun muss. Es werden nur ein öffentlicher Schlüssel und diese Adresse gesendet.",
+    "stateLabel": "Status",
+    "states": {
+      "NotRegistered": "Noch nicht registriert",
+      "Pending": "Wartet auf Bestätigung",
+      "Verified": "Verifiziert",
+      "Revoked": "Widerrufen",
+      "Error": "Fehlgeschlagen"
+    },
+    "verifiedAt": "Bestätigt am {date}",
+    "nextAttempt": "Nächster automatischer Versuch: {date}",
+    "address": "Öffentliche Adresse: {address}",
+    "retry": "Registrierung wiederholen"
+  },
+  "rules": {
+    "ManifestVersionUnknown": "Die Manifestversion wird von diesem Server nicht gelesen.",
+    "SdkAssemblyOutdated": "Das Plugin wurde mit einer älteren SDK-Version erstellt, als dieser Server verwendet.",
+    "PermissionUnknown": "Ein Client-Eintrag nennt eine Berechtigung, die nicht existiert.",
+    "AdminPermissionDeclared": "Ein Admin-Eintrag deklariert eine Berechtigung, der Admin-Bereich akzeptiert jedoch keine.",
+    "RoutePathInvalid": "Ein Routenpfad ist ungültig: Verwenden Sie nur Kleinbuchstaben-Segmente und Parameter.",
+    "RouteDuplicate": "Dieselbe Methode und derselbe Routenpfad wurden zweimal deklariert.",
+    "LabelKeyMissing": "Ein vom Plugin verwendeter Textschlüssel fehlt in seinen englischen Texten.",
+    "SlotUnknown": "Ein Widget nennt einen Slot, den dieser Server nicht anbietet.",
+    "SlotContextKeyNotOffered": "Ein Widget fordert einen Kontextwert an, den sein Slot nicht anbietet.",
+    "AssemblyUnreadable": "Eine Datei im Plugin-Ordner konnte nicht gelesen werden.",
+    "SlotWidgetIdInvalid": "Eine Widget-ID ist ungültig: Verwenden Sie Kleinbuchstaben, Ziffern, Bindestriche und Unterstriche.",
+    "SlotWidgetDuplicate": "Dieselbe Widget-ID wurde zweimal für einen Slot deklariert.",
+    "PluginIdInvalid": "Die Plugin-ID ist ungültig: Verwenden Sie Wörter in Kleinbuchstaben, die durch einzelne Bindestriche verbunden sind.",
+    "EndpointsNotDeclared": "Das Plugin deklariert Routen, Seiten oder Slots, ist aber kein App-Plugin und deklariert die Fähigkeit „endpoints“ nicht.",
+    "CapabilityNotAllowed": "Das Plugin deklariert eine Fähigkeit, die dieser Server nicht kennt oder die sein Plugin-Typ nicht tragen kann."
+  },
+  "pluginSlot": {
+    "hide": "Widget ausblenden",
+    "unavailable": "Dieses Widget konnte nicht angezeigt werden.",
+    "timedOut": "Das Laden dieses Widgets hat zu lange gedauert.",
+    "hideNotSeeded": "Die Einstellung {key} existiert auf diesem Server nicht, daher kann das Widget nicht ausgeblendet werden."
+  },
+  "pluginPage": {
+    "notFoundTitle": "Seite nicht gefunden",
+    "tableEmpty": "Noch nichts anzuzeigen.",
+    "chatMessage": "Nachricht",
+    "chatSend": "Senden",
+    "chatStop": "Stopp",
+    "chatResultDetails": "Details",
+    "chatStepStopped": "gestoppt",
+    "chatStepsCount": "{done} von {total} erledigt",
+    "chatLog": "Unterhaltung",
+    "chatEmpty": "Starten Sie die Unterhaltung.",
+    "chatJumpToLatest": "Zum Neuesten springen",
+    "chatHint": "Eingabetaste zum Senden, Umschalt+Eingabe für eine neue Zeile",
+    "chatCopy": "Antwort kopieren",
+    "chatCopyCode": "Code kopieren",
+    "chatCopied": "Kopiert",
+    "chatRetry": "Erneut versuchen",
+    "chatWriting": "Antwort wird verfasst",
+    "openUrlBlocked": "Dieser Browser hat den neuen Tab blockiert. Erlauben Sie Pop-ups für diese Website und versuchen Sie es erneut.",
+    "openUrlRefused": "Das Plugin hat mit einer Adresse geantwortet, die nicht geöffnet werden kann."
+  }
+}

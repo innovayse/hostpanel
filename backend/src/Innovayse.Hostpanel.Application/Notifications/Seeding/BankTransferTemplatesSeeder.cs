@@ -73,6 +73,28 @@ public static class BankTransferTemplatesSeeder
                 "Դիտել հաշիվը",
                 Note: null,
                 EchoButtonUrl: false)),
+            new SeededEmailVersion("Banküberweisungsdaten für Rechnung #{{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Rechnung #{{ invoice.id }} per Banküberweisung bezahlen",
+                [
+                    "Bitte überweisen Sie {{ invoice.total }} {{ invoice.currency }} und geben Sie <strong>{{ invoice.reference }}</strong> als Verwendungszweck an, damit wir Ihre Zahlung zuordnen können. Die Rechnung wird als bezahlt markiert, sobald wir den Zahlungseingang bestätigt haben.",
+                    "{% if bank.account_name != '' %}Kontoinhaber: {{ bank.account_name }}<br>{% endif %}{% if bank.bank_name != '' %}Bank: {{ bank.bank_name }}<br>{% endif %}{% if bank.iban != '' %}IBAN: {{ bank.iban }}<br>{% endif %}{% if bank.swift != '' %}SWIFT/BIC: {{ bank.swift }}<br>{% endif %}{% if bank.instructions != '' %}{{ bank.instructions }}{% endif %}",
+                ],
+                "{{ invoice.url }}",
+                "Rechnung ansehen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Datos de transferencia bancaria para la factura n.º {{ invoice.id }} | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Pague la factura n.º {{ invoice.id }} por transferencia bancaria",
+                [
+                    "Por favor, transfiera {{ invoice.total }} {{ invoice.currency }} e indique <strong>{{ invoice.reference }}</strong> como referencia del pago, para que podamos identificarlo. La factura se marcará como pagada cuando confirmemos que el dinero ha llegado.",
+                    "{% if bank.account_name != '' %}Titular de la cuenta: {{ bank.account_name }}<br>{% endif %}{% if bank.bank_name != '' %}Banco: {{ bank.bank_name }}<br>{% endif %}{% if bank.iban != '' %}IBAN: {{ bank.iban }}<br>{% endif %}{% if bank.swift != '' %}SWIFT/BIC: {{ bank.swift }}<br>{% endif %}{% if bank.instructions != '' %}{{ bank.instructions }}{% endif %}",
+                ],
+                "{{ invoice.url }}",
+                "Ver factura",
+                Note: null,
+                EchoButtonUrl: false)),
         ]);
 
     /// <summary>The staff notice that a bank transfer waits to be confirmed, one version per language.</summary>
@@ -101,6 +123,22 @@ public static class BankTransferTemplatesSeeder
                 "hy",
                 "Բանկային փոխանցումը սպասում է հաստատման",
                 ["Հաճախորդ №{{ client.id }}-ը ընտրել է №{{ invoice.id }} հաշվի ({{ amount_due }} {{ currency }}) վճարումը բանկային փոխանցմամբ, նշում՝ {{ reference }}։ Երբ գումարը ստացվի, հաստատեք այն «Հաշիվներ», «Սպասվող բանկային փոխանցումներ» բաժնում, իսկ եթե չստացվի՝ մերժեք մեկնաբանությամբ։"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Banküberweisung ausstehend: Rechnung #{{ invoice.id }}", new SeededEmailCopy(
+                "de",
+                "Eine Banküberweisung wartet auf Bestätigung",
+                ["Kunde #{{ client.id }} hat sich entschieden, Rechnung #{{ invoice.id }} ({{ amount_due }} {{ currency }}) per Banküberweisung zu bezahlen, Referenz {{ reference }}. Sobald das Geld eingeht, bestätigen Sie die Überweisung unter Abrechnung, Ausstehende Banküberweisungen; andernfalls lehnen Sie sie mit einer Notiz ab."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Transferencia bancaria pendiente: factura n.º {{ invoice.id }}", new SeededEmailCopy(
+                "es",
+                "Una transferencia bancaria espera confirmación",
+                ["El cliente n.º {{ client.id }} eligió pagar la factura n.º {{ invoice.id }} ({{ amount_due }} {{ currency }}) por transferencia bancaria, referencia {{ reference }}. Cuando llegue el dinero, confírmela en Facturación, Transferencias bancarias pendientes; si no llega, recházela con una nota."],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,
@@ -135,6 +173,22 @@ public static class BankTransferTemplatesSeeder
                 ["Մենք ստացանք ձեր {{ invoice.total }} {{ invoice.currency }} բանկային փոխանցումը (նշում՝ {{ invoice.reference }})։ №{{ invoice.id }} հաշիվը վճարված է։ Շնորհակալություն։"],
                 "{{ invoice.url }}",
                 "Դիտել հաշիվը",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Ihre Banküberweisung für Rechnung #{{ invoice.id }} wurde bestätigt | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Ihre Banküberweisung ist eingegangen",
+                ["Wir haben Ihre Banküberweisung über {{ invoice.total }} {{ invoice.currency }} (Referenz {{ invoice.reference }}) erhalten. Rechnung #{{ invoice.id }} ist bezahlt. Vielen Dank."],
+                "{{ invoice.url }}",
+                "Rechnung ansehen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Su transferencia bancaria de la factura n.º {{ invoice.id }} fue confirmada | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "Su transferencia bancaria ha llegado",
+                ["Hemos recibido su transferencia bancaria de {{ invoice.total }} {{ invoice.currency }} (referencia {{ invoice.reference }}). La factura n.º {{ invoice.id }} está pagada. Gracias."],
+                "{{ invoice.url }}",
+                "Ver factura",
                 Note: null,
                 EchoButtonUrl: false)),
         ]);
@@ -176,6 +230,28 @@ public static class BankTransferTemplatesSeeder
                 ],
                 "{{ invoice.url }}",
                 "Վճարել հաշիվը",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Ihre Banküberweisung für Rechnung #{{ invoice.id }} wurde nicht akzeptiert | {{ site.name }}", new SeededEmailCopy(
+                "de",
+                "Wir konnten Ihre Banküberweisung nicht akzeptieren",
+                [
+                    "Wir konnten eine Banküberweisung (Referenz {{ invoice.reference }}) nicht Rechnung #{{ invoice.id }} zuordnen. Grund: {{ note }}",
+                    "Die Rechnung ist wieder offen, sodass Sie sie per Banküberweisung oder mit einer anderen Zahlungsmethode bezahlen können.",
+                ],
+                "{{ invoice.url }}",
+                "Rechnung bezahlen",
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Su transferencia bancaria de la factura n.º {{ invoice.id }} no fue aceptada | {{ site.name }}", new SeededEmailCopy(
+                "es",
+                "No pudimos aceptar su transferencia bancaria",
+                [
+                    "No pudimos asociar una transferencia bancaria (referencia {{ invoice.reference }}) con la factura n.º {{ invoice.id }}. Motivo: {{ note }}",
+                    "La factura vuelve a estar abierta, por lo que puede pagarla por transferencia bancaria o con otro método de pago.",
+                ],
+                "{{ invoice.url }}",
+                "Pagar factura",
                 Note: null,
                 EchoButtonUrl: false)),
         ]);

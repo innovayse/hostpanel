@@ -36,6 +36,10 @@ public static class ServiceChangeTestSeeds
     /// </param>
     /// <param name="toPackage">The hosting package the other product names, or <see langword="null"/> for none.</param>
     /// <param name="renewalIn">When the current cycle ends, from now; <see cref="DaysLeft"/> days when <see langword="null"/>.</param>
+    /// <param name="toType">The type of the other product; a digital one is delivered by fulfilment plugins.</param>
+    /// <param name="toSku">The other product's SKU, or <see langword="null"/> for none.</param>
+    /// <param name="toMetadata">The other product's metadata JSON object text, or <see langword="null"/> for none.</param>
+    /// <param name="quantity">The quantity the service is held with.</param>
     /// <returns>The seeded ids and prices.</returns>
     public static async Task<SeededPlanChange> SeedServiceAsync(
         IntegrationTestFactory factory,
@@ -44,7 +48,11 @@ public static class ServiceChangeTestSeeds
         decimal toPrice,
         bool provisioned = false,
         string? toPackage = "pro",
-        TimeSpan? renewalIn = null)
+        TimeSpan? renewalIn = null,
+        ProductType toType = ProductType.SharedHosting,
+        string? toSku = null,
+        string? toMetadata = null,
+        int quantity = 1)
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
@@ -58,7 +66,9 @@ public static class ServiceChangeTestSeeds
 
         var from = Product.Create(group.Id, "Starter", null, null, null, "starter", ProductType.SharedHosting, 0m, 0m, now);
         from.SetPrice("USD", BillingCycle.Monthly, fromPrice);
-        var to = Product.Create(group.Id, "Pro", null, null, null, toPackage, ProductType.SharedHosting, 0m, 0m, now);
+        var to = Product.Create(group.Id, "Pro", null, null, null, toPackage, toType, 0m, 0m, now);
+        to.SetSku(toSku);
+        to.SetMetadata(toMetadata);
         to.SetPrice("USD", BillingCycle.Monthly, toPrice);
         context.Products.Add(from);
         context.Products.Add(to);
@@ -79,7 +89,7 @@ public static class ServiceChangeTestSeeds
         }
 
         var renewal = now + (renewalIn ?? TimeSpan.FromDays(DaysLeft));
-        service.ChangeBillingTerms(new ServiceBillingTerms(BillingCycle.Monthly, 1, fromPrice, fromPrice, renewal, null, null, null));
+        service.ChangeBillingTerms(new ServiceBillingTerms(BillingCycle.Monthly, quantity, fromPrice, fromPrice, renewal, null, null, null));
         await context.SaveChangesAsync(CancellationToken.None);
 
         return new SeededPlanChange(ownerId, service.Id, from.Id, to.Id, fromPrice, toPrice, renewal);

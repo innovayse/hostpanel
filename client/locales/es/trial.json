@@ -1,0 +1,29 @@
+{
+  "trial": {
+    "badge": "Prueba gratuita",
+    "title": "Pruebe {product} gratis",
+    "subtitle": "Obtenga acceso completo durante la prueba y compruebe cómo funciona.",
+    "cta": "Iniciar prueba gratuita",
+    "learnMore": "Más información",
+    "noCc": "Empiece su prueba hoy mismo.",
+    "featuresTitle": "Todo lo que incluye {product}",
+    "perks": {
+      "noCc": {
+        "title": "Inicio rápido",
+        "desc": "Empiece de inmediato"
+      },
+      "duration": {
+        "title": "Periodo de prueba",
+        "desc": "Acceso completo durante la prueba"
+      },
+      "support": {
+        "title": "Soporte completo",
+        "desc": "Nuestro equipo de soporte le ayuda con la configuración"
+      }
+    },
+    "seo": {
+      "title": "Prueba gratuita: {product}",
+      "description": "Pruebe {product} gratis."
+    }
+  }
+}

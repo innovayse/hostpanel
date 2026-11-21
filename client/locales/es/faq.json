@@ -1,0 +1,21 @@
+{
+  "faq": {
+    "badge": "Preguntas frecuentes",
+    "filterLabel": "Filtrar por tema",
+    "title": "Preguntas frecuentes",
+    "subtitle": "Encuentre respuestas a las preguntas habituales sobre hosting, dominios, facturación y su cuenta",
+    "viewAll": "Ver todas las preguntas",
+    "noResults": "No se encontraron preguntas en esta categoría.",
+    "backToAll": "Volver a todas las preguntas",
+    "categories": {
+      "all": "Todas",
+      "general": "General",
+      "products": "Productos"
+    },
+    "cta": {
+      "title": "¿Aún tiene preguntas?",
+      "description": "¿No encuentra la respuesta que busca? Hable con nuestro amable equipo.",
+      "button": "Contáctenos"
+    }
+  }
+}

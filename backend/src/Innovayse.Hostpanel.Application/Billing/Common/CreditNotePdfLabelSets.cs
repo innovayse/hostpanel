@@ -1,7 +1,7 @@
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 
 /// <summary>
-/// The credit note PDF labels in each language the panel is translated into (English, Russian, Armenian). A language with no
+/// The credit note PDF labels in each language the panel is translated into (English, Russian, Armenian, German, Spanish). A language with no
 /// set prints English, so a client never gets a document with blank labels.
 /// </summary>
 public static class CreditNotePdfLabelSets
@@ -24,14 +24,28 @@ public static class CreditNotePdfLabelSets
         "Կրեդիտ-նոտա", "Տրման ամսաթիվ", "Հաշիվ", "Կարգավիճակ", "Պատճառ", "Կրեդիտի ընդհանուր գումար",
         "Սևագիր", "Տրված", "Կիրառված", "Չեղարկված", "ՍԵՎԱԳԻՐ", "ՉԵՂԱՐԿՎԱԾ");
 
+    /// <summary>Gets the German labels.</summary>
+    public static CreditNotePdfLabels German { get; } = new(
+        new DocumentPdfLabels("Rechnungsempfänger", "Beschreibung", "Menge", "Einzelpreis", "Betrag", "Zwischensumme", "Steuer", "Guthaben", "Gesamt", "Seite", "von", "Steuer-ID"),
+        "Gutschrift", "Ausstellungsdatum", "Rechnung", "Status", "Grund", "Gutgeschriebener Gesamtbetrag",
+        "Entwurf", "Ausgestellt", "Angerechnet", "Storniert", "ENTWURF", "STORNIERT");
+
+    /// <summary>Gets the Spanish labels.</summary>
+    public static CreditNotePdfLabels Spanish { get; } = new(
+        new DocumentPdfLabels("Facturar a", "Descripción", "Cant.", "Precio unitario", "Importe", "Subtotal", "Impuesto", "Crédito", "Total", "Página", "de", "ID fiscal"),
+        "Nota de crédito", "Fecha de emisión", "Factura", "Estado", "Motivo", "Total acreditado",
+        "Borrador", "Emitida", "Aplicada", "Anulada", "BORRADOR", "ANULADA");
+
     /// <summary>Picks the label set of the language of a client.</summary>
     /// <param name="language">The ISO 639-1 language code of the client, or null when none is set.</param>
-    /// <returns>The set for <c>ru</c> or <c>hy</c>, otherwise English.</returns>
+    /// <returns>The set for <c>ru</c>, <c>hy</c>, <c>de</c> or <c>es</c>, otherwise English.</returns>
     public static CreditNotePdfLabels For(string? language) =>
         language?.Trim().ToLowerInvariant() switch
         {
             "ru" => Russian,
             "hy" => Armenian,
+            "de" => German,
+            "es" => Spanish,
             _ => English,
         };
 }

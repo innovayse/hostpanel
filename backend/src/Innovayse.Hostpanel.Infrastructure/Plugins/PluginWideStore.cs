@@ -1,4 +1,5 @@
 using Hostpanel.Sdk.Plugins.Store;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -16,10 +17,10 @@ using Microsoft.Extensions.Options;
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
-/// The <see cref="IPluginStore"/> a plugin may take in its constructor: bound to the plugin and to no client, with every
+/// The <see cref="IPluginStoreAdvanced"/> (and so <see cref="IPluginStore"/>) a plugin may take in its constructor: bound to the plugin and to no client, with every
 /// operation run by a <see cref="PluginStore"/> over a data context of its own, never the caller's.
 /// </summary>
-internal sealed class PluginWideStore : IPluginStore
+internal sealed class PluginWideStore : IPluginStoreAdvanced
 {
     /// <summary>The plugin whose values these are.</summary>
     private readonly string _pluginId;
@@ -60,6 +61,30 @@ internal sealed class PluginWideStore : IPluginStore
         return RunAsync((store, token) => store.RemoveAsync(key, token), ct);
     }
 
+    /// <inheritdoc/>
+    public Task SetAsync(string key, string value, TimeSpan timeToLive, CancellationToken ct)
+    {
+        return RunAsync(
+            async (store, token) =>
+            {
+                await store.SetAsync(key, value, timeToLive, token);
+                return true;
+            },
+            ct);
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<string>> ListKeysAsync(string prefix, int limit, CancellationToken ct)
+    {
+        return RunAsync((store, token) => store.ListKeysAsync(prefix, limit, token), ct);
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> SetIfAbsentAsync(string key, string value, TimeSpan? timeToLive, CancellationToken ct)
+    {
+        return RunAsync((store, token) => store.SetIfAbsentAsync(key, value, timeToLive, token), ct);
+    }
+
     /// <summary>Runs one operation on a store over a context that exists only for it.</summary>
     /// <typeparam name="T">What the operation answers.</typeparam>
     /// <param name="operation">The operation, given the store to run on.</param>
@@ -73,6 +98,7 @@ internal sealed class PluginWideStore : IPluginStore
             ?? new PluginApiOptions().StoreQuota;
 
         // The quota signal is only read by a call runner; outside a call nobody reads it, the refusal is still thrown.
-        return await operation(new PluginStore(_pluginId, null, db, quota, new PluginStoreQuotaSignal()), ct);
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+        return await operation(new PluginStore(_pluginId, null, db, quota, new PluginStoreQuotaSignal(), clock), ct);
     }
 }

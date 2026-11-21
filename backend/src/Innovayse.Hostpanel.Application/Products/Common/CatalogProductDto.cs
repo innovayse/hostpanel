@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="Prices">Every stored price, one entry per currency the product sells in.</param>
 /// <param name="IsFeatured">Whether the product is the group's recommended plan.</param>
 /// <param name="SortOrder">Operator-defined position inside the group, lowest first.</param>
+/// <param name="Sku">The normalised stock-keeping unit that names the product, or null when none is set.</param>
 public sealed record CatalogProductDto(
     int Id,
     int GroupId,
@@ -29,4 +30,5 @@ public sealed record CatalogProductDto(
     ProductPricingDto Pricing,
     IReadOnlyList<ProductPriceDto> Prices,
     bool IsFeatured,
-    int SortOrder);
+    int SortOrder,
+    string? Sku);

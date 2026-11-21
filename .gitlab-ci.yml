@@ -229,6 +229,29 @@ variables:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
 
+# The host version of this pipeline's commit, for the deploy that builds the API image on its own host (deploy:demo).
+# That deploy fetches one commit without history or tags, so it cannot derive the version itself, and an image built
+# there without it would report the Dockerfile placeholder 0.0.0-dev. The version is derived here, from a full clone
+# (scripts/image-version.sh, the same derivation the production image jobs use) and handed to the deploy as the
+# HOST_VERSION variable through a dotenv report. The job fails when no release tag is reachable, like the image jobs.
+version:host:
+  stage: build
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  variables:
+    GIT_DEPTH: "0"
+  before_script:
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
+  script:
+    - HOST_VERSION="$(sh scripts/image-version.sh)"
+    - echo "HOST_VERSION=$HOST_VERSION" > version.env
+  artifacts:
+    reports:
+      dotenv: version.env
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
+
 # Fetches only the commit being deployed into $DEPLOY_DIR, with no history, so the transfer stays small.
 # A long transfer can break on a flaky link, so the fetch is retried a bounded number of times. The loop is
 # written out here and does not use scripts/retry-bounded.sh on purpose: the job has no checkout of its own
@@ -737,6 +760,7 @@ deploy:demo:
   script:
     - test -n "$DEPLOY_DIR" || { echo "DEPLOY_DIR must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - test -n "$HEALTH_URL" || { echo "HEALTH_URL must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
+    - test -n "$HOST_VERSION" || { echo "HOST_VERSION is missing: the version:host job did not hand over the release version" >&2; exit 1; }
     - test -d "$DEPLOY_DIR/.git" || git init "$DEPLOY_DIR"
     - !reference [.fetch-target-commit, script]
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
@@ -761,6 +785,9 @@ deploy:demo:
   allow_failure: true
   needs:
     - !reference [.deploy-needs-tests, needs]
+    # HOST_VERSION: the release version the demo's API image is built with (docker-compose.prod.yml, build arg VERSION).
+    - job: version:host
+      artifacts: true
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"

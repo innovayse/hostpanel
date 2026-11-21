@@ -82,8 +82,7 @@ internal sealed class DemoLogSeeder
     private DateTimeOffset MomentFor(Domain.Clients.Client client, int daysAgo, int hour)
     {
         var moment = _today.AddDays(-daysAgo).AddHours(hour);
-        var earliest = client.CreatedAt.AddDays(1);
-        return moment > earliest ? moment : earliest;
+        return DemoAnchor.Clamp(moment, client.CreatedAt.AddDays(1), _today);
     }
 
     /// <summary>Seeds the logs that are empty.</summary>

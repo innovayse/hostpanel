@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { useLocalizedSetting } from '~/composables/useLocalizedSetting'
+import { ownRowFor, useLocalizedSetting } from '~/composables/useLocalizedSetting'
 import type { LocalizedSettingSpec } from '~/composables/useLocalizedSetting'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
@@ -56,5 +56,20 @@ describe('useLocalizedSetting', () => {
     stubLocale('hy')
 
     expect(useLocalizedSetting().getLocalized(ADDRESS)).toBe('')
+  })
+})
+
+describe('ownRowFor', () => {
+  /** The rows of a setting stored once per language. */
+  const rows = { ru: 'russian row', hy: 'armenian row' }
+
+  it('picks the Russian and the Armenian row for those languages', () => {
+    expect(ownRowFor('ru', rows)).toBe('russian row')
+    expect(ownRowFor('hy', rows)).toBe('armenian row')
+  })
+
+  it('has no row of its own for English or any other language, which read the default row', () => {
+    expect(ownRowFor('en', rows)).toBeUndefined()
+    expect(ownRowFor('de', rows)).toBeUndefined()
   })
 })

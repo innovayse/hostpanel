@@ -29,6 +29,7 @@ describe('AuroraFooter', () => {
       'aurora.footer.legal',
     ])
     expect(wrapper.find('a[href="/terms"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/acceptable-use"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/domains/transfer"]').exists()).toBe(true)
   })
 

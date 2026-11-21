@@ -2129,6 +2129,10 @@ adds the weights and holds the sum to 0 to 100. A block list hit weighs 100, so 
   `ResetDemoDataCommand` truncates every table except the identity roles and reseeds in one
   transaction every `ResetIntervalHours`; `GET /api/public/demo` publishes the accounts and the next
   reset. Seed text names no outside product.
+- **Dates.** Every seeded date is measured from `DemoAnchor.Today(clock)`, never from a calendar: customers (some signed up in the
+  last weeks), invoices (each customer on its own billing day, paid a few days later), orders, tickets and domain expiries all move with the
+  reset day, nothing is dated before its customer signed up or after the anchor (`DemoAnchor.Clamp`), and the number of rows never
+  depends on the day (`DemoAnchorTests`, `DemoSeedRelativeToClockTests`).
 - **Seed.** The demo seed is fixed and deterministic: `DemoCatalogueSeeder`, `DemoPeopleSeeder` and `DemoClientProfile`
   produce the same sample data on every reset, and it is maximal, with every table populated enough to show each
   feature. The site name is `Hostpanel Demo`. The storefront contact is the one operator-set exception: optional
@@ -2324,6 +2328,8 @@ The Dockerfile default `0.0.0-dev` parses as a real version below every minimum,
 argument refuses every plugin that declares a range. The GitLab `.build-image` template therefore derives the version
 once with `scripts/image-version.sh` (full clone, `GIT_DEPTH: "0"`) and passes it as `--build-arg VERSION` to the API
 image; the job fails when no release tag is reachable. The GitHub image publisher passes the tag it is run for.
+An image built in place from a checkout without tags gets the version through `HOST_VERSION`, which
+`docker/docker-compose.prod.yml` passes as the `VERSION` build argument.
 The mirror workflow pushes the `v*` tags with the branch, because GitLab can only see a tag that was mirrored; a
 tag push alone starts nothing on GitLab, it travels with the next push to `main` or `develop`, and a release tag is
 never moved. Without a new tag the version stays at the last release plus the commit id.
@@ -2822,6 +2828,21 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   fields from the bound locale. A setting stored once per language (`portal.contact.address`, `.ru`, `.hy`) takes its drafts
   from `useLocalizedSettingDrafts`; the saved keys and payloads are unchanged. A label such as "(Russian)" or a key such
   as `addressRu` in a locale file is the sign someone wrote the second implementation.
+- **The operator's own legal text (terms, privacy, refunds, acceptable use, cookies).** Fifteen `portal.legal.<page>[.ru|.hy]`
+  settings (`PortalSettingKeys.Legal*`, seeded empty, editable) are edited in the admin's `LegalTextsCard` (General tab, one
+  `UiLocalizedField` of multi-line fields per page). They are the one kind of setting allowed more than
+  `ProtectedValueLimits.SettingValue` (2000): `ProtectedValueLimits.LegalTextValue` = 12000, held by `UpdateSettingHandler`
+  (the validator only holds the shared ceiling, because only the handler knows the key; `PortalSettingKeys.IsLegalText`
+  tells), and the `Settings.Value` column is sized for the larger figure. They are **not** in `PortalSettingKeys.Public`, which
+  rides in every page's settings payload: the storefront reads one page, in all its languages, from
+  `GET /api/settings/public/legal/{page}` (`GetPublicLegalTextQuery`, anonymous, rows named by `PortalSettingKeys.LegalTexts`,
+  an unknown page is `SETTING_NOT_FOUND`) through the BFF `GET /api/portal/public/legal/:page`, `useContentStore.loadLegalText`
+  and `useLegalSections(page, builtIn)`, the one place that decides: the operator's text in the visitor's language (the default
+  row standing in for a language without its own, `ownRowFor` being the one language rule shared with `useLocalizedSetting`),
+  else the built-in sections. There is no runtime-config fallback for them. `parseLegalText` reads the plain
+  format (`## ` opens a section, a blank line ends a paragraph, `- ` is a list entry) into `LegalSection[]` of plain strings that
+  `LegalDocument` draws as text, never HTML. A page with operator text hides the built-in "last updated" date, which dates only
+  the shipped wording.
 - **Plugin pages and the Add-ons menu (#647).** A page a serving plugin adds to the admin lives at
   `/apps/<plugin>/<path>` (`views/PluginPageView.vue`, route `apps/:plugin/:page*`); the store asks the API's
   lookup by path (`GET /api/admin/plugins/ui/{plugin}/pages/by-path`) and shows its `PLUGIN_PAGE_NOT_FOUND`

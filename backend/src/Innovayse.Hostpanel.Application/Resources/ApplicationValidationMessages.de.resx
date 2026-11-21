@@ -965,7 +965,7 @@
     <value>Die Sortierreihenfolge darf nicht negativ sein.</value>
   </data>
   <data name="ProductSkuInvalid" xml:space="preserve">
-    <value>Verwenden Sie für die SKU Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, höchstens {0} Zeichen.</value>
+    <value>Verwenden Sie für die SKU Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, optional als zwei solche Teile getrennt durch einen Doppelpunkt, höchstens {0} Zeichen.</value>
   </data>
   <data name="ProductMetadataInvalid" xml:space="preserve">
     <value>Die Metadaten müssen ein JSON-Objekt sein.</value>

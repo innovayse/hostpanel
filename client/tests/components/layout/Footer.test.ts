@@ -24,7 +24,7 @@ import { useSiteIdentity } from '~/composables/useSiteIdentity'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-import { SITE_ABOUT_PATH, SITE_COOKIE_POLICY_PATH, SITE_DOMAINS_PATH, SITE_DOMAINS_TRANSFER_PATH, SITE_FAQ_PATH, SITE_KNOWLEDGEBASE_PATH, SITE_PRIVACY_PATH, SITE_PRODUCTS_PATH, SITE_REFUND_POLICY_PATH, SITE_TERMS_PATH } from '~/constants/siteRoutes'
+import { SITE_ABOUT_PATH, SITE_ACCEPTABLE_USE_PATH, SITE_COOKIE_POLICY_PATH, SITE_DOMAINS_PATH, SITE_DOMAINS_TRANSFER_PATH, SITE_FAQ_PATH, SITE_KNOWLEDGEBASE_PATH, SITE_PRIVACY_PATH, SITE_PRODUCTS_PATH, SITE_REFUND_POLICY_PATH, SITE_TERMS_PATH } from '~/constants/siteRoutes'
 
 /** What the stub answers, by route, and the accessor of the stub the hooks start and close around each test. */
 const { replies, stub } = usePortalSettingsServer({ useAppColorMode, useBrandLogo, useContactDetails, useLocalizedSetting, useSiteIdentity })
@@ -139,6 +139,7 @@ describe('LayoutFooter', () => {
     expect(href('footer-legal-cookies')).toBe(localized(SITE_COOKIE_POLICY_PATH))
     expect(href('footer-legal-terms')).toBe(localized(SITE_TERMS_PATH))
     expect(href('footer-legal-refund')).toBe(localized(SITE_REFUND_POLICY_PATH))
+    expect(href('footer-legal-acceptableUse')).toBe(localized(SITE_ACCEPTABLE_USE_PATH))
   })
 
   it('shows the logo lockup and the tagline in the brand block', async () => {

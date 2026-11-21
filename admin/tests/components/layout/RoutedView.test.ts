@@ -358,3 +358,60 @@ describe('RoutedView skeletons', () => {
     expect(shellMounted).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('RoutedView on a hard load', () => {
+  /**
+   * Builds a router whose first navigation is held at a guard, like the session check of a cold page load, and mounts a
+   * RoutedView on it without navigating: installing the router starts the first navigation by itself, as in the browser.
+   *
+   * @param guard - The guard the first navigation waits at, before the navigation hooks.
+   * @returns The wrapper and the router.
+   */
+  const mountColdLoad = (guard: () => Promise<void>): { wrapper: VueWrapper; router: Router } => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: screen('home') }],
+    })
+    router.beforeEach(guard)
+    router.beforeEach(navigationAdmitted)
+    router.afterEach(navigationSettled)
+    router.onError(navigationFailed)
+    return { wrapper: mountOn(router), router }
+  }
+
+  it('draws the page loader while the session is being asked, and the screen once the navigation settles', async () => {
+    let answer: () => void = () => undefined
+    const session = new Promise<void>((resolve) => {
+      answer = resolve
+    })
+    const { wrapper, router } = mountColdLoad(() => session)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="home"]').exists()).toBe(false)
+
+    answer()
+    await router.isReady()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="home"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(false)
+  })
+
+  it('ends in the load error, not in the loader, when the first navigation throws', async () => {
+    const { wrapper, router } = mountColdLoad(() => Promise.reject(new Error('session check failed')))
+
+    await expect(router.isReady()).rejects.toThrow('session check failed')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="view-load-error"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(false)
+  })
+
+  it('never draws the loader once the router has a screen', async () => {
+    const { wrapper } = await mountRouted(heldLoader(screen('slow')).load)
+
+    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="home"]').exists()).toBe(true)
+  })
+})

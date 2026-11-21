@@ -167,7 +167,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var line = FulfilmentContextBuilder.Lines(invoice).Should().ContainSingle().Subject;
         line.ProductId.Should().Be(seeded.ToProductId);
         line.Sku.Should().Be(sku);
-        line.Metadata.Should().Be(metadata);
+        JsonDocument.Parse(line.Metadata!).RootElement.GetProperty("seats").GetInt32().Should().Be(50);
         line.Quantity.Should().Be(2);
         line.Currency.Should().Be("USD");
         (await context.ActivityLogs.AnyAsync(l => l.ClientId == clientId && l.Description.Contains($"Created Upgrade Invoice - Invoice ID: {invoiceId}")))

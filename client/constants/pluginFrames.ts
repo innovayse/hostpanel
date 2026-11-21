@@ -10,3 +10,10 @@
 
 /** The `Server-Timing` entry a document carries when its `frame-src` holds the origins the API answered. */
 export const PLUGIN_FRAME_TIMING = 'plugin-frames'
+
+/**
+ * The query parameter that makes a redrawn frame's address new to the browser, so its cache cannot answer with the old page.
+ * Reserved for the host: the name is prefixed so a plugin page's own query parameters never collide with it, and the
+ * plugin developer guide says a page must not use it.
+ */
+export const PLUGIN_FRAME_REVISION_PARAM = 'hp-revision'

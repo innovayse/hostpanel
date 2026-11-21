@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Application.Services.Extensions;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
@@ -19,7 +19,7 @@ public static class ProductGroupPaymentMethodExtensions
     /// Works out the payment methods allowed by every product group the given products and invoice belong to.
     /// </summary>
     /// <param name="context">The module's data context.</param>
-    /// <param name="bus">The Wolverine bus, through which the products of an invoice's services are asked of the Services module.</param>
+    /// <param name="bus">The Wolverine bus, through which the Services and Products modules are asked.</param>
     /// <param name="productIds">The products of a cart; an id that names no product is ignored.</param>
     /// <param name="invoiceId">
     /// An invoice whose lines charge services of products, or <see langword="null"/>; a line that charges no service has no group.
@@ -47,16 +47,7 @@ public static class ProductGroupPaymentMethodExtensions
             allProductIds.AddRange(await bus.GetServiceProductIdsAsync(chargedServiceIds, ct));
         }
 
-        var groupIds = context.Products
-            .Where(p => allProductIds.Contains(p.Id))
-            .Select(p => p.GroupId);
-
-        var groups = await context.ProductGroups
-            .AsNoTracking()
-            .Where(g => groupIds.Contains(g.Id))
-            .ToListAsync(ct);
-
-        var common = ProductGroup.CommonAllowedPaymentMethods(groups);
+        var common = await bus.GetAllowedPaymentMethodsAsync(allProductIds, ct);
         return common is { Count: 0 }
             ? Result<IReadOnlyList<string>?>.FailureCode(HostpanelErrorCodes.PAYMENT_NO_COMMON_METHOD)
             : Result<IReadOnlyList<string>?>.Success(common);

@@ -189,7 +189,7 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
 
     await useCheckoutStore().loadPaymentMethods()
 
-    expect(requestsTo(stub.requests, BillingEndpoint.OrderPaymentMethods)[0]?.url).toBe(`${BillingEndpoint.OrderPaymentMethods}?productIds=5%2C6`)
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderPaymentMethods)[0]?.url).toBe(`${BillingEndpoint.OrderPaymentMethods}?productIds=5,6`)
   })
 
   it('does not override a method the payer already chose', async () => {

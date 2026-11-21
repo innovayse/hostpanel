@@ -4,7 +4,8 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { LegalPage } from '~/constants/legalPage'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
@@ -35,7 +36,7 @@ describe('pages/cookie-policy', () => {
   })
 
   it('shows the title and the dated last-updated line without a badge', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('h1').text()).toBe('cookiePolicy.title')
     expect(wrapper.find('[data-testid="ui-page-hero-badge"]').exists()).toBe(false)
@@ -43,7 +44,7 @@ describe('pages/cookie-policy', () => {
   })
 
   it('renders seven numbered sections', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const markers = wrapper.findAll('[data-testid="legal-section-marker"]')
     expect(markers).toHaveLength(7)
@@ -51,7 +52,7 @@ describe('pages/cookie-policy', () => {
   })
 
   it('draws each cookie type as a card', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const cards = wrapper.find('[data-testid="legal-section-typesOfCookies"]').findAll('[data-testid="legal-section-card"]')
     expect(cards).toHaveLength(2)
@@ -60,7 +61,7 @@ describe('pages/cookie-policy', () => {
   })
 
   it('lists the uses as a checklist', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const items = wrapper.find('[data-testid="legal-section-howWeUseCookies"]').find('[data-testid="legal-section-items"]')
     expect(items.findAll('li')).toHaveLength(3)
@@ -68,14 +69,14 @@ describe('pages/cookie-policy', () => {
   })
 
   it('shows the managing note as a highlighted remark', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('[data-testid="legal-section-note"]').text()).toContain('cookiePolicy.sections.managingCookies.note')
   })
 
   it('links the contact address as a mail link and has no separate contact card', async () => {
     await loadPortalSettings(replies, { [PortalSettingKey.ContactEmail]: 'hello@acme.test' })
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const link = wrapper.find('[data-testid="legal-section-link"]')
     expect(link.attributes('href')).toBe('mailto:hello@acme.test')
@@ -84,13 +85,13 @@ describe('pages/cookie-policy', () => {
   })
 
   it('leaves the contact link out when no address is configured', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('[data-testid="legal-section-link"]').exists()).toBe(false)
   })
 
   it('asks search engines not to index it and sets the social tags', async () => {
-    await mountPage(Page)
+    await mountRenderedPage(Page, 'legal-document')
 
     expect(spies.useSeoMeta).toHaveBeenCalledWith(expect.objectContaining({
       title: 'seo.legal.cookies.title',
@@ -102,7 +103,7 @@ describe('pages/cookie-policy', () => {
   it('shows the operator text instead of the built-in sections and the built-in date', async () => {
     replies[readOf(legalTextPath(LegalPage.Cookies))] = { body: { [PortalSettingKey.LegalCookies]: '## Seller\n\nAcme Ltd. sells under these terms.\n- Paid by card' } }
 
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const section = wrapper.find('[data-testid="legal-section-custom-1"]')
     expect(section.text()).toContain('Seller')

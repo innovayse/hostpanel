@@ -4,7 +4,8 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { usePortalSettingsServer } from '~/tests/helpers/portalSettings'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { LegalPage } from '~/constants/legalPage'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
@@ -26,7 +27,7 @@ describe('pages/terms', () => {
   })
 
   it('shows the title, the badge and the dated last-updated line', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('h1').text()).toBe('terms.title')
     expect(wrapper.find('[data-testid="ui-page-hero-badge"]').text()).toBe('terms.badge')
@@ -34,7 +35,7 @@ describe('pages/terms', () => {
   })
 
   it('renders the eight sections with their paragraphs', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     for (const id of ['acceptance', 'services', 'accounts', 'intellectual', 'payment', 'termination', 'liability', 'changes']) {
       expect(wrapper.find(`[data-testid="legal-section-${id}"]`).exists()).toBe(true)
@@ -44,14 +45,14 @@ describe('pages/terms', () => {
   })
 
   it('closes with a contact card linking to the localised contact page', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('[data-testid="legal-contact"]').text()).toContain('terms.contact.title')
     expect(wrapper.find('[data-testid="legal-contact-link"]').attributes('href')).toBe('/en/contact')
   })
 
   it('asks search engines not to index it', async () => {
-    await mountPage(Page)
+    await mountRenderedPage(Page, 'legal-document')
 
     expect(spies.useSeoMeta).toHaveBeenCalledWith(expect.objectContaining({
       title: 'seo.legal.terms.title',
@@ -62,7 +63,7 @@ describe('pages/terms', () => {
   it('shows the operator text instead of the built-in sections and the built-in date', async () => {
     replies[readOf(legalTextPath(LegalPage.Terms))] = { body: { [PortalSettingKey.LegalTerms]: '## Seller\n\nAcme Ltd. sells under these terms.\n- Paid by card' } }
 
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const section = wrapper.find('[data-testid="legal-section-custom-1"]')
     expect(section.text()).toContain('Seller')

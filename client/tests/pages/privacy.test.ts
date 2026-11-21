@@ -4,7 +4,8 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { usePortalSettingsServer } from '~/tests/helpers/portalSettings'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { LegalPage } from '~/constants/legalPage'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
@@ -26,7 +27,7 @@ describe('pages/privacy', () => {
   })
 
   it('shows the title, the badge and the dated last-updated line', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('h1').text()).toBe('privacy.title')
     expect(wrapper.find('[data-testid="ui-page-hero-badge"]').text()).toBe('privacy.badge')
@@ -34,7 +35,7 @@ describe('pages/privacy', () => {
   })
 
   it('leads every section with its own icon', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const markers = wrapper.findAll('[data-testid="legal-section-marker"]')
     expect(markers).toHaveLength(9)
@@ -43,7 +44,7 @@ describe('pages/privacy', () => {
   })
 
   it('lists five entries under collection and four under rights', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const collection = wrapper.find('[data-testid="legal-section-collection"]')
     const rights = wrapper.find('[data-testid="legal-section-rights"]')
@@ -53,13 +54,13 @@ describe('pages/privacy', () => {
   })
 
   it('has no list under a section without entries', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('[data-testid="legal-section-sharing"]').find('[data-testid="legal-section-items"]').exists()).toBe(false)
   })
 
   it('asks search engines not to index it', async () => {
-    await mountPage(Page)
+    await mountRenderedPage(Page, 'legal-document')
 
     expect(spies.useSeoMeta).toHaveBeenCalledWith(expect.objectContaining({
       title: 'seo.legal.privacy.title',
@@ -70,7 +71,7 @@ describe('pages/privacy', () => {
   it('shows the operator text instead of the built-in sections and the built-in date', async () => {
     replies[readOf(legalTextPath(LegalPage.Privacy))] = { body: { [PortalSettingKey.LegalPrivacy]: '## Seller\n\nAcme Ltd. sells under these terms.\n- Paid by card' } }
 
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const section = wrapper.find('[data-testid="legal-section-custom-1"]')
     expect(section.text()).toContain('Seller')

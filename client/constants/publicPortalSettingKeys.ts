@@ -54,6 +54,7 @@ export const PUBLIC_PORTAL_SETTING_KEYS: readonly PortalSettingKey[] = [
   PortalSettingKey.StatsUptime,
   PortalSettingKey.StatsRegions,
   PortalSettingKey.HeroBadge,
+  PortalSettingKey.LegalTaxId,
   PortalSettingKey.AppsEnabled,
   PortalSettingKey.AppsAccount,
   PortalSettingKey.AppsTasks,

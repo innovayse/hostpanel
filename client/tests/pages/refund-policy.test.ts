@@ -3,7 +3,8 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { usePortalSettingsServer } from '~/tests/helpers/portalSettings'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { mountRenderedPage } from '~/tests/helpers/renderedPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { LegalPage } from '~/constants/legalPage'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
@@ -25,7 +26,7 @@ describe('pages/refund-policy', () => {
   })
 
   it('shows the title, the badge, the subtitle and the dated last-updated line', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.find('h1').text()).toBe('refundPolicy.title')
     expect(wrapper.find('[data-testid="ui-page-hero-badge"]').text()).toBe('refundPolicy.badge')
@@ -34,7 +35,7 @@ describe('pages/refund-policy', () => {
   })
 
   it('renders six sections, the domains one with four paragraphs', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     expect(wrapper.findAll('[data-testid="legal-section-marker"]')).toHaveLength(6)
     const domains = wrapper.find('[data-testid="legal-section-domains"]')
@@ -43,7 +44,7 @@ describe('pages/refund-policy', () => {
   })
 
   it('closes with the contact card in the normal tone', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const link = wrapper.find('[data-testid="legal-contact-link"]')
     expect(link.text()).toContain('refundPolicy.contact.link')
@@ -52,7 +53,7 @@ describe('pages/refund-policy', () => {
   })
 
   it('asks search engines not to index it', async () => {
-    await mountPage(Page)
+    await mountRenderedPage(Page, 'legal-document')
 
     expect(spies.useSeoMeta).toHaveBeenCalledWith(expect.objectContaining({
       title: 'seo.legal.refund.title',
@@ -63,7 +64,7 @@ describe('pages/refund-policy', () => {
   it('shows the operator text instead of the built-in sections and the built-in date', async () => {
     replies[readOf(legalTextPath(LegalPage.Refund))] = { body: { [PortalSettingKey.LegalRefund]: '## Seller\n\nAcme Ltd. sells under these terms.\n- Paid by card' } }
 
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, 'legal-document')
 
     const section = wrapper.find('[data-testid="legal-section-custom-1"]')
     expect(section.text()).toContain('Seller')

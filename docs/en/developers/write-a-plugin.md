@@ -649,6 +649,8 @@ takes no layout. A bad value is `PLUGIN_PAGE_LAYOUT_UNKNOWN`.
 Up to 5 `sources`, each exactly `id`, `label`, a `GET` `route` and a dotted `field`; `size` is `desktop` or `phone`, and
 the reader can switch both. A bad shape, or a preview in a slot or on an admin page, is `PLUGIN_VIEW_PREVIEW_INVALID`.
 
+The query parameter `hp-revision` is reserved for the panel: when it draws a preview again it adds `hp-revision` to the address, so the browser cannot answer with a cached page. A page of yours must not use that name for its own purposes.
+
 **Letting the reader select elements.** A preview may declare `selection`, and a chat in the same document `"selection": true`; both are off when absent:
 
 ```json

@@ -221,7 +221,7 @@ describe('PluginPreviewBlock', () => {
     expect(assign).not.toHaveBeenCalled()
   })
 
-  it('draws a new frame when another block refreshes it, the address unchanged, with the sandbox as it was', async () => {
+  it('draws a new frame when another block refreshes it, at the address with a revision so the cache cannot answer, with the sandbox as it was', async () => {
     api = await startPluginApi({
       [`GET ${ROUTES_URL}/sites/7`]: { body: { previewUrl: `${ORIGIN}/stage`, liveUrl: `${ORIGIN}/live` } },
       [`POST ${ROUTES_URL}/sites/7/publish`]: { body: {} },
@@ -238,8 +238,35 @@ describe('PluginPreviewBlock', () => {
 
     const second = wrapper.get('[data-testid="plugin-preview-frame"]')
     expect(second.element).not.toBe(first)
-    expect(second.attributes('src')).toBe(`${ORIGIN}/stage`)
+    expect(second.attributes('src')).toBe(`${ORIGIN}/stage?hp-revision=1`)
     expect(second.attributes('sandbox')).toBe('allow-scripts allow-forms')
+  })
+
+  it('draws the frame again, with a revision in its address, when the release on the preview moves and the address does not', async () => {
+    let release = 'r5'
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { previewUrl: `${ORIGIN}/stage`, liveUrl: `${ORIGIN}/live`, notes: { preview: 'Version' }, release } }),
+      [`POST ${ROUTES_URL}/sites/7/publish`]: { body: {} },
+    })
+    const wrapper = mountBlocks([
+      {
+        ...preview,
+        note: { route: TEST_ROUTES.site, field: 'notes' },
+        selection: { sources: ['preview'], route: TEST_ROUTES.publish, release: { route: TEST_ROUTES.site, field: 'release' } },
+      },
+      { kind: PluginBlockKind.Action, label: 'Change', route: TEST_ROUTES.publish, refresh: ['site-preview'] },
+    ], { frameOrigins: [ORIGIN] })
+    await settle()
+    const first = wrapper.get('[data-testid="plugin-preview-frame"]')
+    expect(first.attributes('src')).toBe(`${ORIGIN}/stage`)
+
+    release = 'r6'
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    const second = wrapper.get('[data-testid="plugin-preview-frame"]')
+    expect(second.element).not.toBe(first.element)
+    expect(second.attributes('src')).toBe(`${ORIGIN}/stage?hp-revision=1`)
   })
 
   it('writes the selected source\'s note over the frame, as text', async () => {

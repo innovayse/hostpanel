@@ -148,9 +148,10 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     public async Task Upgrade_ToADigitalPlan_RaisesAnInvoiceWhoseLineIsTheNewPlansFulfilmentLine()
     {
         const string metadata = """{"seats":50}""";
+        var sku = $"PRO-{Guid.NewGuid():N}";
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-digital");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
-            factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: "PRO-PLAN", toMetadata: metadata, quantity: 2);
+            factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: sku, toMetadata: metadata, quantity: 2);
         var expected = ServiceChangeTestSeeds.ExpectedProration(10m, 20m, seeded.NextRenewalAt);
 
         var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
@@ -165,7 +166,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         invoice.Total.Should().BeApproximately(expected, 0.01m);
         var line = FulfilmentContextBuilder.Lines(invoice).Should().ContainSingle().Subject;
         line.ProductId.Should().Be(seeded.ToProductId);
-        line.Sku.Should().Be("PRO-PLAN");
+        line.Sku.Should().Be(sku);
         line.Metadata.Should().Be(metadata);
         line.Quantity.Should().Be(2);
         line.Currency.Should().Be("USD");
@@ -182,9 +183,10 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     public async Task Upgrade_WithAQuantityThatDoesNotDivideTheAmount_KeepsTheQuantityAndRoundsTheUnitPriceOnly()
     {
         const int quantity = 3;
+        var sku = $"PRO-{Guid.NewGuid():N}";
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-qty3");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
-            factory, clientId, 10m, 17.77m, toType: ProductType.Digital, toSku: "PRO-PLAN", quantity: quantity);
+            factory, clientId, 10m, 17.77m, toType: ProductType.Digital, toSku: sku, quantity: quantity);
         var expected = ServiceChangeTestSeeds.ExpectedProration(10m, 17.77m, seeded.NextRenewalAt);
 
         var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
@@ -229,9 +231,10 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     [Fact]
     public async Task Upgrade_ToADigitalPlan_InvoiceNeverLapsesWhenLeftUnpaid()
     {
+        var sku = $"PRO-{Guid.NewGuid():N}";
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-nolapse");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
-            factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: "PRO-PLAN");
+            factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: sku);
         var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
         var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
 

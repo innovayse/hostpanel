@@ -93,7 +93,7 @@ Go to **Settings → Products → Create Product** and fill in the form.
 </li>
 <li>
 
-**SKU**: optional unique code used by fulfilment plugins to identify the product (letters, digits, hyphens, underscores or dots; at most 64 characters).
+**SKU**: optional unique code used by fulfilment plugins to identify the product (letters, digits, hyphens, underscores or dots, optionally as two such parts separated by one colon such as `plan:pro`; at most 64 characters). The SKU is shown in the public product catalog and is stored in upper case, so `plan:pro` and `PLAN:PRO` are the same SKU.
 
 </li>
 <li>

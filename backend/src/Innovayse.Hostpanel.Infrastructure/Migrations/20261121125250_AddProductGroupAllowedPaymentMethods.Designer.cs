@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Hostpanel.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261121091847_AddProductGroupAllowedPaymentMethods")]
+    [Migration("20261121125250_AddProductGroupAllowedPaymentMethods")]
     partial class AddProductGroupAllowedPaymentMethods
     {
         /// <inheritdoc />
@@ -4453,8 +4453,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasMaxLength(10719)
-                        .HasColumnType("character varying(10719)");
+                        .HasMaxLength(64051)
+                        .HasColumnType("character varying(64051)");
 
                     b.HasKey("Id");
 

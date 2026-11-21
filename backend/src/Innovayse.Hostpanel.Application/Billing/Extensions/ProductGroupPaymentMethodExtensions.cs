@@ -1,8 +1,10 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Extensions;
 
@@ -17,6 +19,7 @@ public static class ProductGroupPaymentMethodExtensions
     /// Works out the payment methods allowed by every product group the given products and invoice belong to.
     /// </summary>
     /// <param name="context">The module's data context.</param>
+    /// <param name="bus">The Wolverine bus, through which the products of an invoice's services are asked of the Services module.</param>
     /// <param name="productIds">The products of a cart; an id that names no product is ignored.</param>
     /// <param name="invoiceId">
     /// An invoice whose lines charge services of products, or <see langword="null"/>; a line that charges no service has no group.
@@ -27,22 +30,26 @@ public static class ProductGroupPaymentMethodExtensions
     /// methods all restricted groups share; <c>PAYMENT_NO_COMMON_METHOD</c> when they share none.
     /// </returns>
     public static async Task<Result<IReadOnlyList<string>?>> AllowedPaymentMethodsAsync(
-        this IHostpanelDbContext context, IReadOnlyCollection<int> productIds, int? invoiceId, CancellationToken ct)
+        this IHostpanelDbContext context, IMessageBus bus, IReadOnlyCollection<int> productIds, int? invoiceId, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(bus);
         ArgumentNullException.ThrowIfNull(productIds);
 
-        var groupIds = context.Products
-            .Where(p => productIds.Contains(p.Id))
-            .Select(p => p.GroupId);
-
+        var allProductIds = productIds.ToList();
         if (invoiceId is { } id)
         {
-            var chargedProductIds = context.ClientServices
-                .Where(s => context.InvoiceItems.Any(i => i.InvoiceId == id && i.ClientServiceId == s.Id))
-                .Select(s => s.ProductId);
-            groupIds = groupIds.Concat(context.Products.Where(p => chargedProductIds.Contains(p.Id)).Select(p => p.GroupId));
+            var chargedServiceIds = await context.InvoiceItems
+                .AsNoTracking()
+                .Where(i => i.InvoiceId == id && i.ClientServiceId != null)
+                .Select(i => i.ClientServiceId!.Value)
+                .ToListAsync(ct);
+            allProductIds.AddRange(await bus.GetServiceProductIdsAsync(chargedServiceIds, ct));
         }
+
+        var groupIds = context.Products
+            .Where(p => allProductIds.Contains(p.Id))
+            .Select(p => p.GroupId);
 
         var groups = await context.ProductGroups
             .AsNoTracking()

@@ -177,7 +177,7 @@ public sealed class StartGatewayPaymentHandler
 
         // The product groups the invoice charges may restrict the methods it is paid with; the checkout never offers a
         // method they do not allow, so this answers only a caller that sends one anyway.
-        var allowed = await _context.AllowedPaymentMethodsAsync([], invoice.Id, ct);
+        var allowed = await _context.AllowedPaymentMethodsAsync(_bus, [], invoice.Id, ct);
         if (allowed.IsFailure)
         {
             return Result<RedirectDto>.FailureCode(allowed.ErrorCode!);

@@ -189,6 +189,6 @@ public sealed class ListAvailablePaymentMethodsHandler
             }
         }
 
-        return await _context.AllowedPaymentMethodsAsync(query.ProductIds ?? [], query.InvoiceId, ct);
+        return await _context.AllowedPaymentMethodsAsync(_bus, query.ProductIds ?? [], query.InvoiceId, ct);
     }
 }

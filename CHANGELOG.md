@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-21
+
 ### Added
 
 - The admin panel is available in German (#284): the language menu offers Deutsch, and every screen, message and label of the panel is translated. Machine translations wait for a native review.
@@ -431,7 +433,8 @@ Upgrade notes, read before upgrading:
 - Backend sources were tracked as a submodule; they are now part of the repository.
 - Repository URLs in the README and clone instructions.
 
-[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/innovayse/hostpanel/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/innovayse/hostpanel/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/innovayse/hostpanel/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/innovayse/hostpanel/compare/v0.6.0...v0.7.0

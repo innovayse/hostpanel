@@ -925,6 +925,15 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Описание не должно превышать {0} символов.</value>
   </data>
+  <data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Укажите не более {0} товаров.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Каждый способ оплаты не должен превышать {0} символов.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Допускается не более {0} способов оплаты.</value>
+  </data>
   <data name="ProductBundleIdInvalid" xml:space="preserve">
     <value>Укажите корректный идентификатор набора продуктов.</value>
   </data>

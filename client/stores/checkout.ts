@@ -193,14 +193,18 @@ export const useCheckoutStore = defineStore('checkout', () => {
   }
 
   /**
-   * Reads the gateways an order may be paid through and preselects the first one.
+   * Reads the gateways the cart may be paid through and preselects the first one. The cart's products go with the
+   * request, because their product groups may allow only some gateways; a cart whose groups share none leaves the list
+   * empty with the sentence in {@link error}.
    *
    * @returns Nothing; a failure leaves the list empty and {@link error} holding the sentence.
    */
   const loadPaymentMethods = async (): Promise<void> => {
     methodsLoading.value = true
     try {
-      paymentMethods.value = await billing.fetchGatewayMethods()
+      paymentMethods.value = await billing.fetchGatewayMethods({
+        productIds: cart.itemsInCurrency(currencyStore.payerCode).map(i => i.pid),
+      })
       const first = paymentMethods.value[0]
       if (first && !selectedMethod.value) {
         selectedMethod.value = first.module

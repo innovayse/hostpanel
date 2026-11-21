@@ -20,8 +20,8 @@ const eur: CurrencyDto = { ...usd, code: 'EUR', numeric: '978', prefix: '€', r
 
 /** The product groups offered. */
 const groups: ProductGroup[] = [
-  { id: 5, name: 'Shared', description: null, isActive: true, productCount: 2 },
-  { id: 6, name: 'Cloud', description: null, isActive: true, productCount: 0 },
+  { id: 5, name: 'Shared', description: null, isActive: true, productCount: 2, allowedPaymentMethods: [] },
+  { id: 6, name: 'Cloud', description: null, isActive: true, productCount: 0, allowedPaymentMethods: [] },
 ]
 
 /** A stored product sold in the base currency only. */

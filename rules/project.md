@@ -337,6 +337,17 @@ docker/                              compose set (shared·dev·prod·platform), 
   conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
   method, or a reference over `CardChargeConsent.MaxMethodRefLength` (200) is logged and binds nothing. A save that lost to a
   concurrent completion drops the binding with the rest, because the winner bound it in its own save.
+- **Payment methods allowed per product group.** A `ProductGroup` carries `AllowedPaymentMethods` (payment module ids, stored
+  in `ProductGroups`, set by `ProductGroup.SetAllowedPaymentMethods`, which trims, drops blanks and de-duplicates ignoring
+  case); empty means every method on offer, which is what a group has until an operator restricts it. What an order or
+  invoice may be paid with is the intersection of the restricted groups it draws from (`ProductGroup.CommonAllowedPaymentMethods`,
+  `null` when none is restricted). `ListAvailablePaymentMethods` (cart `productIds`, or an `invoiceId`) offers only those
+  methods, and `StartGatewayPayment` and `PlaceOrder` enforce them for a caller that sends another one anyway:
+  `PAYMENT_METHOD_NOT_ALLOWED` for a module outside the set, `PAYMENT_NO_COMMON_METHOD` (both 400) when the groups share
+  none, so nothing can pay the cart. Ownership is settled before the group rule, so a stranger's invoice answers
+  `INVOICE_NOT_FOUND`. **Update semantics:** `UpdateProductGroup` follows the product update's rule for an optional member,
+  `null` (field omitted) keeps the stored set and an empty list lifts the restriction; the limits (50 ids of at most 100
+  characters) are one rule, `MustBePaymentMethodList`, shared by the create and update validators.
 - **Session kinds, the browser step and the plugin HTTP clients (#1174, #1159, SDK 3.7.0).** A payment session is a redirect,
   a form post or a browser step. `StartGatewayPaymentHandler` is the one place that judges it: `PaymentSessionExtensions`
   (`Application/Billing/Extensions`) refuses a form that breaks `PaymentFormPost`'s rules or `PaymentFormPostLimits` (absolute

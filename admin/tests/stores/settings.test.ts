@@ -279,3 +279,40 @@ describe('settingsStore loads', () => {
     expect(store.actionError).toBe('Name taken.')
   })
 })
+
+describe('settingsStore product groups', () => {
+  installStoreHooks()
+
+  /** A group payload restricted to one method. */
+  const payload = { name: 'Shared', description: null, allowedPaymentMethods: ['bank_transfer'] }
+
+  it('fetchPaymentMethods fills the choices of the group form', async () => {
+    const store = useSettingsStore()
+    stubFetch(json([{ module: 'bank_transfer', displayName: 'Bank transfer' }]))
+
+    await store.fetchPaymentMethods()
+
+    expect(store.paymentMethods).toEqual([{ module: 'bank_transfer', displayName: 'Bank transfer' }])
+  })
+
+  it('createProductGroup returns the new id', async () => {
+    stubFetch(json(7))
+
+    expect(await useSettingsStore().createProductGroup(payload)).toBe(7)
+  })
+
+  it('updateProductGroup reports success as true', async () => {
+    stubFetch(new Response(null, { status: 204 }))
+
+    expect(await useSettingsStore().updateProductGroup(7, payload)).toBe(true)
+  })
+
+  it('a refused group save returns the failure and keeps the API sentence', async () => {
+    const store = useSettingsStore()
+    stubFetch(problem('That group is gone.', 404))
+
+    expect(await store.updateProductGroup(7, payload)).toBe(false)
+    expect(await store.createProductGroup(payload)).toBeNull()
+    expect(store.actionError).toBe('That group is gone.')
+  })
+})

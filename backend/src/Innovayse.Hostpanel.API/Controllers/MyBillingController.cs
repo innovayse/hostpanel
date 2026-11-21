@@ -129,7 +129,7 @@ public sealed class MyBillingController : BaseApiController
     /// <returns>
     /// 200 OK with the redirect URL; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's,
     /// <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account, or <c>CURRENCY_NOT_FOUND</c>; 400 with <c>VALIDATION_ERROR</c> (a method to keep without the consent wording
-    /// version), <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or
+    /// version), <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c>, <c>PAYMENT_METHOD_NOT_ALLOWED</c>, <c>PAYMENT_NO_COMMON_METHOD</c> or
     /// <c>GATEWAY_CURRENCY_MISMATCH</c>; 409 with <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>,
     /// <c>INVOICE_STORED_CHARGE_HELD</c> or <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> (a method to keep at a module that cannot keep one); 503 with
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the

@@ -399,6 +399,60 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await AssertCodeAsync(response, HostpanelErrorCodes.ORDER_PAYMENT_METHOD_UNAVAILABLE);
     }
 
+    /// <summary>A product group that does not allow the chosen method refuses the order, though the method is on offer.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CheckoutRefusesAMethodTheProductGroupDoesNotAllow()
+    {
+        await EnableBankTransferAsync();
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "some-gateway");
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(productId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await AssertCodeAsync(response, HostpanelErrorCodes.ORDER_PAYMENT_METHOD_UNAVAILABLE);
+    }
+
+    /// <summary>A product group that allows the chosen method takes the order as before.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CheckoutAcceptsAMethodTheProductGroupAllows()
+    {
+        await EnableBankTransferAsync();
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank_transfer");
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(productId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+    }
+
+    /// <summary>A cart whose groups share no payment method is refused with its own code, and no order is created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CheckoutRefusesACartWhoseGroupsShareNoMethod()
+    {
+        await EnableBankTransferAsync();
+        var first = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank_transfer");
+        var second = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "some-gateway");
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", new
+        {
+            firstName = "Ada",
+            lastName = "Lovelace",
+            email = $"guest-{Guid.NewGuid():N}@example.test",
+            password = TestPassword,
+            paymentMethod = "bank_transfer",
+            items = new[]
+            {
+                new { productId = first, billingCycle = nameof(BillingCycle.Monthly) },
+                new { productId = second, billingCycle = nameof(BillingCycle.Monthly) },
+            },
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await AssertCodeAsync(response, HostpanelErrorCodes.PAYMENT_NO_COMMON_METHOD);
+    }
+
     /// <summary>
     /// A signed-in caller placing their first order gets a client record rather than a refusal:
     /// this flow has no "no client account" refusal.

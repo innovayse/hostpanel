@@ -127,6 +127,73 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         plugin.CreatePaymentCallCount.Should().Be(0);
     }
 
+    /// <summary>
+    /// An invoice that charges a service of a product group which does not allow the module is refused with
+    /// <c>PAYMENT_METHOD_NOT_ALLOWED</c> before the gateway is ever called.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ModuleTheInvoiceGroupsDoNotAllowIsRefusedWithoutCallingTheGateway()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-group-denied");
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "other-gateway");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, clientId, productId);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_NOT_ALLOWED);
+        plugin.CreatePaymentCallCount.Should().Be(0);
+    }
+
+    /// <summary>
+    /// A stranger asking to pay an invoice whose product group would refuse the module is told the invoice does not
+    /// exist (<c>INVOICE_NOT_FOUND</c>), not <c>PAYMENT_METHOD_NOT_ALLOWED</c>: ownership is checked before the group
+    /// rule, so the refusal never reveals what another client's invoice charges.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AStrangersInvoiceIsRefusedAsNotFoundBeforeTheGroupRuleIsApplied()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (_, ownerId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-group-owner");
+        var stranger = await BillingTestSeeds.RegisterStrangerAsync(factory, host, "gw-start-group-stranger");
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "other-gateway");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, ownerId, productId);
+
+        var response = await StartAsync(stranger, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_FOUND);
+        plugin.CreatePaymentCallCount.Should().Be(0);
+    }
+
+    /// <summary>An invoice whose product group allows the module starts the payment as usual.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ModuleTheInvoiceGroupsAllowStartsThePayment()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-start-group-allowed");
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank-gateway");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, clientId, productId);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.CreatePaymentCallCount.Should().Be(1);
+    }
+
     /// <summary>A module the resolver does not know answers <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

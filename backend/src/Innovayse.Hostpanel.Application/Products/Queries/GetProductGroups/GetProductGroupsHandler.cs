@@ -35,7 +35,8 @@ public sealed class GetProductGroupsHandler
             .AsNoTracking()
             .Where(g => !qry.ActiveOnly || g.IsActive)
             .OrderBy(g => g.Name)
-            .Select(g => new ProductGroupDto(g.Id, g.Name, g.Description, g.IsActive, g.Products.Count))
+            .Select(g => new ProductGroupDto(
+                g.Id, g.Name, g.Description, g.IsActive, g.Products.Count, g.AllowedPaymentMethods))
             .ToListAsync(ct);
 
         return Result<IReadOnlyList<ProductGroupDto>>.Success(groups);

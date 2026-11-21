@@ -1,8 +1,10 @@
+using System.Net;
 using System.Net.Http.Json;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Constants;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -288,5 +290,135 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         // Anonymous caller's own currency is the base, USD; naming "amd" (any case) instead
         // makes the AMD gateway show up.
         (await ListedModulesAsync(host.CreateClient(), "amd")).Should().Contain("bank-gateway");
+    }
+
+    /// <summary>Builds a host with bank transfer switched on and one loaded gateway that bills in USD.</summary>
+    /// <returns>The test host, with both methods on offer to an unrestricted cart.</returns>
+    private async Task<WebApplicationFactory<Program>> BuildHostOfferingBothMethodsAsync()
+    {
+        var registry = new FakePluginRegistry();
+        registry.Add(PaymentManifest("bank-gateway", "Bank Gateway"));
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", new FakePaymentPlugin { CurrencyCode = "840" });
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IPluginRegistry>(registry);
+                services.AddSingleton<IPaymentPluginResolver>(resolver);
+            }));
+        await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
+        return host;
+    }
+
+    /// <summary>A cart whose product group allows one method is offered that method only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ARestrictedGroupLimitsTheListToItsMethods()
+    {
+        var host = await BuildHostOfferingBothMethodsAsync();
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank-gateway");
+
+        var listed = await ListedModulesForProductsAsync(host.CreateClient(), productId);
+
+        listed.Should().Equal("bank-gateway");
+    }
+
+    /// <summary>A group that restricts nothing leaves the list as it was, so existing installs are unchanged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnUnrestrictedGroupLeavesTheListUnchanged()
+    {
+        var host = await BuildHostOfferingBothMethodsAsync();
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory);
+
+        var listed = await ListedModulesForProductsAsync(host.CreateClient(), productId);
+
+        listed.Should().BeEquivalentTo([BuiltInPaymentModules.BankTransfer, "bank-gateway"]);
+    }
+
+    /// <summary>A restricted group and an unrestricted one in the same cart give the restricted group's methods.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnUnrestrictedGroupTakesNoPartInTheIntersection()
+    {
+        var host = await BuildHostOfferingBothMethodsAsync();
+        var restricted = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, BuiltInPaymentModules.BankTransfer);
+        var open = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory);
+
+        var listed = await ListedModulesForProductsAsync(host.CreateClient(), restricted, open);
+
+        listed.Should().Equal(BuiltInPaymentModules.BankTransfer);
+    }
+
+    /// <summary>Two groups that share a method give that method, whatever order and case they name it in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GroupsListOnlyWhatTheyAllAllow()
+    {
+        var host = await BuildHostOfferingBothMethodsAsync();
+        var first = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, BuiltInPaymentModules.BankTransfer, "bank-gateway");
+        var second = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "BANK-GATEWAY");
+
+        var listed = await ListedModulesForProductsAsync(host.CreateClient(), first, second);
+
+        listed.Should().Equal("bank-gateway");
+    }
+
+    /// <summary>A cart whose groups share no method is refused with a code the payer can act on, not an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GroupsWithNoCommonMethodAreRefused()
+    {
+        var host = await BuildHostOfferingBothMethodsAsync();
+        var first = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank-gateway");
+        var second = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, BuiltInPaymentModules.BankTransfer);
+
+        var response = await host.CreateClient().GetAsync($"/api/payment-methods?productIds={first}&productIds={second}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_NO_COMMON_METHOD);
+    }
+
+    /// <summary>The groups of the services an invoice charges restrict its payer's list the same way a cart's do.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AnInvoiceIsListedByTheGroupsItCharges()
+    {
+        var host = await BuildHostOfferingBothMethodsAsync();
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank-gateway");
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "methods-invoice");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, clientId, productId);
+
+        var methods = await client.GetFromJsonAsync<List<AvailablePaymentMethodDto>>($"/api/payment-methods?invoiceId={invoiceId}");
+
+        methods!.Select(m => m.Module).Should().Equal("bank-gateway");
+    }
+
+    /// <summary>An invoice that is another client's is answered as not found, whatever groups it charges.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SomeoneElsesInvoiceIsNotFound()
+    {
+        var host = await BuildHostOfferingBothMethodsAsync();
+        var productId = await ProductsTestSeeds.SeedProductAllowingPaymentMethodsAsync(factory, "bank-gateway");
+        var (_, ownerId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "methods-owner");
+        var (stranger, _) = await BillingTestSeeds.RegisterClientAsync(factory, host, "methods-stranger");
+        var invoiceId = await BillingTestSeeds.SeedInvoiceChargingProductAsync(factory, ownerId, productId);
+
+        var response = await stranger.GetAsync($"/api/payment-methods?invoiceId={invoiceId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_FOUND);
+    }
+
+    /// <summary>Lists the module ids offered for a cart of the given products.</summary>
+    /// <param name="client">The client to list with.</param>
+    /// <param name="productIds">The cart's products.</param>
+    /// <returns>The module ids offered.</returns>
+    private static async Task<List<string>> ListedModulesForProductsAsync(HttpClient client, params int[] productIds)
+    {
+        var query = string.Join('&', productIds.Select(id => $"productIds={id}"));
+        var methods = await client.GetFromJsonAsync<List<AvailablePaymentMethodDto>>($"/api/payment-methods?{query}");
+        return methods!.Select(m => m.Module).ToList();
     }
 }

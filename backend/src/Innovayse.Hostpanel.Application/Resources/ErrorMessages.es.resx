@@ -297,6 +297,12 @@
   <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
     <value>Ese método de pago no está disponible en este momento.</value>
   </data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
+    <value>No hay un método de pago común para todos los productos de este pedido. Pídalos por separado.</value>
+  </data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>Este método de pago no está permitido para los productos que se pagan.</value>
+  </data>
   <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
     <value>Esa moneda no está disponible.</value>
   </data>

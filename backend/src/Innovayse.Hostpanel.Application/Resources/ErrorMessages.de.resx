@@ -139,6 +139,8 @@
   <data name="ORDER_NOT_DELETABLE" xml:space="preserve"><value>Nur eine ausstehende oder stornierte Bestellung kann gelöscht werden.</value></data>
   <data name="ORDER_NOT_INVOICED" xml:space="preserve"><value>Für diese Bestellung gibt es noch keine Rechnung, auf die sich die Aktion beziehen könnte.</value></data>
   <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve"><value>Diese Zahlungsmethode ist derzeit nicht verfügbar.</value></data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve"><value>Für alle Produkte dieser Bestellung gibt es keine gemeinsame Zahlungsmethode. Bestellen Sie sie getrennt.</value></data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve"><value>Diese Zahlungsmethode ist für die zu bezahlenden Produkte nicht zulässig.</value></data>
   <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve"><value>Diese Währung wird nicht angeboten.</value></data>
   <data name="ACCOUNT_EMAIL_EXISTS" xml:space="preserve"><value>Mit dieser E-Mail-Adresse existiert bereits ein Konto. Melden Sie sich an, um fortzufahren.</value></data>
   <data name="ORDER_NUMBER_RANGE_EXHAUSTED" xml:space="preserve"><value>Bestellungen können derzeit nicht nummeriert werden. Bitte versuchen Sie es später erneut.</value></data>

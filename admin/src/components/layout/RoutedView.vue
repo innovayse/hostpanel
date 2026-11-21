@@ -86,8 +86,15 @@ if (starting.value) {
   )
 }
 
-/** True while the loader stands in for the page: the first navigation is running and has not reached a screen to show. */
-const booting = computed<boolean>(() => starting.value && !loading.value && !failed.value)
+/**
+ * True while the loader stands in for the page: the first navigation is running and has not reached a screen to show.
+ *
+ * The route is read here too, because the router matches it before `isReady()` settles; going by the flag alone would
+ * swap the screen that has just landed for the loader for one more tick and mount it twice.
+ */
+const booting = computed<boolean>(
+  () => starting.value && router.currentRoute.value.matched.length === 0 && !loading.value && !failed.value,
+)
 
 /** The records the pending navigation draws from this level down; empty while this level is not loading. */
 const pendingRecords = computed<RouteRecordNormalized[]>(() =>

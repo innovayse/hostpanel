@@ -167,8 +167,9 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ICallerClientMemo`). `Innovayse.Providers.CWP7` implements
   `IProvisioningProvider` and is not scanned: it is not a plugin, Infrastructure links it and
   `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
-  own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations, so there is
-  no SDK contract it could implement instead.
+  own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations; since SDK 3.11.0 the
+  operations live in `IProvisioningPanelPlugin` (capability `provisioningPanel`), which the host accepts but does not call yet (#1353),
+  so these providers stay in the host until it does.
 - **The cPanel provider lives in the host for now.** `WhmProvisioningProvider`, `WhmApiClient` and their
   models (`Infrastructure/Integrations/CPanel/Whm/`) implement `IProvisioningProvider` and are built per server
   by `ProvisioningProviderFactory`, like the CWP7 and Plesk providers, and not shipped as a plugin. The reason
@@ -263,7 +264,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.10.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.11.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -292,7 +293,21 @@ docker/                              compose set (shared·dev·prod·platform), 
   `showInIntegrations`.
 - **Capabilities (#818).** A manifest may list `capabilities`, names from the SDK's `PluginCapabilities`:
   `storedCredentials` (a payment plugin only, the class also implements `IStoredCredentialPlugin`), `paymentReturn` (a payment plugin only, the class also implements `IPaymentReturnPlugin`) and `endpoints`
-  (any type, the class also implements `IPluginEndpoints`). A **serving plugin** is an app plugin or a plugin of any
+  (any type, the class also implements `IPluginEndpoints`). Since SDK 3.11.0 the host knows every name `PluginCapabilities` defines:
+  `tax` (any type, `ITaxPlugin`), `provisioningPanel`, `provisioningPanelLogin` and `provisioningPanelPackages` (a provisioning plugin; the last
+  two need `provisioningPanel`), `virtualServer`, `virtualServerList`, `virtualServerSnapshots`, `virtualServerBackups`,
+  `virtualServerFirewall` and `virtualServerConsole` (a provisioning plugin; the last three and snapshots need `virtualServer`) and the ten
+  registrar names (`registrarOperations` and the nine optional ones, a registrar plugin). **`PluginCapabilityRules`
+  (`Infrastructure/Plugins`) is the one table**: per name the SDK interface the class must implement, the one plugin type that may carry it
+  and the capability it needs. The manifest validator (`Validate`: known, once, right type, companion declared), the loader (the
+  `endpoints` promise, refused at load as `PLUGIN_ENDPOINTS_NOT_IMPLEMENTED`) and `PluginActivator` (`FirstUnimplemented`) all ask it, and
+  `PluginCapabilityRulesTests` fails on a name the SDK adds that the table lacks. Accepting a name only means the plugin loads and is listed;
+  nothing calls the registrar, panel or virtual server contracts yet, which is what #1352, #1353 and #1354 add. A plugin that declares any
+  capability whose interface derives from `IProvisioningPlugin` (`PluginCapabilityRules.DeclaresProvisioning`) must list valid `serverModules`
+  (the SDK's `PluginServerModules.Validate`) and any other plugin must list none (`PLUGIN_MANIFEST_SERVER_MODULES_INVALID`,
+  `PluginManifestRule.ServerModulesInvalid`); a registrar plugin's `connectionRole` settings are checked by the packaging package's
+  `PluginManifestChecker` (`PluginRuleMap` maps its four rules to `PLUGIN_MANIFEST_CONNECTION_ROLE_*`), never re-implemented in the host.
+  A **serving plugin** is an app plugin or a plugin of any
   other type that declares `endpoints`; `PluginManifestCapabilityExtensions.ServesEndpoints()`
   (`Infrastructure/Plugins/Extensions`) is the one place that decides it, and the loader (which also registers such a
   plugin under `IPluginEndpoints`), `PluginEndpointResolver`, `PluginUiSource` and the manifest validator all ask it.
@@ -307,6 +322,20 @@ docker/                              compose set (shared·dev·prod·platform), 
   plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
+- **The panel transport and the server's self signed certificate (SDK 3.7.0 `IPanelTransport`).** `PanelTransport`
+  (`Infrastructure/Plugins`, scoped, registered by `AddPanelTransport`, which the tests call as well) is the one `IPanelTransport` a hosting
+  panel, virtual server or registrar plugin takes in its constructor. `CreateClient()` is the named client `HttpClientNames.PanelTransport`:
+  `AddOutboundAddressGuard(followRedirects: false)` (loopback, link-local and metadata refused, the panel route map applied), no logging, no
+  resilience pipeline so no retry, and `HttpBackstopTimeouts.PanelTransport` (120 s) as its only timeout. `CreateClient(server)` reads
+  `Server.AcceptsSelfSignedCertificate` (column `AcceptsSelfSignedCertificate`, off by default, set on the admin server form as
+  `endpoint.acceptsSelfSignedCertificate`) from the **stored** server by id; when it is on the client owns a handler from
+  `OutboundConnector.CreateHandler` (the same guarded handler, one place) whose certificate callback accepts an untrusted chain or a name
+  mismatch only when the connection's target host is that stored host name. The host keeps no panel port, so the allowance is the host name,
+  `PanelServerConnection.Port` is `null` and a plugin uses its own default port. The setting is never global, never read from the connection
+  the plugin passes and never applies to `CreateClient()`. The trust follows the **stored** host name of the server the plugin names by id, not
+  anything the plugin sends, and plugins are trusted code: one that names a server can reach it, so the operator's setting is not a defence
+  against a plugin. The setting is read on a short lived data context of its own (a scope from `IServiceScopeFactory`), never on the caller's
+  context, and a server cannot accept a self signed certificate without SSL (`ServerErrors.SelfSignedRequiresSsl`, thrown by `Server`).
 - **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
   **A method can also be saved within a payment (#915, SDK 3.5.0).** `StartGatewayPayment` (and `StartMyGatewayPayment`,
   `StartOrderGatewayPayment`, which hand their command to it) takes `SavePaymentMethod` and the `ConsentTextVersion` the payer

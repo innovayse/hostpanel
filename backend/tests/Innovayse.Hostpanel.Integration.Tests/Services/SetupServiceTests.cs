@@ -177,5 +177,6 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), now);
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), now);
 }

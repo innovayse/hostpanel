@@ -29,6 +29,25 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
         (await ServersTestSeeds.SearchServersAsync(client, newName)).Should().Contain(r => r.GetProperty("name").GetString() == newName);
     }
 
+    /// <summary>An update switches the self signed certificate choice on and off, and the list reads it back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SelfSignedCertificate_IsStoredAndClearedByAnUpdateAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+        var name = $"Server-{Guid.NewGuid():N}";
+        var id = await ServersTestSeeds.CreateServerAsync(client, name);
+        (await ReadServerAsync(client, id, name)).GetProperty("endpoint").GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeFalse();
+
+        (await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, acceptsSelfSignedCertificate: true)))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ReadServerAsync(client, id, name)).GetProperty("endpoint").GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeTrue();
+
+        (await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, acceptsSelfSignedCertificate: false)))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ReadServerAsync(client, id, name)).GetProperty("endpoint").GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeFalse();
+    }
+
     /// <summary>
     /// The list says a credential is stored without returning it; an update with the field empty
     /// keeps it, and an explicit clear removes it.

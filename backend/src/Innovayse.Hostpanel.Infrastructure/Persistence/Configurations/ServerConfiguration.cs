@@ -22,6 +22,7 @@ public sealed class ServerConfiguration : IEntityTypeConfiguration<Server>
         // Password, ApiToken and AccessHash are encrypted and sized by ProtectedColumns.
 
         builder.Property(x => x.UseSSL).IsRequired();
+        builder.Property(x => x.AcceptsSelfSignedCertificate).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.MaxAccounts);
         builder.Property(x => x.IsDefault).IsRequired();
         builder.Property(x => x.IsDisabled).IsRequired();

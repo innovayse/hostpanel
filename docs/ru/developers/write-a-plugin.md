@@ -258,7 +258,7 @@ public class MyGatewayTests
 <SettingTable :settings="[
   { name: 'manifestVersion', type: 'number', default: '1', description: 'Укажите 2, чтобы использовать члены ниже.' },
   { name: 'settings', type: 'array', default: '[]', description: 'Типизированные настройки, которые заполняет администратор. Заменяет fields; если settings пуст, хост преобразует fields в settings.' },
-  { name: 'capabilities', type: 'string[]', default: '[]', description: 'Что умеет плагин; показывается без его активации. Известные имена: storedCredentials (платёжный плагин, который также реализует IStoredCredentialPlugin), paymentReturn (платёжный плагин, который также реализует IPaymentReturnPlugin, SDK 3.7.0 или новее) и endpoints (класс плагина реализует IPluginEndpoints; для плагина, не являющегося плагином App, хост отдаёт только его публичные обратные вызовы, см. раздел «Обратные вызовы извне»; плагин App обслуживается без такого объявления). Должно согласовываться с интерфейсами, которые класс действительно реализует.' },
+  { name: 'capabilities', type: 'string[]', default: '[]', description: 'Что умеет плагин; показывается без его активации. Известные имена: storedCredentials (платёжный плагин, который также реализует IStoredCredentialPlugin), paymentReturn (платёжный плагин, который также реализует IPaymentReturnPlugin, SDK 3.7.0 или новее), endpoints (класс плагина реализует IPluginEndpoints; для плагина, не являющегося плагином App, хост отдаёт только его публичные обратные вызовы, см. раздел «Обратные вызовы извне»; плагин App обслуживается без такого объявления), tax, а также имена панелей хостинга, виртуальных серверов и регистраторов из раздела «Возможности (capabilities)». Должно согласовываться с интерфейсами, которые класс действительно реализует.' },
   { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Виды доступа к хостингу клиента, которые плагин запрашивает у хоста. Известные виды: ssh, websites и databases (последние два требуют SDK 3.9.0 или новее, см. раздел о сайтах и базах данных на хостинге клиента). Страница «Плагины» панели администратора показывает каждый объявленный плагином вид.' },
   { name: 'locales', type: 'object', default: '{}', description: 'Тексты по коду языка, затем по ключу, например язык en с ключом menu.chat и текстом Chat. Ключ текста состоит минимум из двух частей, разделённых точкой, например menu.chat. Тексты en должны определять каждый ключ, который использует манифест.' },
   { name: 'api', type: 'object', default: '{}', description: 'Маршруты, которые хост перенаправляет плагину: api.client и api.admin, каждый со списком маршрутов.' },
@@ -394,22 +394,69 @@ Fixes the renewal date."
 
 Манифест версии 2 может перечислять `capabilities`, каждая задана именем из `PluginCapabilities` SDK:
 
-| Возможность | Допустима для | Класс плагина должен также реализовать |
-|------------|------------|--------------------------------------|
-| `storedCredentials` | только `Payment` | `IStoredCredentialPlugin` |
-| `endpoints` | любой тип | `IPluginEndpoints` |
+| Возможность | Допустима для | Требует | Класс плагина должен также реализовать |
+|------------|------------|-------|--------------------------------------|
+| `storedCredentials` | только `Payment` |  | `IStoredCredentialPlugin` |
+| `paymentReturn` | только `Payment` |  | `IPaymentReturnPlugin` |
+| `endpoints` | любой тип |  | `IPluginEndpoints` |
+| `tax` | любой тип |  | `ITaxPlugin` |
+| `provisioningPanel` | только `Provisioning` |  | `IProvisioningPanelPlugin` |
+| `provisioningPanelLogin` | только `Provisioning` | `provisioningPanel` | `IProvisioningPanelLoginPlugin` |
+| `provisioningPanelPackages` | только `Provisioning` | `provisioningPanel` | `IProvisioningPanelPackagesPlugin` |
+| `virtualServer` | только `Provisioning` |  | `IVirtualServerPlugin` |
+| `virtualServerList` | только `Provisioning` |  | `IVirtualServerListPlugin` |
+| `virtualServerSnapshots` | только `Provisioning` | `virtualServer` | `IVirtualServerSnapshotPlugin` |
+| `virtualServerBackups` | только `Provisioning` | `virtualServer` | `IVirtualServerBackupPlugin` |
+| `virtualServerFirewall` | только `Provisioning` | `virtualServer` | `IVirtualServerFirewallPlugin` |
+| `virtualServerConsole` | только `Provisioning` | `virtualServer` | `IVirtualServerPlugin`, с поддержкой `CreateConsoleSessionAsync` |
+| `registrarOperations` | только `Registrar` |  | `IRegistrarOperationsPlugin` |
+| `registrarEmailForwarding`, `registrarDnsManagement`, `registrarWhois`, `registrarChildNameservers`, `registrarDnssec`, `registrarRestore`, `registrarDomainList`, `registrarSuggestions`, `registrarBalance` | только `Registrar` |  | соответствующий интерфейс, например `IRegistrarWhoisPlugin` для `registrarWhois` |
+
+Объявление возможности панели хостинга, виртуального сервера, регистратора или `tax` позволяет плагину загрузиться и показывает возможность на
+странице плагинов. Хост пока не вызывает эти контракты: функция начнёт использовать контракт, когда будет выпущена, а плагин,
+объявивший его раньше, загружается, но к нему не обращаются.
 
 Плагин `App` отвечает на маршруты и показывает страницы, меню и слоты без каких-либо объявлений. Любой другой тип, объявляющий
 маршруты `api` или меню, страницы или слоты `ui`, должен объявить `endpoints`, иначе пакет отклоняется при установке и пропускается
 при запуске (`PLUGIN_ENDPOINTS_NOT_DECLARED`). Так один плагин, например плагин `Fulfilment`, который продаёт кредиты,
-может дать клиенту ещё и свой экран. Неизвестное имя, имя, объявленное дважды, или `storedCredentials` для типа, отличного от
-`Payment`, отклоняются так же (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
+может дать клиенту ещё и свой экран. Неизвестное имя, имя, объявленное дважды, возможность для типа, которому её нельзя
+(`storedCredentials` не для `Payment`, `virtualServer` для `Registrar`) или возможность без той, которую она
+требует (`virtualServerSnapshots` без `virtualServer`), отклоняются так же (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
 
 Объявленная возможность сверяется с классом при активации плагина. Если класс не реализует
 интерфейс, обещанный возможностью, плагин не активируется ни для чего, включая вызовы собственного типа: платёжный
 плагин, объявивший `storedCredentials` без реализации `IStoredCredentialPlugin`, не принимает платежи, а
 плагин исполнения (fulfilment), объявивший `endpoints` без реализации `IPluginEndpoints`, не получает вызовов исполнения. В
 журнале администратора названы плагин и возможность.
+
+### Серверные модули {#server-modules}
+
+Плагин `Provisioning`, объявляющий `provisioningPanel`, `virtualServer` или `virtualServerList`, перечисляет обслуживаемые им
+серверные модули в `serverModules`, например `"serverModules": ["example-panel"]`: это короткие имена, которые администратор выбирает
+как тип панели управления сервера, и хост отправляет плагину серверы этих модулей. Каждый идентификатор состоит из 1-50 ASCII-букв,
+цифр, дефисов, точек или подчёркиваний, идентификаторы не повторяются (регистр не учитывается), а список содержит хотя бы один.
+Плагин, не объявляющий ни одной из этих возможностей, модулей не перечисляет. Список, нарушающий это, отклоняется при установке и при
+запуске с `PLUGIN_MANIFEST_SERVER_MODULES_INVALID`.
+
+### Роли подключения регистратора {#registrar-connection-roles}
+
+Плагин `Registrar` может указать, какой член подключения регистратора заполняет настройка, через `connectionRole` этой настройки:
+`accountName`, `apiKey` (настройка `secret`), `apiUrl` (настройка `url`), `clientIp` или `testMode` (настройка `boolean`). Роль
+даётся только одной настройке, а плагин, который задаёт любую роль, задаёт обе: `accountName` и `apiKey`. Манифест, нарушающий это,
+отклоняется с `PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR`, `PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE`,
+`PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH` или `PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE`. Это проверки
+пакета упаковки, поэтому запуск пакета на вашем плагине до публикации находит их первым.
+
+### Транспорт панели {#the-panel-transport}
+
+Плагин панели хостинга, виртуального сервера или регистратора принимает `IPanelTransport` в конструкторе и строит каждый запрос на
+выданном им клиенте, а собственный `HttpClient` не создаёт. Клиент хоста отказывает адресам loopback, link-local и метаданных
+облака, не следует перенаправлениям (ответ 3xx доходит до плагина как есть), никогда не повторяет запрос и сдаётся через 120
+секунд. `CreateClient(server)` нужно запрашивать, когда плагин общается с сервером, для которого у него есть `PanelServerConnection`: если
+оператор отметил «Доверять самоподписанному сертификату этого сервера» в форме сервера, такой клиент принимает сертификат
+имени хоста этого сервера и больше ничей. Эта настройка принадлежит только оператору и по умолчанию выключена; у плагина нет
+собственного переключателя. Хост не хранит порт панели, поэтому `PanelServerConnection.Port` равен `null`, и плагин использует свой порт по умолчанию.
+`PanelServerConnection` также несёт `UseSsl` и `Password` в том виде, в каком их хранит сервер. Плагин владеет выданным ему `HttpClient` и освобождает его по окончании работы (`using var http = transport.CreateClient(server);`).
 
 Каждая запись в `fields`:
 

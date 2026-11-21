@@ -53,6 +53,8 @@ export interface ServerEndpoint {
   assignedIpAddresses: string | null
   /** Whether SSL is used for API connections. */
   useSSL: boolean
+  /** Whether the self signed certificate of the server's API is trusted, for this server's host name only. */
+  acceptsSelfSignedCertificate: boolean
 }
 
 /** Account capacity of a server and whether it takes new accounts. */

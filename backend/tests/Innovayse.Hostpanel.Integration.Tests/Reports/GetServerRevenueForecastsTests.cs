@@ -122,6 +122,7 @@ public sealed class GetServerRevenueForecastsTests(IntegrationTestFactory factor
                 MonthlyCost: 0m,
                 Datacenter: null,
                 ServerStatusAddress: null,
-                NameServers: ServerNameServers.None),
+                NameServers: ServerNameServers.None,
+                AcceptsSelfSignedCertificate: false),
             TestMoments.Seeded);
 }

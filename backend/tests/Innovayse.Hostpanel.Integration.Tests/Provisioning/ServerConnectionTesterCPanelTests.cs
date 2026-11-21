@@ -36,7 +36,8 @@ public sealed class ServerConnectionTesterCPanelTests
             new ServerDetails(
                 "bad-host", "bad host", null, null, ServerModule.CPanel, "root",
                 new ServerCredentials(null, "secret-token-value", null), true, null, false, false, 0m, null, null,
-                ServerNameServers.None),
+                ServerNameServers.None,
+                false),
             TestMoments.Seeded);
 
         var result = await tester.TestAsync(server, CancellationToken.None);

@@ -29,6 +29,50 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         row.GetProperty("credentials").TryGetProperty("accessHash", out _).Should().BeFalse("the DTO never carries a server's credentials");
     }
 
+    /// <summary>A server is created trusting no self signed certificate unless the body says so, and the choice is stored and listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SelfSignedCertificate_IsOffByDefaultAndStoredWhenAskedAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+        var plain = $"Server-{Guid.NewGuid():N}";
+        var trusting = $"Server-{Guid.NewGuid():N}";
+
+        (await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody(plain))).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await client.PostAsJsonAsync(
+            "/api/admin/servers", ServersTestSeeds.ServerBody(trusting, acceptsSelfSignedCertificate: true))).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await ServersTestSeeds.SearchServersAsync(client, plain)).Single().GetProperty("endpoint")
+            .GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeFalse();
+        (await ServersTestSeeds.SearchServersAsync(client, trusting)).Single().GetProperty("endpoint")
+            .GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeTrue();
+    }
+
+    /// <summary>A body that does not mention the choice (an older script) creates a server that trusts nothing extra.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SelfSignedCertificate_OmittedFromTheBody_IsOffAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+        var name = $"Server-{Guid.NewGuid():N}";
+        var body = new
+        {
+            name,
+            endpoint = new { hostname = $"{name}.example.com", ipAddress = (string?)null, assignedIpAddresses = (string?)null, useSSL = true },
+            module = ServerModule.Cwp7,
+            username = "root",
+            credentials = new { },
+            limits = new { isDefault = false, isDisabled = false },
+            hosting = new { monthlyCost = 1m },
+            nameServers = new { },
+        };
+
+        (await client.PostAsJsonAsync("/api/admin/servers", body)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await ServersTestSeeds.SearchServersAsync(client, name)).Single().GetProperty("endpoint")
+            .GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeFalse();
+    }
+
     /// <summary>A server with an empty name is refused by the validator before it reaches the handler.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

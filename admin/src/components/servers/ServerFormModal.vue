@@ -118,6 +118,8 @@ interface ServerFormState {
   clearAccessHash: boolean
   /** Whether SSL is used for API connections. */
   useSSL: boolean
+  /** Whether the self signed certificate of the server's API is trusted. */
+  acceptsSelfSignedCertificate: boolean
   /** Nameserver hostnames and IPs. */
   nameservers: Record<NameserverKey, string>
 }
@@ -167,6 +169,7 @@ const initialForm = (s: ServerDto | null): ServerFormState => ({
   clearApiToken: false,
   clearAccessHash: false,
   useSSL: s?.endpoint.useSSL ?? true,
+  acceptsSelfSignedCertificate: s?.endpoint.acceptsSelfSignedCertificate ?? false,
   nameservers: {
     ns1Hostname: s?.nameServers.ns1Hostname ?? '',
     ns1Ip: s?.nameServers.ns1Ip ?? '',
@@ -219,6 +222,7 @@ const handleSubmit = (): void => {
       ipAddress: orNull(form.ipAddress),
       assignedIpAddresses: orNull(form.assignedIpAddresses),
       useSSL: form.useSSL,
+      acceptsSelfSignedCertificate: form.useSSL && form.acceptsSelfSignedCertificate,
     },
     module: form.module,
     username: form.username,
@@ -541,6 +545,15 @@ const handleSubmit = (): void => {
           <UiLabel variant="inline">
             <UiToggle v-model="form.useSSL" data-testid="server-form-ssl" />
             {{ t('servers.serverForm.useSslForConnections') }}
+          </UiLabel>
+
+          <UiLabel variant="inline">
+            <UiToggle
+              v-model="form.acceptsSelfSignedCertificate"
+              :disabled="!form.useSSL"
+              data-testid="server-form-self-signed"
+            />
+            {{ t('servers.serverForm.acceptSelfSignedCertificate') }}
           </UiLabel>
         </template>
       </UiForm>

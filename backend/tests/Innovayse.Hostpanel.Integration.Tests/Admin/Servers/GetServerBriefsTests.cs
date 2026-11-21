@@ -41,7 +41,8 @@ public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClas
                 MonthlyCost: 0m,
                 Datacenter: null,
                 ServerStatusAddress: null,
-                NameServers: ServerNameServers.None), TestMoments.Seeded);
+                NameServers: ServerNameServers.None,
+                AcceptsSelfSignedCertificate: false), TestMoments.Seeded);
             context.Servers.Add(server);
             await context.SaveChangesAsync(CancellationToken.None);
             serverId = server.Id;

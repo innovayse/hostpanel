@@ -39,6 +39,7 @@
     "accessHashValue": "Access Hash {value}",
     "usedByCpanelWhmAnd": "Used by cPanel/WHM and CWP for token-based authentication.",
     "useSslForConnections": "Use SSL for connections",
+    "acceptSelfSignedCertificate": "Trust the self signed certificate of this server",
     "addServer": "Add Server",
     "secondary": "Secondary",
     "third": "Third",

@@ -29,6 +29,45 @@ public sealed class ServerTests
             .Which.Should().Match<ServerCreatedEvent>(e => e.Name == "web-1" && e.OccurredAt == Now);
     }
 
+    /// <summary>A new server trusts no self signed certificate unless its details say so.</summary>
+    [Fact]
+    public void Create_TrustsNoSelfSignedCertificateByDefault()
+    {
+        Server.Create(Details("web-1"), Now).AcceptsSelfSignedCertificate.Should().BeFalse();
+        Server.Create(Details("web-1") with { AcceptsSelfSignedCertificate = true }, Now).AcceptsSelfSignedCertificate.Should().BeTrue();
+    }
+
+    /// <summary>A reconfiguration sets the choice from its details, so the operator can switch it on and back off.</summary>
+    [Fact]
+    public void Reconfigure_SwitchesTheSelfSignedCertificateChoice()
+    {
+        var server = Server.Create(Details("web-1"), Now);
+
+        server.Reconfigure(Details("web-1") with { AcceptsSelfSignedCertificate = true }, ServerCredentialClears.None);
+        server.AcceptsSelfSignedCertificate.Should().BeTrue();
+
+        server.Reconfigure(Details("web-1"), ServerCredentialClears.None);
+        server.AcceptsSelfSignedCertificate.Should().BeFalse();
+    }
+
+    /// <summary>A server without SSL cannot accept a self signed certificate, on create and on reconfigure, and keeps its stored choice.</summary>
+    [Fact]
+    public void SelfSignedCertificate_WithoutSsl_IsRefused()
+    {
+        var withoutSsl = Details("web-1") with { UseSSL = false, AcceptsSelfSignedCertificate = true };
+
+        var create = () => Server.Create(withoutSsl, Now);
+        create.Should().Throw<DomainRuleException>().Which.Code.Should().Be(ServerErrors.SelfSignedRequiresSsl);
+
+        var server = Server.Create(Details("web-1") with { AcceptsSelfSignedCertificate = true }, Now);
+        var reconfigure = () => server.Reconfigure(withoutSsl, ServerCredentialClears.None);
+        reconfigure.Should().Throw<DomainRuleException>().Which.Code.Should().Be(ServerErrors.SelfSignedRequiresSsl);
+        server.UseSSL.Should().BeTrue();
+        server.AcceptsSelfSignedCertificate.Should().BeTrue();
+
+        Server.Create(withoutSsl with { AcceptsSelfSignedCertificate = false }, Now).UseSSL.Should().BeFalse();
+    }
+
     /// <summary>A reconfiguration without new credentials keeps the stored ones, so editing a server never wipes its secrets.</summary>
     [Fact]
     public void Reconfigure_KeepsCredentialsWhenNoneAreGiven()
@@ -134,6 +173,7 @@ public sealed class ServerTests
             MonthlyCost: 20m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None with { Ns1Hostname = "ns1.example.test", Ns1Ip = "192.0.2.1" });
+            NameServers: ServerNameServers.None with { Ns1Hostname = "ns1.example.test", Ns1Ip = "192.0.2.1" },
+            AcceptsSelfSignedCertificate: false);
     }
 }

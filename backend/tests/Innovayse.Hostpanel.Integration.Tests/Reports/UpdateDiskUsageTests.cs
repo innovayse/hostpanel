@@ -53,7 +53,8 @@ public sealed class UpdateDiskUsageTests(IntegrationTestFactory factory) : IClas
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), TestMoments.Seeded));
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await scope.ServiceProvider.GetRequiredService<IMessageBus>()

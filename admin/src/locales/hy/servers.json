@@ -39,6 +39,7 @@
     "accessHashValue": "Մուտքի հեշ {value}",
     "usedByCpanelWhmAnd": "Օգտագործվում է cPanel/WHM-ի և CWP-ի կողմից՝ թոքենով նույնականացման համար։",
     "useSslForConnections": "Օգտագործել SSL միացումների համար",
+    "acceptSelfSignedCertificate": "Վստահել այս սերվերի ինքնաստորագրված վկայականին",
     "addServer": "Ավելացնել սերվեր",
     "secondary": "Երկրորդ",
     "third": "Երրորդ",

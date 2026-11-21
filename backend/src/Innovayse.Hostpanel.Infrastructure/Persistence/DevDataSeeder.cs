@@ -881,25 +881,29 @@ public sealed class DevDataSeeder
                 ServerModule.CPanel, "root", new ServerCredentials("changeme", null, null),
                 true, 500, true, false, 150m, "US-East DC", null,
                 new ServerNameServers(
-                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null)),
+                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
+                AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("Shared EU-01", "shared01-eu.example.test", "10.0.0.10", null,
                 ServerModule.CPanel, "root", new ServerCredentials("changeme", null, null),
                 true, 500, false, false, 150m, "EU-West DC", null,
                 new ServerNameServers(
-                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null)),
+                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
+                AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("VPS US-01", "vps01.example.test", "172.16.0.10", null,
                 ServerModule.Plesk, "admin", new ServerCredentials("changeme", null, null),
                 true, 100, true, false, 350m, "US-East DC", null,
                 new ServerNameServers(
-                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null)),
+                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
+                AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("Dedicated US-01", "dedicated01.example.test", "203.0.113.10", null,
                 ServerModule.DirectAdmin, "admin", new ServerCredentials("changeme", null, null),
                 true, 50, false, false, 800m, "US-West DC", null,
                 new ServerNameServers(
-                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null)),
+                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
+                AcceptsSelfSignedCertificate: false),
 
             // The only Cwp7-module server, and the only one the setup flow can actually pick: every
             // hosting product maps to the Cwp7 module (SetupServiceHandler.MapProductTypeToModule),
@@ -910,7 +914,8 @@ public sealed class DevDataSeeder
                 ServerModule.Cwp7, "root", new ServerCredentials("changeme", null, "dev-access-hash"),
                 true, 200, true, false, 300m, "US-East DC", null,
                 new ServerNameServers(
-                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null)),
+                    "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
+                AcceptsSelfSignedCertificate: false),
         };
 
         var groupIds = new[] { sharedGroup.Id, sharedGroup.Id, vpsGroup.Id, vpsGroup.Id, sharedGroup.Id };

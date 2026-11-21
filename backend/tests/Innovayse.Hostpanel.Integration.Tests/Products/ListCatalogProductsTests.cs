@@ -77,6 +77,42 @@ public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : I
             .Should().Contain(activeId).And.NotContain(inactiveId);
     }
 
+    /// <summary>
+    /// The catalogue carries a product's SKU in its stored form, including the family:value shape, and
+    /// null for a product that has none.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListCatalog_CarriesTheSkuOrNullAsync()
+    {
+        var admin = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(admin);
+        var sku = $"{ProductsTestSeeds.UniqueSku()}:Pro";
+        var withSku = await (await admin.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "With SKU",
+            type = ProductType.SharedHosting,
+            monthlyPrice = 1m,
+            annualPrice = 10m,
+            sku,
+        })).Content.ReadFromJsonAsync<int>();
+        var withoutSku = await (await admin.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Without SKU",
+            type = ProductType.SharedHosting,
+            monthlyPrice = 1m,
+            annualPrice = 10m,
+        })).Content.ReadFromJsonAsync<int>();
+
+        using var body = JsonDocument.Parse(await factory.CreateClient().GetStringAsync($"/api/public/products?groupId={groupId}"));
+
+        var products = body.RootElement.EnumerateArray().ToDictionary(p => p.GetProperty("id").GetInt32());
+        products[withSku].GetProperty("sku").GetString().Should().Be(sku.ToUpperInvariant());
+        products[withoutSku].GetProperty("sku").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
     /// <summary>A non-positive group filter is refused by the validator with 400.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

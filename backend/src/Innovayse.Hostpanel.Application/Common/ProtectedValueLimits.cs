@@ -26,8 +26,15 @@ public static class ProtectedValueLimits
     public const int TwoFactorSecret = 128;
 
     /// <summary>
-    /// The longest value a setting row stores. A secret setting is encrypted before it is saved,
-    /// so the column is sized for the encrypted form of this length.
+    /// The longest value an ordinary setting row or integration value stores. A secret setting is
+    /// encrypted before it is saved, so the column is sized for the encrypted form of
+    /// <see cref="LegalTextValue"/>, the longest of the limits a setting row can carry.
     /// </summary>
     public const int SettingValue = 2000;
+
+    /// <summary>
+    /// The longest value one operator legal text (<c>portal.legal.*</c>) stores: a full terms of service in
+    /// one language. Only those keys may exceed <see cref="SettingValue"/>.
+    /// </summary>
+    public const int LegalTextValue = 12000;
 }

@@ -311,6 +311,51 @@ public static class PortalSettingKeys
     /// <summary>Support working hours for Armenian visitors. Empty uses <see cref="ContactHours"/>.</summary>
     public const string ContactHoursHy = "portal.contact.hours.hy";
 
+    /// <summary>The operator's own text of the terms of service, default language; empty keeps the built-in text.</summary>
+    public const string LegalTerms = "portal.legal.terms";
+
+    /// <summary>The operator's own text of the terms of service for Russian visitors. Empty uses <see cref="LegalTerms"/>.</summary>
+    public const string LegalTermsRu = "portal.legal.terms.ru";
+
+    /// <summary>The operator's own text of the terms of service for Armenian visitors. Empty uses <see cref="LegalTerms"/>.</summary>
+    public const string LegalTermsHy = "portal.legal.terms.hy";
+
+    /// <summary>The operator's own text of the privacy policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalPrivacy = "portal.legal.privacy";
+
+    /// <summary>The operator's own text of the privacy policy for Russian visitors. Empty uses <see cref="LegalPrivacy"/>.</summary>
+    public const string LegalPrivacyRu = "portal.legal.privacy.ru";
+
+    /// <summary>The operator's own text of the privacy policy for Armenian visitors. Empty uses <see cref="LegalPrivacy"/>.</summary>
+    public const string LegalPrivacyHy = "portal.legal.privacy.hy";
+
+    /// <summary>The operator's own text of the refund policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalRefund = "portal.legal.refund";
+
+    /// <summary>The operator's own text of the refund policy for Russian visitors. Empty uses <see cref="LegalRefund"/>.</summary>
+    public const string LegalRefundRu = "portal.legal.refund.ru";
+
+    /// <summary>The operator's own text of the refund policy for Armenian visitors. Empty uses <see cref="LegalRefund"/>.</summary>
+    public const string LegalRefundHy = "portal.legal.refund.hy";
+
+    /// <summary>The operator's own text of the acceptable use policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalAcceptableUse = "portal.legal.acceptable_use";
+
+    /// <summary>The operator's own text of the acceptable use policy for Russian visitors. Empty uses <see cref="LegalAcceptableUse"/>.</summary>
+    public const string LegalAcceptableUseRu = "portal.legal.acceptable_use.ru";
+
+    /// <summary>The operator's own text of the acceptable use policy for Armenian visitors. Empty uses <see cref="LegalAcceptableUse"/>.</summary>
+    public const string LegalAcceptableUseHy = "portal.legal.acceptable_use.hy";
+
+    /// <summary>The operator's own text of the cookie policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalCookies = "portal.legal.cookies";
+
+    /// <summary>The operator's own text of the cookie policy for Russian visitors. Empty uses <see cref="LegalCookies"/>.</summary>
+    public const string LegalCookiesRu = "portal.legal.cookies.ru";
+
+    /// <summary>The operator's own text of the cookie policy for Armenian visitors. Empty uses <see cref="LegalCookies"/>.</summary>
+    public const string LegalCookiesHy = "portal.legal.cookies.hy";
+
     /// <summary>The template a fresh install starts with. Mirrors <c>DEFAULT_TEMPLATE</c> in <c>client/templates/types.ts</c>.</summary>
     public const StorefrontTemplate DefaultTemplate = StorefrontTemplate.Classic;
 
@@ -550,6 +595,21 @@ public static class PortalSettingKeys
         new(ContactAddressHy,    "",       "Office address for Armenian visitors. Empty uses the default address."),
         new(ContactHoursRu,      "",       "Support working hours for Russian visitors. Empty uses the default hours."),
         new(ContactHoursHy,      "",       "Support working hours for Armenian visitors. Empty uses the default hours."),
+        new(LegalTerms, "", "Your own text of the terms of service: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalTermsRu, "", "Your own text of the terms of service for Russian visitors. Empty uses the default text."),
+        new(LegalTermsHy, "", "Your own text of the terms of service for Armenian visitors. Empty uses the default text."),
+        new(LegalPrivacy, "", "Your own text of the privacy policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalPrivacyRu, "", "Your own text of the privacy policy for Russian visitors. Empty uses the default text."),
+        new(LegalPrivacyHy, "", "Your own text of the privacy policy for Armenian visitors. Empty uses the default text."),
+        new(LegalRefund, "", "Your own text of the refund policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalRefundRu, "", "Your own text of the refund policy for Russian visitors. Empty uses the default text."),
+        new(LegalRefundHy, "", "Your own text of the refund policy for Armenian visitors. Empty uses the default text."),
+        new(LegalAcceptableUse, "", "Your own text of the acceptable use policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalAcceptableUseRu, "", "Your own text of the acceptable use policy for Russian visitors. Empty uses the default text."),
+        new(LegalAcceptableUseHy, "", "Your own text of the acceptable use policy for Armenian visitors. Empty uses the default text."),
+        new(LegalCookies, "", "Your own text of the cookie policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalCookiesRu, "", "Your own text of the cookie policy for Russian visitors. Empty uses the default text."),
+        new(LegalCookiesHy, "", "Your own text of the cookie policy for Armenian visitors. Empty uses the default text."),
         new(FeaturesBackups,     "",       "Show the backups claims on the nova template: true or false. Empty hides them."),
         new(FeaturesStorage,     "",       "Show the storage claim on the nova template: true or false. Empty hides it."),
         new(FeaturesCaching,     "",       "Show the caching claim on the nova template: true or false. Empty hides it."),
@@ -606,6 +666,29 @@ public static class PortalSettingKeys
         Defaults.Any(d => d.Key == key && d.Value.Length == 0);
 
     /// <summary>
+    /// The operator's own legal texts: the page slug (the segment <c>GET /api/settings/public/legal/{page}</c> takes)
+    /// and the three rows of that page, default language first, then Russian, then Armenian.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> LegalTexts =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+        {
+            ["terms"] = [LegalTerms, LegalTermsRu, LegalTermsHy],
+            ["privacy"] = [LegalPrivacy, LegalPrivacyRu, LegalPrivacyHy],
+            ["refund"] = [LegalRefund, LegalRefundRu, LegalRefundHy],
+            ["acceptable_use"] = [LegalAcceptableUse, LegalAcceptableUseRu, LegalAcceptableUseHy],
+            ["cookies"] = [LegalCookies, LegalCookiesRu, LegalCookiesHy],
+        };
+
+    /// <summary>Every operator legal text key, the one set <see cref="IsLegalText"/> and <see cref="Public"/> read.</summary>
+    private static readonly IReadOnlySet<string> LegalTextKeys =
+        LegalTexts.Values.SelectMany(keys => keys).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>Tells whether a key holds an operator's legal text, the one kind of setting allowed a long value.</summary>
+    /// <param name="key">The setting key.</param>
+    /// <returns><c>true</c> for the fifteen <c>portal.legal.*</c> text keys.</returns>
+    public static bool IsLegalText(string key) => LegalTextKeys.Contains(key);
+
+    /// <summary>
     /// The only keys the anonymous storefront endpoint will ever return.
     /// <para>
     /// Derived from <see cref="Defaults"/> so the two cannot drift: every seeded
@@ -614,7 +697,12 @@ public static class PortalSettingKeys
     /// renders into public HTML. A future <c>portal.*</c> key that must <b>not</b> be public
     /// does not belong in <see cref="Defaults"/>; give it its own list.
     /// </para>
+    /// <para>
+    /// The one exception is the operator's legal texts (<see cref="LegalTexts"/>): seeded and public, but up to
+    /// 12000 characters each, so they stay out of this set, which rides in every page's settings payload, and are
+    /// served one page at a time by <c>GET /api/settings/public/legal/{page}</c>.
+    /// </para>
     /// </summary>
     public static readonly IReadOnlySet<string> Public =
-        Defaults.Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
+        Defaults.Select(d => d.Key).Where(key => !LegalTextKeys.Contains(key)).ToHashSet(StringComparer.Ordinal);
 }

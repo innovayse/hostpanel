@@ -13,6 +13,8 @@ import { startTransport } from '../helpers/stubTransport'
 import { queryOf, requestsTo, routeTable } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
 import type { StubReply, StubServer } from '../helpers/stubServer'
+import { LegalPage } from '~/constants/legalPage'
+import { legalTextPath } from '../helpers/contentPaths'
 import { useContentStore } from '~/stores/content'
 
 /** The BFF path of the signed-in announcement list. */
@@ -183,5 +185,27 @@ describe('useContentStore', () => {
 
     store.clearSearch()
     expect(store.searchResults).toEqual([])
+  })
+
+  it('reads the operator text of one legal page and keeps it by page', async () => {
+    table[`GET ${legalTextPath(LegalPage.Terms)}`] = { body: { 'portal.legal.terms': 'Our terms.', 'portal.legal.terms.ru': 'Наши условия.' } }
+    const store = useContentStore()
+
+    const loaded = await store.loadLegalText(LegalPage.Terms)
+
+    expect(stub.requests.map(request => request.url)).toEqual([legalTextPath(LegalPage.Terms)])
+    expect(loaded).toEqual({ 'portal.legal.terms': 'Our terms.', 'portal.legal.terms.ru': 'Наши условия.' })
+    expect(store.legalTextFor(LegalPage.Terms)).toEqual(loaded)
+    expect(store.legalTextFor(LegalPage.Privacy)).toEqual({})
+  })
+
+  it('keeps an empty legal text, and the failure sentence, when the read fails', async () => {
+    table[`GET ${legalTextPath(LegalPage.Refund)}`] = refusal
+    const store = useContentStore()
+
+    expect(await store.loadLegalText(LegalPage.Refund)).toEqual({})
+
+    expect(store.legalTextFor(LegalPage.Refund)).toEqual({})
+    expect(store.error).toBe('Content unavailable.')
   })
 })

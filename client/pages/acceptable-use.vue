@@ -3,7 +3,7 @@
     :badge="t('aup.badge')"
     :title="t('aup.title')"
     :subtitle="t('aup.subtitle', { site: siteName })"
-    :meta="lastUpdatedLine"
+    :meta="isCustom ? undefined : lastUpdatedLine"
     :sections="sections"
     :contact-title="t('aup.contact.title')"
     :contact-description="t('aup.contact.description')"
@@ -21,6 +21,8 @@
  */
 import { ShieldAlert } from 'lucide-vue-next'
 import { LEGAL_LAST_UPDATED } from '~/constants/legalUpdated'
+import { LegalPage } from '~/constants/legalPage'
+import { useLegalSections } from '~/composables/useLegalSections'
 import type { LegalSection } from '~/types/legalsection'
 
 /** Translates a key in the active language. */
@@ -38,15 +40,18 @@ const SECTION_DEFINITIONS = [
   { id: 'enforcement', icon: 'mdi:gavel', paragraphs: 2 }
 ]
 
-/** The sections with their copy resolved in the active language. */
-const sections = computed<LegalSection[]>(() => SECTION_DEFINITIONS.map(section => ({
+/** The built-in sections with their copy resolved in the active language. */
+const builtInSections = computed<LegalSection[]>(() => SECTION_DEFINITIONS.map(section => ({
   id: section.id,
   icon: section.icon,
   title: t(`aup.sections.${section.id}.title`),
   paragraphs: Array.from({ length: section.paragraphs }, (_, index) => t(`aup.sections.${section.id}.content.${index}`, { site: siteName.value }))
 })))
 
-/** The "last updated" line shown under the title. */
+/** The sections to draw: the operator's own text when it has stated one, otherwise the built-in sections. */
+const { sections, isCustom } = await useLegalSections(LegalPage.AcceptableUse, builtInSections)
+
+/** The "last updated" line shown under the title; it dates the built-in text only. */
 const lastUpdatedLine = computed(() => `${t('aup.lastUpdated')}: ${LEGAL_LAST_UPDATED}`)
 
 useSeoMeta({

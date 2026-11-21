@@ -1,20 +1,20 @@
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Billing.Commands.CancelInvoice;
-using Innovayse.Hostpanel.Application.Billing.Commands.CreateInvoice;
+using Innovayse.Hostpanel.Application.Billing.Commands.CreateOrderInvoice;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Services.Commands.CompleteServiceChange;
+using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChange;
@@ -25,10 +25,14 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlan
 /// </summary>
 /// <remarks>
 /// <para>
-/// An upgrade is approved at once. The prorated charge becomes an invoice through the one invoice creation use case, the
+/// An upgrade is approved at once. The prorated charge becomes an invoice through the use case that raises an order's invoice, the
 /// request keeps the invoice id, and the plan changes when that invoice is paid (<c>ServiceChangeInvoicePaidHandler</c>);
 /// an upgrade with nothing left to prorate has no invoice and is applied now. The invoice falls due after the same payment term
-/// as the invoice of an order (<see cref="OrderOptions.InvoicePaymentTerm"/>). When the save that links the invoice to
+/// as the invoice of an order, since the same use case raises it. Its line carries the snapshot of the plan moved to, so a
+/// digital plan reaches fulfilment plugins when the invoice is paid; the line is not a renewal, so the invoice never lapses
+/// (<c>Invoice.IsPastDigitalGrace</c> judges digital renewal lines only). When the change cannot be applied after the payment
+/// (the hosting panel refuses), the request stays Approved for staff to approve again, as for every failure of
+/// <see cref="CompleteServiceChangeCommand"/>; the plugin was told of the paid invoice by then. When the save that links the invoice to
 /// the request fails, the invoice is cancelled and the request taken back, so no payable invoice is left for a change that
 /// is never applied. An invoice cancelled later, whoever cancels it, rejects its approved request
 /// (<c>ServiceChangeInvoiceCancelledHandler</c>), so the service is never left holding an open request for an invoice that can
@@ -61,9 +65,6 @@ public sealed class RequestMyServicePlanChangeHandler
     /// <summary>The clock the moment of the request is read from.</summary>
     private readonly IClock _clock;
 
-    /// <summary>How long the proration invoice stays payable before it falls due.</summary>
-    private readonly IOptions<OrderOptions> _orderOptions;
-
     /// <summary>Records the activity log line for this action, saved with the change it describes.</summary>
     private readonly IActivityLogger _activity;
 
@@ -79,7 +80,6 @@ public sealed class RequestMyServicePlanChangeHandler
     /// <param name="quoter">Works out which plans the service can move to and what the move costs.</param>
     /// <param name="settings">Reads whether a downgrade is approved without staff.</param>
     /// <param name="clock">The clock the moment of the request is read from.</param>
-    /// <param name="orderOptions">How long the proration invoice stays payable before it falls due.</param>
     /// <param name="activity">Records the activity log line for this action, saved with the change it describes.</param>
     /// <param name="bus">Wolverine bus, used to raise the invoice and to apply the change through their own use cases.</param>
     /// <param name="logger">Reports an invoice or a request that could not be withdrawn.</param>
@@ -89,7 +89,6 @@ public sealed class RequestMyServicePlanChangeHandler
         ServicePlanChangeQuoter quoter,
         ServicePlanChangeSettingsReader settings,
         IClock clock,
-        IOptions<OrderOptions> orderOptions,
         IActivityLogger activity,
         IMessageBus bus,
         ILogger<RequestMyServicePlanChangeHandler> logger)
@@ -99,7 +98,6 @@ public sealed class RequestMyServicePlanChangeHandler
         _quoter = quoter;
         _settings = settings;
         _clock = clock;
-        _orderOptions = orderOptions;
         _activity = activity;
         _bus = bus;
         _logger = logger;
@@ -298,8 +296,20 @@ public sealed class RequestMyServicePlanChangeHandler
     {
         // An invoice line is a stored record of what was sold, not a screen: like every other line the billing flows write,
         // it is one fixed sentence around the product name rather than a resource looked up per language.
-        var item = new CreateInvoiceItemDto($"Upgrade to {option.Name} (prorated for the rest of the billing period)", option.ProrationAmount, 1);
+        //
+        // The line carries the snapshot of the plan moved to, read from the catalogue now like the order and renewal lines do,
+        // so a digital plan is a digital item: the paid invoice reaches the fulfilment plugins with the new plan's SKU and
+        // metadata and the service's quantity. The line total stays the prorated amount, so the unit price is the amount
+        // shared over the quantity, rounded to the currency's minor unit (it differs from the amount by that rounding only).
+        var target = await _bus.GetRequiredProductSummaryAsync(option.ProductId, ct);
+        var quantity = service.Quantity;
+        var item = new OrderInvoiceItemDto(
+            $"Upgrade to {option.Name} (prorated for the rest of the billing period)",
+            CurrencyCode.RoundToMinorUnits(option.ProrationAmount / quantity, option.CurrencyCode),
+            quantity,
+            target.Fulfilment.ToSnapshot(service.BillingCycle),
+            DiscountPercent: 0m);
         return await _bus.InvokeAsync<Result<int>>(
-            new CreateInvoiceCommand(service.ClientId, _clock.UtcNow.Add(_orderOptions.Value.InvoicePaymentTerm), [item]), ct);
+            new CreateOrderInvoiceCommand(service.ClientId, option.CurrencyCode, [item]), ct);
     }
 }

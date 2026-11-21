@@ -2129,6 +2129,10 @@ adds the weights and holds the sum to 0 to 100. A block list hit weighs 100, so 
   `ResetDemoDataCommand` truncates every table except the identity roles and reseeds in one
   transaction every `ResetIntervalHours`; `GET /api/public/demo` publishes the accounts and the next
   reset. Seed text names no outside product.
+- **Dates.** Every seeded date is measured from `DemoAnchor.Today(clock)`, never from a calendar: customers (some signed up in the
+  last weeks), invoices (each customer on its own billing day, paid a few days later), orders, tickets and domain expiries all move with the
+  reset day, nothing is dated before its customer signed up or after the anchor (`DemoAnchor.Clamp`), and the number of rows never
+  depends on the day (`DemoAnchorTests`, `DemoSeedRelativeToClockTests`).
 - **Seed.** The demo seed is fixed and deterministic: `DemoCatalogueSeeder`, `DemoPeopleSeeder` and `DemoClientProfile`
   produce the same sample data on every reset, and it is maximal, with every table populated enough to show each
   feature. The site name is `Hostpanel Demo`. The storefront contact is the one operator-set exception: optional
@@ -2324,6 +2328,8 @@ The Dockerfile default `0.0.0-dev` parses as a real version below every minimum,
 argument refuses every plugin that declares a range. The GitLab `.build-image` template therefore derives the version
 once with `scripts/image-version.sh` (full clone, `GIT_DEPTH: "0"`) and passes it as `--build-arg VERSION` to the API
 image; the job fails when no release tag is reachable. The GitHub image publisher passes the tag it is run for.
+An image built in place from a checkout without tags gets the version through `HOST_VERSION`, which
+`docker/docker-compose.prod.yml` passes as the `VERSION` build argument.
 The mirror workflow pushes the `v*` tags with the branch, because GitLab can only see a tag that was mirrored; a
 tag push alone starts nothing on GitLab, it travels with the next push to `main` or `develop`, and a release tag is
 never moved. Without a new tag the version stays at the last release plus the commit id.

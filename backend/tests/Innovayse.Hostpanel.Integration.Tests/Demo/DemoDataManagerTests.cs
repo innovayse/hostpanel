@@ -38,7 +38,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
         Clients: 65, Users: 73, SubjectRoles: 73, Contacts: 99, ClientUsers: 3, Invitations: 4,
         Servers: 7, ServerGroups: 3, SslChecks: 66, DiskUsage: 58, Services: 140, Cancellations: 75,
         Domains: 108, DomainReminders: 40, DnsRecords: 280, ForwardingRules: 46,
-        Invoices: 517, InvoiceTransactions: 399, Transactions: 409, Quotes: 66, QuoteItems: 165, BillableItems: 66, Orders: 160,
+        Invoices: 411, InvoiceTransactions: 374, Transactions: 384, Quotes: 66, QuoteItems: 165, BillableItems: 66, Orders: 160,
         Departments: 5, ReplyCategories: 4, Replies: 12, KbCategories: 7, Articles: 33, Tickets: 66, TicketReplies: 117,
         TicketTags: 88, Announcements: 25, NetworkIssues: 12,
         Slides: 7, SlideTranslations: 35, DownloadCategories: 4, Downloads: 21, ActivityLogs: 160, EmailLogs: 120,

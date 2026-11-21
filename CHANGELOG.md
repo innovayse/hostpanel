@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The public demo no longer looks dead after a reset. Its sample data is now dated from the day of the reset: customers sign up on different days of the last weeks, each customer is invoiced on its own day of the month and pays a few days later, so the dashboard shows income on many days of the last 30 and 90 days with a gentle upward trend, most invoices are paid, the newest are still open and only a few are overdue, and orders arrive across the recent days. Tickets keep varied ages and domains expire at different times. The picture is the same after every reset, only shifted to that day, and nothing is dated before its customer signed up or after the reset.
+- The admin footer of the public demo now shows the real release version instead of `0.0.0-dev`.
+- The admin panel no longer opens on a blank screen while it asks the server who is signed in. It shows the loading ring at once and replaces it with the panel or the sign-in screen, and a first navigation that fails ends in the same load error as a screen that cannot be downloaded.
 - A payment started for an invoice now tells the payment plugin the address and the language of the client who owns it (#1351), so gateways that refuse a payment without a payer email can be used. A client without an address still starts the payment, with the field left empty.
 
 ## [0.7.2] - 2026-11-20

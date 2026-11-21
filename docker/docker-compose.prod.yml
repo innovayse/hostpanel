@@ -41,6 +41,10 @@ services:
       target: prod
       args:
         AUTH_MODE: ${AUTH_MODE}
+        # The version the host reports as its own (HostVersion in backend/src/Directory.Build.props). A host that
+        # builds in place (the demo deploy) passes the release version in HOST_VERSION; the default is the
+        # Dockerfile's own placeholder, which only a build made by hand ever ships.
+        VERSION: ${HOST_VERSION:-0.0.0-dev}
       # The private feed credentials reach the restore as a BuildKit secret, never as a build argument.
       secrets:
         - nuget_credentials

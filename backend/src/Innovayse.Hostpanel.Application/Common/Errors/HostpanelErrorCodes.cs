@@ -514,6 +514,18 @@ public static class HostpanelErrorCodes
     public const string ORDER_PAYMENT_METHOD_UNAVAILABLE = "ORDER_PAYMENT_METHOD_UNAVAILABLE";
 
     /// <summary>
+    /// The product groups of a cart or an invoice each restrict the payment methods they may be paid with, and no method
+    /// is allowed by all of them (400). The payer has to split the order.
+    /// </summary>
+    public const string PAYMENT_NO_COMMON_METHOD = "PAYMENT_NO_COMMON_METHOD";
+
+    /// <summary>
+    /// A payment was started with a method the product groups of the invoice do not allow (400). The checkout never
+    /// offers such a method; this is the answer to a caller that sends one anyway.
+    /// </summary>
+    public const string PAYMENT_METHOD_NOT_ALLOWED = "PAYMENT_METHOD_NOT_ALLOWED";
+
+    /// <summary>
     /// The checkout chose a currency this deployment does not offer, or has switched off (400).
     /// </summary>
     public const string ORDER_CURRENCY_UNAVAILABLE = "ORDER_CURRENCY_UNAVAILABLE";

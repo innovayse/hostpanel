@@ -181,6 +181,17 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
     expect(store.methodsLoading).toBe(false)
   })
 
+  it('names the cart's products, so the product groups can narrow the gateways', async () => {
+    table[METHODS_ROUTE] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }] }
+    const cart = useCartStore()
+    cart.addItem(hosting)
+    cart.addItem({ ...hosting, pid: 6 })
+
+    await useCheckoutStore().loadPaymentMethods()
+
+    expect(requestsTo(stub.requests, BillingEndpoint.OrderPaymentMethods)[0]?.url).toBe(`${BillingEndpoint.OrderPaymentMethods}?productIds=5%2C6`)
+  })
+
   it('does not override a method the payer already chose', async () => {
     table[METHODS_ROUTE] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }] }
     const store = useCheckoutStore()

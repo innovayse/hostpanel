@@ -14,6 +14,7 @@ public sealed class CreateProductGroupValidator : LocalizedValidator<CreateProdu
     /// <summary>Longest a description may be.</summary>
     private const int DescriptionMaxLength = 500;
 
+
     /// <summary>
     ///     Initializes validator with localization service.
     /// </summary>
@@ -25,5 +26,8 @@ public sealed class CreateProductGroupValidator : LocalizedValidator<CreateProdu
             .MaximumLength(NameMaxLength).WithMessage(L["ProductGroupNameTooLong", NameMaxLength]);
         RuleFor(x => x.Description).MaximumLength(DescriptionMaxLength).When(x => x.Description is not null)
             .WithMessage(L["ProductGroupDescriptionTooLong", DescriptionMaxLength]);
+        RuleFor(x => x.AllowedPaymentMethods).MustBePaymentMethodList(
+            L["ProductGroupPaymentMethodsTooMany", ValidationRuleExtensions.PaymentMethodsMaxCount],
+            L["ProductGroupPaymentMethodTooLong", ValidationRuleExtensions.PaymentMethodMaxLength]);
     }
 }

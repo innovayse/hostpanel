@@ -15,6 +15,7 @@ import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ConsentTextVersion } from '~/types/consenttextversion'
 import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
+import type { GatewayMethodScope } from '~/types/gatewaymethodscope'
 import type { GatewayStart } from '~/types/gatewaystart'
 import type { PaymentReturnParameter } from '~/types/paymentreturnparameter'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
@@ -43,11 +44,18 @@ export const useBillingApi = () => {
    * Note the path: this is under `/api/portal/order`, not `/api/portal/client`, because the
    * list is the same whether or not anybody is signed in.
    *
+   * @param scope - What is being paid for (the cart's products or an invoice), so a gateway the product groups do not
+   * allow is left out; omitted lists every gateway on offer.
    * @returns Every gateway the order can be paid through.
-   * @throws Whatever `apiFetch` throws.
+   * @throws Whatever `apiFetch` throws, among them the `PAYMENT_NO_COMMON_METHOD` refusal when the groups share no method.
    */
-  const fetchGatewayMethods = (): Promise<GatewayMethod[]> =>
-    apiFetch<GatewayMethod[]>('/api/portal/order/payment-methods')
+  const fetchGatewayMethods = (scope: GatewayMethodScope = {}): Promise<GatewayMethod[]> =>
+    apiFetch<GatewayMethod[]>('/api/portal/order/payment-methods', {
+      query: {
+        productIds: scope.productIds?.length ? scope.productIds.join(',') : undefined,
+        invoiceId: scope.invoiceId,
+      },
+    })
 
   /**
    * Places an order, creating the order and its invoice on the backend.

@@ -9,7 +9,7 @@ import ProductsView from '@/views/ProductsView.vue'
 import schema from '@/views/ProductsView.schema'
 import type { CurrencyDto } from '@/types/currency'
 import type { Product, ProductGroup } from '@/types/product'
-import { invalid, json, problem } from '../helpers/fetch'
+import { callOf, invalid, json, problem } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted, mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
@@ -25,7 +25,7 @@ const usd: CurrencyDto = {
 const eur: CurrencyDto = { ...usd, code: 'EUR', prefix: '€', rateToBase: 0.92, isBase: false }
 
 /** The product groups. */
-const groups: ProductGroup[] = [{ id: 5, name: 'Shared', description: null, isActive: true, productCount: 2 }]
+const groups: ProductGroup[] = [{ id: 5, name: 'Shared', description: null, isActive: true, productCount: 2, allowedPaymentMethods: [] }]
 
 /** An active product sold in dollars and euros. */
 const plan: Product = {
@@ -147,6 +147,51 @@ describe('ProductsView', () => {
 
     await wrapper.get('[data-testid="product-form-cancel"]').trigger('click')
     expect(wrapper.find('[data-testid="product-form"]').exists()).toBe(false)
+  })
+
+  it('creates a product group restricted to the ticked payment methods through POST and reads the groups again', async () => {
+    const mock = stubRouteTable({
+      ...routes,
+      'GET /payment-methods': () => json([{ module: 'bank_transfer', displayName: 'Bank transfer' }]),
+      'POST /products/groups': () => json(8),
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="products-groups"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="product-groups-add"]').trigger('click')
+    await wrapper.get('[data-testid="product-group-form-name"]').setValue('Cloud')
+    await wrapper.get('[data-testid="product-group-form-method-bank_transfer"]').trigger('click')
+    await wrapper.get('[data-testid="product-group-form"]').trigger('submit')
+    await vi.waitFor(() => {
+      expect(wrapper.find('[data-testid="product-group-form"]').exists()).toBe(false)
+    })
+
+    const post = callOf(mock, requestsOf(mock).indexOf('POST /products/groups'))
+    expect(post.body).toEqual({ name: 'Cloud', description: null, allowedPaymentMethods: ['bank_transfer'] })
+  })
+
+  it('edits a product group through PUT with its current methods ticked', async () => {
+    const mock = stubRouteTable({
+      ...routes,
+      'GET /products/groups': () => json([{ ...groups[0], allowedPaymentMethods: ['bank_transfer'] }]),
+      'GET /payment-methods': () => json([{ module: 'bank_transfer', displayName: 'Bank transfer' }]),
+      'PUT /products/groups/5': () => new Response(null, { status: 204 }),
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="products-groups"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="product-group-edit-5"]').trigger('click')
+    expect(wrapper.get('[data-testid="product-group-form-method-bank_transfer"]').attributes('aria-checked')).toBe('true')
+    await wrapper.get('[data-testid="product-group-form-method-bank_transfer"]').trigger('click')
+    await wrapper.get('[data-testid="product-group-form"]').trigger('submit')
+    await vi.waitFor(() => {
+      expect(requestsOf(mock)).toContain('PUT /products/groups/5')
+    })
+
+    const put = callOf(mock, requestsOf(mock).indexOf('PUT /products/groups/5'))
+    expect(put.body).toEqual({ name: 'Shared', description: null, allowedPaymentMethods: [] })
   })
 
   it('creates a product through POST and closes the dialog', async () => {

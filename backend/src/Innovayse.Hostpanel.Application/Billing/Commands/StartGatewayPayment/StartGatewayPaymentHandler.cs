@@ -118,7 +118,8 @@ public sealed class StartGatewayPaymentHandler
     /// Where and how the payer's browser goes to the gateway, or one of: <c>INVOICE_NOT_FOUND</c>,
     /// <c>INVOICE_NOT_PAYABLE</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c> when a
     /// stored card charge claim of the invoice blocks it, <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c>, <c>RETURN_URL_NOT_ALLOWED</c>,
-    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, <c>GATEWAY_SESSION_ALREADY_STARTED</c>,
+    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, <c>PAYMENT_METHOD_NOT_ALLOWED</c> or <c>PAYMENT_NO_COMMON_METHOD</c> when the product groups
+    /// the invoice charges restrict the methods, <c>GATEWAY_SESSION_ALREADY_STARTED</c>,
     /// <c>CURRENCY_NOT_FOUND</c>, <c>GATEWAY_CURRENCY_MISMATCH</c> or
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin fails to register the payment or answers a session the host
     /// refuses (a form post that breaks the contract's rules, a browser step from a plugin that cannot complete a return). A payment that saves
@@ -172,6 +173,19 @@ public sealed class StartGatewayPaymentHandler
         if (plugin is null)
         {
             return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.PAYMENT_PLUGIN_NOT_CONFIGURED);
+        }
+
+        // The product groups the invoice charges may restrict the methods it is paid with; the checkout never offers a
+        // method they do not allow, so this answers only a caller that sends one anyway.
+        var allowed = await _context.AllowedPaymentMethodsAsync([], invoice.Id, ct);
+        if (allowed.IsFailure)
+        {
+            return Result<RedirectDto>.FailureCode(allowed.ErrorCode!);
+        }
+
+        if (!allowed.Value.Permits(cmd.Module))
+        {
+            return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.PAYMENT_METHOD_NOT_ALLOWED);
         }
 
         if (await HasLiveSessionAsync(invoice, now, ct))

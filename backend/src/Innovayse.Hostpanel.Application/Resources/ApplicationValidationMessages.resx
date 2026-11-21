@@ -925,6 +925,15 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Keep the description within {0} characters.</value>
   </data>
+  <data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Name at most {0} products.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Keep each payment method within {0} characters.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Allow at most {0} payment methods.</value>
+  </data>
   <data name="ProductBundleIdInvalid" xml:space="preserve">
     <value>Provide a valid product bundle id.</value>
   </data>

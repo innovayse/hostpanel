@@ -297,6 +297,12 @@
 <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
     <value>Այս պահին այդ վճարման եղանակը հասանելի չէ։</value>
   </data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
+    <value>Այս պատվերի բոլոր ապրանքների համար ընդհանուր վճարման եղանակ չկա։ Պատվիրեք դրանք առանձին։</value>
+  </data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>Այս վճարման եղանակը թույլատրված չէ վճարվող ապրանքների համար։</value>
+  </data>
 <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
     <value>Այդ արժույթը հասանելի չէ։</value>
   </data>

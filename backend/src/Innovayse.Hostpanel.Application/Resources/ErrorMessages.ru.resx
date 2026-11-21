@@ -297,6 +297,12 @@
 <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
     <value>Этот способ оплаты сейчас недоступен.</value>
   </data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
+    <value>Для всех товаров в этом заказе нет общего способа оплаты. Оформите их отдельными заказами.</value>
+  </data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>Этот способ оплаты не разрешён для оплачиваемых товаров.</value>
+  </data>
 <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
     <value>Эта валюта не предлагается.</value>
   </data>

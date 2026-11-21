@@ -15,6 +15,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.ListAvailablePaymentMe
 /// switched on by the admin, plus every loaded payment plugin whose integration
 /// is enabled and fully configured, and whose currency is the one this payer is billed in. A plugin that declares the
 /// stored credentials capability in its manifest is marked, so checkout can offer to keep the payer's method.
+/// A product group may restrict the methods it is paid with: when the query names the cart's products or an invoice, only
+/// the methods every one of their groups allows are listed (<see cref="ProductGroupPaymentMethodExtensions"/>), and
+/// a cart whose groups share no method is refused with <c>PAYMENT_NO_COMMON_METHOD</c>.
 /// Nothing is listed that would fail when the payer picks it, and <c>PlaceOrderHandler</c>
 /// refuses any module this list does not contain, so listing and ordering can never disagree.
 /// </summary>
@@ -45,24 +48,30 @@ public sealed class ListAvailablePaymentMethodsHandler
     /// <summary>The message bus, for the admin's on/off switch on each built-in method, owned by the integrations settings.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>The rule that says a client may only ask about their own invoices.</summary>
+    private readonly IInvoiceOwnership _ownership;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="plugins">Plugin registry for loaded plugin manifests.</param>
     /// <param name="pluginResolver">Payment plugin resolver.</param>
     /// <param name="context">The module's data context, for the configured currencies.</param>
     /// <param name="payerCurrency">Resolves the currency the caller is billed in.</param>
     /// <param name="bus">The message bus, for the admin's on/off switch on each built-in method.</param>
+    /// <param name="ownership">The rule that says a client may only ask about their own invoices.</param>
     public ListAvailablePaymentMethodsHandler(
         IPluginRegistry plugins,
         IPaymentPluginResolver pluginResolver,
         IHostpanelDbContext context,
         IPayerCurrencyResolver payerCurrency,
-        IMessageBus bus)
+        IMessageBus bus,
+        IInvoiceOwnership ownership)
     {
         _plugins = plugins;
         _pluginResolver = pluginResolver;
         _context = context;
         _payerCurrency = payerCurrency;
         _bus = bus;
+        _ownership = ownership;
     }
 
     /// <summary>Builds the list of methods available right now.</summary>
@@ -70,8 +79,9 @@ public sealed class ListAvailablePaymentMethodsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Available methods, built-ins first, then plugins in load order: empty when the query
-    /// names a currency the panel does not offer, since nothing can take money in it. Never
-    /// fails.
+    /// names a currency the panel does not offer, since nothing can take money in it. Fails with
+    /// <c>INVOICE_NOT_FOUND</c> when the invoice is not the caller's and with <c>PAYMENT_NO_COMMON_METHOD</c> when the
+    /// groups being paid for allow no method in common.
     /// </returns>
     public async Task<Result<IReadOnlyList<AvailablePaymentMethodDto>>> HandleAsync(
         ListAvailablePaymentMethodsQuery query, CancellationToken ct)
@@ -79,6 +89,14 @@ public sealed class ListAvailablePaymentMethodsHandler
         ArgumentNullException.ThrowIfNull(query);
 
         var methods = new List<AvailablePaymentMethodDto>();
+
+        // Refused before anything else is read: a cart the groups leave no method for is not an empty list but a
+        // reason the payer can act on, and an invoice that is not theirs is not told apart from a missing one.
+        var allowed = await ResolveAllowedMethodsAsync(query, ct);
+        if (allowed.IsFailure)
+        {
+            return Result<IReadOnlyList<AvailablePaymentMethodDto>>.FailureCode(allowed.ErrorCode!);
+        }
 
         // Settled first: a currency nobody can be billed in has no methods, whatever is switched on.
         var payerCurrencyNumeric = await ResolvePayerCurrencyNumericAsync(query.CurrencyCode, ct);
@@ -124,7 +142,8 @@ public sealed class ListAvailablePaymentMethodsHandler
                 manifest.Capabilities.Contains(PluginCapabilities.StoredCredentials, StringComparer.Ordinal)));
         }
 
-        return Result.Success<IReadOnlyList<AvailablePaymentMethodDto>>(methods);
+        return Result.Success<IReadOnlyList<AvailablePaymentMethodDto>>(
+            methods.Where(m => allowed.Value.Permits(m.Module)).ToList());
     }
 
     /// <summary>
@@ -146,5 +165,30 @@ public sealed class ListAvailablePaymentMethodsHandler
         }
 
         return (await _context.FindOfferedCurrencyAsync(requested, ct))?.Numeric;
+    }
+
+    /// <summary>
+    /// Settles which methods the product groups being paid for allow, after checking that an invoice the query names
+    /// is the caller's own.
+    /// </summary>
+    /// <param name="query">The query naming the cart's products and the invoice, if any.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The allowed methods, or <see langword="null"/> when nothing restricts them; <c>INVOICE_NOT_FOUND</c> when the invoice is
+    /// not the caller's; <c>PAYMENT_NO_COMMON_METHOD</c> when the groups share no method.
+    /// </returns>
+    private async Task<Result<IReadOnlyList<string>?>> ResolveAllowedMethodsAsync(
+        ListAvailablePaymentMethodsQuery query, CancellationToken ct)
+    {
+        if (query.InvoiceId is { } invoiceId)
+        {
+            var owned = await _ownership.RequireOwnedByCallerAsync(invoiceId, ct);
+            if (owned.IsFailure)
+            {
+                return Result<IReadOnlyList<string>?>.FailureCode(owned.ErrorCode!);
+            }
+        }
+
+        return await _context.AllowedPaymentMethodsAsync(query.ProductIds ?? [], query.InvoiceId, ct);
     }
 }

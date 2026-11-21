@@ -22,6 +22,15 @@ public sealed class ProductGroup : BaseEntity, IAggregateRoot
     /// <summary>Gets whether this group is visible and available for new orders.</summary>
     public bool IsActive { get; private set; }
 
+    /// <summary>Backing field for the payment methods this group may be paid with.</summary>
+    private List<string> _allowedPaymentMethods = [];
+
+    /// <summary>
+    /// Gets the payment method module ids an order or invoice of this group may be paid with; empty means every
+    /// method on offer is allowed, which is what a group has until an operator restricts it.
+    /// </summary>
+    public IReadOnlyList<string> AllowedPaymentMethods => _allowedPaymentMethods.AsReadOnly();
+
     /// <summary>Gets all products belonging to this group.</summary>
     public IReadOnlyList<Product> Products => _products.AsReadOnly();
 
@@ -49,6 +58,46 @@ public sealed class ProductGroup : BaseEntity, IAggregateRoot
     {
         Name = name;
         Description = description;
+    }
+
+    /// <summary>
+    /// Replaces the payment methods this group may be paid with. Blank entries are dropped and a method named
+    /// twice (ignoring case) is kept once, in the order first given.
+    /// </summary>
+    /// <param name="methods">Payment method module ids; an empty list lifts the restriction.</param>
+    public void SetAllowedPaymentMethods(IEnumerable<string> methods)
+    {
+        ArgumentNullException.ThrowIfNull(methods);
+
+        _allowedPaymentMethods = methods
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Select(m => m.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Works out which payment methods every one of the given groups allows at once: the intersection of the
+    /// restricted groups' sets. A group with no restriction allows everything and so takes no part.
+    /// </summary>
+    /// <param name="groups">The groups an order or invoice draws its products from.</param>
+    /// <returns>
+    /// <see langword="null"/> when no group is restricted (every method on offer may be used); otherwise the methods all
+    /// restricted groups share, which is empty when they share none.
+    /// </returns>
+    public static IReadOnlyList<string>? CommonAllowedPaymentMethods(IEnumerable<ProductGroup> groups)
+    {
+        ArgumentNullException.ThrowIfNull(groups);
+
+        IReadOnlyList<string>? common = null;
+        foreach (var group in groups.Where(g => g._allowedPaymentMethods.Count > 0))
+        {
+            common = common is null
+                ? group._allowedPaymentMethods
+                : common.Intersect(group._allowedPaymentMethods, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        return common;
     }
 
     /// <summary>Marks the group inactive: hides it from the storefront.</summary>

@@ -5,8 +5,8 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Services.Commands.CompleteServiceChange;
 using Innovayse.Hostpanel.Application.Products.Extensions;
+using Innovayse.Hostpanel.Application.Services.Commands.CompleteServiceChange;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Services;
@@ -202,6 +202,13 @@ public sealed class RequestMyServicePlanChangeHandler
 
         try
         {
+            if (request.InvoiceId is { } invoiceId)
+            {
+                await _activity.RecordAsync(
+                    new ActivityLogEntry(service.ClientId, $"Created Upgrade Invoice - Invoice ID: {invoiceId}, Service ID: {service.Id}"),
+                    ct);
+            }
+
             await _activity.RecordAsync(
                 new ActivityLogEntry(
                     service.ClientId,
@@ -287,7 +294,7 @@ public sealed class RequestMyServicePlanChangeHandler
         }
     }
 
-    /// <summary>Raises the invoice of the prorated charge through the one invoice creation use case.</summary>
+    /// <summary>Raises the invoice of the prorated charge through <see cref="CreateOrderInvoiceCommand"/>, the use case that raises an order's invoice.</summary>
     /// <param name="service">The service that changes plan.</param>
     /// <param name="option">The quote, naming the new plan and the amount to charge.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -299,8 +306,11 @@ public sealed class RequestMyServicePlanChangeHandler
         //
         // The line carries the snapshot of the plan moved to, read from the catalogue now like the order and renewal lines do,
         // so a digital plan is a digital item: the paid invoice reaches the fulfilment plugins with the new plan's SKU and
-        // metadata and the service's quantity. The line total stays the prorated amount, so the unit price is the amount
-        // shared over the quantity, rounded to the currency's minor unit (it differs from the amount by that rounding only).
+        // metadata and the service's quantity. The unit price is the prorated amount shared over the quantity, rounded to the
+        // currency's minor unit, so when the quantity does not divide the amount the line total differs from it by at most half
+        // a minor unit per unit of quantity. A line is always quantity times unit price and the quantity must reach the plugin,
+        // so the total cannot be pinned to the amount without a second adjusting line. The quantity is at least one:
+        // InvoiceItem.Create refuses less, and a service is held with one at least.
         var target = await _bus.GetRequiredProductSummaryAsync(option.ProductId, ct);
         var quantity = service.Quantity;
         var item = new OrderInvoiceItemDto(

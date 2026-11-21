@@ -169,6 +169,56 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         line.Metadata.Should().Be(metadata);
         line.Quantity.Should().Be(2);
         line.Currency.Should().Be("USD");
+        (await context.ActivityLogs.AnyAsync(l => l.ClientId == clientId && l.Description.Contains($"Created Upgrade Invoice - Invoice ID: {invoiceId}")))
+            .Should().BeTrue();
+    }
+
+    /// <summary>
+    /// When the quantity does not divide the prorated amount, the invoice still carries the quantity for fulfilment and its
+    /// total differs from the amount by the rounding of the unit price only: at most half a minor unit per unit of quantity.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_WithAQuantityThatDoesNotDivideTheAmount_KeepsTheQuantityAndRoundsTheUnitPriceOnly()
+    {
+        const int quantity = 3;
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-qty3");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
+            factory, clientId, 10m, 17.77m, toType: ProductType.Digital, toSku: "PRO-PLAN", quantity: quantity);
+        var expected = ServiceChangeTestSeeds.ExpectedProration(10m, 17.77m, seeded.NextRenewalAt);
+
+        var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().Include(i => i.Items).FirstAsync(i => i.Id == invoiceId);
+        var item = invoice.Items.Should().ContainSingle().Subject;
+        item.Quantity.Should().Be(quantity);
+        item.UnitPrice.Should().Be(Math.Round(expected / quantity, 2, MidpointRounding.AwayFromZero));
+        invoice.Total.Should().BeApproximately(expected, 0.005m * quantity);
+    }
+
+    /// <summary>
+    /// An upgrade to a plan that is not digital (shared hosting) raises an invoice that is not a digital item, so no
+    /// fulfilment plugin is involved in it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_ToANonDigitalPlan_RaisesAnInvoiceWithoutDigitalItems()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-shared");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+
+        var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().Include(i => i.Items).FirstAsync(i => i.Id == invoiceId);
+        invoice.HasDigitalItems.Should().BeFalse();
     }
 
     /// <summary>
@@ -185,6 +235,8 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
         var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
 
+        // FailingSaveHost is used only for its fixed clock, 400 days on: the predicate refuses no save (always false), so the
+        // overdue cron runs for real and the test judges what it does to the unpaid invoice.
         using var host = FailingSaveHost.Create(factory, new ManualTimeProvider(TestMoments.Present().AddDays(400)), _ => false);
         using (var scope = host.Services.CreateScope())
         {

@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- A plan upgrade of a digital service now tells fulfilment plugins about the new plan. The prorated invoice of the upgrade carries the new product's SKU and metadata and the quantity of the service, so when it is paid the plugin is handed that product and the customer gets its entitlements at once instead of at renewal. The charge is still the prorated amount, and the invoice never lapses if it stays unpaid. A downgrade has no invoice, so plugins are not told about it yet.
+- A plan upgrade of a digital service now tells fulfilment plugins about the new plan. The prorated invoice of the upgrade carries the new product's SKU and metadata and the quantity of the service, so when it is paid the plugin is handed that product and the customer gets its entitlements at once instead of at renewal. The charge is the prorated amount, which for a service held with a quantity that does not divide it may differ by the rounding of the unit price (half a minor unit per unit of quantity at most), and the invoice never lapses if it stays unpaid. A downgrade has no invoice, so plugins are not told about it yet.
 - A payment started for an invoice now tells the payment plugin the address and the language of the client who owns it (#1351), so gateways that refuse a payment without a payer email can be used. A client without an address still starts the payment, with the field left empty.
 
 ## [0.7.2] - 2026-11-20

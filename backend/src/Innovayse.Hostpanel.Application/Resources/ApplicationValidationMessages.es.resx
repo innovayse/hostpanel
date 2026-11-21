@@ -974,7 +974,7 @@
     <value>El orden no puede ser negativo.</value>
   </data>
   <data name="ProductSkuInvalid" xml:space="preserve">
-    <value>Use letras y dígitos unidos por guiones, guiones bajos o puntos simples para el SKU, de {0} caracteres como máximo.</value>
+    <value>Use letras y dígitos unidos por guiones, guiones bajos o puntos simples para el SKU, opcionalmente en dos partes separadas por dos puntos, de {0} caracteres como máximo.</value>
   </data>
   <data name="ProductMetadataInvalid" xml:space="preserve">
     <value>Los metadatos deben ser un objeto JSON.</value>

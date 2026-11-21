@@ -28,6 +28,24 @@ internal sealed class DemoSalesSeeder
     /// <summary>How many days a quote stays valid after it is written.</summary>
     private const int QuoteValidityDays = 30;
 
+    /// <summary>The days before the anchor most orders arrive in; the dashboard's busiest period.</summary>
+    private const int RecentOrderDays = 90;
+
+    /// <summary>
+    /// Every n-th order is an older one, placed before the recent period, so the yearly order report keeps its history;
+    /// the others fall in the recent period.
+    /// </summary>
+    private const int OlderOrderEvery = 4;
+
+    /// <summary>The days before the anchor the oldest orders go back to, counted from the start of the recent period.</summary>
+    private const int OlderOrderDays = 260;
+
+    /// <summary>
+    /// The exponent applied to a uniform draw to place an order inside the recent period: above one, so more orders fall
+    /// near today than far from it and the order chart rises gently towards the present.
+    /// </summary>
+    private const double RecentOrderBias = 1.4;
+
     /// <summary>The quote stages handed out in turn; every stage the entity can reach appears.</summary>
     private static readonly QuoteStage[] QuoteStages =
     [
@@ -128,12 +146,21 @@ internal sealed class DemoSalesSeeder
         for (var n = 0; n < QuoteCount; n++)
         {
             // The demo client gets the first four so its portal shows quotes in several stages.
-            var client = clients[n < 4 ? 0 : (n - 3) % clients.Count];
             var stage = QuoteStages[n % QuoteStages.Length];
+            var index = n < 4 ? 0 : (n - 3) % clients.Count;
+
+            // An expired quote was written weeks ago, so it belongs to a customer who has been around that long.
+            while (stage == QuoteStage.Expired && DemoAnchor.IsRecentSignup(index))
+            {
+                index = (index + 1) % clients.Count;
+            }
+
+            var client = clients[index];
 
             // A quote is valid for thirty days from the day it was written. An expired one was written a month and a half or
             // more ago, every other one in the last three weeks, so no quote is dated after its own expiry.
-            var written = _today.AddDays(-(stage == QuoteStage.Expired ? 45 + ((n * 7) % 50) : 1 + ((n * 3) % 20)));
+            var written = DemoAnchor.Clamp(
+                _today.AddDays(-(stage == QuoteStage.Expired ? 45 + ((n * 7) % 50) : 1 + ((n * 3) % 20))), client.CreatedAt, _today);
             var expiry = written.AddDays(QuoteValidityDays);
 
             var quote = Quote.Create(
@@ -217,7 +244,10 @@ internal sealed class DemoSalesSeeder
         await _db.SaveChangesAsync(ct);
     }
 
-    /// <summary>Seeds orders over the last year, each for a hosting-type product and some with a domain registration too.</summary>
+    /// <summary>
+    /// Seeds orders over the last year, most of them in the last ninety days with more towards today, each for a
+    /// hosting-type product and some with a domain registration too.
+    /// </summary>
     /// <param name="clients">All customers, the demo client first.</param>
     /// <param name="invoiceIds">Each customer's invoice ids, oldest first.</param>
     /// <param name="ct">Cancels the save.</param>
@@ -234,6 +264,7 @@ internal sealed class DemoSalesSeeder
             return;
         }
 
+        var random = DemoAnchor.NewRandom();
         for (var n = 0; n < OrderCount; n++)
         {
             var client = clients[n % clients.Count];
@@ -278,10 +309,15 @@ internal sealed class DemoSalesSeeder
                     break;
             }
 
-            // Spread across the year so the order report has a trend, oldest first.
-            // An order is never older than the account that placed it.
-            var placed = _today.AddDays(-(5 + (((OrderCount - n) * 13) % 350)));
-            order.Backdate(placed > client.CreatedAt ? placed : client.CreatedAt.AddDays(1 + (n % 10)));
+            // Spread over the last ninety days with a rise towards today, plus an older tail, so both dashboard periods and the
+            // yearly order report have a trend. At least a day before the anchor, so no order is dated after the reset.
+            var daysAgo = n % OlderOrderEvery == OlderOrderEvery - 1
+                ? RecentOrderDays + random.Next(OlderOrderDays)
+                : Math.Max(1, (int)(RecentOrderDays * Math.Pow(random.NextDouble(), RecentOrderBias)));
+            var placed = _today.AddDays(-daysAgo).AddHours(random.Next(8, 20));
+
+            // An order is never older than the account that placed it, and never later than the anchor.
+            order.Backdate(DemoAnchor.Clamp(placed, client.CreatedAt.AddDays(1 + (n % 5)), _today));
             _db.Orders.Add(order);
         }
 

@@ -423,7 +423,7 @@
     "sortOrderHint": "Position innerhalb der Gruppe, die niedrigste zuerst. Produkte mit derselben Zahl werden nach Name sortiert.",
     "sortOrderPlaceholder": "z. B. 1",
     "sku": "SKU",
-    "skuHint": "Eindeutiger Code, der dieses Produkt bezeichnet, zum Beispiel in einem Fulfillment-Plugin. Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, höchstens 64 Zeichen. Leer lassen für keinen.",
+    "skuHint": "Eindeutiger Code, der dieses Produkt bezeichnet, zum Beispiel in einem Fulfillment-Plugin. Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, optional als zwei solche Teile getrennt durch einen Doppelpunkt, zum Beispiel plan:pro, höchstens 64 Zeichen. Leer lassen für keinen.",
     "skuPlaceholder": "z. B. CREDITS-100",
     "metadata": "Metadaten",
     "metadataHint": "Optionales JSON-Objekt, das ein Fulfillment-Plugin liest, höchstens 16 KB. Leer lassen für keines.",

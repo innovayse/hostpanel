@@ -16,12 +16,17 @@
  *   of the screen below;
  * - `ViewLoading`, the generic stand-in, only for a record that has no schema (see `lib/skeletonExceptions.ts`).
  *
+ * On a hard load nothing is matched yet: the router is still asking the server who is signed in, and only then knows whether
+ * the visitor gets the panel or the sign-in screen. Until the first navigation settles the root level draws `AppLoading`,
+ * so the page is never blank; if that navigation fails it ends in the load error instead of a spinner.
+ *
  * Use it wherever a layout would write `<RouterView />`.
  */
-import { computed, inject, unref } from 'vue'
+import { computed, inject, ref, unref } from 'vue'
 import type { Component } from 'vue'
 import { RouterView, useRouter, viewDepthKey } from 'vue-router'
 import type { RouteLocationNormalized, RouteRecordNormalized } from 'vue-router'
+import AppLoading from '@/components/layout/AppLoading.vue'
 import ViewLoadError from '@/components/layout/ViewLoadError.vue'
 import ViewLoading from '@/components/layout/ViewLoading.vue'
 import UiSkeletonOf from '@/components/ui/UiSkeletonOf.vue'
@@ -63,6 +68,34 @@ const loading = computed<boolean>(() => changesHere(navigation.pending))
 /** True when the screen this level was about to show could not be downloaded. */
 const failed = computed<boolean>(() => changesHere(navigation.failed))
 
+/** True while the very first navigation of the page is still running: no route is matched, so nothing can be drawn yet. */
+const starting = ref<boolean>(router.currentRoute.value.matched.length === 0)
+
+/** True when the very first navigation threw instead of settling, so the page ends in the load error, not in the loader. */
+const startFailed = ref<boolean>(false)
+
+if (starting.value) {
+  void router.isReady().then(
+    () => {
+      starting.value = false
+    },
+    () => {
+      starting.value = false
+      startFailed.value = true
+    },
+  )
+}
+
+/**
+ * True while the loader stands in for the page: the first navigation is running and has not reached a screen to show.
+ *
+ * The route is read here too, because the router matches it before `isReady()` settles; going by the flag alone would
+ * swap the screen that has just landed for the loader for one more tick and mount it twice.
+ */
+const booting = computed<boolean>(
+  () => starting.value && router.currentRoute.value.matched.length === 0 && !loading.value && !failed.value,
+)
+
 /** The records the pending navigation draws from this level down; empty while this level is not loading. */
 const pendingRecords = computed<RouteRecordNormalized[]>(() =>
   loading.value && navigation.pending !== null ? drawnFrom(navigation.pending.matched) : [],
@@ -82,7 +115,8 @@ const outletSchema = computed<SkeletonSchema | undefined>(() => pendingRecords.v
 </script>
 
 <template>
-  <template v-if="loading && shell === undefined">
+  <AppLoading v-if="booting" />
+  <template v-else-if="loading && shell === undefined">
     <UiSkeletonOf v-if="schema" :schema="schema">
       <template #outlet>
         <UiSkeletonOf v-if="outletSchema" :schema="outletSchema" />
@@ -91,7 +125,7 @@ const outletSchema = computed<SkeletonSchema | undefined>(() => pendingRecords.v
     </UiSkeletonOf>
     <ViewLoading v-else />
   </template>
-  <ViewLoadError v-else-if="failed" />
+  <ViewLoadError v-else-if="failed || startFailed" />
   <!--
     While the shell is the pending record it is drawn here by its own component, in the place its real record takes
     when the navigation lands, so the sidebar and the top bar are the same instances before and after.

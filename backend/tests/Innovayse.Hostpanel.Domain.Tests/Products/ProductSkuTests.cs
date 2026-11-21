@@ -12,6 +12,7 @@ public class ProductSkuTests
     [InlineData("lic-pro", "LIC-PRO")]
     [InlineData("  Credits_100 ", "CREDITS_100")]
     [InlineData("PLAN.V2", "PLAN.V2")]
+    [InlineData(" Plan:Pro ", "PLAN:PRO")]
     public void Normalize_TrimsAndUpperCases(string input, string expected)
     {
         Assert.Equal(expected, ProductSku.Normalize(input));
@@ -28,7 +29,7 @@ public class ProductSkuTests
         Assert.Null(ProductSku.Normalize(input));
     }
 
-    /// <summary>IsValid accepts alphanumeric words joined by single separators, in any case.</summary>
+    /// <summary>IsValid accepts alphanumeric words joined by single separators, alone or as one family:value pair, in any case.</summary>
     /// <param name="sku">A well-formed SKU.</param>
     [Theory]
     [InlineData("A")]
@@ -37,12 +38,15 @@ public class ProductSkuTests
     [InlineData("credits_100")]
     [InlineData(" plan.v2 ")]
     [InlineData("A-B_C.D")]
+    [InlineData("plan:pro")]
+    [InlineData("credits:100")]
+    [InlineData(" Licence-Pro.v2:1Y_Eu ")]
     public void IsValid_AcceptsAWellFormedSku(string sku)
     {
         Assert.True(ProductSku.IsValid(sku));
     }
 
-    /// <summary>IsValid refuses empty text, stray or doubled separators and other characters.</summary>
+    /// <summary>IsValid refuses empty text, stray or doubled separators, a second or edge colon and other characters.</summary>
     /// <param name="sku">A malformed SKU.</param>
     [Theory]
     [InlineData(null)]
@@ -57,6 +61,14 @@ public class ProductSkuTests
     [InlineData("LIC/PRO")]
     [InlineData("LIC#1")]
     [InlineData("ЛИЦ")]
+    [InlineData(":")]
+    [InlineData("PLAN:")]
+    [InlineData(":PRO")]
+    [InlineData("PLAN::PRO")]
+    [InlineData("A:B:C")]
+    [InlineData("PLAN:-PRO")]
+    [InlineData("PLAN-:PRO")]
+    [InlineData("PLAN: PRO")]
     public void IsValid_RefusesAMalformedSku(string? sku)
     {
         Assert.False(ProductSku.IsValid(sku));

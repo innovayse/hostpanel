@@ -316,7 +316,7 @@ public sealed class Product : BaseEntity, IAggregateRoot
         {
             throw new DomainRuleException(
                 ProductsErrors.ProductSkuInvalid,
-                $"The SKU '{normalized}' must be at most {ProductSku.MaxLength} characters of letters and digits joined by single '-', '_' or '.'.");
+                $"The SKU '{normalized}' must be at most {ProductSku.MaxLength} characters of letters and digits joined by single '-', '_' or '.', optionally as two such parts joined by one ':'.");
         }
 
         Sku = normalized;

@@ -311,6 +311,51 @@ public static class PortalSettingKeys
     /// <summary>Support working hours for Armenian visitors. Empty uses <see cref="ContactHours"/>.</summary>
     public const string ContactHoursHy = "portal.contact.hours.hy";
 
+    /// <summary>The operator's own text of the terms of service, default language; empty keeps the built-in text.</summary>
+    public const string LegalTerms = "portal.legal.terms";
+
+    /// <summary>The operator's own text of the terms of service for Russian visitors. Empty uses <see cref="LegalTerms"/>.</summary>
+    public const string LegalTermsRu = "portal.legal.terms.ru";
+
+    /// <summary>The operator's own text of the terms of service for Armenian visitors. Empty uses <see cref="LegalTerms"/>.</summary>
+    public const string LegalTermsHy = "portal.legal.terms.hy";
+
+    /// <summary>The operator's own text of the privacy policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalPrivacy = "portal.legal.privacy";
+
+    /// <summary>The operator's own text of the privacy policy for Russian visitors. Empty uses <see cref="LegalPrivacy"/>.</summary>
+    public const string LegalPrivacyRu = "portal.legal.privacy.ru";
+
+    /// <summary>The operator's own text of the privacy policy for Armenian visitors. Empty uses <see cref="LegalPrivacy"/>.</summary>
+    public const string LegalPrivacyHy = "portal.legal.privacy.hy";
+
+    /// <summary>The operator's own text of the refund policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalRefund = "portal.legal.refund";
+
+    /// <summary>The operator's own text of the refund policy for Russian visitors. Empty uses <see cref="LegalRefund"/>.</summary>
+    public const string LegalRefundRu = "portal.legal.refund.ru";
+
+    /// <summary>The operator's own text of the refund policy for Armenian visitors. Empty uses <see cref="LegalRefund"/>.</summary>
+    public const string LegalRefundHy = "portal.legal.refund.hy";
+
+    /// <summary>The operator's own text of the acceptable use policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalAcceptableUse = "portal.legal.acceptable_use";
+
+    /// <summary>The operator's own text of the acceptable use policy for Russian visitors. Empty uses <see cref="LegalAcceptableUse"/>.</summary>
+    public const string LegalAcceptableUseRu = "portal.legal.acceptable_use.ru";
+
+    /// <summary>The operator's own text of the acceptable use policy for Armenian visitors. Empty uses <see cref="LegalAcceptableUse"/>.</summary>
+    public const string LegalAcceptableUseHy = "portal.legal.acceptable_use.hy";
+
+    /// <summary>The operator's own text of the cookie policy, default language; empty keeps the built-in text.</summary>
+    public const string LegalCookies = "portal.legal.cookies";
+
+    /// <summary>The operator's own text of the cookie policy for Russian visitors. Empty uses <see cref="LegalCookies"/>.</summary>
+    public const string LegalCookiesRu = "portal.legal.cookies.ru";
+
+    /// <summary>The operator's own text of the cookie policy for Armenian visitors. Empty uses <see cref="LegalCookies"/>.</summary>
+    public const string LegalCookiesHy = "portal.legal.cookies.hy";
+
     /// <summary>The template a fresh install starts with. Mirrors <c>DEFAULT_TEMPLATE</c> in <c>client/templates/types.ts</c>.</summary>
     public const StorefrontTemplate DefaultTemplate = StorefrontTemplate.Classic;
 
@@ -550,6 +595,21 @@ public static class PortalSettingKeys
         new(ContactAddressHy,    "",       "Office address for Armenian visitors. Empty uses the default address."),
         new(ContactHoursRu,      "",       "Support working hours for Russian visitors. Empty uses the default hours."),
         new(ContactHoursHy,      "",       "Support working hours for Armenian visitors. Empty uses the default hours."),
+        new(LegalTerms, "", "Your own text of the terms of service: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalTermsRu, "", "Your own text of the terms of service for Russian visitors. Empty uses the default text."),
+        new(LegalTermsHy, "", "Your own text of the terms of service for Armenian visitors. Empty uses the default text."),
+        new(LegalPrivacy, "", "Your own text of the privacy policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalPrivacyRu, "", "Your own text of the privacy policy for Russian visitors. Empty uses the default text."),
+        new(LegalPrivacyHy, "", "Your own text of the privacy policy for Armenian visitors. Empty uses the default text."),
+        new(LegalRefund, "", "Your own text of the refund policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalRefundRu, "", "Your own text of the refund policy for Russian visitors. Empty uses the default text."),
+        new(LegalRefundHy, "", "Your own text of the refund policy for Armenian visitors. Empty uses the default text."),
+        new(LegalAcceptableUse, "", "Your own text of the acceptable use policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalAcceptableUseRu, "", "Your own text of the acceptable use policy for Russian visitors. Empty uses the default text."),
+        new(LegalAcceptableUseHy, "", "Your own text of the acceptable use policy for Armenian visitors. Empty uses the default text."),
+        new(LegalCookies, "", "Your own text of the cookie policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
+        new(LegalCookiesRu, "", "Your own text of the cookie policy for Russian visitors. Empty uses the default text."),
+        new(LegalCookiesHy, "", "Your own text of the cookie policy for Armenian visitors. Empty uses the default text."),
         new(FeaturesBackups,     "",       "Show the backups claims on the nova template: true or false. Empty hides them."),
         new(FeaturesStorage,     "",       "Show the storage claim on the nova template: true or false. Empty hides it."),
         new(FeaturesCaching,     "",       "Show the caching claim on the nova template: true or false. Empty hides it."),

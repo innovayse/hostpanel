@@ -159,6 +159,29 @@ public class PortalSettingKeysTests
         }
     }
 
+    /// <summary>Every operator legal text (five documents, three languages) is seeded empty, public, free text and under the legal prefix.</summary>
+    [Fact]
+    public void LegalTexts_AreSeededEmptyPublicAndFreeText()
+    {
+        string[] keys =
+        [
+            PortalSettingKeys.LegalTerms, PortalSettingKeys.LegalTermsRu, PortalSettingKeys.LegalTermsHy,
+            PortalSettingKeys.LegalPrivacy, PortalSettingKeys.LegalPrivacyRu, PortalSettingKeys.LegalPrivacyHy,
+            PortalSettingKeys.LegalRefund, PortalSettingKeys.LegalRefundRu, PortalSettingKeys.LegalRefundHy,
+            PortalSettingKeys.LegalAcceptableUse, PortalSettingKeys.LegalAcceptableUseRu, PortalSettingKeys.LegalAcceptableUseHy,
+            PortalSettingKeys.LegalCookies, PortalSettingKeys.LegalCookiesRu, PortalSettingKeys.LegalCookiesHy,
+        ];
+
+        Assert.Equal(keys.Length, keys.Distinct().Count());
+        foreach (var key in keys)
+        {
+            Assert.StartsWith("portal.legal.", key);
+            Assert.Contains(key, PortalSettingKeys.Public);
+            Assert.True(PortalSettingKeys.AllowsEmpty(key), $"{key} must seed empty so the built-in text stays");
+            Assert.False(PortalSettingKeys.Patterns.ContainsKey(key), $"{key} is free text with no shape");
+            Assert.False(PortalSettingKeys.AllowedValues.ContainsKey(key), $"{key} is free text with no vocabulary");
+        }
+    }
     /// <summary>The home-page section toggles seed "true" (projects "false"), are public, and accept only booleans, never empty.</summary>
     [Fact]
     public void SectionToggles_SeedVisible_ExceptProjects_AndAcceptOnlyBooleans()

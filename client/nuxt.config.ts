@@ -296,6 +296,22 @@ export default defineNuxtConfig({
       portalAboutText: process.env.NUXT_PUBLIC_PORTAL_ABOUT_TEXT || '',
       portalAboutTextRu: process.env.NUXT_PUBLIC_PORTAL_ABOUT_TEXT_RU || '',
       portalAboutTextHy: process.env.NUXT_PUBLIC_PORTAL_ABOUT_TEXT_HY || '',
+      // The operator's own legal texts (terms, privacy, refunds, acceptable use, cookies), per language; empty keeps the built-in text.
+      portalLegalTerms: process.env.NUXT_PUBLIC_PORTAL_LEGAL_TERMS || '',
+      portalLegalTermsRu: process.env.NUXT_PUBLIC_PORTAL_LEGAL_TERMS_RU || '',
+      portalLegalTermsHy: process.env.NUXT_PUBLIC_PORTAL_LEGAL_TERMS_HY || '',
+      portalLegalPrivacy: process.env.NUXT_PUBLIC_PORTAL_LEGAL_PRIVACY || '',
+      portalLegalPrivacyRu: process.env.NUXT_PUBLIC_PORTAL_LEGAL_PRIVACY_RU || '',
+      portalLegalPrivacyHy: process.env.NUXT_PUBLIC_PORTAL_LEGAL_PRIVACY_HY || '',
+      portalLegalRefund: process.env.NUXT_PUBLIC_PORTAL_LEGAL_REFUND || '',
+      portalLegalRefundRu: process.env.NUXT_PUBLIC_PORTAL_LEGAL_REFUND_RU || '',
+      portalLegalRefundHy: process.env.NUXT_PUBLIC_PORTAL_LEGAL_REFUND_HY || '',
+      portalLegalAcceptableUse: process.env.NUXT_PUBLIC_PORTAL_LEGAL_ACCEPTABLE_USE || '',
+      portalLegalAcceptableUseRu: process.env.NUXT_PUBLIC_PORTAL_LEGAL_ACCEPTABLE_USE_RU || '',
+      portalLegalAcceptableUseHy: process.env.NUXT_PUBLIC_PORTAL_LEGAL_ACCEPTABLE_USE_HY || '',
+      portalLegalCookies: process.env.NUXT_PUBLIC_PORTAL_LEGAL_COOKIES || '',
+      portalLegalCookiesRu: process.env.NUXT_PUBLIC_PORTAL_LEGAL_COOKIES_RU || '',
+      portalLegalCookiesHy: process.env.NUXT_PUBLIC_PORTAL_LEGAL_COOKIES_HY || '',
     }
   },
 

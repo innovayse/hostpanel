@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Settings;
 using Microsoft.AspNetCore.Hosting;
@@ -197,6 +198,32 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
         read.GetProperty("value").GetString().Should().Be("ул. Примерная, 1");
     }
 
+    /// <summary>
+    /// An operator's legal text longer than the old 2000 character cap is stored with its line breaks,
+    /// served to the anonymous storefront read, and one past the cap is refused.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task LegalText_LongMultiLineText_IsStoredServedAndCappedAsync()
+    {
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.LegalTermsRu);
+        var text = string.Join("\n\n", Enumerable.Repeat("## Section\n\nA paragraph of the seller's own terms.", 100));
+        text.Length.Should().BeGreaterThan(2000);
+
+        var update = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = text });
+        update.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var publicRows = await factory.CreateClient().GetFromJsonAsync<List<JsonElement>>("/api/settings/public");
+        publicRows!.Single(row => row.GetProperty("key").GetString() == PortalSettingKeys.LegalTermsRu)
+            .GetProperty("value").GetString().Should().Be(text);
+
+        var tooLong = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = new string('a', ProtectedValueLimits.SettingValue + 1) });
+        tooLong.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // Back to the built-in text for any other test that reads the page.
+        await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = string.Empty });
+    }
     /// <summary>Free text with no vocabulary or shape is stored trimmed, unchanged otherwise.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

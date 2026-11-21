@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import BrandingCard from '@/components/settings/BrandingCard.vue'
+import LegalTextsCard from '@/components/settings/LegalTextsCard.vue'
 import SiteIdentityCard from '@/components/settings/SiteIdentityCard.vue'
 import TrackingChatCard from '@/components/settings/TrackingChatCard.vue'
 import { DEFAULT_SETTINGS_TAB, cardsOfTab } from '@/lib/settingsTabs'
@@ -12,8 +13,9 @@ import schema from '@/views/SystemSettingsView.schema'
 
 describe('cardsOfTab', () => {
   it('places the cards on their tabs', () => {
-    expect(cardsOfTab(SettingsTab.General)).toHaveLength(3)
+    expect(cardsOfTab(SettingsTab.General)).toHaveLength(4)
     expect(cardsOfTab(SettingsTab.General)[0]).toBe(SiteIdentityCard)
+    expect(cardsOfTab(SettingsTab.General)).toContain(LegalTextsCard)
     expect(cardsOfTab(SettingsTab.Appearance)).toHaveLength(5)
     expect(cardsOfTab(SettingsTab.Appearance)).toContain(BrandingCard)
     expect(cardsOfTab(SettingsTab.Integrations)).toEqual([TrackingChatCard])

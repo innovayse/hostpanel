@@ -27,7 +27,8 @@ public static class ProtectedValueLimits
 
     /// <summary>
     /// The longest value a setting row stores. A secret setting is encrypted before it is saved,
-    /// so the column is sized for the encrypted form of this length.
+    /// so the column is sized for the encrypted form of this length. The figure is high enough for an operator's own
+    /// legal text (<c>portal.legal.*</c>), the longest free text a setting holds.
     /// </summary>
-    public const int SettingValue = 2000;
+    public const int SettingValue = 12000;
 }

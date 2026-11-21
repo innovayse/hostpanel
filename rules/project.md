@@ -2822,6 +2822,14 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   fields from the bound locale. A setting stored once per language (`portal.contact.address`, `.ru`, `.hy`) takes its drafts
   from `useLocalizedSettingDrafts`; the saved keys and payloads are unchanged. A label such as "(Russian)" or a key such
   as `addressRu` in a locale file is the sign someone wrote the second implementation.
+- **The operator's own legal text (terms, privacy, refunds, acceptable use, cookies).** Fifteen `portal.legal.<page>[.ru|.hy]`
+  settings (`PortalSettingKeys.Legal*`, seeded empty, public, up to `ProtectedValueLimits.SettingValue` = 12000 characters) are
+  edited in the admin's `LegalTextsCard` (General tab, one `UiLocalizedField` of multi-line fields per page) and read by the
+  storefront through `useLegalSections(page, builtIn)`, the one place that decides: the operator's text in the visitor's language
+  (the default row standing in for a language without its own), else the built-in sections. `parseLegalText` reads the plain
+  format (`## ` opens a section, a blank line ends a paragraph, `- ` is a list entry) into `LegalSection[]` of plain strings that
+  `LegalDocument` draws as text, never HTML. A page with operator text hides the built-in "last updated" date, which dates only
+  the shipped wording.
 - **Plugin pages and the Add-ons menu (#647).** A page a serving plugin adds to the admin lives at
   `/apps/<plugin>/<path>` (`views/PluginPageView.vue`, route `apps/:plugin/:page*`); the store asks the API's
   lookup by path (`GET /api/admin/plugins/ui/{plugin}/pages/by-path`) and shows its `PLUGIN_PAGE_NOT_FOUND`

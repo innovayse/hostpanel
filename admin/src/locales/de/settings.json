@@ -88,6 +88,17 @@
     },
     "localeFallbackHint": "Für eine leer gelassene Sprache wird der englische Text angezeigt."
   },
+  "legalTexts": {
+    "title": "Rechtstexte",
+    "description": "Ihre eigenen Nutzungsbedingungen, Datenschutzerklärung, Erstattungsrichtlinie, Richtlinie zur akzeptablen Nutzung und Cookie-Richtlinie, etwa mit Verkäufername und Zahlungsdienstleister. Eine leere Seite behält den eingebauten Text.",
+    "hint": "Eine leere Sprache zeigt den englischen Text; ohne englischen Text behält die Seite den eingebauten Text. Ein Abschnitt beginnt mit einer ##-Zeile, Absätze trennt eine Leerzeile, Listeneinträge stehen in Zeilen mit -. Listeneinträge folgen den Absätzen ihres Abschnitts.",
+    "placeholder": "z. B. ## Angaben zum Verkäufer, danach der Text des Abschnitts",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutzerklärung",
+    "refund": "Erstattungsrichtlinie",
+    "acceptableUse": "Richtlinie zur akzeptablen Nutzung",
+    "cookies": "Cookie-Richtlinie"
+  },
   "portalAppearance": {
     "title": "Erscheinungsbild des Portals",
     "description": "Welche Vorlage der öffentliche Storefront darstellt und in welchem Farbmodus ein Besucher startet. Änderungen werden beim nächsten Laden der Seite wirksam.",

@@ -3,7 +3,7 @@
     :badge="t('terms.badge')"
     :title="t('terms.title')"
     :subtitle="t('terms.subtitle')"
-    :meta="lastUpdatedLine"
+    :meta="isCustom ? undefined : lastUpdatedLine"
     :sections="sections"
     :contact-title="t('terms.contact.title')"
     :contact-description="t('terms.contact.description')"
@@ -18,6 +18,8 @@
  * Owns the copy keys and the SEO tags; the layout of the document is `LegalDocument`.
  */
 import { LEGAL_LAST_UPDATED } from '~/constants/legalUpdated'
+import { LegalPage } from '~/constants/legalPage'
+import { useLegalSections } from '~/composables/useLegalSections'
 import type { LegalSection } from '~/types/legalsection'
 
 /** Translates a key in the active language. */
@@ -38,14 +40,17 @@ const SECTION_DEFINITIONS = [
   { id: 'changes', paragraphs: 2 }
 ]
 
-/** The sections with their copy resolved in the active language. */
-const sections = computed<LegalSection[]>(() => SECTION_DEFINITIONS.map(section => ({
+/** The built-in sections with their copy resolved in the active language. */
+const builtInSections = computed<LegalSection[]>(() => SECTION_DEFINITIONS.map(section => ({
   id: section.id,
   title: t(`terms.sections.${section.id}.title`),
   paragraphs: Array.from({ length: section.paragraphs }, (_, index) => t(`terms.sections.${section.id}.content.${index}`, { site: siteName.value }))
 })))
 
-/** The "last updated" line shown under the title. */
+/** The sections to draw: the operator's own text when it has stated one, otherwise the built-in sections. */
+const { sections, isCustom } = useLegalSections(LegalPage.Terms, builtInSections)
+
+/** The "last updated" line shown under the title; it dates the built-in text only. */
 const lastUpdatedLine = computed(() => `${t('terms.lastUpdated')}: ${LEGAL_LAST_UPDATED}`)
 
 useSeoMeta({

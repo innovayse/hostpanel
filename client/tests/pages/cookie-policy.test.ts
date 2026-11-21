@@ -95,4 +95,17 @@ describe('pages/cookie-policy', () => {
       twitterCard: 'summary',
     }))
   })
+
+  it('shows the operator text instead of the built-in sections and the built-in date', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.LegalCookies]: '## Seller\n\nAcme Ltd. sells under these terms.\n- Paid by card' })
+
+    const wrapper = await mountPage(Page)
+
+    const section = wrapper.find('[data-testid="legal-section-custom-1"]')
+    expect(section.text()).toContain('Seller')
+    expect(section.text()).toContain('Acme Ltd. sells under these terms.')
+    expect(section.text()).toContain('Paid by card')
+    expect(wrapper.findAll('[data-testid="legal-section-marker"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="legal-last-updated"]').exists()).toBe(false)
+  })
 })

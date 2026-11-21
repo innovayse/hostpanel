@@ -358,7 +358,10 @@ internal sealed class DemoSupportSeeder
             }
 
             // The ticket was opened days ago and each message followed hours after the last, not all at the moment of seeding.
-            ticket.Backdate(_today.AddDays(-(2 + ((n * 7) % 58))).AddHours(8 + (n % 9)), TimeSpan.FromHours(2 + (n % 4)));
+            // A customer who joined a few days ago cannot have written before joining, so the ticket is opened at the earliest on the day of signup.
+            ticket.Backdate(
+                DemoAnchor.Clamp(_today.AddDays(-(2 + ((n * 7) % 58))).AddHours(8 + (n % 9)), owner.CreatedAt, _today),
+                TimeSpan.FromHours(2 + (n % 4)));
             _db.Tickets.Add(ticket);
         }
 

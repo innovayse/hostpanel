@@ -1117,10 +1117,10 @@ docker/                              compose set (shared·dev·prod·platform), 
       `SetIfAbsentAsync` (one atomic step on the same scope xmin token, so exactly one of several racing callers writes) and
       `ListKeysAsync` (prefix as a key may start, limit 1 to `MaxListLimit`, ascending ordinal order by `COLLATE "C"`). A plain
       `SetAsync` clears the expiry. An expired row (`ExpiresAt` at or before `IClock.UtcNow`) is absent for every operation and
-      does not count toward the quota: a write that does not fit first releases the scope's expired rows in the same attempt, and
+      does not count toward the quota: a write that does not fit first releases the scope's expired rows (oldest first, at most the key limit) in the same attempt, and
       the recurring job `SweepExpiredPluginDataCron` (`AdminScheduledJobsStartup`, every
       `ScheduledJobs:SweepExpiredPluginDataIntervalMinutes`, default 15) removes the rest through their scope.
-    - **Quota, one rule.** `PluginApi:MaxStoreKeysPerScope` (keys, default 1000, 1 to 100,000) and
+    - **Quota, one rule.** `PluginApi:MaxStoreKeysPerScope` (keys, default and most 1000, the SDK's `PluginStoreLimits.MaxKeys`, 1 to 1000) and
       `PluginApi:MaxStoreCharsPerScope` (characters of every key and value, default 4 Mi, from one full key and value to
       1 Gi), both on `PluginApiOptions`, validated on start, read as one `PluginStoreQuota`. `PluginDataScope.Admit` is the only
       place either is checked: a write that would take the scope past either measure is refused with `DomainRuleException`

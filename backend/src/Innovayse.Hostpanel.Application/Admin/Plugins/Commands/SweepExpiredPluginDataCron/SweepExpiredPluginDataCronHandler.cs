@@ -16,14 +16,17 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Commands.SweepExpiredPlu
  * again, which also lets it see a value the plugin has just written again with a new time to live. A scope row stays when
  * it is empty: the next write of that plugin reuses it.
  *
+ * A scope whose sweep fails is logged with its plugin id and skipped, so the others still run; the failed batch is detached
+ * and the next pass retries the scope. The pass returns normally, so RecurringJobs schedules the next one.
+ *
  * Rows are loaded and removed with Remove + SaveChangesAsync, never ExecuteDelete: the architecture rules ban bulk deletes
  * in handlers because they skip the interceptors.
  */
 
 /// <summary>
 /// Scheduled handler that removes the expired values of the plugin store, scope by scope. A recurring background message,
-/// not dispatched by a caller, so it returns <see cref="Task"/>; a pass is idempotent and a failing pass is retried by the
-/// next one.
+/// not dispatched by a caller, so it returns <see cref="Task"/>; a pass is idempotent, a scope that fails is logged and
+/// skipped so the others still run, and the next pass retries it.
 /// </summary>
 public sealed class SweepExpiredPluginDataCronHandler
 {
@@ -71,7 +74,7 @@ public sealed class SweepExpiredPluginDataCronHandler
             _jobs.Schedules.SweepExpiredPluginData, () => RunAsync(ct), ct);
     }
 
-    /// <summary>One pass: finds the scopes that hold an expired value and sweeps each.</summary>
+    /// <summary>One pass: finds the scopes that hold an expired value and sweeps each; a scope that fails is logged and skipped.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once no expired value of the moment the pass began is left.</returns>
     private async Task RunAsync(CancellationToken ct)
@@ -86,13 +89,26 @@ public sealed class SweepExpiredPluginDataCronHandler
             .ToListAsync(ct);
 
         var deleted = 0;
+        var failed = 0;
         foreach (var scope in scopes)
         {
-            deleted += await SweepScopeAsync(scope.PluginId, scope.ClientRef, now, ct);
+            try
+            {
+                deleted += await SweepScopeAsync(scope.PluginId, scope.ClientRef, now, ct);
+            }
+            catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
+            {
+                // The failed batch is still tracked and would ride along with, and fail, the next scope's save;
+                // detaching it isolates this scope, and the next pass retries it.
+                _context.DetachAll();
+                failed++;
+                _logger.LogError(ex, "Sweeping the expired plugin store entries of plugin {PluginId} failed.", scope.PluginId);
+            }
         }
 
         _logger.LogInformation(
-            "Swept {EntryCount} expired plugin store entries in {ScopeCount} store scopes.", deleted, scopes.Count);
+            "Swept {EntryCount} expired plugin store entries in {ScopeCount} store scopes, {FailedCount} failed.",
+            deleted, scopes.Count, failed);
     }
 
     /// <summary>Removes one scope's expired entries, batch by batch.</summary>

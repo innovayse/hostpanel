@@ -29,8 +29,8 @@ using Microsoft.EntityFrameworkCore;
  *
  * A value written with a time to live carries an ExpiresAt. An expired row is absent for every operation (a read, a
  * listing, a conditional write, a removal that answers false) but stays in its scope's totals until it is released, so
- * a write that would pass the quota first releases the scope's expired rows in the same attempt and is refused only if
- * it still does not fit. The periodic sweep (SweepExpiredPluginDataCron) releases the rest. An expired row of the very
+ * a write that would pass the quota first releases the scope's expired rows in the same attempt, at most the quota's key
+ * count of them, oldest first, and is refused only if it still does not fit. The periodic sweep (SweepExpiredPluginDataCron) releases the rest. An expired row of the very
  * key being written is reused, never deleted and inserted again, so the key's unique index is never in play twice.
  */
 
@@ -271,8 +271,9 @@ internal sealed class PluginStore : IPluginStoreAdvanced
 
     /// <summary>
     /// Takes a write into the scope's totals. Expired rows still count there until they are released, so when the write
-    /// does not fit as the totals stand the scope's expired rows are released first and the write is refused only if it
-    /// still does not fit.
+    /// does not fit as the totals stand the scope's expired rows are released first, at most the quota's key count of them,
+    /// oldest first (a scope never holds more rows than that, so it is the most one write can need to free), and the write
+    /// is refused only if it still does not fit.
     /// </summary>
     /// <param name="scope">The scope's totals row, tracked.</param>
     /// <param name="addedKeys">Keys the write adds: 1 for a new key, 0 for a replaced value.</param>
@@ -290,6 +291,8 @@ internal sealed class PluginStore : IPluginStoreAdvanced
         {
             var expired = await InScope()
                 .Where(row => row.Key != key && row.ExpiresAt != null && row.ExpiresAt <= now)
+                .OrderBy(row => row.ExpiresAt)
+                .Take(_quota.MaxKeys)
                 .ToListAsync(ct);
             foreach (var row in expired)
             {
